@@ -11,9 +11,7 @@
         "You did hard work when hard work was needed. That matters.",
         "I saw raiders turn from our doors because you were there.",
         "No one wants that kind of fight, but someone had to answer it.",
-        "You helped keep families at their tables. That's worth saying aloud.",
-        "When danger came close, nobody had time to sound brave first.",
-        "You learn a lot about a village when everyone hears the bell at once."
+        "You helped keep families at their tables. That's worth saying aloud."
       ],
       "option": "village_defense_report",
       "show_for_babies": false,

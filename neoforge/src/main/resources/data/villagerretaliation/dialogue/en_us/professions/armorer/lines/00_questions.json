@@ -12,7 +12,6 @@
         "A shield is only useful if the arm behind it holds steady.",
         "Most days, I am at the forge, trying to keep straps and plates from becoming everyone else's problem.",
         "People think armor is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good hammer more than a loud promise. The hammer has less to prove.",
         "Armor looks simple until it has to keep a life inside it.",
         "Good metal has patience in it. Bad metal only has shine.",
@@ -38,14 +37,7 @@
       "lines": [
         "That trip through {follow_biome} tested my buckles more than most customers do.",
         "I remember following you through {follow_biome}. My feet remember it even better.",
-        "That trip across {follow_biome} taught me to ask more questions before walking.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "That trip across {follow_biome} taught me to ask more questions before walking."
       ],
       "conditions": [
         {
@@ -62,14 +54,7 @@
       "lines": [
         "Armor is not made for sitting in a boat. I learned that while following you.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It can't make me forget it.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "A boat can make a bad plan quieter. It can't make me forget it."
       ],
       "conditions": [
         {
@@ -90,11 +75,8 @@
         "Good armor should feel boring until the hour it saves your ribs.",
         "Most days, I am at the forge, trying to keep straps and plates from becoming everyone else's problem.",
         "People think armor is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good hammer more than a loud promise. The hammer has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the forge has done to me."
+        "I can spot a loose strap from across the forge. Bad armor makes itself known."
       ],
       "show_for_babies": false,
       "weight": 18

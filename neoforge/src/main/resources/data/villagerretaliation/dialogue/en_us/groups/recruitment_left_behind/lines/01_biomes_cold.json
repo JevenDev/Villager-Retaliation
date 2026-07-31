@@ -311,10 +311,9 @@
         "Every edge up there looked sharp enough to punish a mistake.",
         "The wind shoved harder than I liked, and the mountain did not care.",
         "I had nowhere comfortable to stand and nowhere safe to fall.",
-        "Please do not leave me on a peak that already sounds like a threat.",
+        "Please do not leave me on a peak that already sounds like a <red><bold>threat</bold></red>.",
         "The Jagged Peaks made every step feel like a negotiation.",
-        "I was balancing between cold stone, sharp drops, and a growing fear you were not coming back.",
-        "Please do not leave me on a peak that already sounds like a <red><bold>threat</bold></red>. The Jagged Peaks made every step feel like a negotiation."
+        "I was balancing between cold stone, sharp drops, and a growing fear you were not coming back."
       ],
       "conditions": [
         {
@@ -348,10 +347,9 @@
         "The waves kept coming in like they had somewhere better to be.",
         "There was no shelter, no warmth, and no sign of you.",
         "A beach should not feel that empty, but the snow managed it.",
-        "Please do not leave me where the cold comes from both the ground and the water.",
+        "Please do not leave me where the cold comes from both the ground and the <aqua><wavy>water</wavy></aqua>.",
         "The Snowy Beach made waiting feel exposed in every direction.",
-        "I kept watching the shoreline, hoping you would come back before the cold settled in.",
-        "A beach should not feel that empty, but the snow managed it. Please do not leave me where the cold comes from both the ground and the <aqua><wavy>water</wavy></aqua>."
+        "I kept watching the shoreline, hoping you would come back before the cold settled in."
       ],
       "conditions": [
         {

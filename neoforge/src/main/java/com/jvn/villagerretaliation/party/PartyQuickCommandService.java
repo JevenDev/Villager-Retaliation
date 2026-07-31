@@ -333,26 +333,31 @@ public final class PartyQuickCommandService {
     }
 
     public static BlockPos moveTarget(PartyRecord party) {
-        if (party == null) {
-            return null;
-        }
-        for (PartyVillagerRecord record : party.villagers()) {
-            RuntimeOrder order = RUNTIME_ORDERS.get(record.villagerId());
-            if (order != null && order.type() == RuntimeOrderType.MOVE_TO && order.targetPosition() != null) {
-                return order.targetPosition().below();
-            }
-        }
-        return null;
+        MoveTarget target = displayedMoveTarget(party);
+        return target == null ? null : target.position().below();
     }
 
     public static ResourceLocation moveTargetDimension(PartyRecord party) {
+        MoveTarget target = displayedMoveTarget(party);
+        return target == null ? null : target.dimension();
+    }
+
+    private static MoveTarget displayedMoveTarget(PartyRecord party) {
         if (party == null) {
             return null;
         }
         for (PartyVillagerRecord record : party.villagers()) {
             RuntimeOrder order = RUNTIME_ORDERS.get(record.villagerId());
-            if (order != null && order.type() == RuntimeOrderType.MOVE_TO) {
-                return order.targetDimension();
+            if (order != null
+                    && order.type() == RuntimeOrderType.MOVE_TO
+                    && order.targetPosition() != null
+                    && order.targetDimension() != null) {
+                return new MoveTarget(order.targetDimension(), order.targetPosition());
+            }
+            if (record.moveToReturnCommanderId() != null
+                    && record.stayPosition() != null
+                    && record.stayDimension() != null) {
+                return new MoveTarget(record.stayDimension(), record.stayPosition());
             }
         }
         return null;
@@ -553,12 +558,12 @@ public final class PartyQuickCommandService {
         int affected = 0;
         BlockPos center = player.blockPosition().immutable();
         for (PartyVillagerRecord record : records) {
-            record.setRegrouping(false);
-            record.clearMoveToReturnCommander();
             Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
             if (villager == null) {
                 continue;
             }
+            record.setRegrouping(false);
+            record.clearMoveToReturnCommander();
             MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
             VillagerRetaliationHandler.clearCustomTarget(villager);
             replaceMovementOrder(villager, RuntimeOrder.pickUpDrops(
@@ -583,12 +588,12 @@ public final class PartyQuickCommandService {
         }
         int affected = 0;
         for (PartyVillagerRecord record : records) {
-            record.setRegrouping(false);
-            record.clearMoveToReturnCommander();
             Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
             if (villager == null) {
                 continue;
             }
+            record.setRegrouping(false);
+            record.clearMoveToReturnCommander();
             MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
             VillagerRetaliationHandler.clearCustomTarget(villager);
             replaceMovementOrder(villager, RuntimeOrder.lootContainers(
@@ -1242,6 +1247,9 @@ public final class PartyQuickCommandService {
         boolean background() {
             return this == PICK_UP_DROPS || this == LOOT_CONTAINERS;
         }
+    }
+
+    private record MoveTarget(ResourceLocation dimension, BlockPos position) {
     }
 
     private record ContainerClaim(ResourceLocation dimension, BlockPos position) {

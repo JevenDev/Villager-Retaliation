@@ -34,12 +34,11 @@
     {
       "key": "interaction.confiscated_stolen_item.aggro",
       "lines": [
-        "No more warnings. Chest, villager, chest again. you chose this over {item_stack}.",
+        "<dark_red><shake>No more warnings</shake></dark_red>. Chest, villager, chest again. you chose this over {item_stack}.",
         "Three times is enough. The village is done asking for {item_stack} back.",
         "You keep stealing what we already took back. Now you answer for {item_stack}.",
         "First the chest, then my inventory, now {item_stack} again. No more words.",
-        "You had two chances to stop reaching for {item_stack}. You wasted both.",
-        "You keep stealing what we already took back. Now you answer for {item_stack}. <dark_red><shake>No more warnings</shake></dark_red>. Chest, villager, chest again. you chose this over {item_stack}."
+        "You had two chances to stop reaching for {item_stack}. You wasted both."
       ],
       "id": "global.messages.08_theft_and_baby_safety.messages.interaction.confiscated_stolen_item.aggro.002"
     },
@@ -48,18 +47,7 @@
       "lines": [
         "Ow! Why would you do that?",
         "Stop! That hurts!",
-        "Help! They hit me!",
-        "Let me ask plainly. Ow! Why would you do that?",
-        "Tell me honestly. Ow! Why would you do that?",
-        "I need to know. Ow! Why would you do that?",
-        "Answer this for me. Ow! Why would you do that?",
-        "There is one thing I need to ask. Ow! Why would you do that?",
-        "I want a straight answer. Ow! Why would you do that?",
-        "Think before you answer. Ow! Why would you do that?",
-        "Listen carefully. Ow! Why would you do that?",
-        "Ow! Why would you do that? I would like an honest answer.",
-        "Ow! Why would you do that? Tell me what you know.",
-        "Ow! Why would you do that? That is what I need answered."
+        "Help! They hit me!"
       ],
       "id": "global.messages.08_theft_and_baby_safety.messages.interaction.ambient.baby_damaged.player.003"
     },
@@ -68,18 +56,7 @@
       "lines": [
         "Ow! Something hit me!",
         "Help! That hurt!",
-        "I want to go home!",
-        "Listen. Ow! Something hit me!",
-        "Understand this. Ow! Something hit me!",
-        "Let me be clear. Ow! Something hit me!",
-        "I will say it plainly. Ow! Something hit me!",
-        "Here is the truth. Ow! Something hit me!",
-        "As things stand, ow! Something hit me!",
-        "From where I stand, ow! Something hit me!",
-        "For the moment, ow! Something hit me!",
-        "Right now, ow! Something hit me!",
-        "Ow! Something hit me! Keep that in mind.",
-        "Ow! Something hit me! Remember that."
+        "I want to go home!"
       ],
       "id": "global.messages.08_theft_and_baby_safety.messages.interaction.ambient.baby_damaged.other.004"
     },
@@ -88,18 +65,7 @@
       "lines": [
         "No no no! I saw what you did!",
         "Help! They hurt them!",
-        "I want the grownups!",
-        "Listen. No no no! I saw what you did!",
-        "Understand this. No no no! I saw what you did!",
-        "Let me be clear. No no no! I saw what you did!",
-        "I will say it plainly. No no no! I saw what you did!",
-        "Here is the truth. No no no! I saw what you did!",
-        "As things stand, no no no! I saw what you did!",
-        "From where I stand, no no no! I saw what you did!",
-        "For the moment, no no no! I saw what you did!",
-        "Right now, no no no! I saw what you did!",
-        "No no no! I saw what you did! Keep that in mind.",
-        "No no no! I saw what you did! Remember that."
+        "I want the grownups!"
       ],
       "id": "global.messages.08_theft_and_baby_safety.messages.interaction.ambient.baby_witnessed_death.player.005"
     },
@@ -108,18 +74,7 @@
       "lines": [
         "No no no! Run!",
         "Where are the grownups?",
-        "Hide! Hide now!",
-        "Listen. No no no! Run!",
-        "Understand this. No no no! Run!",
-        "Let me be clear. No no no! Run!",
-        "I will say it plainly. No no no! Run!",
-        "Here is the truth. No no no! Run!",
-        "As things stand, no no no! Run!",
-        "From where I stand, no no no! Run!",
-        "For the moment, no no no! Run!",
-        "Right now, no no no! Run!",
-        "No no no! Run! Keep that in mind.",
-        "No no no! Run! Remember that."
+        "Hide! Hide now!"
       ],
       "id": "global.messages.08_theft_and_baby_safety.messages.interaction.ambient.baby_witnessed_death.other.006"
     }

@@ -11,9 +11,7 @@
         "I accept the apology as raw material. Make something better from it.",
         "Don't bring me another broken trust and ask why it failed.",
         "Words set the handle. Actions drive the head tight.",
-        "If you mean it, the next repair starts now.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "If you mean it, the next repair starts now."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

@@ -38,64 +38,28 @@
     {
       "key": "interaction.clipboard.storage.hold_clipboard",
       "lines": [
-        "Hold the clipboard to manage assigned storage.",
-        "All right. Hold the clipboard to manage assigned storage.",
-        "Here's where I am with it: Hold the clipboard to manage assigned storage.",
-        "For now, that is the situation. Hold the clipboard to manage assigned storage.",
-        "Just so you know. Hold the clipboard to manage assigned storage.",
-        "Plainly put: Hold the clipboard to manage assigned storage.",
-        "That's all I have for now: Hold the clipboard to manage assigned storage.",
-        "Understood. Hold the clipboard to manage assigned storage.",
-        "Nothing else to add yet. Hold the clipboard to manage assigned storage.",
-        "For the moment: Hold the clipboard to manage assigned storage."
+        "Hold the clipboard to manage assigned storage."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.clipboard.storage.hold_clipboard.000"
     },
     {
       "key": "interaction.clipboard.work_area.hold_clipboard",
       "lines": [
-        "Hold the clipboard to manage assigned work areas.",
-        "All right. Hold the clipboard to manage assigned work areas.",
-        "Here's where I am with it: Hold the clipboard to manage assigned work areas.",
-        "For now, that is the situation. Hold the clipboard to manage assigned work areas.",
-        "Just so you know. Hold the clipboard to manage assigned work areas.",
-        "Plainly put: Hold the clipboard to manage assigned work areas.",
-        "That's all I have for now: Hold the clipboard to manage assigned work areas.",
-        "Understood. Hold the clipboard to manage assigned work areas.",
-        "Nothing else to add yet. Hold the clipboard to manage assigned work areas.",
-        "For the moment: Hold the clipboard to manage assigned work areas."
+        "Hold the clipboard to manage assigned work areas."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.clipboard.work_area.hold_clipboard.001"
     },
     {
       "key": "interaction.clipboard.work_area.same_dimension",
       "lines": [
-        "Stand in the same dimension as this worker to set the job site center.",
-        "All right. Stand in the same dimension as this worker to set the job site center.",
-        "Here's where I am with it: Stand in the same dimension as this worker to set the job site center.",
-        "For now, that is the situation. Stand in the same dimension as this worker to set the job site center.",
-        "Just so you know. Stand in the same dimension as this worker to set the job site center.",
-        "Plainly put: Stand in the same dimension as this worker to set the job site center.",
-        "That's all I have for now: Stand in the same dimension as this worker to set the job site center.",
-        "Understood. Stand in the same dimension as this worker to set the job site center.",
-        "Nothing else to add yet. Stand in the same dimension as this worker to set the job site center.",
-        "For the moment: Stand in the same dimension as this worker to set the job site center."
+        "Stand in the same dimension as this worker to set the job site center."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.clipboard.work_area.same_dimension.002"
     },
     {
       "key": "interaction.clipboard.selection_cleared",
       "lines": [
-        "Clipboard selection cleared.",
-        "All right. Clipboard selection cleared.",
-        "Here's where I am with it: Clipboard selection cleared.",
-        "For now, that is the situation. Clipboard selection cleared.",
-        "Just so you know. Clipboard selection cleared.",
-        "Plainly put: Clipboard selection cleared.",
-        "That's all I have for now: Clipboard selection cleared.",
-        "Understood. Clipboard selection cleared.",
-        "Nothing else to add yet. Clipboard selection cleared.",
-        "For the moment: Clipboard selection cleared."
+        "Clipboard selection cleared."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.clipboard.selection_cleared.003"
     },
@@ -118,32 +82,14 @@
     {
       "key": "interaction.storage.assign_requires_access",
       "lines": [
-        "You need trust or an active hire contract to assign my storage.",
-        "I am held up for now. You need trust or an active hire contract to assign my storage.",
-        "This is stopping the job for the moment. You need trust or an active hire contract to assign my storage.",
-        "I cannot move on yet. You need trust or an active hire contract to assign my storage.",
-        "I will continue once this is fixed. You need trust or an active hire contract to assign my storage.",
-        "That needs attention before I can keep working. You need trust or an active hire contract to assign my storage.",
-        "I am waiting on a fix. You need trust or an active hire contract to assign my storage.",
-        "The work is paused until this changes. You need trust or an active hire contract to assign my storage.",
-        "This is the problem right now. You need trust or an active hire contract to assign my storage.",
-        "I am stuck here for the moment. You need trust or an active hire contract to assign my storage."
+        "You need trust or an active hire contract to assign my storage."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assign_requires_access.005"
     },
     {
       "key": "interaction.storage.select_with_clipboard",
       "lines": [
-        "Select storage with the clipboard first.",
-        "All right. Select storage with the clipboard first.",
-        "Here's where I am with it: Select storage with the clipboard first.",
-        "For now, that is the situation. Select storage with the clipboard first.",
-        "Just so you know. Select storage with the clipboard first.",
-        "Plainly put: Select storage with the clipboard first.",
-        "That's all I have for now: Select storage with the clipboard first.",
-        "Understood. Select storage with the clipboard first.",
-        "Nothing else to add yet. Select storage with the clipboard first.",
-        "For the moment: Select storage with the clipboard first."
+        "Select storage with the clipboard first."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.select_with_clipboard.006"
     },
@@ -280,96 +226,42 @@
     {
       "key": "interaction.storage.inspect_requires_access",
       "lines": [
-        "You need trust or an active hire contract to inspect my storage.",
-        "I am held up for now. You need trust or an active hire contract to inspect my storage.",
-        "This is stopping the job for the moment. You need trust or an active hire contract to inspect my storage.",
-        "I cannot move on yet. You need trust or an active hire contract to inspect my storage.",
-        "I will continue once this is fixed. You need trust or an active hire contract to inspect my storage.",
-        "That needs attention before I can keep working. You need trust or an active hire contract to inspect my storage.",
-        "I am waiting on a fix. You need trust or an active hire contract to inspect my storage.",
-        "The work is paused until this changes. You need trust or an active hire contract to inspect my storage.",
-        "This is the problem right now. You need trust or an active hire contract to inspect my storage.",
-        "I am stuck here for the moment. You need trust or an active hire contract to inspect my storage."
+        "You need trust or an active hire contract to inspect my storage."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.inspect_requires_access.011"
     },
     {
       "key": "interaction.storage.assigned_count",
       "lines": [
-        "Assigned containers: {count}.",
-        "That part is handled. Assigned containers: {count}.",
-        "Here is the update: Assigned containers: {count}.",
-        "That moved things along: Assigned containers: {count}.",
-        "That step is finished. Assigned containers: {count}.",
-        "I have that sorted. Assigned containers: {count}.",
-        "That is taken care of. Assigned containers: {count}.",
-        "The work moved forward. Assigned containers: {count}.",
-        "I can report this much. Assigned containers: {count}.",
-        "That part is done: Assigned containers: {count}."
+        "Assigned containers: {count}."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assigned_count.012"
     },
     {
       "key": "interaction.storage.remove_requires_access",
       "lines": [
-        "You need trust or an active hire contract to remove my storage.",
-        "I am held up for now. You need trust or an active hire contract to remove my storage.",
-        "This is stopping the job for the moment. You need trust or an active hire contract to remove my storage.",
-        "I cannot move on yet. You need trust or an active hire contract to remove my storage.",
-        "I will continue once this is fixed. You need trust or an active hire contract to remove my storage.",
-        "That needs attention before I can keep working. You need trust or an active hire contract to remove my storage.",
-        "I am waiting on a fix. You need trust or an active hire contract to remove my storage.",
-        "The work is paused until this changes. You need trust or an active hire contract to remove my storage.",
-        "This is the problem right now. You need trust or an active hire contract to remove my storage.",
-        "I am stuck here for the moment. You need trust or an active hire contract to remove my storage."
+        "You need trust or an active hire contract to remove my storage."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.remove_requires_access.013"
     },
     {
       "key": "interaction.storage.removed_count",
       "lines": [
-        "Removed {count} assigned container{plural}.",
-        "That part is handled. Removed {count} assigned container{plural}.",
-        "Here is the update: Removed {count} assigned container{plural}.",
-        "That moved things along: Removed {count} assigned container{plural}.",
-        "That step is finished. Removed {count} assigned container{plural}.",
-        "I have that sorted. Removed {count} assigned container{plural}.",
-        "That is taken care of. Removed {count} assigned container{plural}.",
-        "The work moved forward. Removed {count} assigned container{plural}.",
-        "I can report this much. Removed {count} assigned container{plural}.",
-        "That part is done: Removed {count} assigned container{plural}."
+        "Removed {count} assigned container{plural}."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.removed_count.014"
     },
     {
       "key": "interaction.payment_storage.requires_hire",
       "lines": [
-        "Hire me first, then assign recurring payment storage.",
-        "I am held up for now. Hire me first, then assign recurring payment storage.",
-        "This is stopping the job for the moment. Hire me first, then assign recurring payment storage.",
-        "I cannot move on yet. Hire me first, then assign recurring payment storage.",
-        "I will continue once this is fixed. Hire me first, then assign recurring payment storage.",
-        "That needs attention before I can keep working. Hire me first, then assign recurring payment storage.",
-        "I am waiting on a fix. Hire me first, then assign recurring payment storage.",
-        "The work is paused until this changes. Hire me first, then assign recurring payment storage.",
-        "This is the problem right now. Hire me first, then assign recurring payment storage.",
-        "I am stuck here for the moment. Hire me first, then assign recurring payment storage."
+        "Hire me first, then assign recurring payment storage."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.payment_storage.requires_hire.015"
     },
     {
       "key": "interaction.payment_storage.assigned_count",
       "lines": [
-        "Payment containers: {count}. Auto-payment is {auto_payment}.",
-        "That part is handled. Payment containers: {count}. Auto-payment is {auto_payment}.",
-        "Here is the update: Payment containers: {count}. Auto-payment is {auto_payment}.",
-        "That moved things along: Payment containers: {count}. Auto-payment is {auto_payment}.",
-        "That step is finished. Payment containers: {count}. Auto-payment is {auto_payment}.",
-        "I have that sorted. Payment containers: {count}. Auto-payment is {auto_payment}.",
-        "That is taken care of. Payment containers: {count}. Auto-payment is {auto_payment}.",
-        "The work moved forward. Payment containers: {count}. Auto-payment is {auto_payment}.",
-        "I can report this much. Payment containers: {count}. Auto-payment is {auto_payment}.",
-        "That part is done: Payment containers: {count}. Auto-payment is {auto_payment}."
+        "Payment containers: {count}. Auto-payment is {auto_payment}."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.payment_storage.assigned_count.016"
     },
@@ -392,192 +284,84 @@
     {
       "key": "interaction.payment_storage.removed_count",
       "lines": [
-        "Removed {count} payment container{plural}.",
-        "That part is handled. Removed {count} payment container{plural}.",
-        "Here is the update: Removed {count} payment container{plural}.",
-        "That moved things along: Removed {count} payment container{plural}.",
-        "That step is finished. Removed {count} payment container{plural}.",
-        "I have that sorted. Removed {count} payment container{plural}.",
-        "That is taken care of. Removed {count} payment container{plural}.",
-        "The work moved forward. Removed {count} payment container{plural}.",
-        "I can report this much. Removed {count} payment container{plural}.",
-        "That part is done: Removed {count} payment container{plural}."
+        "Removed {count} payment container{plural}."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.payment_storage.removed_count.018"
     },
     {
       "key": "interaction.earnings.deposit_requires_access",
       "lines": [
-        "You need trust or an active hire contract to manage my earnings.",
-        "I am held up for now. You need trust or an active hire contract to manage my earnings.",
-        "This is stopping the job for the moment. You need trust or an active hire contract to manage my earnings.",
-        "I cannot move on yet. You need trust or an active hire contract to manage my earnings.",
-        "I will continue once this is fixed. You need trust or an active hire contract to manage my earnings.",
-        "That needs attention before I can keep working. You need trust or an active hire contract to manage my earnings.",
-        "I am waiting on a fix. You need trust or an active hire contract to manage my earnings.",
-        "The work is paused until this changes. You need trust or an active hire contract to manage my earnings.",
-        "This is the problem right now. You need trust or an active hire contract to manage my earnings.",
-        "I am stuck here for the moment. You need trust or an active hire contract to manage my earnings."
+        "You need trust or an active hire contract to manage my earnings."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.deposit_requires_access.019"
     },
     {
       "key": "interaction.earnings.no_excess",
       "lines": [
-        "No excess earnings to deposit.",
-        "I am held up for now. No excess earnings to deposit.",
-        "This is stopping the job for the moment. No excess earnings to deposit.",
-        "I cannot move on yet. No excess earnings to deposit.",
-        "I will continue once this is fixed. No excess earnings to deposit.",
-        "That needs attention before I can keep working. No excess earnings to deposit.",
-        "I am waiting on a fix. No excess earnings to deposit.",
-        "The work is paused until this changes. No excess earnings to deposit.",
-        "This is the problem right now. No excess earnings to deposit.",
-        "I am stuck here for the moment. No excess earnings to deposit."
+        "No excess earnings to deposit."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.no_excess.020"
     },
     {
       "key": "interaction.earnings.storage_unavailable",
       "lines": [
-        "Assigned storage is unavailable.",
-        "I am held up for now. Assigned storage is unavailable.",
-        "This is stopping the job for the moment. Assigned storage is unavailable.",
-        "I cannot move on yet. Assigned storage is unavailable.",
-        "I will continue once this is fixed. Assigned storage is unavailable.",
-        "That needs attention before I can keep working. Assigned storage is unavailable.",
-        "I am waiting on a fix. Assigned storage is unavailable.",
-        "The work is paused until this changes. Assigned storage is unavailable.",
-        "This is the problem right now. Assigned storage is unavailable.",
-        "I am stuck here for the moment. Assigned storage is unavailable."
+        "Assigned storage is unavailable."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.storage_unavailable.021"
     },
     {
       "key": "interaction.earnings.no_assigned_storage",
       "lines": [
-        "No assigned storage. I kept the currency in my wallet.",
-        "That part is handled. No assigned storage. I kept the currency in my wallet.",
-        "Here is the update: No assigned storage. I kept the currency in my wallet.",
-        "That moved things along: No assigned storage. I kept the currency in my wallet.",
-        "That step is finished. No assigned storage. I kept the currency in my wallet.",
-        "I have that sorted. No assigned storage. I kept the currency in my wallet.",
-        "That is taken care of. No assigned storage. I kept the currency in my wallet.",
-        "The work moved forward. No assigned storage. I kept the currency in my wallet.",
-        "I can report this much. No assigned storage. I kept the currency in my wallet.",
-        "That part is done: No assigned storage. I kept the currency in my wallet."
+        "No assigned storage. I kept the currency in my wallet."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.no_assigned_storage.022"
     },
     {
       "key": "interaction.earnings.storage_full",
       "lines": [
-        "Assigned storage is full. I kept the currency in my wallet.",
-        "I am held up for now. Assigned storage is full. I kept the currency in my wallet.",
-        "This is stopping the job for the moment. Assigned storage is full. I kept the currency in my wallet.",
-        "I cannot move on yet. Assigned storage is full. I kept the currency in my wallet.",
-        "I will continue once this is fixed. Assigned storage is full. I kept the currency in my wallet.",
-        "That needs attention before I can keep working. Assigned storage is full. I kept the currency in my wallet.",
-        "I am waiting on a fix. Assigned storage is full. I kept the currency in my wallet.",
-        "The work is paused until this changes. Assigned storage is full. I kept the currency in my wallet.",
-        "This is the problem right now. Assigned storage is full. I kept the currency in my wallet.",
-        "I am stuck here for the moment. Assigned storage is full. I kept the currency in my wallet."
+        "Assigned storage is full. I kept the currency in my wallet."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.storage_full.023"
     },
     {
       "key": "interaction.earnings.deposited_partial",
       "lines": [
-        "Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet.",
-        "That part is handled. Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet.",
-        "Here is the update: Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet.",
-        "That moved things along: Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet.",
-        "That step is finished. Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet.",
-        "I have that sorted. Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet.",
-        "That is taken care of. Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet.",
-        "The work moved forward. Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet.",
-        "I can report this much. Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet.",
-        "That part is done: Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet."
+        "Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.deposited_partial.024"
     },
     {
       "key": "interaction.earnings.deposited_all",
       "lines": [
-        "Deposited {deposited} into assigned storage.",
-        "That part is handled. Deposited {deposited} into assigned storage.",
-        "Here is the update: Deposited {deposited} into assigned storage.",
-        "That moved things along: Deposited {deposited} into assigned storage.",
-        "That step is finished. Deposited {deposited} into assigned storage.",
-        "I have that sorted. Deposited {deposited} into assigned storage.",
-        "That is taken care of. Deposited {deposited} into assigned storage.",
-        "The work moved forward. Deposited {deposited} into assigned storage.",
-        "I can report this much. Deposited {deposited} into assigned storage.",
-        "That part is done: Deposited {deposited} into assigned storage."
+        "Deposited {deposited} into assigned storage."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.deposited_all.025"
     },
     {
       "key": "interaction.auto_payment.requires_hire",
       "lines": [
-        "Hire me first, then set up recurring payment.",
-        "I am held up for now. Hire me first, then set up recurring payment.",
-        "This is stopping the job for the moment. Hire me first, then set up recurring payment.",
-        "I cannot move on yet. Hire me first, then set up recurring payment.",
-        "I will continue once this is fixed. Hire me first, then set up recurring payment.",
-        "That needs attention before I can keep working. Hire me first, then set up recurring payment.",
-        "I am waiting on a fix. Hire me first, then set up recurring payment.",
-        "The work is paused until this changes. Hire me first, then set up recurring payment.",
-        "This is the problem right now. Hire me first, then set up recurring payment.",
-        "I am stuck here for the moment. Hire me first, then set up recurring payment."
+        "Hire me first, then set up recurring payment."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.auto_payment.requires_hire.026"
     },
     {
       "key": "interaction.auto_payment.requires_storage",
       "lines": [
-        "Assign a payment container first with the clipboard's recurring payment mode.",
-        "I am held up for now. Assign a payment container first with the clipboard's recurring payment mode.",
-        "This is stopping the job for the moment. Assign a payment container first with the clipboard's recurring payment mode.",
-        "I cannot move on yet. Assign a payment container first with the clipboard's recurring payment mode.",
-        "I will continue once this is fixed. Assign a payment container first with the clipboard's recurring payment mode.",
-        "That needs attention before I can keep working. Assign a payment container first with the clipboard's recurring payment mode.",
-        "I am waiting on a fix. Assign a payment container first with the clipboard's recurring payment mode.",
-        "The work is paused until this changes. Assign a payment container first with the clipboard's recurring payment mode.",
-        "This is the problem right now. Assign a payment container first with the clipboard's recurring payment mode.",
-        "I am stuck here for the moment. Assign a payment container first with the clipboard's recurring payment mode."
+        "Assign a payment container first with the clipboard's recurring payment mode."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.auto_payment.requires_storage.027"
     },
     {
       "key": "interaction.auto_payment.enabled",
       "lines": [
-        "Recurring payment enabled.",
-        "That part is handled. Recurring payment enabled.",
-        "Here is the update: Recurring payment enabled.",
-        "That moved things along: Recurring payment enabled.",
-        "That step is finished. Recurring payment enabled.",
-        "I have that sorted. Recurring payment enabled.",
-        "That is taken care of. Recurring payment enabled.",
-        "The work moved forward. Recurring payment enabled.",
-        "I can report this much. Recurring payment enabled.",
-        "That part is done: Recurring payment enabled."
+        "Recurring payment enabled."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.auto_payment.enabled.028"
     },
     {
       "key": "interaction.auto_payment.disabled",
       "lines": [
-        "Recurring payment disabled.",
-        "That part is handled. Recurring payment disabled.",
-        "Here is the update: Recurring payment disabled.",
-        "That moved things along: Recurring payment disabled.",
-        "That step is finished. Recurring payment disabled.",
-        "I have that sorted. Recurring payment disabled.",
-        "That is taken care of. Recurring payment disabled.",
-        "The work moved forward. Recurring payment disabled.",
-        "I can report this much. Recurring payment disabled.",
-        "That part is done: Recurring payment disabled."
+        "Recurring payment disabled."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.auto_payment.disabled.029"
     },

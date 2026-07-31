@@ -14,26 +14,7 @@
       "request": "question",
       "option": "mount.ownership",
       "lines": [
-        "Take it up with my boss.",
-        "Listen. Take it up with my boss.",
-        "Understand this. Take it up with my boss.",
-        "Let me be clear. Take it up with my boss.",
-        "I will say it plainly. Take it up with my boss.",
-        "Here is the truth. Take it up with my boss.",
-        "As things stand, take it up with my boss.",
-        "From where I stand, take it up with my boss.",
-        "For the moment, take it up with my boss.",
-        "Right now, take it up with my boss.",
-        "Take it up with my boss. Keep that in mind.",
-        "Take it up with my boss. Remember that.",
-        "Take it up with my boss. That much is clear.",
-        "Take it up with my boss. That is where things stand.",
-        "Take it up with my boss. I mean it.",
-        "Take it up with my boss. Do not forget it.",
-        "Take it up with my boss. That is the whole of it.",
-        "Take it up with my boss. Nothing about that has changed.",
-        "Take it up with my boss. I have said what needed saying.",
-        "Take it up with my boss. Take it seriously."
+        "Take it up with my boss."
       ],
       "show_for_babies": false,
       "weight": 1

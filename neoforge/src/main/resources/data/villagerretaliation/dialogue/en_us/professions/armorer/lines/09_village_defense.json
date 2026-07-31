@@ -7,14 +7,11 @@
         "You stood where armor matters most. I respect that more than clean talk.",
         "You held when the gate needed holding. Armor is easier to trust after seeing that.",
         "You fought like someone who understands what a door is worth.",
-        "I saw you stand between iron and panic. That stays with me.",
+        "I saw you stand between iron and <dark_gray><wavy>panic</wavy></dark_gray>. That stays with me.",
         "The village needed a shield before the walls did. You were one.",
         "Good armor is not only worn. Sometimes it arrives carrying a weapon.",
         "When the shouting started, you did not fold. I respect that.",
-        "You gave the village time to breathe. Every guard knows the value of time.",
-        "When danger came close, nobody had time to sound brave first.",
-        "You learn a lot about a village when everyone hears the bell at once.",
-        "You fought like someone who understands what a door is worth. I saw you stand between iron and <dark_gray><wavy>panic</wavy></dark_gray>. That stays with me."
+        "You gave the village time to breathe. Every guard knows the value of time."
       ],
       "option": "village_defense_report",
       "show_for_babies": false,

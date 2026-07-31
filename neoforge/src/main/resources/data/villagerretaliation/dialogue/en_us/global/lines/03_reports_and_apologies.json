@@ -38,9 +38,7 @@
         "Courage looks different up close. Yours looked useful.",
         "You gave the raiders something harder to break than a door.",
         "We remember who stood with us when the horn sounded.",
-        "That kind of help does not fade quickly around here.",
-        "We saw what you did when the raiders came. People count that sort of courage carefully. The bell rang and you ran toward the danger. That is not nothing.",
-        "That kind of help does not fade quickly around here. We saw what you did when the raiders came. People count that sort of courage carefully."
+        "That kind of help does not fade quickly around here."
       ],
       "option": "village_defense_report",
       "show_for_babies": false,
@@ -126,9 +124,7 @@
         "I can work with an honest apology.",
         "Then let us start again carefully, with better steps this time.",
         "That helps. It does not erase everything, but it helps.",
-        "Keep choosing better, and the village will notice.",
-        "Thank you for saying it plainly. Do better by us, and this can pass. That was the right thing to say. The next right thing matters too.",
-        "Keep choosing better, and the village will notice. Thank you for saying it plainly. Do better by us, and this can pass."
+        "Keep choosing better, and the village will notice."
       ],
       "dispositions": [
         "respectful",

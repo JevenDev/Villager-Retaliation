@@ -12,7 +12,6 @@
         "<italic>Prayer is not a trade.</italic> You do not put in words and pull out certainty.",
         "Most days, I am at the brewing stand, trying to keep omens and wounds from becoming everyone else's problem.",
         "People think remedies is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good bottle more than a loud promise. The bottle has less to prove.",
         "People come to a cleric when silence has started to hurt.",
         "A good remedy starts by admitting what is wrong.",
@@ -41,11 +40,8 @@
         "Some questions are safer when they stand a little farther away.",
         "Most days, I am at the brewing stand, trying to keep omens and wounds from becoming everyone else's problem.",
         "People think remedies is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good bottle more than a loud promise. The bottle has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the brewing stand has done to me."
+        "I notice when a bottle is missing from the brewing stand. I count them without meaning to."
       ],
       "dispositions": [
         "fearful",
@@ -59,14 +55,7 @@
       "lines": [
         "I have prayed about that time I followed you and you struck me. The bruise answered first.",
         "I remember following you through that road. My feet remember it even better.",
-        "That trip across that road taught me to ask more questions before walking.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "That trip across that road taught me to ask more questions before walking."
       ],
       "conditions": [
         {
@@ -86,14 +75,7 @@
       "lines": [
         "I said a quiet prayer during that boat ride. Mostly for balance.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It can't make me forget it.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "A boat can make a bad plan quieter. It can't make me forget it."
       ],
       "conditions": [
         {
@@ -114,11 +96,8 @@
         "There is still time to answer {theft_witness_possessive} story about {stolen_stack} with something cleaner than denial.",
         "Most days, I am at the brewing stand, trying to keep omens and wounds from becoming everyone else's problem.",
         "People think remedies is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good bottle more than a loud promise. The bottle has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the brewing stand has done to me."
+        "I notice when a bottle is missing from the brewing stand. I count them without meaning to."
       ],
       "conditions": [
         {
@@ -139,11 +118,8 @@
         "The stand bubbles, the village mutters, and I try to tell one warning from the other.",
         "Most days, I am at the brewing stand, trying to keep omens and wounds from becoming everyone else's problem.",
         "People think remedies is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good bottle more than a loud promise. The bottle has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the brewing stand has done to me."
+        "I notice when a bottle is missing from the brewing stand. I count them without meaning to."
       ],
       "show_for_babies": false,
       "weight": 18

@@ -11,9 +11,7 @@
         "I'll mark this apology, but not as the destination.",
         "Don't make a habit of needing a way back from harm.",
         "Fine. Let us see whether your next steps match your words.",
-        "Some mistakes become warnings on maps. Try not to become one.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "Some mistakes become warnings on maps. Try not to become one."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

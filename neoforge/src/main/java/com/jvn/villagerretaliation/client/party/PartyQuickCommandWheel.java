@@ -36,6 +36,7 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.lwjgl.glfw.GLFW;
 
 public final class PartyQuickCommandWheel {
     private static final int WHEEL_RADIUS = 86;
@@ -105,7 +106,7 @@ public final class PartyQuickCommandWheel {
     }
 
     public static void onMouseButton(InputEvent.MouseButton.Pre event) {
-        if (open) {
+        if (open && event.getAction() != GLFW.GLFW_RELEASE) {
             event.setCanceled(true);
         }
     }

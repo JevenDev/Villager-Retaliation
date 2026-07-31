@@ -12,7 +12,6 @@
         "A pack should carry weight without reminding you every step.",
         "Most days, I am at the cauldron, trying to keep stitching and straps from becoming everyone else's problem.",
         "People think leather is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good needle more than a loud promise. The needle has less to prove.",
         "Good leather remembers weather before people do.",
         "A strong stitch is small bravery repeated many times.",
@@ -38,14 +37,7 @@
       "lines": [
         "I still remember that boat trip. Wet leather complains longer than villagers do.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It can't make me forget it.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "A boat can make a bad plan quieter. It can't make me forget it."
       ],
       "conditions": [
         {
@@ -63,14 +55,7 @@
       "lines": [
         "I still think about that walk. My boots forgave you before my feet did.",
         "I remember following you through that road. My feet remember it even better.",
-        "That trip across that road taught me to ask more questions before walking.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "That trip across that road taught me to ask more questions before walking."
       ],
       "conditions": [
         {
@@ -88,14 +73,7 @@
       "lines": [
         "Ocean swimming is terrible for leather and worse for my mood.",
         "Crossing ocean water without a boat is not a memory I recommend keeping.",
-        "I remember every wave from that crossing, and none of them kindly.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "I remember every wave from that crossing, and none of them kindly."
       ],
       "conditions": [
         {
@@ -116,11 +94,8 @@
         "Rain, snow, mud, fear. I make straps for all the things that try to loosen.",
         "Most days, I am at the cauldron, trying to keep stitching and straps from becoming everyone else's problem.",
         "People think leather is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good needle more than a loud promise. The needle has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the cauldron has done to me."
+        "A weak stitch is easier to fix before it splits. I check twice."
       ],
       "show_for_babies": false,
       "weight": 18

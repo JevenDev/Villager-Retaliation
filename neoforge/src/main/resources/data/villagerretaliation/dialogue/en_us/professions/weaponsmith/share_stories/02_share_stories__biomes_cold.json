@@ -5,15 +5,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Cold water steals strength quickly. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Cold Ocean, tell them: Bring a boat and do not swim for pride. I will be at the grindstone.",
-        "Gray waves make distance feel heavier. I'll remember that when I turn the grindstone.",
-        "Cold Ocean is no small story. A weapon is not a plan.",
-        "I will remember Cold Ocean as water that chills courage out of the bones. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:cold_ocean",
@@ -24,15 +17,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Deep cold leaves little room for mistakes. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Deep Cold Ocean, tell them: Use a boat and save your breath. I will be at the grindstone.",
-        "The bottom waits farther down than courage wants. I'll remember that when I turn the grindstone.",
-        "Deep Cold Ocean is no small story. A weapon is not a plan.",
-        "I will remember Deep Cold Ocean as cold water with too much room beneath it. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_cold_ocean",
@@ -43,15 +29,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Ice above and depth below make a cruel pair. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Deep Frozen Ocean, tell them: Mind cracks and keep a boat near. I will be at the grindstone.",
-        "Blue ice can make the sea look solid enough to trust. I will remember that when I turn the grindstone.",
-        "Deep Frozen Ocean is no small story. A weapon is not a plan.",
-        "I will remember Deep Frozen Ocean as a frozen roof over water that still wants you. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_frozen_ocean",
@@ -62,15 +41,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Ice over water is a promise with cracks. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Frozen Ocean, tell them: Test the way and keep a boat ready. I will be at the grindstone.",
-        "Frozen waves still have depth beneath them. I'll remember that when I turn the grindstone.",
-        "Frozen Ocean is no small story. A weapon is not a plan.",
-        "I will remember Frozen Ocean as a white sea pretending to be ground. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_ocean",
@@ -81,15 +53,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Mountain cold sharpens every mistake. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Frozen Peaks, tell them: Climb slowly and turn back before pride freezes. I will be at the grindstone.",
-        "Powder snow can swallow a sure step. I'll remember that when I turn the grindstone.",
-        "Frozen Peaks is no small story. A weapon is not a plan.",
-        "I will remember Frozen Peaks as high white stone with thin air around it. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_peaks",
@@ -100,15 +65,8 @@
       "request": "share_story",
       "lines": [
         "{target}? A frozen crossing can betray a heavy foot. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Frozen River, tell them: Cross where the banks are kind. I will be at the grindstone.",
-        "Ice speaks in cracks before it opens. I'll remember that when I turn the grindstone.",
-        "Frozen River is no small story. A weapon is not a plan.",
-        "I will remember Frozen River as a road of ice over moving water. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_river",
@@ -119,15 +77,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Snowy trees make quiet steps too easy. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Grove, tell them: Watch for powder snow and things hiding behind trunks. I will be at the grindstone.",
-        "Spruce shade keeps winter close. I'll remember that when I turn the grindstone.",
-        "Grove is no small story. A weapon is not a plan.",
-        "I will remember Grove as a white wood where sound gets swallowed. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:grove",
@@ -138,15 +89,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Ice stands tall enough to turn wind mean. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Ice Spikes, tell them: Keep low and do not trust smooth footing. I will be at the grindstone.",
-        "Packed ice shines like it wants you careless. I'll remember that when I turn the grindstone.",
-        "Ice Spikes is no small story. A weapon is not a plan.",
-        "I will remember Ice Spikes as frozen spears under a hard sky. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:ice_spikes",
@@ -157,15 +101,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Sharp mountains punish tired feet. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Jagged Peaks, tell them: Climb with blocks ready and pride asleep. I will be at the grindstone.",
-        "One loose step can travel all the way down. I'll remember that when I turn the grindstone.",
-        "Jagged Peaks is no small story. A weapon is not a plan.",
-        "I will remember Jagged Peaks as peaks that look cut by a giant axe. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:jagged_peaks",
@@ -176,15 +113,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Snow and surf make cold from both sides. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Snowy Beach, tell them: Keep dry and leave before the wind turns. I will be at the grindstone.",
-        "Sand under snow hides the shore badly. I'll remember that when I turn the grindstone.",
-        "Snowy Beach is no small story. A weapon is not a plan.",
-        "I will remember Snowy Beach as a cold edge where land meets colder water. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_beach",
@@ -195,15 +125,8 @@
       "request": "share_story",
       "lines": [
         "{target}? White ground shows tracks and hides holes. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Snowy Plains, tell them: Follow footprints only if you trust who made them. I will be at the grindstone.",
-        "Snow makes distance look shorter than it is. I'll remember that when I turn the grindstone.",
-        "Snowy Plains is no small story. A weapon is not a plan.",
-        "I will remember Snowy Plains as flat winter with every sound laid bare. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_plains",
@@ -214,15 +137,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Powder snow can swallow a careless step. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Snowy Slopes, tell them: Wear leather boots and test the white ground. I will be at the grindstone.",
-        "The hill looks soft until it takes your knees. I'll remember that when I turn the grindstone.",
-        "Snowy Slopes is no small story. A weapon is not a plan.",
-        "I will remember Snowy Slopes as a slope where snow pretends to be stone. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_slopes",
@@ -233,15 +149,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Cold trees make long watches longer. I would keep blades sharp and tempers sheathed.",
-        "If anyone heads for Snowy Taiga, tell them: Keep torches dry and listen for wolves. I will be at the grindstone.",
-        "Spruce and snow muffle bad sounds. I'll remember that when I turn the grindstone.",
-        "Snowy Taiga is no small story. A weapon is not a plan.",
-        "I will remember Snowy Taiga as winter trees with shadows under every branch. I will keep the edge sharp and the blade sheathed.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_taiga",

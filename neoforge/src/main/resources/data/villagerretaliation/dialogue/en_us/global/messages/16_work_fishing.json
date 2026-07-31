@@ -12,192 +12,84 @@
     {
       "key": "interaction.work.fishing.depositing_output",
       "lines": [
-        "My catch needs storage before I cast again.",
-        "Right now, that is my focus. My catch needs storage before I cast again.",
-        "That is my current step. My catch needs storage before I cast again.",
-        "I am keeping the job moving. My catch needs storage before I cast again.",
-        "This is where I am in the work. My catch needs storage before I cast again.",
-        "I am staying with the task. My catch needs storage before I cast again.",
-        "For the moment, I am busy with this. My catch needs storage before I cast again.",
-        "I will keep going from here. My catch needs storage before I cast again.",
-        "The work is still moving. My catch needs storage before I cast again.",
-        "I am working through it. My catch needs storage before I cast again."
+        "My catch needs storage before I cast again."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.depositing_output.000"
     },
     {
       "key": "interaction.work.fishing.output_full_blocked",
       "lines": [
-        "I cannot carry more fish, and there is nowhere nearby to put them.",
-        "I am held up for now. I cannot carry more fish, and there is nowhere nearby to put them.",
-        "This is stopping the job for the moment. I cannot carry more fish, and there is nowhere nearby to put them.",
-        "I cannot move on yet. I cannot carry more fish, and there is nowhere nearby to put them.",
-        "I will continue once this is fixed. I cannot carry more fish, and there is nowhere nearby to put them.",
-        "That needs attention before I can keep working. I cannot carry more fish, and there is nowhere nearby to put them.",
-        "I am waiting on a fix. I cannot carry more fish, and there is nowhere nearby to put them.",
-        "The work is paused until this changes. I cannot carry more fish, and there is nowhere nearby to put them.",
-        "This is the problem right now. I cannot carry more fish, and there is nowhere nearby to put them.",
-        "I am stuck here for the moment. I cannot carry more fish, and there is nowhere nearby to put them."
+        "I cannot carry more fish, and there is nowhere nearby to put them."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.output_full_blocked.001"
     },
     {
       "key": "interaction.work.fishing.missing_rod",
       "lines": [
-        "I need a fishing rod before I can work the water.",
-        "I am held up for now. I need a fishing rod before I can work the water.",
-        "This is stopping the job for the moment. I need a fishing rod before I can work the water.",
-        "I cannot move on yet. I need a fishing rod before I can work the water.",
-        "I will continue once this is fixed. I need a fishing rod before I can work the water.",
-        "That needs attention before I can keep working. I need a fishing rod before I can work the water.",
-        "I am waiting on a fix. I need a fishing rod before I can work the water.",
-        "The work is paused until this changes. I need a fishing rod before I can work the water.",
-        "This is the problem right now. I need a fishing rod before I can work the water.",
-        "I am stuck here for the moment. I need a fishing rod before I can work the water."
+        "I need a fishing rod before I can work the water."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.missing_rod.002"
     },
     {
       "key": "interaction.work.fishing.collecting_rod",
       "lines": [
-        "I am fetching a fishing rod from assigned storage.",
-        "Right now, that is my focus. I am fetching a fishing rod from assigned storage.",
-        "That is my current step. I am fetching a fishing rod from assigned storage.",
-        "I am keeping the job moving. I am fetching a fishing rod from assigned storage.",
-        "This is where I am in the work. I am fetching a fishing rod from assigned storage.",
-        "I am staying with the task. I am fetching a fishing rod from assigned storage.",
-        "For the moment, I am busy with this. I am fetching a fishing rod from assigned storage.",
-        "I will keep going from here. I am fetching a fishing rod from assigned storage.",
-        "The work is still moving. I am fetching a fishing rod from assigned storage.",
-        "I am working through it. I am fetching a fishing rod from assigned storage."
+        "I am fetching a fishing rod from assigned storage."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.collecting_rod.003"
     },
     {
       "key": "interaction.work.fishing.waiting_for_bite",
       "lines": [
-        "The line is in the water. Now I am waiting for a bite.",
-        "Right now, that is my focus. The line is in the water. Now I am waiting for a bite.",
-        "That is my current step. The line is in the water. Now I am waiting for a bite.",
-        "I am keeping the job moving. The line is in the water. Now I am waiting for a bite.",
-        "This is where I am in the work. The line is in the water. Now I am waiting for a bite.",
-        "I am staying with the task. The line is in the water. Now I am waiting for a bite.",
-        "For the moment, I am busy with this. The line is in the water. Now I am waiting for a bite.",
-        "I will keep going from here. The line is in the water. Now I am waiting for a bite.",
-        "The work is still moving. The line is in the water. Now I am waiting for a bite.",
-        "I am working through it. The line is in the water. Now I am waiting for a bite."
+        "The line is in the water. Now I am waiting for a bite."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.waiting_for_bite.004"
     },
     {
       "key": "interaction.work.fishing.roaming",
       "lines": [
-        "I am looking along the bank for a good place to cast.",
-        "Right now, that is my focus. I am looking along the bank for a good place to cast.",
-        "That is my current step. I am looking along the bank for a good place to cast.",
-        "I am keeping the job moving. I am looking along the bank for a good place to cast.",
-        "This is where I am in the work. I am looking along the bank for a good place to cast.",
-        "I am staying with the task. I am looking along the bank for a good place to cast.",
-        "For the moment, I am busy with this. I am looking along the bank for a good place to cast.",
-        "I will keep going from here. I am looking along the bank for a good place to cast.",
-        "The work is still moving. I am looking along the bank for a good place to cast.",
-        "I am working through it. I am looking along the bank for a good place to cast."
+        "I am looking along the bank for a good place to cast."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.roaming.005"
     },
     {
       "key": "interaction.work.fishing.no_open_water",
       "lines": [
-        "There is no fishable surface water within casting range of my work area.",
-        "I am held up for now. There is no fishable surface water within casting range of my work area.",
-        "This is stopping the job for the moment. There is no fishable surface water within casting range of my work area.",
-        "I cannot move on yet. There is no fishable surface water within casting range of my work area.",
-        "I will continue once this is fixed. There is no fishable surface water within casting range of my work area.",
-        "That needs attention before I can keep working. There is no fishable surface water within casting range of my work area.",
-        "I am waiting on a fix. There is no fishable surface water within casting range of my work area.",
-        "The work is paused until this changes. There is no fishable surface water within casting range of my work area.",
-        "This is the problem right now. There is no fishable surface water within casting range of my work area.",
-        "I am stuck here for the moment. There is no fishable surface water within casting range of my work area."
+        "There is no fishable surface water within casting range of my work area."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.no_open_water.006"
     },
     {
       "key": "interaction.work.fishing.water_unreachable",
       "lines": [
-        "I can see fishable water, but I cannot reach a safe place to cast from.",
-        "I am held up for now. I can see fishable water, but I cannot reach a safe place to cast from.",
-        "This is stopping the job for the moment. I can see fishable water, but I cannot reach a safe place to cast from.",
-        "I cannot move on yet. I can see fishable water, but I cannot reach a safe place to cast from.",
-        "I will continue once this is fixed. I can see fishable water, but I cannot reach a safe place to cast from.",
-        "That needs attention before I can keep working. I can see fishable water, but I cannot reach a safe place to cast from.",
-        "I am waiting on a fix. I can see fishable water, but I cannot reach a safe place to cast from.",
-        "The work is paused until this changes. I can see fishable water, but I cannot reach a safe place to cast from.",
-        "This is the problem right now. I can see fishable water, but I cannot reach a safe place to cast from.",
-        "I am stuck here for the moment. I can see fishable water, but I cannot reach a safe place to cast from."
+        "I can see fishable water, but I cannot reach a safe place to cast from."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.water_unreachable.007"
     },
     {
       "key": "interaction.work.fishing.moving_to_water",
       "lines": [
-        "I am moving to the water now.",
-        "Right now, that is my focus. I am moving to the water now.",
-        "That is my current step. I am moving to the water now.",
-        "I am keeping the job moving. I am moving to the water now.",
-        "This is where I am in the work. I am moving to the water now.",
-        "I am staying with the task. I am moving to the water now.",
-        "For the moment, I am busy with this. I am moving to the water now.",
-        "I will keep going from here. I am moving to the water now.",
-        "The work is still moving. I am moving to the water now.",
-        "I am working through it. I am moving to the water now."
+        "I am moving to the water now."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.moving_to_water.008"
     },
     {
       "key": "interaction.work.fishing.cast",
       "lines": [
-        "I cast the line. Now we see what answers.",
-        "That part is handled. I cast the line. Now we see what answers.",
-        "Here is the update: I cast the line. Now we see what answers.",
-        "That moved things along: I cast the line. Now we see what answers.",
-        "That step is finished. I cast the line. Now we see what answers.",
-        "I have that sorted. I cast the line. Now we see what answers.",
-        "That is taken care of. I cast the line. Now we see what answers.",
-        "The work moved forward. I cast the line. Now we see what answers.",
-        "I can report this much. I cast the line. Now we see what answers.",
-        "That part is done: I cast the line. Now we see what answers."
+        "I cast the line. Now we see what answers."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.cast.009"
     },
     {
       "key": "interaction.work.fishing.completed",
       "lines": [
-        "I reeled in the catch and stored it.",
-        "That part is handled. I reeled in the catch and stored it.",
-        "Here is the update: I reeled in the catch and stored it.",
-        "That moved things along: I reeled in the catch and stored it.",
-        "That step is finished. I reeled in the catch and stored it.",
-        "I have that sorted. I reeled in the catch and stored it.",
-        "That is taken care of. I reeled in the catch and stored it.",
-        "The work moved forward. I reeled in the catch and stored it.",
-        "I can report this much. I reeled in the catch and stored it.",
-        "That part is done: I reeled in the catch and stored it."
+        "I reeled in the catch and stored it."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.completed.010"
     },
     {
       "key": "interaction.work.fishing.completed_overflow",
       "lines": [
-        "I reeled in the catch, but some of it had to be dropped because storage was full.",
-        "That part is handled. I reeled in the catch, but some of it had to be dropped because storage was full.",
-        "Here is the update: I reeled in the catch, but some of it had to be dropped because storage was full.",
-        "That moved things along: I reeled in the catch, but some of it had to be dropped because storage was full.",
-        "That step is finished. I reeled in the catch, but some of it had to be dropped because storage was full.",
-        "I have that sorted. I reeled in the catch, but some of it had to be dropped because storage was full.",
-        "That is taken care of. I reeled in the catch, but some of it had to be dropped because storage was full.",
-        "The work moved forward. I reeled in the catch, but some of it had to be dropped because storage was full.",
-        "I can report this much. I reeled in the catch, but some of it had to be dropped because storage was full.",
-        "That part is done: I reeled in the catch, but some of it had to be dropped because storage was full."
+        "I reeled in the catch, but some of it had to be dropped because storage was full."
       ],
       "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.completed_overflow.011"
     }

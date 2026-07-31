@@ -114,11 +114,10 @@
         "I found {target}, and I am not letting it linger.",
         "{target} is being dealt with.",
         "I am striking at {target} until it backs down or falls.",
-        "Attack orders are active. I am engaging {target}.",
+        "<red><bold>Attack</bold></red> orders are active. I am engaging {target}.",
         "I have {target} in my sights.",
         "{target} is the nearest problem, so I am solving it.",
-        "I am keeping pressure on {target}.",
-        "I am striking at {target} until it backs down or falls. <red><bold>Attack</bold></red> orders are active. I am engaging {target}."
+        "I am keeping pressure on {target}."
       ],
       "id": "global.messages.14_work_combat.messages.interaction.work.combat.active.attack_all.006"
     },

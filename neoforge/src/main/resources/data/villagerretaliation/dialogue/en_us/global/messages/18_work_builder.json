@@ -12,32 +12,14 @@
     {
       "key": "interaction.work.builder.choose_structure",
       "lines": [
-        "Choose a structure for me to build.",
-        "All right. Choose a structure for me to build.",
-        "Here's where I am with it: Choose a structure for me to build.",
-        "For now, that is the situation. Choose a structure for me to build.",
-        "Just so you know. Choose a structure for me to build.",
-        "Plainly put: Choose a structure for me to build.",
-        "That's all I have for now: Choose a structure for me to build.",
-        "Understood. Choose a structure for me to build.",
-        "Nothing else to add yet. Choose a structure for me to build.",
-        "For the moment: Choose a structure for me to build."
+        "Choose a structure for me to build."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.choose_structure.000"
     },
     {
       "key": "interaction.work.builder.requires_role_choose",
       "lines": [
-        "Assign me to Builder before choosing a construction job.",
-        "I am held up for now. Assign me to Builder before choosing a construction job.",
-        "This is stopping the job for the moment. Assign me to Builder before choosing a construction job.",
-        "I cannot move on yet. Assign me to Builder before choosing a construction job.",
-        "I will continue once this is fixed. Assign me to Builder before choosing a construction job.",
-        "That needs attention before I can keep working. Assign me to Builder before choosing a construction job.",
-        "I am waiting on a fix. Assign me to Builder before choosing a construction job.",
-        "The work is paused until this changes. Assign me to Builder before choosing a construction job.",
-        "This is the problem right now. Assign me to Builder before choosing a construction job.",
-        "I am stuck here for the moment. Assign me to Builder before choosing a construction job."
+        "Assign me to Builder before choosing a construction job."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.requires_role_choose.001"
     },
@@ -76,144 +58,63 @@
     {
       "key": "interaction.work.builder.no_job_site",
       "lines": [
-        "Builders do not use assigned job sites. I will travel between storage and the construction site.",
-        "I am held up for now. Builders do not use assigned job sites. I will travel between storage and the construction site.",
-        "This is stopping the job for the moment. Builders do not use assigned job sites. I will travel between storage and the construction site.",
-        "I cannot move on yet. Builders do not use assigned job sites. I will travel between storage and the construction site.",
-        "I will continue once this is fixed. Builders do not use assigned job sites. I will travel between storage and the construction site.",
-        "That needs attention before I can keep working. Builders do not use assigned job sites. I will travel between storage and the construction site.",
-        "I am waiting on a fix. Builders do not use assigned job sites. I will travel between storage and the construction site.",
-        "The work is paused until this changes. Builders do not use assigned job sites. I will travel between storage and the construction site.",
-        "This is the problem right now. Builders do not use assigned job sites. I will travel between storage and the construction site.",
-        "I am stuck here for the moment. Builders do not use assigned job sites. I will travel between storage and the construction site."
+        "Builders do not use assigned job sites. I will travel between storage and the construction site."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.no_job_site.002"
     },
     {
       "key": "interaction.work.builder.unknown_structure",
       "lines": [
-        "I do not know that structure.",
-        "I am held up for now. I do not know that structure.",
-        "This is stopping the job for the moment. I do not know that structure.",
-        "I cannot move on yet. I do not know that structure.",
-        "I will continue once this is fixed. I do not know that structure.",
-        "That needs attention before I can keep working. I do not know that structure.",
-        "I am waiting on a fix. I do not know that structure.",
-        "The work is paused until this changes. I do not know that structure.",
-        "This is the problem right now. I do not know that structure.",
-        "I am stuck here for the moment. I do not know that structure."
+        "I do not know that structure."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.unknown_structure.003"
     },
     {
       "key": "interaction.work.builder.structure_unavailable",
       "lines": [
-        "That structure is not available right now.",
-        "I am held up for now. That structure is not available right now.",
-        "This is stopping the job for the moment. That structure is not available right now.",
-        "I cannot move on yet. That structure is not available right now.",
-        "I will continue once this is fixed. That structure is not available right now.",
-        "That needs attention before I can keep working. That structure is not available right now.",
-        "I am waiting on a fix. That structure is not available right now.",
-        "The work is paused until this changes. That structure is not available right now.",
-        "This is the problem right now. That structure is not available right now.",
-        "I am stuck here for the moment. That structure is not available right now."
+        "That structure is not available right now."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.structure_unavailable.004"
     },
     {
       "key": "interaction.work.builder.preview",
       "lines": [
-        "{structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}.",
-        "All right. {structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}.",
-        "Here's where I am with it: {structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}.",
-        "For now, that is the situation. {structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}.",
-        "Just so you know. {structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}.",
-        "Plainly put: {structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}.",
-        "That's all I have for now: {structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}.",
-        "Understood. {structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}.",
-        "Nothing else to add yet. {structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}.",
-        "For the moment: {structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}."
+        "{structure} needs {blocks} blocks. The blueprint is {blueprint_cost}, construction will cost {cost}. I will need {materials}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.preview.005"
     },
     {
       "key": "interaction.work.builder.preview_blocked",
       "lines": [
-        "I cannot start {structure}: {reason}.",
-        "I am held up for now. I cannot start {structure}: {reason}.",
-        "This is stopping the job for the moment. I cannot start {structure}: {reason}.",
-        "I cannot move on yet. I cannot start {structure}: {reason}.",
-        "I will continue once this is fixed. I cannot start {structure}: {reason}.",
-        "That needs attention before I can keep working. I cannot start {structure}: {reason}.",
-        "I am waiting on a fix. I cannot start {structure}: {reason}.",
-        "The work is paused until this changes. I cannot start {structure}: {reason}.",
-        "This is the problem right now. I cannot start {structure}: {reason}.",
-        "I am stuck here for the moment. I cannot start {structure}: {reason}."
+        "I cannot start {structure}: {reason}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.preview_blocked.006"
     },
     {
       "key": "interaction.work.builder.preview_first",
       "lines": [
-        "Choose and preview a structure before buying a blueprint.",
-        "All right. Choose and preview a structure before buying a blueprint.",
-        "Here's where I am with it: Choose and preview a structure before buying a blueprint.",
-        "For now, that is the situation. Choose and preview a structure before buying a blueprint.",
-        "Just so you know. Choose and preview a structure before buying a blueprint.",
-        "Plainly put: Choose and preview a structure before buying a blueprint.",
-        "That's all I have for now: Choose and preview a structure before buying a blueprint.",
-        "Understood. Choose and preview a structure before buying a blueprint.",
-        "Nothing else to add yet. Choose and preview a structure before buying a blueprint.",
-        "For the moment: Choose and preview a structure before buying a blueprint."
+        "Choose and preview a structure before buying a blueprint."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.preview_first.007"
     },
     {
       "key": "interaction.work.builder.already_building",
       "lines": [
-        "I am already working on {structure}.",
-        "That part is handled. I am already working on {structure}.",
-        "Here is the update: I am already working on {structure}.",
-        "That moved things along: I am already working on {structure}.",
-        "That step is finished. I am already working on {structure}.",
-        "I have that sorted. I am already working on {structure}.",
-        "That is taken care of. I am already working on {structure}.",
-        "The work moved forward. I am already working on {structure}.",
-        "I can report this much. I am already working on {structure}.",
-        "That part is done: I am already working on {structure}."
+        "I am already working on {structure}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.already_building.008"
     },
     {
       "key": "interaction.work.builder.need_payment",
       "lines": [
-        "I need {cost} from your inventory before I can start building {structure}.",
-        "I am held up for now. I need {cost} from your inventory before I can start building {structure}.",
-        "This is stopping the job for the moment. I need {cost} from your inventory before I can start building {structure}.",
-        "I cannot move on yet. I need {cost} from your inventory before I can start building {structure}.",
-        "I will continue once this is fixed. I need {cost} from your inventory before I can start building {structure}.",
-        "That needs attention before I can keep working. I need {cost} from your inventory before I can start building {structure}.",
-        "I am waiting on a fix. I need {cost} from your inventory before I can start building {structure}.",
-        "The work is paused until this changes. I need {cost} from your inventory before I can start building {structure}.",
-        "This is the problem right now. I need {cost} from your inventory before I can start building {structure}.",
-        "I am stuck here for the moment. I need {cost} from your inventory before I can start building {structure}."
+        "I need {cost} from your inventory before I can start building {structure}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.need_payment.009"
     },
     {
       "key": "interaction.work.builder.need_blueprint_payment",
       "lines": [
-        "I need {blueprint_cost} from you before I can draw up a blueprint for {structure}.",
-        "I am held up for now. I need {blueprint_cost} from you before I can draw up a blueprint for {structure}.",
-        "This is stopping the job for the moment. I need {blueprint_cost} from you before I can draw up a blueprint for {structure}.",
-        "I cannot move on yet. I need {blueprint_cost} from you before I can draw up a blueprint for {structure}.",
-        "I will continue once this is fixed. I need {blueprint_cost} from you before I can draw up a blueprint for {structure}.",
-        "That needs attention before I can keep working. I need {blueprint_cost} from you before I can draw up a blueprint for {structure}.",
-        "I am waiting on a fix. I need {blueprint_cost} from you before I can draw up a blueprint for {structure}.",
-        "The work is paused until this changes. I need {blueprint_cost} from you before I can draw up a blueprint for {structure}.",
-        "This is the problem right now. I need {blueprint_cost} from you before I can draw up a blueprint for {structure}.",
-        "I am stuck here for the moment. I need {blueprint_cost} from you before I can draw up a blueprint for {structure}."
+        "I need {blueprint_cost} from you before I can draw up a blueprint for {structure}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.need_blueprint_payment.010"
     },
@@ -236,512 +137,224 @@
     {
       "key": "interaction.work.builder.blueprint_missing",
       "lines": [
-        "Hold the construction blueprint when you ask me to start.",
-        "I am held up for now. Hold the construction blueprint when you ask me to start.",
-        "This is stopping the job for the moment. Hold the construction blueprint when you ask me to start.",
-        "I cannot move on yet. Hold the construction blueprint when you ask me to start.",
-        "I will continue once this is fixed. Hold the construction blueprint when you ask me to start.",
-        "That needs attention before I can keep working. Hold the construction blueprint when you ask me to start.",
-        "I am waiting on a fix. Hold the construction blueprint when you ask me to start.",
-        "The work is paused until this changes. Hold the construction blueprint when you ask me to start.",
-        "This is the problem right now. Hold the construction blueprint when you ask me to start.",
-        "I am stuck here for the moment. Hold the construction blueprint when you ask me to start."
+        "Hold the construction blueprint when you ask me to start."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_missing.012"
     },
     {
       "key": "interaction.work.builder.blueprint_expired",
       "lines": [
-        "That blueprint is expired.",
-        "I am held up for now. That blueprint is expired.",
-        "This is stopping the job for the moment. That blueprint is expired.",
-        "I cannot move on yet. That blueprint is expired.",
-        "I will continue once this is fixed. That blueprint is expired.",
-        "That needs attention before I can keep working. That blueprint is expired.",
-        "I am waiting on a fix. That blueprint is expired.",
-        "The work is paused until this changes. That blueprint is expired.",
-        "This is the problem right now. That blueprint is expired.",
-        "I am stuck here for the moment. That blueprint is expired."
+        "That blueprint is expired."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_expired.013"
     },
     {
       "key": "interaction.work.builder.blueprint_started",
       "lines": [
-        "That blueprint has already started a construction job.",
-        "That part is handled. That blueprint has already started a construction job.",
-        "Here is the update: That blueprint has already started a construction job.",
-        "That moved things along: That blueprint has already started a construction job.",
-        "That step is finished. That blueprint has already started a construction job.",
-        "I have that sorted. That blueprint has already started a construction job.",
-        "That is taken care of. That blueprint has already started a construction job.",
-        "The work moved forward. That blueprint has already started a construction job.",
-        "I can report this much. That blueprint has already started a construction job.",
-        "That part is done: That blueprint has already started a construction job."
+        "That blueprint has already started a construction job."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_started.014"
     },
     {
       "key": "interaction.work.builder.blueprint_completed",
       "lines": [
-        "That blueprint is already completed.",
-        "That part is handled. That blueprint is already completed.",
-        "Here is the update: That blueprint is already completed.",
-        "That moved things along: That blueprint is already completed.",
-        "That step is finished. That blueprint is already completed.",
-        "I have that sorted. That blueprint is already completed.",
-        "That is taken care of. That blueprint is already completed.",
-        "The work moved forward. That blueprint is already completed.",
-        "I can report this much. That blueprint is already completed.",
-        "That part is done: That blueprint is already completed."
+        "That blueprint is already completed."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_completed.015"
     },
     {
       "key": "interaction.work.builder.started",
       "lines": [
-        "I will build {structure} at {site}. I have marked the materials and payment.",
-        "That part is handled. I will build {structure} at {site}. I have marked the materials and payment.",
-        "Here is the update: I will build {structure} at {site}. I have marked the materials and payment.",
-        "That moved things along: I will build {structure} at {site}. I have marked the materials and payment.",
-        "That step is finished. I will build {structure} at {site}. I have marked the materials and payment.",
-        "I have that sorted. I will build {structure} at {site}. I have marked the materials and payment.",
-        "That is taken care of. I will build {structure} at {site}. I have marked the materials and payment.",
-        "The work moved forward. I will build {structure} at {site}. I have marked the materials and payment.",
-        "I can report this much. I will build {structure} at {site}. I have marked the materials and payment.",
-        "That part is done: I will build {structure} at {site}. I have marked the materials and payment."
+        "I will build {structure} at {site}. I have marked the materials and payment."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.started.016"
     },
     {
       "key": "interaction.work.builder.started_waiting_materials",
       "lines": [
-        "I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site.",
-        "That part is handled. I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site.",
-        "Here is the update: I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site.",
-        "That moved things along: I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site.",
-        "That step is finished. I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site.",
-        "I have that sorted. I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site.",
-        "That is taken care of. I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site.",
-        "The work moved forward. I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site.",
-        "I can report this much. I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site.",
-        "That part is done: I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site."
+        "I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.started_waiting_materials.017"
     },
     {
       "key": "interaction.work.builder.status_summary",
       "lines": [
-        "I am building {structure}: {placed} of {blocks} blocks placed.",
-        "All right. I am building {structure}: {placed} of {blocks} blocks placed.",
-        "Here's where I am with it: I am building {structure}: {placed} of {blocks} blocks placed.",
-        "For now, that is the situation. I am building {structure}: {placed} of {blocks} blocks placed.",
-        "Just so you know. I am building {structure}: {placed} of {blocks} blocks placed.",
-        "Plainly put: I am building {structure}: {placed} of {blocks} blocks placed.",
-        "That's all I have for now: I am building {structure}: {placed} of {blocks} blocks placed.",
-        "Understood. I am building {structure}: {placed} of {blocks} blocks placed.",
-        "Nothing else to add yet. I am building {structure}: {placed} of {blocks} blocks placed.",
-        "For the moment: I am building {structure}: {placed} of {blocks} blocks placed."
+        "I am building {structure}: {placed} of {blocks} blocks placed."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.status_summary.018"
     },
     {
       "key": "interaction.work.builder.cancelled",
       "lines": [
-        "Construction cancelled.",
-        "That part is handled. Construction cancelled.",
-        "Here is the update: Construction cancelled.",
-        "That moved things along: Construction cancelled.",
-        "That step is finished. Construction cancelled.",
-        "I have that sorted. Construction cancelled.",
-        "That is taken care of. Construction cancelled.",
-        "The work moved forward. Construction cancelled.",
-        "I can report this much. Construction cancelled.",
-        "That part is done: Construction cancelled."
+        "Construction cancelled."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.cancelled.019"
     },
     {
       "key": "interaction.work.builder.cancelled_refund",
       "lines": [
-        "Construction cancelled. I returned {cost} because no blocks were placed.",
-        "That part is handled. Construction cancelled. I returned {cost} because no blocks were placed.",
-        "Here is the update: Construction cancelled. I returned {cost} because no blocks were placed.",
-        "That moved things along: Construction cancelled. I returned {cost} because no blocks were placed.",
-        "That step is finished. Construction cancelled. I returned {cost} because no blocks were placed.",
-        "I have that sorted. Construction cancelled. I returned {cost} because no blocks were placed.",
-        "That is taken care of. Construction cancelled. I returned {cost} because no blocks were placed.",
-        "The work moved forward. Construction cancelled. I returned {cost} because no blocks were placed.",
-        "I can report this much. Construction cancelled. I returned {cost} because no blocks were placed.",
-        "That part is done: Construction cancelled. I returned {cost} because no blocks were placed."
+        "Construction cancelled. I returned {cost} because no blocks were placed."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.cancelled_refund.020"
     },
     {
       "key": "interaction.work.builder.waiting_materials",
       "lines": [
-        "I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory.",
-        "Right now, that is my focus. I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory.",
-        "That is my current step. I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory.",
-        "I am keeping the job moving. I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory.",
-        "This is where I am in the work. I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory.",
-        "I am staying with the task. I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory.",
-        "For the moment, I am busy with this. I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory.",
-        "I will keep going from here. I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory.",
-        "The work is still moving. I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory.",
-        "I am working through it. I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory."
+        "I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.waiting_materials.021"
     },
     {
       "key": "interaction.work.builder.moving_to_material_storage",
       "lines": [
-        "I need {materials} for {structure}, so I am heading to assigned storage to restock.",
-        "Right now, that is my focus. I need {materials} for {structure}, so I am heading to assigned storage to restock.",
-        "That is my current step. I need {materials} for {structure}, so I am heading to assigned storage to restock.",
-        "I am keeping the job moving. I need {materials} for {structure}, so I am heading to assigned storage to restock.",
-        "This is where I am in the work. I need {materials} for {structure}, so I am heading to assigned storage to restock.",
-        "I am staying with the task. I need {materials} for {structure}, so I am heading to assigned storage to restock.",
-        "For the moment, I am busy with this. I need {materials} for {structure}, so I am heading to assigned storage to restock.",
-        "I will keep going from here. I need {materials} for {structure}, so I am heading to assigned storage to restock.",
-        "The work is still moving. I need {materials} for {structure}, so I am heading to assigned storage to restock.",
-        "I am working through it. I need {materials} for {structure}, so I am heading to assigned storage to restock."
+        "I need {materials} for {structure}, so I am heading to assigned storage to restock."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.moving_to_material_storage.022"
     },
     {
       "key": "interaction.work.builder.waiting_materials_at_storage",
       "lines": [
-        "I am at assigned storage waiting for {materials} to build {structure}.",
-        "Right now, that is my focus. I am at assigned storage waiting for {materials} to build {structure}.",
-        "That is my current step. I am at assigned storage waiting for {materials} to build {structure}.",
-        "I am keeping the job moving. I am at assigned storage waiting for {materials} to build {structure}.",
-        "This is where I am in the work. I am at assigned storage waiting for {materials} to build {structure}.",
-        "I am staying with the task. I am at assigned storage waiting for {materials} to build {structure}.",
-        "For the moment, I am busy with this. I am at assigned storage waiting for {materials} to build {structure}.",
-        "I will keep going from here. I am at assigned storage waiting for {materials} to build {structure}.",
-        "The work is still moving. I am at assigned storage waiting for {materials} to build {structure}.",
-        "I am working through it. I am at assigned storage waiting for {materials} to build {structure}."
+        "I am at assigned storage waiting for {materials} to build {structure}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.waiting_materials_at_storage.023"
     },
     {
       "key": "interaction.work.builder.collecting_materials",
       "lines": [
-        "I am collecting construction materials from assigned storage.",
-        "Right now, that is my focus. I am collecting construction materials from assigned storage.",
-        "That is my current step. I am collecting construction materials from assigned storage.",
-        "I am keeping the job moving. I am collecting construction materials from assigned storage.",
-        "This is where I am in the work. I am collecting construction materials from assigned storage.",
-        "I am staying with the task. I am collecting construction materials from assigned storage.",
-        "For the moment, I am busy with this. I am collecting construction materials from assigned storage.",
-        "I will keep going from here. I am collecting construction materials from assigned storage.",
-        "The work is still moving. I am collecting construction materials from assigned storage.",
-        "I am working through it. I am collecting construction materials from assigned storage."
+        "I am collecting construction materials from assigned storage."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.collecting_materials.024"
     },
     {
       "key": "interaction.work.builder.material_inventory_full",
       "lines": [
-        "I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space.",
-        "I am held up for now. I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space.",
-        "This is stopping the job for the moment. I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space.",
-        "I cannot move on yet. I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space.",
-        "I will continue once this is fixed. I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space.",
-        "That needs attention before I can keep working. I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space.",
-        "I am waiting on a fix. I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space.",
-        "The work is paused until this changes. I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space.",
-        "This is the problem right now. I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space.",
-        "I am stuck here for the moment. I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space."
+        "I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.material_inventory_full.025"
     },
     {
       "key": "interaction.work.builder.materials_unreachable",
       "lines": [
-        "I found the needed construction materials in assigned storage, but I cannot reach that container.",
-        "I am held up for now. I found the needed construction materials in assigned storage, but I cannot reach that container.",
-        "This is stopping the job for the moment. I found the needed construction materials in assigned storage, but I cannot reach that container.",
-        "I cannot move on yet. I found the needed construction materials in assigned storage, but I cannot reach that container.",
-        "I will continue once this is fixed. I found the needed construction materials in assigned storage, but I cannot reach that container.",
-        "That needs attention before I can keep working. I found the needed construction materials in assigned storage, but I cannot reach that container.",
-        "I am waiting on a fix. I found the needed construction materials in assigned storage, but I cannot reach that container.",
-        "The work is paused until this changes. I found the needed construction materials in assigned storage, but I cannot reach that container.",
-        "This is the problem right now. I found the needed construction materials in assigned storage, but I cannot reach that container.",
-        "I am stuck here for the moment. I found the needed construction materials in assigned storage, but I cannot reach that container."
+        "I found the needed construction materials in assigned storage, but I cannot reach that container."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.materials_unreachable.026"
     },
     {
       "key": "interaction.work.builder.waiting_material_storage_unreachable",
       "lines": [
-        "I still need {materials} for {structure}. I cannot reach assigned storage to wait for them.",
-        "Right now, that is my focus. I still need {materials} for {structure}. I cannot reach assigned storage to wait for them.",
-        "That is my current step. I still need {materials} for {structure}. I cannot reach assigned storage to wait for them.",
-        "I am keeping the job moving. I still need {materials} for {structure}. I cannot reach assigned storage to wait for them.",
-        "This is where I am in the work. I still need {materials} for {structure}. I cannot reach assigned storage to wait for them.",
-        "I am staying with the task. I still need {materials} for {structure}. I cannot reach assigned storage to wait for them.",
-        "For the moment, I am busy with this. I still need {materials} for {structure}. I cannot reach assigned storage to wait for them.",
-        "I will keep going from here. I still need {materials} for {structure}. I cannot reach assigned storage to wait for them.",
-        "The work is still moving. I still need {materials} for {structure}. I cannot reach assigned storage to wait for them.",
-        "I am working through it. I still need {materials} for {structure}. I cannot reach assigned storage to wait for them."
+        "I still need {materials} for {structure}. I cannot reach assigned storage to wait for them."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.waiting_material_storage_unreachable.027"
     },
     {
       "key": "interaction.work.builder.site_missing",
       "lines": [
-        "I do not have a build site for this structure.",
-        "I am held up for now. I do not have a build site for this structure.",
-        "This is stopping the job for the moment. I do not have a build site for this structure.",
-        "I cannot move on yet. I do not have a build site for this structure.",
-        "I will continue once this is fixed. I do not have a build site for this structure.",
-        "That needs attention before I can keep working. I do not have a build site for this structure.",
-        "I am waiting on a fix. I do not have a build site for this structure.",
-        "The work is paused until this changes. I do not have a build site for this structure.",
-        "This is the problem right now. I do not have a build site for this structure.",
-        "I am stuck here for the moment. I do not have a build site for this structure."
+        "I do not have a build site for this structure."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.site_missing.028"
     },
     {
       "key": "interaction.work.builder.no_safe_site",
       "lines": [
-        "I cannot find a safe place nearby for that structure.",
-        "I am held up for now. I cannot find a safe place nearby for that structure.",
-        "This is stopping the job for the moment. I cannot find a safe place nearby for that structure.",
-        "I cannot move on yet. I cannot find a safe place nearby for that structure.",
-        "I will continue once this is fixed. I cannot find a safe place nearby for that structure.",
-        "That needs attention before I can keep working. I cannot find a safe place nearby for that structure.",
-        "I am waiting on a fix. I cannot find a safe place nearby for that structure.",
-        "The work is paused until this changes. I cannot find a safe place nearby for that structure.",
-        "This is the problem right now. I cannot find a safe place nearby for that structure.",
-        "I am stuck here for the moment. I cannot find a safe place nearby for that structure."
+        "I cannot find a safe place nearby for that structure."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.no_safe_site.029"
     },
     {
       "key": "interaction.work.builder.too_large",
       "lines": [
-        "{structure} is too large for the current builder limit.",
-        "I am held up for now. {structure} is too large for the current builder limit.",
-        "This is stopping the job for the moment. {structure} is too large for the current builder limit.",
-        "I cannot move on yet. {structure} is too large for the current builder limit.",
-        "I will continue once this is fixed. {structure} is too large for the current builder limit.",
-        "That needs attention before I can keep working. {structure} is too large for the current builder limit.",
-        "I am waiting on a fix. {structure} is too large for the current builder limit.",
-        "The work is paused until this changes. {structure} is too large for the current builder limit.",
-        "This is the problem right now. {structure} is too large for the current builder limit.",
-        "I am stuck here for the moment. {structure} is too large for the current builder limit."
+        "{structure} is too large for the current builder limit."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.too_large.030"
     },
     {
       "key": "interaction.work.builder.site_outside_area",
       "lines": [
-        "The planned build site is outside my assigned work area.",
-        "All right. The planned build site is outside my assigned work area.",
-        "Here's where I am with it: The planned build site is outside my assigned work area.",
-        "For now, that is the situation. The planned build site is outside my assigned work area.",
-        "Just so you know. The planned build site is outside my assigned work area.",
-        "Plainly put: The planned build site is outside my assigned work area.",
-        "That's all I have for now: The planned build site is outside my assigned work area.",
-        "Understood. The planned build site is outside my assigned work area.",
-        "Nothing else to add yet. The planned build site is outside my assigned work area.",
-        "For the moment: The planned build site is outside my assigned work area."
+        "The planned build site is outside my assigned work area."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.site_outside_area.031"
     },
     {
       "key": "interaction.work.builder.site_too_far",
       "lines": [
-        "The planned build site is too far from us.",
-        "I am held up for now. The planned build site is too far from us.",
-        "This is stopping the job for the moment. The planned build site is too far from us.",
-        "I cannot move on yet. The planned build site is too far from us.",
-        "I will continue once this is fixed. The planned build site is too far from us.",
-        "That needs attention before I can keep working. The planned build site is too far from us.",
-        "I am waiting on a fix. The planned build site is too far from us.",
-        "The work is paused until this changes. The planned build site is too far from us.",
-        "This is the problem right now. The planned build site is too far from us.",
-        "I am stuck here for the moment. The planned build site is too far from us."
+        "The planned build site is too far from us."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.site_too_far.032"
     },
     {
       "key": "interaction.work.builder.site_unloaded",
       "lines": [
-        "Part of the planned build site is not loaded.",
-        "That part is handled. Part of the planned build site is not loaded.",
-        "Here is the update: Part of the planned build site is not loaded.",
-        "That moved things along: Part of the planned build site is not loaded.",
-        "That step is finished. Part of the planned build site is not loaded.",
-        "I have that sorted. Part of the planned build site is not loaded.",
-        "That is taken care of. Part of the planned build site is not loaded.",
-        "The work moved forward. Part of the planned build site is not loaded.",
-        "I can report this much. Part of the planned build site is not loaded.",
-        "That part is done: Part of the planned build site is not loaded."
+        "Part of the planned build site is not loaded."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.site_unloaded.033"
     },
     {
       "key": "interaction.work.builder.blocked_existing",
       "lines": [
-        "Something important is already at {target}, so I will not replace it.",
-        "I am held up for now. Something important is already at {target}, so I will not replace it.",
-        "This is stopping the job for the moment. Something important is already at {target}, so I will not replace it.",
-        "I cannot move on yet. Something important is already at {target}, so I will not replace it.",
-        "I will continue once this is fixed. Something important is already at {target}, so I will not replace it.",
-        "That needs attention before I can keep working. Something important is already at {target}, so I will not replace it.",
-        "I am waiting on a fix. Something important is already at {target}, so I will not replace it.",
-        "The work is paused until this changes. Something important is already at {target}, so I will not replace it.",
-        "This is the problem right now. Something important is already at {target}, so I will not replace it.",
-        "I am stuck here for the moment. Something important is already at {target}, so I will not replace it."
+        "Something important is already at {target}, so I will not replace it."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.blocked_existing.034"
     },
     {
       "key": "interaction.work.builder.blocked_support",
       "lines": [
-        "The next block at {target} needs support before I can place it.",
-        "I am held up for now. The next block at {target} needs support before I can place it.",
-        "This is stopping the job for the moment. The next block at {target} needs support before I can place it.",
-        "I cannot move on yet. The next block at {target} needs support before I can place it.",
-        "I will continue once this is fixed. The next block at {target} needs support before I can place it.",
-        "That needs attention before I can keep working. The next block at {target} needs support before I can place it.",
-        "I am waiting on a fix. The next block at {target} needs support before I can place it.",
-        "The work is paused until this changes. The next block at {target} needs support before I can place it.",
-        "This is the problem right now. The next block at {target} needs support before I can place it.",
-        "I am stuck here for the moment. The next block at {target} needs support before I can place it."
+        "The next block at {target} needs support before I can place it."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.blocked_support.035"
     },
     {
       "key": "interaction.work.builder.blocked_entity",
       "lines": [
-        "Someone or something is standing where I need to build at {target}.",
-        "I am held up for now. Someone or something is standing where I need to build at {target}.",
-        "This is stopping the job for the moment. Someone or something is standing where I need to build at {target}.",
-        "I cannot move on yet. Someone or something is standing where I need to build at {target}.",
-        "I will continue once this is fixed. Someone or something is standing where I need to build at {target}.",
-        "That needs attention before I can keep working. Someone or something is standing where I need to build at {target}.",
-        "I am waiting on a fix. Someone or something is standing where I need to build at {target}.",
-        "The work is paused until this changes. Someone or something is standing where I need to build at {target}.",
-        "This is the problem right now. Someone or something is standing where I need to build at {target}.",
-        "I am stuck here for the moment. Someone or something is standing where I need to build at {target}."
+        "Someone or something is standing where I need to build at {target}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.blocked_entity.036"
     },
     {
       "key": "interaction.work.builder.path_blocked",
       "lines": [
-        "I cannot reach the next construction spot at {target}.",
-        "I am held up for now. I cannot reach the next construction spot at {target}.",
-        "This is stopping the job for the moment. I cannot reach the next construction spot at {target}.",
-        "I cannot move on yet. I cannot reach the next construction spot at {target}.",
-        "I will continue once this is fixed. I cannot reach the next construction spot at {target}.",
-        "That needs attention before I can keep working. I cannot reach the next construction spot at {target}.",
-        "I am waiting on a fix. I cannot reach the next construction spot at {target}.",
-        "The work is paused until this changes. I cannot reach the next construction spot at {target}.",
-        "This is the problem right now. I cannot reach the next construction spot at {target}.",
-        "I am stuck here for the moment. I cannot reach the next construction spot at {target}."
+        "I cannot reach the next construction spot at {target}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.path_blocked.037"
     },
     {
       "key": "interaction.work.builder.missing_clear_tool",
       "lines": [
-        "I need a suitable {tool} to clear the block at {target} before I can keep building {structure}.",
-        "I am held up for now. I need a suitable {tool} to clear the block at {target} before I can keep building {structure}.",
-        "This is stopping the job for the moment. I need a suitable {tool} to clear the block at {target} before I can keep building {structure}.",
-        "I cannot move on yet. I need a suitable {tool} to clear the block at {target} before I can keep building {structure}.",
-        "I will continue once this is fixed. I need a suitable {tool} to clear the block at {target} before I can keep building {structure}.",
-        "That needs attention before I can keep working. I need a suitable {tool} to clear the block at {target} before I can keep building {structure}.",
-        "I am waiting on a fix. I need a suitable {tool} to clear the block at {target} before I can keep building {structure}.",
-        "The work is paused until this changes. I need a suitable {tool} to clear the block at {target} before I can keep building {structure}.",
-        "This is the problem right now. I need a suitable {tool} to clear the block at {target} before I can keep building {structure}.",
-        "I am stuck here for the moment. I need a suitable {tool} to clear the block at {target} before I can keep building {structure}."
+        "I need a suitable {tool} to clear the block at {target} before I can keep building {structure}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.missing_clear_tool.038"
     },
     {
       "key": "interaction.work.builder.missing_placement_tool",
       "lines": [
-        "I need a {tool} to prepare the next construction block at {target} for {structure}.",
-        "I am held up for now. I need a {tool} to prepare the next construction block at {target} for {structure}.",
-        "This is stopping the job for the moment. I need a {tool} to prepare the next construction block at {target} for {structure}.",
-        "I cannot move on yet. I need a {tool} to prepare the next construction block at {target} for {structure}.",
-        "I will continue once this is fixed. I need a {tool} to prepare the next construction block at {target} for {structure}.",
-        "That needs attention before I can keep working. I need a {tool} to prepare the next construction block at {target} for {structure}.",
-        "I am waiting on a fix. I need a {tool} to prepare the next construction block at {target} for {structure}.",
-        "The work is paused until this changes. I need a {tool} to prepare the next construction block at {target} for {structure}.",
-        "This is the problem right now. I need a {tool} to prepare the next construction block at {target} for {structure}.",
-        "I am stuck here for the moment. I need a {tool} to prepare the next construction block at {target} for {structure}."
+        "I need a {tool} to prepare the next construction block at {target} for {structure}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.missing_placement_tool.039"
     },
     {
       "key": "interaction.work.builder.moving_to_site",
       "lines": [
-        "I am moving to the next construction spot at {target}.",
-        "Right now, that is my focus. I am moving to the next construction spot at {target}.",
-        "That is my current step. I am moving to the next construction spot at {target}.",
-        "I am keeping the job moving. I am moving to the next construction spot at {target}.",
-        "This is where I am in the work. I am moving to the next construction spot at {target}.",
-        "I am staying with the task. I am moving to the next construction spot at {target}.",
-        "For the moment, I am busy with this. I am moving to the next construction spot at {target}.",
-        "I will keep going from here. I am moving to the next construction spot at {target}.",
-        "The work is still moving. I am moving to the next construction spot at {target}.",
-        "I am working through it. I am moving to the next construction spot at {target}."
+        "I am moving to the next construction spot at {target}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.moving_to_site.040"
     },
     {
       "key": "interaction.work.builder.placement_failed",
       "lines": [
-        "I could not place the next block at {target}.",
-        "All right. I could not place the next block at {target}.",
-        "Here's where I am with it: I could not place the next block at {target}.",
-        "For now, that is the situation. I could not place the next block at {target}.",
-        "Just so you know. I could not place the next block at {target}.",
-        "Plainly put: I could not place the next block at {target}.",
-        "That's all I have for now: I could not place the next block at {target}.",
-        "Understood. I could not place the next block at {target}.",
-        "Nothing else to add yet. I could not place the next block at {target}.",
-        "For the moment: I could not place the next block at {target}."
+        "I could not place the next block at {target}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.placement_failed.041"
     },
     {
       "key": "interaction.work.builder.placed_block",
       "lines": [
-        "I placed the next block for {structure}: {placed} of {blocks}.",
-        "That part is handled. I placed the next block for {structure}: {placed} of {blocks}.",
-        "Here is the update: I placed the next block for {structure}: {placed} of {blocks}.",
-        "That moved things along: I placed the next block for {structure}: {placed} of {blocks}.",
-        "That step is finished. I placed the next block for {structure}: {placed} of {blocks}.",
-        "I have that sorted. I placed the next block for {structure}: {placed} of {blocks}.",
-        "That is taken care of. I placed the next block for {structure}: {placed} of {blocks}.",
-        "The work moved forward. I placed the next block for {structure}: {placed} of {blocks}.",
-        "I can report this much. I placed the next block for {structure}: {placed} of {blocks}.",
-        "That part is done: I placed the next block for {structure}: {placed} of {blocks}."
+        "I placed the next block for {structure}: {placed} of {blocks}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.placed_block.042"
     },
     {
       "key": "interaction.work.builder.complete",
       "lines": [
-        "{structure} is complete.",
-        "That part is handled. {structure} is complete.",
-        "Here is the update: {structure} is complete.",
-        "That moved things along: {structure} is complete.",
-        "That step is finished. {structure} is complete.",
-        "I have that sorted. {structure} is complete.",
-        "That is taken care of. {structure} is complete.",
-        "The work moved forward. {structure} is complete.",
-        "I can report this much. {structure} is complete.",
-        "That part is done: {structure} is complete."
+        "{structure} is complete."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.complete.043"
     },

@@ -12,7 +12,7 @@
     {
       "key": "cartographer_map_report.missing",
       "lines": [
-        "Bring me news from the mark first. A map is not a story until someone walks it.",
+        "Bring me news from the mark first. A <gradient:aqua:green>map</gradient> is not a story until someone walks it.",
         "I will mark {target_article} with a steadier hand now that you came back.",
         "Good. {target_article} is no longer just ink and rumor.",
         "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
@@ -21,8 +21,7 @@
         "I will add a note in the margin: confirmed, but not necessarily friendly.",
         "The parchment needed truth more than decoration. This helps.",
         "Now the next traveler has warning instead of guesswork. That matters.",
-        "I will mark the road, the risk, and the part where returning was the impressive bit.",
-        "I will mark the road, the risk, and the part where returning was the impressive bit. Bring me news from the mark first. A <gradient:aqua:green>map</gradient> is not a story until someone walks it."
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "id": "professions.cartographer.messages.00_messages.messages.cartographer_map_report.missing.000"
     },
@@ -90,9 +89,7 @@
         "I will add a note in the margin: confirmed, but not necessarily friendly.",
         "The parchment needed truth more than decoration. This helps.",
         "Now the next traveler has warning instead of guesswork. That matters.",
-        "I will mark the road, the risk, and the part where returning was the impressive bit.",
-        "{target_article} under open water. Good work. The sea hides landmarks better than any fog. You found {target_article}? Then the waves were telling the truth for once.",
-        "I will mark the road, the risk, and the part where returning was the impressive bit. {target_article} under open water. Good work. The sea hides landmarks better than any fog."
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },

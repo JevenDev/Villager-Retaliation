@@ -12,256 +12,112 @@
     {
       "key": "interaction.work.brewing.no_order",
       "lines": [
-        "No brewing order selected.",
-        "I am held up for now. No brewing order selected.",
-        "This is stopping the job for the moment. No brewing order selected.",
-        "I cannot move on yet. No brewing order selected.",
-        "I will continue once this is fixed. No brewing order selected.",
-        "That needs attention before I can keep working. No brewing order selected.",
-        "I am waiting on a fix. No brewing order selected.",
-        "The work is paused until this changes. No brewing order selected.",
-        "This is the problem right now. No brewing order selected.",
-        "I am stuck here for the moment. No brewing order selected."
+        "No brewing order selected."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.no_order.000"
     },
     {
       "key": "interaction.work.brewing.depositing_outputs",
       "lines": [
-        "I am putting finished potions away before brewing more.",
-        "Right now, that is my focus. I am putting finished potions away before brewing more.",
-        "That is my current step. I am putting finished potions away before brewing more.",
-        "I am keeping the job moving. I am putting finished potions away before brewing more.",
-        "This is where I am in the work. I am putting finished potions away before brewing more.",
-        "I am staying with the task. I am putting finished potions away before brewing more.",
-        "For the moment, I am busy with this. I am putting finished potions away before brewing more.",
-        "I will keep going from here. I am putting finished potions away before brewing more.",
-        "The work is still moving. I am putting finished potions away before brewing more.",
-        "I am working through it. I am putting finished potions away before brewing more."
+        "I am putting finished potions away before brewing more."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.depositing_outputs.001"
     },
     {
       "key": "interaction.work.brewing.choose_order",
       "lines": [
-        "Choose a potion and amount before I start brewing.",
-        "All right. Choose a potion and amount before I start brewing.",
-        "Here's where I am with it: Choose a potion and amount before I start brewing.",
-        "For now, that is the situation. Choose a potion and amount before I start brewing.",
-        "Just so you know. Choose a potion and amount before I start brewing.",
-        "Plainly put: Choose a potion and amount before I start brewing.",
-        "That's all I have for now: Choose a potion and amount before I start brewing.",
-        "Understood. Choose a potion and amount before I start brewing.",
-        "Nothing else to add yet. Choose a potion and amount before I start brewing.",
-        "For the moment: Choose a potion and amount before I start brewing."
+        "Choose a potion and amount before I start brewing."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.choose_order.002"
     },
     {
       "key": "interaction.work.brewing.recipe_unavailable",
       "lines": [
-        "That potion recipe is no longer available.",
-        "I am held up for now. That potion recipe is no longer available.",
-        "This is stopping the job for the moment. That potion recipe is no longer available.",
-        "I cannot move on yet. That potion recipe is no longer available.",
-        "I will continue once this is fixed. That potion recipe is no longer available.",
-        "That needs attention before I can keep working. That potion recipe is no longer available.",
-        "I am waiting on a fix. That potion recipe is no longer available.",
-        "The work is paused until this changes. That potion recipe is no longer available.",
-        "This is the problem right now. That potion recipe is no longer available.",
-        "I am stuck here for the moment. That potion recipe is no longer available."
+        "That potion recipe is no longer available."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.recipe_unavailable.003"
     },
     {
       "key": "interaction.work.brewing.no_stand",
       "lines": [
-        "I need a brewing stand inside the assigned job site.",
-        "I am held up for now. I need a brewing stand inside the assigned job site.",
-        "This is stopping the job for the moment. I need a brewing stand inside the assigned job site.",
-        "I cannot move on yet. I need a brewing stand inside the assigned job site.",
-        "I will continue once this is fixed. I need a brewing stand inside the assigned job site.",
-        "That needs attention before I can keep working. I need a brewing stand inside the assigned job site.",
-        "I am waiting on a fix. I need a brewing stand inside the assigned job site.",
-        "The work is paused until this changes. I need a brewing stand inside the assigned job site.",
-        "This is the problem right now. I need a brewing stand inside the assigned job site.",
-        "I am stuck here for the moment. I need a brewing stand inside the assigned job site."
+        "I need a brewing stand inside the assigned job site."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.no_stand.004"
     },
     {
       "key": "interaction.work.brewing.order_complete",
       "lines": [
-        "The brewing order is complete.",
-        "That part is handled. The brewing order is complete.",
-        "Here is the update: The brewing order is complete.",
-        "That moved things along: The brewing order is complete.",
-        "That step is finished. The brewing order is complete.",
-        "I have that sorted. The brewing order is complete.",
-        "That is taken care of. The brewing order is complete.",
-        "The work moved forward. The brewing order is complete.",
-        "I can report this much. The brewing order is complete.",
-        "That part is done: The brewing order is complete."
+        "The brewing order is complete."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.order_complete.005"
     },
     {
       "key": "interaction.work.brewing.wrong_bottles",
       "lines": [
-        "The brewing stand has different bottles in it.",
-        "I am held up for now. The brewing stand has different bottles in it.",
-        "This is stopping the job for the moment. The brewing stand has different bottles in it.",
-        "I cannot move on yet. The brewing stand has different bottles in it.",
-        "I will continue once this is fixed. The brewing stand has different bottles in it.",
-        "That needs attention before I can keep working. The brewing stand has different bottles in it.",
-        "I am waiting on a fix. The brewing stand has different bottles in it.",
-        "The work is paused until this changes. The brewing stand has different bottles in it.",
-        "This is the problem right now. The brewing stand has different bottles in it.",
-        "I am stuck here for the moment. The brewing stand has different bottles in it."
+        "The brewing stand has different bottles in it."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.wrong_bottles.006"
     },
     {
       "key": "interaction.work.brewing.wrong_ingredient",
       "lines": [
-        "The brewing stand has the wrong ingredient in it.",
-        "I am held up for now. The brewing stand has the wrong ingredient in it.",
-        "This is stopping the job for the moment. The brewing stand has the wrong ingredient in it.",
-        "I cannot move on yet. The brewing stand has the wrong ingredient in it.",
-        "I will continue once this is fixed. The brewing stand has the wrong ingredient in it.",
-        "That needs attention before I can keep working. The brewing stand has the wrong ingredient in it.",
-        "I am waiting on a fix. The brewing stand has the wrong ingredient in it.",
-        "The work is paused until this changes. The brewing stand has the wrong ingredient in it.",
-        "This is the problem right now. The brewing stand has the wrong ingredient in it.",
-        "I am stuck here for the moment. The brewing stand has the wrong ingredient in it."
+        "The brewing stand has the wrong ingredient in it."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.wrong_ingredient.007"
     },
     {
       "key": "interaction.work.brewing.wrong_fuel",
       "lines": [
-        "The brewing stand has the wrong fuel in it.",
-        "I am held up for now. The brewing stand has the wrong fuel in it.",
-        "This is stopping the job for the moment. The brewing stand has the wrong fuel in it.",
-        "I cannot move on yet. The brewing stand has the wrong fuel in it.",
-        "I will continue once this is fixed. The brewing stand has the wrong fuel in it.",
-        "That needs attention before I can keep working. The brewing stand has the wrong fuel in it.",
-        "I am waiting on a fix. The brewing stand has the wrong fuel in it.",
-        "The work is paused until this changes. The brewing stand has the wrong fuel in it.",
-        "This is the problem right now. The brewing stand has the wrong fuel in it.",
-        "I am stuck here for the moment. The brewing stand has the wrong fuel in it."
+        "The brewing stand has the wrong fuel in it."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.wrong_fuel.008"
     },
     {
       "key": "interaction.work.brewing.missing_materials",
       "lines": [
-        "Missing materials.",
-        "I am held up for now. Missing materials.",
-        "This is stopping the job for the moment. Missing materials.",
-        "I cannot move on yet. Missing materials.",
-        "I will continue once this is fixed. Missing materials.",
-        "That needs attention before I can keep working. Missing materials.",
-        "I am waiting on a fix. Missing materials.",
-        "The work is paused until this changes. Missing materials.",
-        "This is the problem right now. Missing materials.",
-        "I am stuck here for the moment. Missing materials."
+        "Missing materials."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.missing_materials.009"
     },
     {
       "key": "interaction.work.brewing.stand_unreachable",
       "lines": [
-        "I cannot reach the assigned brewing stand.",
-        "I am held up for now. I cannot reach the assigned brewing stand.",
-        "This is stopping the job for the moment. I cannot reach the assigned brewing stand.",
-        "I cannot move on yet. I cannot reach the assigned brewing stand.",
-        "I will continue once this is fixed. I cannot reach the assigned brewing stand.",
-        "That needs attention before I can keep working. I cannot reach the assigned brewing stand.",
-        "I am waiting on a fix. I cannot reach the assigned brewing stand.",
-        "The work is paused until this changes. I cannot reach the assigned brewing stand.",
-        "This is the problem right now. I cannot reach the assigned brewing stand.",
-        "I am stuck here for the moment. I cannot reach the assigned brewing stand."
+        "I cannot reach the assigned brewing stand."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.stand_unreachable.010"
     },
     {
       "key": "interaction.work.brewing.stand_blocked",
       "lines": [
-        "The brewing stand is blocked off, so I am waiting for a clear path.",
-        "I am held up for now. The brewing stand is blocked off, so I am waiting for a clear path.",
-        "This is stopping the job for the moment. The brewing stand is blocked off, so I am waiting for a clear path.",
-        "I cannot move on yet. The brewing stand is blocked off, so I am waiting for a clear path.",
-        "I will continue once this is fixed. The brewing stand is blocked off, so I am waiting for a clear path.",
-        "That needs attention before I can keep working. The brewing stand is blocked off, so I am waiting for a clear path.",
-        "I am waiting on a fix. The brewing stand is blocked off, so I am waiting for a clear path.",
-        "The work is paused until this changes. The brewing stand is blocked off, so I am waiting for a clear path.",
-        "This is the problem right now. The brewing stand is blocked off, so I am waiting for a clear path.",
-        "I am stuck here for the moment. The brewing stand is blocked off, so I am waiting for a clear path."
+        "The brewing stand is blocked off, so I am waiting for a clear path."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.stand_blocked.011"
     },
     {
       "key": "interaction.work.brewing.repositioning_stand",
       "lines": [
-        "I am moving into position at the brewing stand.",
-        "Right now, that is my focus. I am moving into position at the brewing stand.",
-        "That is my current step. I am moving into position at the brewing stand.",
-        "I am keeping the job moving. I am moving into position at the brewing stand.",
-        "This is where I am in the work. I am moving into position at the brewing stand.",
-        "I am staying with the task. I am moving into position at the brewing stand.",
-        "For the moment, I am busy with this. I am moving into position at the brewing stand.",
-        "I will keep going from here. I am moving into position at the brewing stand.",
-        "The work is still moving. I am moving into position at the brewing stand.",
-        "I am working through it. I am moving into position at the brewing stand."
+        "I am moving into position at the brewing stand."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.repositioning_stand.012"
     },
     {
       "key": "interaction.work.brewing.moving_to_stand",
       "lines": [
-        "I am heading to the brewing stand.",
-        "Right now, that is my focus. I am heading to the brewing stand.",
-        "That is my current step. I am heading to the brewing stand.",
-        "I am keeping the job moving. I am heading to the brewing stand.",
-        "This is where I am in the work. I am heading to the brewing stand.",
-        "I am staying with the task. I am heading to the brewing stand.",
-        "For the moment, I am busy with this. I am heading to the brewing stand.",
-        "I will keep going from here. I am heading to the brewing stand.",
-        "The work is still moving. I am heading to the brewing stand.",
-        "I am working through it. I am heading to the brewing stand."
+        "I am heading to the brewing stand."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.moving_to_stand.013"
     },
     {
       "key": "interaction.work.brewing.water_unreachable",
       "lines": [
-        "I cannot reach the assigned water source.",
-        "I am held up for now. I cannot reach the assigned water source.",
-        "This is stopping the job for the moment. I cannot reach the assigned water source.",
-        "I cannot move on yet. I cannot reach the assigned water source.",
-        "I will continue once this is fixed. I cannot reach the assigned water source.",
-        "That needs attention before I can keep working. I cannot reach the assigned water source.",
-        "I am waiting on a fix. I cannot reach the assigned water source.",
-        "The work is paused until this changes. I cannot reach the assigned water source.",
-        "This is the problem right now. I cannot reach the assigned water source.",
-        "I am stuck here for the moment. I cannot reach the assigned water source."
+        "I cannot reach the assigned water source."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.water_unreachable.014"
     },
     {
       "key": "interaction.work.brewing.water_blocked",
       "lines": [
-        "The water source is blocked off, so I am waiting for a clear path.",
-        "I am held up for now. The water source is blocked off, so I am waiting for a clear path.",
-        "This is stopping the job for the moment. The water source is blocked off, so I am waiting for a clear path.",
-        "I cannot move on yet. The water source is blocked off, so I am waiting for a clear path.",
-        "I will continue once this is fixed. The water source is blocked off, so I am waiting for a clear path.",
-        "That needs attention before I can keep working. The water source is blocked off, so I am waiting for a clear path.",
-        "I am waiting on a fix. The water source is blocked off, so I am waiting for a clear path.",
-        "The work is paused until this changes. The water source is blocked off, so I am waiting for a clear path.",
-        "This is the problem right now. The water source is blocked off, so I am waiting for a clear path.",
-        "I am stuck here for the moment. The water source is blocked off, so I am waiting for a clear path."
+        "The water source is blocked off, so I am waiting for a clear path."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.water_blocked.015"
     },
@@ -269,15 +125,6 @@
       "key": "interaction.work.brewing.repositioning_water",
       "lines": [
         "I am moving into position at the water source.",
-        "Right now, that is my focus. I am moving into position at the water source.",
-        "That is my current step. I am moving into position at the water source.",
-        "I am keeping the job moving. I am moving into position at the water source.",
-        "This is where I am in the work. I am moving into position at the water source.",
-        "I am staying with the task. I am moving into position at the water source.",
-        "For the moment, I am busy with this. I am moving into position at the water source.",
-        "I will keep going from here. I am moving into position at the water source.",
-        "The work is still moving. I am moving into position at the water source.",
-        "I am working through it. I am moving into position at the water source.",
         "I am staying with the task. I am moving into position at the <aqua><wavy>water</wavy></aqua> source. For the moment, I am busy with this. I am moving into position at the water source."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.repositioning_water.016"
@@ -286,15 +133,6 @@
       "key": "interaction.work.brewing.moving_to_water",
       "lines": [
         "I am heading to the water source.",
-        "Right now, that is my focus. I am heading to the water source.",
-        "That is my current step. I am heading to the water source.",
-        "I am keeping the job moving. I am heading to the water source.",
-        "This is where I am in the work. I am heading to the water source.",
-        "I am staying with the task. I am heading to the water source.",
-        "For the moment, I am busy with this. I am heading to the water source.",
-        "I will keep going from here. I am heading to the water source.",
-        "The work is still moving. I am heading to the water source.",
-        "I am working through it. I am heading to the water source.",
         "Right now, that is my focus. I am heading to the <aqua><wavy>water</wavy></aqua> source. That is my current step. I am heading to the water source."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.moving_to_water.017"
@@ -302,16 +140,7 @@
     {
       "key": "interaction.work.brewing.water_bottle_space",
       "lines": [
-        "I need room in my job inventory to fill water bottles.",
-        "All right. I need room in my job inventory to fill water bottles.",
-        "Here's where I am with it: I need room in my job inventory to fill water bottles.",
-        "For now, that is the situation. I need room in my job inventory to fill water bottles.",
-        "Just so you know. I need room in my job inventory to fill water bottles.",
-        "Plainly put: I need room in my job inventory to fill water bottles.",
-        "That's all I have for now: I need room in my job inventory to fill water bottles.",
-        "Understood. I need room in my job inventory to fill water bottles.",
-        "Nothing else to add yet. I need room in my job inventory to fill <aqua><wavy>water</wavy></aqua> bottles.",
-        "For the moment: I need room in my job inventory to fill water bottles.",
+        "I need room in my job inventory to fill <aqua><wavy>water</wavy></aqua> bottles.",
         "Understood. I need room in my job inventory to fill water bottles. Nothing else to add yet. I need room in my job inventory to fill water bottles.",
         "Nothing else to add yet. I need room in my job inventory to fill water bottles. For the moment: I need room in my job inventory to fill water bottles."
       ],
@@ -320,64 +149,28 @@
     {
       "key": "interaction.work.brewing.crafted_ingredients",
       "lines": [
-        "I crafted brewing ingredients.",
-        "That part is handled. I crafted brewing ingredients.",
-        "Here is the update: I crafted brewing ingredients.",
-        "That moved things along: I crafted brewing ingredients.",
-        "That step is finished. I crafted brewing ingredients.",
-        "I have that sorted. I crafted brewing ingredients.",
-        "That is taken care of. I crafted brewing ingredients.",
-        "The work moved forward. I crafted brewing ingredients.",
-        "I can report this much. I crafted brewing ingredients.",
-        "That part is done: I crafted brewing ingredients."
+        "I crafted brewing ingredients."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.crafted_ingredients.019"
     },
     {
       "key": "interaction.work.brewing.crafted_blaze_powder",
       "lines": [
-        "I crafted blaze powder for the brewing stand.",
-        "That part is handled. I crafted blaze powder for the brewing stand.",
-        "Here is the update: I crafted blaze powder for the brewing stand.",
-        "That moved things along: I crafted blaze powder for the brewing stand.",
-        "That step is finished. I crafted blaze powder for the brewing stand.",
-        "I have that sorted. I crafted blaze powder for the brewing stand.",
-        "That is taken care of. I crafted blaze powder for the brewing stand.",
-        "The work moved forward. I crafted blaze powder for the brewing stand.",
-        "I can report this much. I crafted blaze powder for the brewing stand.",
-        "That part is done: I crafted blaze powder for the brewing stand."
+        "I crafted blaze powder for the brewing stand."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.crafted_blaze_powder.020"
     },
     {
       "key": "interaction.work.brewing.collected_output",
       "lines": [
-        "I collected {count} brewed {item}.",
-        "That part is handled. I collected {count} brewed {item}.",
-        "Here is the update: I collected {count} brewed {item}.",
-        "That moved things along: I collected {count} brewed {item}.",
-        "That step is finished. I collected {count} brewed {item}.",
-        "I have that sorted. I collected {count} brewed {item}.",
-        "That is taken care of. I collected {count} brewed {item}.",
-        "The work moved forward. I collected {count} brewed {item}.",
-        "I can report this much. I collected {count} brewed {item}.",
-        "That part is done: I collected {count} brewed {item}."
+        "I collected {count} brewed {item}."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.collected_output.021"
     },
     {
       "key": "interaction.work.brewing.clear_bottle_space",
       "lines": [
-        "I need room in my job inventory before I can clear extra bottles from the stand.",
-        "All right. I need room in my job inventory before I can clear extra bottles from the stand.",
-        "Here's where I am with it: I need room in my job inventory before I can clear extra bottles from the stand.",
-        "For now, that is the situation. I need room in my job inventory before I can clear extra bottles from the stand.",
-        "Just so you know. I need room in my job inventory before I can clear extra bottles from the stand.",
-        "Plainly put: I need room in my job inventory before I can clear extra bottles from the stand.",
-        "That's all I have for now: I need room in my job inventory before I can clear extra bottles from the stand.",
-        "Understood. I need room in my job inventory before I can clear extra bottles from the stand.",
-        "Nothing else to add yet. I need room in my job inventory before I can clear extra bottles from the stand.",
-        "For the moment: I need room in my job inventory before I can clear extra bottles from the stand."
+        "I need room in my job inventory before I can clear extra bottles from the stand."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.clear_bottle_space.022"
     },
@@ -385,15 +178,6 @@
       "key": "interaction.work.brewing.cleared_extra_bottles",
       "lines": [
         "I cleared extra <aqua><wavy>water</wavy></aqua> bottles from the brewing stand before starting this order.",
-        "All right. I cleared extra water bottles from the brewing stand before starting this order.",
-        "Here's where I am with it: I cleared extra water bottles from the brewing stand before starting this order.",
-        "For now, that is the situation. I cleared extra water bottles from the brewing stand before starting this order.",
-        "Just so you know. I cleared extra water bottles from the brewing stand before starting this order.",
-        "Plainly put: I cleared extra water bottles from the brewing stand before starting this order.",
-        "That's all I have for now: I cleared extra water bottles from the brewing stand before starting this order.",
-        "Understood. I cleared extra water bottles from the brewing stand before starting this order.",
-        "Nothing else to add yet. I cleared extra water bottles from the brewing stand before starting this order.",
-        "For the moment: I cleared extra water bottles from the brewing stand before starting this order.",
         "I cleared extra water bottles from the brewing stand before starting this order. All right. I cleared extra water bottles from the brewing stand before starting this order.",
         "For the moment: I cleared extra water bottles from the brewing stand before starting this order. I cleared extra water bottles from the brewing stand before starting this order."
       ],
@@ -402,288 +186,126 @@
     {
       "key": "interaction.work.brewing.finishing_larger_batch",
       "lines": [
-        "I am finishing the larger batch already in the brewing stand.",
-        "Right now, that is my focus. I am finishing the larger batch already in the brewing stand.",
-        "That is my current step. I am finishing the larger batch already in the brewing stand.",
-        "I am keeping the job moving. I am finishing the larger batch already in the brewing stand.",
-        "This is where I am in the work. I am finishing the larger batch already in the brewing stand.",
-        "I am staying with the task. I am finishing the larger batch already in the brewing stand.",
-        "For the moment, I am busy with this. I am finishing the larger batch already in the brewing stand.",
-        "I will keep going from here. I am finishing the larger batch already in the brewing stand.",
-        "The work is still moving. I am finishing the larger batch already in the brewing stand.",
-        "I am working through it. I am finishing the larger batch already in the brewing stand."
+        "I am finishing the larger batch already in the brewing stand."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.finishing_larger_batch.024"
     },
     {
       "key": "interaction.work.brewing.waiting_current_batch",
       "lines": [
-        "I am waiting for the current brewing batch to finish.",
-        "Right now, that is my focus. I am waiting for the current brewing batch to finish.",
-        "That is my current step. I am waiting for the current brewing batch to finish.",
-        "I am keeping the job moving. I am waiting for the current brewing batch to finish.",
-        "This is where I am in the work. I am waiting for the current brewing batch to finish.",
-        "I am staying with the task. I am waiting for the current brewing batch to finish.",
-        "For the moment, I am busy with this. I am waiting for the current brewing batch to finish.",
-        "I will keep going from here. I am waiting for the current brewing batch to finish.",
-        "The work is still moving. I am waiting for the current brewing batch to finish.",
-        "I am working through it. I am waiting for the current brewing batch to finish."
+        "I am waiting for the current brewing batch to finish."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.waiting_current_batch.025"
     },
     {
       "key": "interaction.work.brewing.loaded_water_bottles",
       "lines": [
-        "I loaded water bottles into the brewing stand.",
-        "That part is handled. I loaded water bottles into the brewing stand.",
-        "Here is the update: I loaded water bottles into the brewing stand.",
-        "That moved things along: I loaded water bottles into the brewing stand.",
-        "That step is finished. I loaded water bottles into the brewing stand.",
-        "I have that sorted. I loaded water bottles into the brewing stand.",
-        "That is taken care of. I loaded water bottles into the brewing stand.",
-        "The work moved forward. I loaded water bottles into the brewing stand.",
-        "I can report this much. I loaded water bottles into the brewing stand.",
-        "That part is done: I loaded water bottles into the brewing stand."
+        "I loaded water bottles into the brewing stand."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.loaded_water_bottles.026"
     },
     {
       "key": "interaction.work.brewing.ready_to_collect",
       "lines": [
-        "I am ready to collect the finished potions.",
-        "That part is handled. I am ready to collect the finished potions.",
-        "Here is the update: I am ready to collect the finished potions.",
-        "That moved things along: I am ready to collect the finished potions.",
-        "That step is finished. I am ready to collect the finished potions.",
-        "I have that sorted. I am ready to collect the finished potions.",
-        "That is taken care of. I am ready to collect the finished potions.",
-        "The work moved forward. I am ready to collect the finished potions.",
-        "I can report this much. I am ready to collect the finished potions.",
-        "That part is done: I am ready to collect the finished potions."
+        "I am ready to collect the finished potions."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.ready_to_collect.027"
     },
     {
       "key": "interaction.work.brewing.waiting_stand",
       "lines": [
-        "I am waiting for the brewing stand to finish.",
-        "Right now, that is my focus. I am waiting for the brewing stand to finish.",
-        "That is my current step. I am waiting for the brewing stand to finish.",
-        "I am keeping the job moving. I am waiting for the brewing stand to finish.",
-        "This is where I am in the work. I am waiting for the brewing stand to finish.",
-        "I am staying with the task. I am waiting for the brewing stand to finish.",
-        "For the moment, I am busy with this. I am waiting for the brewing stand to finish.",
-        "I will keep going from here. I am waiting for the brewing stand to finish.",
-        "The work is still moving. I am waiting for the brewing stand to finish.",
-        "I am working through it. I am waiting for the brewing stand to finish."
+        "I am waiting for the brewing stand to finish."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.waiting_stand.028"
     },
     {
       "key": "interaction.work.brewing.loaded_ingredient",
       "lines": [
-        "I loaded the next brewing ingredient.",
-        "That part is handled. I loaded the next brewing ingredient.",
-        "Here is the update: I loaded the next brewing ingredient.",
-        "That moved things along: I loaded the next brewing ingredient.",
-        "That step is finished. I loaded the next brewing ingredient.",
-        "I have that sorted. I loaded the next brewing ingredient.",
-        "That is taken care of. I loaded the next brewing ingredient.",
-        "The work moved forward. I loaded the next brewing ingredient.",
-        "I can report this much. I loaded the next brewing ingredient.",
-        "That part is done: I loaded the next brewing ingredient."
+        "I loaded the next brewing ingredient."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.loaded_ingredient.029"
     },
     {
       "key": "interaction.work.brewing.loaded_blaze_powder",
       "lines": [
-        "I loaded blaze powder into the brewing stand.",
-        "That part is handled. I loaded blaze powder into the brewing stand.",
-        "Here is the update: I loaded blaze powder into the brewing stand.",
-        "That moved things along: I loaded blaze powder into the brewing stand.",
-        "That step is finished. I loaded blaze powder into the brewing stand.",
-        "I have that sorted. I loaded blaze powder into the brewing stand.",
-        "That is taken care of. I loaded blaze powder into the brewing stand.",
-        "The work moved forward. I loaded blaze powder into the brewing stand.",
-        "I can report this much. I loaded blaze powder into the brewing stand.",
-        "That part is done: I loaded blaze powder into the brewing stand."
+        "I loaded blaze powder into the brewing stand."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.loaded_blaze_powder.030"
     },
     {
       "key": "interaction.work.brewing.collecting_materials",
       "lines": [
-        "I am collecting brewing materials from storage.",
-        "Right now, that is my focus. I am collecting brewing materials from storage.",
-        "That is my current step. I am collecting brewing materials from storage.",
-        "I am keeping the job moving. I am collecting brewing materials from storage.",
-        "This is where I am in the work. I am collecting brewing materials from storage.",
-        "I am staying with the task. I am collecting brewing materials from storage.",
-        "For the moment, I am busy with this. I am collecting brewing materials from storage.",
-        "I will keep going from here. I am collecting brewing materials from storage.",
-        "The work is still moving. I am collecting brewing materials from storage.",
-        "I am working through it. I am collecting brewing materials from storage."
+        "I am collecting brewing materials from storage."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.collecting_materials.031"
     },
     {
       "key": "interaction.work.brewing.materials_unreachable",
       "lines": [
-        "I cannot reach the assigned brewing materials.",
-        "I am held up for now. I cannot reach the assigned brewing materials.",
-        "This is stopping the job for the moment. I cannot reach the assigned brewing materials.",
-        "I cannot move on yet. I cannot reach the assigned brewing materials.",
-        "I will continue once this is fixed. I cannot reach the assigned brewing materials.",
-        "That needs attention before I can keep working. I cannot reach the assigned brewing materials.",
-        "I am waiting on a fix. I cannot reach the assigned brewing materials.",
-        "The work is paused until this changes. I cannot reach the assigned brewing materials.",
-        "This is the problem right now. I cannot reach the assigned brewing materials.",
-        "I am stuck here for the moment. I cannot reach the assigned brewing materials."
+        "I cannot reach the assigned brewing materials."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.materials_unreachable.032"
     },
     {
       "key": "interaction.work.brewing.material_inventory_full",
       "lines": [
-        "I need room in my job inventory to carry brewing materials.",
-        "I am held up for now. I need room in my job inventory to carry brewing materials.",
-        "This is stopping the job for the moment. I need room in my job inventory to carry brewing materials.",
-        "I cannot move on yet. I need room in my job inventory to carry brewing materials.",
-        "I will continue once this is fixed. I need room in my job inventory to carry brewing materials.",
-        "That needs attention before I can keep working. I need room in my job inventory to carry brewing materials.",
-        "I am waiting on a fix. I need room in my job inventory to carry brewing materials.",
-        "The work is paused until this changes. I need room in my job inventory to carry brewing materials.",
-        "This is the problem right now. I need room in my job inventory to carry brewing materials.",
-        "I am stuck here for the moment. I need room in my job inventory to carry brewing materials."
+        "I need room in my job inventory to carry brewing materials."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.material_inventory_full.033"
     },
     {
       "key": "interaction.work.brewing.gathered_materials",
       "lines": [
-        "I gathered brewing materials from storage.",
-        "That part is handled. I gathered brewing materials from storage.",
-        "Here is the update: I gathered brewing materials from storage.",
-        "That moved things along: I gathered brewing materials from storage.",
-        "That step is finished. I gathered brewing materials from storage.",
-        "I have that sorted. I gathered brewing materials from storage.",
-        "That is taken care of. I gathered brewing materials from storage.",
-        "The work moved forward. I gathered brewing materials from storage.",
-        "I can report this much. I gathered brewing materials from storage.",
-        "That part is done: I gathered brewing materials from storage."
+        "I gathered brewing materials from storage."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.gathered_materials.034"
     },
     {
       "key": "interaction.work.brewing.requires_role_choose",
       "lines": [
-        "Assign me to Brewing before choosing a potion.",
-        "I am held up for now. Assign me to Brewing before choosing a potion.",
-        "This is stopping the job for the moment. Assign me to Brewing before choosing a potion.",
-        "I cannot move on yet. Assign me to Brewing before choosing a potion.",
-        "I will continue once this is fixed. Assign me to Brewing before choosing a potion.",
-        "That needs attention before I can keep working. Assign me to Brewing before choosing a potion.",
-        "I am waiting on a fix. Assign me to Brewing before choosing a potion.",
-        "The work is paused until this changes. Assign me to Brewing before choosing a potion.",
-        "This is the problem right now. Assign me to Brewing before choosing a potion.",
-        "I am stuck here for the moment. Assign me to Brewing before choosing a potion."
+        "Assign me to Brewing before choosing a potion."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.requires_role_choose.035"
     },
     {
       "key": "interaction.work.brewing.requires_role_change",
       "lines": [
-        "Assign me to Brewing before changing brewing orders.",
-        "I am held up for now. Assign me to Brewing before changing brewing orders.",
-        "This is stopping the job for the moment. Assign me to Brewing before changing brewing orders.",
-        "I cannot move on yet. Assign me to Brewing before changing brewing orders.",
-        "I will continue once this is fixed. Assign me to Brewing before changing brewing orders.",
-        "That needs attention before I can keep working. Assign me to Brewing before changing brewing orders.",
-        "I am waiting on a fix. Assign me to Brewing before changing brewing orders.",
-        "The work is paused until this changes. Assign me to Brewing before changing brewing orders.",
-        "This is the problem right now. Assign me to Brewing before changing brewing orders.",
-        "I am stuck here for the moment. Assign me to Brewing before changing brewing orders."
+        "Assign me to Brewing before changing brewing orders."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.requires_role_change.036"
     },
     {
       "key": "interaction.work.brewing.choose_amount",
       "lines": [
-        "Choose how many potions I should brew.",
-        "All right. Choose how many potions I should brew.",
-        "Here's where I am with it: Choose how many potions I should brew.",
-        "For now, that is the situation. Choose how many potions I should brew.",
-        "Just so you know. Choose how many potions I should brew.",
-        "Plainly put: Choose how many potions I should brew.",
-        "That's all I have for now: Choose how many potions I should brew.",
-        "Understood. Choose how many potions I should brew.",
-        "Nothing else to add yet. Choose how many potions I should brew.",
-        "For the moment: Choose how many potions I should brew."
+        "Choose how many potions I should brew."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.choose_amount.037"
     },
     {
       "key": "interaction.work.brewing.unknown_recipe",
       "lines": [
-        "I do not know that brewing recipe.",
-        "I am held up for now. I do not know that brewing recipe.",
-        "This is stopping the job for the moment. I do not know that brewing recipe.",
-        "I cannot move on yet. I do not know that brewing recipe.",
-        "I will continue once this is fixed. I do not know that brewing recipe.",
-        "That needs attention before I can keep working. I do not know that brewing recipe.",
-        "I am waiting on a fix. I do not know that brewing recipe.",
-        "The work is paused until this changes. I do not know that brewing recipe.",
-        "This is the problem right now. I do not know that brewing recipe.",
-        "I am stuck here for the moment. I do not know that brewing recipe."
+        "I do not know that brewing recipe."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.unknown_recipe.038"
     },
     {
       "key": "interaction.work.brewing.already_brewing",
       "lines": [
-        "I already have a brewing order running. Stop it before choosing another.",
-        "That part is handled. I already have a brewing order running. Stop it before choosing another.",
-        "Here is the update: I already have a brewing order running. Stop it before choosing another.",
-        "That moved things along: I already have a brewing order running. Stop it before choosing another.",
-        "That step is finished. I already have a brewing order running. Stop it before choosing another.",
-        "I have that sorted. I already have a brewing order running. Stop it before choosing another.",
-        "That is taken care of. I already have a brewing order running. Stop it before choosing another.",
-        "The work moved forward. I already have a brewing order running. Stop it before choosing another.",
-        "I can report this much. I already have a brewing order running. Stop it before choosing another.",
-        "That part is done: I already have a brewing order running. Stop it before choosing another."
+        "I already have a brewing order running. Stop it before choosing another."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.already_brewing.039"
     },
     {
       "key": "interaction.work.brewing.order_summary",
       "lines": [
-        "Brewing {order}.",
-        "All right. Brewing {order}.",
-        "Here's where I am with it: Brewing {order}.",
-        "For now, that is the situation. Brewing {order}.",
-        "Just so you know. Brewing {order}.",
-        "Plainly put: Brewing {order}.",
-        "That's all I have for now: Brewing {order}.",
-        "Understood. Brewing {order}.",
-        "Nothing else to add yet. Brewing {order}.",
-        "For the moment: Brewing {order}."
+        "Brewing {order}."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.order_summary.040"
     },
     {
       "key": "interaction.work.brewing.stopped",
       "lines": [
-        "Brewing stopped.",
-        "That part is handled. Brewing stopped.",
-        "Here is the update: Brewing stopped.",
-        "That moved things along: Brewing stopped.",
-        "That step is finished. Brewing stopped.",
-        "I have that sorted. Brewing stopped.",
-        "That is taken care of. Brewing stopped.",
-        "The work moved forward. Brewing stopped.",
-        "I can report this much. Brewing stopped.",
-        "That part is done: Brewing stopped."
+        "Brewing stopped."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.stopped.041"
     }

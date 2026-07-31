@@ -63,7 +63,7 @@
       "id": "global_story_bell",
       "request": "story",
       "lines": [
-        "Once the bell rang for a shadow at the edge of the square. Everyone still claims they were not scared.",
+        "Once the bell rang for a shadow at the edge of the square. Everyone still claims they were not <dark_gray><wavy>scared</wavy></dark_gray>.",
         "One season, half the village learned roofing because the rain would not stop teaching.",
         "The well once went dry for a morning, and suddenly every bucket had a reputation.",
         "A trader once swore the road moved while they were sleeping. We blamed the map, then the trader, then the road.",
@@ -72,8 +72,7 @@
         "A child tied ribbons to the fence so travelers could find us. The wind took credit for the idea.",
         "The bell once rang during breakfast, and half the village arrived with bread still in hand.",
         "One winter, the firewood pile fell over so loudly that three people apologized to it.",
-        "There was a morning when the square went silent all at once. Turns out everyone was watching the same fox steal berries.",
-        "There was a morning when the square went silent all at once. Turns out everyone was watching the same fox steal berries. Once the bell rang for a shadow at the edge of the square. Everyone still claims they were not <dark_gray><wavy>scared</wavy></dark_gray>."
+        "There was a morning when the square went silent all at once. Turns out everyone was watching the same fox steal berries."
       ],
       "weight": 60
     }

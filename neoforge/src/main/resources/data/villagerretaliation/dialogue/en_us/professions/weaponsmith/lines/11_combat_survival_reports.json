@@ -5,16 +5,13 @@
       "request": "combat_survival_report",
       "lines": [
         "The blade did its work, and so did my feet when it was time to come home.",
-        "Heat, pressure, fear. Good steel survives that. So did I.",
+        "Heat, pressure, <dark_gray><wavy>fear</wavy></dark_gray>. Good steel survives that. So did I.",
         "Steel sang, fear shouted, and I still heard the way home.",
         "I kept my blade ready and my feet smarter than pride.",
         "No weapon feels heavy until you carry it back after the fight.",
         "I survived with the edge intact and the lesson sharper.",
         "I trust good steel. Tonight I had to trust my own nerve too.",
-        "The fight ended before I did. That's the result I prefer.",
-        "When danger came close, nobody had time to sound brave first.",
-        "You learn a lot about a village when everyone hears the bell at once.",
-        "Heat, pressure, <dark_gray><wavy>fear</wavy></dark_gray>. Good steel survives that. So did I. Steel sang, fear shouted, and I still heard the way home."
+        "The fight ended before I did. That's the result I prefer."
       ],
       "option": "combat_survival_report",
       "show_for_babies": false,

@@ -11,9 +11,7 @@
         "Mercy is not forgetfulness. It is a chance to choose better.",
         "A wounded trust heals slowly. Still, healing can begin here.",
         "If remorse has roots, we will see fruit.",
-        "I'll hold this apology with care. Don't make it lonely.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "I'll hold this apology with care. Don't make it lonely."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

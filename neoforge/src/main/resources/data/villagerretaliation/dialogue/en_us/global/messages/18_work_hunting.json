@@ -28,9 +28,8 @@
         "No hostile target yet. I am checking the assigned area.",
         "The hostile hunt is quiet for now, so I am keeping patrol.",
         "I am staying inside the bounds and watching for danger.",
-        "No threat in reach yet. I am still searching.",
-        "I am covering the hunting grounds for hostile targets.",
-        "The hostile hunt is quiet for now, so I am keeping patrol. No <red><bold>threat</bold></red> in reach yet. I am still searching."
+        "No <red><bold>threat</bold></red> in reach yet. I am still searching.",
+        "I am covering the hunting grounds for hostile targets."
       ],
       "id": "global.messages.18_work_hunting.messages.interaction.work.hunting.passive.hostiles.001"
     },

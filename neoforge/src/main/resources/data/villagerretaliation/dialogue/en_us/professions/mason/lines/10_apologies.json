@@ -11,9 +11,7 @@
         "Fine. A foundation can be reset, but it takes honest work.",
         "I hear the apology. Now bring mortar, not dust.",
         "Damage hidden inside stone still spreads. Keep this in the open.",
-        "Trust can stand again if the base is not shaken twice.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "Trust can stand again if the base is not shaken twice."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

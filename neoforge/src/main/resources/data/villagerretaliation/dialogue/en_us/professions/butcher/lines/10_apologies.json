@@ -11,9 +11,7 @@
         "An apology does not put things back on the hook, but it is a beginning.",
         "I'll take the words. I'll judge the hands.",
         "Fine. Say it once, then prove it every time after.",
-        "I know when something has gone bad. This does not have to.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "I know when something has gone bad. This does not have to."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

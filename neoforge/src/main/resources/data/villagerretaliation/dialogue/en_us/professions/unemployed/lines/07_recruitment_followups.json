@@ -5,16 +5,8 @@
       "request": "recruitment_followup",
       "lines": [
         "I do not have a trade for it yet, but coming home safely feels like honest work.",
-        "Home again, whole enough to thank you properly. That matters.",
-        "We came back with the village still ahead of us. I'll count that as good work.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions.",
-        "Home again, whole enough to <gold><pulse>thank you</pulse></gold> properly. That matters. We came back with the village still ahead of us. I'll count that as good work."
+        "Home again, whole enough to <gold><pulse>thank you</pulse></gold> properly. That matters.",
+        "We came back with the village still ahead of us. I'll count that as good work."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -29,14 +21,7 @@
       "lines": [
         "I was looking for direction, not bruises. Still, I made it back.",
         "I made it home, but the road took more from me than it should have.",
-        "Next time, let us return with fewer marks and better choices.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "Next time, let us return with fewer marks and better choices."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -51,14 +36,7 @@
       "lines": [
         "I followed because I thought you knew where we were going. I was wrong about more than the road.",
         "Following you was trust. What happened after was something else.",
-        "A guide who strikes from close by leaves the longest mark.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "A guide who strikes from close by leaves the longest mark."
       ],
       "conditions": [
         {
@@ -79,14 +57,7 @@
       "lines": [
         "I learned I am not ready for a career in boating. But I survived the lesson.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
-        "Water carried us home, which is more than I expected from that journey.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "Water carried us home, which is more than I expected from that journey."
       ],
       "conditions": [
         {

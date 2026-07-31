@@ -14,14 +14,7 @@
       "lines": [
         "Fine. The line goes slack, for now.",
         "Fine. I'll set this down before it gets heavier.",
-        "Fine. I can step back, but do not make me regret it.",
-        "Fine. I can let this cool, but do not mistake calm for forgetting.",
-        "That helps. Keep your hands peaceful and we may still end this properly.",
-        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-        "You are short. A nervous apology does not settle a public mistake.",
-        "No. I am too angry to bargain while you are standing there like that.",
-        "Put the weapon away first. I will not discuss peace with steel in my face.",
-        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+        "Fine. I can step back, but do not make me regret it."
       ],
       "outcomes": [
         "success"
@@ -33,14 +26,7 @@
       "lines": [
         "That offer will not hold. I need {emerald_cost} {emeralds}.",
         "That's short of the full repair. Bring {emerald_cost} {emeralds}.",
-        "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
-        "Fine. I can let this cool, but do not mistake calm for forgetting.",
-        "That helps. Keep your hands peaceful and we may still end this properly.",
-        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-        "You are short. A nervous apology does not settle a public mistake.",
-        "No. I am too angry to bargain while you are standing there like that.",
-        "Put the weapon away first. I will not discuss peace with steel in my face.",
-        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ],
       "outcomes": [
         "not_enough_emeralds"
@@ -52,14 +38,7 @@
       "lines": [
         "No. I know when to cut a bad line.",
         "No. Some damage has to cool before payment matters.",
-        "No. Keep {payment_items}. Trust is not ready to trade.",
-        "Fine. I can let this cool, but do not mistake calm for forgetting.",
-        "That helps. Keep your hands peaceful and we may still end this properly.",
-        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-        "You are short. A nervous apology does not settle a public mistake.",
-        "No. I am too angry to bargain while you are standing there like that.",
-        "Put the weapon away first. I will not discuss peace with steel in my face.",
-        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+        "No. Keep {payment_items}. Trust is not ready to trade."
       ],
       "outcomes": [
         "blocked_by_reputation"

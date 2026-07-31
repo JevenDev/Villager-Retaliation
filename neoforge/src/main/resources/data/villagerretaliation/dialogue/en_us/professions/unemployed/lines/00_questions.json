@@ -12,7 +12,6 @@
         "A fair chance is easier to ask for than to recognize.",
         "Most days, I am at the village square, trying to keep finding a calling from becoming everyone else's problem.",
         "People think watching is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good empty hands more than a loud promise. The empty hands has less to prove.",
         "A free pair of hands can be useful if someone knows where to point them.",
         "Work sounds simple until it has to fit the day in front of you.",
@@ -41,11 +40,8 @@
         "Some questions are safer when they stand a little farther away.",
         "Most days, I am at the village square, trying to keep finding a calling from becoming everyone else's problem.",
         "People think watching is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good empty hands more than a loud promise. The empty hands has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the village square has done to me."
+        "I spend enough time in the square to notice who comes and goes."
       ],
       "dispositions": [
         "cautious",
@@ -59,14 +55,7 @@
       "lines": [
         "I followed you once and learned something: I need better shoes before I choose a trade.",
         "I remember following you through that road. My feet remember it even better.",
-        "That trip across that road taught me to ask more questions before walking.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "That trip across that road taught me to ask more questions before walking."
       ],
       "conditions": [
         {
@@ -84,14 +73,7 @@
       "lines": [
         "I followed you into a boat once. Not a trade, apparently, but it felt like training.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It can't make me forget it.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "A boat can make a bad plan quieter. It can't make me forget it."
       ],
       "conditions": [
         {

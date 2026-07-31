@@ -116,7 +116,7 @@
       "id": "recruitment_left_behind_swamp",
       "request": "recruitment_followup",
       "lines": [
-        "Don't leave me in the Swamp. Mud, water, and gloom make a miserable watch post.",
+        "Don't leave me in the Swamp. Mud, <aqua><wavy>water</wavy></aqua>, and gloom make a miserable watch post.",
         "The Swamp is too soggy and too murky to be standing alone in.",
         "I waited in the Swamp trying not to trip into the water while I looked for you.",
         "If you disappear in a Swamp, I am left wading through mud and bad feelings.",
@@ -125,8 +125,7 @@
         "Please do not leave me somewhere the ground feels half-finished.",
         "The Swamp made everything smell wet, old, and unfriendly.",
         "I kept watching the water, because I could not tell what was under it.",
-        "I was alone in the muck, hoping the next movement was you and not something worse.",
-        "Don't leave me in the Swamp. Mud, <aqua><wavy>water</wavy></aqua>, and gloom make a miserable watch post. The Swamp is too soggy and too murky to be standing alone in."
+        "I was alone in the muck, hoping the next movement was you and not something worse."
       ],
       "conditions": [
         {

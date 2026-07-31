@@ -113,12 +113,11 @@
         "You still have my service for {time_remaining} day(s). More time is {cost} emeralds for each day.",
         "There are {time_remaining} paid day(s) left on our contract. The extension rate is {cost} emeralds a day.",
         "I remain with your party for another {time_remaining} day(s). Further days cost {cost} emeralds each.",
-        "Our time together runs for {time_remaining} more day(s). You may add days at {cost} emeralds apiece.",
+        "Our time together runs for {time_remaining} more day(s). You may add days at {cost} <green><bold>emeralds</bold></green> apiece.",
         "The contract holds for {time_remaining} day(s) yet. Renewing it costs {cost} emeralds per day.",
         "We have {time_remaining} day(s) before this agreement ends. Each extra day requires {cost} emeralds.",
         "My place in the party is paid for another {time_remaining} day(s). Extensions remain {cost} emeralds daily.",
-        "By my count, {time_remaining} paid day(s) remain. The price for another day is {cost} emeralds.",
-        "Our time together runs for {time_remaining} more day(s). You may add days at {cost} <green><bold>emeralds</bold></green> apiece. The contract holds for {time_remaining} day(s) yet. Renewing it costs {cost} emeralds per day."
+        "By my count, {time_remaining} paid day(s) remain. The price for another day is {cost} emeralds."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.contract_remaining.006"
     },
@@ -134,8 +133,7 @@
         "Do you mean to dismiss me? Any paid days we have left will be forfeited.",
         "If I leave the party now, the unused part of our contract cannot be repaid. Are you sure?",
         "You are asking to end our arrangement early. The remaining prepaid time will be lost. Is that final?",
-        "Are these truly your wishes? I will leave, but no emeralds are returned for the days left.",
-        "You are asking to end our arrangement early. The remaining prepaid time will be lost. Is that final? Are these truly your wishes? I will leave, but no <green><bold>emeralds</bold></green> are returned for the days left."
+        "Are these truly your wishes? I will leave, but no <green><bold>emeralds</bold></green> are returned for the days left."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.dismiss_confirmation.007"
     },

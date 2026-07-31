@@ -245,9 +245,7 @@
         "I have no interest in hiding while others stand in front.",
         "The quiet feels thin today. I am listening through it.",
         "Stay close to the paths and do not ignore the bell.",
-        "We are not helpless just because we were frightened.",
-        "I do not plan to be caught unready twice. There is fear in the village, yes. There is also backbone.",
-        "There is fear in the village, yes. There is also backbone. If something comes through that gate, it will find us awake."
+        "We are not helpless just because we were frightened."
       ],
       "min_mood_intensity": 25,
       "mood": "protective",
@@ -281,7 +279,7 @@
       "request": "joke",
       "lines": [
         "That one nearly survived the landing. <jump>Try again</jump>, and I may give it a proper funeral.",
-        "A brave attempt. Comedy is just archery with more witnesses.",
+        "That joke missed. At least no arrows were involved.",
         "You aimed for laughter and hit the fence. Still, I admire the confidence.",
         "I have heard worse. I have also heard better, but let us stay kind.",
         "That joke took a strange road, but it did arrive somewhere.",

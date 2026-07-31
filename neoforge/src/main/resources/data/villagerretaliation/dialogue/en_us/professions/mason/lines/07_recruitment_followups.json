@@ -6,14 +6,7 @@
       "lines": [
         "Solid trip, solid return. Foundations matter.",
         "We left, returned, and nothing load-bearing failed. I'll take that.",
-        "Home is still standing, and so am I. That's a proper finish.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "Home is still standing, and so am I. That's a proper finish."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -28,14 +21,7 @@
       "lines": [
         "I came back chipped. A wall can take that. A person should not have to.",
         "I made it home with damage that no chisel can smooth.",
-        "There are cracks in me that the road had no right to make.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "There are cracks in me that the road had no right to make."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -50,14 +36,7 @@
       "lines": [
         "You cracked something load-bearing between us.",
         "A careless blow can split more than stone.",
-        "Trust was holding weight. Then you struck it.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "Trust was holding weight. Then you struck it."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -72,14 +51,7 @@
       "lines": [
         "No foundation under a boat, yet somehow it held. I respect the craft.",
         "A boat has no proper base, but I can't argue with arriving alive.",
-        "The water carried us better than I expected. I still prefer roads.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "The water carried us better than I expected. I still prefer roads."
       ],
       "conditions": [
         {

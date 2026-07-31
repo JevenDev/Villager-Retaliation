@@ -5,15 +5,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Vines can hide lava as well as stone. I would save bread for the road home.",
-        "If anyone heads for Jungle Ruined Portal, tell them: Clear the leaves before stepping close. I will be at the fields.",
-        "The jungle grows over Nether scars, but not kindly. I'll remember that when I put bread aside.",
-        "Jungle Ruined Portal is no small story. A full belly is not the same as safety.",
-        "I will remember Jungle Ruined Portal as a green ruin with a red memory underneath. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_jungle",
@@ -24,15 +17,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Broken obsidian near cliffs makes bad footing worse. I would save bread for the road home.",
-        "If anyone heads for Mountain Ruined Portal, tell them: Mind the edge before minding the chest. I will be at the fields.",
-        "Thin air and Nether stone both make folk careless. I'll remember that when I put bread aside.",
-        "Mountain Ruined Portal is no small story. A full belly is not the same as safety.",
-        "I will remember Mountain Ruined Portal as a high ruin where one bad step travels far. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_mountain",
@@ -43,15 +29,8 @@
       "request": "share_story",
       "lines": [
         "{target}? A broken portal in the Nether still feels too awake. I would save bread for the road home.",
-        "If anyone heads for Nether Ruined Portal, tell them: Keep fire behind you and a way out ahead. I will be at the fields.",
-        "Obsidian there looks less broken than hungry. I'll remember that when I put bread aside.",
-        "Nether Ruined Portal is no small story. A full belly is not the same as safety.",
-        "I will remember Nether Ruined Portal as a ruin inside the place ruins come from. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_nether",
@@ -62,15 +41,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Lava stone under water makes no honest sense. I would save bread for the road home.",
-        "If anyone heads for Ocean Ruined Portal, tell them: Watch your air and anything glowing below. I will be at the fields.",
-        "The sea should not know that much heat. I'll remember that when I put bread aside.",
-        "Ocean Ruined Portal is no small story. A full belly is not the same as safety.",
-        "I will remember Ocean Ruined Portal as a drowned portal still remembering fire. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_ocean",
@@ -81,15 +53,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Mud, vines, and Nether stone all grab at your feet. I would save bread for the road home.",
-        "If anyone heads for Swamp Ruined Portal, tell them: Bring blocks and leave before the fog thickens. I will be at the fields.",
-        "Swamp water makes broken obsidian look sicker. I'll remember that when I put bread aside.",
-        "Swamp Ruined Portal is no small story. A full belly is not the same as safety.",
-        "I will remember Swamp Ruined Portal as a wet ruin with a fever under it. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_swamp",
@@ -100,15 +65,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Broken planks underwater snag the careless. I would save bread for the road home.",
-        "If anyone heads for Shipwreck, tell them: Count your air before counting loot. I will be at the fields.",
-        "The sea keeps what sinks unless you bargain well. I'll remember that when I put bread aside.",
-        "Shipwreck is no small story. A full belly is not the same as safety.",
-        "I will remember Shipwreck as a drowned hull that still knows how to trap feet. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck",
@@ -119,15 +77,8 @@
       "request": "share_story",
       "lines": [
         "{target}? A ship on land already lost one argument. I would save bread for the road home.",
-        "If anyone heads for Beached Shipwreck, tell them: Watch rotten planks and the sand under them. I will be at the fields.",
-        "Wood that survived the sea can still give way. I'll remember that when I put bread aside.",
-        "Beached Shipwreck is no small story. A full belly is not the same as safety.",
-        "I will remember Beached Shipwreck as a stranded hull with old trouble in its ribs. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck_beached",
@@ -138,15 +89,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Deep stone can lead farther than anyone planned. I would save bread for the road home.",
-        "If anyone heads for Stronghold, tell them: Mark every stair and do not stare too long at the portal room. I will be at the fields.",
-        "Silverfish turn old blocks into bad surprises. I'll remember that when I put bread aside.",
-        "Stronghold is no small story. A full belly is not the same as safety.",
-        "I will remember Stronghold as a buried place asking questions in stone. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:stronghold",
@@ -157,15 +101,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Witches do not need much room to make trouble. I would save bread for the road home.",
-        "If anyone heads for Swamp Hut, tell them: Keep milk ready and do not breathe the potions. I will be at the fields.",
-        "A little hut can smell like a warning. I'll remember that when I put bread aside.",
-        "Swamp Hut is no small story. A full belly is not the same as safety.",
-        "I will remember Swamp Hut as a crooked house where bottles mean danger. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:swamp_hut",
@@ -176,15 +113,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Old roads leave sharp bits behind. I would save bread for the road home.",
-        "If anyone heads for Trail Ruins, tell them: Brush carefully and do not dig like a fool. I will be at the fields.",
-        "The past breaks easily when rushed. I'll remember that when I put bread aside.",
-        "Trail Ruins is no small story. A full belly is not the same as safety.",
-        "I will remember Trail Ruins as buried paths with history under the dirt. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:trail_ruins",
@@ -195,15 +125,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Rooms built for tests rarely grade kindly. I would save bread for the road home.",
-        "If anyone heads for Trial Chambers, tell them: Save strength for the next door, not the first cheer. I will be at the fields.",
-        "Copper halls can turn brave feet around. I'll remember that when I put bread aside.",
-        "Trial Chambers is no small story. A full belly is not the same as safety.",
-        "I will remember Trial Chambers as a place that measures courage by bruises. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:trial_chambers",
@@ -214,15 +137,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Neighbors there fight heat before anything else. I would save bread for the road home.",
-        "If anyone heads for Desert Village, tell them: Bring water and news, not trouble. I will be at the fields.",
-        "Sand gets into doors, beds, and tempers. I'll remember that when I put bread aside.",
-        "Desert Village is no small story. A full belly is not the same as safety.",
-        "I will remember Desert Village as another village trying to keep shade and hope. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:village_desert",
@@ -233,15 +149,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Open fields give little warning before danger arrives. I would save bread for the road home.",
-        "If anyone heads for Plains Village, tell them: Greet the bell and trade kindly. I will be at the fields.",
-        "Flat roads make visitors easy to see. I'll remember that when I put bread aside.",
-        "Plains Village is no small story. A full belly is not the same as safety.",
-        "I will remember Plains Village as neighbors with fields like ours. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:village_plains",
@@ -252,15 +161,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Dry grass carries sound and fire quickly. I would save bread for the road home.",
-        "If anyone heads for Savanna Village, tell them: Bring respect and watch the wind. I will be at the fields.",
-        "Acacia roofs know hard sun well. I'll remember that when I put bread aside.",
-        "Savanna Village is no small story. A full belly is not the same as safety.",
-        "I will remember Savanna Village as neighbors standing under a sharper sky. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:village_savanna",
@@ -271,15 +173,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Cold makes every chore heavier. I would save bread for the road home.",
-        "If anyone heads for Snowy Village, tell them: Shut doors fast and bring something warm. I will be at the fields.",
-        "Snow hides paths faster than gossip finds them. I'll remember that when I put bread aside.",
-        "Snowy Village is no small story. A full belly is not the same as safety.",
-        "I will remember Snowy Village as neighbors keeping hearths alive in white country. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:village_snowy",
@@ -290,15 +185,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Trees and snow make quiet approaches easy. I would save bread for the road home.",
-        "If anyone heads for Taiga Village, tell them: Follow torchlight and respect their stores. I will be at the fields.",
-        "Spruce shadows can hide a lot. I'll remember that when I put bread aside.",
-        "Taiga Village is no small story. A full belly is not the same as safety.",
-        "I will remember Taiga Village as neighbors tucked among cold trees. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:village_taiga",
@@ -309,15 +197,8 @@
       "request": "share_story",
       "lines": [
         "{target}? Illagers make a house feel like a threat. I would save bread for the road home.",
-        "If anyone heads for Woodland Mansion, tell them: Don't enter alone, and do not trust the quiet rooms. I will be at the fields.",
-        "Dark oak walls can hold too many axes. I'll remember that when I put bread aside.",
-        "Woodland Mansion is no small story. A full belly is not the same as safety.",
-        "I will remember Woodland Mansion as a huge house that forgot how to be a home. I will keep bread aside for the road.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+        "So that is what {target} is like. I am glad you made it back.",
+        "I have never been to {target}. Thanks for telling me about it."
       ],
       "option": "adult_share_story",
       "story_structure": "minecraft:woodland_mansion",

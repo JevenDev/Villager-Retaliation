@@ -414,7 +414,7 @@ const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "g
 const questFactScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "quest", "quest_progress", "player_quest", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const questCompletionScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const questBranchLockEvents = new Set(["started", "start", "accepted", "begin", "begun", "completed", "complete", "turn_in", "turnin", "finish", "finished"]);
-const forcedDialogueTriggers = new Set(["container_theft", "container_opened", "container_broken", "retaliation_started", "low_guts_rally", "player_raid_betrayal", "player_item_proximity", "trade_refresh", "quest"]);
+const forcedDialogueTriggers = new Set(["container_theft", "container_opened", "container_broken", "retaliation_started", "low_guts_rally", "low_guts_pursuit_abandoned", "low_guts_counter_completed", "retaliation_target_escaped", "retaliation_search_expired", "player_raid_betrayal", "player_item_proximity", "trade_refresh", "quest"]);
 const forcedDialogueOutputModes = new Set(["forced_dialogue", "chat"]);
 const dialogueTreeActionKeys = new Set([
   "type",
@@ -579,6 +579,7 @@ const knownPlaceholders = new Set([
   "count",
   "current_stage",
   "current_village",
+  "currency",
   "current_villager",
   "cousin",
   "cousin_possessive",
@@ -656,7 +657,9 @@ const knownPlaceholders = new Set([
   "max_order_count_word",
   "max_order_word",
   "max_orders",
+  "maximum_wager",
   "mode",
+  "mount",
   "new_time_remaining",
   "niece_nephew",
   "niece_nephew_possessive",
@@ -806,8 +809,10 @@ const knownPlaceholders = new Set([
   "victim_profession",
   "visited_target",
   "villager",
+  "villager_losses",
   "villager_name",
   "villager_possessive",
+  "villager_wins",
   "wait_day_word",
   "wait_days",
   "work_area",
