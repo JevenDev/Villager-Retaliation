@@ -38,6 +38,7 @@ import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.trade.VillagerTradeMemory;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
 import com.jvn.villagerretaliation.util.VillagerDataWarmup;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import net.minecraft.server.MinecraftServer;
@@ -56,6 +57,7 @@ public final class ServerRuntimeState {
 
         VillagerDataWarmup.clearCaches();
         VillagerTaskNavigationUtil.clearRuntimeState();
+        VillagerRetaliationVillagerEquipment.clearRuntimeState();
         VillagerRetaliationVillagerRules.clearCachedChecks();
 
         VillagerGossipHooks.clear();

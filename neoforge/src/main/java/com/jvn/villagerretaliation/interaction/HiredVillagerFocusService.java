@@ -33,6 +33,7 @@ public final class HiredVillagerFocusService {
             return;
         }
 
+        HiredVillagerContractService.expireHireContractIfNeeded(level, villager);
         suppressInteractionsWithBusyHiredVillagers(level, villager);
         if (shouldSkipHiredFocus(level, villager)) {
             return;
@@ -108,7 +109,7 @@ public final class HiredVillagerFocusService {
                 || VillagerConversationService.isConversing(villager)
                 || (!stressWorker && villager.getTarget() != null)
                 || villager.getLastHurtByMob() != null
-                || !HiredVillagerContractService.isHired(level, villager);
+                || !HiredVillagerContractService.hasActiveOrPendingContract(villager);
     }
 
     public static void suppressNonWorkAi(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -217,6 +218,15 @@ public final class HiredVillagerFocusService {
             return false;
         }
         HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        return shouldSuppressForActiveHiredJob(level, villager, state, role, worker);
+    }
+
+    private static boolean shouldSuppressForActiveHiredJob(
+            ServerLevel level,
+            Villager villager,
+            CompoundTag state,
+            HiredVillagerRole role,
+            HiredWorkerBrain.Snapshot worker) {
         if (hasAssignedRoute(role, state)) {
             return true;
         }
@@ -228,9 +238,10 @@ public final class HiredVillagerFocusService {
                     worker.targetPos() != null;
             case MOVING_TO_STORAGE, DEPOSITING, WAITING_FOR_MATERIALS ->
                     worker.storageTargetPos() != null;
-            case RETURNING_TO_WORK_AREA, SELECTING_TARGET, IDLE, FAILED_COOLDOWN,
-                    PAUSED_FULL_INVENTORY, PAUSED_STORAGE_FULL, PAUSED_NO_STORAGE,
-                    NO_WORK_AREA, PAUSED_MISSING_TOOL -> true;
+            case RETURNING_TO_WORK_AREA, SELECTING_TARGET, IDLE, AWAITING_INSTRUCTION,
+                    FAILED_COOLDOWN, PAUSED_FULL_INVENTORY, PAUSED_STORAGE_FULL,
+                    PAUSED_OUTPUT_BACKPRESSURE, PAUSED_NO_STORAGE, NO_WORK_AREA,
+                    PAUSED_MISSING_TOOL -> true;
             default -> false;
         };
     }
@@ -246,7 +257,7 @@ public final class HiredVillagerFocusService {
         HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(state, level.getGameTime());
         return hasAssignedRoute(role, state)
                 || shouldLetFarmerBrainHandleFields(level, villager, worker, role)
-                || shouldSuppressForActiveHiredJob(level, villager, state, role);
+                || shouldSuppressForActiveHiredJob(level, villager, state, role, worker);
     }
 
     private static boolean hasAssignedRoute(HiredVillagerRole role, CompoundTag state) {
@@ -281,12 +292,16 @@ public final class HiredVillagerFocusService {
                 || VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
             return null;
         }
-        UUID hirerId = HiredVillagerContractService.getHirer(level, villager).orElse(null);
-        if (hirerId == null || level.getServer().getPlayerList().getPlayer(hirerId) == null) {
+        HireContractSnapshot contract = HiredVillagerContractService.snapshot(level, villager);
+        UUID hirerId = contract.hirer().orElse(null);
+        if (!contract.hired()
+                || contract.awaitingAutoPayment()
+                || hirerId == null
+                || level.getServer().getPlayerList().getPlayer(hirerId) == null) {
             return null;
         }
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        return role != null && HiredRoleWorkerRegistry.get(role) != null ? role : null;
+        HiredVillagerRole role = contract.role();
+        return HiredRoleWorkerRegistry.get(role) != null ? role : null;
     }
 
     private static Activity scheduledActivity(ServerLevel level, Brain<Villager> brain) {

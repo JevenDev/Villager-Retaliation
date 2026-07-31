@@ -76,6 +76,7 @@ import com.jvn.villagerretaliation.villager.VillagerContainerClimbGuard;
 import com.jvn.villagerretaliation.villager.VillagerNaturalJobArmor;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.jvn.villagerretaliation.villager.VillagerSleepHealingService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -443,6 +444,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (!event.getLevel().isClientSide() && event.getEntity() instanceof AbstractVillager villager) {
+            VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
+        }
         if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
             ContainerFilterResolver.invalidateFrame(level, frame);
         }
@@ -895,6 +899,7 @@ public final class VillagerRetaliationEvents {
         VillagerProfileManager.onEntityLeaveLevel(event);
         VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
         if (event.getEntity() instanceof AbstractVillager villager) {
+            VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
             VillagerTradeUseTracker.forget(villager);
         }
         if (event.getEntity() instanceof Villager villager) {

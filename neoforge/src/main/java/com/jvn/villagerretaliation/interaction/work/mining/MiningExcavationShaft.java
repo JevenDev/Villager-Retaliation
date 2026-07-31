@@ -6,13 +6,17 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathTarget;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -24,6 +28,8 @@ final class MiningExcavationShaft {
     private static final String Z_TAG = "ExcavationLadderZ";
     private static final String FACING_TAG = "ExcavationLadderFacing";
     private static final int SURFACE_ENTRY_SEARCH_RADIUS = 2;
+    private static final long SURFACE_ENTRY_CACHE_TICKS = 20L * 10L;
+    private static final Map<Villager, CachedSurfaceEntry> SURFACE_ENTRY_TARGETS = new IdentityHashMap<>();
 
     private MiningExcavationShaft() {
     }
@@ -51,6 +57,7 @@ final class MiningExcavationShaft {
         BlockPos entry = entryTarget(level, context);
         if (entry != null) {
             if (isAtEntry(villager, entry) || isAtSurfaceEntry(villager, entry)) {
+                invalidateSurfaceEntryTarget(villager);
                 return entry;
             }
             BlockPos surfaceEntry = bestSurfaceEntryTarget(level, villager, context, entry);
@@ -65,6 +72,16 @@ final class MiningExcavationShaft {
                 context.workMax().getY() + 1,
                 context.workCenter().getZ());
         return level.hasChunkAt(fallback) ? fallback : context.workCenter();
+    }
+
+    static void invalidateSurfaceEntryTarget(Villager villager) {
+        if (villager != null) {
+            SURFACE_ENTRY_TARGETS.remove(villager);
+        }
+    }
+
+    static void clearRuntimeState() {
+        SURFACE_ENTRY_TARGETS.clear();
     }
 
     static BlockPos currentLayerDescentTarget(ServerLevel level, HiredWorkContext context) {
@@ -394,6 +411,19 @@ final class MiningExcavationShaft {
             Villager villager,
             HiredWorkContext context,
             BlockPos ladderEntry) {
+        CachedSurfaceEntry cached = SURFACE_ENTRY_TARGETS.get(villager);
+        if (cached != null
+                && cached.matches(level, context, ladderEntry)
+                && isValidSurfaceEntry(level, cached.target())
+                && (level.getGameTime() < cached.expiresGameTime()
+                || !villager.getNavigation().isDone()
+                && cached.target().equals(villager.getNavigation().getTargetPos()))) {
+            return cached.target();
+        }
+        if (cached != null) {
+            SURFACE_ENTRY_TARGETS.remove(villager);
+        }
+
         int entryY = context.workMax().getY() + 1;
         List<SurfaceEntry> surfaceEntries = new ArrayList<>();
         addSurfaceEntry(level, villager, context, surfaceEntries, ladderEntry, new BlockPos(
@@ -416,10 +446,24 @@ final class MiningExcavationShaft {
             }
             Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
             if (path != null && path.canReach()) {
-                return candidate.pos();
+                return rememberSurfaceEntryTarget(level, villager, context, ladderEntry, candidate.pos());
             }
         }
-        return fallback;
+        return rememberSurfaceEntryTarget(level, villager, context, ladderEntry, fallback);
+    }
+
+    private static BlockPos rememberSurfaceEntryTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos ladderEntry,
+            BlockPos target) {
+        if (target != null) {
+            SURFACE_ENTRY_TARGETS.put(villager, new CachedSurfaceEntry(
+                    level.dimension(), context.workMin(), context.workMax(), ladderEntry, target,
+                    level.getGameTime() + SURFACE_ENTRY_CACHE_TICKS));
+        }
+        return target;
     }
 
     private static void addSurfaceEntry(
@@ -665,5 +709,20 @@ final class MiningExcavationShaft {
     }
 
     private record SurfaceEntry(BlockPos pos, double score) {
+    }
+
+    private record CachedSurfaceEntry(
+            ResourceKey<Level> dimension,
+            BlockPos workMin,
+            BlockPos workMax,
+            BlockPos ladderEntry,
+            BlockPos target,
+            long expiresGameTime) {
+        private boolean matches(ServerLevel level, HiredWorkContext context, BlockPos currentLadderEntry) {
+            return dimension.equals(level.dimension())
+                    && workMin.equals(context.workMin())
+                    && workMax.equals(context.workMax())
+                    && java.util.Objects.equals(ladderEntry, currentLadderEntry);
+        }
     }
 }

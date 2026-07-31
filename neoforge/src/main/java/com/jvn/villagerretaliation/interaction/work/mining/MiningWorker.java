@@ -56,6 +56,14 @@ public final class MiningWorker extends AbstractBlockWorker {
         return MiningExcavationSupport.returnTarget(level, villager, context);
     }
 
+    public static void invalidateExcavationReturnTarget(Villager villager) {
+        MiningExcavationShaft.invalidateSurfaceEntryTarget(villager);
+    }
+
+    public static void clearExcavationReturnTargets() {
+        MiningExcavationShaft.clearRuntimeState();
+    }
+
     public static String phase(HiredWorkContext context) {
         return MiningWorkerState.phase(context).id();
     }
@@ -379,6 +387,7 @@ public final class MiningWorker extends AbstractBlockWorker {
     }
 
     private void resetRuntimeState(ServerLevel level, Villager villager, HiredWorkContext context) {
+        invalidateExcavationReturnTarget(villager);
         HiredWorkPlan.clear(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);
         clearActiveBreakingTarget(level, context, villager);
