@@ -35,6 +35,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -48,6 +49,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
@@ -807,6 +810,215 @@ public final class DuelGameTests {
                 DuelService.resolveForTest(player, DuelResult.CANCELLED);
             }
         });
+    }
+
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void crashRecoveryRestoresAssignedSnapshotsAndEscrow(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        player.getInventory().setItem(4, new ItemStack(Items.GOLD_INGOT, 5));
+        player.getInventory().selected = 4;
+        villager.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_SWORD));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.BREAD, 2));
+
+        player.getInventory().add(VillagerCurrencyResources.createStack(participant.level().getServer(), 8));
+        int walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
+        if (walletBefore < 8) {
+            VillagerWalletService.addCurrency(
+                    villager, 8 - walletBefore, VillagerWalletService.WalletSource.DUEL);
+            walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
+        }
+
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.ARMORED, 8);
+        helper.assertTrue(start.started(), "recovery duel should start: " + start.reason());
+        player.getInventory().add(new ItemStack(Items.DIAMOND_BLOCK, 4));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.EMERALD_BLOCK));
+
+        DuelService.forgetRuntimeStateForTest();
+        helper.assertTrue(DuelService.recoverPendingPlayer(player),
+                "orphaned player snapshot should recover after runtime state is lost");
+        helper.assertTrue(DuelService.recoverPendingVillager(villager),
+                "orphaned villager snapshot should recover after runtime state is lost");
+        helper.assertValueEqual(player.getInventory().countItem(Items.GOLD_INGOT), 5,
+                "crash recovery must restore the original player inventory");
+        helper.assertValueEqual(player.getInventory().countItem(Items.DIAMOND_BLOCK), 0,
+                "crash recovery must discard temporary duel inventory");
+        helper.assertValueEqual(player.getInventory().selected, 4,
+                "crash recovery must restore the selected slot");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(player), 8,
+                "crash recovery must refund the player's escrow");
+        helper.assertTrue(villager.getMainHandItem().is(Items.DIAMOND_SWORD),
+                "crash recovery must restore the villager's original equipment");
+        helper.assertValueEqual(VillagerInventoryAccess.captureFullInventory(villager).stream()
+                        .filter(stack -> stack.is(Items.BREAD)).mapToInt(ItemStack::getCount).sum(),
+                2, "crash recovery must restore the villager's original inventory");
+        helper.assertValueEqual(countVillagerItem(villager, Items.EMERALD_BLOCK), 0,
+                "crash recovery must discard temporary villager inventory");
+        if (!VillagerWalletService.hasUnlimitedCurrency()) {
+            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBefore,
+                    "crash recovery must refund the villager's escrow");
+        }
+        helper.assertFalse(DuelService.recoverPendingPlayer(player),
+                "player crash recovery must be idempotent");
+        helper.assertFalse(DuelService.recoverPendingVillager(villager),
+                "villager crash recovery must be idempotent");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void activeDuelistsCannotDamageThirdParties(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        Villager outsider = helper.spawn(EntityType.VILLAGER, 4, 2, 4);
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.MELEE, 0);
+        helper.assertTrue(start.started(), "isolation duel should start: " + start.reason());
+        try {
+            LivingIncomingDamageEvent outgoing = new LivingIncomingDamageEvent(
+                    outsider,
+                    new DamageContainer(participant.level().damageSources().playerAttack(player), 4.0F));
+            helper.assertTrue(DuelService.onIncomingDamage(outgoing),
+                    "outgoing third-party damage should be handled by the duel policy");
+            helper.assertTrue(outgoing.isCanceled() && outgoing.getAmount() == 0.0F,
+                    "duelists must not damage non-opponents");
+
+            AttackEntityEvent directAttack = new AttackEntityEvent(player, outsider);
+            DuelService.onAttackEntity(directAttack);
+            helper.assertTrue(directAttack.isCanceled(),
+                    "direct attacks against non-opponents must be canceled before damage");
+
+            LivingIncomingDamageEvent incoming = new LivingIncomingDamageEvent(
+                    player,
+                    new DamageContainer(participant.level().damageSources().mobAttack(outsider), 4.0F));
+            helper.assertTrue(DuelService.onIncomingDamage(incoming),
+                    "incoming third-party damage should be handled by the duel policy");
+            helper.assertTrue(incoming.isCanceled() && incoming.getAmount() == 0.0F,
+                    "third parties must not interfere with active duelists");
+            helper.succeed();
+        } finally {
+            DuelService.resolveForTest(player, DuelResult.CANCELLED);
+        }
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void firstKnockoutResultCannotBeOverwritten(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.BARE_HANDED, 0);
+        helper.assertTrue(start.started(), "knockout race duel should start: " + start.reason());
+        try {
+            villager.setHealth(1.0F);
+            player.setHealth(1.0F);
+            LivingDamageEvent.Pre villagerKnockout = new LivingDamageEvent.Pre(
+                    villager,
+                    new DamageContainer(participant.level().damageSources().playerAttack(player), 4.0F));
+            helper.assertTrue(DuelService.onFinalDamage(villagerKnockout),
+                    "villager knockout should be handled by the duel policy");
+            helper.assertValueEqual(DuelService.pendingResultForTest(player), DuelResult.PLAYER_WIN,
+                    "the first knockout should decide the result");
+
+            LivingDamageEvent.Pre latePlayerKnockout = new LivingDamageEvent.Pre(
+                    player,
+                    new DamageContainer(participant.level().damageSources().mobAttack(villager), 4.0F));
+            helper.assertTrue(DuelService.onFinalDamage(latePlayerKnockout),
+                    "late player knockout should still be made non-lethal");
+            helper.assertValueEqual(DuelService.pendingResultForTest(player), DuelResult.PLAYER_WIN,
+                    "a later final-damage event must not overwrite the first knockout");
+            helper.succeed();
+        } finally {
+            DuelService.resolveForTest(player, DuelResult.CANCELLED);
+        }
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void trackedDuelProjectilesAreRemovedOutsideTheArena(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        DuelService.StartResult start = DuelService.start(
+                player, participant.villager(), DuelLoadout.RANGED, 0);
+        helper.assertTrue(start.started(), "projectile cleanup duel should start: " + start.reason());
+
+        Arrow arrow = new Arrow(
+                participant.level(), player, new ItemStack(Items.ARROW), new ItemStack(Items.BOW));
+        arrow.moveTo(player.getX() + 60.0D, player.getY(), player.getZ(), 0.0F, 0.0F);
+        participant.level().addFreshEntity(arrow);
+        DuelService.onEntityJoinLevel(new EntityJoinLevelEvent(arrow, participant.level()));
+        helper.assertFalse(arrow.isRemoved(), "tracked projectile fixture should be live before resolution");
+
+        helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW),
+                "projectile cleanup duel should resolve");
+        helper.assertTrue(arrow.isRemoved(),
+                "tracked duel projectiles must be removed even beyond the former cleanup box");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void missingVillagerRefundsEscrowWhenItReturns(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        player.getInventory().add(VillagerCurrencyResources.createStack(participant.level().getServer(), 8));
+        int walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
+        if (walletBefore < 8) {
+            VillagerWalletService.addCurrency(
+                    villager, 8 - walletBefore, VillagerWalletService.WalletSource.DUEL);
+            walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
+        }
+
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.MELEE, 8);
+        helper.assertTrue(start.started(), "missing-villager duel should start: " + start.reason());
+        villager.remove(Entity.RemovalReason.CHANGED_DIMENSION);
+        helper.assertTrue(DuelService.resolveForTest(player, DuelResult.CANCELLED),
+                "duel should cancel while the villager is unresolved");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(player), 8,
+                "the resolved player should receive their own refund");
+        if (!VillagerWalletService.hasUnlimitedCurrency()) {
+            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBefore - 8,
+                    "the unresolved villager refund should remain pending");
+        }
+
+        helper.assertTrue(DuelService.recoverPendingVillager(villager),
+                "the returning villager should consume its pending recovery");
+        if (!VillagerWalletService.hasUnlimitedCurrency()) {
+            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBefore,
+                    "the returning villager should receive its escrow refund");
+        }
+        helper.assertFalse(DuelService.recoverPendingVillager(villager),
+                "the deferred villager refund must settle exactly once");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void spectatorsAreExcludedFromGeneralClearanceAndRemainRewardEligible(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager spectator = helper.spawn(EntityType.VILLAGER, 4, 2, 4);
+        DuelService.StartResult start = DuelService.start(
+                player, participant.villager(), DuelLoadout.BARE_HANDED, 0);
+        helper.assertTrue(start.started(), "spectator clearance duel should start: " + start.reason());
+        try {
+            DuelService.addSpectatorForTest(player, spectator);
+            spectator.setTarget(player);
+            spectator.setAggressive(true);
+            DuelService.onVillagerTickPost(spectator);
+            helper.assertTrue(spectator.getTarget() == player && spectator.isAggressive(),
+                    "general arena clearance must not overwrite recruited spectator state");
+
+            int previousRadius = VillagerRetaliationConfig.DUEL_SPECTATOR_RADIUS.get();
+            try {
+                VillagerRetaliationConfig.DUEL_SPECTATOR_RADIUS.set(8);
+                helper.assertTrue(DuelSpectators.rewardRadiusSqr(128) >= 133.0D * 133.0D,
+                        "maintained spectators must remain reward-eligible when the arena exceeds the search radius");
+            } finally {
+                VillagerRetaliationConfig.DUEL_SPECTATOR_RADIUS.set(previousRadius);
+            }
+            helper.succeed();
+        } finally {
+            DuelService.resolveForTest(player, DuelResult.CANCELLED);
+        }
     }
 
     private static Participant participant(GameTestHelper helper) {

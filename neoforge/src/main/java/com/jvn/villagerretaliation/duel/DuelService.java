@@ -26,6 +26,7 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,10 +52,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
@@ -74,6 +75,7 @@ public final class DuelService {
     private static final double VILLAGER_CLEARANCE = 3.0D;
     private static final int LOSS_PENALTY_TICKS = 100;
     private static final int LOSS_SLOWNESS_AMPLIFIER = 1;
+    private static final String DUEL_PROJECTILE_TAG = "VillagerRetaliationDuelProjectile";
     private static final Map<UUID, ActiveDuel> BY_ID = new HashMap<>();
     private static final Map<UUID, UUID> BY_ENTITY = new HashMap<>();
     private static final Map<UUID, FinisherPermission> FINISHERS = new HashMap<>();
@@ -169,6 +171,7 @@ public final class DuelService {
         VillagerCombatBehavior.reset(villager);
         VillagerDownedService.ensureStandingDimensions(villager);
         DuelEquipment.Snapshots snapshots = DuelEquipment.prepare(player, villager, loadout);
+        DuelEquipment.persistRecovery(player, villager, id, loadout, stake, snapshots);
         ActiveDuel duel = new ActiveDuel(id, level.dimension(), player.getUUID(), villager.getUUID(), loadout, stake,
                 center, VillagerRetaliationConfig.DUEL_ARENA_RADIUS.get(),
                 VillagerRetaliationConfig.DUEL_BOUNDARY_GRACE_TICKS.get(),
@@ -204,7 +207,9 @@ public final class DuelService {
         ServerPlayer player = server.getPlayerList().getPlayer(duel.playerId());
         Villager villager = level != null && level.getEntity(duel.villagerId()) instanceof Villager found ? found : null;
         if (level == null || villager == null || !villager.isAlive()) { finish(server, duel, DuelResult.CANCELLED, false); return; }
-        if (player == null) { finish(server, duel, DuelResult.VILLAGER_WIN, false); return; }
+        // Normal logouts resolve through onPlayerLogout with a live player hint. If that hook was
+        // missed, cancellation is the only settlement that can be recovered safely for both sides.
+        if (player == null) { finish(server, duel, DuelResult.CANCELLED, false); return; }
         if (player.serverLevel() != level || !player.isAlive()) { finish(server, duel, DuelResult.CANCELLED, false); return; }
         if (duel.pendingResult() != null) { finish(server, duel, duel.pendingResult(), duel.villagerKnockedOut()); return; }
         if (player.containerMenu != player.inventoryMenu) {
@@ -340,7 +345,14 @@ public final class DuelService {
     }
 
     public static boolean onIncomingDamage(LivingIncomingDamageEvent event) {
-        if (event.getSource().getEntity() instanceof ServerPlayer player && isPostLossAttackLocked(player)) {
+        LivingEntity attacker = event.getSource().getEntity() instanceof LivingEntity living ? living : null;
+        ActiveDuel attackerDuel = active(attacker);
+        if (attackerDuel != null && !isOpponent(attackerDuel, event.getEntity(), attacker)) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return true;
+        }
+        if (attacker instanceof ServerPlayer player && isPostLossAttackLocked(player)) {
             event.setCanceled(true);
             event.setAmount(0.0F);
             return true;
@@ -354,7 +366,6 @@ public final class DuelService {
 
         ActiveDuel duel = active(event.getEntity());
         if (duel == null) return false;
-        LivingEntity attacker = event.getSource().getEntity() instanceof LivingEntity living ? living : null;
         long now = ((ServerLevel) event.getEntity().level()).getServer().overworld().getGameTime();
         if (!isOpponent(duel, event.getEntity(), attacker) || now < duel.countdownEndsAt()) {
             event.setCanceled(true); event.setAmount(0.0F); return true;
@@ -369,9 +380,13 @@ public final class DuelService {
     }
 
     public static void onAttackEntity(AttackEntityEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player && isPostLossAttackLocked(player)) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        ActiveDuel duel = active(player);
+        if (duel != null && !event.getTarget().getUUID().equals(duel.villagerId())) {
             event.setCanceled(true);
+            return;
         }
+        if (isPostLossAttackLocked(player)) event.setCanceled(true);
     }
 
     public static boolean onFinalDamage(LivingDamageEvent.Pre event) {
@@ -380,10 +395,13 @@ public final class DuelService {
         LivingEntity attacker = event.getSource().getEntity() instanceof LivingEntity living ? living : null;
         if (!isOpponent(duel, event.getEntity(), attacker)) { event.setNewDamage(0.0F); return true; }
         float maximum = Math.max(0.0F, event.getEntity().getHealth() - 1.0F);
-        if (event.getNewDamage() >= maximum) {
+        if (event.getNewDamage() > 0.0F && event.getNewDamage() >= maximum) {
             event.setNewDamage(maximum);
-            duel.pendingResult(event.getEntity() instanceof Villager ? DuelResult.PLAYER_WIN : DuelResult.VILLAGER_WIN);
-            duel.villagerKnockedOut(event.getEntity() instanceof Villager);
+            if (duel.pendingResult() == null) {
+                duel.pendingResult(event.getEntity() instanceof Villager
+                        ? DuelResult.PLAYER_WIN : DuelResult.VILLAGER_WIN);
+                duel.villagerKnockedOut(event.getEntity() instanceof Villager);
+            }
         }
         return true;
     }
@@ -437,10 +455,34 @@ public final class DuelService {
 
     public static boolean isParticipant(LivingEntity entity) { return active(entity) != null; }
 
+    public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof Projectile projectile)) return;
+        if (projectile.getPersistentData().hasUUID(DUEL_PROJECTILE_TAG)) {
+            UUID duelId = projectile.getPersistentData().getUUID(DUEL_PROJECTILE_TAG);
+            ActiveDuel duel = BY_ID.get(duelId);
+            if (duel == null) {
+                projectile.discard();
+            } else {
+                duel.projectiles().add(projectile.getUUID());
+            }
+            return;
+        }
+        if (projectile.getOwner() instanceof LivingEntity owner) {
+            ActiveDuel duel = active(owner);
+            if (duel != null) {
+                projectile.getPersistentData().putUUID(DUEL_PROJECTILE_TAG, duel.id());
+                duel.projectiles().add(projectile.getUUID());
+            }
+        }
+    }
+
     public static void onVillagerTickPost(Villager villager) {
-        if (!(villager.level() instanceof ServerLevel level) || isParticipant(villager)) return;
+        if (!(villager.level() instanceof ServerLevel level)) return;
+        recoverPendingVillager(villager);
+        if (isParticipant(villager)) return;
         for (ActiveDuel duel : BY_ID.values()) {
-            if (!duel.dimension().equals(level.dimension())) continue;
+            if (!duel.dimension().equals(level.dimension())
+                    || duel.spectators().contains(villager.getUUID())) continue;
             LivingEntity target = villager.getTarget();
             if (target != null && (target.getUUID().equals(duel.playerId())
                     || target.getUUID().equals(duel.villagerId()))) {
@@ -484,6 +526,32 @@ public final class DuelService {
         if (duel != null) finish(player.getServer(), duel, DuelResult.VILLAGER_WIN, false, player);
     }
 
+    public static boolean recoverPendingPlayer(ServerPlayer player) {
+        DuelEquipment.PlayerRecovery recovery = DuelEquipment.playerRecovery(player);
+        if (recovery == null || BY_ID.containsKey(recovery.duelId())) return false;
+        recovery.snapshot().restore(player, recovery.loadout() != DuelLoadout.BRING_YOUR_OWN);
+        giveCurrency(player, recovery.stake());
+        DuelEquipment.clearRecovery(player, recovery.duelId());
+        player.inventoryMenu.broadcastFullState();
+        syncInventoryState(player, false, false);
+        return true;
+    }
+
+    public static boolean recoverPendingVillager(Villager villager) {
+        DuelEquipment.VillagerRecovery recovery = DuelEquipment.villagerRecovery(villager);
+        if (recovery == null || BY_ID.containsKey(recovery.duelId())) return false;
+        VillagerCombatBehavior.reset(villager);
+        recovery.snapshot().restore(villager);
+        VillagerWalletService.addCurrency(
+                villager, recovery.stake(), VillagerWalletService.WalletSource.DUEL);
+        DuelEquipment.clearRecovery(villager, recovery.duelId());
+        villager.setTarget(null);
+        villager.setAggressive(false);
+        villager.getNavigation().stop();
+        VillagerRangedCombatHelper.clearDuelState(villager);
+        return true;
+    }
+
     static boolean resolveForTest(ServerPlayer player, DuelResult result) {
         ActiveDuel duel = active(player);
         if (duel == null) return false;
@@ -499,6 +567,21 @@ public final class DuelService {
     }
     static void authorizeFinisherForTest(Villager villager, ServerPlayer player, long expiresAt) {
         FINISHERS.put(villager.getUUID(), new FinisherPermission(player.getUUID(), expiresAt));
+    }
+
+    static DuelResult pendingResultForTest(ServerPlayer player) {
+        ActiveDuel duel = active(player);
+        return duel == null ? null : duel.pendingResult();
+    }
+
+    static void addSpectatorForTest(ServerPlayer player, Villager spectator) {
+        ActiveDuel duel = active(player);
+        if (duel != null) duel.spectators().add(spectator.getUUID());
+    }
+
+    static void forgetRuntimeStateForTest() {
+        BY_ID.clear();
+        BY_ENTITY.clear();
     }
 
     public static void clearRuntimeState(MinecraftServer server) {
@@ -518,11 +601,13 @@ public final class DuelService {
         ServerPlayer listedPlayer = server.getPlayerList().getPlayer(duel.playerId());
         ServerPlayer player = playerHint != null && playerHint.getUUID().equals(duel.playerId()) ? playerHint : listedPlayer;
         Villager villager = level != null && level.getEntity(duel.villagerId()) instanceof Villager found ? found : null;
-        if (level != null) {
-            AABB cleanup = AABB.ofSize(duel.center(), 80.0D, 80.0D, 80.0D);
-            level.getEntitiesOfClass(Projectile.class, cleanup, projectile -> projectile.getOwner() != null
-                    && (projectile.getOwner().getUUID().equals(duel.playerId()) || projectile.getOwner().getUUID().equals(duel.villagerId())))
-                    .forEach(net.minecraft.world.entity.Entity::discard);
+        for (UUID projectileId : duel.projectiles()) {
+            for (ServerLevel candidate : server.getAllLevels()) {
+                if (candidate.getEntity(projectileId) instanceof Projectile projectile) {
+                    projectile.discard();
+                    break;
+                }
+            }
         }
         if (player != null) {
             boolean assignedLoadout = duel.loadout() != DuelLoadout.BRING_YOUR_OWN;
@@ -540,6 +625,8 @@ public final class DuelService {
         }
         if (level != null) DuelSpectators.release(level, duel.spectators());
         settle(player, villager, duel.stake(), result);
+        if (player != null) DuelEquipment.clearRecovery(player, duel.id());
+        if (villager != null) DuelEquipment.clearRecovery(villager, duel.id());
         if (result != DuelResult.CANCELLED && level != null && villager != null) complete(server, level, player, villager, duel, result, knockedOut);
         if (result == DuelResult.VILLAGER_WIN && player != null) applyLossPenalty(server, player);
         if (result == DuelResult.PLAYER_WIN && player != null) playPlayerDuelVictorySound(player);
@@ -580,7 +667,9 @@ public final class DuelService {
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), player == null ? "Player" : player.getGameProfile().getName(),
                 result, duel.stake(), server.overworld().getGameTime(), BlockPos.containing(duel.center()).asLong(), villageId,
                 duel.spectators(), record.villagerWins(), record.villagerLosses()));
-        if (result == DuelResult.PLAYER_WIN && player != null) DuelSpectators.reward(level, duel.spectators(), duel.center(), player);
+        if (result == DuelResult.PLAYER_WIN && player != null) {
+            DuelSpectators.reward(level, duel.spectators(), duel.center(), duel.arenaRadius(), player);
+        }
         if (knockedOut && VillagerSecondWindCompat.isActive()) {
             boolean enteredDowned = VillagerDownedService.enterDowned(level, villager,
                     new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("duel:" + duel.id())),
@@ -654,7 +743,8 @@ public final class DuelService {
         private final UUID id; private final ResourceKey<Level> dimension; private final UUID playerId, villagerId;
         private final DuelLoadout loadout; private final int stake; private final Vec3 center;
         private final int arenaRadius, boundaryGraceTicks; private final long countdownEndsAt, timeoutAt;
-        private final DuelEquipment.Snapshots snapshots; private final Set<UUID> spectators;
+        private final DuelEquipment.Snapshots snapshots;
+        private final Set<UUID> spectators, projectiles = new HashSet<>();
         private long playerOutsideSince = -1L, villagerOutsideSince = -1L, nextAttackAt;
         private int lastCountdownSecond = -1, lastBoundarySecond = -1;
         private DuelResult pendingResult; private boolean villagerKnockedOut;
@@ -663,12 +753,13 @@ public final class DuelService {
                    DuelEquipment.Snapshots snapshots, Set<UUID> spectators) {
             this.id=id;this.dimension=dimension;this.playerId=playerId;this.villagerId=villagerId;this.loadout=loadout;this.stake=stake;
             this.center=center;this.arenaRadius=arenaRadius;this.boundaryGraceTicks=boundaryGraceTicks;
-            this.countdownEndsAt=countdownEndsAt;this.timeoutAt=timeoutAt;this.snapshots=snapshots;this.spectators=Set.copyOf(spectators);
+            this.countdownEndsAt=countdownEndsAt;this.timeoutAt=timeoutAt;this.snapshots=snapshots;this.spectators=new HashSet<>(spectators);
         }
         UUID id(){return id;} ResourceKey<Level> dimension(){return dimension;} UUID playerId(){return playerId;} UUID villagerId(){return villagerId;}
         DuelLoadout loadout(){return loadout;} int stake(){return stake;} Vec3 center(){return center;}
         int arenaRadius(){return arenaRadius;} int boundaryGraceTicks(){return boundaryGraceTicks;} long countdownEndsAt(){return countdownEndsAt;}
         long timeoutAt(){return timeoutAt;} DuelEquipment.Snapshots snapshots(){return snapshots;} Set<UUID> spectators(){return spectators;}
+        Set<UUID> projectiles(){return projectiles;}
         long playerOutsideSince(){return playerOutsideSince;} void playerOutsideSince(long v){playerOutsideSince=v;}
         long villagerOutsideSince(){return villagerOutsideSince;} void villagerOutsideSince(long v){villagerOutsideSince=v;}
         long nextAttackAt(){return nextAttackAt;} void nextAttackAt(long v){nextAttackAt=v;}

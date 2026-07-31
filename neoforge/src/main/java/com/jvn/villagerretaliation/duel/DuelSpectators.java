@@ -59,12 +59,19 @@ final class DuelSpectators {
         }
     }
 
-    static void reward(ServerLevel level, Set<UUID> ids, Vec3 center, ServerPlayer player) {
+    static void reward(ServerLevel level, Set<UUID> ids, Vec3 center, int arenaRadius, ServerPlayer player) {
         int amount = VillagerRetaliationConfig.DUEL_WATCHER_REPUTATION.get();
-        double radiusSqr = Math.pow(VillagerRetaliationConfig.DUEL_SPECTATOR_RADIUS.get(), 2.0D);
+        double radiusSqr = rewardRadiusSqr(arenaRadius);
         for (UUID id : ids) if (level.getEntity(id) instanceof Villager witness && witness.isAlive()
                 && witness.position().distanceToSqr(center) <= radiusSqr) {
             VillagerReputationManager.addDialogueReputation(level, witness, player, amount);
         }
+    }
+
+    static double rewardRadiusSqr(int arenaRadius) {
+        double radius = Math.max(
+                VillagerRetaliationConfig.DUEL_SPECTATOR_RADIUS.get(),
+                Math.max(0, arenaRadius) + 5.0D);
+        return radius * radius;
     }
 }
