@@ -35,6 +35,7 @@ import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.item.VillagerRecipeFilterData;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
@@ -48,10 +49,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Optional;
+import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -90,7 +94,10 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.ChestBlock;
@@ -433,6 +440,295 @@ public final class VillagerWorkerGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void smelterMovesFromBusyCachedFurnaceToAnotherFurnace(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @SuppressWarnings("unchecked")
+    public static void cookRecipeFilterUsesExactSmokingStation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        BlockPos furnaceRel = new BlockPos(3, 2, 2);
+        BlockPos smokerRel = new BlockPos(2, 2, 3);
+        setBlock(helper, furnaceRel, Blocks.FURNACE.defaultBlockState());
+        setBlock(helper, smokerRel, Blocks.SMOKER.defaultBlockState());
+        Container furnace = container(level, helper.absolutePos(furnaceRel));
+        Container smoker = container(level, helper.absolutePos(smokerRel));
+
+        RecipeType<AbstractCookingRecipe> smoking =
+                (RecipeType<AbstractCookingRecipe>) (RecipeType<?>) RecipeType.SMOKING;
+        RecipeHolder<AbstractCookingRecipe> recipe = level.getRecipeManager()
+                .getRecipeFor(smoking, new SingleRecipeInput(new ItemStack(Items.BEEF)), level)
+                .orElseThrow();
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.RECIPE_FILTER.get());
+        helper.assertTrue(
+                VillagerRecipeFilterData.setRecipe(filter, level, recipe.id()),
+                "smoking recipe should configure");
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        VillagerItemFilterService.replaceFilter(villager, filter);
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.BEEF, 4)).isEmpty(), "beef should fit");
+        helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.COAL, 2)).isEmpty(), "fuel should fit");
+
+        WorkResult result = new CookingWorker().tick(
+                level, villager, fakePlayer(level, "VrExactSmokingCook"), context);
+
+        helper.assertValueEqual(result.status(), "interaction.work.cooking.loaded_input", "smoker load status");
+        helper.assertValueEqual(smoker.getItem(0).getCount(), 4, "exact smoking recipe should use smoker");
+        helper.assertTrue(furnace.getItem(0).isEmpty(), "furnace must remain unused");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @SuppressWarnings("unchecked")
+    public static void smelterRecipeFilterUsesExactBlastingStation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        BlockPos furnaceRel = new BlockPos(3, 2, 2);
+        BlockPos blastRel = new BlockPos(2, 2, 3);
+        setBlock(helper, furnaceRel, Blocks.FURNACE.defaultBlockState());
+        setBlock(helper, blastRel, Blocks.BLAST_FURNACE.defaultBlockState());
+        Container furnace = container(level, helper.absolutePos(furnaceRel));
+        Container blastFurnace = container(level, helper.absolutePos(blastRel));
+
+        RecipeType<AbstractCookingRecipe> blasting =
+                (RecipeType<AbstractCookingRecipe>) (RecipeType<?>) RecipeType.BLASTING;
+        RecipeHolder<AbstractCookingRecipe> recipe = level.getRecipeManager()
+                .getRecipeFor(blasting, new SingleRecipeInput(new ItemStack(Items.RAW_IRON)), level)
+                .orElseThrow();
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.RECIPE_FILTER.get());
+        helper.assertTrue(
+                VillagerRecipeFilterData.setRecipe(filter, level, recipe.id()),
+                "blasting recipe should configure");
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        VillagerItemFilterService.replaceFilter(villager, filter);
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.RAW_IRON, 4)).isEmpty(),
+                "raw iron should fit");
+        helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.COAL, 2)).isEmpty(), "fuel should fit");
+
+        WorkResult result = new SmeltingWorker().tick(
+                level, villager, fakePlayer(level, "VrExactBlastingSmelter"), context);
+
+        helper.assertValueEqual(result.status(), "interaction.work.smelting.loaded_input", "blast furnace load status");
+        helper.assertValueEqual(blastFurnace.getItem(0).getCount(), 4, "exact blasting recipe should use blast furnace");
+        helper.assertTrue(furnace.getItem(0).isEmpty(), "ordinary furnace must remain unused");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void cookCollectsReadyOutputBeforeCraftingMoreFood(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        BlockPos furnaceRel = new BlockPos(3, 2, 2);
+        setBlock(helper, furnaceRel, Blocks.FURNACE.defaultBlockState());
+        setBlock(helper, new BlockPos(2, 2, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
+        Container furnace = container(level, helper.absolutePos(furnaceRel));
+        furnace.setItem(2, new ItemStack(Items.COOKED_BEEF, 2));
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.BREAD));
+        VillagerItemFilterData.setEntry(filter, 1, new ItemStack(Items.COOKED_BEEF));
+        VillagerItemFilterService.replaceFilter(villager, filter);
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.WHEAT, 3)).isEmpty(), "wheat should fit");
+
+        WorkResult result = new CookingWorker().tick(
+                level, villager, fakePlayer(level, "VrCookOutputPriority"), context);
+
+        helper.assertTrue(result.completed(), "ready furnace output should be collected first");
+        helper.assertTrue(furnace.getItem(2).isEmpty(), "ready cooked food should leave the furnace");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.COOKED_BEEF), 2, "collected cooked beef");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.WHEAT), 3, "wheat should remain unused");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.BREAD), 0, "bread should not be crafted");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void cookSkipsContaminatedFurnaceForCleanStation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 7, 0, 7, 1);
+        BlockPos wrongRel = new BlockPos(3, 2, 2);
+        BlockPos cleanRel = new BlockPos(2, 2, 4);
+        setBlock(helper, wrongRel, Blocks.FURNACE.defaultBlockState());
+        setBlock(helper, cleanRel, Blocks.FURNACE.defaultBlockState());
+        Container wrong = container(level, helper.absolutePos(wrongRel));
+        Container clean = container(level, helper.absolutePos(cleanRel));
+        wrong.setItem(2, new ItemStack(Items.STONE));
+
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 1));
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(6, 4, 6), true);
+        helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.BEEF, 4)).isEmpty(), "beef should fit");
+        helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.COAL, 2)).isEmpty(), "fuel should fit");
+
+        WorkResult result = new CookingWorker().tick(
+                level, villager, fakePlayer(level, "VrCleanCookStation"), context);
+
+        helper.assertValueEqual(result.status(), "interaction.work.cooking.loaded_input", "clean station load status");
+        helper.assertValueEqual(clean.getItem(0).getCount(), 4, "clean furnace should receive food");
+        helper.assertTrue(wrong.getItem(2).is(Items.STONE), "contaminating output must remain untouched");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void smelterSkipsContaminatedFurnaceForCleanStation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 7, 0, 7, 1);
+        BlockPos wrongRel = new BlockPos(3, 2, 2);
+        BlockPos cleanRel = new BlockPos(2, 2, 4);
+        setBlock(helper, wrongRel, Blocks.FURNACE.defaultBlockState());
+        setBlock(helper, cleanRel, Blocks.FURNACE.defaultBlockState());
+        Container wrong = container(level, helper.absolutePos(wrongRel));
+        Container clean = container(level, helper.absolutePos(cleanRel));
+        wrong.setItem(2, new ItemStack(Items.STONE));
+
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 1));
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(6, 4, 6), true);
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.RAW_IRON, 4)).isEmpty(),
+                "raw iron should fit");
+        helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.COAL, 2)).isEmpty(), "fuel should fit");
+
+        WorkResult result = new SmeltingWorker().tick(
+                level, villager, fakePlayer(level, "VrCleanSmeltingStation"), context);
+
+        helper.assertValueEqual(result.status(), "interaction.work.smelting.loaded_input", "clean station load status");
+        helper.assertValueEqual(clean.getItem(0).getCount(), 4, "clean furnace should receive ore");
+        helper.assertTrue(wrong.getItem(2).is(Items.STONE), "contaminating output must remain untouched");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void cookAcceptsKelpWhenCookingResultIsFood(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        BlockPos furnaceRel = new BlockPos(3, 2, 2);
+        setBlock(helper, furnaceRel, Blocks.FURNACE.defaultBlockState());
+        Container furnace = container(level, helper.absolutePos(furnaceRel));
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(4, 4, 4), true);
+        helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.KELP, 4)).isEmpty(), "kelp should fit");
+        helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.COAL, 2)).isEmpty(), "fuel should fit");
+
+        WorkResult result = new CookingWorker().tick(
+                level, villager, fakePlayer(level, "VrKelpCook"), context);
+
+        helper.assertValueEqual(result.status(), "interaction.work.cooking.loaded_input", "kelp load status");
+        helper.assertValueEqual(furnace.getItem(0).getCount(), 4, "kelp should enter the furnace");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void processingFuelRemaindersDoNotGrantPractice(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        BlockPos furnaceRel = new BlockPos(3, 2, 2);
+        setBlock(helper, furnaceRel, Blocks.FURNACE.defaultBlockState());
+        Container furnace = container(level, helper.absolutePos(furnaceRel));
+        furnace.setItem(1, new ItemStack(Items.BUCKET));
+
+        Villager cook = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredWorkContext cookContext = context(
+                helper, cook, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(4, 4, 4), true);
+        WorkResult cookResult = new CookingWorker().tick(
+                level, cook, fakePlayer(level, "VrCookFuelRemainder"), cookContext);
+        helper.assertTrue(cookResult.practice().isEmpty(), "collecting a bucket must not train Cooking");
+        cook.discard();
+
+        furnace.setItem(1, new ItemStack(Items.BUCKET));
+        Villager smelter = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredWorkContext smelterContext = context(
+                helper, smelter, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(4, 4, 4), true);
+        WorkResult smelterResult = new SmeltingWorker().tick(
+                level, smelter, fakePlayer(level, "VrSmelterFuelRemainder"), smelterContext);
+        helper.assertTrue(smelterResult.practice().isEmpty(), "collecting a bucket must not train Smithing");
+        smelter.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void cookRecipeFilterHonorsNarrowedCraftingIngredient(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        setBlock(helper, new BlockPos(3, 2, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
+        RecipeHolder<CraftingRecipe> holder = level.getRecipeManager()
+                .getAllRecipesFor(RecipeType.CRAFTING)
+                .stream()
+                .filter(candidate -> candidate.value()
+                        .getResultItem(level.registryAccess()).is(Items.SUSPICIOUS_STEW))
+                .filter(candidate -> candidate.value().getIngredients().stream()
+                        .anyMatch(ingredient -> ingredient.getItems().length > 1))
+                .findFirst()
+                .orElseThrow();
+        List<Ingredient> ingredients = holder.value().getIngredients();
+        int narrowedSlot = -1;
+        ItemStack narrowedChoice = ItemStack.EMPTY;
+        for (int slot = 0; slot < ingredients.size(); slot++) {
+            ItemStack[] choices = ingredients.get(slot).getItems();
+            if (choices.length > 1) {
+                narrowedSlot = slot;
+                narrowedChoice = choices[choices.length - 1].copyWithCount(1);
+                break;
+            }
+        }
+        helper.assertTrue(narrowedSlot >= 0 && !narrowedChoice.isEmpty(), "alternative ingredient should exist");
+
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.RECIPE_FILTER.get());
+        helper.assertTrue(VillagerRecipeFilterData.setRecipe(filter, level, holder.id()), "recipe should configure");
+        helper.assertTrue(
+                VillagerRecipeFilterData.setIngredient(
+                        filter, level, narrowedSlot, BuiltInRegistries.ITEM.getKey(narrowedChoice.getItem())),
+                "ingredient alternative should narrow");
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        VillagerItemFilterService.replaceFilter(villager, filter);
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        Map<net.minecraft.world.item.Item, Integer> supplied = new LinkedHashMap<>();
+        for (int slot = 0; slot < ingredients.size(); slot++) {
+            Ingredient ingredient = ingredients.get(slot);
+            if (ingredient.isEmpty()) {
+                continue;
+            }
+            ItemStack choice = slot == narrowedSlot ? narrowedChoice : ingredient.getItems()[0];
+            supplied.merge(choice.getItem(), 1, Integer::sum);
+        }
+        supplied.forEach((item, count) ->
+                helper.assertTrue(
+                        context.inventory().insertSupply(new ItemStack(item, count)).isEmpty(),
+                        "recipe ingredient should fit"));
+
+        CookingWorker.CraftingAssessment assessment =
+                CookingWorker.assessCraftingTargets(level, villager, context, filter);
+        helper.assertTrue(assessment.selection() != null, "exact narrowed recipe should plan");
+        helper.assertTrue(
+                assessment.selection().narrowedIngredients().get(narrowedSlot) == narrowedChoice.getItem(),
+                "plan should retain the narrowed ingredient");
+        WorkResult result = new CookingWorker().tick(
+                level, villager, fakePlayer(level, "VrNarrowedRecipeCook"), context);
+        helper.assertTrue(result.completed(), "exact narrowed recipe should craft");
+        helper.assertTrue(
+                countInventoryItem(context.inventory(), Items.SUSPICIOUS_STEW) > 0,
+                "configured recipe output should be produced");
+        villager.discard();
+        helper.succeed();
+    }
+
         buildFloor(helper, 0, 6, 0, 6, 1);
         BlockPos busyRel = new BlockPos(3, 2, 2);
         BlockPos availableRel = new BlockPos(2, 2, 3);

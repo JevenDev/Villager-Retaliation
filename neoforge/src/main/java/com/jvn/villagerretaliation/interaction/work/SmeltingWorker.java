@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
+import com.jvn.villagerretaliation.item.VillagerFilterMatcher;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.ArrayList;
@@ -57,7 +59,9 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             }
         }
 
-        BlockPos station = nearestSmeltingStation(level, villager, context);
+        ItemStack processingFilter = VillagerItemFilterService.assignedFilter(villager);
+        Predicate<ItemStack> desiredOutput = stack -> isDesiredSmeltedOutput(level, processingFilter, stack);
+        BlockPos station = nearestSmeltingStation(level, villager, context, processingFilter, desiredOutput);
         if (station == null) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "no_smelting_station", level.getGameTime() + 100L);
@@ -74,14 +78,14 @@ public final class SmeltingWorker extends AbstractBlockWorker {
 
         RecipeType<AbstractCookingRecipe> recipeType = recipeType(furnace);
         ItemStack output = furnace.getItem(RESULT_SLOT);
-        if (!output.isEmpty() && !isSmeltedOre(output)) {
+        if (!output.isEmpty() && !desiredOutput.test(output)) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "smelting_wrong_output", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, station);
             return WorkResult.idle("interaction.work.smelting.wrong_output");
         }
         ItemStack input = furnace.getItem(INPUT_SLOT);
-        if (!input.isEmpty() && !isSmeltableOre(level, input, recipeType)) {
+        if (!input.isEmpty() && !isSmeltableOre(level, input, recipeType, processingFilter)) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "smelting_wrong_input", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, station);
@@ -97,7 +101,8 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         }
 
         if (output.isEmpty() && !fuelRemainder) {
-            WorkResult gatheredMaterials = gatherSmeltingMaterials(level, villager, context, station, furnace, recipeType);
+            WorkResult gatheredMaterials = gatherSmeltingMaterials(
+                    level, villager, context, station, furnace, recipeType, processingFilter);
             if (gatheredMaterials != null) {
                 context.setProgressTicks(0);
                 return gatheredMaterials;
@@ -131,7 +136,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         holdWorkPosition(villager, target);
         setTaskState(context, HiredWorkerTaskState.WORKING, station);
         context.setProgressTicks(0);
-        return workSmeltingStation(level, villager, context, furnace, station, recipeType);
+        return workSmeltingStation(level, villager, context, furnace, station, recipeType, processingFilter);
     }
 
     private WorkResult workSmeltingStation(
@@ -140,7 +145,8 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             AbstractFurnaceBlockEntity furnace,
             BlockPos station,
-            RecipeType<AbstractCookingRecipe> recipeType) {
+            RecipeType<AbstractCookingRecipe> recipeType,
+            ItemStack processingFilter) {
         ItemStack output = furnace.getItem(RESULT_SLOT);
         if (!output.isEmpty()) {
             return collectOutput(level, villager, context, furnace, station, RESULT_SLOT, output, "interaction.work.smelting.collected_output", true);
@@ -153,7 +159,8 @@ public final class SmeltingWorker extends AbstractBlockWorker {
 
         ItemStack input = furnace.getItem(INPUT_SLOT);
         if (input.isEmpty()) {
-            ItemStack carriedOre = context.inventory().findSupply(stack -> isSmeltableOre(level, stack, recipeType));
+            ItemStack carriedOre = context.inventory().findSupply(
+                    stack -> isSmeltableOre(level, stack, recipeType, processingFilter));
             if (carriedOre.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_smelting_raw_ore", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, station);
@@ -230,11 +237,15 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         }
         updateFurnace(level, furnace, station);
         useWorkItem(level, villager, removed);
-        var practice = HiredWorkPractice.batch(
-                VillagerSkill.SMITHING, "hired:smelting:batch", removed.getCount(), removed.getItem().hashCode());
-        return completed
-                ? WorkResult.completedWithPractice(status, itemReplacements(removed), practice)
-                : WorkResult.progressedWithPractice(status, itemReplacements(removed), practice);
+        if (!completed) {
+            return WorkResult.progressed(status, itemReplacements(removed));
+        }
+        return WorkResult.completedWithPractice(
+                status,
+                itemReplacements(removed),
+                HiredWorkPractice.batch(
+                        VillagerSkill.SMITHING, "hired:smelting:batch",
+                        removed.getCount(), removed.getItem().hashCode()));
     }
 
     private WorkResult gatherSmeltingMaterials(
@@ -243,8 +254,9 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             BlockPos station,
             AbstractFurnaceBlockEntity furnace,
-            RecipeType<AbstractCookingRecipe> recipeType) {
-        List<MaterialNeed> needs = materialNeeds(level, villager, context, furnace, recipeType);
+            RecipeType<AbstractCookingRecipe> recipeType,
+            ItemStack processingFilter) {
+        List<MaterialNeed> needs = materialNeeds(level, villager, context, furnace, recipeType, processingFilter);
         if (needs.isEmpty()) {
             HiredStorageNavigationGoal.clearStorageTarget(context);
             return null;
@@ -344,9 +356,11 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             AbstractFurnaceBlockEntity furnace,
-            RecipeType<AbstractCookingRecipe> recipeType) {
+            RecipeType<AbstractCookingRecipe> recipeType,
+            ItemStack processingFilter) {
         List<MaterialNeed> needs = new ArrayList<>();
-        Predicate<ItemStack> rawOrePredicate = stack -> isSmeltableOre(level, stack, recipeType);
+        Predicate<ItemStack> rawOrePredicate =
+                stack -> isSmeltableOre(level, stack, recipeType, processingFilter);
         Predicate<ItemStack> fuelPredicate = stack -> isFuel(stack, recipeType);
         ItemStack input = furnace.getItem(INPUT_SLOT);
         if (input.isEmpty() && HiredSupplyCrafting.countCarried(context, rawOrePredicate) <= 0) {
@@ -381,11 +395,17 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         return false;
     }
 
-    private BlockPos nearestSmeltingStation(ServerLevel level, Villager villager, HiredWorkContext context) {
+    private BlockPos nearestSmeltingStation(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            ItemStack processingFilter,
+            Predicate<ItemStack> desiredOutput) {
         CompoundTag state = context.state();
         BlockPos cached = cachedPos(state);
         if (isValidSmeltingStation(level, context, cached)
                 && !HiredPathMemory.isAvoided(level, villager, cached)
+                && stationContentsCompatible(level, cached, processingFilter, desiredOutput)
                 && stationNeedsAttention(level, cached)) {
             return cached;
         }
@@ -397,26 +417,38 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         List<FacilityCandidate> candidates = new ArrayList<>();
         for (BlockPos raw : context.workAreaPositions()) {
             BlockPos pos = raw.immutable();
-            if (isValidSmeltingStation(level, context, pos)
-                    && !HiredPathMemory.isAvoided(level, villager, pos)) {
+            if (!isValidSmeltingStation(level, context, pos)
+                    || HiredPathMemory.isAvoided(level, villager, pos)) {
+                continue;
+            }
+            AbstractFurnaceBlockEntity furnace = (AbstractFurnaceBlockEntity) level.getBlockEntity(pos);
+            if (HiredProcessingRecipeFilter.supportsRecipeType(level, processingFilter, recipeType(furnace))) {
                 candidates.add(new FacilityCandidate(pos, villager.distanceToSqr(pos.getCenter())));
             }
         }
         candidates.sort(Comparator.comparingDouble(FacilityCandidate::score));
-        boolean hasAvailableStation = candidates.stream()
+        boolean hasCompatibleStation = candidates.stream()
+                .anyMatch(candidate -> stationContentsCompatible(
+                        level, candidate.pos(), processingFilter, desiredOutput));
+        if (hasCompatibleStation) {
+            candidates = candidates.stream()
+                    .filter(candidate -> stationContentsCompatible(
+                            level, candidate.pos(), processingFilter, desiredOutput))
+                    .toList();
+        }
+        boolean hasAttentionStation = candidates.stream()
                 .anyMatch(candidate -> stationNeedsAttention(level, candidate.pos()));
-        BlockPos fallback = candidates.stream()
-                .filter(candidate -> !hasAvailableStation || stationNeedsAttention(level, candidate.pos()))
+        List<FacilityCandidate> selectable = candidates.stream()
+                .filter(candidate -> !hasAttentionStation || stationNeedsAttention(level, candidate.pos()))
+                .toList();
+        BlockPos fallback = selectable.stream()
                 .map(FacilityCandidate::pos)
                 .findFirst()
                 .orElse(null);
         BlockPos best = null;
         double bestScore = Double.MAX_VALUE;
         int attempts = 0;
-        for (FacilityCandidate candidate : candidates) {
-            if (hasAvailableStation && !stationNeedsAttention(level, candidate.pos())) {
-                continue;
-            }
+        for (FacilityCandidate candidate : selectable) {
             HiredPathTarget target = bestWorkTarget(level, villager, context, candidate.pos());
             if (target == null) {
                 continue;
@@ -454,6 +486,23 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 || furnace.getItem(FUEL_SLOT).isEmpty();
     }
 
+    private static boolean stationContentsCompatible(
+            ServerLevel level,
+            BlockPos pos,
+            ItemStack processingFilter,
+            Predicate<ItemStack> desiredOutput) {
+        if (!(level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity furnace)) {
+            return false;
+        }
+        RecipeType<AbstractCookingRecipe> recipeType = recipeType(furnace);
+        ItemStack output = furnace.getItem(RESULT_SLOT);
+        ItemStack input = furnace.getItem(INPUT_SLOT);
+        ItemStack fuel = furnace.getItem(FUEL_SLOT);
+        return (output.isEmpty() || desiredOutput.test(output))
+                && (input.isEmpty() || isSmeltableOre(level, input, recipeType, processingFilter))
+                && (fuel.isEmpty() || isFuelRemainder(fuel) || isFuel(fuel, recipeType));
+    }
+
     private static boolean isValidSmeltingStation(ServerLevel level, HiredWorkContext context, BlockPos pos) {
         return pos != null
                 && context.isInsideWorkArea(pos)
@@ -481,8 +530,23 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         return (RecipeType<AbstractCookingRecipe>) (RecipeType<?>) RecipeType.SMELTING;
     }
 
-    private static boolean isSmeltableOre(ServerLevel level, ItemStack stack, RecipeType<AbstractCookingRecipe> recipeType) {
-        return isRawOre(stack) && smeltingRecipe(level, stack, recipeType).isPresent();
+    private static boolean isSmeltableOre(
+            ServerLevel level,
+            ItemStack stack,
+            RecipeType<AbstractCookingRecipe> recipeType,
+            ItemStack processingFilter) {
+        if (!isRawOre(stack)) {
+            return false;
+        }
+        return smeltingRecipe(level, stack, recipeType)
+                .filter(recipe -> {
+                    ItemStack result = recipe.value().assemble(
+                            new SingleRecipeInput(stack), level.registryAccess());
+                    return isSmeltedOre(result)
+                            && HiredProcessingRecipeFilter.allows(
+                                    level, processingFilter, recipe, stack, result);
+                })
+                .isPresent();
     }
 
     private static boolean isRawOre(ItemStack stack) {
@@ -496,6 +560,12 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 || stack.is(Items.GOLD_INGOT)
                 || stack.is(Items.IRON_INGOT));
     }
+    private static boolean isDesiredSmeltedOutput(ServerLevel level, ItemStack filter, ItemStack stack) {
+        return isSmeltedOre(stack)
+                && (filter == null || filter.isEmpty()
+                        || VillagerFilterMatcher.matches(level, filter, stack));
+    }
+
 
     private static Optional<RecipeHolder<AbstractCookingRecipe>> smeltingRecipe(
             ServerLevel level,

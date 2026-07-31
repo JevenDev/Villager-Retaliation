@@ -66,12 +66,16 @@ public final class CookingWorker extends AbstractBlockWorker {
         }
 
         ItemStack foodFilter = VillagerItemFilterService.assignedFilter(villager);
-        CraftingAssessment crafting = assessCraftingTargets(level, villager, context, foodFilter);
-        if (crafting.selection() != null) {
-            return tickCraftingFood(level, villager, context, crafting.selection());
+        Predicate<ItemStack> desiredFood = desiredFoodPredicate(level, foodFilter);
+        BlockPos station = nearestCookingStation(level, villager, context, foodFilter, desiredFood);
+        CraftingAssessment crafting = CraftingAssessment.NONE;
+        if (!stationHasCollectibleOutput(level, station, desiredFood)) {
+            crafting = assessCraftingTargets(level, villager, context, foodFilter);
+            if (crafting.selection() != null) {
+                return tickCraftingFood(level, villager, context, crafting.selection());
+            }
         }
 
-        BlockPos station = nearestCookingStation(level, villager, context);
         if (station == null) {
             context.setProgressTicks(0);
             if (crafting.hasRecipe()) {
@@ -100,7 +104,6 @@ public final class CookingWorker extends AbstractBlockWorker {
         }
 
         RecipeType<AbstractCookingRecipe> recipeType = recipeType(furnace);
-        Predicate<ItemStack> desiredFood = desiredFoodPredicate(level, foodFilter);
         ItemStack output = furnace.getItem(RESULT_SLOT);
         if (!output.isEmpty() && (!isFood(output) || !desiredFood.test(output))) {
             context.setProgressTicks(0);
@@ -109,7 +112,7 @@ public final class CookingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.cooking.wrong_output");
         }
         ItemStack input = furnace.getItem(INPUT_SLOT);
-        if (!input.isEmpty() && !isCookableFood(level, input, recipeType, desiredFood)) {
+        if (!input.isEmpty() && !isCookableFood(level, input, recipeType, foodFilter)) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "cooking_wrong_input", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, station);
@@ -132,7 +135,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                     station,
                     furnace,
                     recipeType,
-                    desiredFood);
+                    foodFilter);
             if (gatheredMaterials != null) {
                 context.setProgressTicks(0);
                 return gatheredMaterials;
@@ -166,7 +169,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         holdWorkPosition(villager, target);
         setTaskState(context, HiredWorkerTaskState.WORKING, station);
         context.setProgressTicks(0);
-        return workCookingStation(level, villager, context, furnace, station, recipeType, desiredFood);
+        return workCookingStation(level, villager, context, furnace, station, recipeType, foodFilter);
     }
 
     private WorkResult workCookingStation(
@@ -176,7 +179,7 @@ public final class CookingWorker extends AbstractBlockWorker {
             AbstractFurnaceBlockEntity furnace,
             BlockPos station,
             RecipeType<AbstractCookingRecipe> recipeType,
-            Predicate<ItemStack> desiredFood) {
+            ItemStack foodFilter) {
         ItemStack output = furnace.getItem(RESULT_SLOT);
         if (!output.isEmpty()) {
             return collectOutput(level, villager, context, furnace, station, RESULT_SLOT, output, "interaction.work.cooking.collected_output", true);
@@ -190,7 +193,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         ItemStack input = furnace.getItem(INPUT_SLOT);
         if (input.isEmpty()) {
             ItemStack carriedFood = context.inventory().findSupply(
-                    stack -> isCookableFood(level, stack, recipeType, desiredFood));
+                    stack -> isCookableFood(level, stack, recipeType, foodFilter));
             if (carriedFood.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_cooking_raw_food", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, station);
@@ -267,11 +270,15 @@ public final class CookingWorker extends AbstractBlockWorker {
         }
         updateFurnace(level, furnace, station);
         useWorkItem(level, villager, removed);
-        var practice = HiredWorkPractice.batch(
-                VillagerSkill.COOKING, "hired:cooking:batch", removed.getCount(), removed.getItem().hashCode());
-        return completed
-                ? WorkResult.completedWithPractice(status, itemReplacements(removed), practice)
-                : WorkResult.progressedWithPractice(status, itemReplacements(removed), practice);
+        if (!completed) {
+            return WorkResult.progressed(status, itemReplacements(removed));
+        }
+        return WorkResult.completedWithPractice(
+                status,
+                itemReplacements(removed),
+                HiredWorkPractice.batch(
+                        VillagerSkill.COOKING, "hired:cooking:batch",
+                        removed.getCount(), removed.getItem().hashCode()));
     }
 
     private WorkResult gatherCookingMaterials(
@@ -281,8 +288,8 @@ public final class CookingWorker extends AbstractBlockWorker {
             BlockPos station,
             AbstractFurnaceBlockEntity furnace,
             RecipeType<AbstractCookingRecipe> recipeType,
-            Predicate<ItemStack> desiredFood) {
-        List<MaterialNeed> needs = materialNeeds(level, villager, context, furnace, recipeType, desiredFood);
+            ItemStack foodFilter) {
+        List<MaterialNeed> needs = materialNeeds(level, villager, context, furnace, recipeType, foodFilter);
         if (needs.isEmpty()) {
             HiredStorageNavigationGoal.clearStorageTarget(context);
             return null;
@@ -386,9 +393,9 @@ public final class CookingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             AbstractFurnaceBlockEntity furnace,
             RecipeType<AbstractCookingRecipe> recipeType,
-            Predicate<ItemStack> desiredFood) {
+            ItemStack foodFilter) {
         List<MaterialNeed> needs = new ArrayList<>();
-        Predicate<ItemStack> rawFoodPredicate = stack -> isCookableFood(level, stack, recipeType, desiredFood);
+        Predicate<ItemStack> rawFoodPredicate = stack -> isCookableFood(level, stack, recipeType, foodFilter);
         Predicate<ItemStack> fuelPredicate = stack -> isFuel(stack, recipeType);
         ItemStack input = furnace.getItem(INPUT_SLOT);
         if (input.isEmpty() && HiredSupplyCrafting.countCarried(context, rawFoodPredicate) <= 0) {
@@ -439,6 +446,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                         villager,
                         context,
                         candidates,
+                        filter,
                         desiredFood,
                         entry.getItem(),
                         hasCraftingTable);
@@ -454,6 +462,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                     villager,
                     context,
                     candidates,
+                    filter,
                     desiredFood,
                     null,
                     hasCraftingTable);
@@ -471,6 +480,7 @@ public final class CookingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             List<RecipeHolder<CraftingRecipe>> candidates,
+            ItemStack filter,
             Predicate<ItemStack> desiredFood,
             Item requestedItem,
             boolean hasCraftingTable) {
@@ -484,7 +494,8 @@ public final class CookingWorker extends AbstractBlockWorker {
             ItemStack result = recipe.getResultItem(level.registryAccess());
             if (result.isEmpty()
                     || requestedItem != null && !result.is(requestedItem)
-                    || !desiredFood.test(result)) {
+                    || !desiredFood.test(result)
+                    || !HiredProcessingRecipeFilter.allowsCraftingRecipe(level, filter, holder, result)) {
                 continue;
             }
             hasRecipe = true;
@@ -496,9 +507,11 @@ public final class CookingWorker extends AbstractBlockWorker {
             HiredSupplyCrafting.MaterialPlanner planner =
                     new HiredSupplyCrafting.MaterialPlanner(level, villager, context, false, true);
             Map<Item, Integer> materials = new LinkedHashMap<>();
-            if (planner.planRecipe(recipe, result.getCount(), materials)) {
+            Map<Integer, Item> narrowed =
+                    HiredProcessingRecipeFilter.narrowedCraftingIngredients(level, filter, holder);
+            if (planner.planRecipe(recipe, result.getCount(), materials, narrowed)) {
                 return new CraftingAssessment(
-                        new CraftingSelection(recipe, result.copy(), Map.copyOf(materials)),
+                        new CraftingSelection(recipe, result.copy(), Map.copyOf(materials), narrowed),
                         true,
                         false);
             }
@@ -563,7 +576,8 @@ public final class CookingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.WORKING);
         }
 
-        if (!HiredSupplyCrafting.craftCarriedSupplyItemWithStations(level, context, selection.result().getItem())) {
+        if (!HiredSupplyCrafting.craftCarriedRecipeWithStations(
+                level, context, selection.recipe(), selection.narrowedIngredients())) {
             HiredWorkerBrain.setFailure(context, "missing_cooking_crafting_materials", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, craftingTable);
             return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
@@ -718,12 +732,18 @@ public final class CookingWorker extends AbstractBlockWorker {
         return false;
     }
 
-    private BlockPos nearestCookingStation(ServerLevel level, Villager villager, HiredWorkContext context) {
+    private BlockPos nearestCookingStation(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            ItemStack foodFilter,
+            Predicate<ItemStack> desiredFood) {
         CompoundTag state = context.state();
         BlockPos cached = cachedPos(state);
         if (isValidCookingStation(level, context, cached)
                 && !HiredPathMemory.isAvoided(level, villager, cached)
-                && stationNeedsAttention(level, cached)) {
+                && stationContentsCompatible(level, cached, foodFilter, desiredFood)
+                && stationHasCollectibleOutput(level, cached, desiredFood)) {
             return cached;
         }
         clearCachedStation(state);
@@ -734,26 +754,40 @@ public final class CookingWorker extends AbstractBlockWorker {
         List<FacilityCandidate> candidates = new ArrayList<>();
         for (BlockPos raw : context.workAreaPositions()) {
             BlockPos pos = raw.immutable();
-            if (isValidCookingStation(level, context, pos)
-                    && !HiredPathMemory.isAvoided(level, villager, pos)) {
+            if (!isValidCookingStation(level, context, pos)
+                    || HiredPathMemory.isAvoided(level, villager, pos)) {
+                continue;
+            }
+            AbstractFurnaceBlockEntity furnace = (AbstractFurnaceBlockEntity) level.getBlockEntity(pos);
+            if (HiredProcessingRecipeFilter.supportsRecipeType(level, foodFilter, recipeType(furnace))) {
                 candidates.add(new FacilityCandidate(pos, villager.distanceToSqr(pos.getCenter())));
             }
         }
         candidates.sort(Comparator.comparingDouble(FacilityCandidate::score));
-        boolean hasAvailableStation = candidates.stream()
+        boolean hasCompatibleStation = candidates.stream()
+                .anyMatch(candidate -> stationContentsCompatible(level, candidate.pos(), foodFilter, desiredFood));
+        if (hasCompatibleStation) {
+            candidates = candidates.stream()
+                    .filter(candidate -> stationContentsCompatible(level, candidate.pos(), foodFilter, desiredFood))
+                    .toList();
+        }
+        boolean hasCollectibleStation = candidates.stream()
+                .anyMatch(candidate -> stationHasCollectibleOutput(level, candidate.pos(), desiredFood));
+        boolean hasAttentionStation = candidates.stream()
                 .anyMatch(candidate -> stationNeedsAttention(level, candidate.pos()));
-        BlockPos fallback = candidates.stream()
-                .filter(candidate -> !hasAvailableStation || stationNeedsAttention(level, candidate.pos()))
+        List<FacilityCandidate> selectable = candidates.stream()
+                .filter(candidate -> hasCollectibleStation
+                        ? stationHasCollectibleOutput(level, candidate.pos(), desiredFood)
+                        : !hasAttentionStation || stationNeedsAttention(level, candidate.pos()))
+                .toList();
+        BlockPos fallback = selectable.stream()
                 .map(FacilityCandidate::pos)
                 .findFirst()
                 .orElse(null);
         BlockPos best = null;
         double bestScore = Double.MAX_VALUE;
         int attempts = 0;
-        for (FacilityCandidate candidate : candidates) {
-            if (hasAvailableStation && !stationNeedsAttention(level, candidate.pos())) {
-                continue;
-            }
+        for (FacilityCandidate candidate : selectable) {
             HiredPathTarget target = bestWorkTarget(level, villager, context, candidate.pos());
             if (target == null) {
                 continue;
@@ -791,6 +825,38 @@ public final class CookingWorker extends AbstractBlockWorker {
                 || furnace.getItem(FUEL_SLOT).isEmpty();
     }
 
+    private static boolean stationHasCollectibleOutput(
+            ServerLevel level,
+            BlockPos pos,
+            Predicate<ItemStack> desiredFood) {
+        if (pos == null) {
+            return false;
+        }
+        if (!(level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity furnace)) {
+            return false;
+        }
+        ItemStack output = furnace.getItem(RESULT_SLOT);
+        return !output.isEmpty() && isFood(output) && desiredFood.test(output)
+                || isFuelRemainder(furnace.getItem(FUEL_SLOT));
+    }
+
+    private static boolean stationContentsCompatible(
+            ServerLevel level,
+            BlockPos pos,
+            ItemStack foodFilter,
+            Predicate<ItemStack> desiredFood) {
+        if (!(level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity furnace)) {
+            return false;
+        }
+        RecipeType<AbstractCookingRecipe> recipeType = recipeType(furnace);
+        ItemStack output = furnace.getItem(RESULT_SLOT);
+        ItemStack input = furnace.getItem(INPUT_SLOT);
+        ItemStack fuel = furnace.getItem(FUEL_SLOT);
+        return (output.isEmpty() || isFood(output) && desiredFood.test(output))
+                && (input.isEmpty() || isCookableFood(level, input, recipeType, foodFilter))
+                && (fuel.isEmpty() || isFuelRemainder(fuel) || isFuel(fuel, recipeType));
+    }
+
     private static boolean isValidCookingStation(ServerLevel level, HiredWorkContext context, BlockPos pos) {
         return pos != null
                 && context.isInsideWorkArea(pos)
@@ -822,14 +888,18 @@ public final class CookingWorker extends AbstractBlockWorker {
             ServerLevel level,
             ItemStack stack,
             RecipeType<AbstractCookingRecipe> recipeType,
-            Predicate<ItemStack> desiredFood) {
-        if (stack == null || stack.isEmpty() || !isFood(stack)) {
+            ItemStack foodFilter) {
+        if (stack == null || stack.isEmpty()) {
             return false;
         }
         return cookingRecipe(level, stack, recipeType)
-                .map(recipe -> recipe.value().assemble(new SingleRecipeInput(stack), level.registryAccess()))
-                .filter(CookingWorker::isFood)
-                .filter(desiredFood)
+                .filter(recipe -> {
+                    ItemStack result = recipe.value().assemble(
+                            new SingleRecipeInput(stack), level.registryAccess());
+                    return isFood(result)
+                            && HiredProcessingRecipeFilter.allows(
+                                    level, foodFilter, recipe, stack, result);
+                })
                 .isPresent();
     }
 
@@ -838,7 +908,7 @@ public final class CookingWorker extends AbstractBlockWorker {
             ItemStack stack,
             RecipeType<AbstractCookingRecipe> recipeType,
             ItemStack filter) {
-        return isCookableFood(level, stack, recipeType, desiredFoodPredicate(level, filter));
+        return isCookableFood(level, stack, recipeType, filter);
     }
 
     private static Predicate<ItemStack> desiredFoodPredicate(ServerLevel level, ItemStack filter) {
@@ -914,7 +984,11 @@ public final class CookingWorker extends AbstractBlockWorker {
     private record MaterialNeed(Predicate<ItemStack> predicate, int count, String failureReason, String missingStatus) {
     }
 
-    record CraftingSelection(CraftingRecipe recipe, ItemStack result, Map<Item, Integer> materials) {
+    record CraftingSelection(
+            CraftingRecipe recipe,
+            ItemStack result,
+            Map<Item, Integer> materials,
+            Map<Integer, Item> narrowedIngredients) {
     }
 
     record CraftingAssessment(CraftingSelection selection, boolean hasRecipe, boolean missingCraftingTable) {
