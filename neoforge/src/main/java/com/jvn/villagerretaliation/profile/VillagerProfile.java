@@ -370,9 +370,14 @@ public class VillagerProfile {
             long repetitionKey,
             long overworldDayIndex,
             double grantedXp,
+            int repetitions,
             int maximumKeys,
             long gameTime) {
-        if (skill == null || !Double.isFinite(grantedXp) || grantedXp <= 0.0D || maximumKeys <= 0) {
+        if (skill == null
+                || !Double.isFinite(grantedXp)
+                || grantedXp <= 0.0D
+                || repetitions <= 0
+                || maximumKeys <= 0) {
             return false;
         }
         PracticeDayState state = this.skillPracticeDailyState.get(skill);
@@ -384,7 +389,9 @@ public class VillagerProfile {
             Long eldest = state.repetitions.keySet().iterator().next();
             state.repetitions.remove(eldest);
         }
-        state.repetitions.put(repetitionKey, Math.min(1_000_000, state.repetitions.getOrDefault(repetitionKey, 0) + 1));
+        int previousRepetitions = state.repetitions.getOrDefault(repetitionKey, 0);
+        state.repetitions.put(
+                repetitionKey, (int) Math.min(1_000_000L, (long) previousRepetitions + repetitions));
         state.earnedXp = Math.min(1_000_000.0D, state.earnedXp + grantedXp);
         this.updatedGameTime = gameTime;
         return true;

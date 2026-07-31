@@ -44,8 +44,11 @@ public final class VillagerProfileManager {
             return profile;
         }
 
+        String previousProfessionKey = profile.lastKnownProfession();
         String professionKey = VillagerProfileGenerator.professionKey(villager);
-        boolean changed = profile.updateLastKnownProfession(professionKey, level.getGameTime());
+        boolean changed = regenerateUntouchedSkillsForFirstProfession(
+                profile, previousProfessionKey, professionKey, level.getGameTime());
+        changed |= profile.updateLastKnownProfession(professionKey, level.getGameTime());
         changed |= ensureSkills(profile, professionKey, level.getGameTime());
         if (changed) {
             data.setDirty();
@@ -337,6 +340,36 @@ public final class VillagerProfileManager {
             builder.append("(").append(value).append(")");
         }
         return builder.toString();
+    }
+
+    private static boolean regenerateUntouchedSkillsForFirstProfession(
+            VillagerProfile profile,
+            String previousProfessionKey,
+            String professionKey,
+            long gameTime) {
+        if (!isProfessionless(previousProfessionKey)
+                || isProfessionless(professionKey)
+                || profile.skillGeneratedVersion() != VillagerSkillGenerator.CURRENT_GENERATION_VERSION) {
+            return false;
+        }
+        VillagerSkillSet originalSkills = VillagerSkillGenerator.generate(
+                previousProfessionKey, profile.socialAttributes(), profile.seed());
+        if (!profile.skills().asMap().equals(originalSkills.asMap())) {
+            return false;
+        }
+        VillagerSkillSet professionSkills = VillagerSkillGenerator.generate(
+                professionKey, profile.socialAttributes(), profile.seed());
+        return profile.replaceSkills(
+                professionSkills, VillagerSkillGenerator.CURRENT_GENERATION_VERSION, gameTime);
+    }
+
+    private static boolean isProfessionless(String professionKey) {
+        return professionKey == null
+                || professionKey.isBlank()
+                || professionKey.equals("none")
+                || professionKey.equals("minecraft:none")
+                || professionKey.equals("unemployed")
+                || professionKey.equals("minecraft:unemployed");
     }
 
     private static boolean ensureSkills(VillagerProfile profile, String professionKey, long gameTime) {

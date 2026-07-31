@@ -8,7 +8,6 @@ import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -65,9 +64,10 @@ public final class VillagerSkillGrowthService {
                         profile,
                         List.of(new VillagerSkillPractice(
                                 primary,
-                                tradeCount,
+                                1.0D,
                                 "trade:regular_offer",
-                                offerRepetitionKey(offer))),
+                                offerRepetitionKey(offer),
+                                tradeCount)),
                         dayIndex,
                         level.getGameTime(),
                         xpPerTrade);
@@ -127,14 +127,29 @@ public final class VillagerSkillGrowthService {
         if (offer == null) {
             return 0L;
         }
-        return Objects.hash(stackSignature(offer.getCostA()), stackSignature(offer.getCostB()), stackSignature(offer.getResult()));
+        long signature = mix64(stackSignature(offer.getBaseCostA()));
+        signature = mix64(signature ^ Long.rotateLeft(stackSignature(offer.getCostB()), 21));
+        return mix64(signature ^ Long.rotateLeft(stackSignature(offer.getResult()), 42));
     }
 
-    private static String stackSignature(ItemStack stack) {
+    private static long stackSignature(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
-            return "empty";
+            return 0L;
         }
-        return BuiltInRegistries.ITEM.getKey(stack.getItem()) + "x" + stack.getCount();
+        long itemHash = Integer.toUnsignedLong(
+                BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().hashCode());
+        long countHash = Integer.toUnsignedLong(stack.getCount());
+        long componentHash = Integer.toUnsignedLong(stack.getComponents().hashCode());
+        return mix64(itemHash ^ Long.rotateLeft(countHash, 23) ^ Long.rotateLeft(componentHash, 41));
+    }
+
+    private static long mix64(long value) {
+        value ^= value >>> 30;
+        value *= 0xbf58476d1ce4e5b9L;
+        value ^= value >>> 27;
+        value *= 0x94d049bb133111ebL;
+        value ^= value >>> 31;
+        return value;
     }
 
     private static void appendIncreases(
