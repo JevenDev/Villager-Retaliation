@@ -44,13 +44,12 @@ public final class PartyContainerLootService {
             if (!level.hasChunkAt(cursor)) {
                 continue;
             }
-            BlockEntity blockEntity = level.getBlockEntity(cursor);
-            if (!(blockEntity instanceof Container container)) {
+            if (level.getBlockEntity(cursor) == null) {
                 continue;
             }
             VillagerInventoryOverflowService.ContainerCandidate candidate =
-                    VillagerInventoryOverflowService.ContainerCandidate.resolve(level, cursor.immutable(), container);
-            if (!canAccess(level, candidate, commander)) {
+                    VillagerInventoryOverflowService.ContainerCandidate.resolve(level, cursor.immutable());
+            if (candidate == null || !canAccess(level, candidate, commander)) {
                 continue;
             }
             containers.putIfAbsent(candidate.pos(), candidate.pos());
@@ -172,11 +171,7 @@ public final class PartyContainerLootService {
         if (level == null || pos == null || !level.hasChunkAt(pos)) {
             return null;
         }
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof Container container)) {
-            return null;
-        }
-        return VillagerInventoryOverflowService.ContainerCandidate.resolve(level, pos.immutable(), container);
+        return VillagerInventoryOverflowService.ContainerCandidate.resolve(level, pos.immutable());
     }
 
     public enum LootResult {

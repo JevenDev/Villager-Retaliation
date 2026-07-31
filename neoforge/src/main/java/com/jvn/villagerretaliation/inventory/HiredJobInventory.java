@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -337,10 +338,11 @@ public final class HiredJobInventory implements Container {
 
     @Override
     public boolean stillValid(Player player) {
+        double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         return this.villager.isAlive()
                 && player.isAlive()
                 && !player.isSpectator()
-                && player.distanceToSqr(this.villager) <= 64.0D;
+                && player.distanceToSqr(this.villager) <= maxDistance * maxDistance;
     }
 
     @Override

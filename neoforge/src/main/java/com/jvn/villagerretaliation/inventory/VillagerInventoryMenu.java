@@ -4,7 +4,6 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.mixin.AbstractContainerMenuAccessor;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
-import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -24,7 +23,6 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 
@@ -498,7 +496,22 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                         HiredJobInventory.FILTER_SLOT + 1,
                         false);
             }
-            return moveItemStackTo(stack, 0, this.villagerSlotCount, false);
+            if (equipmentSlot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+                int armorSlot = armorSlotFor(equipmentSlot);
+                if (armorSlot >= 0 && moveItemStackTo(stack, armorSlot, armorSlot + 1, false)) {
+                    return true;
+                }
+            }
+            if (equipmentSlot == EquipmentSlot.OFFHAND
+                    && moveItemStackTo(
+                            stack,
+                            HiredJobInventory.OFFHAND_SLOT,
+                            HiredJobInventory.OFFHAND_SLOT + 1,
+                            false)) {
+                return true;
+            }
+            return moveItemStackTo(
+                    stack, HiredJobInventory.MAIN_GRID_START, this.villagerSlotCount, false);
         }
 
         if (equipmentSlot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
@@ -754,10 +767,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     }
 
     private static EquipmentSlot equipmentSlotFor(ItemStack stack) {
-        if (stack.getItem() instanceof ArmorItem armorItem) {
-            return armorItem.getEquipmentSlot();
-        }
-        return EquipmentSlot.MAINHAND;
+        Equipable equipable = Equipable.get(stack);
+        return equipable == null ? EquipmentSlot.MAINHAND : equipable.getEquipmentSlot();
     }
 
     private void initializePersonalTrackingState() {

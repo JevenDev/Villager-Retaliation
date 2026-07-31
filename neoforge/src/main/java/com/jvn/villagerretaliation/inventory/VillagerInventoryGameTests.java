@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
 import com.jvn.villagerretaliation.item.VillagerFilterMatcher;
 import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
@@ -1628,6 +1629,72 @@ public final class VillagerInventoryGameTests {
         helper.assertValueEqual(personalMenu.getSlot(personalHotbarMenuSlot).y, 161,
                 "personal hotbar should align with the separated texture row");
         personalMenu.removed(player);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void jobInventoryMenuQuickMoveSeparatesSuppliesAndEquipables(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrJobMenuQuickMove");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        player.moveTo(villager.getX(), villager.getY(), villager.getZ());
+        HiredVillagerContractService.startHireContract(level, villager, player, 1, 0);
+
+        player.getInventory().setItem(9, new ItemStack(Items.WHEAT, 8));
+        player.getInventory().setItem(10, new ItemStack(Items.ELYTRA));
+        VillagerInventoryMenu menu = new VillagerInventoryMenu(
+                3,
+                player.getInventory(),
+                villager,
+                VillagerInventoryMenu.ViewMode.JOB,
+                false,
+                true);
+
+        helper.assertFalse(menu.quickMoveStack(player, HiredJobInventory.SLOT_COUNT).isEmpty(),
+                "shift-clicking supplies should move the stack");
+        HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+        helper.assertTrue(jobInventory.getItem(HiredJobInventory.MAINHAND_SLOT).isEmpty()
+                        && jobInventory.getItem(HiredJobInventory.OFFHAND_SLOT).isEmpty(),
+                "ordinary supplies must not occupy either equipment hand");
+        helper.assertTrue(jobInventory.getItem(HiredJobInventory.MAIN_GRID_START).is(Items.WHEAT)
+                        && jobInventory.getItem(HiredJobInventory.MAIN_GRID_START).getCount() == 8,
+                "ordinary supplies should start in the main supply grid");
+        helper.assertValueEqual(
+                jobInventory.slotType(HiredJobInventory.MAIN_GRID_START),
+                HiredJobInventorySlotType.SUPPLY,
+                "quick-moved supplies should retain supply ownership");
+
+        helper.assertFalse(menu.quickMoveStack(player, HiredJobInventory.SLOT_COUNT + 1).isEmpty(),
+                "shift-clicking a component-based wearable should move the stack");
+        helper.assertTrue(jobInventory.getItem(1).is(Items.ELYTRA),
+                "elytra should route to the chest equipment slot");
+
+        menu.removed(player);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void inventoryValidityHonorsConfiguredDialogueDistance(GameTestHelper helper) {
+        buildFloor(helper, 0, 16, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrConfiguredInventoryDistance");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        player.moveTo(villager.getX() + 12.0D, villager.getY(), villager.getZ());
+
+        double previousDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
+        try {
+            VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.set(16.0D);
+            helper.assertTrue(new VillagerInventoryContainer(villager).stillValid(player),
+                    "personal inventory validity should honor a configured distance above eight blocks");
+            helper.assertTrue(HiredJobInventory.getJobInventory(villager).stillValid(player),
+                    "job inventory validity should honor a configured distance above eight blocks");
+        } finally {
+            VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.set(previousDistance);
+        }
+
         villager.discard();
         helper.succeed();
     }
