@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.villager.VillagerNaturalJobArmor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -176,10 +177,11 @@ final class VillagerInventoryContainer implements Container {
 
     @Override
     public boolean stillValid(Player player) {
+        double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         return this.villager.isAlive()
                 && player.isAlive()
                 && !player.isSpectator()
-                && player.distanceToSqr(this.villager) <= 64.0D;
+                && player.distanceToSqr(this.villager) <= maxDistance * maxDistance;
     }
 
     @Override
