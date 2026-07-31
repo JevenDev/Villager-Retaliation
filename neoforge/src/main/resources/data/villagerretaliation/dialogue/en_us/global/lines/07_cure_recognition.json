@@ -59,7 +59,7 @@
       "request": "gift_preferences",
       "lines": [
         "I think you already know what I can tell you about gifts.",
-        "You've picked my memory clean on gifts, I'm afraid.",
+        "You've picked my memory clean on gifts, I'm <dark_gray><wavy>afraid</wavy></dark_gray>.",
         "No fresh advice. Try another villager if you want more gift gossip.",
         "I would rather not pretend I know more than I do.",
         "No new gift advice from me today. Ask someone else and you may hear more.",
@@ -67,8 +67,7 @@
         "Nothing new comes to mind. Gifts are personal, even when villagers gossip.",
         "I do not have another gift tip ready for you.",
         "You have already heard the useful parts from me.",
-        "My gift advice is empty for now. Best not to scrape the bowl.",
-        "I think you already know what I can tell you about gifts. You've picked my memory clean on gifts, I'm <dark_gray><wavy>afraid</wavy></dark_gray>."
+        "My gift advice is empty for now. Best not to scrape the bowl."
       ],
       "gift_advice": "already_known",
       "weight": 150
@@ -107,9 +106,7 @@
         "I recognize you in flashes. That is more comfort than it sounds.",
         "My thoughts still circle the dark places before they reach your kindness.",
         "I am <gold><pulse>grateful</pulse></gold>, I think. I just wish my memory would say it plainly.",
-        "You feel familiar in a way that still makes me careful.",
-        "My thoughts still circle the dark places before they reach your kindness. I am grateful, I think. I just wish my memory would say it plainly.",
-        "I am grateful, I think. I just wish my memory would say it plainly. You feel familiar in a way that still makes me careful."
+        "You feel familiar in a way that still makes me careful."
       ],
       "dispositions": [
         "neutral",
@@ -123,15 +120,14 @@
       "lines": [
         "I remember you. That does not make the remembering easy.",
         "I know you helped. I also know remembering still hurts.",
-        "The gratitude is real. So is the fear around it.",
+        "The gratitude is real. So is the <dark_gray><wavy>fear</wavy></dark_gray> around it.",
         "You were part of my return, but the road back was not gentle.",
         "I am thankful, and I am unsettled. Both are true.",
         "Do not ask me to make the memory clean just because the cure worked.",
         "I know I owe you something. I also know my hands still shake when I think of it.",
         "Being saved does not erase what came before.",
         "Your face is tied to a hard morning. I am still learning what to do with that.",
-        "I can be grateful without being ready to stand close.",
-        "I know you helped. I also know remembering still hurts. The gratitude is real. So is the <dark_gray><wavy>fear</wavy></dark_gray> around it."
+        "I can be grateful without being ready to stand close."
       ],
       "dispositions": [
         "rude",

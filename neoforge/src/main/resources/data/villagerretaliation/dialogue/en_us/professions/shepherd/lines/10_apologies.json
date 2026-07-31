@@ -11,9 +11,7 @@
         "Trust scatters quickly. Gather it patiently.",
         "Don't chase forgiveness. Walk steady and let it come closer.",
         "I hear you. Keep your hands calm around this village.",
-        "Words can be soft. Make your choices soft too.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "Words can be soft. Make your choices soft too."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

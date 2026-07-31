@@ -92,16 +92,7 @@
     {
       "key": "interaction.work.animal_handling.placeholder",
       "lines": [
-        "I am ready to tend the animals once there are lures and a safe pen.",
-        "All right. I am ready to tend the animals once there are lures and a safe pen.",
-        "Here's where I am with it: I am ready to tend the animals once there are lures and a safe pen.",
-        "For now, that is the situation. I am ready to tend the animals once there are lures and a safe pen.",
-        "Just so you know. I am ready to tend the animals once there are lures and a safe pen.",
-        "Plainly put: I am ready to tend the animals once there are lures and a safe pen.",
-        "That's all I have for now: I am ready to tend the animals once there are lures and a safe pen.",
-        "Understood. I am ready to tend the animals once there are lures and a safe pen.",
-        "Nothing else to add yet. I am ready to tend the animals once there are lures and a safe pen.",
-        "For the moment: I am ready to tend the animals once there are lures and a safe pen."
+        "I am ready to tend the animals once there are lures and a safe pen."
       ],
       "id": "global.messages.18_work_specialists.messages.interaction.work.animal_handling.placeholder.005"
     }

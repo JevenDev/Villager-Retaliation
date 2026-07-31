@@ -11,9 +11,7 @@
         "Okay. Try doing the good version of that next time.",
         "I'll forgive a bit now and maybe another bit after lunch.",
         "Words received. Suspicion still lightly worn.",
-        "Fine. I am putting the apology somewhere safe in my head.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "Fine. I am putting the apology somewhere safe in my head."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

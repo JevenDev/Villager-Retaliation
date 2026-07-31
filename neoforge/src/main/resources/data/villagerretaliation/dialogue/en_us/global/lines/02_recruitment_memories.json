@@ -456,7 +456,7 @@
       "id": "question_follow_memory_injured",
       "request": "question",
       "lines": [
-        "I remember following you home hurt. I was grateful, but not exactly comfortable.",
+        "I remember following you home hurt. I was <gold><pulse>grateful</pulse></gold>, but not exactly comfortable.",
         "I was grateful to get home and angry that getting home hurt. Both fit.",
         "That journey ended here, but the ache took longer to arrive.",
         "I remember each step better than I wanted to.",
@@ -465,8 +465,7 @@
         "That road felt longer once I was limping through it.",
         "I was glad to see the village again, even through the hurt.",
         "A safe return can still leave a sore memory.",
-        "Next time, I would rather arrive without counting every bruise.",
-        "I remember following you home hurt. I was <gold><pulse>grateful</pulse></gold>, but not exactly comfortable. I was grateful to get home and angry that getting home hurt. Both fit."
+        "Next time, I would rather arrive without counting every bruise."
       ],
       "conditions": [
         {

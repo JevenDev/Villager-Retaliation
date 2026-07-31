@@ -2382,6 +2382,58 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void persistentMoveToSurvivesUnavailableGatherCommands(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_unavailable_gather"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord unavailable = villagerRecord(UUID.randomUUID(), leader.getUUID(), 0, now);
+        PartySavedData.get(level).addVillager(party, unavailable);
+        BlockPos moveTarget = helper.absolutePos(new BlockPos(6, 2, 2));
+        unavailable.setStaying(level.dimension().location(), moveTarget);
+        unavailable.setMoveToReturnCommander(leader.getUUID());
+        unavailable.setRegrouping(true);
+
+        PartyQuickCommandService.clearRuntimeState();
+        helper.assertValueEqual(PartyQuickCommandService.moveTarget(party), moveTarget.below(),
+                "the move-to marker should fall back to persistent state when runtime state is absent");
+        helper.assertValueEqual(PartyQuickCommandService.moveTargetDimension(party), level.dimension().location(),
+                "the persistent move-to marker should retain its target dimension");
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.PICK_UP_DROPS));
+        helper.assertValueEqual(unavailable.moveToReturnCommanderId(), leader.getUUID(),
+                "a rejected gather-drops command must preserve an unavailable villager's move-to return state");
+        helper.assertTrue(unavailable.regrouping(),
+                "a rejected gather-drops command must preserve an unavailable villager's regroup state");
+
+        BlockPos chestPos = helper.absolutePos(new BlockPos(3, 2, 2));
+        level.setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
+        if (!(level.getBlockEntity(chestPos) instanceof Container chest)) {
+            throw new GameTestAssertException("Could not create unavailable-villager loot-command chest");
+        }
+        chest.setItem(0, new ItemStack(Items.EMERALD));
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.LOOT_CONTAINERS,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        chestPos));
+        helper.assertValueEqual(unavailable.moveToReturnCommanderId(), leader.getUUID(),
+                "a rejected loot command must preserve an unavailable villager's move-to return state");
+        helper.assertTrue(unavailable.regrouping(),
+                "a rejected loot command must preserve an unavailable villager's regroup state");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        leader.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void partyGatherDropsCollectsItemsAndMoveToOverridesIt(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_gather_drops"));

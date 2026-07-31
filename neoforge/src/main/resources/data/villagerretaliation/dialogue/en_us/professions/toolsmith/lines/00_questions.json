@@ -12,7 +12,6 @@
         "Cracked handles are warnings. Ignore them and they become stories.",
         "Most days, I am at the smithing table, trying to keep edges and handles from becoming everyone else's problem.",
         "People think tools is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good file more than a loud promise. The file has less to prove.",
         "A good tool saves effort later because someone spent effort first.",
         "Handles teach humility. Ignore the grain and they repay you fast.",
@@ -38,14 +37,7 @@
       "lines": [
         "That time I followed you, the whole plan could have used a better handle.",
         "I remember following you through that road. My feet remember it even better.",
-        "That trip across that road taught me to ask more questions before walking.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "That trip across that road taught me to ask more questions before walking."
       ],
       "conditions": [
         {
@@ -60,16 +52,9 @@
       "id": "question_follow_memory_toolsmith_boat",
       "request": "question",
       "lines": [
-        "A boat is just a tool with a nervous floor. Yours worked, mostly.",
+        "Boats are tools too, I suppose. I still prefer tools that stay put.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It can't make me forget it.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "A boat can make a bad plan quieter. It can't make me forget it."
       ],
       "conditions": [
         {
@@ -90,11 +75,8 @@
         "I can fix a cracked handle. A cracked habit takes longer.",
         "Most days, I am at the smithing table, trying to keep edges and handles from becoming everyone else's problem.",
         "People think tools is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good file more than a loud promise. The file has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the smithing table has done to me."
+        "A tool tells you what is wrong if you pay attention to the handle."
       ],
       "show_for_babies": false,
       "weight": 18

@@ -6,15 +6,12 @@
       "lines": [
         "I am trying to belong here. Please do not make that harder.",
         "Fine. We can start again from here, but not from before.",
-        "I am still figuring out where I fit. Please do not make me fit around fear.",
+        "I am still figuring out where I fit. Please do not make me fit around <dark_gray><wavy>fear</wavy></dark_gray>.",
         "Fine. I accept, but I need room to believe it.",
         "That helps. Not everything, but it helps.",
         "I do not have a profession for judging apologies. This one sounds real enough to start.",
         "Let us call this a beginning, not a finish.",
-        "I'll give the apology a place. Give me a reason to keep it there.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry.",
-        "Fine. We can start again from here, but not from before. I am still figuring out where I fit. Please do not make me fit around <dark_gray><wavy>fear</wavy></dark_gray>."
+        "I'll give the apology a place. Give me a reason to keep it there."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

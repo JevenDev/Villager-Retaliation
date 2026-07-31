@@ -6,14 +6,7 @@
       "lines": [
         "We came back with all our pieces where they belong. Good enough for my ledger.",
         "Home again, whole enough to thank you properly. That matters.",
-        "We came back with the village still ahead of us. I'll count that as good work.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "We came back with the village still ahead of us. I'll count that as good work."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -28,14 +21,7 @@
       "lines": [
         "I know a shallow cut from a deep mistake. That trip had a little of both.",
         "I made it home, but the road took more from me than it should have.",
-        "Next time, let us return with fewer marks and better choices.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "Next time, let us return with fewer marks and better choices."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -50,14 +36,7 @@
       "lines": [
         "I expect sharp things at work. I did not expect one from the person I followed.",
         "Following you was trust. What happened after was something else.",
-        "A guide who strikes from close by leaves the longest mark.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "A guide who strikes from close by leaves the longest mark."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -72,15 +51,7 @@
       "lines": [
         "I prefer a steady block beneath me, but the boat got us back without carving a new problem.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
-        "Water carried us home, which is more than I expected from that journey.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions.",
-        "<aqua><wavy>Water</wavy></aqua> carried us home, which is more than I expected from that journey. Following you taught me that plans sound much safer before anyone starts walking."
+        "<aqua><wavy>Water</wavy></aqua> carried us home, which is more than I expected from that journey."
       ],
       "conditions": [
         {

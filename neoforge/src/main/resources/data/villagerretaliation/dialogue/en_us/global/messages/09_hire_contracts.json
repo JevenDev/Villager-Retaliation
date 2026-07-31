@@ -15,11 +15,7 @@
         "It is good to see you, but I am working under another contract. If it is not about our quest, I should get back to it.",
         "I would gladly talk when my work is done. For now, another player has hired me.",
         "You are always welcome here, but these are contracted hours. Let me finish my work.",
-        "I trust you understand: I have promised this time to someone else's work.",
-        "Listen. It is good to see you, but I am working under another contract. If it is not about our quest, I should get back to it.",
-        "Understand this. It is good to see you, but I am working under another contract. If it is not about our quest, I should get back to it.",
-        "Let me be clear. It is good to see you, but I am working under another contract. If it is not about our quest, I should get back to it.",
-        "I will say it plainly. It is good to see you, but I am working under another contract. If it is not about our quest, I should get back to it."
+        "I trust you understand: I have promised this time to someone else's work."
       ],
       "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.respectful"
     },
@@ -29,11 +25,7 @@
         "Good to see you, but I am working for someone else right now.",
         "I would stop and chat, but I have a contract to keep.",
         "Not now, friend. Someone else hired me for this work.",
-        "Unless this is about our quest, I need to keep working.",
-        "Listen. Good to see you, but I am working for someone else right now.",
-        "Understand this. Good to see you, but I am working for someone else right now.",
-        "Let me be clear. Good to see you, but I am working for someone else right now.",
-        "I will say it plainly. Good to see you, but I am working for someone else right now."
+        "Unless this is about our quest, I need to keep working."
       ],
       "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.friendly"
     },
@@ -43,11 +35,7 @@
         "I am working under someone else's contract right now.",
         "I cannot stop to talk. I have been hired for this work.",
         "Unless you need me for our quest, I should keep working.",
-        "I'm already working for someone. I need to get back to it.",
-        "Listen. I am working under someone else's contract right now.",
-        "Understand this. I am working under someone else's contract right now.",
-        "Let me be clear. I am working under someone else's contract right now.",
-        "I will say it plainly. I am working under someone else's contract right now."
+        "I'm already working for someone. I need to get back to it."
       ],
       "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.neutral"
     },
@@ -57,11 +45,7 @@
         "I am working. Do not make me neglect someone else's contract.",
         "If this is not about our quest, leave me to my work.",
         "Someone else hired me. I do not have time for this.",
-        "Keep this brief. I have contracted work to finish.",
-        "Listen. I am working. Do not make me neglect someone else's contract.",
-        "Understand this. I am working. Do not make me neglect someone else's contract.",
-        "Let me be clear. I am working. Do not make me neglect someone else's contract.",
-        "I will say it plainly. I am working. Do not make me neglect someone else's contract."
+        "Keep this brief. I have contracted work to finish."
       ],
       "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.cautious"
     },
@@ -71,11 +55,7 @@
         "I am working. Leave me alone.",
         "You do not own my time. Go away.",
         "I have work to do, and none of it is for you.",
-        "Do not interrupt me again unless our quest demands it.",
-        "Listen. I am working. Leave me alone.",
-        "Understand this. I am working. Leave me alone.",
-        "Let me be clear. I am working. Leave me alone.",
-        "I will say it plainly. I am working. Leave me alone."
+        "Do not interrupt me again unless our quest demands it."
       ],
       "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.hostile"
     },

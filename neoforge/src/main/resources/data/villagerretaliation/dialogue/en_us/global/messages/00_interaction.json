@@ -12,7 +12,6 @@
     {
       "key": "interaction.follow_stay",
       "lines": [
-        "I will stay here.",
         "I will <pulse>stay here</pulse>.",
         "This is where I am staying.",
         "I will hold this spot for now.",
@@ -94,18 +93,7 @@
       "lines": [
         "I am already following someone else's direction.",
         "That command belongs to the person I agreed to follow.",
-        "I will only take that order from the one I am following.",
-        "Listen. I am already following someone else's direction.",
-        "Understand this. I am already following someone else's direction.",
-        "Let me be clear. I am already following someone else's direction.",
-        "I will say it plainly. I am already following someone else's direction.",
-        "Here is the truth. I am already following someone else's direction.",
-        "As things stand, i am already following someone else's direction.",
-        "From where I stand, i am already following someone else's direction.",
-        "For the moment, i am already following someone else's direction.",
-        "Right now, i am already following someone else's direction.",
-        "I am already following someone else's direction. Keep that in mind.",
-        "I am already following someone else's direction. Remember that."
+        "I will only take that order from the one I am following."
       ],
       "id": "global.messages.00_interaction.messages.interaction.follow_command_requires_owner.005"
     },
@@ -156,8 +144,7 @@
         "I followed your steps, and you made me regret it.",
         "Do not ask me to forget what happened on that road.",
         "You turned a path into a warning.",
-        "I should not have had to fear the person I followed.",
-        "<shake>I trusted you.</shake> Remember that."
+        "I should not have had to fear the person I followed."
       ],
       "weight": 20,
       "id": "global.messages.00_interaction.messages.interaction.follow_betrayal.005"
@@ -213,26 +200,7 @@
     {
       "key": "interaction.incapacitated",
       "lines": [
-        "This villager is incapacitated.",
-        "Listen. This villager is incapacitated.",
-        "Understand this. This villager is incapacitated.",
-        "Let me be clear. This villager is incapacitated.",
-        "I will say it plainly. This villager is incapacitated.",
-        "Here is the truth. This villager is incapacitated.",
-        "As things stand, this villager is incapacitated.",
-        "From where I stand, this villager is incapacitated.",
-        "For the moment, this villager is incapacitated.",
-        "Right now, this villager is incapacitated.",
-        "This villager is incapacitated. Keep that in mind.",
-        "This villager is incapacitated. Remember that.",
-        "This villager is incapacitated. That much is clear.",
-        "This villager is incapacitated. That is where things stand.",
-        "This villager is incapacitated. I mean it.",
-        "This villager is incapacitated. Do not forget it.",
-        "This villager is incapacitated. That is the whole of it.",
-        "This villager is incapacitated. Nothing about that has changed.",
-        "This villager is incapacitated. I have said what needed saying.",
-        "This villager is incapacitated. Take it seriously."
+        "This villager is incapacitated."
       ],
       "id": "global.messages.00_interaction.messages.interaction.incapacitated.downed"
     },
@@ -259,13 +227,12 @@
         "That conversation is over.",
         "We are finished talking.",
         "There is nothing more to say right now.",
-        "That is the end of it.",
+        "That is <gradient:dark_purple:light_purple><pulse>the end</pulse></gradient> of it.",
         "We can stop here.",
         "This talk is done.",
         "No more words for now.",
         "The matter is closed.",
-        "We are finished here.",
-        "That is <gradient:dark_purple:light_purple><pulse>the end</pulse></gradient> of it. We can stop here."
+        "We are finished here."
       ],
       "id": "global.messages.00_interaction.messages.interaction.conversation_ended.010"
     },

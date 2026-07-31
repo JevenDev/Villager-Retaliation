@@ -11,9 +11,7 @@
         "Words can clarify. They can't replace the missing page.",
         "I'll not close the book on you yet. Don't make me regret the bookmark.",
         "The statement is clear. The evidence must follow.",
-        "I accept the correction. Now avoid making an errata list.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "I accept the correction. Now avoid making an errata list."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

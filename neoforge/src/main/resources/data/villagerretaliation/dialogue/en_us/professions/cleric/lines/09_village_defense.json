@@ -7,14 +7,11 @@
         "I prayed for courage in the village. It seems some of it found you.",
         "Every life still here is a quieter bell than the one that rang. Thank you.",
         "I prayed for protection and saw someone answer with action.",
-        "You gave fear less room inside these walls.",
+        "You gave <dark_gray><wavy>fear</wavy></dark_gray> less room inside these walls.",
         "The bell called for help, and you came before the echo faded.",
         "There are blessings spoken and blessings done. Yours was done.",
         "I'll remember the courage, even while I tend the frightened.",
-        "The village is quieter because you helped end the noise.",
-        "When danger came close, nobody had time to sound brave first.",
-        "You learn a lot about a village when everyone hears the bell at once.",
-        "I prayed for protection and saw someone answer with action. You gave <dark_gray><wavy>fear</wavy></dark_gray> less room inside these walls."
+        "The village is quieter because you helped end the noise."
       ],
       "option": "village_defense_report",
       "show_for_babies": false,

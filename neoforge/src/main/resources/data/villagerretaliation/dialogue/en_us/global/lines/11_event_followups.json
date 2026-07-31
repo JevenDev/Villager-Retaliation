@@ -11,10 +11,9 @@
         "People step aside when you pass. I hope you understand what that means.",
         "I can speak with you, but I will not stand too close.",
         "The square gets quieter when you arrive.",
-        "I am trying not to sound afraid. Help me by giving me no reason.",
+        "I am trying not to sound <dark_gray><wavy>afraid</wavy></dark_gray>. Help me by giving me no reason.",
         "Keep your hands calm, and maybe everyone else can breathe.",
-        "You are welcome to speak, but not to frighten anyone further.",
-        "The square gets quieter when you arrive. I am trying not to sound <dark_gray><wavy>afraid</wavy></dark_gray>. Help me by giving me no reason."
+        "You are welcome to speak, but not to frighten anyone further."
       ],
       "reputation_levels": [
         "feared"
@@ -608,8 +607,7 @@
         "Prepared feels better than lucky.",
         "I would rather carry it unused than need it missing.",
         "It has not seen trouble yet. May it stay that way.",
-        "Knowing it is there makes the road feel less eager to surprise me.",
-        "Knowing it is there makes the road feel less eager to <yellow><jump>surprise</jump></yellow> me. I have kept the gear ready. Around here, ready is a kind of prayer."
+        "Knowing it is there makes the road feel less eager to <yellow><jump>surprise</jump></yellow> me."
       ],
       "conditions": [
         {

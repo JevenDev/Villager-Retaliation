@@ -11,9 +11,7 @@
         "I hear the words. Now keep your aim away from us.",
         "A bent shaft can be corrected if it has not split. Prove you have not split.",
         "Fine. Let this be the shot you meant to take.",
-        "Trust is easy to miss and hard to hit again. Try carefully.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "Trust is easy to miss and hard to hit again. Try carefully."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

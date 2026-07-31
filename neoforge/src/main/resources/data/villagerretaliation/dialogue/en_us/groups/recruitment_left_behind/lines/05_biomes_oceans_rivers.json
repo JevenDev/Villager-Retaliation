@@ -33,7 +33,7 @@
       "request": "recruitment_followup",
       "lines": [
         "Don't leave me near the Deep Lukewarm Ocean. Deep water is still deep water even when it feels mild.",
-        "The Deep Lukewarm Ocean sounded gentler than it felt once I was alone beside it.",
+        "The Deep Lukewarm <aqua><wavy>Ocean</wavy></aqua> sounded gentler than it felt once I was alone beside it.",
         "I was stranded near the Deep Lukewarm Ocean with too much water and too little certainty.",
         "If you wander off by a Deep Lukewarm Ocean, I still have to worry about what is moving below.",
         "That water looked calm enough to trick someone careless. I was trying not to be careless.",
@@ -41,8 +41,7 @@
         "Please do not leave me beside deep water just because it looks warm and harmless.",
         "The air felt mild, but the ocean still felt too large.",
         "Every ripple made me wonder what I could not see underneath it.",
-        "I was alone by deep water, trying not to let my thoughts sink with it.",
-        "The Deep Lukewarm <aqua><wavy>Ocean</wavy></aqua> sounded gentler than it felt once I was alone beside it. I was stranded near the Deep Lukewarm Ocean with too much water and too little certainty."
+        "I was alone by deep water, trying not to let my thoughts sink with it."
       ],
       "conditions": [
         {
@@ -92,14 +91,13 @@
         "Don't leave me by the Lukewarm Ocean. Calm water still hides problems underneath it.",
         "The Lukewarm Ocean looked gentle right up until I had to wait beside it alone.",
         "I stood near the Lukewarm Ocean wondering what was moving below the surface while you were gone.",
-        "If you wander off beside a Lukewarm Ocean, I still have to fear what I cannot see.",
+        "If you wander off beside a Lukewarm Ocean, I still have to <dark_gray><wavy>fear</wavy></dark_gray> what I cannot see.",
         "The water was pleasant enough to look at, which made it worse when I started worrying.",
         "I kept watching the surface for shapes that were not there until they were.",
         "Please do not leave me where calm waves can make danger look polite.",
         "The Lukewarm Ocean was quiet, but not quiet enough to comfort me.",
         "Every little splash made me turn my head.",
-        "I was alone beside calm water, trying to remember that calm does not mean safe.",
-        "I stood near the Lukewarm Ocean wondering what was moving below the surface while you were gone. If you wander off beside a Lukewarm Ocean, I still have to <dark_gray><wavy>fear</wavy></dark_gray> what I cannot see."
+        "I was alone beside calm water, trying to remember that calm does not mean safe."
       ],
       "conditions": [
         {

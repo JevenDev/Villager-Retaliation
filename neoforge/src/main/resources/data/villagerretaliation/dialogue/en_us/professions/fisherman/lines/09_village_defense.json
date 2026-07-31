@@ -11,9 +11,7 @@
         "I saw you stand where the tide was meanest.",
         "A safe harbor takes work. Yesterday, you did some.",
         "The village rode out the storm because people held fast.",
-        "You helped haul the worst of that night away from our doors.",
-        "When danger came close, nobody had time to sound brave first.",
-        "You learn a lot about a village when everyone hears the bell at once."
+        "You helped haul the worst of that night away from our doors."
       ],
       "option": "village_defense_report",
       "show_for_babies": false,

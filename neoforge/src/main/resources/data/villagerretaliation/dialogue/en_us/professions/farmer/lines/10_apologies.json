@@ -10,11 +10,8 @@
         "Fine. Plant better behavior where that harm was.",
         "I'll not pull up the apology before it sprouts. Don't let it wither.",
         "A fence mended poorly breaks again. Mend this properly.",
-        "Words are rain. Useful, but not enough by themselves.",
-        "I have seen hard ground soften. Maybe you can too.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry.",
-        "Words are <aqua><wavy>rain</wavy></aqua>. Useful, but not enough by themselves. I have seen hard ground soften. Maybe you can too."
+        "Words are <aqua><wavy>rain</wavy></aqua>. Useful, but not enough by themselves.",
+        "I have seen hard ground soften. Maybe you can too."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

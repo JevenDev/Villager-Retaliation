@@ -83,10 +83,9 @@
         "Try searching about {distance} {direction}{vertical} for {target_article}.",
         "Head {direction} for about {distance}{vertical}. That should bring you near {target_article}.",
         "I would start around {distance} {direction}{vertical} if you want {target_article}.",
-        "The details I heard were {distance} {direction}{vertical}, give or take a little fear.",
+        "The details I heard were {distance} {direction}{vertical}, give or take a little <dark_gray><wavy>fear</wavy></dark_gray>.",
         "{target_article} is said to be close to {distance} {direction}{vertical}.",
-        "About {distance} {direction}{vertical}. That is where the story points.",
-        "The details I heard were {distance} {direction}{vertical}, give or take a little <dark_gray><wavy>fear</wavy></dark_gray>. {target_article} is said to be close to {distance} {direction}{vertical}."
+        "About {distance} {direction}{vertical}. That is where the story points."
       ],
       "id": "global.messages.04_story_hints.messages.story_hint.structure.precise.004"
     },
@@ -248,7 +247,7 @@
         "{target_article}, confirmed. That is not a discovery I would celebrate loudly.",
         "So the deep rumor was true. Some truths are best carried carefully.",
         "You found {target_article}. I hope you left more silence there than you took.",
-        "That place sounds like the kind of dark that listens back.",
+        "That place sounds dark enough to hide trouble right beside you.",
         "Do not make a campfire tale of {target_article}. Some stories wake things.",
         "You returned from that depth. I would call that fortunate before I called it brave.",
         "{target_article} is real. Then quiet has a shape, and it is down there.",
@@ -283,11 +282,10 @@
         "So {target_article} was there. Good. I prefer knowing where the dangerous roads start.",
         "You came back from {target_article}. I would call that lucky, skilled, or both.",
         "Anything tied to that heat deserves caution before curiosity.",
-        "The Nether has a way of making distance feel angry.",
+        "The <gradient:dark_purple:light_purple><pulse>Nether</pulse></gradient> has a way of making distance feel angry.",
         "{target_article} is real, then. I hope you did not breathe too deeply there.",
         "Some roads should be marked less for travel and more for warning.",
-        "You returned from the smoke and heat. That alone is worth noting.",
-        "Anything tied to that heat deserves caution before curiosity. The <gradient:dark_purple:light_purple><pulse>Nether</pulse></gradient> has a way of making distance feel angry."
+        "You returned from the smoke and heat. That alone is worth noting."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.nether.016"
@@ -317,7 +315,7 @@
         "You confirmed {target_article}. The past is never quite as empty as it pretends.",
         "So {target_article} was real. I wonder what story broke there first.",
         "You reached {target_article}. Some places are leftovers, but not harmless ones.",
-        "A ruin is just a story that lost its roof.",
+        "Ruins still tell stories. Most of them start with the roof coming down.",
         "{target_article} may be broken, but that does not mean it is finished.",
         "Old stones keep old names, even when no one speaks them anymore.",
         "You found what remains. Sometimes remains are enough to worry over.",

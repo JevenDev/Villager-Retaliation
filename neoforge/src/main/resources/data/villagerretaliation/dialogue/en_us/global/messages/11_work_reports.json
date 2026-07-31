@@ -110,8 +110,7 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done.",
-        "I am still tending the fields and watching the crops. The field work is moving along."
+        "I am staying focused until this job is done."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.farming.003"
     },
@@ -363,8 +362,7 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward.",
-        "I finished another round at the water. That bit of fishing work is done for now."
+        "The job is still moving forward."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.fishing.013"
     },

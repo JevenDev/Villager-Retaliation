@@ -11,9 +11,7 @@
         "I'll hear you out. I have waited longer for worse catches.",
         "Bad waters calm if the wind changes. Let us see whether yours does.",
         "You hooked harm and brought it here. Now bring something decent.",
-        "Fine. I'll not throw the words back, but I'll inspect them.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "Fine. I'll not throw the words back, but I'll inspect them."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,
