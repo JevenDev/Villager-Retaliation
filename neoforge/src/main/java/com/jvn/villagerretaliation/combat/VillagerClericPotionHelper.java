@@ -24,6 +24,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrownPotion;
@@ -479,6 +480,14 @@ final class VillagerClericPotionHelper {
         );
         bestTarget = bestSupportCandidate(
                 villager,
+                level.getEntitiesOfClass(WanderingTrader.class, searchArea),
+                maxDistanceSqr,
+                healthThreshold,
+                requireLineOfSight,
+                bestTarget
+        );
+        bestTarget = bestSupportCandidate(
+                villager,
                 level.getEntitiesOfClass(Player.class, searchArea),
                 maxDistanceSqr,
                 healthThreshold,
@@ -518,13 +527,14 @@ final class VillagerClericPotionHelper {
         return bestTarget;
     }
 
-    private static boolean isSupportTarget(Villager villager, LivingEntity entity, float healthThreshold, boolean requireLineOfSight) {
+    static boolean isSupportTarget(Villager villager, LivingEntity entity, float healthThreshold, boolean requireLineOfSight) {
         if (entity == villager || !entity.isAlive() || entity.isInvertedHealAndHarm()
                 || DuelService.isParticipant(entity)) {
             return false;
         }
         if (!(entity instanceof Villager)
                 && !(entity instanceof IronGolem)
+                && !(entity instanceof WanderingTrader)
                 && !(entity instanceof Player)) {
             return false;
         }
@@ -549,7 +559,13 @@ final class VillagerClericPotionHelper {
         if (player.isCreative() || player.isSpectator()) {
             return false;
         }
-        if (!(villager.level() instanceof ServerLevel level) || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        if (PartyService.areInSameParty(villager, player)) {
+            return true;
+        }
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return false;
         }
 
@@ -582,7 +598,7 @@ final class VillagerClericPotionHelper {
         return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING);
     }
 
-    private static boolean isSafeOffensiveThrow(Villager villager, LivingEntity target, ItemStack potionStack) {
+    static boolean isSafeOffensiveThrow(Villager villager, LivingEntity target, ItemStack potionStack) {
         if (isFriendlySafePotion(potionStack)) {
             return true;
         }
@@ -606,7 +622,10 @@ final class VillagerClericPotionHelper {
     private static boolean isFriendlyCivilian(Villager villager, LivingEntity entity) {
         return entity != villager
                 && entity.isAlive()
-                && (entity instanceof Villager || entity instanceof IronGolem);
+                && (entity instanceof Villager
+                || entity instanceof IronGolem
+                || entity instanceof WanderingTrader
+                || entity instanceof Player player && canSupportPlayer(villager, player));
     }
 
     private static boolean isFriendlySafePotion(ItemStack potionStack) {
