@@ -3895,6 +3895,117 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerHarvestsMelonBlockOutput(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingMelon");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        BlockPos composterRel = new BlockPos(2, 1, 2);
+        setBlock(helper, composterRel, Blocks.COMPOSTER.defaultBlockState());
+        villager.getBrain().setMemory(
+                MemoryModuleType.JOB_SITE,
+                GlobalPos.of(level.dimension(), helper.absolutePos(composterRel)));
+        BlockPos melonRel = new BlockPos(3, 2, 2);
+        setBlock(helper, melonRel, Blocks.MELON.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(1, 2, 1),
+                new BlockPos(5, 4, 4),
+                false);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+
+        WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
+        helper.assertTrue(
+                level.getBlockState(helper.absolutePos(melonRel)).isAir(),
+                "farming worker should harvest a mature melon output block");
+        helper.assertTrue(
+                context.inventory().hasOutput(stack -> stack.is(Items.MELON_SLICE)),
+                "melon slices should be stored as job output");
+        helper.assertValueEqual(
+                result.status(),
+                "interaction.work.farming.completed_output",
+                "melon completion status");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerIgnoresCropOutsideCircularJobSiteRange(GameTestHelper helper) {
+        buildFloor(helper, 0, 12, 0, 12, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingCircle");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        BlockPos composterRel = new BlockPos(2, 1, 2);
+        BlockPos composter = helper.absolutePos(composterRel);
+        setBlock(helper, composterRel, Blocks.COMPOSTER.defaultBlockState());
+        villager.getBrain().setMemory(MemoryModuleType.JOB_SITE, GlobalPos.of(level.dimension(), composter));
+        BlockPos cornerCropRel = new BlockPos(10, 2, 10);
+        BlockPos cornerCrop = helper.absolutePos(cornerCropRel);
+        setBlock(helper, cornerCropRel.below(), Blocks.FARMLAND.defaultBlockState());
+        setBlock(helper, cornerCropRel, ((CropBlock) Blocks.WHEAT).getStateForAge(7));
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(1, 2, 1),
+                new BlockPos(5, 4, 4),
+                false);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+
+        WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
+        BlockState cornerCropState = level.getBlockState(cornerCrop);
+        helper.assertTrue(
+                cornerCropState.getBlock() instanceof CropBlock crop && crop.isMaxAge(cornerCropState),
+                "farmer should leave a crop outside the circular job-site range untouched");
+        helper.assertValueEqual(
+                result.status(),
+                "interaction.work.farming.waiting_for_growth",
+                "outside-corner crop should not become a field target");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerBoundsGrowingCropPresenceScans(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingBoundedScan");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        CompoundTag state = new CompoundTag();
+        state.putBoolean(HiredFarmingOptions.TILL_SOIL_TAG, false);
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(0, 2, 0),
+                new BlockPos(48, 14, 48),
+                true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+        FarmingWorker worker = new FarmingWorker();
+
+        for (int tick = 0; tick < 41; tick++) {
+            worker.tick(level, villager, hirer, context);
+        }
+
+        helper.assertTrue(
+                state.getLong("FarmingFieldGrowingScanCursor") > 0L,
+                "growing-crop presence scan should preserve a cursor instead of scanning the whole work area at once");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 240)
     public static void miningWorkerPlugsLavaBeforeExcavatingAdjacentBlock(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 0);
@@ -6201,7 +6312,36 @@ public final class VillagerWorkerGameTests {
                 HiredJobInventory.isJobItem(pickupInventory.getItem(HiredJobInventory.MAIN_GRID_START)),
                 "captured wheat should remain a vanilla-clean item stack");
 
+        BlockPos outsidePos = helper.absolutePos(new BlockPos(10, 2, 10));
+        ItemEntity outsideDrop = new ItemEntity(
+                level,
+                outsidePos.getX() + 0.5D,
+                outsidePos.getY(),
+                outsidePos.getZ() + 0.5D,
+                new ItemStack(Items.WHEAT));
+        outsideDrop.setNoPickUpDelay();
+        level.addFreshEntity(outsideDrop);
+        helper.assertTrue(
+                HiredFarmingInventoryBridge.shouldDiscardWantedItem(level, villager, outsideDrop),
+                "wanted-item memory should reject farm drops outside the circular job-site range");
+        helper.assertTrue(
+                HiredFarmingInventoryBridge.capturePickup(level, villager, outsideDrop),
+                "out-of-range farm drops should be intercepted before vanilla inventory insertion");
+        helper.assertTrue(outsideDrop.isAlive(), "intercepted out-of-range farm drop should remain in the world");
+        helper.assertValueEqual(
+                countInventoryItem(pickupInventory, Items.WHEAT),
+                5,
+                "out-of-range farm drop should not enter the job inventory");
+
+        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            pickupInventory.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        helper.assertFalse(
+                villager.wantsToPickUp(new ItemStack(Items.WHEAT)),
+                "hired farmer should not target farm drops when the job inventory cannot accept them");
+
         HiredVillagerContractService.endHireContract(level, villager, hirer);
+        outsideDrop.discard();
         villager.discard();
         helper.succeed();
     }
@@ -7246,6 +7386,18 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(
                 session.context().isInsideWorkArea(villager.blockPosition()),
                 "farmer standing by the claimed job block should be inside the synthesized site");
+        BlockPos squareCorner = composter.offset(8, 1, 8);
+        helper.assertTrue(
+                session.context().isInsideWorkArea(squareCorner),
+                "fixture corner should remain inside the synthesized scan bounds");
+        helper.assertFalse(
+                HiredVillagerWorkService.isInsideEffectiveWorkArea(
+                        level,
+                        villager,
+                        HiredVillagerRole.FARMING,
+                        session.context(),
+                        squareCorner),
+                "synthesized job-site tether should exclude square corners beyond its circular radius");
 
         ClipboardWorkforceSnapshot snapshot = ClipboardWorkforceService.snapshot(hirer);
         helper.assertValueEqual(snapshot.workers().size(), 1, "clipboard worker rows");

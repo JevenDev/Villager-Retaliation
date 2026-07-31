@@ -18,6 +18,7 @@
     "HarvestFarmlandMixin",
     "HorseVillagerPassengerPositionMixin",
     "LivingEntityVillagerExperienceMixin",
+    "NearestItemSensorMixin",
     "PathNavigationTrafficMixin",
     "PanicGoalMixin",
     "ReactToBellMixin",

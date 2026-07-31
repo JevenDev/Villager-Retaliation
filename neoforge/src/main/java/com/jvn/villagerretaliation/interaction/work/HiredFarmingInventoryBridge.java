@@ -39,12 +39,29 @@ public final class HiredFarmingInventoryBridge {
         if (!isFarmPickupItem(villager, stack)) {
             return false;
         }
-        return HiredVillagerWorkService.isInsideEffectiveWorkArea(
+        return canAcceptFarmPickup(villager, session.inventory(), stack)
+                && HiredVillagerWorkService.isInsideEffectiveWorkArea(
                 level,
                 villager,
                 HiredVillagerRole.FARMING,
                 session.context(),
                 villager.blockPosition());
+    }
+
+    public static boolean shouldDiscardWantedItem(ServerLevel level, Villager villager, ItemEntity itemEntity) {
+        HiredWorkSession session = activeFarmingSession(level, villager);
+        if (session == null || itemEntity == null) {
+            return false;
+        }
+        ItemStack stack = itemEntity.getItem();
+        return !isFarmPickupItem(villager, stack)
+                || !canAcceptFarmPickup(villager, session.inventory(), stack)
+                || !HiredVillagerWorkService.isInsideEffectiveWorkArea(
+                level,
+                villager,
+                HiredVillagerRole.FARMING,
+                session.context(),
+                itemEntity.blockPosition());
     }
 
     public static boolean capturePickup(ServerLevel level, Villager villager, ItemEntity itemEntity) {
@@ -248,6 +265,16 @@ public final class HiredFarmingInventoryBridge {
             remainder = inventory.insertPlainOutput(remainder);
         }
         return remainder;
+    }
+
+    private static boolean canAcceptFarmPickup(Villager villager, HiredJobInventory inventory, ItemStack stack) {
+        ItemStack sample = stack.copyWithCount(1);
+        if (isPlantingItem(villager, sample)
+                && countPlantingItems(villager, inventory.supplySlots(), inventory) < PLANTING_RESERVE
+                && inventory.canStorePlainSupplies(List.of(sample))) {
+            return true;
+        }
+        return inventory.canStorePlainOutputs(List.of(sample));
     }
 
     private static boolean hasPlantingItem(Villager villager, HiredJobInventory inventory) {

@@ -57,7 +57,12 @@ public record HiredJobSite(
     }
 
     public boolean isInsideNavigationTether(BlockPos pos, int horizontalPadding, int verticalPadding) {
-        return isInsidePaddedWorkBounds(pos, horizontalPadding, verticalPadding) || isNearAnchor(pos);
+        if (this.workArea.explicitlyAssigned()) {
+            return isInsidePaddedWorkBounds(pos, horizontalPadding, verticalPadding) || isNearAnchor(pos);
+        }
+        return hasAnchor()
+                ? isNearAnchor(pos)
+                : isInsidePaddedWorkBounds(pos, horizontalPadding, verticalPadding);
     }
 
     public boolean isInsidePaddedWorkBounds(BlockPos pos, int horizontalPadding, int verticalPadding) {
