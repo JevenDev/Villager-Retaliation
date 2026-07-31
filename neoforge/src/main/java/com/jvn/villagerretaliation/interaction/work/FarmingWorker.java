@@ -1,9 +1,10 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.interaction.HiredJobSite;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
-import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.Brain;
@@ -25,9 +27,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.AttachedStemBlock;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CocoaBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmBlock;
+import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.BlockHitResult;
@@ -40,6 +48,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
     private static final String FIELD_HARVEST_SCAN_CURSOR_TAG = "FarmingFieldHarvestScanCursor";
     private static final String FIELD_PLANT_SCAN_CURSOR_TAG = "FarmingFieldPlantScanCursor";
     private static final String FIELD_TILL_SCAN_CURSOR_TAG = "FarmingFieldTillScanCursor";
+    private static final String FIELD_GROWING_SCAN_CURSOR_TAG = "FarmingFieldGrowingScanCursor";
+    private static final String FIELD_GROWING_SCAN_COMPLETE_TAG = "FarmingFieldGrowingScanComplete";
+    private static final String FIELD_GROWING_CROP_PRESENT_TAG = "FarmingFieldGrowingCropPresent";
     private static final int MAX_FIELD_SCAN_POSITIONS_PER_WORK_TICK = 768;
     private static final int NO_FIELD_TARGET_SCAN_COOLDOWN_TICKS = 40;
     private static final int JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS = 10;
@@ -105,10 +116,13 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         if (fieldScanOnCooldown(level, context)) {
+            GrowingCropPresence growing = growingCropPresence(level, context, jobSite);
             HiredWorkerBrain.setLastTargetScanResult(
                     context,
-                    hasGrowingCropInFieldSearchArea(level, context, jobSite)
+                    growing == GrowingCropPresence.PRESENT
                             ? "field_scan_cooldown_waiting_for_crops"
+                            : growing == GrowingCropPresence.SCANNING
+                            ? "field_scan_cooldown_scanning_growth"
                             : "field_scan_cooldown_no_targets");
             clearSecondaryJobSite(villager);
             setTaskState(context, HiredWorkerTaskState.IDLE);
@@ -172,6 +186,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             if (isHarvestableVanillaFieldTarget(level, target)) {
                 return harvestCrop(level, villager, context, target);
+            }
+            if (isHarvestableBlockOutputTarget(level, target)) {
+                return harvestBlockOutput(level, villager, context, target);
             }
             if (isPlantableVanillaFieldTarget(level, target)) {
                 return plantCrop(level, villager, context, target);
@@ -244,6 +261,63 @@ public final class FarmingWorker extends AbstractBlockWorker {
                         ? "interaction.work.farming.completed_crop"
                         : "interaction.work.farming.completed_output",
                 HiredWorkPractice.farming(replanted ? "harvest_replant" : "harvest"));
+    }
+
+    private WorkResult harvestBlockOutput(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos target) {
+        ItemStack hoe = context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT);
+        BlockState state = level.getBlockState(target);
+        if (!isHarvestableBlockOutputTarget(level, target)) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "harvest_target_changed");
+            setTaskState(context, HiredWorkerTaskState.IDLE, target);
+            return WorkResult.idle("interaction.work.farming.target_changed");
+        }
+
+        List<ItemStack> drops = Block.getDrops(state, level, target, level.getBlockEntity(target), villager, hoe);
+        if (!context.inventory().canStorePlainOutputs(drops)) {
+            OutputFullHandling outputFull = handleOutputFullInventory(
+                    level,
+                    context,
+                    villager,
+                    FIELD_GUIDE_WALK_SPEED,
+                    target,
+                    "interaction.work.farming.output_full_depositing",
+                    "interaction.work.farming.output_full_blocked");
+            if (outputFull.handled()) {
+                return outputFull.result();
+            }
+            if (!context.inventory().canStorePlainOutputs(drops)) {
+                return WorkResult.idle("interaction.work.farming.output_full_blocked");
+            }
+        }
+
+        faceBlock(villager, target);
+        swingWorkTool(villager);
+        EnchantmentHelper.onHitBlock(
+                level,
+                hoe,
+                villager,
+                villager,
+                EquipmentSlot.MAINHAND,
+                target.getCenter(),
+                state,
+                ignored -> {
+                });
+        level.destroyBlock(target, false, villager);
+        HiredPathMemory.onBlockChanged(level, target);
+        HiredPathMemory.rememberRecent(level, target);
+        if (!HiredFarmingInventoryBridge.storeFarmDrops(villager, context.inventory(), drops)) {
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, target);
+            return WorkResult.idle("interaction.work.farming.output_full_blocked");
+        }
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.IDLE, target);
+        return WorkResult.progressedWithPractice(
+                "interaction.work.farming.completed_output", HiredWorkPractice.farming("harvest"));
     }
 
     private WorkResult plantCrop(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos cropTarget) {
@@ -531,8 +605,13 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS);
         for (BlockPos raw : BlockPos.betweenClosed(min, max)) {
             BlockPos candidate = raw.immutable();
+            int dx = candidate.getX() - jobSite.getX();
+            int dz = candidate.getZ() - jobSite.getZ();
+            if (dx * dx + dz * dz > JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS * JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS) {
+                continue;
+            }
             boolean matches = harvestOnly
-                    ? isHarvestableVanillaFieldTarget(level, candidate)
+                    ? isHarvestableFieldTarget(level, candidate)
                     : isPlantableVanillaFieldTarget(level, candidate);
             if (matches) {
                 targets.add(candidate);
@@ -607,7 +686,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
     }
 
     private static boolean isUsableVanillaFieldTarget(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos pos) {
-        return isHarvestableVanillaFieldTarget(level, pos)
+        return isHarvestableFieldTarget(level, pos)
                 || HiredFarmingInventoryBridge.hasJobPlantingItem(villager, context) && isPlantableVanillaFieldTarget(level, pos);
     }
 
@@ -634,12 +713,16 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (target == null || !context.hasWorkArea() || !context.isLoaded(level, target)) {
             return false;
         }
-        if (!context.isInsideWorkArea(target) && !context.isInsideWorkArea(target.below())) {
+        if (!isInsideFieldWorkArea(context, target) && !isInsideFieldWorkArea(context, target.below())) {
             return false;
         }
         return harvestOnly
-                ? isHarvestableVanillaFieldTarget(level, target)
+                ? isHarvestableFieldTarget(level, target)
                 : isPlantableVanillaFieldTarget(level, target);
+    }
+
+    private static boolean isHarvestableFieldTarget(ServerLevel level, BlockPos pos) {
+        return isHarvestableVanillaFieldTarget(level, pos) || isHarvestableBlockOutputTarget(level, pos);
     }
 
     private static boolean isHarvestableVanillaFieldTarget(ServerLevel level, BlockPos pos) {
@@ -653,6 +736,36 @@ public final class FarmingWorker extends AbstractBlockWorker {
         return false;
     }
 
+    private static boolean isHarvestableBlockOutputTarget(ServerLevel level, BlockPos pos) {
+        if (pos == null || !level.hasChunkAt(pos)) {
+            return false;
+        }
+        BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof StemBlock || state.getBlock() instanceof AttachedStemBlock) {
+            return false;
+        }
+        if (state.getBlock() instanceof CocoaBlock) {
+            return state.getValue(CocoaBlock.AGE) >= CocoaBlock.MAX_AGE;
+        }
+        return state.is(Blocks.PUMPKIN)
+                || state.is(Blocks.MELON)
+                || state.is(BlockTags.CROPS) && !hasImmatureAgeProperty(state);
+    }
+
+    private static boolean hasImmatureAgeProperty(BlockState state) {
+        for (Property<?> property : state.getProperties()) {
+            if (property instanceof IntegerProperty ageProperty && "age".equals(property.getName())) {
+                int currentAge = state.getValue(ageProperty);
+                int maxAge = ageProperty.getPossibleValues().stream()
+                        .mapToInt(Integer::intValue)
+                        .max()
+                        .orElse(currentAge);
+                return currentAge < maxAge;
+            }
+        }
+        return false;
+    }
+
     private static boolean isPlantableVanillaFieldTarget(ServerLevel level, BlockPos pos) {
         if (pos == null || !level.hasChunkAt(pos)) {
             return false;
@@ -661,32 +774,77 @@ public final class FarmingWorker extends AbstractBlockWorker {
         return state.isAir() && isVillagerFarmland(level.getBlockState(pos.below()));
     }
 
-    private static boolean hasGrowingCropInFieldSearchArea(ServerLevel level, HiredWorkContext context, BlockPos jobSite) {
-        if (context.hasWorkArea()) {
-            for (BlockPos raw : context.workAreaPositions()) {
-                if (isGrowingCropForSearchPos(level, context, raw)) {
-                    return true;
-                }
-            }
-            return false;
+    private static GrowingCropPresence growingCropPresence(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos jobSite) {
+        if (context.state().getBoolean(FIELD_GROWING_SCAN_COMPLETE_TAG)) {
+            return context.state().getBoolean(FIELD_GROWING_CROP_PRESENT_TAG)
+                    ? GrowingCropPresence.PRESENT
+                    : GrowingCropPresence.ABSENT;
         }
+
+        GrowingCropPresence result = context.hasWorkArea()
+                ? scanGrowingCropsInWorkArea(level, context)
+                : scanGrowingCropsAroundJobSite(level, context, jobSite);
+        if (result != GrowingCropPresence.SCANNING) {
+            context.state().putBoolean(FIELD_GROWING_SCAN_COMPLETE_TAG, true);
+            context.state().putBoolean(FIELD_GROWING_CROP_PRESENT_TAG, result == GrowingCropPresence.PRESENT);
+        }
+        return result;
+    }
+
+    private static GrowingCropPresence scanGrowingCropsInWorkArea(ServerLevel level, HiredWorkContext context) {
+        HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
+                context,
+                FIELD_GROWING_SCAN_CURSOR_TAG,
+                MAX_FIELD_SCAN_POSITIONS_PER_WORK_TICK,
+                pos -> isGrowingCropForSearchPos(level, context, pos));
+        if (!scan.candidates().isEmpty()) {
+            HiredWorkAreaScan.clearCursor(context, FIELD_GROWING_SCAN_CURSOR_TAG);
+            return GrowingCropPresence.PRESENT;
+        }
+        return scan.completedFullPass() ? GrowingCropPresence.ABSENT : GrowingCropPresence.SCANNING;
+    }
+
+    private static GrowingCropPresence scanGrowingCropsAroundJobSite(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos jobSite) {
         if (jobSite == null) {
-            return false;
+            return GrowingCropPresence.ABSENT;
         }
-        BlockPos min = jobSite.offset(
-                -JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS,
-                -JOB_SITE_FIELD_SCAN_VERTICAL_RADIUS,
-                -JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS);
-        BlockPos max = jobSite.offset(
-                JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS,
-                JOB_SITE_FIELD_SCAN_VERTICAL_RADIUS,
-                JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS);
-        for (BlockPos raw : BlockPos.betweenClosed(min, max)) {
-            if (isGrowingVanillaCrop(level, raw)) {
-                return true;
+        int horizontalSize = JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS * 2 + 1;
+        int verticalSize = JOB_SITE_FIELD_SCAN_VERTICAL_RADIUS * 2 + 1;
+        long totalPositions = (long) horizontalSize * horizontalSize * verticalSize;
+        long index = context.state().contains(FIELD_GROWING_SCAN_CURSOR_TAG)
+                ? Math.floorMod(context.state().getLong(FIELD_GROWING_SCAN_CURSOR_TAG), totalPositions)
+                : 0L;
+        long visited = 0L;
+        while (visited < totalPositions && visited < MAX_FIELD_SCAN_POSITIONS_PER_WORK_TICK) {
+            int xOffset = (int) (index % horizontalSize) - JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS;
+            long zyIndex = index / horizontalSize;
+            int zOffset = (int) (zyIndex % horizontalSize) - JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS;
+            int yOffset = (int) (zyIndex / horizontalSize) - JOB_SITE_FIELD_SCAN_VERTICAL_RADIUS;
+            BlockPos candidate = jobSite.offset(xOffset, yOffset, zOffset);
+            if (xOffset * xOffset + zOffset * zOffset
+                    <= JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS * JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS
+                    && isGrowingFarmCrop(level, candidate)) {
+                HiredWorkAreaScan.clearCursor(context, FIELD_GROWING_SCAN_CURSOR_TAG);
+                return GrowingCropPresence.PRESENT;
+            }
+            index = (index + 1L) % totalPositions;
+            visited++;
+            if (index == 0L) {
+                break;
             }
         }
-        return false;
+        if (index == 0L) {
+            HiredWorkAreaScan.clearCursor(context, FIELD_GROWING_SCAN_CURSOR_TAG);
+            return GrowingCropPresence.ABSENT;
+        }
+        context.state().putLong(FIELD_GROWING_SCAN_CURSOR_TAG, index);
+        return GrowingCropPresence.SCANNING;
     }
 
     private static boolean isGrowingCropForSearchPos(ServerLevel level, HiredWorkContext context, BlockPos raw) {
@@ -703,18 +861,27 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (pos == null || !context.isLoaded(level, pos)) {
             return false;
         }
-        if (!context.isInsideWorkArea(pos) && !context.isInsideWorkArea(pos.below())) {
+        if (!isInsideFieldWorkArea(context, pos) && !isInsideFieldWorkArea(context, pos.below())) {
             return false;
         }
-        return isGrowingVanillaCrop(level, pos);
+        return isGrowingFarmCrop(level, pos);
     }
 
-    private static boolean isGrowingVanillaCrop(ServerLevel level, BlockPos pos) {
+    private static boolean isGrowingFarmCrop(ServerLevel level, BlockPos pos) {
         if (pos == null || !level.hasChunkAt(pos)) {
             return false;
         }
         BlockState state = level.getBlockState(pos);
-        return state.getBlock() instanceof CropBlock crop && !crop.isMaxAge(state);
+        if (state.getBlock() instanceof CropBlock crop) {
+            return !crop.isMaxAge(state);
+        }
+        if (state.getBlock() instanceof CocoaBlock) {
+            return state.getValue(CocoaBlock.AGE) < CocoaBlock.MAX_AGE;
+        }
+        if (state.getBlock() instanceof StemBlock || state.getBlock() instanceof AttachedStemBlock) {
+            return true;
+        }
+        return state.is(BlockTags.CROPS) && hasImmatureAgeProperty(state);
     }
 
     private static BlockPos tillTargetForSearchPos(
@@ -744,7 +911,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (!context.isLoaded(level, cropPos) || !level.getBlockState(cropPos).isAir()) {
             return false;
         }
-        if (!context.isInsideWorkArea(soilPos) && !context.isInsideWorkArea(cropPos)) {
+        if (!isInsideFieldWorkArea(context, soilPos) && !isInsideFieldWorkArea(context, cropPos)) {
             return false;
         }
         return tillModifiedState(level, soilPos, hoe) != null;
@@ -809,18 +976,36 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (context.hasWorkArea()) {
             context.state().putLong(NEXT_FIELD_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_FIELD_TARGET_SCAN_COOLDOWN_TICKS);
         }
+        if (context.state().getBoolean(FIELD_GROWING_SCAN_COMPLETE_TAG)) {
+            context.state().remove(FIELD_GROWING_SCAN_COMPLETE_TAG);
+            context.state().remove(FIELD_GROWING_CROP_PRESENT_TAG);
+        }
+        GrowingCropPresence growing = growingCropPresence(level, context, jobSite);
         HiredWorkerBrain.setLastTargetScanResult(
                 context,
-                hasGrowingCropInFieldSearchArea(level, context, jobSite)
+                growing == GrowingCropPresence.PRESENT
                         ? "field_scan_full_waiting_for_crops"
+                        : growing == GrowingCropPresence.SCANNING
+                        ? "field_scan_full_scanning_growth"
                         : "field_scan_full_no_targets");
+    }
+
+    private static boolean isInsideFieldWorkArea(HiredWorkContext context, BlockPos pos) {
+        if (context == null || pos == null) {
+            return false;
+        }
+        HiredJobSite jobSite = context.jobSite();
+        if (jobSite.hasAnchor() && !jobSite.workArea().explicitlyAssigned()) {
+            return jobSite.isNearAnchor(pos);
+        }
+        return context.isInsideWorkArea(pos);
     }
 
     private static boolean isInsideFieldSearchArea(BlockPos pos, HiredWorkContext context, BlockPos jobSite) {
         if (context.hasWorkArea()) {
-            return context.isInsideWorkArea(pos)
-                    || context.isInsideWorkArea(pos.below())
-                    || context.isInsideWorkArea(pos.above());
+            return isInsideFieldWorkArea(context, pos)
+                    || isInsideFieldWorkArea(context, pos.below())
+                    || isInsideFieldWorkArea(context, pos.above());
         }
         if (jobSite == null) {
             return false;
@@ -860,11 +1045,20 @@ public final class FarmingWorker extends AbstractBlockWorker {
         HiredWorkAreaScan.clearCursor(context, FIELD_HARVEST_SCAN_CURSOR_TAG);
         HiredWorkAreaScan.clearCursor(context, FIELD_PLANT_SCAN_CURSOR_TAG);
         HiredWorkAreaScan.clearCursor(context, FIELD_TILL_SCAN_CURSOR_TAG);
+        HiredWorkAreaScan.clearCursor(context, FIELD_GROWING_SCAN_CURSOR_TAG);
+        context.state().remove(FIELD_GROWING_SCAN_COMPLETE_TAG);
+        context.state().remove(FIELD_GROWING_CROP_PRESENT_TAG);
     }
 
     private static BlockPos returnTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
         BlockPos jobSite = HiredVillagerWorkService.claimedJobSitePos(level, villager);
         return jobSite != null ? jobSite : context.workCenter();
+    }
+
+    private enum GrowingCropPresence {
+        PRESENT,
+        ABSENT,
+        SCANNING
     }
 
     private record FieldSearchResult(BlockPos target, boolean scanInProgress) {

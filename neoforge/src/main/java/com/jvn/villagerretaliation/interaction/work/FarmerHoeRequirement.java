@@ -6,6 +6,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.common.ItemAbilities;
 
 public final class FarmerHoeRequirement {
     private FarmerHoeRequirement() {
@@ -30,13 +31,7 @@ public final class FarmerHoeRequirement {
     }
 
     public static boolean isHoe(ItemStack stack) {
-        return !stack.isEmpty()
-                && (stack.is(Items.WOODEN_HOE)
-                || stack.is(Items.STONE_HOE)
-                || stack.is(Items.IRON_HOE)
-                || stack.is(Items.GOLDEN_HOE)
-                || stack.is(Items.DIAMOND_HOE)
-                || stack.is(Items.NETHERITE_HOE));
+        return !stack.isEmpty() && stack.canPerformAction(ItemAbilities.HOE_TILL);
     }
 
     public static double hoeScore(ItemStack stack) {

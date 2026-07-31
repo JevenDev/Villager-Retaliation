@@ -897,6 +897,24 @@ public final class HiredJobInventory implements Container {
         return canStoreOutputs(stacks, false);
     }
 
+    public boolean canStorePlainSupplies(List<ItemStack> stacks) {
+        NonNullList<ItemStack> simulatedItems = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+        HiredJobInventorySlotType[] simulatedTypes = new HiredJobInventorySlotType[SLOT_COUNT];
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            simulatedItems.set(slot, this.items.get(slot).copy());
+            simulatedTypes[slot] = slotType(slot);
+        }
+        for (ItemStack stack : stacks) {
+            if (stack == null) {
+                continue;
+            }
+            if (!simulateSupplyInsert(simulatedItems, simulatedTypes, stack.copy(), false).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private boolean canStoreOutputs(List<ItemStack> stacks, boolean markContractItems) {
         NonNullList<ItemStack> simulatedItems = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
         HiredJobInventorySlotType[] simulatedTypes = new HiredJobInventorySlotType[SLOT_COUNT];
@@ -1164,11 +1182,23 @@ public final class HiredJobInventory implements Container {
             NonNullList<ItemStack> simulatedItems,
             HiredJobInventorySlotType[] simulatedTypes,
             ItemStack stack) {
+        return simulateSupplyInsert(simulatedItems, simulatedTypes, stack, true);
+    }
+
+    private ItemStack simulateSupplyInsert(
+            NonNullList<ItemStack> simulatedItems,
+            HiredJobInventorySlotType[] simulatedTypes,
+            ItemStack stack,
+            boolean markContractItem) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
-        markWithActiveContract(remainder);
+        if (markContractItem) {
+            markWithActiveContract(remainder);
+        } else {
+            removeJobItemMarker(remainder);
+        }
         simulateSupplyInsertIntoPreferredRegions(simulatedItems, simulatedTypes, remainder);
         return remainder;
     }
