@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.scene.SceneRuntime;
 import com.jvn.villagerretaliation.scene.encounter.EncounterService;
@@ -189,6 +190,9 @@ public final class VillagerRetaliationEvents {
 
     public static void onPlayerClone(PlayerEvent.Clone event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            if (event.getOriginal() instanceof ServerPlayer original) {
+                DuelService.copyPendingPlayerRecovery(original, player);
+            }
             VillagerQuestService.clearRuntimeState(player);
             ClipboardWorkforceService.clearRuntimeState(player);
             PartySyncService.sendTo(player);

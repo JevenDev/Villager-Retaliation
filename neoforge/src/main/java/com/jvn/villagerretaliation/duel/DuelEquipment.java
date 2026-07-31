@@ -23,6 +23,7 @@ import net.minecraft.world.item.Items;
 final class DuelEquipment {
     private static final String RECOVERY_TAG = "VillagerRetaliationDuelRecovery";
     private static final int RECOVERY_VERSION = 1;
+    private static final int PLAYER_HOTBAR_SIZE = 9;
 
     private DuelEquipment() {}
 
@@ -66,7 +67,7 @@ final class DuelEquipment {
         CompoundTag root = recoveryTag(player);
         if (root == null) return null;
         DuelLoadout loadout = loadout(root);
-        PlayerSnapshot snapshot = PlayerSnapshot.load(player.registryAccess(), root.getCompound("Snapshot"));
+        PlayerSnapshot snapshot = PlayerSnapshot.load(player, root.getCompound("Snapshot"));
         return loadout == null || snapshot == null ? null
                 : new PlayerRecovery(root.getUUID("Duel"), loadout, Math.max(0, root.getInt("Stake")), snapshot);
     }
@@ -75,9 +76,16 @@ final class DuelEquipment {
         CompoundTag root = recoveryTag(villager);
         if (root == null) return null;
         DuelLoadout loadout = loadout(root);
-        VillagerSnapshot snapshot = VillagerSnapshot.load(villager.registryAccess(), root.getCompound("Snapshot"));
+        VillagerSnapshot snapshot = VillagerSnapshot.load(villager, root.getCompound("Snapshot"));
         return loadout == null || snapshot == null ? null
                 : new VillagerRecovery(root.getUUID("Duel"), loadout, Math.max(0, root.getInt("Stake")), snapshot);
+    }
+
+    static void copyRecovery(Entity original, Entity replacement) {
+        CompoundTag root = recoveryTag(original);
+        if (root != null && replacement != null) {
+            replacement.getPersistentData().put(RECOVERY_TAG, root.copy());
+        }
     }
 
     static void clearRecovery(Entity entity, UUID duelId) {
@@ -199,18 +207,34 @@ final class DuelEquipment {
             return tag;
         }
 
-        static PlayerSnapshot load(HolderLookup.Provider provider, CompoundTag tag) {
+        static PlayerSnapshot load(ServerPlayer player, CompoundTag tag) {
             if (!tag.contains("Items", Tag.TAG_LIST)
                     || !tag.contains("Armor", Tag.TAG_LIST)
                     || !tag.contains("Offhand", Tag.TAG_LIST)
-                    || !tag.contains("Food", Tag.TAG_COMPOUND)) {
+                    || !tag.contains("Selected", Tag.TAG_INT)
+                    || !tag.contains("Health", Tag.TAG_FLOAT)
+                    || !tag.contains("Absorption", Tag.TAG_FLOAT)
+                    || !tag.contains("Food", Tag.TAG_COMPOUND)
+                    || !tag.contains("Effects", Tag.TAG_LIST)) {
+                return null;
+            }
+            HolderLookup.Provider provider = player.registryAccess();
+            List<ItemStack> items = loadStacksExact(
+                    tag, "Items", provider, player.getInventory().items.size());
+            List<ItemStack> armor = loadStacksExact(
+                    tag, "Armor", provider, player.getInventory().armor.size());
+            List<ItemStack> offhand = loadStacksExact(
+                    tag, "Offhand", provider, player.getInventory().offhand.size());
+            int selected = tag.getInt("Selected");
+            if (items == null || armor == null || offhand == null
+                    || selected < 0 || selected >= PLAYER_HOTBAR_SIZE) {
                 return null;
             }
             return new PlayerSnapshot(
-                    loadStacks(tag, "Items", provider),
-                    loadStacks(tag, "Armor", provider),
-                    loadStacks(tag, "Offhand", provider),
-                    tag.getInt("Selected"),
+                    items,
+                    armor,
+                    offhand,
+                    selected,
                     tag.getFloat("Health"),
                     tag.getFloat("Absorption"),
                     tag.getCompound("Food").copy(),
@@ -265,21 +289,38 @@ final class DuelEquipment {
             return tag;
         }
 
-        static VillagerSnapshot load(HolderLookup.Provider provider, CompoundTag tag) {
+        static VillagerSnapshot load(Villager villager, CompoundTag tag) {
             if (!tag.contains("Inventory", Tag.TAG_LIST)
                     || !tag.contains("Equipment", Tag.TAG_COMPOUND)
+                    || !tag.contains("EquipmentOwnership", Tag.TAG_COMPOUND)
+                    || !tag.contains("Health", Tag.TAG_FLOAT)
+                    || !tag.contains("Absorption", Tag.TAG_FLOAT)
+                    || !tag.contains("Effects", Tag.TAG_LIST)
+                    || !tag.contains("Pickup", Tag.TAG_BYTE)
                     || !tag.contains("Recovery", Tag.TAG_COMPOUND)) {
                 return null;
             }
+            HolderLookup.Provider provider = villager.registryAccess();
+            List<ItemStack> inventory = loadStacksExact(
+                    tag, "Inventory", provider,
+                    VillagerInventoryAccess.captureFullInventory(villager).size());
+            if (inventory == null) return null;
             CompoundTag equipmentTag = tag.getCompound("Equipment");
             Map<EquipmentSlot, ItemStack> equipment = new EnumMap<>(EquipmentSlot.class);
             for (EquipmentSlot slot : EquipmentSlot.values()) {
+                if (!equipmentTag.contains(slot.getName(), Tag.TAG_COMPOUND)) return null;
                 equipment.put(slot, ItemStack.parseOptional(
                         provider, equipmentTag.getCompound(slot.getName())));
             }
             CompoundTag recoveryTag = tag.getCompound("Recovery");
+            if (!recoveryTag.contains("Food", Tag.TAG_INT)
+                    || !recoveryTag.contains("Saturation", Tag.TAG_FLOAT)
+                    || !recoveryTag.contains("Exhaustion", Tag.TAG_FLOAT)
+                    || !recoveryTag.contains("HealTimer", Tag.TAG_INT)) {
+                return null;
+            }
             return new VillagerSnapshot(
-                    loadStacks(tag, "Inventory", provider),
+                    inventory,
                     equipment,
                     tag.getCompound("EquipmentOwnership").copy(),
                     tag.getFloat("Health"),
@@ -303,8 +344,11 @@ final class DuelEquipment {
         return saved;
     }
 
-    private static List<ItemStack> loadStacks(CompoundTag tag, String key, HolderLookup.Provider provider) {
-        return tag.getList(key, Tag.TAG_COMPOUND).stream()
+    private static List<ItemStack> loadStacksExact(
+            CompoundTag tag, String key, HolderLookup.Provider provider, int expectedSize) {
+        ListTag saved = tag.getList(key, Tag.TAG_COMPOUND);
+        if (saved.size() != expectedSize) return null;
+        return saved.stream()
                 .map(raw -> ItemStack.parseOptional(provider, (CompoundTag) raw))
                 .toList();
     }
