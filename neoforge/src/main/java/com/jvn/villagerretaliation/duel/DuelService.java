@@ -526,6 +526,10 @@ public final class DuelService {
         if (duel != null) finish(player.getServer(), duel, DuelResult.VILLAGER_WIN, false, player);
     }
 
+    public static void copyPendingPlayerRecovery(ServerPlayer original, ServerPlayer replacement) {
+        DuelEquipment.copyRecovery(original, replacement);
+    }
+
     public static boolean recoverPendingPlayer(ServerPlayer player) {
         DuelEquipment.PlayerRecovery recovery = DuelEquipment.playerRecovery(player);
         if (recovery == null || BY_ID.containsKey(recovery.duelId())) return false;
@@ -601,6 +605,11 @@ public final class DuelService {
         ServerPlayer listedPlayer = server.getPlayerList().getPlayer(duel.playerId());
         ServerPlayer player = playerHint != null && playerHint.getUUID().equals(duel.playerId()) ? playerHint : listedPlayer;
         Villager villager = level != null && level.getEntity(duel.villagerId()) instanceof Villager found ? found : null;
+        DuelResult settledResult = result;
+        if ((result == DuelResult.PLAYER_WIN && player == null)
+                || (result == DuelResult.VILLAGER_WIN && villager == null)) {
+            settledResult = DuelResult.CANCELLED;
+        }
         for (UUID projectileId : duel.projectiles()) {
             for (ServerLevel candidate : server.getAllLevels()) {
                 if (candidate.getEntity(projectileId) instanceof Projectile projectile) {
@@ -624,13 +633,14 @@ public final class DuelService {
             VillagerRangedCombatHelper.clearDuelState(villager);
         }
         if (level != null) DuelSpectators.release(level, duel.spectators());
-        settle(player, villager, duel.stake(), result);
+        settle(player, villager, duel.stake(), settledResult);
         if (player != null) DuelEquipment.clearRecovery(player, duel.id());
         if (villager != null) DuelEquipment.clearRecovery(villager, duel.id());
-        if (result != DuelResult.CANCELLED && level != null && villager != null) complete(server, level, player, villager, duel, result, knockedOut);
-        if (result == DuelResult.VILLAGER_WIN && player != null) applyLossPenalty(server, player);
-        if (result == DuelResult.PLAYER_WIN && player != null) playPlayerDuelVictorySound(player);
-        if (player != null) player.sendSystemMessage(Component.translatable("villagerretaliation.duel.result." + result.name().toLowerCase()));
+        if (settledResult != DuelResult.CANCELLED && level != null && villager != null)
+            complete(server, level, player, villager, duel, settledResult, knockedOut);
+        if (settledResult == DuelResult.VILLAGER_WIN && player != null) applyLossPenalty(server, player);
+        if (settledResult == DuelResult.PLAYER_WIN && player != null) playPlayerDuelVictorySound(player);
+        if (player != null) player.sendSystemMessage(Component.translatable("villagerretaliation.duel.result." + settledResult.name().toLowerCase()));
     }
 
     private static void playPlayerDuelVictorySound(ServerPlayer player) {

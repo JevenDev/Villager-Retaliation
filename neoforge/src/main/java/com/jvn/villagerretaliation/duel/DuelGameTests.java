@@ -25,6 +25,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.chat.Component;
@@ -739,6 +740,44 @@ public final class DuelGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void logoutWithMissingVillagerCancelsAndPreservesEscrow(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        player.getInventory().add(
+                VillagerCurrencyResources.createStack(participant.level().getServer(), 8));
+        int walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
+        if (walletBefore < 8) {
+            VillagerWalletService.addCurrency(
+                    villager, 8 - walletBefore, VillagerWalletService.WalletSource.DUEL);
+            walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
+        }
+
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.MELEE, 8);
+        helper.assertTrue(start.started(), "missing-villager logout duel should start: " + start.reason());
+        villager.remove(Entity.RemovalReason.CHANGED_DIMENSION);
+        DuelService.onPlayerLogout(player);
+
+        helper.assertFalse(DuelService.isParticipant(player),
+                "logout must remove the duel even when the villager is unresolved");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(player), 8,
+                "an unresolved winner must cancel and refund the player's escrow");
+        helper.assertFalse(DuelService.isPostLossAttackLocked(player),
+                "a canceled settlement must not apply the duel-loss penalty");
+        if (!VillagerWalletService.hasUnlimitedCurrency()) {
+            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBefore - 8,
+                    "the unresolved villager refund should remain pending");
+        }
+        helper.assertTrue(DuelService.recoverPendingVillager(villager),
+                "the returning villager should recover its pending escrow");
+        if (!VillagerWalletService.hasUnlimitedCurrency()) {
+            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBefore,
+                    "the returning villager should receive its original escrow");
+        }
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 340)
     public static void timeoutEndsInDrawAndRestoresEquipment(GameTestHelper helper) {
         Participant participant = participant(helper);
@@ -864,6 +903,71 @@ public final class DuelGameTests {
                 "player crash recovery must be idempotent");
         helper.assertFalse(DuelService.recoverPendingVillager(villager),
                 "villager crash recovery must be idempotent");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void playerCloneKeepsPendingDuelRecovery(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        player.getInventory().setItem(4, new ItemStack(Items.GOLD_INGOT, 5));
+        player.getInventory().selected = 4;
+        DuelService.StartResult start = DuelService.start(
+                player, participant.villager(), DuelLoadout.ARMORED, 0);
+        helper.assertTrue(start.started(), "clone recovery duel should start: " + start.reason());
+
+        ServerPlayer replacement = participant(helper).player();
+        DuelService.copyPendingPlayerRecovery(player, replacement);
+        DuelEquipment.PlayerRecovery copied = DuelEquipment.playerRecovery(replacement);
+        try {
+            helper.assertTrue(copied != null,
+                    "a player clone must retain its pending duel recovery tag");
+            helper.assertValueEqual(
+                    copied.snapshot().items().get(4).getCount(), 5,
+                    "the cloned recovery tag must retain the original inventory snapshot");
+            helper.assertTrue(copied.snapshot().items().get(4).is(Items.GOLD_INGOT),
+                    "the cloned recovery snapshot must retain item identities");
+            helper.succeed();
+        } finally {
+            DuelEquipment.clearRecovery(replacement, start.duelId());
+            DuelService.resolveForTest(player, DuelResult.CANCELLED);
+        }
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void partialRecoverySnapshotsAreRejected(GameTestHelper helper) {
+        Participant participant = participant(helper);
+
+        CompoundTag playerSnapshot = new CompoundTag();
+        playerSnapshot.put("Items", new ListTag());
+        playerSnapshot.put("Armor", new ListTag());
+        playerSnapshot.put("Offhand", new ListTag());
+        playerSnapshot.putInt("Selected", 0);
+        playerSnapshot.putFloat("Health", 20.0F);
+        playerSnapshot.putFloat("Absorption", 0.0F);
+        playerSnapshot.put("Food", new CompoundTag());
+        playerSnapshot.put("Effects", new ListTag());
+        helper.assertTrue(DuelEquipment.PlayerSnapshot.load(
+                        participant.player(), playerSnapshot) == null,
+                "a truncated player inventory snapshot must be rejected");
+
+        CompoundTag villagerSnapshot = new CompoundTag();
+        villagerSnapshot.put("Inventory", new ListTag());
+        villagerSnapshot.put("Equipment", new CompoundTag());
+        villagerSnapshot.put("EquipmentOwnership", new CompoundTag());
+        villagerSnapshot.putFloat("Health", 20.0F);
+        villagerSnapshot.putFloat("Absorption", 0.0F);
+        villagerSnapshot.put("Effects", new ListTag());
+        villagerSnapshot.putBoolean("Pickup", false);
+        CompoundTag recovery = new CompoundTag();
+        recovery.putInt("Food", 20);
+        recovery.putFloat("Saturation", 20.0F);
+        recovery.putFloat("Exhaustion", 0.0F);
+        recovery.putInt("HealTimer", 0);
+        villagerSnapshot.put("Recovery", recovery);
+        helper.assertTrue(DuelEquipment.VillagerSnapshot.load(
+                        participant.villager(), villagerSnapshot) == null,
+                "a truncated villager inventory snapshot must be rejected");
         helper.succeed();
     }
 
