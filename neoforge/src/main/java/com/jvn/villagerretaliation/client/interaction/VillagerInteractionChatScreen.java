@@ -6,6 +6,8 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
+import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -100,6 +102,15 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     }
 
     @Override
+    public void updateDuelStatus(OpenVillagerDuelPayload payload) {
+        this.interactionScreen.updateDuelStatus(payload);
+    }
+
+    @Override
+    public void acceptRecruitmentResult(RecruitmentResultPayload payload) {
+        this.interactionScreen.acceptRecruitmentResult(payload);
+    }
+
     public void replaceFromServer() {
         this.interactionScreen.replaceFromServer();
     }

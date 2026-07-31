@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.network.ServerConfigSyncPayload;
 
 public final class VillagerRetaliationServerConfigClient {
     private static boolean showVillagerNameTags = true;
+    private static boolean villagerGiftsEnabled = true;
     private static VillagerStatDisplayMode villagerStatDisplayMode = VillagerStatDisplayMode.PARTY_ONLY;
 
     private VillagerRetaliationServerConfigClient() {
@@ -12,11 +13,16 @@ public final class VillagerRetaliationServerConfigClient {
 
     public static void accept(ServerConfigSyncPayload payload) {
         showVillagerNameTags = payload.showVillagerNameTags();
+        villagerGiftsEnabled = payload.villagerGiftsEnabled();
         villagerStatDisplayMode = payload.villagerStatDisplayMode();
     }
 
     public static boolean showVillagerNameTags() {
         return showVillagerNameTags;
+    }
+
+    public static boolean villagerGiftsEnabled() {
+        return villagerGiftsEnabled;
     }
 
     public static VillagerStatDisplayMode villagerStatDisplayMode() {
@@ -25,6 +31,7 @@ public final class VillagerRetaliationServerConfigClient {
 
     public static void reset() {
         showVillagerNameTags = true;
+        villagerGiftsEnabled = true;
         villagerStatDisplayMode = VillagerStatDisplayMode.PARTY_ONLY;
     }
 }

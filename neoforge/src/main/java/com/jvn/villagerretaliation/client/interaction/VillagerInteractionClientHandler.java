@@ -62,7 +62,9 @@ public final class VillagerInteractionClientHandler {
     }
 
     public static void acceptDuelStatus(OpenVillagerDuelPayload payload) {
-        if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen) {
+        Minecraft minecraft = Minecraft.getInstance();
+        VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (screen != null) {
             screen.updateDuelStatus(payload);
         }
     }
@@ -220,8 +222,8 @@ public final class VillagerInteractionClientHandler {
 
     public static void acceptRecruitmentResult(RecruitmentResultPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof VillagerInteractionScreen screen
-                && screen.matchesVillager(payload.entityId())) {
+        VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (screen != null) {
             screen.acceptRecruitmentResult(payload);
         }
     }
