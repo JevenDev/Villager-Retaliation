@@ -84,6 +84,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -264,11 +265,11 @@ public final class VillagerRetaliationCommands {
                                     context.getSource().getPlayerOrException());
                             return 1;
                         })
-                        .then(argument("player", EntityArgument.player())
+                        .then(argument("player", GameProfileArgument.gameProfile())
                                 .executes(context -> {
                                     PartyActionHandler.acceptInvitationFromCommand(
                                             context.getSource().getPlayerOrException(),
-                                            EntityArgument.getPlayer(context, "player"));
+                                            singleGameProfileId(context, "player"));
                                     return 1;
                                 })))
                 .then(literal("decline")
@@ -283,11 +284,11 @@ public final class VillagerRetaliationCommands {
                             return 1;
                         }))
                 .then(literal("kick")
-                        .then(argument("player", EntityArgument.player())
+                        .then(argument("player", GameProfileArgument.gameProfile())
                                 .executes(context -> {
                                     PartyActionHandler.removePlayerCommand(
                                             context.getSource().getPlayerOrException(),
-                                            EntityArgument.getPlayer(context, "player"));
+                                            singleGameProfileId(context, "player"));
                                     return 1;
                                 })))
                 .then(literal("disband")
@@ -310,14 +311,24 @@ public final class VillagerRetaliationCommands {
             String command,
             PartyService.AllianceAction action) {
         return literal(command)
-                .then(argument("player", EntityArgument.player())
+                .then(argument("player", GameProfileArgument.gameProfile())
                         .executes(context -> {
                             PartyActionHandler.allianceCommand(
                                     context.getSource().getPlayerOrException(),
-                                    EntityArgument.getPlayer(context, "player"),
+                                    singleGameProfileId(context, "player"),
                                     action);
                             return 1;
                         }));
+    }
+
+    private static UUID singleGameProfileId(
+            CommandContext<CommandSourceStack> context,
+            String argumentName) throws CommandSyntaxException {
+        var profiles = GameProfileArgument.getGameProfiles(context, argumentName);
+        if (profiles.size() != 1) {
+            throw EntityArgument.ERROR_NOT_SINGLE_PLAYER.create();
+        }
+        return profiles.iterator().next().getId();
     }
 
     private static int showPartyCommandHelp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

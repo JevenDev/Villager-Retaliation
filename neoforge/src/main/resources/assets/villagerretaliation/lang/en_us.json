@@ -1645,6 +1645,7 @@
   "interaction.mount.mounted_travel_enabled": "Mounted travel enabled.",
   "villagerretaliation.gui.party.about_contract": "Extend Party Contract",
   "villagerretaliation.gui.party.admin_privileges": "Admin Privileges",
+  "villagerretaliation.gui.party.remove_player_hint": "Shift-click to remove %s from the party",
   "villagerretaliation.gui.party.assign_mount": "Assign Mount",
   "villagerretaliation.gui.party.attack_mode": "Attack Mode",
   "villagerretaliation.gui.party.attack_mode.all": "All",

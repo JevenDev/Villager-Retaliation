@@ -251,7 +251,9 @@ public final class PartyInventoryOverlay {
                     Minecraft.getInstance().font,
                     List.of(
                             Component.translatable("villagerretaliation.gui.party.admin_privileges"),
-                            playerName(member)),
+                            playerName(member),
+                            Component.translatable("villagerretaliation.gui.party.remove_player_hint", playerName(member))
+                                    .withStyle(ChatFormatting.GRAY)),
                     Optional.empty(),
                     mouseX,
                     mouseY);
@@ -565,7 +567,11 @@ public final class PartyInventoryOverlay {
         if (pushButton < 0) return;
         event.setCanceled(true);
         if (pushButton < PUSH_BUTTON_FIRST_GROUP_SIZE) {
-            toggleAdminPrivileges(pushButton);
+            if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+                removePlayer(pushButton);
+            } else {
+                toggleAdminPrivileges(pushButton);
+            }
         } else {
             toggleVillagerQuickCommands(pushButton - PUSH_BUTTON_FIRST_GROUP_SIZE);
         }
@@ -906,6 +912,17 @@ public final class PartyInventoryOverlay {
                 null,
                 !member.adminPrivileges()));
     }
+
+    private static void removePlayer(int playerIndex) {
+        var roster = PartyRosterClient.roster();
+        List<PartyRosterSyncPayload.PlayerEntry> members = partyMembers();
+        if (!roster.recipientLeader() || playerIndex < 0 || playerIndex >= members.size()) return;
+        PacketDistributor.sendToServer(new PartyActionRequestPayload(
+                PartyActionRequestPayload.Action.REMOVE_PLAYER,
+                members.get(playerIndex).playerId(),
+                null));
+    }
+
     private static void playButtonSound() {
         Minecraft.getInstance().getSoundManager().play(
                 SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
