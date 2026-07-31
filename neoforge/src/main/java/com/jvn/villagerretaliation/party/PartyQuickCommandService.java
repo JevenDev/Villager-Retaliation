@@ -647,7 +647,6 @@ public final class PartyQuickCommandService {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
             record.setWeaponPreference(preference);
-            record.setWeaponsSheathed(false);
             Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
             if (villager != null) {
                 com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService.applyPreference(villager, preference);

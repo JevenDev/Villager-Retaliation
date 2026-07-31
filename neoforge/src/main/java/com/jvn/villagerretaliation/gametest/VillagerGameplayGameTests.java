@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.gametest;
 
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
-import com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
@@ -342,7 +341,7 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void idleMendingWeaponStaysEquippedThroughWorkExperience(GameTestHelper helper) {
+    public static void mendingWeaponRemainsEquippedAfterRepair(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         ItemStack sword = new ItemStack(Items.IRON_SWORD);
@@ -354,31 +353,14 @@ public final class VillagerGameplayGameTests {
         inventory.setItem(HiredJobInventory.MAINHAND_SLOT, sword);
         HiredJobInventory.maintainEquipmentSlots(villager);
         helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
-                "the job sword should begin equipped");
-
-        helper.assertFalse(
-                VillagerCombatLoadoutService.stowIdleWeapon(villager),
-                "idle cleanup must retain a damaged held Mending weapon");
-        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
-                "the damaged Mending weapon should remain visible for XP pickup");
+                "the owned sword should begin equipped");
 
         villager.getMainHandItem().setDamageValue(0);
-        VillagerWorkExperience.spawn(level, villager, villager.position(), 3);
-        List<ExperienceOrb> workExperience = level.getEntitiesOfClass(
-                ExperienceOrb.class,
-                villager.getBoundingBox().inflate(2.0D));
-        helper.assertValueEqual(workExperience.size(), 1,
-                "the test should create one villager-owned work XP orb");
-        helper.assertFalse(
-                VillagerCombatLoadoutService.stowIdleWeapon(villager),
-                "a repaired Mending weapon should remain equipped until excess work XP is consumed");
-
-        workExperience.getFirst().discard();
-        helper.assertTrue(
-                VillagerCombatLoadoutService.stowIdleWeapon(villager),
-                "the repaired weapon should return to storage after owned work XP is gone");
-        helper.assertTrue(villager.getMainHandItem().isEmpty(),
-                "the repaired job weapon should no longer remain visibly equipped");
+        HiredJobInventory.maintainEquipmentSlots(villager);
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                "a fully repaired weapon must remain equipped while idle");
+        helper.assertValueEqual(villager.getMainHandItem().getDamageValue(), 0,
+                "equipment maintenance should retain the repaired stack state");
 
         villager.discard();
         helper.succeed();

@@ -930,7 +930,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return WorkResult.idle(storageFullStatus(context));
         }
         if (depositResult == DepositResult.UNAVAILABLE) {
-            return WorkResult.idle("interaction.work.logging.no_target_depositing");
+            context.state().remove(TREE_DEPOSIT_PENDING_TAG);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
+            clearStorageFullStatus(context);
+            return null;
         }
         context.state().remove(TREE_DEPOSIT_PENDING_TAG);
         return null;

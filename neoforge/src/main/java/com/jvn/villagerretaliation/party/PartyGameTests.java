@@ -12,7 +12,6 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
-import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentStore;
@@ -21,7 +20,6 @@ import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
-import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization;
@@ -145,7 +143,6 @@ public final class PartyGameTests {
         helper.assertValueEqual(record.weaponPreference(), PartyWeaponPreference.AUTO,
                 "legacy/default weapon preference should be AUTO");
         record.setWeaponPreference(PartyWeaponPreference.RANGED);
-        record.setWeaponsSheathed(true);
         UUID moveCommanderId = UUID.randomUUID();
         record.setStaying(Level.OVERWORLD.location(), new BlockPos(8, 64, 3));
         record.setMoveToReturnCommander(moveCommanderId);
@@ -156,8 +153,6 @@ public final class PartyGameTests {
         PartyVillagerRecord loaded = PartyVillagerRecord.load(record.save());
         helper.assertValueEqual(loaded.weaponPreference(), PartyWeaponPreference.RANGED,
                 "weapon preference should survive party record serialization");
-        helper.assertTrue(loaded.weaponsSheathed(),
-                "the explicit sheathe order should survive party record serialization");
         helper.assertTrue(loaded.regrouping(),
                 "regroup acquisition suppression should survive unload/reload");
         helper.assertValueEqual(loaded.moveToReturnCommanderId(), moveCommanderId,
@@ -170,14 +165,11 @@ public final class PartyGameTests {
         CompoundTag legacy = record.save();
         legacy.remove("WeaponPreference");
         legacy.remove("Regrouping");
-        legacy.remove("WeaponsSheathed");
         PartyVillagerRecord legacyLoaded = PartyVillagerRecord.load(legacy);
         helper.assertValueEqual(legacyLoaded.weaponPreference(), PartyWeaponPreference.AUTO,
                 "missing legacy preference should migrate to AUTO");
         helper.assertFalse(legacyLoaded.regrouping(),
                 "legacy records should not begin with target suppression");
-        helper.assertFalse(legacyLoaded.weaponsSheathed(),
-                "legacy party members should default to weapons ready");
         helper.succeed();
     }
 
@@ -219,57 +211,24 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
-    public static void partyUnequipStowsWeaponsAndShieldsInHotbar(GameTestHelper helper) {
-        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
-        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
-        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
-        inventory.setItem(HiredJobInventory.OFFHAND_SLOT, new ItemStack(Items.SHIELD));
-
-        helper.assertTrue(
-                com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService.stowWeapons(villager, true),
-                "unequip should move held party combat equipment into storage");
-        helper.assertTrue(villager.getMainHandItem().isEmpty() && villager.getOffhandItem().isEmpty(),
-                "unequip should clear both held weapon slots");
-        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.IRON_SWORD)
-                        && inventory.getItem(HiredJobInventory.HOTBAR_START + 1).is(Items.SHIELD),
-                "unequip should prefer consecutive party hotbar slots");
-
-        villager.discard();
-        helper.succeed();
-    }
-
-    @GameTest(template = EMPTY_TEMPLATE)
-    public static void activeWorkerKeepsAndCanSwitchJobTool(GameTestHelper helper) {
+    public static void selectedJobToolRemainsEquipped(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
         inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.SHEARS));
-        CompoundTag workState = HiredWorkStateStore.state(villager);
-        workState.putBoolean("Enabled", true);
-        workState.putString("WorkerTaskState", HiredWorkerTaskState.WORKING.id());
 
-        helper.assertFalse(
-                VillagerCombatLoadoutService.stowIdleWeapon(villager),
-                "idle combat cleanup must not stow the active worker axe");
         helper.assertTrue(villager.getMainHandItem().is(Items.IRON_AXE),
-                "an active worker should visibly hold the tool selected for its current task");
+                "the selected axe should remain visibly equipped while idle");
 
         ItemStack switchedTool = inventory.equipBestTool(
                 stack -> stack.is(Items.SHEARS),
                 stack -> 1.0D);
         helper.assertTrue(switchedTool.is(Items.SHEARS) && villager.getMainHandItem().is(Items.SHEARS),
-                "worker tool selection should still switch the held tool as the job action changes");
-        helper.assertFalse(
-                VillagerCombatLoadoutService.stowIdleWeapon(villager),
-                "idle combat cleanup must leave the newly selected work tool equipped");
+                "selecting another owned tool should immediately switch the visible main hand");
 
-        workState.putString("WorkerTaskState", HiredWorkerTaskState.IDLE.id());
-        inventory.equipBestTool(stack -> stack.is(Items.IRON_AXE), stack -> 1.0D);
-        helper.assertTrue(
-                VillagerCombatLoadoutService.stowIdleWeapon(villager),
-                "the weapon-like job tool should return to storage after work becomes idle");
-        helper.assertTrue(villager.getMainHandItem().isEmpty(),
-                "an idle worker should no longer visibly hold the axe");
+        HiredJobInventory.maintainEquipmentSlots(villager);
+        helper.assertTrue(villager.getMainHandItem().is(Items.SHEARS),
+                "idle equipment maintenance must not stow the selected tool");
 
         villager.discard();
         helper.succeed();

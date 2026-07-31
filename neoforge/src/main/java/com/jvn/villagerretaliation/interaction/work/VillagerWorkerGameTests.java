@@ -6326,6 +6326,70 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 400)
+    public static void loggingWorkerContinuesWithoutAssignedOutputStorage(GameTestHelper helper) {
+        buildFloor(helper, 0, 13, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerLoggingNoStorage");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+
+        BlockPos oakRootRel = new BlockPos(4, 2, 3);
+        BlockPos birchRootRel = new BlockPos(10, 2, 3);
+        for (BlockPos rootRel : List.of(oakRootRel, birchRootRel)) {
+            boolean oak = rootRel.equals(oakRootRel);
+            BlockState log = oak ? Blocks.OAK_LOG.defaultBlockState() : Blocks.BIRCH_LOG.defaultBlockState();
+            BlockState leaves = (oak ? Blocks.OAK_LEAVES : Blocks.BIRCH_LEAVES)
+                    .defaultBlockState()
+                    .setValue(BlockStateProperties.PERSISTENT, false);
+            setBlock(helper, rootRel.below(), Blocks.DIRT.defaultBlockState());
+            for (int y = 0; y <= 2; y++) {
+                setBlock(helper, rootRel.above(y), log);
+            }
+            for (BlockPos leafRel : List.of(
+                    rootRel.offset(0, 3, 0),
+                    rootRel.offset(-1, 3, 0),
+                    rootRel.offset(1, 3, 0),
+                    rootRel.offset(0, 3, -1),
+                    rootRel.offset(0, 3, 1),
+                    rootRel.offset(-1, 2, 0),
+                    rootRel.offset(1, 2, 0),
+                    rootRel.offset(0, 2, -1),
+                    rootRel.offset(0, 2, 1))) {
+                setBlock(helper, leafRel, leaves);
+            }
+        }
+
+        CompoundTag state = new CompoundTag();
+        HiredLoggingOptions.initializeDefaults(state);
+        HiredLoggingOptions.toggle(state, HiredLoggingOptions.PLANT_SAPLINGS);
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(1, 2, 1),
+                new BlockPos(12, 6, 5),
+                true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
+        LoggingWorker worker = new LoggingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 300, () ->
+                !level.getBlockState(helper.absolutePos(oakRootRel)).is(BlockTags.OAK_LOGS)
+                        && !level.getBlockState(helper.absolutePos(birchRootRel)).is(BlockTags.BIRCH_LOGS));
+
+        helper.assertFalse(
+                level.getBlockState(helper.absolutePos(oakRootRel)).is(BlockTags.OAK_LOGS),
+                "logger should finish the first tree without output storage");
+        helper.assertFalse(
+                level.getBlockState(helper.absolutePos(birchRootRel)).is(BlockTags.BIRCH_LOGS),
+                "logger should continue to a second tree without output storage");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.OAK_LOG)), "oak drops should remain carried as output");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.BIRCH_LOG)), "birch drops should remain carried as output");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
     public static void loggingWorkerKeepsLeafConnectedTreeFamiliesSeparate(GameTestHelper helper) {
         buildFloor(helper, 0, 10, 0, 6, 1);

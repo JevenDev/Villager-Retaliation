@@ -43,7 +43,7 @@ Beta.13 is the Hired Help and Village Life update. It adds complete worker logis
 - Added Clipboard workforce management for live worker lists, multi-selection, assignment and removal, role changes, warnings, work-area drafting and resizing, route editing, storage assignment, reusable drafts, and world-space previews.
 - Added per-purpose container assignments for Supplies, Output, General, and Payment storage. Shared and double containers retain every worker assignment and are resolved as one logical inventory where appropriate.
 - Added separate Personal, Job, and Party inventory views on top of the beta.12 storage foundation, with nine-slot hotbars, job equipment and filter slots, protected gear, authorization rules, reclaim windows, overflow handling, and safe return of supplied equipment.
-- Added role-aware tool selection, dynamic combat weapon switching, automatic weapon stowing outside combat, an Unequip Weapon(s) command, transient-gear tracking, and safeguards against duplicated or leaked equipment.
+- Added role-aware tool selection, dynamic combat weapon switching, transient-gear tracking, and safeguards against duplicated or leaked equipment.
 - Added item filters with item and tag entries, quantities, allow/deny modes, all/any combination rules, stock targets, and configurable transfer policies.
 - Added Attribute Filters for component and item-property matching and Recipe Filters for selecting crafted, cooked, or processed outputs; EMI drag-and-drop can populate compatible ghost slots.
 - Added composable container filters, including attached item-frame rules, persisted filter snapshots, per-container collection and destination policies, and cached matching for large logistics networks.

@@ -24,9 +24,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.item.Items;
 
 public final class PartyVillagerContractService {
     public static final int DAILY_EMERALD_COST = 32;
@@ -231,25 +229,6 @@ public final class PartyVillagerContractService {
         }
         context.record().setDropCollectionMode(context.record().dropCollectionMode().next());
         return settingsChanged(context, "villagerretaliation.party.villager_settings_updated");
-    }
-
-    public static ContractResult sheatheWeapons(ServerPlayer player, Villager villager) {
-        PartyVillagerContext context = authorizedContext(player, villager);
-        if (context == null) {
-            return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
-        }
-        com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService.stowWeapons(villager, true);
-        if (com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
-                || villager.getItemBySlot(EquipmentSlot.MAINHAND).is(Items.SHIELD)
-                || villager.getItemBySlot(EquipmentSlot.OFFHAND).is(Items.SHIELD)) {
-            return ContractResult.failure("villagerretaliation.party.weapons_not_unequipped");
-        }
-        context.record().setWeaponsSheathed(true);
-        PartyService.markChanged(context.level());
-        PartySyncService.syncParty(context.level().getServer(), context.party().id());
-        return ContractResult.success(
-                "villagerretaliation.party.weapons_unequipped",
-                context.party().id(), context.record(), 0, 0);
     }
 
     public static boolean canAccessJobInventory(ServerLevel level, Villager villager, ServerPlayer player) {

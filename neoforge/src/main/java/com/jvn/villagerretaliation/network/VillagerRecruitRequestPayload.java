@@ -111,7 +111,6 @@ public record VillagerRecruitRequestPayload(
         PARTY_DISMISS,
         CYCLE_PARTY_COMBAT_MODE,
         CYCLE_PARTY_ATTACK_MODE,
-        CYCLE_PARTY_DROP_COLLECTION,
-        UNEQUIP_PARTY_WEAPONS
+        CYCLE_PARTY_DROP_COLLECTION
     }
 }
