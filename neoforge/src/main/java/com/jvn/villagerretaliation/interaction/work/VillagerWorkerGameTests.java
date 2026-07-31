@@ -654,6 +654,140 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 160)
+    public static void animalHandlerCollectsBucketFromAssignedStorageBeforeMilking(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalMilkingStorage");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        BlockPos chestRelative = new BlockPos(2, 2, 3);
+        BlockPos chest = helper.absolutePos(chestRelative);
+        setBlock(helper, chestRelative, Blocks.CHEST.defaultBlockState());
+        container(level, chest).setItem(0, new ItemStack(Items.BUCKET));
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.SUPPLY_PURPOSE);
+
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 80, () ->
+                countInventoryItem(context.inventory(), Items.MILK_BUCKET) == 1);
+
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.MILK_BUCKET),
+                1,
+                "animal handler should collect a bucket from storage and milk the cow");
+        helper.assertValueEqual(countItem(container(level, chest), Items.BUCKET), 0, "stored bucket should be consumed");
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerDepositsDueWoolWithoutReadySheep(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalIdleShearingDeposit");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Sheep sheep = spawnAnimal(helper, EntityType.SHEEP, new BlockPos(4, 2, 3));
+        sheep.setSheared(true);
+        BlockPos chestRelative = new BlockPos(3, 2, 2);
+        BlockPos chest = helper.absolutePos(chestRelative);
+        setBlock(helper, chestRelative, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        CompoundTag state = new CompoundTag();
+        state.putLong(AnimalBreedingWorker.NEXT_SHEARING_DEPOSIT_GAME_TIME_TAG, level.getGameTime());
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        context.inventory().insertOutput(new ItemStack(Items.WHITE_WOOL, 4));
+
+        new AnimalBreedingWorker().tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(countItem(container(level, chest), Items.WHITE_WOOL), 4, "due wool deposit");
+        helper.assertFalse(context.hasOutputToDeposit(), "due wool should leave the job inventory");
+        helper.assertTrue(sheep.isSheared(), "deposit should not require a ready sheep");
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerDoesNotFeedWidelySeparatedBreedingPair(GameTestHelper helper) {
+        buildFloor(helper, 0, 12, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalSeparatedPair");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Cow first = spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        Cow second = spawnAnimal(helper, EntityType.COW, new BlockPos(10, 2, 3));
+        first.setNoAi(true);
+        second.setNoAi(true);
+
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(11, 4, 5), true);
+        context.inventory().insertSupply(new ItemStack(Items.WHEAT, 2));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+        for (int tick = 0; tick < 10; tick++) {
+            worker.tick(level, villager, hirer, context);
+            level.tickNonPassenger(villager);
+        }
+
+        helper.assertFalse(first.isInLove() || second.isInLove(), "separated animals must not be fed remotely");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.WHEAT),
+                2,
+                "invalid remote pair should not consume breeding food");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerBlacklistsUnreachableAnimal(GameTestHelper helper) {
+        buildFloor(helper, 0, 12, 0, 12, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalUnreachable");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 6));
+        Cow cow = spawnAnimal(helper, EntityType.COW, new BlockPos(9, 2, 6));
+        cow.setNoAi(true);
+        for (int z = 1; z <= 11; z++) {
+            for (int y = 2; y <= 4; y++) {
+                setBlock(helper, new BlockPos(6, y, z), Blocks.STONE.defaultBlockState());
+            }
+        }
+
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(11, 4, 11), true);
+        context.inventory().insertSupply(new ItemStack(Items.BUCKET));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+        for (int attempt = 0; attempt < 3; attempt++) {
+            worker.tick(level, villager, hirer, context);
+        }
+
+        helper.assertTrue(
+                HiredPathMemory.isAvoided(level, villager, cow.blockPosition()),
+                "third failed animal path should temporarily blacklist the target");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.BUCKET),
+                1,
+                "unreachable animal should not consume its handling supply");
+        HiredPathMemory.clear(villager);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void animalHandlerCullCapUsesPerTypePoolsAndWeapon(GameTestHelper helper) {
         buildFloor(helper, 0, 7, 0, 7, 1);

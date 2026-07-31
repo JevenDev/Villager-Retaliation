@@ -44,6 +44,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private static final double BREEDING_REACH_SQR = 9.0D;
+    private static final double MAX_BREEDING_PAIR_DISTANCE_SQR = BREEDING_REACH_SQR;
     private static final double HANDLING_REACH_SQR = 9.0D;
     private static final double CULLING_REACH_SQR = 9.0D;
     private static final double EGG_PICKUP_REACH_SQR = 2.25D;
@@ -112,6 +113,12 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         if (shearingDepositResult != null) {
             return shearingDepositResult;
         }
+        if (HiredAnimalHandlingOptions.shearSheep(context.state())) {
+            shearingDepositResult = startPeriodicShearingDepositIfDue(level, villager, context);
+            if (shearingDepositResult != null) {
+                return shearingDepositResult;
+            }
+        }
 
         WorkResult cullResult = cullExcessAnimals(level, villager, context);
         if (cullResult != null) {
@@ -158,17 +165,23 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             return gatheredFood;
         }
 
+        Animal approachTarget = breedingApproachTarget(villager, pair);
         if (!canBreedFromCurrentPosition(villager, context, pair)) {
             context.setProgressTicks(0);
-            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, pair.first().blockPosition());
-            if (!moveToAnimal(level, villager, context, pair.first(), 0.45D)) {
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, approachTarget.blockPosition());
+            if (!moveToAnimal(level, villager, context, approachTarget, 0.45D)) {
+                if (!recordWorkPathFailure(level, villager, approachTarget.blockPosition())) {
+                    return WorkResult.progressed("interaction.work.animal_breeding.moving_to_pair");
+                }
                 HiredWorkerBrain.setFailure(context, "animal_target_unreachable", level.getGameTime() + 20L * 30L);
-                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, pair.first().blockPosition());
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, approachTarget.blockPosition());
                 return WorkResult.idle("interaction.work.animal_breeding.pair_unreachable");
             }
             return WorkResult.progressed("interaction.work.animal_breeding.moving_to_pair");
         }
 
+        clearWorkPathFailure(villager, pair.first().blockPosition());
+        clearWorkPathFailure(villager, pair.second().blockPosition());
         stopWorkNavigation(villager);
         faceAnimal(villager, pair.first());
         HiredWorkerBrain.clearFailure(context);
@@ -183,7 +196,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         }
 
         context.setProgressTicks(0);
-        if (!canAttemptPair(pair.first(), pair.second())) {
+        if (!canAttemptPair(pair.first(), pair.second())
+                || !canBreedFromCurrentPosition(villager, context, pair)) {
             HiredWorkerBrain.setFailure(context, "animal_pair_changed", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, pair.first().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.pair_changed");
@@ -249,6 +263,9 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             context.setProgressTicks(0);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, animal.blockPosition());
             if (!moveToAnimal(level, villager, context, animal, 0.45D)) {
+                if (!recordWorkPathFailure(level, villager, animal.blockPosition())) {
+                    return WorkResult.progressed("interaction.work.animal_breeding.moving_to_cull_target");
+                }
                 HiredWorkerBrain.setFailure(context, "animal_cull_target_unreachable", level.getGameTime() + 20L * 30L);
                 setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, animal.blockPosition());
                 return WorkResult.idle("interaction.work.animal_breeding.cull_target_unreachable");
@@ -258,6 +275,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                     java.util.Map.of("target", HiredAnimalBreedingTargets.label(target.typeId())));
         }
 
+        clearWorkPathFailure(villager, animal.blockPosition());
         stopWorkNavigation(villager);
         faceAnimal(villager, animal);
         HiredWorkerBrain.clearFailure(context);
@@ -338,7 +356,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         AnimalScan scan = animalsInWorkArea(level, context);
         List<Animal> animals = new ArrayList<>();
         for (Animal animal : scan.animals()) {
-            if (isEligibleAnimal(level, context, animal, selectedTargets)) {
+            if (isEligibleAnimal(level, context, villager, animal, selectedTargets)) {
                 animals.add(animal);
             }
         }
@@ -354,21 +372,26 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         for (Map.Entry<ResourceLocation, List<Animal>> entry : animalsByType.entrySet()) {
             ResourceLocation animalType = entry.getKey();
             List<Animal> sameTypeAnimals = entry.getValue();
-            if (sameTypeAnimals.size() < 2) {
-                continue;
-            }
-            Animal first = sameTypeAnimals.get(0);
-            Animal second = sameTypeAnimals.get(1);
-            Predicate<ItemStack> food = stack -> first.isFood(stack) && second.isFood(stack);
-            int carried = HiredSupplyCrafting.countCarried(context, food);
-            if (carried < 2 && AssignedStorageService.countItems(villager, food) <= 0) {
-                hasPairWithoutFood = true;
-                continue;
-            }
-            double score = villager.distanceToSqr(first) + first.distanceToSqr(second) * 0.25D;
-            if (score < bestScore) {
-                bestScore = score;
-                best = new BreedingPair(first, second, food, animalType);
+            for (int firstIndex = 0; firstIndex < sameTypeAnimals.size() - 1; firstIndex++) {
+                Animal first = sameTypeAnimals.get(firstIndex);
+                for (int secondIndex = firstIndex + 1; secondIndex < sameTypeAnimals.size(); secondIndex++) {
+                    Animal second = sameTypeAnimals.get(secondIndex);
+                    if (first.distanceToSqr(second) > MAX_BREEDING_PAIR_DISTANCE_SQR) {
+                        continue;
+                    }
+                    Predicate<ItemStack> food = stack -> first.isFood(stack) && second.isFood(stack);
+                    int carried = HiredSupplyCrafting.countCarried(context, food);
+                    if (carried < 2 && AssignedStorageService.countItems(villager, food) <= 0) {
+                        hasPairWithoutFood = true;
+                        continue;
+                    }
+                    double score = villager.distanceToSqr(first) + villager.distanceToSqr(second)
+                            + first.distanceToSqr(second) * 0.25D;
+                    if (score < bestScore) {
+                        bestScore = score;
+                        best = new BreedingPair(first, second, food, animalType);
+                    }
+                }
             }
         }
 
@@ -442,6 +465,13 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             AnimalProductTarget target) {
+        if (target.kind() == AnimalProductKind.MILK) {
+            WorkResult gatheredSupply = gatherAnimalHandlingSupply(level, villager, context, target);
+            if (gatheredSupply != null) {
+                return gatheredSupply;
+            }
+        }
+
         if (!canStoreProductOutputs(context, target)) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
             if (depositResult == DepositResult.DEPOSITED) {
@@ -460,21 +490,19 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         }
 
         if (target.kind() == AnimalProductKind.SHEAR) {
-            WorkResult shearingDepositResult = startPeriodicShearingDepositIfDue(level, villager, context);
-            if (shearingDepositResult != null) {
-                return shearingDepositResult;
+            WorkResult gatheredSupply = gatherAnimalHandlingSupply(level, villager, context, target);
+            if (gatheredSupply != null) {
+                return gatheredSupply;
             }
-        }
-
-        WorkResult gatheredSupply = gatherAnimalHandlingSupply(level, villager, context, target);
-        if (gatheredSupply != null) {
-            return gatheredSupply;
         }
 
         if (!canHandleProductFromCurrentPosition(villager, context, target.animal())) {
             context.setProgressTicks(0);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target.animal().blockPosition());
             if (!moveToAnimal(level, villager, context, target.animal(), 0.45D)) {
+                if (!recordWorkPathFailure(level, villager, target.animal().blockPosition())) {
+                    return WorkResult.progressed(target.movingMessageKey());
+                }
                 HiredWorkerBrain.setFailure(context, "animal_product_target_unreachable", level.getGameTime() + 20L * 30L);
                 setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.animal().blockPosition());
                 return WorkResult.idle("interaction.work.animal_breeding.product_unreachable");
@@ -482,6 +510,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             return WorkResult.progressed(target.movingMessageKey());
         }
 
+        clearWorkPathFailure(villager, target.animal().blockPosition());
         stopWorkNavigation(villager);
         faceAnimal(villager, target.animal());
         HiredWorkerBrain.clearFailure(context);
@@ -906,6 +935,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private static boolean isEligibleAnimal(
             ServerLevel level,
             HiredWorkContext context,
+            Villager villager,
             Animal animal,
             Set<ResourceLocation> selectedTargets) {
         return animal.isAlive()
@@ -914,7 +944,14 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 && !isHandledAnimalOnCooldown(context, animal, level.getGameTime())
                 && context.isInsideWorkArea(animal.blockPosition())
                 && context.isLoaded(level, animal.blockPosition())
+                && !HiredPathMemory.isAvoided(level, villager, animal.blockPosition())
                 && HiredAnimalBreedingTargets.matches(animal, selectedTargets);
+    }
+
+    private static Animal breedingApproachTarget(Villager villager, BreedingPair pair) {
+        return villager.distanceToSqr(pair.first()) >= villager.distanceToSqr(pair.second())
+                ? pair.first()
+                : pair.second();
     }
 
     private static boolean canAttemptPair(Animal first, Animal second) {
@@ -925,14 +962,17 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 && !first.isBaby()
                 && !second.isBaby()
                 && first.canFallInLove()
-                && second.canFallInLove();
+                && second.canFallInLove()
+                && first.distanceToSqr(second) <= MAX_BREEDING_PAIR_DISTANCE_SQR;
     }
 
     private boolean canBreedFromCurrentPosition(Villager villager, HiredWorkContext context, BreedingPair pair) {
         return context.isInsideWorkArea(villager.blockPosition())
                 && context.isInsideWorkArea(pair.first().blockPosition())
                 && context.isInsideWorkArea(pair.second().blockPosition())
-                && villager.distanceToSqr(pair.first()) <= BREEDING_REACH_SQR;
+                && villager.distanceToSqr(pair.first()) <= BREEDING_REACH_SQR
+                && villager.distanceToSqr(pair.second()) <= BREEDING_REACH_SQR
+                && pair.first().distanceToSqr(pair.second()) <= MAX_BREEDING_PAIR_DISTANCE_SQR;
     }
 
     private boolean canHandleProductFromCurrentPosition(Villager villager, HiredWorkContext context, Animal animal) {
