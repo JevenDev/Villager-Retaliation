@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.PartyActionRequestPayload;
 import com.jvn.villagerretaliation.network.PartyInvitationSyncPayload;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
@@ -198,6 +199,7 @@ public final class PartyActionHandler {
                 }
             }
             PartySyncService.syncParty(target.getServer(), result.partyId());
+            VillagerQuestService.refreshTracker(target);
         }
     }
 
@@ -246,6 +248,8 @@ public final class PartyActionHandler {
         notice(player, result.messageKey());
         if (result.success() && party != null) {
             PartyQuestService.detachPlayer(player.serverLevel(), party, player.getUUID());
+            VillagerQuestService.refreshTracker(player);
+            refreshPartyTrackers(player, party);
             PartySyncService.clear(player.getServer(), player.getUUID());
             PartySyncService.syncParty(player.getServer(), party.id());
         }
@@ -265,6 +269,7 @@ public final class PartyActionHandler {
             String removedName = removed == null ? targetId.toString() : removed.getName().getString();
             if (removed != null) {
                 styledNotice(removed, "villagerretaliation.party.player_removed.self");
+                VillagerQuestService.refreshTracker(removed);
             }
             for (UUID playerId : party.playerIds()) {
                 ServerPlayer member = leader.getServer().getPlayerList().getPlayer(playerId);
@@ -272,6 +277,7 @@ public final class PartyActionHandler {
                     styledNotice(member, "villagerretaliation.party.player_removed.other", removedName);
                 }
             }
+            refreshPartyTrackers(leader, party);
             PartySyncService.syncParty(leader.getServer(), party.id());
         }
     }
@@ -290,6 +296,19 @@ public final class PartyActionHandler {
             ServerPlayer affected = leader.getServer().getPlayerList().getPlayer(playerId);
             if (affected != null) {
                 notice(affected, "villagerretaliation.party.disbanded");
+                VillagerQuestService.refreshTracker(affected);
+            }
+        }
+    }
+
+    private static void refreshPartyTrackers(ServerPlayer source, PartyRecord party) {
+        if (source == null || party == null) {
+            return;
+        }
+        for (UUID playerId : party.playerIds()) {
+            ServerPlayer member = source.getServer().getPlayerList().getPlayer(playerId);
+            if (member != null) {
+                VillagerQuestService.refreshTracker(member);
             }
         }
     }
