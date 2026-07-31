@@ -248,15 +248,23 @@ public final class VillagerReputationNetworking {
                 PartyActionRequestPayload.TYPE,
                 PartyActionRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
-                        ToucanNetwork.withServerPlayer(context, player ->
-                                com.jvn.villagerretaliation.party.PartyActionHandler.handle(player, payload)))
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (ServerboundRequestLimiter.tryAcquire(
+                                    player, PartyActionRequestPayload.TYPE.id(), 2L)) {
+                                com.jvn.villagerretaliation.party.PartyActionHandler.handle(player, payload);
+                            }
+                        }))
         );
         network.playToServer(
                 PartyQuickCommandRequestPayload.TYPE,
                 PartyQuickCommandRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
-                        ToucanNetwork.withServerPlayer(context, player ->
-                                com.jvn.villagerretaliation.party.PartyQuickCommandService.handle(player, payload)))
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (ServerboundRequestLimiter.tryAcquire(
+                                    player, PartyQuickCommandRequestPayload.TYPE.id(), 5L)) {
+                                com.jvn.villagerretaliation.party.PartyQuickCommandService.handle(player, payload);
+                            }
+                        }))
         );
         network.playToServer(
                 QuestTrackerRequestPayload.TYPE,

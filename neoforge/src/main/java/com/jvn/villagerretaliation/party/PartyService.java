@@ -317,14 +317,9 @@ public final class PartyService {
             data.removeInvitation(invitationId);
             return PartyResult.failure("villagerretaliation.party.error.already_in_party");
         }
-        ServerPlayer inviter = target.getServer().getPlayerList().getPlayer(invitation.inviterId());
-        if (inviter == null) {
-            data.removeInvitation(invitationId);
-            return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
-        }
 
-        PartyRecord party = data.partyForPlayer(inviter.getUUID()).orElse(null);
-        if (party != null && !party.leaderId().equals(inviter.getUUID())) {
+        PartyRecord party = data.partyForPlayer(invitation.inviterId()).orElse(null);
+        if (party != null && !party.leaderId().equals(invitation.inviterId())) {
             data.removeInvitation(invitationId);
             return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
         }
@@ -340,7 +335,7 @@ public final class PartyService {
 
         boolean created = false;
         if (party == null) {
-            party = data.createParty(inviter.getUUID(), now);
+            party = data.createParty(invitation.inviterId(), now);
             created = true;
         }
         if (!data.addPlayer(party, target.getUUID())) {

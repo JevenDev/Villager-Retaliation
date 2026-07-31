@@ -24,9 +24,7 @@ public final class PartyActionHandler {
             return;
         }
         ServerPlayer inviter = target.getServer().getPlayerList().getPlayer(invitation.inviterId());
-        String inviterName = inviter == null
-                ? "Player"
-                : inviter.getGameProfile().getName();
+        String inviterName = inviter == null ? profileName(target, invitation.inviterId()) : inviter.getGameProfile().getName();
         sendInvitationNotice(target, inviterName);
     }
 
@@ -47,9 +45,9 @@ public final class PartyActionHandler {
         acceptInvitation(target, invitation == null ? null : invitation.id());
     }
 
-    public static void acceptInvitationFromCommand(ServerPlayer target, ServerPlayer inviter) {
+    public static void acceptInvitationFromCommand(ServerPlayer target, UUID inviterId) {
         PartyInvitation invitation = latestPendingInvitationFrom(
-                target, inviter == null ? null : inviter.getUUID());
+                target, inviterId);
         acceptInvitation(target, invitation == null ? null : invitation.id());
     }
     public static void declineLatestInvitationCommand(ServerPlayer target) {
@@ -61,8 +59,8 @@ public final class PartyActionHandler {
         leaveParty(player);
     }
 
-    public static void removePlayerCommand(ServerPlayer leader, ServerPlayer target) {
-        removePlayer(leader, target == null ? null : target.getUUID());
+    public static void removePlayerCommand(ServerPlayer leader, UUID targetId) {
+        removePlayer(leader, targetId);
     }
 
     public static void disbandCommand(ServerPlayer leader) {
@@ -71,9 +69,9 @@ public final class PartyActionHandler {
 
     public static void allianceCommand(
             ServerPlayer leader,
-            ServerPlayer target,
+            UUID targetId,
             PartyService.AllianceAction action) {
-        handleAlliance(leader, target == null ? null : target.getUUID(), action);
+        handleAlliance(leader, targetId, action);
     }
 
     public static void handle(ServerPlayer player, PartyActionRequestPayload payload) {
@@ -266,7 +264,7 @@ public final class PartyActionHandler {
             PartyQuestService.detachPlayer(leader.serverLevel(), party, targetId);
             PartySyncService.clear(leader.getServer(), targetId);
             ServerPlayer removed = leader.getServer().getPlayerList().getPlayer(targetId);
-            String removedName = removed == null ? targetId.toString() : removed.getName().getString();
+            String removedName = removed == null ? profileName(leader, targetId) : removed.getName().getString();
             if (removed != null) {
                 styledNotice(removed, "villagerretaliation.party.player_removed.self");
                 VillagerQuestService.refreshTracker(removed);
@@ -311,6 +309,17 @@ public final class PartyActionHandler {
                 VillagerQuestService.refreshTracker(member);
             }
         }
+    }
+
+    private static String profileName(ServerPlayer source, UUID playerId) {
+        if (source == null || playerId == null || source.getServer().getProfileCache() == null) {
+            return playerId == null ? "Player" : playerId.toString();
+        }
+        return source.getServer().getProfileCache()
+                .get(playerId)
+                .map(com.mojang.authlib.GameProfile::getName)
+                .filter(name -> !name.isBlank())
+                .orElse(playerId.toString());
     }
 
     private static boolean canInteract(ServerPlayer player, ServerPlayer target) {

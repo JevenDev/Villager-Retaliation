@@ -179,6 +179,11 @@ public final class PartyQuickCommandService {
                 RUNTIME_ORDERS.put(villagerId, order);
             }
         }
+        if (record.regrouping() && (order == null || order.type() != RuntimeOrderType.REGROUP)) {
+            record.setRegrouping(false);
+            PartyService.markChanged(level);
+            syncRuntimeState(villager, party);
+        }
 
         if (record.regrouping()) {
             releaseRegroupSuppressionIfArrived(level, villager, party, record);
@@ -362,9 +367,18 @@ public final class PartyQuickCommandService {
     }
 
     public static void onVillagerUnloaded(Villager villager) {
-        if (villager != null) {
-            clearAllOrders(villager);
+        if (villager == null) {
+            return;
         }
+        if (villager.level() instanceof ServerLevel level) {
+            PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+            PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+            if (record != null && record.regrouping()) {
+                record.setRegrouping(false);
+                PartyService.markChanged(level);
+            }
+        }
+        clearAllOrders(villager);
     }
 
     public static void clearRuntimeState() {
@@ -593,8 +607,8 @@ public final class PartyQuickCommandService {
             List<PartyVillagerRecord> records) {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
+            record.setRegrouping(false);
             record.setFollowing();
-            record.setRegrouping(true);
             Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
             if (villager == null) {
                 clearMovementOrder(record.villagerId());
@@ -606,6 +620,7 @@ public final class PartyQuickCommandService {
             com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
             VillagerRetaliationHandler.clearCustomTarget(villager);
             if (villager.level() == player.serverLevel()) {
+                record.setRegrouping(true);
                 replaceMovementOrder(villager, RuntimeOrder.regroup(player.getUUID()));
             } else {
                 clearMovementOrder(villager);

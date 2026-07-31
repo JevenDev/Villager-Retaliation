@@ -176,6 +176,58 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void unavailableRegroupParticipantsDoNotKeepCombatSuppression(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_regroup_leader"));
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), level.getGameTime());
+        PartyVillagerRecord unavailable = villagerRecord(
+                UUID.randomUUID(), leader.getUUID(), 0, level.getGameTime());
+        PartySavedData.get(level).addVillager(party, unavailable);
+        unavailable.setRegrouping(true);
+        try {
+            unavailable.setStaying(level.dimension().location(), helper.absolutePos(new BlockPos(3, 2, 3)));
+            PartyQuickCommandService.handle(
+                    leader,
+                    new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(PartyQuickCommand.REGROUP));
+            helper.assertValueEqual(unavailable.commandMode(), PartyCommandMode.FOLLOW,
+                    "regroup should still persist the requested follow mode for an unavailable villager");
+            helper.assertFalse(unavailable.regrouping(),
+                    "an unavailable villager must not retain regroup combat suppression without a runtime route");
+        } finally {
+            PartyService.deleteParty(level, party.id());
+            PartyQuickCommandService.clearRuntimeState();
+            leader.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void unloadingVillagerClearsOrphanedRegroupSuppression(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_regroup_unload_leader"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), level.getGameTime());
+        PartyVillagerRecord record = villagerRecord(
+                villager.getUUID(), leader.getUUID(), 0, level.getGameTime());
+        PartySavedData.get(level).addVillager(party, record);
+        try {
+            PartyQuickCommandService.handle(
+                    leader,
+                    new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(PartyQuickCommand.REGROUP));
+            helper.assertTrue(record.regrouping(), "loaded villager should begin an active regroup route");
+            PartyQuickCommandService.onVillagerUnloaded(villager);
+            helper.assertFalse(record.regrouping(),
+                    "unloading must clear regroup suppression after its runtime route is discarded");
+        } finally {
+            PartyService.deleteParty(level, party.id());
+            PartyQuickCommandService.clearRuntimeState();
+            villager.discard();
+            leader.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void rangeAndMeleeCommandsKeepWeaponsDrawnOutsideCombat(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_idle_loadout"));
@@ -557,6 +609,39 @@ public final class PartyGameTests {
             if (partyId != null) {
                 PartyService.deleteParty(level, partyId);
             }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void persistedInvitationCanBeAcceptedWhileInviterIsOffline(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer target = fakePlayer(level, uniqueName("party_offline_invite_target"));
+        PartySavedData data = PartySavedData.get(level);
+        UUID offlineInviterId = UUID.randomUUID();
+        PartyRecord party = data.createParty(offlineInviterId, level.getGameTime());
+        long now = level.getServer().overworld().getGameTime();
+        PartyInvitation invitation = new PartyInvitation(
+                UUID.randomUUID(),
+                offlineInviterId,
+                target.getUUID(),
+                party.id(),
+                now,
+                now + PartyService.INVITATION_LIFETIME_TICKS);
+        data.putInvitation(invitation);
+        try {
+            helper.assertTrue(level.getServer().getPlayerList().getPlayer(offlineInviterId) == null,
+                    "fixture inviter must be offline");
+            PartyService.PartyResult accepted = PartyService.acceptInvitation(target, invitation.id());
+            helper.assertTrue(accepted.success(),
+                    "saved invitation should remain valid when its party leader is offline");
+            helper.assertValueEqual(
+                    PartyService.getPartyForPlayer(level, target.getUUID()).map(PartyRecord::id).orElse(null),
+                    party.id(),
+                    "offline invitation acceptance should join the expected saved party");
+        } finally {
+            PartyService.deleteParty(level, party.id());
+            target.discard();
         }
         helper.succeed();
     }
