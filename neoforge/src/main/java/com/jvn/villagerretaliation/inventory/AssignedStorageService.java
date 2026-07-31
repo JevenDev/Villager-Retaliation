@@ -358,6 +358,9 @@ public final class AssignedStorageService {
     public static void rememberOutputStorageFailure(ServerLevel level, Villager villager, BlockPos storagePos, String reason) {
         rememberStorageFailure(level, villager, storagePos, StorageUse.OUTPUT, reason, STORAGE_RETRY_COOLDOWN_TICKS);
     }
+    public static void rememberInputStorageFailure(ServerLevel level, Villager villager, BlockPos storagePos, String reason) {
+        rememberStorageFailure(level, villager, storagePos, StorageUse.INPUT, reason, STORAGE_RETRY_COOLDOWN_TICKS);
+    }
 
     public static void rememberToolStorageFailure(ServerLevel level, Villager villager, BlockPos storagePos, String reason) {
         rememberStorageFailure(level, villager, storagePos, StorageUse.TOOL, reason, STORAGE_RETRY_COOLDOWN_TICKS);

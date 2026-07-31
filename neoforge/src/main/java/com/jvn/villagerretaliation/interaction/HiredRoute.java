@@ -152,13 +152,15 @@ public record HiredRoute(List<BlockPos> nodes, boolean loop, List<Branch> branch
 
     /** Expands branches into ordinary out-and-back route nodes for courier traversal. */
     public List<BlockPos> traversalNodes() {
-        if (this.nodes.isEmpty() || this.branches.isEmpty()) {
+        if (this.nodes.isEmpty() || (this.branches.isEmpty() && !this.loop)) {
             return this.nodes;
         }
         record Attachment(Branch branch, int segmentIndex, double progress, int branchIndex) {
         }
         List<Attachment> attachments = new ArrayList<>();
-        int segmentCount = Math.max(1, this.nodes.size() - 1);
+        int segmentCount = this.nodes.size() == 1
+                ? 1
+                : this.nodes.size() - 1 + (this.loop ? 1 : 0);
         for (int branchIndex = 0; branchIndex < this.branches.size(); branchIndex++) {
             Branch branch = this.branches.get(branchIndex);
             int bestSegment = 0;
@@ -166,7 +168,9 @@ public record HiredRoute(List<BlockPos> nodes, boolean loop, List<Branch> branch
             double bestDistance = Double.MAX_VALUE;
             for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++) {
                 BlockPos first = this.nodes.get(segmentIndex);
-                BlockPos second = this.nodes.size() == 1 ? first : this.nodes.get(segmentIndex + 1);
+                BlockPos second = this.nodes.size() == 1
+                        ? first
+                        : this.nodes.get((segmentIndex + 1) % this.nodes.size());
                 double progress = segmentProgress(branch.anchor(), first, second);
                 double projectedX = first.getX() + (second.getX() - first.getX()) * progress;
                 double projectedY = first.getY() + (second.getY() - first.getY()) * progress;
@@ -200,7 +204,7 @@ public record HiredRoute(List<BlockPos> nodes, boolean loop, List<Branch> branch
                 addTraversalNode(traversal, attachment.branch().anchor());
             }
             if (this.nodes.size() > 1) {
-                addTraversalNode(traversal, this.nodes.get(segmentIndex + 1));
+                addTraversalNode(traversal, this.nodes.get((segmentIndex + 1) % this.nodes.size()));
             }
         }
         if (!this.loop

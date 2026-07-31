@@ -4507,6 +4507,58 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
+    public static void courierSkipsInputDuringUnreachableRetryCooldown(GameTestHelper helper) {
+        buildFloor(helper, 0, 10, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierInputFailure");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        BlockPos failedInputRel = new BlockPos(3, 2, 2);
+        BlockPos availableInputRel = new BlockPos(6, 2, 2);
+        BlockPos outputRel = new BlockPos(9, 2, 2);
+        BlockPos failedInput = helper.absolutePos(failedInputRel);
+        BlockPos availableInput = helper.absolutePos(availableInputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, failedInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, availableInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        container(level, failedInput).setItem(0, new ItemStack(Items.DIRT, 4));
+        container(level, availableInput).setItem(0, new ItemStack(Items.COBBLESTONE, 5));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), failedInput),
+                        new AssignedStorageService.StoragePosition(level.dimension(), availableInput)),
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 2, "courier input assignments");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "courier output assignment");
+
+        List<BlockPos> beforeFailure = AssignedStorageService.assignedCourierInputStoragePositionsContaining(
+                level, villager, stack -> !stack.isEmpty());
+        helper.assertTrue(beforeFailure.contains(failedInput) && beforeFailure.contains(availableInput),
+                "both reachable inputs should initially be eligible");
+
+        AssignedStorageService.rememberInputStorageFailure(
+                level, villager, failedInput, "courier_input_unreachable");
+
+        List<BlockPos> duringCooldown = AssignedStorageService.assignedCourierInputStoragePositionsContaining(
+                level, villager, stack -> !stack.isEmpty());
+        helper.assertFalse(duringCooldown.contains(failedInput),
+                "an unreachable input should be skipped during its retry cooldown");
+        helper.assertTrue(duringCooldown.contains(availableInput),
+                "one failed input must not block other route inputs");
+
+        AssignedStorageService.clearStorageFailure(level, villager, failedInput);
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
     public static void courierCollectsReachableInputBesideRouteNode(GameTestHelper helper) {
         buildFloor(helper, 0, 14, 0, 4, 1);
         ServerLevel level = helper.getLevel();
@@ -4735,6 +4787,43 @@ public final class VillagerWorkerGameTests {
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 20)
+    public static void courierLoopTraversalIncludesClosingBranchAndDistance(GameTestHelper helper) {
+        BlockPos first = new BlockPos(0, 2, 0);
+        BlockPos second = new BlockPos(12, 2, 0);
+        BlockPos third = new BlockPos(6, 2, 10);
+        BlockPos branchAnchor = new BlockPos(3, 2, 5);
+        BlockPos branchEnd = new BlockPos(0, 2, 5);
+        HiredRoute route = new HiredRoute(
+                List.of(first, second, third),
+                true,
+                List.of(new HiredRoute.Branch(branchAnchor, branchEnd)));
+        List<BlockPos> expectedTraversal = List.of(
+                first,
+                second,
+                third,
+                branchAnchor,
+                branchEnd,
+                branchAnchor,
+                first);
+
+        helper.assertTrue(route.loop(), "the route fixture should retain its valid closing segment");
+        helper.assertValueEqual(
+                route.traversalNodes(),
+                expectedTraversal,
+                "a loop traversal should follow its closing segment and branches attached to it");
+
+        double expectedDistance = 0.0D;
+        for (int index = 1; index < expectedTraversal.size(); index++) {
+            expectedDistance += Math.sqrt(
+                    expectedTraversal.get(index - 1).distSqr(expectedTraversal.get(index)));
+        }
+        helper.assertTrue(
+                Math.abs(CourierWorker.routeDistance(route) - expectedDistance) < 0.000001D,
+                "courier practice distance should use the complete expanded traversal");
         helper.succeed();
     }
 

@@ -253,11 +253,9 @@ public final class CourierWorker implements HiredRoleWorker {
 
     static double routeDistance(HiredRoute route) {
         double distance = 0.0D;
-        for (int index = 1; index < route.nodes().size(); index++) {
-            distance += Math.sqrt(route.nodes().get(index - 1).distSqr(route.nodes().get(index)));
-        }
-        if (route.loop() && route.nodes().size() > 1) {
-            distance += Math.sqrt(route.nodes().getLast().distSqr(route.nodes().getFirst()));
+        List<BlockPos> traversalNodes = route.traversalNodes();
+        for (int index = 1; index < traversalNodes.size(); index++) {
+            distance += Math.sqrt(traversalNodes.get(index - 1).distSqr(traversalNodes.get(index)));
         }
         return distance;
     }
@@ -331,6 +329,9 @@ public final class CourierWorker implements HiredRoleWorker {
             if (AssignedStorageService.OUTPUT_PURPOSE.equals(purpose)) {
                 AssignedStorageService.rememberOutputStorageFailure(
                         level, villager, storage, "courier_output_unreachable");
+            } else if (AssignedStorageService.SUPPLY_PURPOSE.equals(purpose)) {
+                AssignedStorageService.rememberInputStorageFailure(
+                        level, villager, storage, "courier_input_unreachable");
             }
             String failure = AssignedStorageService.SUPPLY_PURPOSE.equals(purpose)
                     ? "courier_input_unreachable"
