@@ -59,7 +59,7 @@ Default reputation tiers:
 | Neutral | -74 to 74 |
 | Suspicious | -75 or below |
 | Hostile | -100 or below |
-| Despised | -250 or below |
+| Despised | -400 or below |
 | Feared | -1000 or below |
 
 Higher trust can improve how villagers treat you, reduce anger, unlock warmer dialogue, support gift rewards, and open up more helpful interactions. Lower trust can make villagers cold, suspicious, unwilling to trade, harder to pacify, or openly dangerous.
@@ -314,7 +314,7 @@ Debug-only family testing items are also available through commands:
 
 ## Player Wiki
 
-Use the [player wiki](https://jevendev.github.io/Villager-Retaliation/) for quest walkthroughs, rewards, gifts, reputation tiers, skill trades, watched containers, advancements, and player-facing settings.
+Use the [player wiki](https://jevendev.github.io/Villager-Retaliation/) for quest walkthroughs, hiring and jobs, parties and mounts, tracked villages, duels, downed recovery, Sell Box prices, gifts, reputation tiers, skill trades, watched containers, advancements, and player-facing settings.
 
 ## Pack Support
 

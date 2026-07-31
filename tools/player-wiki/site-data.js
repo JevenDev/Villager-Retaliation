@@ -38,8 +38,8 @@ window.VR_WIKI_DATA = {
     },
     {
       "level": "Despised",
-      "threshold": "-250 or below",
-      "effect": "Villagers can become dangerous, may refuse pacification, and may attack on sight when enabled."
+      "threshold": "-400 or below",
+      "effect": "Most peaceful options are unavailable. Villagers may refuse service or attack on sight when that behavior is enabled."
     },
     {
       "level": "Feared",
@@ -65550,6 +65550,2059 @@ window.VR_WIKI_DATA = {
       ]
     }
   ],
+  "sellPrices": [
+    {
+      "id": "acacia_boat",
+      "item": "Acacia Boat",
+      "itemId": "minecraft:acacia_boat",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "acacia_sapling",
+      "item": "Acacia Sapling",
+      "itemId": "minecraft:acacia_sapling",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "allium",
+      "item": "Allium",
+      "itemId": "minecraft:allium",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "andesite",
+      "item": "Andesite",
+      "itemId": "minecraft:andesite",
+      "itemCount": "16",
+      "currencyCount": "1"
+    },
+    {
+      "id": "apple",
+      "item": "Apple",
+      "itemId": "minecraft:apple",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "arrow",
+      "item": "Arrow",
+      "itemId": "minecraft:arrow",
+      "itemCount": "16",
+      "currencyCount": "1"
+    },
+    {
+      "id": "azure_bluet",
+      "item": "Azure Bluet",
+      "itemId": "minecraft:azure_bluet",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "beef",
+      "item": "Beef",
+      "itemId": "minecraft:beef",
+      "itemCount": "10",
+      "currencyCount": "1"
+    },
+    {
+      "id": "beetroot",
+      "item": "Beetroot",
+      "itemId": "minecraft:beetroot",
+      "itemCount": "15",
+      "currencyCount": "1"
+    },
+    {
+      "id": "beetroot_seeds",
+      "item": "Beetroot Seeds",
+      "itemId": "minecraft:beetroot_seeds",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "bell",
+      "item": "Bell",
+      "itemId": "minecraft:bell",
+      "itemCount": "1",
+      "currencyCount": "36"
+    },
+    {
+      "id": "birch_sapling",
+      "item": "Birch Sapling",
+      "itemId": "minecraft:birch_sapling",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "black_banner",
+      "item": "Black Banner",
+      "itemId": "minecraft:black_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "black_bed",
+      "item": "Black Bed",
+      "itemId": "minecraft:black_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "black_carpet",
+      "item": "Black Carpet",
+      "itemId": "minecraft:black_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "black_dye",
+      "item": "Black Dye",
+      "itemId": "minecraft:black_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "black_glazed_terracotta",
+      "item": "Black Glazed Terracotta",
+      "itemId": "minecraft:black_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "black_terracotta",
+      "item": "Black Terracotta",
+      "itemId": "minecraft:black_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "black_wool",
+      "item": "Black Wool",
+      "itemId": "minecraft:black_wool",
+      "itemCount": "1-18",
+      "currencyCount": "1"
+    },
+    {
+      "id": "blue_banner",
+      "item": "Blue Banner",
+      "itemId": "minecraft:blue_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "blue_bed",
+      "item": "Blue Bed",
+      "itemId": "minecraft:blue_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "blue_carpet",
+      "item": "Blue Carpet",
+      "itemId": "minecraft:blue_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "blue_dye",
+      "item": "Blue Dye",
+      "itemId": "minecraft:blue_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "blue_glazed_terracotta",
+      "item": "Blue Glazed Terracotta",
+      "itemId": "minecraft:blue_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "blue_ice",
+      "item": "Blue Ice",
+      "itemId": "minecraft:blue_ice",
+      "itemCount": "1",
+      "currencyCount": "6"
+    },
+    {
+      "id": "blue_orchid",
+      "item": "Blue Orchid",
+      "itemId": "minecraft:blue_orchid",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "blue_terracotta",
+      "item": "Blue Terracotta",
+      "itemId": "minecraft:blue_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "blue_wool",
+      "item": "Blue Wool",
+      "itemId": "minecraft:blue_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "book",
+      "item": "Book",
+      "itemId": "minecraft:book",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "bookshelf",
+      "item": "Bookshelf",
+      "itemId": "minecraft:bookshelf",
+      "itemCount": "1",
+      "currencyCount": "9"
+    },
+    {
+      "id": "bow",
+      "item": "Bow",
+      "itemId": "minecraft:bow",
+      "itemCount": "1",
+      "currencyCount": "2-21"
+    },
+    {
+      "id": "brain_coral_block",
+      "item": "Brain Coral Block",
+      "itemId": "minecraft:brain_coral_block",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "bread",
+      "item": "Bread",
+      "itemId": "minecraft:bread",
+      "itemCount": "6",
+      "currencyCount": "1"
+    },
+    {
+      "id": "brick",
+      "item": "Brick",
+      "itemId": "minecraft:brick",
+      "itemCount": "10",
+      "currencyCount": "1"
+    },
+    {
+      "id": "brown_banner",
+      "item": "Brown Banner",
+      "itemId": "minecraft:brown_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "brown_bed",
+      "item": "Brown Bed",
+      "itemId": "minecraft:brown_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "brown_carpet",
+      "item": "Brown Carpet",
+      "itemId": "minecraft:brown_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "brown_dye",
+      "item": "Brown Dye",
+      "itemId": "minecraft:brown_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "brown_glazed_terracotta",
+      "item": "Brown Glazed Terracotta",
+      "itemId": "minecraft:brown_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "brown_mushroom",
+      "item": "Brown Mushroom",
+      "itemId": "minecraft:brown_mushroom",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "brown_terracotta",
+      "item": "Brown Terracotta",
+      "itemId": "minecraft:brown_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "brown_wool",
+      "item": "Brown Wool",
+      "itemId": "minecraft:brown_wool",
+      "itemCount": "1-18",
+      "currencyCount": "1"
+    },
+    {
+      "id": "bubble_coral_block",
+      "item": "Bubble Coral Block",
+      "itemId": "minecraft:bubble_coral_block",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "cactus",
+      "item": "Cactus",
+      "itemId": "minecraft:cactus",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "cake",
+      "item": "Cake",
+      "itemId": "minecraft:cake",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "campfire",
+      "item": "Campfire",
+      "itemId": "minecraft:campfire",
+      "itemCount": "1",
+      "currencyCount": "2"
+    },
+    {
+      "id": "carrot",
+      "item": "Carrot",
+      "itemId": "minecraft:carrot",
+      "itemCount": "22",
+      "currencyCount": "1"
+    },
+    {
+      "id": "chainmail_boots",
+      "item": "Chainmail Boots",
+      "itemId": "minecraft:chainmail_boots",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "chainmail_chestplate",
+      "item": "Chainmail Chestplate",
+      "itemId": "minecraft:chainmail_chestplate",
+      "itemCount": "1",
+      "currencyCount": "4"
+    },
+    {
+      "id": "chainmail_helmet",
+      "item": "Chainmail Helmet",
+      "itemId": "minecraft:chainmail_helmet",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "chainmail_leggings",
+      "item": "Chainmail Leggings",
+      "itemId": "minecraft:chainmail_leggings",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "cherry_sapling",
+      "item": "Cherry Sapling",
+      "itemId": "minecraft:cherry_sapling",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "chicken",
+      "item": "Chicken",
+      "itemId": "minecraft:chicken",
+      "itemCount": "14",
+      "currencyCount": "1"
+    },
+    {
+      "id": "chiseled_stone_bricks",
+      "item": "Chiseled Stone Bricks",
+      "itemId": "minecraft:chiseled_stone_bricks",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "clay_ball",
+      "item": "Clay Ball",
+      "itemId": "minecraft:clay_ball",
+      "itemCount": "10",
+      "currencyCount": "1"
+    },
+    {
+      "id": "clock",
+      "item": "Clock",
+      "itemId": "minecraft:clock",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "coal",
+      "item": "Coal",
+      "itemId": "minecraft:coal",
+      "itemCount": "10-15",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cod",
+      "item": "Cod",
+      "itemId": "minecraft:cod",
+      "itemCount": "15",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cod_bucket",
+      "item": "Cod Bucket",
+      "itemId": "minecraft:cod_bucket",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "compass",
+      "item": "Compass",
+      "itemId": "minecraft:compass",
+      "itemCount": "1",
+      "currencyCount": "1-4"
+    },
+    {
+      "id": "cooked_chicken",
+      "item": "Cooked Chicken",
+      "itemId": "minecraft:cooked_chicken",
+      "itemCount": "8",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cooked_cod",
+      "item": "Cooked Cod",
+      "itemId": "minecraft:cooked_cod",
+      "itemCount": "6",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cooked_porkchop",
+      "item": "Cooked Porkchop",
+      "itemId": "minecraft:cooked_porkchop",
+      "itemCount": "5",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cooked_salmon",
+      "item": "Cooked Salmon",
+      "itemId": "minecraft:cooked_salmon",
+      "itemCount": "6",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cookie",
+      "item": "Cookie",
+      "itemId": "minecraft:cookie",
+      "itemCount": "18",
+      "currencyCount": "3"
+    },
+    {
+      "id": "cornflower",
+      "item": "Cornflower",
+      "itemId": "minecraft:cornflower",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "crossbow",
+      "item": "Crossbow",
+      "itemId": "minecraft:crossbow",
+      "itemCount": "1",
+      "currencyCount": "3-22"
+    },
+    {
+      "id": "cyan_banner",
+      "item": "Cyan Banner",
+      "itemId": "minecraft:cyan_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "cyan_bed",
+      "item": "Cyan Bed",
+      "itemId": "minecraft:cyan_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "cyan_carpet",
+      "item": "Cyan Carpet",
+      "itemId": "minecraft:cyan_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cyan_dye",
+      "item": "Cyan Dye",
+      "itemId": "minecraft:cyan_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cyan_glazed_terracotta",
+      "item": "Cyan Glazed Terracotta",
+      "itemId": "minecraft:cyan_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cyan_terracotta",
+      "item": "Cyan Terracotta",
+      "itemId": "minecraft:cyan_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "cyan_wool",
+      "item": "Cyan Wool",
+      "itemId": "minecraft:cyan_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "dandelion",
+      "item": "Dandelion",
+      "itemId": "minecraft:dandelion",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "dark_oak_boat",
+      "item": "Dark Oak Boat",
+      "itemId": "minecraft:dark_oak_boat",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "dark_oak_sapling",
+      "item": "Dark Oak Sapling",
+      "itemId": "minecraft:dark_oak_sapling",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "diamond",
+      "item": "Diamond",
+      "itemId": "minecraft:diamond",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "diamond_axe",
+      "item": "Diamond Axe",
+      "itemId": "minecraft:diamond_axe",
+      "itemCount": "1",
+      "currencyCount": "17-31"
+    },
+    {
+      "id": "diamond_boots",
+      "item": "Diamond Boots",
+      "itemId": "minecraft:diamond_boots",
+      "itemCount": "1",
+      "currencyCount": "13-27"
+    },
+    {
+      "id": "diamond_chestplate",
+      "item": "Diamond Chestplate",
+      "itemId": "minecraft:diamond_chestplate",
+      "itemCount": "1",
+      "currencyCount": "21-35"
+    },
+    {
+      "id": "diamond_helmet",
+      "item": "Diamond Helmet",
+      "itemId": "minecraft:diamond_helmet",
+      "itemCount": "1",
+      "currencyCount": "13-27"
+    },
+    {
+      "id": "diamond_hoe",
+      "item": "Diamond Hoe",
+      "itemId": "minecraft:diamond_hoe",
+      "itemCount": "1",
+      "currencyCount": "4"
+    },
+    {
+      "id": "diamond_leggings",
+      "item": "Diamond Leggings",
+      "itemId": "minecraft:diamond_leggings",
+      "itemCount": "1",
+      "currencyCount": "19-33"
+    },
+    {
+      "id": "diamond_pickaxe",
+      "item": "Diamond Pickaxe",
+      "itemId": "minecraft:diamond_pickaxe",
+      "itemCount": "1",
+      "currencyCount": "18-32"
+    },
+    {
+      "id": "diamond_shovel",
+      "item": "Diamond Shovel",
+      "itemId": "minecraft:diamond_shovel",
+      "itemCount": "1",
+      "currencyCount": "10-24"
+    },
+    {
+      "id": "diamond_sword",
+      "item": "Diamond Sword",
+      "itemId": "minecraft:diamond_sword",
+      "itemCount": "1",
+      "currencyCount": "13-27"
+    },
+    {
+      "id": "diorite",
+      "item": "Diorite",
+      "itemId": "minecraft:diorite",
+      "itemCount": "16",
+      "currencyCount": "1"
+    },
+    {
+      "id": "dried_kelp_block",
+      "item": "Dried Kelp Block",
+      "itemId": "minecraft:dried_kelp_block",
+      "itemCount": "10",
+      "currencyCount": "1"
+    },
+    {
+      "id": "dripstone_block",
+      "item": "Dripstone Block",
+      "itemId": "minecraft:dripstone_block",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "enchanted_book",
+      "item": "Enchanted Book",
+      "itemId": "minecraft:enchanted_book",
+      "itemCount": "1",
+      "currencyCount": "2-64"
+    },
+    {
+      "id": "ender_pearl",
+      "item": "Ender Pearl",
+      "itemId": "minecraft:ender_pearl",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "experience_bottle",
+      "item": "Experience Bottle",
+      "itemId": "minecraft:experience_bottle",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "feather",
+      "item": "Feather",
+      "itemId": "minecraft:feather",
+      "itemCount": "24",
+      "currencyCount": "1"
+    },
+    {
+      "id": "fern",
+      "item": "Fern",
+      "itemId": "minecraft:fern",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "filled_map",
+      "item": "Filled Map",
+      "itemId": "minecraft:filled_map",
+      "itemCount": "1",
+      "currencyCount": "12-14"
+    },
+    {
+      "id": "fire_coral_block",
+      "item": "Fire Coral Block",
+      "itemId": "minecraft:fire_coral_block",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "fishing_rod",
+      "item": "Fishing Rod",
+      "itemId": "minecraft:fishing_rod",
+      "itemCount": "1",
+      "currencyCount": "8-22"
+    },
+    {
+      "id": "flint",
+      "item": "Flint",
+      "itemId": "minecraft:flint",
+      "itemCount": "10-30",
+      "currencyCount": "1"
+    },
+    {
+      "id": "glass",
+      "item": "Glass",
+      "itemId": "minecraft:glass",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "glass_bottle",
+      "item": "Glass Bottle",
+      "itemId": "minecraft:glass_bottle",
+      "itemCount": "9",
+      "currencyCount": "1"
+    },
+    {
+      "id": "glass_pane",
+      "item": "Glass Pane",
+      "itemId": "minecraft:glass_pane",
+      "itemCount": "11",
+      "currencyCount": "1"
+    },
+    {
+      "id": "glistering_melon_slice",
+      "item": "Glistering Melon Slice",
+      "itemId": "minecraft:glistering_melon_slice",
+      "itemCount": "3",
+      "currencyCount": "4"
+    },
+    {
+      "id": "globe_banner_pattern",
+      "item": "Globe Banner Pattern",
+      "itemId": "minecraft:globe_banner_pattern",
+      "itemCount": "1",
+      "currencyCount": "8"
+    },
+    {
+      "id": "glowstone",
+      "item": "Glowstone",
+      "itemId": "minecraft:glowstone",
+      "itemCount": "1",
+      "currencyCount": "2-4"
+    },
+    {
+      "id": "gold_ingot",
+      "item": "Gold Ingot",
+      "itemId": "minecraft:gold_ingot",
+      "itemCount": "3",
+      "currencyCount": "1"
+    },
+    {
+      "id": "golden_carrot",
+      "item": "Golden Carrot",
+      "itemId": "minecraft:golden_carrot",
+      "itemCount": "3",
+      "currencyCount": "3"
+    },
+    {
+      "id": "granite",
+      "item": "Granite",
+      "itemId": "minecraft:granite",
+      "itemCount": "16",
+      "currencyCount": "1"
+    },
+    {
+      "id": "gray_banner",
+      "item": "Gray Banner",
+      "itemId": "minecraft:gray_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "gray_bed",
+      "item": "Gray Bed",
+      "itemId": "minecraft:gray_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "gray_carpet",
+      "item": "Gray Carpet",
+      "itemId": "minecraft:gray_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "gray_dye",
+      "item": "Gray Dye",
+      "itemId": "minecraft:gray_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "gray_glazed_terracotta",
+      "item": "Gray Glazed Terracotta",
+      "itemId": "minecraft:gray_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "gray_terracotta",
+      "item": "Gray Terracotta",
+      "itemId": "minecraft:gray_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "gray_wool",
+      "item": "Gray Wool",
+      "itemId": "minecraft:gray_wool",
+      "itemCount": "1-18",
+      "currencyCount": "1"
+    },
+    {
+      "id": "green_banner",
+      "item": "Green Banner",
+      "itemId": "minecraft:green_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "green_bed",
+      "item": "Green Bed",
+      "itemId": "minecraft:green_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "green_carpet",
+      "item": "Green Carpet",
+      "itemId": "minecraft:green_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "green_dye",
+      "item": "Green Dye",
+      "itemId": "minecraft:green_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "green_glazed_terracotta",
+      "item": "Green Glazed Terracotta",
+      "itemId": "minecraft:green_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "green_terracotta",
+      "item": "Green Terracotta",
+      "itemId": "minecraft:green_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "green_wool",
+      "item": "Green Wool",
+      "itemId": "minecraft:green_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "gunpowder",
+      "item": "Gunpowder",
+      "itemId": "minecraft:gunpowder",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "horn_coral_block",
+      "item": "Horn Coral Block",
+      "itemId": "minecraft:horn_coral_block",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "ink_sac",
+      "item": "Ink Sac",
+      "itemId": "minecraft:ink_sac",
+      "itemCount": "5",
+      "currencyCount": "1"
+    },
+    {
+      "id": "iron_axe",
+      "item": "Iron Axe",
+      "itemId": "minecraft:iron_axe",
+      "itemCount": "1",
+      "currencyCount": "3-20"
+    },
+    {
+      "id": "iron_boots",
+      "item": "Iron Boots",
+      "itemId": "minecraft:iron_boots",
+      "itemCount": "1",
+      "currencyCount": "4"
+    },
+    {
+      "id": "iron_chestplate",
+      "item": "Iron Chestplate",
+      "itemId": "minecraft:iron_chestplate",
+      "itemCount": "1",
+      "currencyCount": "9"
+    },
+    {
+      "id": "iron_helmet",
+      "item": "Iron Helmet",
+      "itemId": "minecraft:iron_helmet",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "iron_ingot",
+      "item": "Iron Ingot",
+      "itemId": "minecraft:iron_ingot",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "iron_leggings",
+      "item": "Iron Leggings",
+      "itemId": "minecraft:iron_leggings",
+      "itemCount": "1",
+      "currencyCount": "7"
+    },
+    {
+      "id": "iron_pickaxe",
+      "item": "Iron Pickaxe",
+      "itemId": "minecraft:iron_pickaxe",
+      "itemCount": "1",
+      "currencyCount": "8-22"
+    },
+    {
+      "id": "iron_shovel",
+      "item": "Iron Shovel",
+      "itemId": "minecraft:iron_shovel",
+      "itemCount": "1",
+      "currencyCount": "7-21"
+    },
+    {
+      "id": "iron_sword",
+      "item": "Iron Sword",
+      "itemId": "minecraft:iron_sword",
+      "itemCount": "1",
+      "currencyCount": "7-21"
+    },
+    {
+      "id": "item_frame",
+      "item": "Item Frame",
+      "itemId": "minecraft:item_frame",
+      "itemCount": "1",
+      "currencyCount": "7"
+    },
+    {
+      "id": "jungle_boat",
+      "item": "Jungle Boat",
+      "itemId": "minecraft:jungle_boat",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "jungle_sapling",
+      "item": "Jungle Sapling",
+      "itemId": "minecraft:jungle_sapling",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "kelp",
+      "item": "Kelp",
+      "itemId": "minecraft:kelp",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "lantern",
+      "item": "Lantern",
+      "itemId": "minecraft:lantern",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "lapis_lazuli",
+      "item": "Lapis Lazuli",
+      "itemId": "minecraft:lapis_lazuli",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "lava_bucket",
+      "item": "Lava Bucket",
+      "itemId": "minecraft:lava_bucket",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "leather",
+      "item": "Leather",
+      "itemId": "minecraft:leather",
+      "itemCount": "6",
+      "currencyCount": "1"
+    },
+    {
+      "id": "leather_boots",
+      "item": "Leather Boots",
+      "itemId": "minecraft:leather_boots",
+      "itemCount": "1",
+      "currencyCount": "4"
+    },
+    {
+      "id": "leather_chestplate",
+      "item": "Leather Chestplate",
+      "itemId": "minecraft:leather_chestplate",
+      "itemCount": "1",
+      "currencyCount": "7"
+    },
+    {
+      "id": "leather_helmet",
+      "item": "Leather Helmet",
+      "itemId": "minecraft:leather_helmet",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "leather_horse_armor",
+      "item": "Leather Horse Armor",
+      "itemId": "minecraft:leather_horse_armor",
+      "itemCount": "1",
+      "currencyCount": "6"
+    },
+    {
+      "id": "leather_leggings",
+      "item": "Leather Leggings",
+      "itemId": "minecraft:leather_leggings",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "light_blue_banner",
+      "item": "Light Blue Banner",
+      "itemId": "minecraft:light_blue_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "light_blue_bed",
+      "item": "Light Blue Bed",
+      "itemId": "minecraft:light_blue_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "light_blue_carpet",
+      "item": "Light Blue Carpet",
+      "itemId": "minecraft:light_blue_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "light_blue_dye",
+      "item": "Light Blue Dye",
+      "itemId": "minecraft:light_blue_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "light_blue_glazed_terracotta",
+      "item": "Light Blue Glazed Terracotta",
+      "itemId": "minecraft:light_blue_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "light_blue_terracotta",
+      "item": "Light Blue Terracotta",
+      "itemId": "minecraft:light_blue_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "light_blue_wool",
+      "item": "Light Blue Wool",
+      "itemId": "minecraft:light_blue_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "light_gray_banner",
+      "item": "Light Gray Banner",
+      "itemId": "minecraft:light_gray_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "light_gray_bed",
+      "item": "Light Gray Bed",
+      "itemId": "minecraft:light_gray_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "light_gray_carpet",
+      "item": "Light Gray Carpet",
+      "itemId": "minecraft:light_gray_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "light_gray_dye",
+      "item": "Light Gray Dye",
+      "itemId": "minecraft:light_gray_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "light_gray_glazed_terracotta",
+      "item": "Light Gray Glazed Terracotta",
+      "itemId": "minecraft:light_gray_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "light_gray_terracotta",
+      "item": "Light Gray Terracotta",
+      "itemId": "minecraft:light_gray_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "light_gray_wool",
+      "item": "Light Gray Wool",
+      "itemId": "minecraft:light_gray_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "lily_of_the_valley",
+      "item": "Lily Of The Valley",
+      "itemId": "minecraft:lily_of_the_valley",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "lily_pad",
+      "item": "Lily Pad",
+      "itemId": "minecraft:lily_pad",
+      "itemCount": "2",
+      "currencyCount": "1"
+    },
+    {
+      "id": "lime_banner",
+      "item": "Lime Banner",
+      "itemId": "minecraft:lime_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "lime_bed",
+      "item": "Lime Bed",
+      "itemId": "minecraft:lime_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "lime_carpet",
+      "item": "Lime Carpet",
+      "itemId": "minecraft:lime_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "lime_dye",
+      "item": "Lime Dye",
+      "itemId": "minecraft:lime_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "lime_glazed_terracotta",
+      "item": "Lime Glazed Terracotta",
+      "itemId": "minecraft:lime_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "lime_terracotta",
+      "item": "Lime Terracotta",
+      "itemId": "minecraft:lime_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "lime_wool",
+      "item": "Lime Wool",
+      "itemId": "minecraft:lime_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "magenta_banner",
+      "item": "Magenta Banner",
+      "itemId": "minecraft:magenta_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "magenta_bed",
+      "item": "Magenta Bed",
+      "itemId": "minecraft:magenta_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "magenta_carpet",
+      "item": "Magenta Carpet",
+      "itemId": "minecraft:magenta_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "magenta_dye",
+      "item": "Magenta Dye",
+      "itemId": "minecraft:magenta_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "magenta_glazed_terracotta",
+      "item": "Magenta Glazed Terracotta",
+      "itemId": "minecraft:magenta_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "magenta_terracotta",
+      "item": "Magenta Terracotta",
+      "itemId": "minecraft:magenta_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "magenta_wool",
+      "item": "Magenta Wool",
+      "itemId": "minecraft:magenta_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "mangrove_propagule",
+      "item": "Mangrove Propagule",
+      "itemId": "minecraft:mangrove_propagule",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "map",
+      "item": "Map",
+      "itemId": "minecraft:map",
+      "itemCount": "1",
+      "currencyCount": "7"
+    },
+    {
+      "id": "melon",
+      "item": "Melon",
+      "itemId": "minecraft:melon",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "melon_seeds",
+      "item": "Melon Seeds",
+      "itemId": "minecraft:melon_seeds",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "moss_block",
+      "item": "Moss Block",
+      "itemId": "minecraft:moss_block",
+      "itemCount": "2",
+      "currencyCount": "1"
+    },
+    {
+      "id": "mutton",
+      "item": "Mutton",
+      "itemId": "minecraft:mutton",
+      "itemCount": "7",
+      "currencyCount": "1"
+    },
+    {
+      "id": "name_tag",
+      "item": "Name Tag",
+      "itemId": "minecraft:name_tag",
+      "itemCount": "1",
+      "currencyCount": "20"
+    },
+    {
+      "id": "nautilus_shell",
+      "item": "Nautilus Shell",
+      "itemId": "minecraft:nautilus_shell",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "nether_wart",
+      "item": "Nether Wart",
+      "itemId": "minecraft:nether_wart",
+      "itemCount": "22",
+      "currencyCount": "1"
+    },
+    {
+      "id": "oak_boat",
+      "item": "Oak Boat",
+      "itemId": "minecraft:oak_boat",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "oak_sapling",
+      "item": "Oak Sapling",
+      "itemId": "minecraft:oak_sapling",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "orange_banner",
+      "item": "Orange Banner",
+      "itemId": "minecraft:orange_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "orange_bed",
+      "item": "Orange Bed",
+      "itemId": "minecraft:orange_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "orange_carpet",
+      "item": "Orange Carpet",
+      "itemId": "minecraft:orange_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "orange_dye",
+      "item": "Orange Dye",
+      "itemId": "minecraft:orange_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "orange_glazed_terracotta",
+      "item": "Orange Glazed Terracotta",
+      "itemId": "minecraft:orange_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "orange_terracotta",
+      "item": "Orange Terracotta",
+      "itemId": "minecraft:orange_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "orange_tulip",
+      "item": "Orange Tulip",
+      "itemId": "minecraft:orange_tulip",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "orange_wool",
+      "item": "Orange Wool",
+      "itemId": "minecraft:orange_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "oxeye_daisy",
+      "item": "Oxeye Daisy",
+      "itemId": "minecraft:oxeye_daisy",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "packed_ice",
+      "item": "Packed Ice",
+      "itemId": "minecraft:packed_ice",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "painting",
+      "item": "Painting",
+      "itemId": "minecraft:painting",
+      "itemCount": "3",
+      "currencyCount": "2"
+    },
+    {
+      "id": "paper",
+      "item": "Paper",
+      "itemId": "minecraft:paper",
+      "itemCount": "24",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pink_banner",
+      "item": "Pink Banner",
+      "itemId": "minecraft:pink_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "pink_bed",
+      "item": "Pink Bed",
+      "itemId": "minecraft:pink_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "pink_carpet",
+      "item": "Pink Carpet",
+      "itemId": "minecraft:pink_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pink_dye",
+      "item": "Pink Dye",
+      "itemId": "minecraft:pink_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pink_glazed_terracotta",
+      "item": "Pink Glazed Terracotta",
+      "itemId": "minecraft:pink_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pink_terracotta",
+      "item": "Pink Terracotta",
+      "itemId": "minecraft:pink_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pink_tulip",
+      "item": "Pink Tulip",
+      "itemId": "minecraft:pink_tulip",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pink_wool",
+      "item": "Pink Wool",
+      "itemId": "minecraft:pink_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "podzol",
+      "item": "Podzol",
+      "itemId": "minecraft:podzol",
+      "itemCount": "3",
+      "currencyCount": "3"
+    },
+    {
+      "id": "pointed_dripstone",
+      "item": "Pointed Dripstone",
+      "itemId": "minecraft:pointed_dripstone",
+      "itemCount": "2",
+      "currencyCount": "1"
+    },
+    {
+      "id": "polished_andesite",
+      "item": "Polished Andesite",
+      "itemId": "minecraft:polished_andesite",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "polished_diorite",
+      "item": "Polished Diorite",
+      "itemId": "minecraft:polished_diorite",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "polished_granite",
+      "item": "Polished Granite",
+      "itemId": "minecraft:polished_granite",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "poppy",
+      "item": "Poppy",
+      "itemId": "minecraft:poppy",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "porkchop",
+      "item": "Porkchop",
+      "itemId": "minecraft:porkchop",
+      "itemCount": "7",
+      "currencyCount": "1"
+    },
+    {
+      "id": "potato",
+      "item": "Potato",
+      "itemId": "minecraft:potato",
+      "itemCount": "26",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pufferfish",
+      "item": "Pufferfish",
+      "itemId": "minecraft:pufferfish",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pufferfish_bucket",
+      "item": "Pufferfish Bucket",
+      "itemId": "minecraft:pufferfish_bucket",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "pumpkin",
+      "item": "Pumpkin",
+      "itemId": "minecraft:pumpkin",
+      "itemCount": "1-6",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pumpkin_pie",
+      "item": "Pumpkin Pie",
+      "itemId": "minecraft:pumpkin_pie",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "pumpkin_seeds",
+      "item": "Pumpkin Seeds",
+      "itemId": "minecraft:pumpkin_seeds",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "purple_banner",
+      "item": "Purple Banner",
+      "itemId": "minecraft:purple_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "purple_bed",
+      "item": "Purple Bed",
+      "itemId": "minecraft:purple_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "purple_carpet",
+      "item": "Purple Carpet",
+      "itemId": "minecraft:purple_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "purple_dye",
+      "item": "Purple Dye",
+      "itemId": "minecraft:purple_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "purple_glazed_terracotta",
+      "item": "Purple Glazed Terracotta",
+      "itemId": "minecraft:purple_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "purple_terracotta",
+      "item": "Purple Terracotta",
+      "itemId": "minecraft:purple_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "purple_wool",
+      "item": "Purple Wool",
+      "itemId": "minecraft:purple_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "quartz",
+      "item": "Quartz",
+      "itemId": "minecraft:quartz",
+      "itemCount": "12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "quartz_block",
+      "item": "Quartz Block",
+      "itemId": "minecraft:quartz_block",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "quartz_pillar",
+      "item": "Quartz Pillar",
+      "itemId": "minecraft:quartz_pillar",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "rabbit",
+      "item": "Rabbit",
+      "itemId": "minecraft:rabbit",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "rabbit_foot",
+      "item": "Rabbit Foot",
+      "itemId": "minecraft:rabbit_foot",
+      "itemCount": "2",
+      "currencyCount": "1"
+    },
+    {
+      "id": "rabbit_hide",
+      "item": "Rabbit Hide",
+      "itemId": "minecraft:rabbit_hide",
+      "itemCount": "9",
+      "currencyCount": "1"
+    },
+    {
+      "id": "rabbit_stew",
+      "item": "Rabbit Stew",
+      "itemId": "minecraft:rabbit_stew",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "red_banner",
+      "item": "Red Banner",
+      "itemId": "minecraft:red_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "red_bed",
+      "item": "Red Bed",
+      "itemId": "minecraft:red_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "red_carpet",
+      "item": "Red Carpet",
+      "itemId": "minecraft:red_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "red_dye",
+      "item": "Red Dye",
+      "itemId": "minecraft:red_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "red_glazed_terracotta",
+      "item": "Red Glazed Terracotta",
+      "itemId": "minecraft:red_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "red_mushroom",
+      "item": "Red Mushroom",
+      "itemId": "minecraft:red_mushroom",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "red_sand",
+      "item": "Red Sand",
+      "itemId": "minecraft:red_sand",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "red_terracotta",
+      "item": "Red Terracotta",
+      "itemId": "minecraft:red_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "red_tulip",
+      "item": "Red Tulip",
+      "itemId": "minecraft:red_tulip",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "red_wool",
+      "item": "Red Wool",
+      "itemId": "minecraft:red_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "redstone",
+      "item": "Redstone",
+      "itemId": "minecraft:redstone",
+      "itemCount": "2",
+      "currencyCount": "1"
+    },
+    {
+      "id": "rooted_dirt",
+      "item": "Rooted Dirt",
+      "itemId": "minecraft:rooted_dirt",
+      "itemCount": "2",
+      "currencyCount": "1"
+    },
+    {
+      "id": "rotten_flesh",
+      "item": "Rotten Flesh",
+      "itemId": "minecraft:rotten_flesh",
+      "itemCount": "32",
+      "currencyCount": "1"
+    },
+    {
+      "id": "saddle",
+      "item": "Saddle",
+      "itemId": "minecraft:saddle",
+      "itemCount": "1",
+      "currencyCount": "6"
+    },
+    {
+      "id": "salmon",
+      "item": "Salmon",
+      "itemId": "minecraft:salmon",
+      "itemCount": "13",
+      "currencyCount": "1"
+    },
+    {
+      "id": "sand",
+      "item": "Sand",
+      "itemId": "minecraft:sand",
+      "itemCount": "8",
+      "currencyCount": "1"
+    },
+    {
+      "id": "sea_pickle",
+      "item": "Sea Pickle",
+      "itemId": "minecraft:sea_pickle",
+      "itemCount": "1",
+      "currencyCount": "2"
+    },
+    {
+      "id": "shears",
+      "item": "Shears",
+      "itemId": "minecraft:shears",
+      "itemCount": "1",
+      "currencyCount": "2"
+    },
+    {
+      "id": "shield",
+      "item": "Shield",
+      "itemId": "minecraft:shield",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "slime_ball",
+      "item": "Slime Ball",
+      "itemId": "minecraft:slime_ball",
+      "itemCount": "1",
+      "currencyCount": "4"
+    },
+    {
+      "id": "small_dripleaf",
+      "item": "Small Dripleaf",
+      "itemId": "minecraft:small_dripleaf",
+      "itemCount": "2",
+      "currencyCount": "1"
+    },
+    {
+      "id": "spruce_boat",
+      "item": "Spruce Boat",
+      "itemId": "minecraft:spruce_boat",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "spruce_sapling",
+      "item": "Spruce Sapling",
+      "itemId": "minecraft:spruce_sapling",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "stick",
+      "item": "Stick",
+      "itemId": "minecraft:stick",
+      "itemCount": "32",
+      "currencyCount": "1"
+    },
+    {
+      "id": "stone",
+      "item": "Stone",
+      "itemId": "minecraft:stone",
+      "itemCount": "20",
+      "currencyCount": "1"
+    },
+    {
+      "id": "stone_axe",
+      "item": "Stone Axe",
+      "itemId": "minecraft:stone_axe",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "stone_hoe",
+      "item": "Stone Hoe",
+      "itemId": "minecraft:stone_hoe",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "stone_pickaxe",
+      "item": "Stone Pickaxe",
+      "itemId": "minecraft:stone_pickaxe",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "stone_shovel",
+      "item": "Stone Shovel",
+      "itemId": "minecraft:stone_shovel",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "string",
+      "item": "String",
+      "itemId": "minecraft:string",
+      "itemCount": "14-20",
+      "currencyCount": "1"
+    },
+    {
+      "id": "sugar_cane",
+      "item": "Sugar Cane",
+      "itemId": "minecraft:sugar_cane",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "suspicious_stew",
+      "item": "Suspicious Stew",
+      "itemId": "minecraft:suspicious_stew",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "sweet_berries",
+      "item": "Sweet Berries",
+      "itemId": "minecraft:sweet_berries",
+      "itemCount": "10",
+      "currencyCount": "1"
+    },
+    {
+      "id": "tipped_arrow",
+      "item": "Tipped Arrow",
+      "itemId": "minecraft:tipped_arrow",
+      "itemCount": "5",
+      "currencyCount": "2"
+    },
+    {
+      "id": "tripwire_hook",
+      "item": "Tripwire Hook",
+      "itemId": "minecraft:tripwire_hook",
+      "itemCount": "8",
+      "currencyCount": "1"
+    },
+    {
+      "id": "tropical_fish",
+      "item": "Tropical Fish",
+      "itemId": "minecraft:tropical_fish",
+      "itemCount": "6",
+      "currencyCount": "1"
+    },
+    {
+      "id": "tropical_fish_bucket",
+      "item": "Tropical Fish Bucket",
+      "itemId": "minecraft:tropical_fish_bucket",
+      "itemCount": "1",
+      "currencyCount": "5"
+    },
+    {
+      "id": "tube_coral_block",
+      "item": "Tube Coral Block",
+      "itemId": "minecraft:tube_coral_block",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "turtle_scute",
+      "item": "Turtle Scute",
+      "itemId": "minecraft:turtle_scute",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "vine",
+      "item": "Vine",
+      "itemId": "minecraft:vine",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "wheat",
+      "item": "Wheat",
+      "itemId": "minecraft:wheat",
+      "itemCount": "20",
+      "currencyCount": "1"
+    },
+    {
+      "id": "wheat_seeds",
+      "item": "Wheat Seeds",
+      "itemId": "minecraft:wheat_seeds",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "white_banner",
+      "item": "White Banner",
+      "itemId": "minecraft:white_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "white_bed",
+      "item": "White Bed",
+      "itemId": "minecraft:white_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "white_carpet",
+      "item": "White Carpet",
+      "itemId": "minecraft:white_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "white_dye",
+      "item": "White Dye",
+      "itemId": "minecraft:white_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "white_glazed_terracotta",
+      "item": "White Glazed Terracotta",
+      "itemId": "minecraft:white_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "white_terracotta",
+      "item": "White Terracotta",
+      "itemId": "minecraft:white_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "white_tulip",
+      "item": "White Tulip",
+      "itemId": "minecraft:white_tulip",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "white_wool",
+      "item": "White Wool",
+      "itemId": "minecraft:white_wool",
+      "itemCount": "1-18",
+      "currencyCount": "1"
+    },
+    {
+      "id": "writable_book",
+      "item": "Writable Book",
+      "itemId": "minecraft:writable_book",
+      "itemCount": "2",
+      "currencyCount": "1"
+    },
+    {
+      "id": "yellow_banner",
+      "item": "Yellow Banner",
+      "itemId": "minecraft:yellow_banner",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "yellow_bed",
+      "item": "Yellow Bed",
+      "itemId": "minecraft:yellow_bed",
+      "itemCount": "1",
+      "currencyCount": "3"
+    },
+    {
+      "id": "yellow_carpet",
+      "item": "Yellow Carpet",
+      "itemId": "minecraft:yellow_carpet",
+      "itemCount": "4",
+      "currencyCount": "1"
+    },
+    {
+      "id": "yellow_dye",
+      "item": "Yellow Dye",
+      "itemId": "minecraft:yellow_dye",
+      "itemCount": "3-12",
+      "currencyCount": "1"
+    },
+    {
+      "id": "yellow_glazed_terracotta",
+      "item": "Yellow Glazed Terracotta",
+      "itemId": "minecraft:yellow_glazed_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "yellow_terracotta",
+      "item": "Yellow Terracotta",
+      "itemId": "minecraft:yellow_terracotta",
+      "itemCount": "1",
+      "currencyCount": "1"
+    },
+    {
+      "id": "yellow_wool",
+      "item": "Yellow Wool",
+      "itemId": "minecraft:yellow_wool",
+      "itemCount": "1",
+      "currencyCount": "1"
+    }
+  ],
   "advancements": [
     {
       "id": "familiar_face",
@@ -65786,6 +67839,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/commonfolk"
     },
     {
+      "id": "sound_the_horn",
+      "title": "Sound the Horn",
+      "description": "Begin a player-led raid.",
+      "frame": "Task",
+      "hidden": false,
+      "icon": "Goat Horn",
+      "parent": "reputation/the_mark_you_chose"
+    },
+    {
       "id": "steady_gaze",
       "title": "Steady Gaze",
       "description": "Stare precisely between a villager's eyes.",
@@ -65811,6 +67873,15 @@ window.VR_WIKI_DATA = {
       "hidden": true,
       "icon": "Shield",
       "parent": "reputation/commonfolk"
+    },
+    {
+      "id": "the_village_falls",
+      "title": "The Village Falls",
+      "description": "Win a player-led raid.",
+      "frame": "Goal",
+      "hidden": false,
+      "icon": "Iron Sword",
+      "parent": "reputation/sound_the_horn"
     },
     {
       "id": "the_village_has_eyes",
@@ -65868,9 +67939,9 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 82098,
+    "dialogueLinesEstimate": 50224,
     "dialogueLineBreakdown": {
-      "dialogue": 80399,
+      "dialogue": 48525,
       "forcedDialogue": 375,
       "dialogueTrees": 0,
       "questModules": 1324
