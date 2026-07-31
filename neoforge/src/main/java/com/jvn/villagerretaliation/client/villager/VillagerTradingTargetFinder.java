@@ -10,8 +10,13 @@ import net.minecraft.world.phys.AABB;
 
 public final class VillagerTradingTargetFinder {
     public static final double DEFAULT_LOOKUP_RADIUS = 8.0D;
+    private static volatile Integer syncedMerchantId;
 
     private VillagerTradingTargetFinder() {
+    }
+
+    public static void acceptMerchantId(int entityId) {
+        syncedMerchantId = entityId;
     }
 
     public static List<AbstractVillager> nearbySorted(Minecraft minecraft) {
@@ -47,6 +52,10 @@ public final class VillagerTradingTargetFinder {
     }
 
     public static Optional<AbstractVillager> findTradingVillagerOrSingleNearby(Minecraft minecraft, double lookupRadius) {
+        if (minecraft.level != null && syncedMerchantId != null
+                && minecraft.level.getEntity(syncedMerchantId) instanceof AbstractVillager syncedMerchant) {
+            return Optional.of(syncedMerchant);
+        }
         Optional<AbstractVillager> tradingVillager = findTradingVillager(minecraft, lookupRadius);
         if (tradingVillager.isPresent()) {
             return tradingVillager;

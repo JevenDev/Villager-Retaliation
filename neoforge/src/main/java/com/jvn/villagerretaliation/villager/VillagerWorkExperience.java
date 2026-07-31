@@ -23,8 +23,16 @@ public final class VillagerWorkExperience {
     }
 
     public static boolean belongsTo(ExperienceOrb orb, Villager villager) {
-        return orb.getPersistentData().hasUUID(OWNER_TAG)
+        return isOwned(orb)
                 && orb.getPersistentData().getUUID(OWNER_TAG).equals(villager.getUUID());
+    }
+
+    public static boolean isOwned(ExperienceOrb orb) {
+        return orb != null && orb.getPersistentData().hasUUID(OWNER_TAG);
+    }
+
+    public static boolean mayMerge(ExperienceOrb first, ExperienceOrb second) {
+        return !isOwned(first) && !isOwned(second);
     }
 
     public static boolean hasNearbyOwnedExperience(Villager villager) {

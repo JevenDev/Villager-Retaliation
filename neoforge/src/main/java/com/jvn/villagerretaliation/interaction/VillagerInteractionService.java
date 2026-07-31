@@ -129,6 +129,7 @@ public final class VillagerInteractionService {
     private static final String BLUEPRINT_START_OPTION_ID = "construction_blueprint_start";
     private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
     private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
+    private static final ThreadLocal<TradeOpenPermit> VANILLA_TRADE_OPEN_PERMIT = new ThreadLocal<>();
     private static final String EDMUNDO_OMINOUS_FORCED_LINE =
             "Loud, I am aware of what you have done. Do not think the village has forgotten. Do not mistake this calm for mercy. Even when the roads fall silent, your name still travels in whispers after dark. Jvn has tried to silence me, it will only be a matter of time before all is revealed.";
 
@@ -183,6 +184,10 @@ public final class VillagerInteractionService {
                 villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING)
                 || VillagerRetaliationHandler.isHostileTowards(villager, player)) {
             return true;
+        }
+        TradeOpenPermit permit = VANILLA_TRADE_OPEN_PERMIT.get();
+        if (permit != null && permit.matches(villager, player, hand)) {
+            return false;
         }
         if (hand != InteractionHand.MAIN_HAND
                 || (!VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() && !player.isInvisible())
@@ -2722,7 +2727,17 @@ public final class VillagerInteractionService {
             return InteractionResult.CONSUME;
         }
 
-        return villager.mobInteract(player, InteractionHand.MAIN_HAND);
+        TradeOpenPermit previousPermit = VANILLA_TRADE_OPEN_PERMIT.get();
+        VANILLA_TRADE_OPEN_PERMIT.set(new TradeOpenPermit(villager, player));
+        try {
+            return villager.mobInteract(player, InteractionHand.MAIN_HAND);
+        } finally {
+            if (previousPermit == null) {
+                VANILLA_TRADE_OPEN_PERMIT.remove();
+            } else {
+                VANILLA_TRADE_OPEN_PERMIT.set(previousPermit);
+            }
+        }
     }
 
     private static Villager resolveVillager(ServerPlayer player, int entityId) {
@@ -3405,6 +3420,14 @@ public final class VillagerInteractionService {
             Optional<BuilderStructureScanner.StructurePlan> plan,
             BlockPos origin,
             Rotation rotation) {
+    }
+
+    private record TradeOpenPermit(Villager villager, Player player) {
+        private boolean matches(Villager candidateVillager, Player candidatePlayer, InteractionHand hand) {
+            return this.villager == candidateVillager
+                    && this.player == candidatePlayer
+                    && hand == InteractionHand.MAIN_HAND;
+        }
     }
 
     private record DialogueContextSnapshots(

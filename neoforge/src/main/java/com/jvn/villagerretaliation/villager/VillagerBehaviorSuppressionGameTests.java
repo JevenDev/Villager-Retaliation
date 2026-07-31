@@ -29,6 +29,8 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.trading.ItemCost;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
@@ -258,6 +260,43 @@ public final class VillagerBehaviorSuppressionGameTests {
             VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.set(previousShiftBypass);
             VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.set(previousDialogueDistance);
             player.setShiftKeyDown(false);
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void controlledTradeOpeningBypassesOnlyTheRoutingGuard(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "suppression_controlled_trade");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        boolean previousInteractionScreen = VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get();
+
+        try {
+            VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.set(true);
+            player.moveTo(villager.getX(), villager.getY(), villager.getZ() + 1.0D, 0.0F, 0.0F);
+            villager.getOffers().add(new MerchantOffer(
+                    new ItemCost(Items.EMERALD, 1),
+                    new ItemStack(Items.BREAD),
+                    12,
+                    2,
+                    0.05F));
+
+            helper.assertValueEqual(
+                    villager.mobInteract(player, InteractionHand.MAIN_HAND),
+                    InteractionResult.FAIL,
+                    "an unowned vanilla trade entry must remain suppressed");
+
+            InteractionResult controlledResult = VillagerInteractionService.openTrading(player, villager, false);
+            helper.assertTrue(
+                    controlledResult.consumesAction(),
+                    "the interaction system's validated trade entry must reach vanilla trading");
+            helper.assertTrue(
+                    villager.getTradingPlayer() == player,
+                    "the controlled trade entry must install the trading player");
+        } finally {
+            villager.setTradingPlayer(null);
+            VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.set(previousInteractionScreen);
             villager.discard();
         }
         helper.succeed();

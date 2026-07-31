@@ -34,13 +34,12 @@ public final class VillagerTradeRefreshButtons {
     private static final int TEXTURE_SIZE = 20;
     private static final Field SCROLL_OFF_FIELD = scrollOffField();
     private static final Map<Integer, Set<Integer>> PENDING_REFRESHES_BY_MERCHANT = new ConcurrentHashMap<>();
-    private static volatile Integer syncedMerchantId;
 
     private VillagerTradeRefreshButtons() {
     }
 
     public static void acceptState(VillagerTradeRefreshStatePayload payload) {
-        syncedMerchantId = payload.entityId();
+        VillagerTradingTargetFinder.acceptMerchantId(payload.entityId());
         if (payload.pendingOfferIndexes().isEmpty()) {
             PENDING_REFRESHES_BY_MERCHANT.remove(payload.entityId());
             return;
@@ -99,9 +98,8 @@ public final class VillagerTradeRefreshButtons {
     }
 
     private static Optional<Integer> resolveMerchantId(Minecraft minecraft) {
-        Optional<Integer> visibleMerchantId = VillagerTradingTargetFinder.findTradingVillagerOrSingleNearby(minecraft)
+        return VillagerTradingTargetFinder.findTradingVillagerOrSingleNearby(minecraft)
                 .map(villager -> villager.getId());
-        return visibleMerchantId.or(() -> Optional.ofNullable(syncedMerchantId));
     }
 
     private static void renderButton(ScreenEvent.Render.Post event, MerchantScreen screen, int row, MerchantOffer offer, boolean pending) {
