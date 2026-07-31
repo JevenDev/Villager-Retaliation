@@ -13,6 +13,7 @@
     "EntityDuelDropMixin",
     "EntityNameMixin",
     "ExperienceOrbMixin",
+    "FishingHookPredicateMixin",
     "GiveGiftToHeroMixin",
     "GoToPotentialJobSiteMixin",
     "HarvestFarmlandMixin",
