@@ -1,24 +1,18 @@
 package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.duel.DuelService;
-import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import com.jvn.villagerretaliation.party.PartyWeaponPreference;
-import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
-import com.jvn.villagerretaliation.villager.VillagerEquipmentMending;
-import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.function.Predicate;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 /** Keeps a party villager's durable weapon preference separate from its current order. */
 public final class VillagerCombatLoadoutService {
@@ -42,93 +36,12 @@ public final class VillagerCombatLoadoutService {
         ensurePreferredWeapon(villager, preference);
     }
 
-    /** Keeps an unsheathed party member visibly ready even between combat targets. */
-    public static boolean maintainPartyReadiness(Villager villager) {
-        PartyVillagerRecord record = partyRecord(villager);
-        if (record == null || record.weaponsSheathed()
-                || VillagerInventoryAccess.hasOpenInventory(villager)
-                || DuelService.isParticipant(villager)
-                || villager.isUsingItem()) {
-            return false;
-        }
-        if (record.weaponPreference() == PartyWeaponPreference.AUTO) {
-            return tryEquip(villager, VillagerRetaliationVillagerWeapons::isUsableWeapon);
-        }
-        return ensurePreferredWeapon(villager, record.weaponPreference());
-    }
-
-    public static boolean shouldKeepPartyWeaponReady(Villager villager) {
-        PartyVillagerRecord record = partyRecord(villager);
-        return record != null && !record.weaponsSheathed();
-    }
-
     public static boolean hasPersistentEquippedPreference(Villager villager) {
         return preference(villager) != PartyWeaponPreference.AUTO;
     }
 
     public static boolean maintainEquippedPreference(Villager villager) {
-        return VillagerRetaliationVillagerCombatUtil.isInCombat(villager)
-                && hasPersistentEquippedPreference(villager)
-                && ensurePreferredWeapon(villager);
-    }
-
-    /** Stows held weapons, and optionally shields, while leaving them available for later combat. */
-    public static boolean stowWeapons(Villager villager, boolean includeShield) {
-        if (villager == null || VillagerInventoryAccess.hasOpenInventory(villager)
-                || DuelService.isParticipant(villager)) {
-            return false;
-        }
-        boolean changed = false;
-        if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)) {
-            VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
-            changed = !VillagerInventoryAccess.hasBorrowedCombatWeapon(villager);
-        }
-        changed |= HiredJobInventory.stowCombatEquipment(villager, includeShield);
-        changed |= stowPersonalHand(villager, EquipmentSlot.MAINHAND,
-                stack -> VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)
-                        || includeShield && stack.is(Items.SHIELD));
-        if (includeShield) {
-            if (villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD)) {
-                villager.stopUsingItem();
-            }
-            changed |= stowPersonalHand(villager, EquipmentSlot.OFFHAND, stack -> stack.is(Items.SHIELD));
-        }
-        return changed;
-    }
-
-    public static boolean stowIdleWeapon(Villager villager) {
-        return villager != null
-                && !VillagerRetaliationVillagerCombatUtil.isInCombat(villager)
-                && !HiredVillagerWorkService.isActivelyWorking(villager)
-                && !shouldKeepPartyWeaponReady(villager)
-                && !VillagerEquipmentMending.shouldKeepMainHandEquipped(villager)
-                && stowWeapons(villager, false);
-    }
-
-    private static PartyVillagerRecord partyRecord(Villager villager) {
-        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
-            return null;
-        }
-        return PartyService.getPartyForVillager(level, villager.getUUID())
-                .map(party -> party.villager(villager.getUUID()))
-                .orElse(null);
-    }
-
-    private static boolean stowPersonalHand(
-            Villager villager, EquipmentSlot slot, Predicate<ItemStack> predicate) {
-        if (HiredJobInventory.hasJobEquipmentForSlot(villager, slot)) {
-            return false;
-        }
-        ItemStack held = villager.getItemBySlot(slot);
-        if (held.isEmpty() || !predicate.test(held)) {
-            return false;
-        }
-        ItemStack remainder = VillagerInventoryAccess.addItem(villager, held.copy());
-        if (!remainder.isEmpty()) {
-            return false;
-        }
-        VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
-        return true;
+        return hasPersistentEquippedPreference(villager) && ensurePreferredWeapon(villager);
     }
 
     public static boolean ensurePreferredWeapon(Villager villager) {

@@ -1053,7 +1053,6 @@ public final class VillagerInteractionService {
                  CYCLE_PARTY_COMBAT_MODE,
                  CYCLE_PARTY_ATTACK_MODE,
                  CYCLE_PARTY_DROP_COLLECTION,
-                 UNEQUIP_PARTY_WEAPONS,
                  START_MOUNT_ASSIGNMENT,
                  UNASSIGN_MOUNT,
                  PROMPT_PARTY_DISMISS_CONFIRMATION,
@@ -1132,13 +1131,6 @@ public final class VillagerInteractionService {
                 trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), ""));
                 VillagerConversationService.endForPlayer(player, false);
             }
-            return true;
-        }
-        if (action == VillagerRecruitRequestPayload.Action.UNEQUIP_PARTY_WEAPONS) {
-            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
-                    com.jvn.villagerretaliation.party.PartyVillagerContractService.sheatheWeapons(player, villager);
-            player.sendSystemMessage(Component.translatable(result.messageKey()));
-            VillagerInteractionScreenOpener.refreshNormal(player, villager);
             return true;
         }
         if (action == VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT) {
