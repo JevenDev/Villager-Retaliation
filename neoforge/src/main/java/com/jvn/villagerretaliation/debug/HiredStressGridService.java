@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.interaction.work.mining.MiningWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
@@ -45,9 +46,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
@@ -59,10 +62,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.ChestType;
+import net.minecraft.world.phys.AABB;
 
 /** Builds a self-contained production workload for every hired villager role. */
 public final class HiredStressGridService {
@@ -73,7 +78,9 @@ public final class HiredStressGridService {
     private static final String STRESS_ROLE_TAG = "VillagerRetaliationHiredStressRole";
     private static final String STRESS_CELL_TAG = "VillagerRetaliationHiredStressCell";
     private static final String STRESS_TARGET_TAG = "VillagerRetaliationHiredStressTarget";
+    private static final String MINING_ACCESS_READY_TAG = "VillagerRetaliationHiredStressMiningAccessReady";
     private static final String NEXT_SUPPLY_REFILL_TAG = "VillagerRetaliationHiredStressNextSupplyRefill";
+    private static final String NEXT_DROP_CLEANUP_TAG = "VillagerRetaliationHiredStressNextDropCleanup";
     private static final int GRID_SPACING = 16;
     private static final int CELL_RADIUS = 7;
     private static final int WORK_RADIUS = 5;
@@ -81,6 +88,7 @@ public final class HiredStressGridService {
     private static final int MINING_RADIUS = 3;
     private static final int MINING_DEPTH = 24;
     private static final int SUPPLY_REFILL_INTERVAL_TICKS = 20;
+    private static final int DROP_CLEANUP_INTERVAL_TICKS = 100;
     private static final String PLAINS_SMALL_HOUSE_PREFIX = "village/plains/houses/plains_small_house_";
 
     private static final List<RoleSpec> ROLE_SPECS = List.of(
@@ -269,6 +277,10 @@ public final class HiredStressGridService {
                 }
             }
         }
+        prepareMiningAccessShaft(level, cell, bottomY);
+        villager.getPersistentData().putBoolean(MINING_ACCESS_READY_TAG, true);
+        MiningWorker.resetForModeChange(level, villager, session.context(), HiredMiningMode.EXCAVATE_AREA);
+
         DoubleChest input = placeDoubleChest(level, cell.offset(-5, 0, -5), "Stress Mining INPUT");
         DoubleChest output = placeDoubleChest(level, cell.offset(3, 0, -5), "Stress Mining OUTPUT");
         fillDoubleChest(level, input, List.of(
@@ -544,6 +556,7 @@ public final class HiredStressGridService {
         villager.getPersistentData().putString(STRESS_ROLE_TAG, role.serializedName());
         villager.getPersistentData().putLong(STRESS_CELL_TAG, cell.asLong());
         villager.getPersistentData().putLong(NEXT_SUPPLY_REFILL_TAG, 0L);
+        villager.getPersistentData().putLong(NEXT_DROP_CLEANUP_TAG, 0L);
         keepStressWorkerAwake(villager);
     }
 
@@ -582,8 +595,12 @@ public final class HiredStressGridService {
             return;
         }
         BlockPos cell = BlockPos.of(villager.getPersistentData().getLong(STRESS_CELL_TAG));
+        if (role == HiredVillagerRole.MINING) {
+            maintainStressMiningAccess(level, villager, cell);
+        }
         if (role == HiredVillagerRole.COMBAT || role == HiredVillagerRole.HUNTING) {
             maintainStressTarget(level, villager, cell, role);
+            maintainStressTargetDrops(level, villager, cell);
         }
         long gameTime = level.getGameTime();
         if (villager.getPersistentData().getLong(NEXT_SUPPLY_REFILL_TAG) > gameTime) {
@@ -627,6 +644,47 @@ public final class HiredStressGridService {
             VillagerRetaliationHandler.engageCustomTarget(villager, target, false);
         }
         return target;
+    }
+
+    private static void maintainStressMiningAccess(ServerLevel level, Villager villager, BlockPos cell) {
+        if (villager.getPersistentData().getBoolean(MINING_ACCESS_READY_TAG)) {
+            return;
+        }
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        prepareMiningAccessShaft(level, cell, miningBottomY(level, cell));
+        MiningWorker.resetForModeChange(level, villager, session.context(), HiredMiningMode.EXCAVATE_AREA);
+        villager.getPersistentData().putBoolean(MINING_ACCESS_READY_TAG, true);
+    }
+
+    private static void prepareMiningAccessShaft(ServerLevel level, BlockPos cell, int bottomY) {
+        BlockPos shaftTop = cell.offset(-MINING_RADIUS, 0, -MINING_RADIUS);
+        Direction ladderFacing = Direction.SOUTH;
+        for (int y = bottomY; y <= cell.getY(); y++) {
+            BlockPos ladderPos = new BlockPos(shaftTop.getX(), y, shaftTop.getZ());
+            BlockPos backingPos = ladderPos.relative(ladderFacing.getOpposite());
+            level.setBlock(backingPos, Blocks.COBBLESTONE.defaultBlockState(), 3);
+            level.setBlock(ladderPos, Blocks.LADDER.defaultBlockState()
+                    .setValue(LadderBlock.FACING, ladderFacing), 3);
+        }
+    }
+
+    private static void maintainStressTargetDrops(ServerLevel level, Villager villager, BlockPos cell) {
+        long gameTime = level.getGameTime();
+        if (villager.getPersistentData().getLong(NEXT_DROP_CLEANUP_TAG) > gameTime) {
+            return;
+        }
+        villager.getPersistentData().putLong(
+                NEXT_DROP_CLEANUP_TAG, gameTime + DROP_CLEANUP_INTERVAL_TICKS);
+        AABB cellInterior = new AABB(
+                cell.getX() - CELL_RADIUS + 1,
+                cell.getY() - 1,
+                cell.getZ() - CELL_RADIUS + 1,
+                cell.getX() + CELL_RADIUS,
+                cell.getY() + CELL_HEIGHT + 1,
+                cell.getZ() + CELL_RADIUS);
+        level.getEntitiesOfClass(ItemEntity.class, cellInterior).forEach(Entity::discard);
+        level.getEntitiesOfClass(ExperienceOrb.class, cellInterior).forEach(Entity::discard);
     }
 
     private static int miningBottomY(ServerLevel level, BlockPos cell) {

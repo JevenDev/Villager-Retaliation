@@ -73,6 +73,7 @@ public final class HiredJobInventory implements Container {
     private final Villager villager;
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
     private final HiredJobInventorySlotType[] slotTypes = new HiredJobInventorySlotType[SLOT_COUNT];
+    private long modificationVersion;
 
     public HiredJobInventory(Villager villager) {
         this.villager = villager;
@@ -139,6 +140,10 @@ public final class HiredJobInventory implements Container {
 
     Villager villager() {
         return this.villager;
+    }
+
+    public long modificationVersion() {
+        return this.modificationVersion;
     }
 
     public static void clearInheritedStateForNewborn(Villager child) {
@@ -1491,6 +1496,7 @@ public final class HiredJobInventory implements Container {
     }
 
     private void save() {
+        this.modificationVersion++;
         CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), this.items, true, this.villager.level().registryAccess());
         tag.putInt(LAYOUT_VERSION_TAG, CURRENT_LAYOUT_VERSION);
         ListTag slotTypesTag = new ListTag();

@@ -39,10 +39,12 @@ public final class HiredRoleWorkerRegistry {
 
     public static void clearRuntimeState() {
         AbstractBlockWorker.clearSharedRuntimeState();
+        MiningWorker.clearExcavationReturnTargets();
     }
 
     public static void clearRuntimeState(Villager villager) {
         HiredPathMemory.clear(villager);
+        MiningWorker.invalidateExcavationReturnTarget(villager);
     }
 
     private static Map.Entry<HiredVillagerRole, HiredRoleWorker> worker(HiredRoleWorker worker) {

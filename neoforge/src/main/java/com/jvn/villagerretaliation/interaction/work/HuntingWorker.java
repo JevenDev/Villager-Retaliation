@@ -216,7 +216,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
         return villager.getTarget() != null && villager.getTarget().isAlive();
     }
 
-    private static boolean tryAcquireTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredHuntingTargets.Selection targets) {
+    static boolean tryAcquireTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredHuntingTargets.Selection targets) {
         if (villager.getTarget() != null || villager.getLastHurtByMob() != null) {
             return false;
         }
@@ -235,13 +235,41 @@ public final class HuntingWorker extends AbstractBlockWorker {
     private static Optional<LivingEntity> findNearestTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredHuntingTargets.Selection targets) {
         double horizontalRadius = Math.max(6.0D, context.horizontalSearchRadius() + TARGET_SCAN_RADIUS_PADDING);
         double verticalRadius = Math.max(4.0D, context.verticalRadius() + 2.0D);
-        LivingEntity target = HiredEntitySearch.nearest(
-                level,
-                LivingEntity.class,
-                villager.getBoundingBox().inflate(horizontalRadius, verticalRadius, horizontalRadius),
-                candidate -> isEligibleTarget(villager, candidate, context, targets),
-                villager::distanceToSqr);
-        return Optional.ofNullable(target);
+        var bounds = villager.getBoundingBox().inflate(horizontalRadius, verticalRadius, horizontalRadius);
+
+        // Hostile classification can include custom LivingEntity implementations, so preserve the
+        // broad query for that mode. Animal-only hunting is the common case and can avoid visiting
+        // every villager, projectile owner, and other living entity in the search volume.
+        if (targets.hostiles()) {
+            return Optional.ofNullable(HiredEntitySearch.nearest(
+                    level,
+                    LivingEntity.class,
+                    bounds,
+                    candidate -> isEligibleTarget(villager, candidate, context, targets),
+                    villager::distanceToSqr));
+        }
+
+        LivingEntity nearest = null;
+        if (targets.animals()) {
+            nearest = HiredEntitySearch.nearest(
+                    level,
+                    Animal.class,
+                    bounds,
+                    candidate -> isEligibleTarget(villager, candidate, context, targets),
+                    villager::distanceToSqr);
+        }
+        if (targets.players()) {
+            for (ServerPlayer player : level.players()) {
+                if (!player.getBoundingBox().intersects(bounds)
+                        || !isEligibleTarget(villager, player, context, targets)) {
+                    continue;
+                }
+                if (nearest == null || villager.distanceToSqr(player) < villager.distanceToSqr(nearest)) {
+                    nearest = player;
+                }
+            }
+        }
+        return Optional.ofNullable(nearest);
     }
 
     private static boolean isEligibleTarget(Villager villager, LivingEntity target, HiredWorkContext context, HiredHuntingTargets.Selection targets) {
@@ -256,6 +284,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
             boolean requireLineOfSight) {
         if (target == villager
                 || targets.none()
+                || !matchesSelectedCategory(villager, target, targets)
                 || !target.isAlive()
                 || !villager.canAttack(target)
                 || requireLineOfSight && !VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target)
@@ -269,13 +298,23 @@ public final class HuntingWorker extends AbstractBlockWorker {
                 || VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target)) {
             return false;
         }
+        return true;
+    }
 
-        boolean animal = target instanceof Animal;
-        boolean hostile = VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target);
-        boolean player = target instanceof ServerPlayer serverPlayer && isEligiblePlayerTarget(villager, serverPlayer);
-        return targets.animals() && animal
-                || targets.hostiles() && hostile
-                || targets.players() && player;
+    private static boolean matchesSelectedCategory(
+            Villager villager,
+            LivingEntity target,
+            HiredHuntingTargets.Selection targets) {
+        if (targets.animals() && target instanceof Animal) {
+            return true;
+        }
+        if (targets.players()
+                && target instanceof ServerPlayer player
+                && isEligiblePlayerTarget(villager, player)) {
+            return true;
+        }
+        return targets.hostiles()
+                && VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target);
     }
 
     private static void clearStaleActiveTargetIfNeeded(

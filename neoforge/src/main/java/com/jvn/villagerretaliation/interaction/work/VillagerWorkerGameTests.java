@@ -39,6 +39,7 @@ import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
@@ -67,6 +68,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.ai.behavior.HarvestFarmland;
@@ -1017,6 +1019,177 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(countInventoryItem(context.inventory(), Items.ARROW), 0, "hunter should not recover arrow until in pickup reach");
 
         target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 160)
+    public static void normalAndStressHuntersShareProductionTargetingAndReacquire(GameTestHelper helper) {
+        buildFloor(helper, 0, 18, 0, 8, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrHunterParity");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager normalHunter = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Villager stressHunter = spawnVillager(helper, new BlockPos(13, 2, 3));
+        normalHunter.setVillagerData(normalHunter.getVillagerData().setProfession(VillagerProfession.FLETCHER));
+        stressHunter.setVillagerData(stressHunter.getVillagerData().setProfession(VillagerProfession.FLETCHER));
+        Villager normalDecoy = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Villager stressDecoy = spawnVillager(helper, new BlockPos(13, 2, 3));
+        Cow normalTarget = spawnAnimal(helper, EntityType.COW, new BlockPos(3, 2, 4));
+        Cow stressTarget = spawnAnimal(helper, EntityType.COW, new BlockPos(13, 2, 4));
+
+        helper.assertTrue(HiredVillagerContractService.startHireContract(
+                        level, normalHunter, hirer, 1, 32, HiredVillagerRole.HUNTING),
+                "normal hunter should accept a production hunting contract");
+        helper.assertTrue(HiredVillagerContractService.startHireContract(
+                        level, stressHunter, hirer, 1, 32, HiredVillagerRole.HUNTING),
+                "stress-tagged hunter should accept the same production hunting contract");
+        helper.assertTrue(HiredVillagerWorkService.setWorkArea(
+                        hirer, level, normalHunter,
+                        helper.absolutePos(new BlockPos(1, 2, 1)), helper.absolutePos(new BlockPos(8, 4, 7))),
+                "normal hunter should accept its work area");
+        helper.assertTrue(HiredVillagerWorkService.setWorkArea(
+                        hirer, level, stressHunter,
+                        helper.absolutePos(new BlockPos(10, 2, 1)), helper.absolutePos(new BlockPos(17, 4, 7))),
+                "stress-tagged hunter should accept its work area through production logic");
+        HiredWorkSession normalSession = HiredWorkSession.active(level, normalHunter);
+        HiredWorkSession stressSession = HiredWorkSession.active(level, stressHunter);
+        CompoundTag normalState = normalSession.state();
+        CompoundTag stressState = stressSession.state();
+        for (CompoundTag state : List.of(normalState, stressState)) {
+            state.putBoolean(HiredHuntingTargets.HUNT_ANIMALS_TAG, true);
+            state.putBoolean(HiredHuntingTargets.HUNT_HOSTILES_TAG, false);
+            state.putBoolean(HiredHuntingTargets.HUNT_PLAYERS_TAG, false);
+        }
+        HiredWorkContext normalContext = normalSession.context();
+        HiredWorkContext stressContext = stressSession.context();
+        normalContext.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        stressContext.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        stressHunter.getPersistentData().putBoolean("VillagerRetaliationHiredStressWorker", true);
+        stressHunter.getPersistentData().putString("VillagerRetaliationHiredStressRole", "hunting");
+
+        HiredHuntingTargets.Selection normalTargets = HiredHuntingTargets.fromState(normalState);
+        HiredHuntingTargets.Selection stressTargets = HiredHuntingTargets.fromState(stressState);
+        helper.assertTrue(HuntingWorker.tryAcquireTarget(
+                        level, normalHunter, normalContext, normalTargets),
+                "normal hunter should acquire through the production scan path");
+        helper.assertTrue(HuntingWorker.tryAcquireTarget(
+                        level, stressHunter, stressContext, stressTargets),
+                "stress-tagged hunter should acquire through the same production scan path");
+
+        helper.assertTrue(com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.hasRetaliationTarget(normalHunter, normalTarget),
+                "normal animal-only hunter should skip a closer irrelevant villager and acquire the cow");
+        helper.assertTrue(com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.hasRetaliationTarget(stressHunter, stressTarget),
+                "stress-tagged hunter should use the same production acquisition path as a normal hunter");
+
+        normalTarget.discard();
+        com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.clearCustomTarget(normalHunter);
+        ((net.minecraft.world.level.storage.ServerLevelData) level.getLevelData())
+                .setGameTime(level.getGameTime() + 21L);
+        Cow replacement = spawnAnimal(helper, EntityType.COW, new BlockPos(3, 2, 4));
+        helper.assertTrue(HuntingWorker.tryAcquireTarget(
+                        level, normalHunter, normalContext, normalTargets),
+                "hunter should rerun the production scan after its normal interval");
+        helper.assertTrue(com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.hasRetaliationTarget(normalHunter, replacement),
+                "hunter should reacquire a newly available eligible target after its normal scan interval");
+
+        replacement.discard();
+        stressTarget.discard();
+        normalDecoy.discard();
+        stressDecoy.discard();
+        HiredVillagerContractService.endHireContract(level, normalHunter, hirer);
+        HiredVillagerContractService.endHireContract(level, stressHunter, hirer);
+        normalHunter.discard();
+        stressHunter.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void miningSurfaceReturnTargetCachesAcrossMovementAndInvalidatesOnTerrainChange(GameTestHelper helper) {
+        buildFloor(helper, 0, 12, 0, 10, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrMiningReturnCache");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager miner = spawnVillager(helper, new BlockPos(1, 2, 5));
+        miner.setVillagerData(miner.getVillagerData().setProfession(VillagerProfession.TOOLSMITH));
+        helper.assertTrue(
+                HiredVillagerContractService.startHireContract(
+                        level, miner, hirer, 1, 32, HiredVillagerRole.MINING),
+                "miner should accept a contract for return-target caching");
+        helper.assertTrue(
+                HiredVillagerWorkService.setWorkArea(
+                        hirer,
+                        level,
+                        miner,
+                        helper.absolutePos(new BlockPos(6, 1, 3)),
+                        helper.absolutePos(new BlockPos(10, 1, 7))),
+                "mining area should be assigned");
+        HiredWorkSession session = HiredWorkSession.active(level, miner);
+        session.state().putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        MiningWorker.invalidateExcavationReturnTarget(miner);
+        HiredPathMemory.clear(miner);
+
+        BlockPos firstTarget = MiningWorker.excavationReturnTarget(level, miner, session.context());
+        long firstPathCount = HiredPathMemory.pathCreationDebug(level, miner).totalCount();
+        helper.assertTrue(firstTarget != null && firstPathCount > 0,
+                "initial excavation return target should perform a reachable surface search");
+
+        BlockPos moved = helper.absolutePos(new BlockPos(2, 2, 5));
+        miner.setPos(moved.getX() + 0.5D, moved.getY(), moved.getZ() + 0.5D);
+        BlockPos cachedTarget = MiningWorker.excavationReturnTarget(level, miner, session.context());
+        helper.assertValueEqual(cachedTarget, firstTarget,
+                "walking miner should retain its selected surface entry target");
+        helper.assertValueEqual(
+                HiredPathMemory.pathCreationDebug(level, miner).totalCount(),
+                firstPathCount,
+                "walking across origin blocks must not recreate the surface-entry candidate paths");
+
+        level.setBlock(firstTarget, Blocks.STONE.defaultBlockState(), 3);
+        HiredPathMemory.onBlockChanged(level, firstTarget);
+        BlockPos terrainAdjustedTarget = MiningWorker.excavationReturnTarget(level, miner, session.context());
+        helper.assertTrue(terrainAdjustedTarget != null && !terrainAdjustedTarget.equals(firstTarget),
+                "blocking the cached landing should invalidate it and select another surface entry");
+        helper.assertTrue(HiredPathMemory.pathCreationDebug(level, miner).totalCount() > firstPathCount,
+                "terrain invalidation should permit a fresh recovery path search");
+
+        HiredVillagerContractService.endHireContract(level, miner, hirer);
+        miner.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void managedMainHandCacheTracksMutationRestoreAndRuntimeInvalidation(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        ItemStack sword = new ItemStack(Items.IRON_SWORD);
+        ItemStack axe = new ItemStack(Items.IRON_AXE);
+
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager, net.minecraft.world.entity.EquipmentSlot.MAINHAND, sword);
+        CompoundTag swordOwnership = VillagerRetaliationVillagerEquipment.captureOwnershipState(villager);
+        helper.assertTrue(
+                VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager).is(Items.IRON_SWORD),
+                "manual main hand should be decoded into the runtime cache");
+
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager, net.minecraft.world.entity.EquipmentSlot.MAINHAND, axe);
+        helper.assertTrue(
+                VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager).is(Items.IRON_AXE),
+                "authoritative mutation should update the cached managed stack immediately");
+
+        VillagerRetaliationVillagerEquipment.restoreOwnershipState(villager, swordOwnership);
+        helper.assertTrue(
+                VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager).is(Items.IRON_SWORD),
+                "ownership restore should invalidate and decode the restored stack");
+        VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
+        helper.assertTrue(
+                VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager).is(Items.IRON_SWORD),
+                "unload-style runtime invalidation should rebuild from persisted ownership data");
+        VillagerRetaliationVillagerEquipment.clearPlayerManagedMainHand(villager);
+        helper.assertTrue(
+                VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager).isEmpty(),
+                "clearing ownership must also clear the cached stack");
+
         villager.discard();
         helper.succeed();
     }
@@ -6347,6 +6520,14 @@ public final class VillagerWorkerGameTests {
         state.putBoolean("Enabled", true);
         HiredWorkerBrain.setState(state, HiredWorkerTaskState.SELECTING_TARGET, null);
         helper.assertTrue(HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager), "active hired work should suppress vanilla idle AI");
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+        helper.assertTrue(
+                HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager),
+                "waiting hired work should not run unrelated vanilla behaviors");
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE, null);
+        helper.assertTrue(
+                HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager),
+                "output-backpressured hired work should not run unrelated vanilla behaviors");
 
         state.putBoolean("Enabled", false);
         helper.assertFalse(HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager), "disabled work should clear suppression");
@@ -6508,6 +6689,50 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void stressMiningFixtureProvidesCompleteVerticalAccess(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 8, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrStressMiningAccess");
+        Villager miner = spawnVillager(helper, new BlockPos(4, 2, 4));
+        miner.setVillagerData(miner.getVillagerData().setProfession(VillagerProfession.TOOLSMITH));
+        helper.assertTrue(
+                HiredVillagerContractService.startHireContract(
+                        level, miner, hirer, 1, 64, HiredVillagerRole.MINING),
+                "stress miner should accept a mining contract");
+
+        BlockPos cell = helper.absolutePos(new BlockPos(4, 2, 4));
+        int bottomY = Math.max(level.getMinBuildHeight() + 2, cell.getY() - 24);
+        HiredVillagerWorkService.setWorkArea(
+                hirer,
+                level,
+                miner,
+                new BlockPos(cell.getX() - 3, bottomY, cell.getZ() - 3),
+                cell.offset(3, 0, 3));
+        miner.getPersistentData().putBoolean("VillagerRetaliationHiredStressWorker", true);
+        miner.getPersistentData().putString("VillagerRetaliationHiredStressRole", "mining");
+        miner.getPersistentData().putLong("VillagerRetaliationHiredStressCell", cell.asLong());
+
+        HiredStressGridService.maintainStressWorker(level, miner);
+        HiredWorkSession session = HiredWorkSession.active(level, miner);
+        helper.assertValueEqual(
+                HiredMiningMode.fromState(session.state()),
+                HiredMiningMode.EXCAVATE_AREA,
+                "stress mining fixture should force vertical excavation mode");
+        helper.assertTrue(
+                MiningExcavationSupport.hasCompleteLadderRouteToLayer(level, session.context(), bottomY),
+                "stress mining fixture should provide a complete route to its deepest assigned layer");
+        for (int y = bottomY; y <= cell.getY(); y++) {
+            BlockPos ladderPos = new BlockPos(cell.getX() - 3, y, cell.getZ() - 3);
+            helper.assertTrue(level.getBlockState(ladderPos).is(Blocks.LADDER),
+                    "stress mining access should contain a ladder at y=" + y);
+        }
+
+        HiredVillagerContractService.endHireContract(level, miner, hirer);
+        miner.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void stressCombatAndHuntingTargetsRenewAfterDefeat(GameTestHelper helper) {
         buildFloor(helper, 0, 14, 0, 8, 1);
         ServerLevel level = helper.getLevel();
@@ -6523,8 +6748,25 @@ public final class VillagerWorkerGameTests {
         hunting.getPersistentData().putString("VillagerRetaliationHiredStressRole", "hunting");
         hunting.getPersistentData().putLong("VillagerRetaliationHiredStressCell", huntingCell.asLong());
 
+        ItemEntity combatDrop = new ItemEntity(
+                level,
+                combatCell.getX() + 0.5D,
+                combatCell.getY(),
+                combatCell.getZ() + 0.5D,
+                new ItemStack(Items.BEEF));
+        ExperienceOrb huntingExperience = new ExperienceOrb(
+                level,
+                huntingCell.getX() + 0.5D,
+                huntingCell.getY(),
+                huntingCell.getZ() + 0.5D,
+                5);
+        level.addFreshEntity(combatDrop);
+        level.addFreshEntity(huntingExperience);
+
         HiredStressGridService.maintainStressWorker(level, combat);
         HiredStressGridService.maintainStressWorker(level, hunting);
+        helper.assertFalse(combatDrop.isAlive(), "combat stress cell should clear mob item drops");
+        helper.assertFalse(huntingExperience.isAlive(), "hunting stress cell should clear XP drops");
         List<Cow> firstCombatTargets = level.getEntitiesOfClass(
                 Cow.class, new AABB(combatCell).inflate(3.0D), Cow::isAlive);
         List<Cow> firstHuntingTargets = level.getEntitiesOfClass(

@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredRoleWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.GlobalPos;
@@ -28,6 +29,7 @@ public record HiredWorkSession(
         HiredWorkContext context) {
     private static final long METADATA_CACHE_TICKS = 40L;
     private static final Map<UUID, CachedMetadata> METADATA_CACHE = new HashMap<>();
+    private static final Map<Villager, CachedEquipmentFingerprint> EQUIPMENT_FINGERPRINT_CACHE = new IdentityHashMap<>();
 
     public static HiredWorkSession active(ServerLevel level, Villager villager) {
         return create(level, villager, HiredVillagerContractService.activeRole(level, villager));
@@ -83,11 +85,13 @@ public record HiredWorkSession(
     public static void invalidate(Villager villager) {
         if (villager != null) {
             METADATA_CACHE.remove(villager.getUUID());
+            EQUIPMENT_FINGERPRINT_CACHE.remove(villager);
         }
     }
 
     public static void clearRuntimeState() {
         METADATA_CACHE.clear();
+        EQUIPMENT_FINGERPRINT_CACHE.clear();
     }
 
     private static CachedMetadata metadata(
@@ -126,14 +130,8 @@ public record HiredWorkSession(
             CompoundTag state,
             HiredJobInventory inventory) {
         GlobalPos jobSite = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE).orElse(null);
-        int equipmentFingerprint = 1;
-        for (int slot = 0; slot <= HiredJobInventory.OFFHAND_SLOT; slot++) {
-            ItemStack stack = inventory.getItem(slot);
-            equipmentFingerprint = 31 * equipmentFingerprint + (stack.isEmpty() ? 0 : stack.getItem().hashCode());
-            equipmentFingerprint = 31 * equipmentFingerprint + (stack.isEmpty() ? 0 : stack.getComponents().hashCode());
-            equipmentFingerprint = 31 * equipmentFingerprint + stack.getCount();
-        }
-        return new MetadataSignature(
+        int equipmentFingerprint = equipmentFingerprint(level, villager, inventory);
+        MetadataSignature signature = new MetadataSignature(
                 level.dimension(),
                 role,
                 villager.getVillagerData().getProfession(),
@@ -145,6 +143,38 @@ public record HiredWorkSession(
                 state.getBoolean(HiredWorkArea.WORK_AREA_ASSIGNED_TAG),
                 jobSite,
                 equipmentFingerprint);
+        return signature;
+    }
+
+    private static int equipmentFingerprint(
+            ServerLevel level,
+            Villager villager,
+            HiredJobInventory inventory) {
+        CachedEquipmentFingerprint cached = EQUIPMENT_FINGERPRINT_CACHE.get(villager);
+        long inventoryVersion = inventory.modificationVersion();
+        if (cached != null
+                && cached.level() == level
+                && cached.gameTime() == level.getGameTime()
+                && cached.inventoryVersion() == inventoryVersion) {
+            return cached.fingerprint();
+        }
+        int fingerprint = 1;
+        for (int slot = 0; slot <= HiredJobInventory.OFFHAND_SLOT; slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            fingerprint = 31 * fingerprint + (stack.isEmpty() ? 0 : stack.getItem().hashCode());
+            fingerprint = 31 * fingerprint + (stack.isEmpty() ? 0 : stack.getComponents().hashCode());
+            fingerprint = 31 * fingerprint + stack.getCount();
+        }
+        EQUIPMENT_FINGERPRINT_CACHE.put(villager, new CachedEquipmentFingerprint(
+                level, level.getGameTime(), inventoryVersion, fingerprint));
+        return fingerprint;
+    }
+
+    private record CachedEquipmentFingerprint(
+            ServerLevel level,
+            long gameTime,
+            long inventoryVersion,
+            int fingerprint) {
     }
 
     private record CachedMetadata(

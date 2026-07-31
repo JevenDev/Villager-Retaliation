@@ -339,6 +339,7 @@ public final class HiredVillagerWorkService {
         CompoundTag state = session.state();
         if (!context.hasWorkArea()) {
             state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
+            MiningWorker.invalidateExcavationReturnTarget(villager);
             return false;
         }
         BlockPos excavationEntry = excavationSurfaceEntryTarget(level, session, villager);
@@ -350,10 +351,12 @@ public final class HiredVillagerWorkService {
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.IDLE, null);
             }
             clearWorkAreaReturnState(state);
+            MiningWorker.invalidateExcavationReturnTarget(villager);
             return false;
         }
         if (brain.taskState().keepsStorageTarget() && brain.storageTargetPos() != null) {
             clearWorkAreaReturnState(state);
+            MiningWorker.invalidateExcavationReturnTarget(villager);
             return false;
         }
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
@@ -372,6 +375,7 @@ public final class HiredVillagerWorkService {
                         : context.workCenter();
                 if (isWorkAreaReturnNavigationStuck(level, villager, state, progressTarget)) {
                     VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+                    MiningWorker.invalidateExcavationReturnTarget(villager);
                     state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level, villager));
                     setStatus(state, "interaction.work.status.return_path_lost");
                     return true;
@@ -416,6 +420,7 @@ public final class HiredVillagerWorkService {
                 return true;
             }
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, excavationEntry);
+            MiningWorker.invalidateExcavationReturnTarget(villager);
             state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level, villager));
             setStatus(state, "interaction.work.status.need_excavation_ladder_path");
             return true;
