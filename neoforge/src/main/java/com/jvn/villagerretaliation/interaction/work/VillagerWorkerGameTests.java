@@ -35,8 +35,8 @@ import com.jvn.villagerretaliation.inventory.PaymentBoxChunkLoadingService;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
-import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.item.VillagerRecipeFilterData;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
@@ -49,14 +49,14 @@ import com.mojang.authlib.GameProfile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.LinkedHashMap;
-import java.util.Optional;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -94,13 +94,13 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.CraftingRecipe;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.level.GameRules;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.ChestBlock;
@@ -441,9 +441,6 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void smelterMovesFromBusyCachedFurnaceToAnotherFurnace(GameTestHelper helper) {
-        ServerLevel level = helper.getLevel();
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     @SuppressWarnings("unchecked")
     public static void cookRecipeFilterUsesExactSmokingStation(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
@@ -732,6 +729,9 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void smelterMovesFromBusyCachedFurnaceToAnotherFurnace(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 6, 0, 6, 1);
         BlockPos busyRel = new BlockPos(3, 2, 2);
         BlockPos availableRel = new BlockPos(2, 2, 3);
