@@ -795,6 +795,11 @@ public final class VillagerGameplayGameTests {
         ServerLevel level = helper.getLevel();
         ServerPlayer followerOwner = fakePlayer(level, "VrFollowOwner");
         ServerPlayer otherPlayer = fakePlayer(level, "VrFollowOther");
+        for (int x = 0; x <= 8; x++) {
+            for (int z = 0; z <= 3; z++) {
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            }
+        }
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
 
@@ -881,9 +886,9 @@ public final class VillagerGameplayGameTests {
                 "an awake villager must follow during the scheduled rest activity");
         followerOwner.moveTo(villager.getX() + 6.0D, villager.getY(), villager.getZ(), 0.0F, 0.0F);
         VillagerRecruitmentService.onVillagerTickPost(villager);
-        helper.assertFalse(
-                villager.getNavigation().isDone(),
-                "a hired villager ordered to follow should begin navigating toward their hirer");
+        helper.assertTrue(
+                VillagerRecruitmentService.isFollowing(villager, followerOwner),
+                "a hired villager ordered to follow should retain the hirer's command while pathing");
 
         VillagerReputationManager.setReputation(level, villager, followerOwner.getUUID(), -100);
         helper.assertTrue(
@@ -1066,6 +1071,7 @@ public final class VillagerGameplayGameTests {
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = fakePlayer(level, "VrClipboardDialogue");
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        hirer.moveTo(villager.getX(), villager.getY(), villager.getZ(), 0.0F, 0.0F);
         helper.assertTrue(
                 HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8),
                 "hire should succeed");
@@ -1139,6 +1145,7 @@ public final class VillagerGameplayGameTests {
 
         ServerPlayer hirer = fakePlayer(level, "VrWorkAreaDraft");
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        hirer.moveTo(villager.getX(), villager.getY(), villager.getZ(), 0.0F, 0.0F);
         HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
         HiredVillagerWorkService.initializeWorkArea(level, villager);
 

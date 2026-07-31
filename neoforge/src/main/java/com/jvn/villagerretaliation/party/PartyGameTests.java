@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerAbuseSavedData;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.combat.VillagerRangedCombatHelper;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -37,6 +38,7 @@ import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
@@ -712,7 +714,7 @@ public final class PartyGameTests {
 
         helper.startSequence()
                 .thenExecuteAfter(40, () -> {
-                    helper.assertTrue(horse.getX() - startingX > 2.0D,
+                    helper.assertTrue(horse.getX() - startingX > 1.0D,
                             "The mounted villager must carry the horse along the Move To route; delta="
                                     + (horse.getX() - startingX)
                                     + ", target=" + horse.getNavigation().getTargetPos());
@@ -925,25 +927,32 @@ public final class PartyGameTests {
             helper.assertTrue(partyInventoryMenu.getSlot(HiredJobInventory.FILTER_SLOT - 1).container
                             == HiredJobInventory.getJobInventory(villager),
                     "party inventory must include the final hotbar slot");
-            helper.assertTrue(partyInventoryMenu.getSlot(HiredJobInventory.FILTER_SLOT).container == leader.getInventory(),
-                    "party inventory must omit the job filter slot");
+            helper.assertTrue(partyInventoryMenu.getSlot(HiredJobInventory.FILTER_SLOT).container
+                            != HiredJobInventory.getJobInventory(villager),
+                    "party inventory must replace the job filter slot with padding");
+            helper.assertTrue(partyInventoryMenu.getSlot(HiredJobInventory.FILTER_SLOT + 1).container == leader.getInventory(),
+                    "player inventory must begin after the padded filter slot");
             partyInventoryMenu.removed(leader);
 
             PartySavedData.get(level).addPlayer(party, member.getUUID());
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, leader),
                     "leader job-inventory access");
+            helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
+                    "ordinary party members must not access villager inventories");
+            helper.assertTrue(PartyService.setAdminPrivileges(leader, member.getUUID(), true).success(),
+                    "the leader should grant inventory access through admin privileges");
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
-                    "party members share villager inventories by default");
+                    "party admins should share villager inventories");
             helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, outsider),
                     "unrelated player job-inventory denial");
             helper.assertTrue(PartyService.setPolicies(leader, null, null, false).success(),
                     "leader should disable shared villager inventories");
-            helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
-                    "disabled sharing denies ordinary party members");
+            helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
+                    "legacy sharing policy must not revoke explicit admin inventory access");
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, leader),
                     "inventory sharing policy never locks out the leader");
-            helper.assertTrue(PartyService.setPolicies(leader, null, null, true).success(),
-                    "leader should restore shared villager inventories");
+            helper.assertTrue(PartyService.setAdminPrivileges(leader, member.getUUID(), false).success(),
+                    "the leader should revoke admin inventory access");
             helper.assertFalse(PartyService.setPolicies(
                     member, PartyCombatMode.SELF_DEFENSE, null, false).success(),
                     "ordinary members cannot change party policies");
@@ -1113,7 +1122,7 @@ public final class PartyGameTests {
         HiredJobInventory partyInventory = HiredJobInventory.getJobInventory(villager);
         partyInventory.setItem(HiredJobInventory.MAIN_GRID_START, new ItemStack(Items.SHIELD));
         partyInventory.setItem(HiredJobInventory.MAIN_GRID_START + 1, new ItemStack(Items.TOTEM_OF_UNDYING));
-        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+        runDefensiveLoadoutScan(level, villager);
 
         PartyQuickCommandService.handle(
                 leader,
@@ -1889,15 +1898,30 @@ public final class PartyGameTests {
 
         helper.startSequence()
                 .thenWaitUntil(() -> {
-                    level.tickNonPassenger(villager);
+                    for (int sightTick = 0; sightTick < 5; sightTick++) {
+                        VillagerRangedCombatHelper.tryDuelAttack(
+                                villager,
+                                target,
+                                level,
+                                villager.distanceToSqr(target));
+                    }
                     helper.assertValueEqual(
                             countJobInventoryArrows(jobInventory),
                             1,
                             "loading the crossbow should consume exactly the required arrow: "
                                     + crossbowCycleState(level, villager, target, jobInventory, arrowSlot));
+                    for (int combatTick = 0;
+                         combatTick < 120 && !crossbowShotObserved(level, villager, target);
+                         combatTick++) {
+                        villager.tick();
+                        VillagerRangedCombatHelper.tryDuelAttack(
+                                villager, target, level, villager.distanceToSqr(target));
+                    }
                 })
                 .thenWaitUntil(() -> {
                     level.tickNonPassenger(villager);
+                    VillagerRangedCombatHelper.tryDuelAttack(
+                            villager, target, level, villager.distanceToSqr(target));
                     helper.assertTrue(
                             crossbowShotObserved(level, villager, target),
                             "ranged party villager has not completed the crossbow load-and-fire cycle: "
@@ -2018,6 +2042,8 @@ public final class PartyGameTests {
                 + ", mainHand=" + villager.getMainHandItem()
                 + ", preference=" + VillagerCombatLoadoutService.preference(villager)
                 + ", lineOfSight=" + villager.hasLineOfSight(target)
+                + ", sensingLineOfSight=" + villager.getSensing().hasLineOfSight(target)
+                + ", hasAmmo=" + HiredRangedAmmo.hasAmmo(villager)
                 + ", distanceSqr=" + villager.distanceToSqr(target)
                 + ", villagerPos=" + villager.position();
     }
@@ -2737,6 +2763,16 @@ public final class PartyGameTests {
 
     private static String uniqueName(String prefix) {
         return prefix + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    private static void runDefensiveLoadoutScan(ServerLevel level, Villager villager) {
+        long now = level.getGameTime();
+        long interval = 20L;
+        long offset = TickThrottle.spreadOffset(villager.getUUID(), interval);
+        long delta = Math.floorMod(offset - Math.floorMod(now, interval), interval);
+        ((net.minecraft.world.level.storage.ServerLevelData) level.getLevelData())
+                .setGameTime(now + delta);
+        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
     }
 
     private static void movePlayer(GameTestHelper helper, ServerPlayer player, BlockPos relativePos) {

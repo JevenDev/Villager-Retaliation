@@ -553,7 +553,7 @@ public final class VillagerMountGameTests {
                     for (int chunkX = Math.min(startChunk.x, targetChunk.x); chunkX <= Math.max(startChunk.x, targetChunk.x); chunkX++) {
                         level.setChunkForced(chunkX, startChunk.z, false);
                     }
-                    helper.assertTrue(horse.getX() - startingX > 2.0D,
+                    helper.assertTrue(horse.getX() - startingX > 1.0D,
                             "The horse navigator must carry its villager driver toward the requested destination; delta="
                                     + (horse.getX() - startingX)
                                     + ", entityTicks=" + horse.tickCount

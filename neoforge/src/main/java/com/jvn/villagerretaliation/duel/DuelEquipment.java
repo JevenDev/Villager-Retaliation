@@ -57,6 +57,7 @@ final class DuelEquipment {
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             villager.setItemSlot(slot, ItemStack.EMPTY);
         }
+        VillagerRetaliationVillagerEquipment.restoreOwnershipState(villager, new CompoundTag());
     }
 
     private static void melee(ServerPlayer player, Villager villager) {

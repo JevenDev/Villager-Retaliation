@@ -404,22 +404,23 @@ public final class DuelGameTests {
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(
                 villager, EquipmentSlot.FEET, new ItemStack(Items.DIAMOND_BOOTS));
         DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.ARMORED, 0);
-        helper.assertTrue(start.started(), EMPTY_TEMPLATE);
+        helper.assertTrue(start.started(), "armored duel should start: " + start.reason());
 
         helper.runAfterDelay(65, () -> {
             try {
                 long now = participant.level().getServer().overworld().getGameTime();
+                player.moveTo(villager.getX() + 1.0D, villager.getY(), villager.getZ(), 0.0F, 0.0F);
                 player.startUsingItem(InteractionHand.OFF_HAND);
-                helper.assertTrue(DuelService.driveForTest(player, now, true), EMPTY_TEMPLATE);
-                helper.assertTrue(villager.getMainHandItem().is(Items.IRON_AXE), EMPTY_TEMPLATE);
-                helper.assertFalse(player.isUsingItem(), EMPTY_TEMPLATE);
+                helper.assertTrue(DuelService.driveForTest(player, now, true), "armored duel should remain active for axe tactics");
+                helper.assertTrue(villager.getMainHandItem().is(Items.IRON_AXE), "shielding opponent should make the armored villager equip its iron axe");
+                helper.assertFalse(player.isUsingItem(), "the villager axe attack should disable the player's shield");
 
-                helper.assertTrue(DuelService.driveForTest(player, now + 1L, false), EMPTY_TEMPLATE);
-                helper.assertTrue(villager.isUsingItem(), EMPTY_TEMPLATE);
-                helper.assertTrue(villager.getUsedItemHand() == InteractionHand.OFF_HAND, EMPTY_TEMPLATE);
-                helper.assertTrue(villager.getUseItem().is(Items.SHIELD), EMPTY_TEMPLATE);
+                helper.assertTrue(DuelService.driveForTest(player, now + 1L, false), "armored duel should remain active for guard tactics");
+                helper.assertTrue(villager.isUsingItem(), "armored villager should raise its shield between attacks");
+                helper.assertTrue(villager.getUsedItemHand() == InteractionHand.OFF_HAND, "armored villager should guard with its off hand");
+                helper.assertTrue(villager.getUseItem().is(Items.SHIELD), "armored villager should actively use its shield");
 
-                helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW), EMPTY_TEMPLATE);
+                helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW), "armored duel should resolve as a draw");
                 VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager);
                 helper.assertTrue(villager.getMainHandItem().is(Items.DIAMOND_SWORD), EMPTY_TEMPLATE);
                 helper.assertTrue(villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING), EMPTY_TEMPLATE);

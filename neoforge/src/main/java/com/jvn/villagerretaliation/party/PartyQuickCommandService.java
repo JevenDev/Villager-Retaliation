@@ -190,7 +190,8 @@ public final class PartyQuickCommandService {
         // Match ordinary recruited follow behavior: active retaliation owns movement until
         // combat finishes. In particular, a regroup route must not keep replacing combat
         // navigation with its higher catch-up speed every tick.
-        if (order != null && VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)) {
+        if (order != null && !order.type().background()
+                && VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)) {
             return;
         }
         if ((standingGuard || order != null && order.type().background())
