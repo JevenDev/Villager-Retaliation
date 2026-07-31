@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.raid;
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationCombatWeaponFactory;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -22,10 +23,13 @@ final class PlayerRaidLoadoutService {
     private PlayerRaidLoadoutService() {
     }
 
-    static void equip(Villager villager) {
+    static void equip(Villager villager, UUID raidId) {
         if (villager.isBaby()
-                || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT
-                || villager.getPersistentData().getBoolean(EQUIPPED)) {
+                || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT) {
+            return;
+        }
+        if (villager.getPersistentData().hasUUID(EQUIPPED)
+                && villager.getPersistentData().getUUID(EQUIPPED).equals(raidId)) {
             return;
         }
         RandomSource random = villager.getRandom();
@@ -65,7 +69,7 @@ final class PlayerRaidLoadoutService {
                 equipEmpty(villager, EquipmentSlot.FEET, armor.feet(), configured);
             }
         }
-        villager.getPersistentData().putBoolean(EQUIPPED, true);
+        villager.getPersistentData().putUUID(EQUIPPED, raidId);
         villager.setPersistenceRequired();
     }
 

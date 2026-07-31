@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.party;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerAbuseSavedData;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
@@ -36,6 +37,8 @@ import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.raid.PlayerRaidSavedData;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.util.TickThrottle;
@@ -57,6 +60,7 @@ import java.util.function.Consumer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
@@ -1500,6 +1504,61 @@ public final class PartyGameTests {
             secondVillager.discard();
         }
         helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void activeRaidSidesOverridePartyAlliances(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer defenderLeader = fakePlayer(level, uniqueName("raid_alliance_defender"));
+        ServerPlayer raiderLeader = fakePlayer(level, uniqueName("raid_alliance_raider"));
+        Villager defender = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Villager raider = spawnVillager(helper, new BlockPos(5, 2, 3));
+        long now = level.getServer().overworld().getGameTime();
+        PartySavedData partyData = PartySavedData.get(level);
+        PartyRecord defenderParty = partyData.createParty(defenderLeader.getUUID(), now);
+        PartyRecord raiderParty = partyData.createParty(raiderLeader.getUUID(), now);
+        partyData.addVillager(defenderParty, villagerRecord(defender.getUUID(), defenderLeader.getUUID(), 0, now));
+        partyData.addVillager(raiderParty, villagerRecord(raider.getUUID(), raiderLeader.getUUID(), 0, now));
+        helper.assertTrue(PartyService.requestAlliance(defenderLeader, raiderLeader.getUUID()).success(),
+                "defender party should request the alliance");
+        helper.assertTrue(PartyService.acceptAlliance(raiderLeader, defenderLeader.getUUID()).success(),
+                "raider party should accept the alliance");
+
+        BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
+        PlayerRaidSavedData raidData = PlayerRaidSavedData.get(level);
+        PlayerRaidSavedData.RaidRecord raid = raidData.create(
+                VillageAllegianceId.random(), level.dimension().location(), center,
+                Set.of(SectionPos.asLong(raiderLeader.blockPosition())), "Alliance Raid Village",
+                raiderLeader.getUUID(), raiderParty.id(), Set.of(raiderLeader.getUUID()),
+                Set.of(raider.getUUID()), Set.of(defender.getUUID()), Set.of(), 42L);
+        PlayerRaidService.beginPreparation(level.getServer(), raid.id());
+
+        helper.runAfterDelay(220, () -> {
+            try {
+                helper.assertValueEqual(raid.phase(), PlayerRaidSavedData.Phase.ACTIVE,
+                        "the alliance regression fixture should reach the active raid phase");
+                helper.assertTrue(PartyService.areInSameOrAlliedParty(defender, raider),
+                        "the opposing raid villagers should still belong to allied parties");
+                helper.assertTrue(PlayerRaidService.areOpposingParticipants(defender, raider),
+                        "the raid snapshot should put allied-party villagers on opposing sides");
+
+                VillagerRetaliationHandler.forceAngerSilently(defender, raider);
+                helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(defender, raider),
+                        "raid opposition should outrank the live party alliance for target acquisition");
+                Map<UUID, VillagerRetaliationRetaliationUtil.AngerTarget> anger = new LinkedHashMap<>();
+                helper.assertTrue(VillagerRetaliationRetaliationUtil.tryAnger(
+                                defender, raider, anger, "PlayerRaidAllianceGameTestAnger"),
+                        "raid opposition should outrank the alliance in retained retaliation state");
+            } finally {
+                raidData.remove(raid.id());
+                VillagerRetaliationHandler.clearCustomTarget(defender);
+                PartyService.deleteParty(level, defenderParty.id());
+                PartyService.deleteParty(level, raiderParty.id());
+                defender.discard();
+                raider.discard();
+            }
+            helper.succeed();
+        });
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 180)

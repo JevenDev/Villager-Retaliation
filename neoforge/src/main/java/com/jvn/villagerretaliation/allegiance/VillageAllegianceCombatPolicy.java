@@ -26,11 +26,11 @@ public final class VillageAllegianceCombatPolicy {
         if (context == AllegianceCombatContext.DISCIPLINE) {
             return AllegianceCombatDecision.allow(AllegianceCombatDecision.Reason.DISCIPLINARY_RESPONSE);
         }
-        if (PartyService.areInSameOrAlliedParty(actor, target)) {
-            return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.SAME_PARTY);
-        }
         if (PlayerRaidService.areOpposingParticipants(actor, target)) {
             return AllegianceCombatDecision.pass(AllegianceCombatDecision.Reason.PLAYER_RAID_OPPONENT);
+        }
+        if (PartyService.areInSameOrAlliedParty(actor, target)) {
+            return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.SAME_PARTY);
         }
         AllegianceEntityClassifier.Classification targetClass = AllegianceEntityClassifier.classify(target);
         if (targetClass == AllegianceEntityClassifier.Classification.NEUTRAL_TRADER) {

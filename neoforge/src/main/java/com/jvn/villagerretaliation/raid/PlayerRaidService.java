@@ -258,18 +258,22 @@ public final class PlayerRaidService {
         }
     }
 
-    private static void tickRaid(
+    static void tickRaid(
             MinecraftServer server, PlayerRaidSavedData data, PlayerRaidSavedData.RaidRecord raid, long now) {
         ServerLevel level = level(server, raid);
-        if (level == null) return;
-        updateBossBar(server, raid, now);
         if (!raid.running()) {
+            if (level != null) updateBossBar(server, raid, now);
             if (raid.outcomeCleanupAt() > 0L && now >= raid.outcomeCleanupAt()) {
                 hideBossBar(raid.id());
                 data.remove(raid.id());
             }
             return;
         }
+        if (level == null) {
+            finish(server, data, raid, false, now);
+            return;
+        }
+        updateBossBar(server, raid, now);
         suppressVanillaRaidOverlap(level, raid);
         if (raid.phase() == PlayerRaidSavedData.Phase.DECLARATION) {
             if ((!PlayerRaidDialogueService.hasSession(raid.id()) && now - raid.phaseStarted() >= 20L)
@@ -341,7 +345,7 @@ public final class PlayerRaidService {
                         || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT)) {
                 hideVillager(level, villager);
             } else {
-                PlayerRaidLoadoutService.equip(villager);
+                PlayerRaidLoadoutService.equip(villager, raid.id());
             }
         }
         for (UUID candidateId : raid.mercyCandidates()) {
@@ -437,7 +441,7 @@ public final class PlayerRaidService {
             if (target != null
                     && (raid.raiderPlayers().contains(target.getUUID())
                         || raid.raiderVillagers().contains(target.getUUID()))
-                    && VillageAllegianceApi.canonicalPrimary(level, golem).filter(raid.villageId()::equals).isPresent()) {
+                    && isDefendingGolem(level, raid, golem)) {
                 golem.setTarget(null);
             }
         }
@@ -475,7 +479,7 @@ public final class PlayerRaidService {
             if (target == null) continue;
             if (defender instanceof Villager villager && !villager.isBaby()
                     && villager.getVillagerData().getProfession() != VillagerProfession.NITWIT) {
-                PlayerRaidLoadoutService.equip(villager);
+                PlayerRaidLoadoutService.equip(villager, raid.id());
                 VillagerRetaliationHandler.forceAngerSilently(villager, target);
             } else if (defender instanceof Villager villager) {
                 hideVillager((ServerLevel) villager.level(), villager);
@@ -785,7 +789,7 @@ public final class PlayerRaidService {
         for (PlayerRaidSavedData.RaidRecord raid : data.raids()) {
             if (raid.phase() == PlayerRaidSavedData.Phase.ACTIVE
                     && raid.raiderVillagers().contains(villager.getUUID())
-                    && VillageAllegianceApi.canonicalPrimary(level, golem).filter(raid.villageId()::equals).isPresent()) {
+                    && isDefendingGolem(level, raid, golem)) {
                 return true;
             }
         }
@@ -865,10 +869,12 @@ public final class PlayerRaidService {
             ServerLevel level,
             PlayerRaidSavedData.RaidRecord raid,
             Entity entity) {
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId raidVillage = registry.canonical(raid.villageId()).orElse(raid.villageId());
         return entity instanceof IronGolem golem
                 && raid.dimension().equals(level.dimension().location())
                 && VillageAllegianceApi.canonicalPrimary(level, golem)
-                .filter(raid.villageId()::equals)
+                .filter(raidVillage::equals)
                 .isPresent();
     }
 
@@ -940,6 +946,7 @@ public final class PlayerRaidService {
     public static void clearRuntimeState() {
         BOSS_BARS.values().forEach(ServerBossEvent::removeAllPlayers);
         BOSS_BARS.clear();
+        RAID_CONFIRMATIONS.clear();
         PlayerRaidDialogueService.clearRuntimeState();
         PlayerRaidMercyService.clearRuntimeState();
     }
