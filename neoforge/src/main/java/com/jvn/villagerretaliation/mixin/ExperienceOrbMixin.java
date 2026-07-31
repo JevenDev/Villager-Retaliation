@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ExperienceOrb.class)
 public abstract class ExperienceOrbMixin {
@@ -22,6 +23,44 @@ public abstract class ExperienceOrbMixin {
     @Shadow @Nullable private Player followingPlayer;
 
     @Unique @Nullable private Villager villagerretaliation$followingVillager;
+
+    @Inject(method = "playerTouch", at = @At("HEAD"), cancellable = true)
+    private void villagerretaliation$preventPlayerTakingVillagerWorkExperience(
+            Player player,
+            CallbackInfo callback) {
+        if (VillagerWorkExperience.isOwned((ExperienceOrb) (Object) this)) {
+            callback.cancel();
+        }
+    }
+
+    @Inject(
+            method = "canMerge(Lnet/minecraft/world/entity/ExperienceOrb;)Z",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void villagerretaliation$keepWorkExperienceSeparate(
+            ExperienceOrb other,
+            CallbackInfoReturnable<Boolean> callback) {
+        ExperienceOrb orb = (ExperienceOrb) (Object) this;
+        if (!VillagerWorkExperience.mayMerge(orb, other)) {
+            callback.setReturnValue(false);
+        }
+    }
+
+    @Inject(
+            method = "canMerge(Lnet/minecraft/world/entity/ExperienceOrb;II)Z",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private static void villagerretaliation$preventVanillaExperienceMergingIntoWorkExperience(
+            ExperienceOrb candidate,
+            int id,
+            int value,
+            CallbackInfoReturnable<Boolean> callback) {
+        if (VillagerWorkExperience.isOwned(candidate)) {
+            callback.setReturnValue(false);
+        }
+    }
 
     @Inject(method = "scanForEntities", at = @At("TAIL"))
     private void villagerretaliation$findVillagerNeedingMending(CallbackInfo callback) {

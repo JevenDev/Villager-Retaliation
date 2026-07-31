@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.skill.VillagerSkillGrowthResult;
 import com.jvn.villagerretaliation.skill.VillagerSkillGrowthService;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
+import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
 import com.jvn.villagerretaliation.trade.VillagerTradeWalletService;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.util.TickThrottle;
@@ -285,6 +286,7 @@ public final class VillagerReputationEvents {
                 VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
                 if (villager instanceof Villager villageResident && player instanceof ServerPlayer serverPlayer) {
                     VillagerTradeWalletService.syncOffers(serverPlayer, villageResident);
+                    VillagerTradeRefreshService.sendState(serverPlayer, villageResident);
                 }
                 VillagerReputationManager.syncToTrackingPlayer(level, villager, player.getUUID());
                 if (player instanceof ServerPlayer serverPlayer) {

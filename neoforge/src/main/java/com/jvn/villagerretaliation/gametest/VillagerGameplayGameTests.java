@@ -297,6 +297,40 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerWorkExperienceRejectsPlayerPickupAndOrbMerging(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ServerPlayer player = fakePlayer(level, "VrWorkExperienceOwner");
+        player.moveTo(villager.getX(), villager.getY(), villager.getZ(), 0.0F, 0.0F);
+
+        VillagerWorkExperience.spawn(level, villager, villager.position(), 5);
+        ExperienceOrb ownedOrb = level.getEntitiesOfClass(
+                        ExperienceOrb.class,
+                        villager.getBoundingBox().inflate(2.0D),
+                        orb -> VillagerWorkExperience.belongsTo(orb, villager))
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("Could not spawn villager work experience"));
+
+        int experienceBefore = player.totalExperience;
+        ownedOrb.playerTouch(player);
+        helper.assertTrue(ownedOrb.isAlive(), "a player must not collect villager-owned work experience");
+        helper.assertValueEqual(
+                player.totalExperience,
+                experienceBefore,
+                "rejected work experience must not grant player XP");
+
+        ExperienceOrb ordinaryOrb = new ExperienceOrb(level, villager.getX(), villager.getY(), villager.getZ(), 5);
+        helper.assertFalse(
+                VillagerWorkExperience.mayMerge(ownedOrb, ordinaryOrb),
+                "villager-owned and ordinary experience must never merge");
+
+        ownedOrb.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void villagerKillDropsExperienceForMendingEquipment(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         level.getGameRules().getRule(GameRules.RULE_DOMOBLOOT).set(true, level.getServer());
