@@ -64,6 +64,30 @@ public final class HiredSupplyCrafting {
         return craftCarriedSupplyItem(level, context, item, new HashSet<>(), hasCraftingTable(level, context));
     }
 
+    /** Crafts one exact recipe into supply slots while honoring configured ingredient alternatives. */
+    public static boolean craftCarriedRecipeWithStations(
+            ServerLevel level,
+            HiredWorkContext context,
+            CraftingRecipe recipe,
+            Map<Integer, Item> narrowedIngredients) {
+        boolean hasCraftingTable = hasCraftingTable(level, context);
+        if (recipe == null || recipe.isSpecial() || !canUseRecipe(recipe, hasCraftingTable)) {
+            return false;
+        }
+        ItemStack result = recipe.getResultItem(level.registryAccess());
+        if (result.isEmpty()) {
+            return false;
+        }
+        Map<Item, Integer> ingredients = new LinkedHashMap<>();
+        if (!prepareRecipeIngredients(
+                level, context, recipe, ingredients, narrowedIngredients, new HashSet<>(), hasCraftingTable)) {
+            return false;
+        }
+        List<ItemStack> produced = craftingRemainders(ingredients);
+        produced.add(0, result.copy());
+        return context.inventory().tryTransformSupplies(ingredients, produced);
+    }
+
     /** Crafts one exact recipe, placing its result in job-output slots. */
     public static boolean craftCarriedRecipeToOutputsWithStations(
             ServerLevel level,
@@ -125,12 +149,30 @@ public final class HiredSupplyCrafting {
             Map<Item, Integer> ingredients,
             Set<Item> visiting,
             boolean hasCraftingTable) {
-        for (Ingredient ingredient : recipe.getIngredients()) {
+        return prepareRecipeIngredients(
+                level, context, recipe, ingredients, Map.of(), visiting, hasCraftingTable);
+    }
+
+    private static boolean prepareRecipeIngredients(
+            ServerLevel level,
+            HiredWorkContext context,
+            CraftingRecipe recipe,
+            Map<Item, Integer> ingredients,
+            Map<Integer, Item> narrowedIngredients,
+            Set<Item> visiting,
+            boolean hasCraftingTable) {
+        List<Ingredient> recipeIngredients = recipe.getIngredients();
+        for (int slot = 0; slot < recipeIngredients.size(); slot++) {
+            Ingredient ingredient = recipeIngredients.get(slot);
             if (ingredient.isEmpty()) {
                 continue;
             }
             Item selected = null;
-            for (ItemStack option : ingredient.getItems()) {
+            Item narrowed = narrowedIngredients.get(slot);
+            ItemStack[] options = narrowed == null
+                    ? ingredient.getItems()
+                    : new ItemStack[]{new ItemStack(narrowed)};
+            for (ItemStack option : options) {
                 if (option.isEmpty()) {
                     continue;
                 }
@@ -253,7 +295,21 @@ public final class HiredSupplyCrafting {
             return Math.max(0, available - planned.getOrDefault(item, 0));
         }
 
+        public boolean planRecipe(
+                CraftingRecipe recipe,
+                int desiredCount,
+                Map<Item, Integer> planned,
+                Map<Integer, Item> narrowedIngredients) {
+            return planRecipe(recipe, desiredCount, planned, narrowedIngredients, true);
+        }
+
         public boolean planRecipe(CraftingRecipe recipe, int desiredCount, Map<Item, Integer> planned) {
+            return planRecipe(recipe, desiredCount, planned, Map.of(), true);
+        }
+
+        private boolean planRecipe(
+                CraftingRecipe recipe, int desiredCount, Map<Item, Integer> planned,
+                Map<Integer, Item> narrowedIngredients, boolean topLevel) {
             if (recipe == null || desiredCount <= 0 || recipe.isSpecial() || !canUseRecipe(recipe, this.hasCraftingTable)) {
                 return false;
             }
@@ -270,6 +326,7 @@ public final class HiredSupplyCrafting {
                     desiredCount,
                     trial,
                     trialSurplus,
+                    topLevel ? narrowedIngredients : Map.of(),
                     new HashSet<>(),
                     0)) {
                 return false;
@@ -329,7 +386,8 @@ public final class HiredSupplyCrafting {
                 }
                 Map<Item, Integer> recipePlan = new LinkedHashMap<>(planned);
                 Map<Item, Integer> recipeSurplus = new LinkedHashMap<>(surplus);
-                if (planRecipe(recipe, item, result.getCount(), remaining, recipePlan, recipeSurplus, visiting, depth + 1)) {
+                if (planRecipe(recipe, item, result.getCount(), remaining, recipePlan, recipeSurplus,
+                        Map.of(), visiting, depth + 1)) {
                     planned.clear();
                     planned.putAll(recipePlan);
                     surplus.clear();
@@ -349,17 +407,25 @@ public final class HiredSupplyCrafting {
                 int neededCount,
                 Map<Item, Integer> planned,
                 Map<Item, Integer> surplus,
+                Map<Integer, Item> narrowedIngredients,
                 Set<Item> visiting,
                 int depth) {
             if (resultCount <= 0 || !recipe.canCraftInDimensions(3, 3)) {
                 return false;
             }
             int crafts = (neededCount + resultCount - 1) / resultCount;
-            for (Ingredient ingredient : recipe.getIngredients()) {
+            List<Ingredient> recipeIngredients = recipe.getIngredients();
+            for (int slot = 0; slot < recipeIngredients.size(); slot++) {
+                Ingredient ingredient = recipeIngredients.get(slot);
                 if (ingredient.isEmpty()) {
                     continue;
                 }
-                if (!planIngredient(ingredient, crafts, planned, surplus, visiting, depth)) {
+                Item narrowed = narrowedIngredients.get(slot);
+                boolean plannedIngredient = narrowed == null
+                        ? planIngredient(ingredient, crafts, planned, surplus, visiting, depth)
+                        : ingredient.test(new ItemStack(narrowed))
+                                && plan(narrowed, crafts, planned, surplus, visiting, depth);
+                if (!plannedIngredient) {
                     return false;
                 }
             }
