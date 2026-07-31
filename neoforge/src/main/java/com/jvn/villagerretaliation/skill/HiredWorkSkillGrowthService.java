@@ -50,6 +50,9 @@ public final class HiredWorkSkillGrowthService {
 
         double xpPerUnit = HiredVillagerRoleSettings.skillGrowthAmount(role);
         if (!Double.isFinite(xpPerUnit) || xpPerUnit <= 0.0D) {
+            if (migrated) {
+                VillagerProfileSavedData.get(level).setDirty();
+            }
             return VillagerSkillProgressionResult.NONE;
         }
         long dayIndex = Math.floorDiv(level.getServer().overworld().getDayTime(), 24_000L);

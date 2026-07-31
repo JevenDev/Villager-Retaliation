@@ -1,16 +1,23 @@
 package com.jvn.villagerretaliation.skill;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -90,6 +97,60 @@ public final class VillagerSkillProgressionGameTests {
                 || loaded.repetitionKeyCount(VillagerSkill.MINING, 9L) != repeated.repetitionKeyCount(VillagerSkill.MINING, 9L)
                 || !VillagerProfileManager.exportProfile(loaded).contains("skillPracticeDailyState")) {
             helper.fail("Practice XP or daily state did not survive save/load");
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void bulkPracticeMatchesIndividualRepetitions(GameTestHelper helper) {
+        VillagerProfile bulk = profileWithSkill(10);
+        VillagerProfile individual = profileWithSkill(10);
+        VillagerSkillPractice batch =
+                new VillagerSkillPractice(VillagerSkill.MINING, 1.0D, "trade:regular_offer", 77L, 12);
+        double bulkGranted = VillagerSkillProgressionService.apply(
+                bulk, List.of(batch), 11L, 1L, 0.5D).grantedXp();
+        double individualGranted = 0.0D;
+        for (int index = 0; index < 12; index++) {
+            individualGranted += VillagerSkillProgressionService.apply(
+                    individual,
+                    List.of(new VillagerSkillPractice(
+                            VillagerSkill.MINING, 1.0D, "trade:regular_offer", 77L)),
+                    11L,
+                    2L + index,
+                    0.5D).grantedXp();
+        }
+        if (Math.abs(bulkGranted - individualGranted) > 0.0001D
+                || bulk.repetitionCount(VillagerSkill.MINING, batch.repetitionIdentity(), 11L) != 12
+                || bulk.skills().get(VillagerSkill.MINING)
+                        != individual.skills().get(VillagerSkill.MINING)
+                || Math.abs(bulk.skillPracticeXp(VillagerSkill.MINING)
+                        - individual.skillPracticeXp(VillagerSkill.MINING)) > 0.0001D) {
+            helper.fail("Bulk practice did not apply repetition and skill XP identically to individual events");
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void repetitionIdentityIncludesPracticeSource(GameTestHelper helper) {
+        VillagerProfile profile = profileWithSkill(10);
+        for (int index = 0; index < VillagerSkillProgressionService.FULL_RATE_REPETITIONS; index++) {
+            VillagerSkillProgressionService.apply(
+                    profile,
+                    List.of(new VillagerSkillPractice(VillagerSkill.MINING, 0.1D, "hired:builder:place", 42L)),
+                    12L,
+                    index,
+                    1.0D);
+        }
+        double distinctSourceGranted = VillagerSkillProgressionService.apply(
+                profile,
+                List.of(new VillagerSkillPractice(VillagerSkill.MINING, 0.1D, "hired:builder:clear", 42L)),
+                12L,
+                20L,
+                1.0D).grantedXp();
+        if (Math.abs(distinctSourceGranted - 0.1D) > 0.0001D) {
+            helper.fail("Different practice sources incorrectly shared repetition penalties");
             return;
         }
         helper.succeed();
@@ -176,6 +237,77 @@ public final class VillagerSkillProgressionGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void zeroGrowthConfigurationStillDirtiesMigratedProfileData(GameTestHelper helper) {
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.TOOLSMITH));
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(helper.getLevel(), villager);
+        VillagerProfileSavedData data = VillagerProfileSavedData.get(helper.getLevel());
+        CompoundTag workState = new CompoundTag();
+        CompoundTag legacy = new CompoundTag();
+        legacy.putDouble(VillagerSkill.MINING.serializedName(), 0.5D);
+        workState.put(HiredWorkSkillGrowthService.LEGACY_PROGRESS_TAG, legacy);
+        data.setDirty(false);
+
+        double previousGrowth = VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.get();
+        try {
+            VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.set(0.0D);
+            HiredWorkSkillGrowthService.onPractice(
+                    helper.getLevel(),
+                    villager,
+                    null,
+                    HiredVillagerRole.MINING,
+                    workState,
+                    List.of(new VillagerSkillPractice(
+                            VillagerSkill.MINING, 1.0D, "hired:mining:block", 1L)));
+        } finally {
+            VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.set(previousGrowth);
+        }
+
+        if (!data.isDirty()
+                || workState.contains(HiredWorkSkillGrowthService.LEGACY_PROGRESS_TAG)
+                || profile.skillPracticeXp(VillagerSkill.MINING) <= 0.0D) {
+            helper.fail("Zero configured growth did not persist the legacy XP migration");
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void firstProfessionRegeneratesOnlyUntouchedProfessionlessSkills(GameTestHelper helper) {
+        Villager untouched = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+        untouched.setVillagerData(untouched.getVillagerData().setProfession(VillagerProfession.NONE));
+        VillagerProfileManager.getOrCreateProfile(helper.getLevel(), untouched);
+        untouched.setVillagerData(
+                untouched.getVillagerData().setProfession(VillagerProfession.FARMER));
+        VillagerProfile assignedProfile =
+                VillagerProfileManager.getOrCreateProfile(helper.getLevel(), untouched);
+        VillagerSkillSet expectedFarmerSkills = VillagerSkillGenerator.generate(
+                "farmer", assignedProfile.socialAttributes(), assignedProfile.seed());
+        if (!assignedProfile.skills().asMap().equals(expectedFarmerSkills.asMap())
+                || !assignedProfile.lastKnownProfession().equals("farmer")) {
+            helper.fail("An untouched professionless profile did not receive profession skills");
+            return;
+        }
+
+        Villager edited = helper.spawn(EntityType.VILLAGER, 2, 1, 1);
+        edited.setVillagerData(edited.getVillagerData().setProfession(VillagerProfession.NONE));
+        VillagerProfile editedProfile =
+                VillagerProfileManager.getOrCreateProfile(helper.getLevel(), edited);
+        int editedMining = editedProfile.skills().get(VillagerSkill.MINING) == VillagerSkillSet.MAX_VALUE
+                ? VillagerSkillSet.MAX_VALUE - 1
+                : editedProfile.skills().get(VillagerSkill.MINING) + 1;
+        editedProfile.setSkill(VillagerSkill.MINING, editedMining, helper.getLevel().getGameTime());
+        edited.setVillagerData(edited.getVillagerData().setProfession(VillagerProfession.FARMER));
+        VillagerProfile preservedProfile =
+                VillagerProfileManager.getOrCreateProfile(helper.getLevel(), edited);
+        if (preservedProfile.skills().get(VillagerSkill.MINING) != editedMining) {
+            helper.fail("Assigning a profession overwrote an already modified skill profile");
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void tradeProgressMigratesAndOfferKeysAreStable(GameTestHelper helper) {
         VillagerProfile profile = profileWithSkill(40);
         profile.setRegularTradeSkillGrowthProgress(VillagerSkill.TRADING, 0.5D, 1L);
@@ -191,9 +323,18 @@ public final class VillagerSkillProgressionGameTests {
         MerchantOffer breadA = offer(Items.BREAD);
         MerchantOffer breadB = offer(Items.BREAD);
         MerchantOffer apples = offer(Items.APPLE);
-        if (VillagerSkillGrowthService.offerRepetitionKey(breadA) != VillagerSkillGrowthService.offerRepetitionKey(breadB)
-                || VillagerSkillGrowthService.offerRepetitionKey(breadA) == VillagerSkillGrowthService.offerRepetitionKey(apples)) {
-            helper.fail("Trade offer repetition keys were not stable and offer-specific");
+        ItemStack namedBreadStack = new ItemStack(Items.BREAD);
+        namedBreadStack.set(DataComponents.CUSTOM_NAME, Component.literal("Distinct offer"));
+        MerchantOffer namedBread = offer(namedBreadStack);
+        long breadKey = VillagerSkillGrowthService.offerRepetitionKey(breadA);
+        breadA.addToSpecialPriceDiff(-1);
+        if (breadKey != VillagerSkillGrowthService.offerRepetitionKey(breadA)
+                || breadKey != VillagerSkillGrowthService.offerRepetitionKey(breadB)
+                || VillagerSkillGrowthService.offerRepetitionKey(breadA)
+                        == VillagerSkillGrowthService.offerRepetitionKey(apples)
+                || VillagerSkillGrowthService.offerRepetitionKey(breadA)
+                        == VillagerSkillGrowthService.offerRepetitionKey(namedBread)) {
+            helper.fail("Trade offer repetition keys were not stable, component-aware, and offer-specific");
             return;
         }
         helper.succeed();
@@ -210,9 +351,13 @@ public final class VillagerSkillProgressionGameTests {
     }
 
     private static MerchantOffer offer(net.minecraft.world.item.Item result) {
+        return offer(new ItemStack(result));
+    }
+
+    private static MerchantOffer offer(ItemStack result) {
         return new MerchantOffer(
                 new ItemCost(Items.EMERALD, 2),
-                new ItemStack(result),
+                result,
                 12,
                 2,
                 0.05F);

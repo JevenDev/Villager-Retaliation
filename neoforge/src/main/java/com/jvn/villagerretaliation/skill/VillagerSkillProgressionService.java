@@ -52,14 +52,24 @@ public final class VillagerSkillProgressionService {
                 continue;
             }
 
-            double baseXp = event.units() * xpPerUnit;
-            if (!Double.isFinite(baseXp) || baseXp <= 0.0D) {
+            double baseXpPerRepetition = event.units() * xpPerUnit;
+            double baseXp = baseXpPerRepetition * event.repetitions();
+            if (!Double.isFinite(baseXpPerRepetition)
+                    || baseXpPerRepetition <= 0.0D
+                    || !Double.isFinite(baseXp)
+                    || baseXp <= 0.0D) {
                 throw new IllegalArgumentException("Calculated practice XP must be finite and positive");
             }
             requestedXp += baseXp;
 
-            int repeated = profile.repetitionCount(skill, event.repetitionKey(), overworldDayIndex);
-            double repetitionAdjusted = baseXp * (repeated >= FULL_RATE_REPETITIONS ? REPETITION_MULTIPLIER : 1.0D);
+            long repetitionIdentity = event.repetitionIdentity();
+            int repeated = profile.repetitionCount(skill, repetitionIdentity, overworldDayIndex);
+            int fullRateRepetitions = Math.min(
+                    event.repetitions(),
+                    Math.max(0, FULL_RATE_REPETITIONS - repeated));
+            int reducedRepetitions = event.repetitions() - fullRateRepetitions;
+            double repetitionAdjusted = baseXpPerRepetition * fullRateRepetitions
+                    + baseXpPerRepetition * reducedRepetitions * REPETITION_MULTIPLIER;
             double earnedToday = profile.practiceEarnedToday(skill, overworldDayIndex);
             double fullRateRemaining = Math.max(0.0D, DAILY_FULL_RATE_XP - earnedToday);
             double fullRatePart = Math.min(repetitionAdjusted, fullRateRemaining);
@@ -71,9 +81,10 @@ public final class VillagerSkillProgressionService {
 
             changed |= profile.recordPracticeEvent(
                     skill,
-                    event.repetitionKey(),
+                    repetitionIdentity,
                     overworldDayIndex,
                     dailyAdjusted,
+                    event.repetitions(),
                     MAX_REPETITION_KEYS_PER_SKILL,
                     gameTime);
             grantedXp += dailyAdjusted;
