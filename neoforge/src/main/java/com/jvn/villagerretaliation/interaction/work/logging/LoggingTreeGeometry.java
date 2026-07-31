@@ -71,10 +71,13 @@ final class LoggingTreeGeometry {
     static List<BlockPos> naturalTreeLeaves(ServerLevel level, List<BlockPos> logs) {
         List<BlockPos> leaves = new ArrayList<>();
         Set<Long> seen = new HashSet<>();
+        Set<Long> selectedLogs = new HashSet<>();
+        logs.forEach(log -> selectedLogs.add(log.asLong()));
         for (BlockPos log : logs) {
             for (BlockPos rawPos : BlockPos.betweenClosed(log.offset(-3, -2, -3), log.offset(3, 4, 3))) {
                 BlockPos pos = rawPos.immutable();
-                if (seen.add(pos.asLong()) && level.hasChunkAt(pos) && isNaturalLeaf(level.getBlockState(pos))) {
+                if (seen.add(pos.asLong()) && level.hasChunkAt(pos) && isNaturalLeaf(level.getBlockState(pos))
+                        && !isAttachedToExternalLog(level, pos, selectedLogs)) {
                     leaves.add(pos);
                     if (leaves.size() >= LoggingHarvestPlan.MAX_LEAVES) {
                         return leaves;
@@ -83,6 +86,22 @@ final class LoggingTreeGeometry {
             }
         }
         return leaves;
+    }
+
+    private static boolean isAttachedToExternalLog(
+            ServerLevel level,
+            BlockPos leaf,
+            Set<Long> selectedLogs) {
+        for (BlockPos rawPos : BlockPos.betweenClosed(leaf.offset(-3, -4, -3), leaf.offset(3, 2, 3))) {
+            BlockPos pos = rawPos.immutable();
+            if (selectedLogs.contains(pos.asLong()) || !level.hasChunkAt(pos)) {
+                continue;
+            }
+            if (level.getBlockState(pos).is(BlockTags.LOGS)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static ItemStack saplingForTree(ServerLevel level, List<BlockPos> logs) {

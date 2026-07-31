@@ -783,7 +783,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return null;
         }
         LoggingHarvestPlan.Snapshot activePlan = LoggingHarvestPlan.read(context);
-        if (activePlan != null && activePlan.hasLogs()) {
+        if (activePlan == null
+                || activePlan.hasLogs()
+                || !isNearActiveTree(villager, activePlan)) {
             return null;
         }
 
@@ -795,7 +797,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             if (isPassableExitBlock(level, lower) && isPassableExitBlock(level, upper)) {
                 return null;
             }
-            ExitObstruction candidate = treeExitObstruction(level, context, lower, upper);
+            ExitObstruction candidate = treeExitObstruction(level, context, activePlan, lower, upper);
             if (candidate != null && (best == null || candidate.leaf() && !best.leaf())) {
                 best = candidate;
             }
@@ -821,9 +823,17 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return breakTreeExitObstruction(level, villager, context, best, tool);
     }
 
+    private static boolean isNearActiveTree(
+            Villager villager,
+            LoggingHarvestPlan.Snapshot plan) {
+        BlockPos anchor = plan.harvestPos() == null ? plan.origin() : plan.harvestPos();
+        return anchor != null && villager.distanceToSqr(anchor.getCenter()) <= 16.0D;
+    }
+
     private static ExitObstruction treeExitObstruction(
             ServerLevel level,
             HiredWorkContext context,
+            LoggingHarvestPlan.Snapshot plan,
             BlockPos lower,
             BlockPos upper) {
         ExitObstruction best = null;
@@ -835,8 +845,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 return null;
             }
             BlockState state = level.getBlockState(pos);
-            boolean leaf = state.is(BlockTags.LEAVES);
-            if (!leaf && !state.is(BlockTags.LOGS)) {
+            boolean leaf = isNaturalLeaf(state);
+            boolean matchingLog = !plan.logFamily().isBlank()
+                    && isPendingTreeLog(state, plan.logFamily());
+            if (!leaf && !matchingLog) {
                 return null;
             }
             ExitObstruction candidate = new ExitObstruction(pos.immutable(), leaf);
@@ -1818,11 +1830,8 @@ public final class LoggingWorker extends AbstractBlockWorker {
 
         restoreLoggingAxe(context, level, plan.origin());
         if (!plan.sapling().isEmpty() && plan.saplings().length > 0) {
-            boolean waitingForSapling = plantPendingSapling(level, context, villager, plan.sapling());
+            plantPendingSapling(level, context, villager, plan.sapling());
             plan = LoggingHarvestPlan.read(context);
-            if (waitingForSapling) {
-                return TreeHarvestResult.progressed(plan == null ? 0 : plan.logsCut());
-            }
             if (plan != null && plan.saplings().length > 0) {
                 return TreeHarvestResult.progressed(plan.logsCut());
             }
@@ -2085,6 +2094,16 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 harvested++;
             } else if (changed) {
                 HiredPathMemory.onBlockChanged(level, leaf);
+            } else {
+                remaining.add(packedLeaf);
+                for (int rest = index + 1; rest < pendingLeaves.length; rest++) {
+                    remaining.add(pendingLeaves[rest]);
+                }
+                LoggingHarvestPlan.replaceLeaves(context, packedPositions(remaining));
+                restoreLoggingAxe(context, level, leaf);
+                HiredWorkerBrain.setFailure(context, "access_leaf_blocked", level.getGameTime() + 40L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, leaf);
+                return true;
             }
         }
 
@@ -2277,33 +2296,34 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return 0.0D;
     }
 
-    private boolean plantPendingSapling(
+    private void plantPendingSapling(
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
             ItemStack sapling) {
         if (!(sapling.getItem() instanceof BlockItem blockItem)) {
             LoggingHarvestPlan.clearSaplings(context);
-            return false;
+            return;
         }
         HiredPathTarget target = storedWorkTarget(context.state());
         if (target == null || !canPlantFromCurrentPosition(level, villager, context, target)) {
-            return false;
+            return;
         }
         BlockPos pos = target.blockPos().above();
         LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
         if (plan == null || !LoggingHarvestPlan.contains(plan.saplings(), pos)) {
-            return false;
+            return;
         }
         BlockState saplingState = blockItem.getBlock().defaultBlockState();
         if (!canPlaceSapling(level, context, pos, saplingState)) {
             LoggingHarvestPlan.removeSapling(context, pos);
             clearActiveBreakingTarget(level, context, villager);
-            return false;
+            return;
         }
         if (!consumeSapling(villager, context, sapling)) {
+            LoggingHarvestPlan.clearSaplings(context);
             clearActiveBreakingTarget(level, context, villager);
-            return true;
+            return;
         }
         facePlacedSapling(villager, pos);
         swingWorkItem(level, villager, sapling);
@@ -2313,14 +2333,13 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 Block.popResource(level, villager.blockPosition(), remainder);
             }
             clearActiveBreakingTarget(level, context, villager);
-            return false;
+            return;
         }
         HiredPathMemory.onBlockChanged(level, pos);
         HiredPathMemory.rememberRecent(level, pos);
         LoggingHarvestPlan.removeSapling(context, pos);
         clearActiveBreakingTarget(level, context, villager);
         LoggingWorkerState.wakeSaplingSearch(context);
-        return false;
     }
 
     private static void facePlacedSapling(Villager villager, BlockPos pos) {

@@ -322,6 +322,18 @@ public final class LoggingJobGameTests {
                 100,
                 false,
                 false);
+        LoggingHarvestPlan.begin(
+                context,
+                exitLog,
+                villagerPos,
+                List.of(exitLog),
+                List.of(exitLeaf),
+                List.of(),
+                ItemStack.EMPTY,
+                false,
+                "minecraft:oak");
+        LoggingHarvestPlan.replaceLogs(context, new long[0]);
+        LoggingHarvestPlan.incrementLogsCut(context);
         LoggingWorker worker = new LoggingWorker();
 
         worker.tick(level, villager, hirer, context);
@@ -329,6 +341,136 @@ public final class LoggingJobGameTests {
         worker.tick(level, villager, hirer, context);
         helper.assertFalse(level.getBlockState(exitLog).is(BlockTags.LOGS), "logger should axe the log still blocking its feet");
         helper.assertTrue(inventory.hasOutput(stack -> stack.is(Items.OAK_LOG)), "blocked exit log should retain its simulated drop");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void loggingLeavesStayWithNeighboringRootedTree(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos selectedRoot = helper.absolutePos(new BlockPos(4, 2, 3));
+        BlockPos neighboringRoot = helper.absolutePos(new BlockPos(7, 2, 3));
+        setBlock(level, selectedRoot.below(), Blocks.DIRT.defaultBlockState());
+        setBlock(level, neighboringRoot.below(), Blocks.DIRT.defaultBlockState());
+
+        List<BlockPos> selectedLogs = new ArrayList<>();
+        for (int y = 0; y < 3; y++) {
+            BlockPos selectedLog = selectedRoot.above(y);
+            selectedLogs.add(selectedLog);
+            setBlock(level, selectedLog, Blocks.OAK_LOG.defaultBlockState());
+            setBlock(level, neighboringRoot.above(y), Blocks.OAK_LOG.defaultBlockState());
+        }
+
+        BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
+        BlockPos selectedLeaf = selectedRoot.offset(-1, 3, 0);
+        List<BlockPos> neighboringLeaves = List.of(
+                neighboringRoot.above(3),
+                neighboringRoot.offset(-1, 3, 0),
+                neighboringRoot.offset(0, 3, -1),
+                neighboringRoot.offset(0, 3, 1));
+        setBlock(level, selectedLeaf, leaves);
+        neighboringLeaves.forEach(pos -> setBlock(level, pos, leaves));
+
+        List<BlockPos> harvestedLeaves = LoggingTreeGeometry.naturalTreeLeaves(level, selectedLogs);
+        helper.assertTrue(harvestedLeaves.contains(selectedLeaf), "selected tree should keep its unshared canopy leaf");
+        helper.assertTrue(
+                neighboringLeaves.stream().noneMatch(harvestedLeaves::contains),
+                "leaves attached to a neighboring rooted tree must not join this harvest");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void loggingHarvestCompletesWhenNoReplantItemExists(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        for (int x = 0; x <= 7; x++) {
+            for (int z = 0; z <= 6; z++) {
+                setBlock(level, helper.absolutePos(new BlockPos(x, 1, z)), Blocks.STONE.defaultBlockState());
+            }
+        }
+
+        BlockPos villagerPos = helper.absolutePos(new BlockPos(2, 2, 3));
+        BlockPos plantingPos = helper.absolutePos(new BlockPos(4, 2, 3));
+        setBlock(level, plantingPos.below(), Blocks.CRIMSON_NYLIUM.defaultBlockState());
+        Villager villager = EntityType.VILLAGER.create(level);
+        helper.assertTrue(villager != null, "missing-sapling fixture villager");
+        villager.moveTo(villagerPos.getX() + 0.5D, villagerPos.getY(), villagerPos.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(level.addFreshEntity(villager), "missing-sapling villager should enter the level");
+
+        CompoundTag state = new CompoundTag();
+        HiredLoggingOptions.initializeDefaults(state);
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        HiredWorkContext context = new HiredWorkContext(
+                inventory,
+                state,
+                plantingPos,
+                helper.absolutePos(new BlockPos(1, 1, 1)),
+                helper.absolutePos(new BlockPos(7, 5, 5)),
+                16,
+                16,
+                true,
+                100,
+                false,
+                false);
+        LoggingHarvestPlan.begin(
+                context,
+                plantingPos,
+                villagerPos,
+                List.of(),
+                List.of(),
+                List.of(plantingPos),
+                new ItemStack(Items.CRIMSON_FUNGUS),
+                false,
+                "minecraft:crimson");
+        LoggingHarvestPlan.incrementLogsCut(context);
+        LoggingWorker worker = new LoggingWorker();
+
+        runUntil(helper, level, villager, hirer, context, worker, 100, () -> LoggingHarvestPlan.read(context) == null);
+        helper.assertTrue(level.getBlockState(plantingPos).isAir(), "logger must skip replanting when no fungus is available");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void idleLoggerDoesNotBreakUnrelatedExitBlocks(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        BlockPos villagerPos = helper.absolutePos(new BlockPos(4, 2, 4));
+        setBlock(level, villagerPos.below(), Blocks.STONE.defaultBlockState());
+        for (BlockPos blockedSide : List.of(villagerPos.north(), villagerPos.south(), villagerPos.west())) {
+            setBlock(level, blockedSide, Blocks.STONE.defaultBlockState());
+            setBlock(level, blockedSide.above(), Blocks.STONE.defaultBlockState());
+        }
+        BlockPos unrelatedLog = villagerPos.east();
+        BlockPos decorativeLeaf = unrelatedLog.above();
+        setBlock(level, unrelatedLog, Blocks.OAK_LOG.defaultBlockState());
+        setBlock(level, decorativeLeaf, Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true));
+
+        Villager villager = EntityType.VILLAGER.create(level);
+        helper.assertTrue(villager != null, "idle blocked-exit fixture villager");
+        villager.moveTo(villagerPos.getX() + 0.5D, villagerPos.getY(), villagerPos.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(level.addFreshEntity(villager), "idle blocked-exit villager should enter the level");
+
+        CompoundTag state = new CompoundTag();
+        HiredLoggingOptions.initializeDefaults(state);
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
+        HiredWorkContext context = new HiredWorkContext(
+                inventory,
+                state,
+                villagerPos,
+                villagerPos.offset(-3, -1, -3),
+                villagerPos.offset(3, 3, 3),
+                16,
+                16,
+                true,
+                100,
+                false,
+                false);
+
+        new LoggingWorker().tick(level, villager, hirer, context);
+        helper.assertTrue(level.getBlockState(unrelatedLog).is(Blocks.OAK_LOG), "idle logger must not break unrelated logs");
+        helper.assertTrue(level.getBlockState(decorativeLeaf).is(Blocks.OAK_LEAVES), "idle logger must not break decorative leaves");
         villager.discard();
         helper.succeed();
     }
