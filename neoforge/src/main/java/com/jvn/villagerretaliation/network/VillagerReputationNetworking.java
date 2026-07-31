@@ -703,6 +703,7 @@ public final class VillagerReputationNetworking {
     public static void sendServerConfig(ServerPlayer player) {
         trySendToPlayer(player, new ServerConfigSyncPayload(
                 VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get(),
+                VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get(),
                 VillagerRetaliationConfig.VILLAGER_STAT_DISPLAY_MODE.get()
         ));
         sendBuilderStructureCatalog(player);

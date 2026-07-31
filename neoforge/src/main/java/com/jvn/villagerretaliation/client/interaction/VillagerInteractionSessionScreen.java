@@ -6,6 +6,8 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
+import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
 import java.util.List;
 
 interface VillagerInteractionSessionScreen {
@@ -21,6 +23,10 @@ interface VillagerInteractionSessionScreen {
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
             List<GiftTooltipReaction> giftTooltipReactions);
+
+    void updateDuelStatus(OpenVillagerDuelPayload payload);
+
+    void acceptRecruitmentResult(RecruitmentResultPayload payload);
 
     void replaceFromServer();
 

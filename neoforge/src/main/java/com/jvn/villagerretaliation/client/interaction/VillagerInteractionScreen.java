@@ -7,6 +7,7 @@ import com.jvn.toucanlib.client.interaction.ToucanLimitFeedback;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.party.PartyRosterClient;
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
@@ -858,6 +859,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return true;
         }
         if (this.page == DialoguePage.SKILLS
+                && scrollY != 0.0D
                 && maxSkillScroll() > 0.0F
                 && isPointInsideSkillsInfoScrollArea(interactionContentMouseX, interactionMouseY)) {
             int direction = scrollY < 0.0D ? 1 : -1;
@@ -868,6 +870,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         if (tryScrollInteractionDialogue(mouseX, interactionMouseY, scrollY)) {
             return true;
+        }
+        if (scrollY == 0.0D) {
+            return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
         if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(interactionContentMouseX, interactionMouseY)) {
@@ -3578,7 +3583,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     this::openDuelPage,
                     true));
         }
-        if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
+        if (VillagerRetaliationServerConfigClient.villagerGiftsEnabled()) {
             buttons.add(new InteractionMenuButton(
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_GIFT_TEXTURE,
                     translate("root.gift"),
