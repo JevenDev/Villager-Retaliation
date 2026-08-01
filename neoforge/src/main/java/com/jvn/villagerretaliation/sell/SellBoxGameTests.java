@@ -111,25 +111,24 @@ public final class SellBoxGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
-    public static void dailyPricesAreDeterministicBoundedAndChangeConsecutively(GameTestHelper helper) {
+    public static void villageBaseCandidatesAreDeterministicAndBounded(GameTestHelper helper) {
         SellPriceDefinition definition = new SellPriceDefinition(
                 ResourceLocation.fromNamespaceAndPath("test", "coal"),
                 Items.COAL,
                 new SellPriceDefinition.IntRange(15, 24),
                 SellPriceDefinition.IntRange.fixed(1));
-        CurrencyAmount previous = null;
+        VillageAllegianceId village = new VillageAllegianceId(new UUID(21L, 22L));
+        Set<CurrencyAmount> selectedAcrossDays = new LinkedHashSet<>();
         for (long day = -5; day < 25; day++) {
-            CurrencyAmount selected = DailySellMarket.selectPrice(3733L, day, definition);
-            helper.assertTrue(definition.candidatePrices().contains(selected), "daily price must be a configured candidate");
+            CurrencyAmount selected = VillageSellMarket.selectBasePrice(3733L, day, village, definition);
+            helper.assertTrue(definition.candidatePrices().contains(selected), "base price must be a configured candidate");
             helper.assertValueEqual(
-                    DailySellMarket.selectPrice(3733L, day, definition),
+                    VillageSellMarket.selectBasePrice(3733L, day, village, definition),
                     selected,
-                    "world seed, definition id, and day must select deterministically");
-            if (previous != null) {
-                helper.assertTrue(!previous.equals(selected), "multi-value ranges must change on consecutive days");
-            }
-            previous = selected;
+                    "seed, village, definition, and day must select deterministically");
+            selectedAcrossDays.add(selected);
         }
+        helper.assertTrue(selectedAcrossDays.size() > 1, "multi-value ranges must vary across days");
 
         boolean rejected = false;
         try {
@@ -319,6 +318,42 @@ public final class SellBoxGameTests {
                 after.recoveredPressure(),
                 CurrencyAmount.of(64, 1),
                 "one completed sale must add pressure exactly once");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void groupedItemsSharePressureAndServerRejectsStaleQuotes(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        MarketQuote stale = VillageSellMarket.quote(
+                        helper.getLevel(), sellBox.getBlockPos(), new ItemStack(Items.DIAMOND, 64))
+                .orElseThrow();
+        sellBox.insertForSale(new ItemStack(Items.DIAMOND, 64), false);
+        helper.assertTrue(sellBox.sellPending(), "first sale must complete");
+
+        sellBox.insertForSale(new ItemStack(Items.DIAMOND, 64), false);
+        CurrencyAmount balanceBefore = sellBox.balance();
+        helper.assertTrue(sellBox.sellPending(), "second sale must complete");
+        CurrencyAmount actualSecondPayout = sellBox.balance().subtract(balanceBefore);
+        helper.assertTrue(
+                actualSecondPayout.compareTo(stale.stackPayout()) < 0,
+                "the server must recalculate instead of trusting the stale pre-sale quote");
+
+        MarketQuote logsBefore = VillageSellMarket.quote(
+                        helper.getLevel(), sellBox.getBlockPos(), new ItemStack(Items.OAK_LOG, 64))
+                .orElseThrow();
+        sellBox.insertForSale(new ItemStack(Items.OAK_LOG, 64), false);
+        helper.assertTrue(sellBox.sellPending(), "oak logs must sell");
+        MarketQuote spruceAfter = VillageSellMarket.quote(
+                        helper.getLevel(), sellBox.getBlockPos(), new ItemStack(Items.SPRUCE_LOG, 1))
+                .orElseThrow();
+        helper.assertValueEqual(
+                spruceAfter.marketGroup(),
+                logsBefore.marketGroup(),
+                "log variants must share one market group");
+        helper.assertValueEqual(
+                spruceAfter.recoveredPressure(),
+                CurrencyAmount.of(64, 5),
+                "selling oak logs must add full base pressure to spruce log quotes");
         helper.succeed();
     }
 
