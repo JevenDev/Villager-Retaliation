@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -30,11 +31,22 @@ public final class VillageSellMarket {
             return Optional.empty();
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        Optional<VillageAllegianceId> village = registry.peekAt(level, position).flatMap(registry::canonical);
+        Optional<VillageAllegianceId> village = resolveVillage(registry, level, position);
         if (village.isEmpty()) {
             return Optional.empty();
         }
         return quote(level, registry, VillageMarketSavedData.get(level), village.get(), stack);
+    }
+
+    public static Optional<MarketQuote> quoteDiscovering(ServerLevel level, BlockPos position, ItemStack stack) {
+        if (level == null || position == null || stack == null || stack.isEmpty()) {
+            return Optional.empty();
+        }
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> village = registry.discoverAt(level, position)
+                .flatMap(registry::canonical)
+                .or(() -> resolveVillage(registry, level, position));
+        return village.flatMap(id -> quote(level, registry, VillageMarketSavedData.get(level), id, stack));
     }
 
     public static Optional<SaleResult> sell(ServerLevel level, BlockPos position, ItemStack stack) {
@@ -42,7 +54,9 @@ public final class VillageSellMarket {
             return Optional.empty();
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        Optional<VillageAllegianceId> village = registry.discoverAt(level, position).flatMap(registry::canonical);
+        Optional<VillageAllegianceId> village = registry.discoverAt(level, position)
+                .flatMap(registry::canonical)
+                .or(() -> resolveVillage(registry, level, position));
         if (village.isEmpty()) {
             return Optional.empty();
         }
@@ -111,6 +125,26 @@ public final class VillageSellMarket {
                 demand,
                 pressure,
                 stack.getCount()));
+    }
+
+    public static Optional<VillageAllegianceId> resolveVillage(
+            VillageAllegianceRegistrySavedData registry,
+            ServerLevel level,
+            BlockPos position) {
+        if (registry == null || level == null || position == null) {
+            return Optional.empty();
+        }
+        Optional<VillageAllegianceId> resolved = registry.peekAt(level, position).flatMap(registry::canonical);
+        if (resolved.isPresent()) {
+            return resolved;
+        }
+        long section = SectionPos.asLong(position);
+        return registry.activeRecords(level.dimension().location()).stream()
+                .filter(record -> record.footprintSections().isEmpty())
+                .filter(record -> SectionPos.asLong(record.originPosition()) == section)
+                .min(Comparator.comparingDouble(record -> record.originPosition().distSqr(position)))
+                .map(VillageAllegianceRegistrySavedData.AllegianceRecord::id)
+                .flatMap(registry::canonical);
     }
 
     public static long currentDay(MinecraftServer server) {

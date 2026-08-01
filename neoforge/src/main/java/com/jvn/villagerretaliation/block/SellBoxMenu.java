@@ -1,8 +1,11 @@
 package com.jvn.villagerretaliation.block;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
-import com.jvn.villagerretaliation.sell.DailySellMarket;
+import com.jvn.villagerretaliation.sell.VillageSellMarket;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -11,6 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
+import java.util.Optional;
 import net.minecraft.world.item.ItemStack;
 
 public final class SellBoxMenu extends AbstractContainerMenu {
@@ -144,6 +148,29 @@ public final class SellBoxMenu extends AbstractContainerMenu {
         }
     }
 
+    public static void syncVillage(ServerLevel level, VillageAllegianceId village) {
+        if (level == null || village == null) {
+            return;
+        }
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> canonical = registry.canonical(village);
+        if (canonical.isEmpty()) {
+            return;
+        }
+        for (Player player : level.players()) {
+            if (player instanceof ServerPlayer serverPlayer
+                    && serverPlayer.containerMenu instanceof SellBoxMenu menu
+                    && menu.container instanceof SellBoxBlockEntity openBox
+                    && registry.peekAt(level, openBox.getBlockPos())
+                            .flatMap(registry::canonical)
+                            .filter(canonical.get()::equals)
+                            .isPresent()) {
+                menu.broadcastFullState();
+                menu.sync(serverPlayer);
+            }
+        }
+    }
+
     public void sync(ServerPlayer player) {
         com.jvn.villagerretaliation.network.SellBoxSyncPayload.send(
                 player,
@@ -177,8 +204,9 @@ public final class SellBoxMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return player.level().getServer() == null
-                || DailySellMarket.price(player.level().getServer(), stack).isPresent();
+            return !(container instanceof SellBoxBlockEntity sellBox)
+                    || !(player.level() instanceof ServerLevel serverLevel)
+                    || VillageSellMarket.quote(serverLevel, sellBox.getBlockPos(), stack).isPresent();
         }
     }
 }

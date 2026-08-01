@@ -256,6 +256,62 @@ public final class SellBoxGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void sellBoxesInOneVillageSharePressure(GameTestHelper helper) {
+        SellBoxBlockEntity first = placeBox(helper);
+        BlockPos secondPos = new BlockPos(3, 1, 1);
+        helper.setBlock(secondPos, VillagerRetaliationBlocks.SELL_BOX.get());
+        SellBoxBlockEntity second = (SellBoxBlockEntity) helper.getBlockEntity(secondPos);
+
+        MarketQuote before = VillageSellMarket.quote(
+                        helper.getLevel(), second.getBlockPos(), new ItemStack(Items.DIAMOND, 64))
+                .orElseThrow();
+        first.insertForSale(new ItemStack(Items.DIAMOND, 64), false);
+        helper.assertTrue(first.sellPending(), "the first box sale must complete");
+        MarketQuote after = VillageSellMarket.quote(
+                        helper.getLevel(), second.getBlockPos(), new ItemStack(Items.DIAMOND, 64))
+                .orElseThrow();
+
+        helper.assertTrue(
+                after.stackPayout().compareTo(before.stackPayout()) < 0,
+                "a second box in the village must see the first box's supply pressure");
+        helper.assertValueEqual(
+                after.recoveredPressure(),
+                CurrencyAmount.of(64, 1),
+                "one completed sale must add pressure exactly once");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void noVillageRejectsSalesButKeepsCurrencyCollectable(GameTestHelper helper) {
+        helper.setBlock(BOX_POS, VillagerRetaliationBlocks.SELL_BOX.get());
+        SellBoxBlockEntity sellBox = (SellBoxBlockEntity) helper.getBlockEntity(BOX_POS);
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
+        int recordsBefore = registry.records().size();
+        ItemStack diamonds = new ItemStack(Items.DIAMOND, 4);
+
+        helper.assertValueEqual(
+                sellBox.inputHandler().insertItem(0, diamonds, true),
+                diamonds,
+                "simulation outside a village must reject the item");
+        helper.assertValueEqual(
+                registry.records().size(),
+                recordsBefore,
+                "simulation must not discover or create a village");
+        helper.assertValueEqual(
+                sellBox.insertForSale(diamonds, false),
+                diamonds,
+                "actual insertion outside a valid market must reject the item");
+        helper.assertTrue(sellBox.getItem(0).isEmpty(), "rejected goods must not enter the pending slot");
+
+        sellBox.restoreCurrency(new ItemStack(Items.EMERALD, 2));
+        helper.assertValueEqual(
+                sellBox.outputHandler().extractItem(0, 2, false).getCount(),
+                2,
+                "existing whole currency must remain extractable outside a village");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void pendingStackWaitsForConfirmation(GameTestHelper helper) {
         SellBoxBlockEntity sellBox = placeBox(helper);
         ItemStack coal = new ItemStack(Items.COAL, 7);
@@ -264,7 +320,7 @@ public final class SellBoxGameTests {
         helper.assertValueEqual(sellBox.getItem(0).getCount(), 7, "the inserted stack should remain pending");
         helper.assertTrue(sellBox.balance().isZero(), "insertion into an empty box must not sell immediately");
 
-        CurrencyAmount expected = DailySellMarket.value(helper.getLevel().getServer(), coal);
+        CurrencyAmount expected = sellBox.pendingValue();
         helper.assertTrue(sellBox.sellPending(), "confirmation should sell the pending stack");
         helper.assertValueEqual(sellBox.balance(), expected, "confirmed sale should add its exact current value");
         helper.assertTrue(sellBox.getItem(0).isEmpty(), "confirmed sale should clear the pending slot");
@@ -277,7 +333,7 @@ public final class SellBoxGameTests {
         ItemStack oldStack = new ItemStack(Items.COAL, 3);
         ItemStack newStack = new ItemStack(Items.COAL, 5);
         sellBox.insertForSale(oldStack, false);
-        CurrencyAmount expected = DailySellMarket.value(helper.getLevel().getServer(), oldStack);
+        CurrencyAmount expected = sellBox.pendingValue();
 
         helper.assertTrue(sellBox.insertForSale(newStack, false).isEmpty(), "replacement should be accepted");
         helper.assertValueEqual(sellBox.balance(), expected, "replacement must sell exactly the old stack");
@@ -322,8 +378,10 @@ public final class SellBoxGameTests {
     @GameTest(template = EMPTY_TEMPLATE)
     public static void bottomExtractionPaysOnlyWholeCurrency(GameTestHelper helper) {
         SellBoxBlockEntity sellBox = placeBox(helper);
-        CurrencyAmount unitPrice = DailySellMarket.price(
-                helper.getLevel().getServer(), new ItemStack(Items.COAL)).orElseThrow();
+        CurrencyAmount unitPrice = VillageSellMarket.quote(
+                        helper.getLevel(), sellBox.getBlockPos(), new ItemStack(Items.COAL))
+                .orElseThrow()
+                .effectiveUnitPrice();
         sellBox.insertForSale(new ItemStack(Items.COAL, 64), false);
         sellBox.sellPending();
         CurrencyAmount original = sellBox.balance();
@@ -373,6 +431,16 @@ public final class SellBoxGameTests {
     }
 
     private static SellBoxBlockEntity placeBox(GameTestHelper helper) {
+        BlockPos absolute = helper.absolutePos(BOX_POS);
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
+        VillageAllegianceId village = new VillageAllegianceId(new UUID(
+                absolute.asLong(),
+                absolute.asLong() ^ 0x5DEECE66DL));
+        registry.ensureRecord(
+                village,
+                helper.getLevel().getGameTime(),
+                helper.getLevel().dimension().location(),
+                absolute);
         helper.setBlock(BOX_POS, VillagerRetaliationBlocks.SELL_BOX.get());
         if (helper.getBlockEntity(BOX_POS) instanceof SellBoxBlockEntity sellBox) {
             return sellBox;
