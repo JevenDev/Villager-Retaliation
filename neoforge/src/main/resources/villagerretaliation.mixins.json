@@ -19,6 +19,7 @@
     "HarvestFarmlandMixin",
     "HorseVillagerPassengerPositionMixin",
     "LivingEntityVillagerExperienceMixin",
+    "MerchantResultSlotWalletMixin",
     "NearestItemSensorMixin",
     "PathNavigationTrafficMixin",
     "PanicGoalMixin",

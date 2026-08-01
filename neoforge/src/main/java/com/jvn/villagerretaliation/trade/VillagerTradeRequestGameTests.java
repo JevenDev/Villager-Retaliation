@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.trade;
 
+import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.mojang.authlib.GameProfile;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
@@ -18,7 +19,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.trading.ItemCost;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -174,6 +178,33 @@ public final class VillagerTradeRequestGameTests {
                 "refund delivery should succeed even when inventory is full");
         int afterDrops = helper.getLevel().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(3.0D)).size();
         helper.assertTrue(afterDrops > beforeDrops, "refund overflow must be dropped safely at the player");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void walletStockSurvivesOfferUseResetAndBlocksStalePayout(GameTestHelper helper) {
+        Villager villager = villager(helper);
+        int available = VillagerWalletService.getCurrentEmeralds(villager);
+        VillagerWalletService.spendCurrency(
+                villager, available, VillagerWalletService.WalletSource.DEBUG);
+        MerchantOffer offer = new MerchantOffer(
+                new ItemCost(Items.COAL, 1),
+                new ItemStack(Items.EMERALD, 5),
+                12,
+                1,
+                0.05F);
+        villager.getOffers().add(offer);
+
+        VillagerTradeWalletService.refreshWalletStock(helper.getLevel(), villager);
+        helper.assertTrue(offer.isOutOfStock(), "an unaffordable currency payout must be out of stock");
+        offer.resetUses();
+        helper.assertTrue(!offer.isOutOfStock(), "the test reset must emulate vanilla restocking the offer");
+
+        VillagerTradeWalletService.refreshWalletStock(helper.getLevel(), villager);
+        helper.assertTrue(offer.isOutOfStock(), "wallet stock must be reapplied after vanilla resets offer uses");
+        helper.assertTrue(
+                !VillagerTradeWalletService.canCompleteTrade(helper.getLevel(), villager, offer),
+                "a stale offer must fail the server-side payout preflight");
         helper.succeed();
     }
 

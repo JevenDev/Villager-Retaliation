@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.block;
 
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.sell.VillageMarketSavedData;
 import com.mojang.serialization.MapCodec;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -78,6 +79,7 @@ public final class SellBoxBlock extends BaseEntityBlock {
             Player player,
             BlockHitResult hitResult) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof SellBoxBlockEntity sellBox) {
+            VillageMarketSavedData.discoverVillage((ServerLevel) level, pos);
             player.openMenu(sellBox);
             player.awardStat(Stats.OPEN_BARREL);
         }

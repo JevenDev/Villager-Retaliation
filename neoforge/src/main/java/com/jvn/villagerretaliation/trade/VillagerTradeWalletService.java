@@ -61,6 +61,14 @@ public final class VillagerTradeWalletService {
         );
     }
 
+    public static boolean canCompleteTrade(ServerLevel level, Villager villager, MerchantOffer offer) {
+        if (level == null || villager == null || offer == null) {
+            return false;
+        }
+        int payout = currencyCount(level, offer.getResult());
+        return payout <= 0 || VillagerWalletService.canSpendCurrency(villager, payout);
+    }
+
     public static void onTradeCompleted(ServerLevel level, Villager villager, MerchantOffer offer) {
         if (level == null || villager == null || offer == null) {
             return;
@@ -73,8 +81,10 @@ public final class VillagerTradeWalletService {
         }
 
         int paidByVillager = currencyCount(level, offer.getResult());
-        if (paidByVillager > 0) {
-            VillagerWalletService.spendCurrency(villager, paidByVillager, VillagerWalletService.WalletSource.TRADE_PAYOUT);
+        if (paidByVillager > 0 && !VillagerWalletService.spendCurrency(
+                villager, paidByVillager, VillagerWalletService.WalletSource.TRADE_PAYOUT)) {
+            throw new IllegalStateException(
+                    "A wallet-gated villager trade completed without enough currency for its payout");
         }
         refreshWalletStock(level, villager);
     }
@@ -93,10 +103,12 @@ public final class VillagerTradeWalletService {
     }
 
     private static void markWalletOutOfStock(Villager villager, MerchantOffer offer, int index) {
-        if (index < 0 || isWalletStockOverlayed(villager, index)) {
+        if (index < 0) {
             return;
         }
-        rememberUses(villager, index, offer.getUses());
+        if (!isWalletStockOverlayed(villager, index)) {
+            rememberUses(villager, index, offer.getUses());
+        }
         offer.setToOutOfStock();
     }
 

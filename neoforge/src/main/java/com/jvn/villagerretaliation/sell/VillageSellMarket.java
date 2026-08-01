@@ -164,7 +164,11 @@ public final class VillageSellMarket {
                 ? 0L
                 : mix64(village.value().getMostSignificantBits() ^ village.value().getLeastSignificantBits());
         long identity = mix64(worldSeed ^ villageHash ^ hash(definition.id()) ^ mix64(day));
-        return candidates.get(Math.floorMod(identity, candidates.size()));
+        int split = (candidates.size() + 1) / 2;
+        boolean selectFirstHalf = Math.floorMod(day, 2L) == 0L;
+        int start = selectFirstHalf ? 0 : split;
+        int length = selectFirstHalf ? split : candidates.size() - split;
+        return candidates.get(start + Math.floorMod(identity, length));
     }
 
     static Map<ResourceLocation, DailyDemandBand> demandBands(
