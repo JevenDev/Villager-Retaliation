@@ -170,10 +170,16 @@ public final class SellBoxScreen extends AbstractContainerScreen<SellBoxMenu> {
                         rateText(pending, entry, state)).withStyle(ChatFormatting.GRAY));
                 lines.add(Component.translatable(
                         "villagerretaliation.sell_box.daily_demand",
-                        titleCase(entry.demandBand().name())).withStyle(ChatFormatting.GRAY));
+                        Component.translatable(
+                                "villagerretaliation.sell_box.demand_band."
+                                        + entry.demandBand().name().toLowerCase(java.util.Locale.ROOT)))
+                        .withStyle(ChatFormatting.GRAY));
                 lines.add(Component.translatable(
                         "villagerretaliation.sell_box.recent_supply",
-                        titleCase(entry.supplyBand().name())).withStyle(ChatFormatting.GRAY));
+                        Component.translatable(
+                                "villagerretaliation.sell_box.supply_band."
+                                        + entry.supplyBand().name().toLowerCase(java.util.Locale.ROOT)))
+                        .withStyle(ChatFormatting.GRAY));
                 lines.add(Component.translatable(
                         "villagerretaliation.sell_box.market_group",
                         entry.marketGroup().toString()).withStyle(ChatFormatting.DARK_GRAY));
@@ -203,25 +209,25 @@ public final class SellBoxScreen extends AbstractContainerScreen<SellBoxMenu> {
         return SellBoxClientState.payout(entry, pending.getCount());
     }
 
-    private String rateText(
+    private Component rateText(
             ItemStack pending,
             com.jvn.villagerretaliation.network.SellBoxSyncPayload.MarketEntry entry,
             SellBoxClientState.Snapshot state) {
         CurrencyAmount rate = entry.effectiveUnitPrice();
         if (rate.numerator().bitLength() < 31 && rate.denominator().bitLength() < 31) {
-            return rate.denominator() + " " + pending.getHoverName().getString()
-                    + " -> " + rate.numerator() + " "
-                    + (rate.numerator().equals(java.math.BigInteger.ONE)
+            return Component.translatable(
+                    "villagerretaliation.sell_box.rate.exchange",
+                    rate.denominator().toString(),
+                    pending.getHoverName(),
+                    rate.numerator().toString(),
+                    Component.literal(rate.numerator().equals(java.math.BigInteger.ONE)
                             ? state.currencyName()
-                            : state.currencyPluralName());
+                            : state.currencyPluralName()));
         }
-        return "~" + CurrencyAmount.of(1, 1).multiply(rate).decimal(3)
-                + " " + state.currencyPluralName() + " each";
-    }
-
-    private static String titleCase(String value) {
-        String normalized = value.toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
-        return normalized.substring(0, 1).toUpperCase(java.util.Locale.ROOT) + normalized.substring(1);
+        return Component.translatable(
+                "villagerretaliation.sell_box.rate.each",
+                CurrencyAmount.of(1, 1).multiply(rate).decimal(3),
+                Component.literal(state.currencyPluralName()));
     }
 
     private void clickButton(int id) {
