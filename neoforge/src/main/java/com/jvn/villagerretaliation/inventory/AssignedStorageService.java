@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.block.PaymentBoxBlockEntity;
 import com.jvn.villagerretaliation.block.SellBoxBlockEntity;
-import com.jvn.villagerretaliation.sell.DailySellMarket;
+import com.jvn.villagerretaliation.sell.VillageSellMarket;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignmentResult;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -791,7 +791,7 @@ public final class AssignedStorageService {
             UUID excludedOwner,
             List<ItemStack> additionalReservations) {
         if (candidate.container() instanceof SellBoxBlockEntity
-                && DailySellMarket.price(level.getServer(), stack).isEmpty()) {
+                && VillageSellMarket.quote(level, candidate.pos(), stack).isEmpty()) {
             return 0;
         }
         ContainerFilterEvaluator.Evaluation evaluation = evaluateContainerRules(

@@ -1,9 +1,13 @@
 package com.jvn.villagerretaliation.block;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
-import com.jvn.villagerretaliation.sell.DailySellMarket;
+import com.jvn.villagerretaliation.sell.MarketQuote;
+import com.jvn.villagerretaliation.sell.SaleResult;
+import com.jvn.villagerretaliation.sell.VillageSellMarket;
 import java.math.BigInteger;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -21,6 +25,7 @@ import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.ChestLidController;
@@ -93,7 +98,9 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return slot == 0 && level != null && DailySellMarket.price(level.getServer(), stack).isPresent();
+        return slot == 0
+                && level instanceof ServerLevel serverLevel
+                && VillageSellMarket.quote(serverLevel, worldPosition, stack).isPresent();
     }
 
     public CurrencyAmount balance() {
@@ -113,33 +120,42 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
     }
 
     public CurrencyAmount pendingValue() {
-        return level == null ? CurrencyAmount.ZERO : DailySellMarket.value(level.getServer(), getItem(0));
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return CurrencyAmount.ZERO;
+        }
+        return VillageSellMarket.quote(serverLevel, worldPosition, getItem(0))
+                .map(MarketQuote::stackPayout)
+                .orElse(CurrencyAmount.ZERO);
     }
 
     public boolean sellPending() {
-        if (level == null || level.isClientSide || getItem(0).isEmpty()) {
+        if (!(level instanceof ServerLevel serverLevel) || getItem(0).isEmpty()) {
             return false;
         }
-        CurrencyAmount value = DailySellMarket.value(level.getServer(), getItem(0));
-        if (value.isZero()) {
+        Optional<SaleResult> sale = VillageSellMarket.sell(serverLevel, worldPosition, getItem(0));
+        if (sale.isEmpty()) {
             return false;
         }
-        this.balance = this.balance.add(value);
+        this.balance = this.balance.add(sale.get().payout());
         this.items.set(0, ItemStack.EMPTY);
         changedAndSync();
+        SellBoxMenu.syncVillage(serverLevel, sale.get().quote().villageId());
         return true;
     }
 
     public ItemStack insertForSale(ItemStack incoming, boolean simulate) {
-        if (incoming == null || incoming.isEmpty() || level == null || level.isClientSide) {
+        if (incoming == null || incoming.isEmpty() || !(level instanceof ServerLevel serverLevel)) {
             return incoming == null ? ItemStack.EMPTY : incoming;
         }
-        if (DailySellMarket.price(level.getServer(), incoming).isEmpty()) {
+        Optional<MarketQuote> incomingQuote = simulate
+                ? VillageSellMarket.quote(serverLevel, worldPosition, incoming)
+                : VillageSellMarket.quoteDiscovering(serverLevel, worldPosition, incoming);
+        if (incomingQuote.isEmpty()) {
             return incoming;
         }
 
         ItemStack pending = getItem(0);
-        if (!pending.isEmpty() && DailySellMarket.price(level.getServer(), pending).isEmpty()) {
+        if (!pending.isEmpty() && VillageSellMarket.quote(serverLevel, worldPosition, pending).isEmpty()) {
             return incoming;
         }
 
@@ -148,15 +164,20 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
             return incoming;
         }
         if (!simulate) {
+            VillageAllegianceId soldInVillage = null;
             if (!pending.isEmpty()) {
-                CurrencyAmount value = DailySellMarket.value(level.getServer(), pending);
-                if (value.isZero()) {
+                Optional<SaleResult> sale = VillageSellMarket.sell(serverLevel, worldPosition, pending);
+                if (sale.isEmpty()) {
                     return incoming;
                 }
-                this.balance = this.balance.add(value);
+                this.balance = this.balance.add(sale.get().payout());
+                soldInVillage = sale.get().quote().villageId();
             }
             this.items.set(0, incoming.copyWithCount(accepted));
             changedAndSync();
+            if (soldInVillage != null) {
+                SellBoxMenu.syncVillage(serverLevel, soldInVillage);
+            }
         }
         return accepted == incoming.getCount()
                 ? ItemStack.EMPTY
@@ -395,7 +416,8 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
             checkSlot(slot);
-            return level != null && DailySellMarket.price(level.getServer(), stack).isPresent();
+            return level instanceof ServerLevel serverLevel
+                    && VillageSellMarket.quote(serverLevel, worldPosition, stack).isPresent();
         }
     }
 
