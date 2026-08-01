@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:yellow_bed",
-    "item_count":  1,
-    "currency_count":  3
+    "item_count":  3,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:beds"
 }

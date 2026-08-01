@@ -256,6 +256,47 @@ public final class SellBoxGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void wholesaleCatalogueAnchorsGroupsAndUnsafeGoods(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        SellPriceDefinition logs = SellPriceResources.definition(server, new ItemStack(Items.OAK_LOG))
+                .orElseThrow();
+        SellPriceDefinition planks = SellPriceResources.definition(server, new ItemStack(Items.OAK_PLANKS))
+                .orElseThrow();
+        helper.assertValueEqual(logs.itemCount(), SellPriceDefinition.IntRange.fixed(5), "logs anchor");
+        helper.assertValueEqual(planks.itemCount(), SellPriceDefinition.IntRange.fixed(18), "planks anchor");
+        helper.assertValueEqual(
+                logs.marketGroup(),
+                ResourceLocation.fromNamespaceAndPath("villagerretaliation", "logs"),
+                "all logs use the logs group");
+        helper.assertValueEqual(
+                SellPriceResources.definition(server, new ItemStack(Items.SPRUCE_LOG)).orElseThrow().marketGroup(),
+                logs.marketGroup(),
+                "log variants must share one group");
+        helper.assertValueEqual(
+                SellPriceResources.definition(server, new ItemStack(Items.WHEAT)).orElseThrow().itemCount(),
+                SellPriceDefinition.IntRange.fixed(20),
+                "wheat anchor");
+        helper.assertValueEqual(
+                SellPriceResources.definition(server, new ItemStack(Items.WHEAT_SEEDS)).orElseThrow().itemCount(),
+                SellPriceDefinition.IntRange.fixed(48),
+                "seed anchor");
+        helper.assertValueEqual(
+                SellPriceResources.definition(server, new ItemStack(Items.IRON_INGOT)).orElseThrow().itemCount(),
+                SellPriceDefinition.IntRange.fixed(5),
+                "iron anchor");
+        helper.assertTrue(
+                SellPriceResources.definition(server, new ItemStack(Items.ENCHANTED_BOOK)).isEmpty(),
+                "component-sensitive enchanted books must be disabled");
+        helper.assertTrue(
+                SellPriceResources.definition(server, new ItemStack(Items.DIAMOND_PICKAXE)).isEmpty(),
+                "damageable tools must be disabled");
+        helper.assertTrue(
+                SellPriceResources.definition(server, new ItemStack(Items.TIPPED_ARROW)).isEmpty(),
+                "component-sensitive tipped arrows must be disabled");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void sellBoxesInOneVillageSharePressure(GameTestHelper helper) {
         SellBoxBlockEntity first = placeBox(helper);
         BlockPos secondPos = new BlockPos(3, 1, 1);

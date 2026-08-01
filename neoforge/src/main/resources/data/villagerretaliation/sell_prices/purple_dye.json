@@ -1,8 +1,6 @@
 {
     "item":  "minecraft:purple_dye",
-    "item_count":  {
-                       "min":  3,
-                       "max":  12
-                   },
-    "currency_count":  1
+    "item_count":  12,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:dyes"
 }

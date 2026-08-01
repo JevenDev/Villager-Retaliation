@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:gray_glazed_terracotta",
-    "item_count":  1,
-    "currency_count":  1
+    "item_count":  12,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:masonry"
 }

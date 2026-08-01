@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:leather_horse_armor",
     "item_count":  1,
-    "currency_count":  6
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:leather_horse_armor"
 }

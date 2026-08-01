@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:tropical_fish_bucket",
     "item_count":  1,
-    "currency_count":  5
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:tropical_fish_bucket"
 }

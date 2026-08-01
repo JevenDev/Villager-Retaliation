@@ -1,8 +1,7 @@
 {
+    "enabled":  false,
     "item":  "minecraft:diamond_pickaxe",
     "item_count":  1,
-    "currency_count":  {
-                           "min":  18,
-                           "max":  32
-                       }
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:diamond_pickaxe"
 }

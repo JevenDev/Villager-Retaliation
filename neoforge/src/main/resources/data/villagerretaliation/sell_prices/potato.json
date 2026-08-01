@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:potato",
-    "item_count":  26,
-    "currency_count":  1
+    "item_count":  20,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:vegetables"
 }

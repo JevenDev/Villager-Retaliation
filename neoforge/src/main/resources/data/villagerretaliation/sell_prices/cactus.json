@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:cactus",
-    "item_count":  1,
-    "currency_count":  3
+    "item_count":  20,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:cactus"
 }

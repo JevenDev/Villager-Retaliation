@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:paper",
-    "item_count":  24,
-    "currency_count":  1
+    "item_count":  22,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:paper"
 }

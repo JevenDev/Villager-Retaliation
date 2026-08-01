@@ -1,8 +1,7 @@
 {
+    "enabled":  false,
     "item":  "minecraft:enchanted_book",
     "item_count":  1,
-    "currency_count":  {
-                           "min":  2,
-                           "max":  64
-                       }
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:enchanted_book"
 }

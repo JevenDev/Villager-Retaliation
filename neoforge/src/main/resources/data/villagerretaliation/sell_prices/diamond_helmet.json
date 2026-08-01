@@ -1,8 +1,7 @@
 {
+    "enabled":  false,
     "item":  "minecraft:diamond_helmet",
     "item_count":  1,
-    "currency_count":  {
-                           "min":  13,
-                           "max":  27
-                       }
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:diamond_helmet"
 }

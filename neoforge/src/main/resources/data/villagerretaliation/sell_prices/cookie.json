@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:cookie",
     "item_count":  18,
-    "currency_count":  3
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:cookie"
 }
