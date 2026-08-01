@@ -50,6 +50,52 @@ public record CurrencyAmount(BigInteger numerator, BigInteger denominator) imple
         return factor == 0L ? ZERO : new CurrencyAmount(this.numerator.multiply(BigInteger.valueOf(factor)), this.denominator);
     }
 
+    public CurrencyAmount multiply(CurrencyAmount factor) {
+        if (factor == null) {
+            throw new IllegalArgumentException("Currency amount multiplier is required");
+        }
+        if (this.isZero() || factor.isZero()) {
+            return ZERO;
+        }
+        return new CurrencyAmount(
+                this.numerator.multiply(factor.numerator),
+                this.denominator.multiply(factor.denominator));
+    }
+
+    public CurrencyAmount multiplyRatio(long numerator, long denominator) {
+        return this.multiply(CurrencyAmount.of(numerator, denominator));
+    }
+
+    public CurrencyAmount subtract(CurrencyAmount other) {
+        if (other == null || other.isZero()) {
+            return this;
+        }
+        BigInteger resultNumerator = this.numerator.multiply(other.denominator)
+                .subtract(other.numerator.multiply(this.denominator));
+        if (resultNumerator.signum() < 0) {
+            throw new IllegalArgumentException("Currency subtraction cannot produce a negative amount");
+        }
+        return new CurrencyAmount(resultNumerator, this.denominator.multiply(other.denominator));
+    }
+
+    public CurrencyAmount subtractClamped(CurrencyAmount other) {
+        return other == null || this.compareTo(other) <= 0 ? ZERO : this.subtract(other);
+    }
+
+    public CurrencyAmount min(CurrencyAmount other) {
+        if (other == null) {
+            throw new IllegalArgumentException("Currency amount is required");
+        }
+        return this.compareTo(other) <= 0 ? this : other;
+    }
+
+    public CurrencyAmount max(CurrencyAmount other) {
+        if (other == null) {
+            throw new IllegalArgumentException("Currency amount is required");
+        }
+        return this.compareTo(other) >= 0 ? this : other;
+    }
+
     public BigInteger wholeUnits() {
         return this.numerator.divide(this.denominator);
     }
