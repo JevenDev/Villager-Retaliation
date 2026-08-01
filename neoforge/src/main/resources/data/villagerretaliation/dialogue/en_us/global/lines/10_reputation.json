@@ -13,7 +13,17 @@
         "The snow was pretty until it started hiding everything.",
         "I stayed close to the fire because the outside was too white.",
         "My nose got cold even when I was inside. That feels unfair.",
-        "Next time the sky drops that much snow, I am staying under a blanket."
+        "Next time the sky drops that much snow, I am staying under a blanket.",
+        "The snow reached higher than my knees by breakfast.",
+        "I followed the lanterns because all the paths disappeared.",
+        "We slept close to the hearth in all our clothes.",
+        "A grown-up made me knock snow off the window every hour.",
+        "The animals had white backs when we finally found them.",
+        "I carried little pieces of firewood while everyone dug.",
+        "Someone made a tunnel between two houses just for us.",
+        "The bell looked tiny under all that snow.",
+        "We drank hot soup until my hands stopped hurting.",
+        "The village was fun to slide through after they said it was safe."
       ],
       "event_tags": [
         "snowstorm"
@@ -35,7 +45,17 @@
         "I keep my things closer now. You can guess why.",
         "If you wanted trust, the {stolen_container} was a poor place to start.",
         "That theft made even simple questions feel less simple.",
-        "I am answering, but do not mistake that for forgetting."
+        "I am answering, but do not mistake that for forgetting.",
+        "You took my {stolen_item}. I want to hear why from you.",
+        "I counted that chest myself before you opened it.",
+        "Do not make me prove what both of us know happened.",
+        "Bring back the {stolen_item} and we can discuss what comes next.",
+        "I trusted you near my belongings, and now I regret it.",
+        "Were a few items worth making me lock every container?",
+        "The missing stack has your hands all over the memory.",
+        "I am asking once before I take this to the guards.",
+        "You looked at me before taking it, which made the insult worse.",
+        "Tell me where the {stolen_item} is now."
       ],
       "conditions": [
         {
@@ -66,7 +86,17 @@
         "If you thought {stolen_stack} would stay quiet, you do not know villages very well.",
         "People remember who takes from a {stolen_container} without permission.",
         "You can ask your question, but the story of {stolen_stack} is standing beside you.",
-        "Around here, stolen things grow longer shadows than you might expect."
+        "Around here, stolen things grow longer shadows than you might expect.",
+        "<aqua>{theft_witness}</aqua> saw you take {stolen_stack}. What is your explanation?",
+        "The story reached every house before you returned to the square.",
+        "People are checking their chests because of what happened.",
+        "You owe the owner more than a shrug and an excuse.",
+        "Return {stolen_stack} before this becomes a matter for the guards.",
+        "<aqua>{theft_witness}</aqua> had no reason to invent what they saw.",
+        "One theft can make a whole village suspicious of strangers.",
+        "The stores support families, not whoever opens them first.",
+        "If there is another side to this, speak before the rumor hardens.",
+        "Everyone will notice whether the missing goods come back."
       ],
       "conditions": [
         {
@@ -97,7 +127,17 @@
         "You arrive with a story already attached to you.",
         "I know enough about the theft to keep my distance.",
         "A greeting is all I am offering while that {stolen_container} is still in memory.",
-        "People are still talking about what happened. I am one of them."
+        "People are still talking about what happened. I am one of them.",
+        "I heard <aqua>{theft_witness_possessive}</aqua> account of the {stolen_container}.",
+        "You should know the village is talking about what went missing.",
+        "This is a difficult place to ask for welcome after opening someone else's container.",
+        "The owner has counted the loss and named what you took.",
+        "People who once left their doors open are locking them now.",
+        "You may want to return the goods before starting any other conversation.",
+        "The guards have heard the same story I did.",
+        "A greeting feels dishonest when theft is standing between us.",
+        "I am willing to listen, but not to pretend nothing happened.",
+        "Settle the matter at the {stolen_container}, then come back."
       ],
       "conditions": [
         {
@@ -128,7 +168,17 @@
         "When trouble comes, people look to the paths and hope you are on them.",
         "You are welcome here in a way few outsiders ever become.",
         "The village does not bow easily, but it does remember who earned its trust.",
-        "Walk kindly with the weight of that respect. You earned it, and it can still be spent."
+        "Walk kindly with the weight of that respect. You earned it, and it can still be spent.",
+        "People straighten up when you enter the square.",
+        "Your choices carry farther than ordinary gossip now.",
+        "The village expects leadership from you, even when you did not ask for it.",
+        "Children know your face from stories told at home.",
+        "The guards treat your word as something worth acting on.",
+        "Every public favor becomes part of your reputation.",
+        "People notice who receives your time and attention.",
+        "You can calm an argument simply by showing up.",
+        "That kind of respect brings responsibility with it.",
+        "The village sees you as one of its strongest protectors."
       ],
       "reputation_levels": [
         "royalty"
@@ -149,7 +199,17 @@
         "You have become part of the stories people use to feel safer.",
         "When your name comes up, most faces soften before anyone says why.",
         "You have done enough good here that people measure others against it.",
-        "A village knows the difference between a visitor and someone who stayed in the ways that matter."
+        "A village knows the difference between a visitor and someone who stayed in the ways that matter.",
+        "People tell stories about what you have done for us.",
+        "Your name makes frightened villagers feel steadier.",
+        "The village remembers every time you chose to help.",
+        "You have earned a welcome at nearly every door.",
+        "Neighbors ask what you would do when trouble starts.",
+        "Children try to copy the brave parts of your stories.",
+        "Your word can settle doubts that mine cannot.",
+        "Respect like this was built one choice at a time.",
+        "People save a place for you at important gatherings.",
+        "Even the cautious villagers speak well of you."
       ],
       "reputation_levels": [
         "revered",
@@ -171,7 +231,17 @@
         "Respect makes doors easier to open, but it also makes mistakes louder.",
         "You are trusted enough that your choices reach farther than you may think.",
         "The village has seen enough from you to listen first.",
-        "Keep walking the way that earned this respect, and it will hold."
+        "Keep walking the way that earned this respect, and it will hold.",
+        "People listen when you offer an opinion.",
+        "You have shown enough good judgment to earn a fair hearing.",
+        "Neighbors trust you with work they would not give a stranger.",
+        "Your help has been noticed beyond the people who received it.",
+        "The village expects you to keep acting with care.",
+        "A few doors open faster when people know it is you.",
+        "Your name comes up kindly around the workstations.",
+        "Respect makes mistakes easier to discuss, not easier to ignore.",
+        "People have begun asking whether you will stay longer.",
+        "You are no longer just another traveler passing through."
       ],
       "reputation_levels": [
         "respected",
@@ -194,7 +264,17 @@
         "People do not tense when they see you anymore. That says plenty.",
         "It is good when familiar footsteps belong to someone helpful.",
         "Welcome back. The village knows your shape in the doorway now.",
-        "You are easy to greet these days. That is a good thing."
+        "You are easy to greet these days. That is a good thing.",
+        "Good to see you. I saved you a place near the fire.",
+        "I was hoping you would pass through today.",
+        "The village relaxes when a familiar friend walks the paths.",
+        "Come in. I do not need to count the shelves first.",
+        "You have kept your word often enough that I remember it.",
+        "I can speak plainly with you, which is a rare comfort.",
+        "People here know you will help when the bell rings.",
+        "Your visits feel less like company and more like a neighbor returning.",
+        "I heard you were nearby and expected you would stop.",
+        "There are few travelers I would trust with an unlocked door."
       ],
       "reputation_levels": [
         "trusted",
@@ -218,7 +298,17 @@
         "The village is waiting to see which habits you bring with you.",
         "You are still a question here, not an answer.",
         "Do right by people, and they will notice. Do wrong, and they will notice faster.",
-        "For now, you are someone passing through. What comes next is up to you."
+        "For now, you are someone passing through. What comes next is up to you.",
+        "People are still deciding what to make of you.",
+        "You have neither earned trust nor given us a reason to close the gates.",
+        "Most villagers will judge your next choice for what it is.",
+        "You are welcome to trade while the usual rules are respected.",
+        "A few kind acts would be noticed quickly.",
+        "People know your face, but not your character yet.",
+        "The village is giving you room to show your intentions.",
+        "No one expects trouble from you, though no one assumes loyalty either.",
+        "You stand at the easiest point to shape your reputation.",
+        "Ordinary courtesy goes a long way when people are unsure."
       ],
       "reputation_levels": [
         "neutral"
@@ -239,7 +329,17 @@
         "The village is not closed to you, but it is not open wide either.",
         "I know your face. I am still learning what it means when it arrives.",
         "Careful words would serve you well right now.",
-        "I can greet you without pretending I am comfortable."
+        "I can greet you without pretending I am comfortable.",
+        "People check their doors after you pass.",
+        "Your name comes up whenever something goes missing.",
+        "The guards notice where you stand and what you touch.",
+        "Trust will not return through words alone.",
+        "You still have time to prove the rumors wrong.",
+        "Villagers keep conversations short until they understand your intentions.",
+        "A careless move from you looks worse than it would from someone trusted.",
+        "People remember the warning signs even when no new trouble happens.",
+        "You will need patience if you want a fair chance again.",
+        "Give the village reasons to relax instead of asking it to pretend."
       ],
       "reputation_levels": [
         "suspicious"
@@ -259,8 +359,18 @@
         "You ask questions like trust is still on the table.",
         "It is hard to answer calmly when your name already carries trouble.",
         "The village has learned to make room between itself and you.",
-        "If you want honesty, here it is: people feel safer when you leave.",
-        "You have made caution feel like common sense."
+        "If you want honesty, here it is. People feel safer when you leave.",
+        "You have made caution feel like common sense.",
+        "Ask quickly. I have no wish to keep your company.",
+        "The guards know you are here, so choose every word carefully.",
+        "You have taken enough from this village without taking our time.",
+        "Nobody owes an answer to someone who treats us as enemies.",
+        "State your business from the other side of the path.",
+        "I remember your deeds better than whatever excuse comes next.",
+        "You are fortunate anyone here is willing to hear the question.",
+        "Do not mistake this conversation for a welcome.",
+        "If the answer leads toward our homes, the answer is no.",
+        "Finish asking and leave before patience runs out."
       ],
       "reputation_levels": [
         "hostile"
@@ -281,7 +391,17 @@
         "There are people here who still tense at the sound of your footsteps.",
         "You burned through trust faster than anyone could rebuild it.",
         "If you want help here, you are starting from below empty.",
-        "Some reputations do not follow people. They arrive before them."
+        "Some reputations do not follow people. They arrive before them.",
+        "Your name is used as a warning around here.",
+        "People remember the harm before they remember your face.",
+        "Even a quiet visit from you makes the square tense.",
+        "You have burned through nearly every chance this village offered.",
+        "No one wants to owe you or be owed by you.",
+        "The guards would rather see you take the road out.",
+        "Children are told to find an adult if they spot you.",
+        "Repairing this reputation would take more than one good deed.",
+        "People assume the worst because you trained them to.",
+        "The village owes you no warmth after what happened."
       ],
       "reputation_levels": [
         "despised"

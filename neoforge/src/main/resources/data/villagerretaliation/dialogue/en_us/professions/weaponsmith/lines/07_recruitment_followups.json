@@ -6,7 +6,24 @@
       "lines": [
         "You brought me back without needing the worst of it. Restraint is a weapon too.",
         "Home again, whole enough to thank you properly. That matters.",
-        "We came back with the village still ahead of us. I'll count that as good work."
+        "We came back with the village still ahead of us. I will count that as good work.",
+        "The forge sounded better than music when we reached the gate.",
+        "I carried less steel than usual and still felt prepared.",
+        "Good judgment brought us home more surely than a sharp blade could.",
+        "I watched every turn so I could find the route again.",
+        "The road nearly outlasted our food, but not our sense.",
+        "Thanks for sharing the last of the supplies without making a speech.",
+        "I kept pace on the rough ground because you did not rush me.",
+        "Seeing the village roofs again loosened every muscle in my shoulders.",
+        "The bell at the end of the road told me we had made it.",
+        "Next time I bring more food and fewer weapons.",
+        "No one drew steel. That is the best report I can give.",
+        "A safe return is worth more than a glorious story.",
+        "I trusted your route, and this time that trust came home intact.",
+        "The first thing I did was put the weapon away and breathe.",
+        "We left together and returned together. Good work.",
+        "I learned when to carry a blade and when to trust the road.",
+        "Give me one quiet shift at the forge and I may be ready to go again."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -21,7 +38,24 @@
       "lines": [
         "I came back marked. Next time, keep the edge between us and danger.",
         "I made it home, but the road took more from me than it should have.",
-        "Next time, let us return with fewer marks and better choices."
+        "Next time, let us return with fewer marks and better choices.",
+        "Every step pulled at the wound before we reached the gate.",
+        "I hated slowing the group, but I could not hide it forever.",
+        "The first safe doorway was the finest thing I saw all day.",
+        "Blood dried on the road before I could clean the blade.",
+        "I should carry bandages beside the whetstone from now on.",
+        "The forge felt impossibly far away while we were walking home.",
+        "Neighbors took my weight at the gate. I will remember that.",
+        "Survival matters more than keeping a blade unmarked.",
+        "I made the mistake of treating pain like a test of pride.",
+        "Next time I stop and bind the wound before it gets worse.",
+        "A weapon cannot help much when the hand holding it is shaking.",
+        "I came home with the steel and nearly left my strength behind.",
+        "The road taught my ribs a lesson the forge never could.",
+        "I was not brave. I was stubborn enough to keep walking.",
+        "Give me time to heal before you ask me to call that trip worthwhile.",
+        "I know exactly which piece of gear failed me. It will not fail twice.",
+        "We reached home. Today, that is enough victory."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -36,7 +70,24 @@
       "lines": [
         "I respect sharp steel. I do not respect turning it on someone who followed you.",
         "Following you was trust. What happened after was something else.",
-        "A guide who strikes from close by leaves the longest mark."
+        "A guide who strikes from close by leaves the longest mark.",
+        "I keep my weapon between us now. You taught me that.",
+        "The bruise faded faster than the suspicion did.",
+        "I watched the road while the real danger walked beside me.",
+        "Do not ask me to admire your aim. There was nothing honorable in it.",
+        "The walk home was quiet because trust had already said its last word.",
+        "I can repair chipped steel. I cannot repair this for you.",
+        "You knew my guard was down. That makes it worse.",
+        "I will hear you out, but I will not turn my back.",
+        "A clean apology would help more than another excuse.",
+        "I followed your lead once. You will have to earn that privilege again.",
+        "The forge felt safer than the road after what you did.",
+        "I have handled rough weapons with better discipline than yours.",
+        "Next time, I choose the route and keep you in sight.",
+        "You turned a simple journey into a lesson I did not need.",
+        "The worst part was realizing the attack came from someone I trusted.",
+        "I made it home, but I left my faith in you on that road.",
+        "If there is a next time, honesty comes before the first step."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -51,7 +102,24 @@
       "lines": [
         "A boat is not armor, but it kept danger at a decent distance.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
-        "Water carried us home, which is more than I expected from that journey."
+        "Water carried us home, which is more than I expected from that journey.",
+        "I should have left the heavy blade at the forge.",
+        "The current handled our route like it had made the plan itself.",
+        "I checked the sheath three times and the hull far more than that.",
+        "A sharp edge is little comfort when the water is deeper than you are tall.",
+        "I was glad to hear the grindstone again when we returned.",
+        "Next time we inspect the boat before either of us steps inside.",
+        "There was barely room for two people and no room for bad judgment.",
+        "I kept still because rocking the boat solved nothing.",
+        "The village looked better with every stroke toward shore.",
+        "My hands wanted a hammer, a rail, or anything that did not move.",
+        "I trust solid ground more than I did before that trip.",
+        "The hull held, the sheath stayed shut, and we came home. Good enough.",
+        "I could not fight the current, so I learned to respect it.",
+        "That knocking under the boat sounded worse than a cracked blade.",
+        "I will bring less steel and more dry food next time.",
+        "Stepping onto land felt like setting down a weapon after a long watch.",
+        "I am not eager to repeat the trip, but I know how to prepare now."
       ],
       "conditions": [
         {

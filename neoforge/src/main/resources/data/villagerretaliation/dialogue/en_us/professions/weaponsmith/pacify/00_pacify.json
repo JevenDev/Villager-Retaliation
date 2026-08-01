@@ -12,9 +12,26 @@
     {
       "id": "weaponsmith_pacify_success",
       "lines": [
-        "Fine. I'll let the blade rest, but do not test me again.",
-        "Fine. I'll set this down before it gets heavier.",
-        "Fine. I can step back, but do not make me regret it."
+        "Fine. I will let the blade rest, but do not test me again.",
+        "Fine. I will set this down before it gets heavier.",
+        "Sheathe your weapon and I will do the same.",
+        "You admitted the damage. That is the first honest thing I have heard.",
+        "The full repair settles the debt.",
+        "A clean ending is better than another strike.",
+        "Keep your hands peaceful and this can end here.",
+        "I accept the payment. Now honor the agreement.",
+        "The anger is cooling. Do not stir it again.",
+        "Restraint takes a steadier hand than swinging steel.",
+        "I would rather return to the forge than carry this fight any farther.",
+        "We both walk away. That is the best result left to us.",
+        "Your apology finally has some weight behind it.",
+        "I believe you are trying to repair what you did.",
+        "No more drawn weapons. We finish this with words.",
+        "The damage remains, but the quarrel can stop.",
+        "I am lowering my guard. Do not make that a mistake.",
+        "A fair repair deserves a fair answer. I accept.",
+        "This is settled. Let the steel stay quiet.",
+        "We have peace for now. Keep it well."
       ],
       "outcomes": [
         "success"
@@ -25,8 +42,25 @@
       "id": "weaponsmith_pacify_short",
       "lines": [
         "That offer is dull. Bring {emerald_cost} {emeralds}.",
-        "That's short of the full repair. Bring {emerald_cost} {emeralds}.",
-        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
+        "You are short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
+        "Count it properly before you ask me to lower my guard.",
+        "A weak payment does not mend real damage.",
+        "You brought part of the cost and none of the answer.",
+        "The agreement was clear. Pay the full amount.",
+        "I do not leave cracks hidden in a repair, and I will not leave this debt half settled.",
+        "Bring the missing emeralds. Then we talk.",
+        "That offer lacks weight in every sense.",
+        "You cannot polish a short payment and call it fair.",
+        "The harm was complete. The repair should be too.",
+        "I am not bargaining down what you owe.",
+        "Come back with the full amount and an honest apology.",
+        "The balance is wrong. You still owe more.",
+        "I will wait for {emerald_cost} {emeralds}.",
+        "Close is not enough when trust is already damaged.",
+        "Do not ask me to accept a repair with pieces missing.",
+        "Pay what we agreed and we can put the weapons away.",
+        "Bring the rest before this conversation gets any sharper."
       ],
       "outcomes": [
         "not_enough_emeralds"
@@ -37,8 +71,25 @@
       "id": "weaponsmith_pacify_blocked",
       "lines": [
         "No. Some threats do not get to buy their way closer.",
-        "No. Some damage has to cool before payment matters.",
-        "No. Keep {payment_items}. Trust is not ready to trade."
+        "No. Some <shake>damage</shake> has to cool before payment matters.",
+        "No. Keep {payment_items}. Trust is not ready to trade.",
+        "Back away and keep your hands where I can see them.",
+        "I will not bargain while a weapon is still in reach.",
+        "Payment does not make this safe. Distance might.",
+        "Put the items down and step away from the forge.",
+        "The steel stays between us until I trust your intentions.",
+        "If you want peace later, bring {emerald_cost} {emeralds}. Right now, leave.",
+        "I am too angry to set a fair price, so there will be no deal today.",
+        "Some repairs begin by leaving the damaged thing alone.",
+        "Do not push closer because you brought an offer.",
+        "I will decide when it is safe to talk again.",
+        "Keep the payment. I want the threat gone first.",
+        "A settlement made under fear is not a settlement.",
+        "The hammer can wait. So can your apology.",
+        "Leave before either of us makes this worse.",
+        "I cannot mend trust while I am watching your hands.",
+        "Come back without the weapon and with better sense.",
+        "No bargain today. Let the forge cool."
       ],
       "outcomes": [
         "blocked_by_reputation"

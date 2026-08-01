@@ -13,7 +13,17 @@
         "I am grateful to be tired from work instead of <italic>running</italic>.",
         "Everything looks the same as before, except I know how quickly it can change.",
         "I made it home. That sentence feels heavier than it should.",
-        "The village is still standing, and so am I. For today, that is <pulse>enough</pulse>."
+        "The village is still standing, and so am I. For today, that is <pulse>enough</pulse>.",
+        "I fed the animals before I let myself sit down. Routine helped.",
+        "The work was waiting exactly where I left it. I was glad.",
+        "My hands shook less once they had an ordinary chore.",
+        "I never thought sweeping a floor could feel like safety.",
+        "The animals were noisy, alive, and wonderful to hear.",
+        "I came home and checked every latch twice.",
+        "A warm meal did more for me than any victory speech.",
+        "The danger is over, but my body has not heard the news.",
+        "I slept badly and woke grateful.",
+        "Today I am doing simple work at a careful pace."
       ],
       "professions": [
         "farmer",
@@ -37,7 +47,17 @@
         "Nothing fancy. Nothing foolish. Just <bold>useful</bold>.",
         "If something survives a day of real work, I start to respect it.",
         "It felt sturdy in the quiet moments and better in the loud ones.",
-        "Whoever made this understood that practical things still need to be <pulse>dependable</pulse>."
+        "Whoever made this understood that practical things still need to be <pulse>dependable</pulse>.",
+        "It stayed comfortable through a full day of real work.",
+        "Mud cleaned off easier than I expected.",
+        "The weight sat where it should and never pulled at me.",
+        "I could bend, lift, and carry without fighting the fit.",
+        "Nothing came loose before the work was done.",
+        "It already feels like part of my usual kit.",
+        "The gear handled rain, dirt, and an impatient animal.",
+        "I noticed the craftsmanship when I stopped noticing the gear.",
+        "It saved me time without asking for attention.",
+        "This was made by someone who understands long days."
       ],
       "professions": [
         "farmer",
@@ -61,8 +81,18 @@
         "A quiet morning after violence feels like a gift. You helped give us that.",
         "The village may not say it loudly, but it is breathing easier because of you.",
         "You protected more than walls. You protected the small routines inside them.",
-        "I saw fear leave peopleÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢s faces slowly after the fighting stopped.",
-        "You made safety feel possible again. Around here, that is <bold>everything</bold>."
+        "I watched the fear slowly leave people's faces after the fighting stopped.",
+        "You made safety feel possible again. Around here, that is <bold>everything</bold>.",
+        "You kept danger away from people who had nowhere else to go.",
+        "The fields, pens, and workshops are still here because you stood firm.",
+        "Families slept under their own roofs after the fighting.",
+        "Say what you mean without dressing it up.",
+        "The market opened again because you gave us the chance.",
+        "We returned to work with your courage behind us.",
+        "I heard children playing after the danger passed. That was your victory too.",
+        "You made room for an ordinary morning.",
+        "Nobody here will forget who stood at the gate.",
+        "Thank you for treating our home like it mattered."
       ],
       "player_event_tags": [
         "player_defended_village",
@@ -91,7 +121,17 @@
         "You returned me to my hands, my trade, and my people.",
         "I was almost only teeth and hunger. You helped me become someone again.",
         "The first tool I held afterward felt heavier than usual, but it was mine.",
-        "I owe you more than thanks, but thanks is where my voice can start."
+        "I owe you more than thanks, but thanks is where my voice can start.",
+        "The first familiar tool in my hand nearly made me cry.",
+        "I remembered the rhythm of work before I remembered the day.",
+        "The smell of my workplace told me I was home.",
+        "You gave me back all the small habits that make a life.",
+        "My hands stopped feeling like they belonged to a stranger.",
+        "I woke tired, frightened, and myself again.",
+        "The village put food near me and gave me time.",
+        "I can do honest work again because you refused to leave me lost.",
+        "Each ordinary morning feels borrowed in the best way.",
+        "I still have bad dreams, but daylight belongs to me again."
       ],
       "professions": [
         "farmer",
@@ -116,7 +156,17 @@
         "You made the dent. Now show me you know how to stop swinging.",
         "I will hear the words, but I will watch the seams.",
         "Do not polish guilt and call it repair.",
-        "Say it, then prove it. That is how trust gets <pulse>rebuilt</pulse>."
+        "Say it, then prove it. That is how trust gets <pulse>rebuilt</pulse>.",
+        "A clean repair starts with admitting where the break is.",
+        "I heard the apology. Now give it something solid to stand on.",
+        "Damage takes time to mend, even after the right words.",
+        "Do better next time and this may hold.",
+        "I will not pretend the crack vanished, but we can work on it.",
+        "Trust can be rebuilt if you stop striking the same weak spot.",
+        "Your words fit. Let us see whether your actions do.",
+        "I accept the start of the repair, not the finished work.",
+        "Leave the excuses and keep the honest part.",
+        "We can move forward, but the next choice matters."
       ],
       "professions": [
         "armorer",
@@ -141,7 +191,17 @@
         "I will not throw your words away, but I will not live inside them either.",
         "A sorry heart still needs steady hands.",
         "Do better quietly, and people will notice <italic>eventually</italic>.",
-        "This can be a beginning, but only if you stop treating it like an ending."
+        "This can be a beginning, but only if you stop treating it like an ending.",
+        "I accept that you are trying to make this right.",
+        "Give the village time to believe what you said.",
+        "An honest apology helps, though it does not erase the hurt.",
+        "Show care in the days ahead and people will notice.",
+        "I would rather see change than hear another perfect speech.",
+        "We can start again without pretending nothing happened.",
+        "Your words reached me. Let your choices reach everyone else.",
+        "The hurt may fade if you stop feeding it.",
+        "I will meet you halfway if you keep walking toward better.",
+        "Let this be the first good thing after the mistake."
       ],
       "professions": [
         "farmer",
@@ -167,7 +227,17 @@
         "There is one more reason to keep the doors strong and the hearths lit.",
         "The chores felt lighter after the news, though nobody admitted it.",
         "A tiny life arrived, and somehow the whole village stood a little taller.",
-        "Hope came wrapped in small hands and a very loud <jump>cry</jump>."
+        "Hope came wrapped in small hands and a very loud <jump>cry</jump>.",
+        "Everyone found an excuse to pass the family home today.",
+        "The baby has a strong voice and very little patience.",
+        "We brought food so the family could rest.",
+        "Even the animals seemed curious about the new arrival.",
+        "A tiny hand wrapped around one finger and won the whole village.",
+        "There is already an argument over who the child resembles.",
+        "The family needs sleep more than advice, so naturally they got advice.",
+        "We lowered our voices near the house without being asked.",
+        "That child arrived to more love than they can understand yet.",
+        "The village feels larger even though the cradle is small."
       ],
       "event_tags": [
         "baby_born"
@@ -192,7 +262,17 @@
         "I will not trust a peaceful sunset for a few days.",
         "There are sounds you only need to hear once to remember forever.",
         "The attack ended, but the dark still feels a little <pulse>closer</pulse>.",
-        "Tonight, every door will be checked twice and every window will earn a second look."
+        "Tonight, every door will be checked twice and every window will earn a second look.",
+        "We found tracks near the fence when morning came.",
+        "Nobody slept after the first warning cry.",
+        "Every lamp stayed lit until the sun returned.",
+        "We moved the animals closer and kept tools within reach.",
+        "The latch held, but I replaced it anyway.",
+        "Darkness makes a small sound travel across the whole village.",
+        "We counted everyone before anyone went back to bed.",
+        "The attack ended quickly. The listening lasted all night.",
+        "Tonight the watch will have extra eyes.",
+        "Morning never looked so welcome."
       ],
       "event_tags": [
         "night_attack"
@@ -218,7 +298,17 @@
         "You did not have to make our trouble yours. You did.",
         "The village remembers who runs toward danger when others run from it.",
         "I saw people open their doors after the fighting and look for you first.",
-        "You helped keep this place alive. That is not a favor. That is <bold>honor</bold>."
+        "You helped keep this place alive. That is not a favor. That is <bold>honor</bold>.",
+        "You gave us the chance to return to our lives.",
+        "The danger reached our fields, but it did not take them.",
+        "I saw you stand your ground when others needed cover.",
+        "Our homes are quiet again because you fought for them.",
+        "You protected people who could not repay you in battle.",
+        "We will remember your face when the next peaceful morning comes.",
+        "The village survived with your help. That is plain truth.",
+        "You kept the fighting from becoming grief in every home.",
+        "Our work continues because you made sure we could.",
+        "Thank you for staying when running would have been easier."
       ],
       "event_tags": [
         "player_defended_village"
@@ -248,7 +338,17 @@
         "You put yourself between us and ruin. That will not be forgotten quickly.",
         "There was a moment when everything could have broken. You helped keep it whole.",
         "The village survived the raid with your name tied to the story.",
-        "Some people run from the sound of the bell. You ran toward it."
+        "Some people run from the sound of the bell. You ran toward it.",
+        "The banners came down because you would not.",
+        "You met the raiders before they reached the frightened families.",
+        "I saw you answer every horn with another step forward.",
+        "The gate held long enough because you were there.",
+        "You turned their attack into their retreat.",
+        "We counted fewer wounds because of you.",
+        "The village knows who fought beside it.",
+        "You stood in the worst place so others could find safety.",
+        "No emerald can measure what you kept from happening.",
+        "When the bell rings again, we will remember how you answered this time."
       ],
       "event_tags": [
         "player_defended_raid"
@@ -277,7 +377,17 @@
         "I can still smell it. Wood, smoke, panic, and wet ash.",
         "The village survived, but the fire made sure we <shake>noticed</shake>.",
         "Every bucket passed from hand to hand felt too light and too late.",
-        "We will rebuild what burned, but nobody forgets the sound of a wall catching fire."
+        "We will rebuild what burned, but nobody forgets the sound of a wall catching fire.",
+        "We formed a bucket line before anyone had time to panic.",
+        "The roof is damaged, but every villager made it out.",
+        "Smoke found every crack and stayed in our clothes.",
+        "We soaked the neighboring walls before the sparks could spread.",
+        "The last flame went out after our arms had gone numb.",
+        "Someone saved the tools, but only after the children were clear.",
+        "We are checking for hidden embers before rebuilding.",
+        "The well earned more gratitude today than it usually gets.",
+        "Fire moved quickly. The village moved faster.",
+        "Repairs can start now that everyone is safe."
       ],
       "event_tags": [
         "village_fire"
@@ -303,7 +413,17 @@
         "The storm passed, but it left everyone speaking a little softer.",
         "I heard the wind hit the walls and decided not to argue with it.",
         "There was a moment when the whole village seemed to <shake>hold its breath</shake>.",
-        "When the weather gets cruel, even a familiar road can feel far away."
+        "When the weather gets cruel, even a familiar road can feel far away.",
+        "We tied down what we could and chased the rest afterward.",
+        "The fields took a beating, but the homes held.",
+        "Rain came sideways through places no rain should find.",
+        "Every animal wanted the same dry corner.",
+        "The wind tested roofs that had never complained before.",
+        "We waited together until conversation beat the thunder.",
+        "Morning showed us the damage one puddle at a time.",
+        "Nothing makes neighbors closer than one stubborn leak.",
+        "We found branches in the square and half a fence in the field.",
+        "The storm passed. The cleanup has only introduced itself."
       ],
       "event_tags": [
         "thunderstorm",
@@ -331,7 +451,17 @@
         "People count their things differently after theft. They count each other differently too.",
         "Stealing from a chest is stealing from the hands that filled it.",
         "What was taken matters. What it made us feel matters <bold>more</bold>.",
-        "A lock can be replaced. The feeling behind it takes longer."
+        "A lock can be replaced. The feeling behind it takes longer.",
+        "Someone opened a shared chest and took more than items.",
+        "We should not need guards around supplies meant for everyone.",
+        "The missing goods can be replaced. The trust will take longer.",
+        "Every honest hand now has to answer for one dishonest one.",
+        "We counted the chest twice because none of us wanted to believe it.",
+        "Taking village stores leaves every household a little poorer.",
+        "People have started marking what they leave behind.",
+        "A locked chest is a sad answer to a neighbor.",
+        "Whoever stole from us made ordinary sharing harder.",
+        "We will replace what is gone and remember why it vanished."
       ],
       "event_tags": [
         "player_container_theft"
@@ -361,7 +491,17 @@
         "A village changes shape after someone is attacked, even if the buildings stay the same.",
         "The fear moved through us faster than the news did.",
         "We are tending the hurt and watching the doors. Both feel necessary.",
-        "The village will settle again, but not before this <pulse>echo</pulse> fades."
+        "The village will settle again, but not before this <pulse>echo</pulse> fades.",
+        "We stayed close to the injured villager until help arrived.",
+        "The square fell quiet after the shouting stopped.",
+        "Everyone knows which path the attack happened on.",
+        "People walk in pairs now without discussing why.",
+        "The wound is treated, but the fear keeps moving.",
+        "Children were brought indoors before the news finished spreading.",
+        "We checked every face and every doorway afterward.",
+        "Familiar places feel wrong after violence touches them.",
+        "The village is angry, worried, and watching.",
+        "Healing has begun. Feeling safe will take longer."
       ],
       "event_tags": [
         "villager_attacked"

@@ -13,7 +13,17 @@
         "Whatever reason you had, it had better become a lesson quickly.",
         "Trust cracks faster than bone, and it mends slower too.",
         "The village is watching you more closely now.",
-        "Do better from here, or do not expect warm doors."
+        "Do better from here, or do not expect warm doors.",
+        "I saw the argument turn violent before anyone reached the bell.",
+        "The injured villager had neighbors beside them within moments.",
+        "You made a familiar path feel dangerous that day.",
+        "Nobody here needed to see a weapon raised among friends.",
+        "The guards know what happened, even if every witness tells it differently.",
+        "One blow gave the whole village a reason to watch you.",
+        "We moved the children inside while the healer checked the wound.",
+        "Whatever anger you felt, someone else had to carry the injury.",
+        "People remember where you stood when the shouting started.",
+        "You will need more than an excuse to make these doors feel safe again."
       ],
       "event_tags": [
         "player_attacked_villager"
@@ -36,7 +46,17 @@
         "You made someone feel seen today. That is no small thing.",
         "A thoughtful gift can soften a whole room.",
         "That one will be remembered with a smile.",
-        "You did well. The village notices gestures like that."
+        "You did well. The village notices gestures like that.",
+        "They have already found a special place for what you gave them.",
+        "You chose the sort of gift that becomes part of someone's daily life.",
+        "They smiled before the wrapping was fully open.",
+        "That present suited them well enough to start a dozen conversations.",
+        "You remembered something they never expected you to notice.",
+        "They will think of you each time they use it.",
+        "A gift like that feels personal without asking for praise.",
+        "You managed to surprise someone who is not easily surprised.",
+        "The village heard about their reaction before the day was over.",
+        "You gave them a memory along with the item."
       ],
       "event_tags": [
         "player_gave_loved_gift"
@@ -59,7 +79,17 @@
         "Small kindnesses have a way of finding their way around the village.",
         "That was a fine gesture. Simple, but welcome.",
         "You brought something useful, and usefulness is appreciated here.",
-        "People remember when someone gives without making a fuss."
+        "People remember when someone gives without making a fuss.",
+        "I have already found a use for that gift.",
+        "It was kind of you to think of me.",
+        "The item suits my work better than you may realize.",
+        "I appreciate a gift that does not need a speech around it.",
+        "You chose something practical, and I respect that.",
+        "I will keep it where it will not be wasted.",
+        "The thought behind it reached me before the wrapping did.",
+        "It made the day a little easier.",
+        "I know gifts can be awkward to choose, so thank you for trying.",
+        "You paid attention to what I actually use."
       ],
       "event_tags": [
         "player_gave_liked_gift"
@@ -82,7 +112,17 @@
         "No harm done, perhaps, but no favor earned either.",
         "That one landed poorly. Best not to press the matter.",
         "You tried, I think. Just try with better aim next time.",
-        "Sometimes the kindest gift is the one you hold back until you know better."
+        "Sometimes the kindest gift is the one you hold back until you know better.",
+        "They accepted it politely, but the choice clearly missed.",
+        "The gift was not cruel, just poorly matched to the person.",
+        "You may want to ask what they like before trying again.",
+        "Good intentions do not always make a useful present.",
+        "They are looking for somewhere the item will not go to waste.",
+        "Nobody is angry, though the moment was uncomfortable.",
+        "A simpler gift would probably have gone over better.",
+        "They thanked you because they are kind, not because they wanted it.",
+        "Treat the awkward silence as helpful advice for next time.",
+        "One unfortunate present does not have to become a pattern."
       ],
       "event_tags": [
         "player_gave_disliked_gift"
@@ -105,7 +145,17 @@
         "That was not taken kindly, and I cannot blame them.",
         "You should be careful. A hated gift can sour more than one mood.",
         "That was a mistake worth not repeating.",
-        "The village has long memories for insults dressed as favors."
+        "The village has long memories for insults dressed as favors.",
+        "That present felt less like kindness and more like a message.",
+        "They did not hide how badly the gift landed.",
+        "Do not bring them another one unless you mean to provoke them.",
+        "Someone had to take the item away before the argument grew.",
+        "You chose the one thing they would never want to receive.",
+        "The village is wondering whether the insult was deliberate.",
+        "An apology would be wiser than an explanation right now.",
+        "They want no part of the item or the joke behind it.",
+        "Whatever you meant, the gift caused real offense.",
+        "Give them space before you try to repair that mistake."
       ],
       "event_tags": [
         "player_gave_hated_gift"
@@ -128,7 +178,17 @@
         "If you came with steady hands, they are welcome.",
         "We are counting people, checking doors, and trying to breathe again.",
         "The danger passed, but it left its shadow behind.",
-        "Stay alert. Peace feels thin after a day like that."
+        "Stay alert. Peace feels thin after a day like that.",
+        "The shop is open again, though I still look up at every sudden sound.",
+        "We put the tools back in place after checking the doors twice.",
+        "Work feels strange when the alarm is still fresh in your ears.",
+        "I am here, but part of me is still watching the road.",
+        "The village is safe enough to work and tense enough to notice everything.",
+        "I lost time to the danger, so today's chores have piled up.",
+        "A quiet customer is welcome after all that noise.",
+        "The damage is repaired. My nerves are taking longer.",
+        "I kept the door unlatched today in case the bell rings again.",
+        "Tell me what you need while I still have a calm moment."
       ],
       "event_tags": [
         "raid",
@@ -152,7 +212,17 @@
         "When everyone runs, it is hard to know where safe is.",
         "I stayed where I was told, even when I wanted to peek.",
         "The grown-ups said it is over, but they still look worried.",
-        "I hope the bell sounds normal next time."
+        "I hope the bell sounds normal next time.",
+        "I stayed under the table until someone said my name.",
+        "The grown-ups kept telling us to be quiet while they listened outside.",
+        "I held someone's hand so tightly that mine hurt afterward.",
+        "The bell sounded different when everybody was already scared.",
+        "I know the quickest way from the square to my house now.",
+        "Nobody let me look through the window until it was over.",
+        "I counted familiar voices while we waited inside.",
+        "The golem came back to the square, and then I could breathe again.",
+        "I slept near my family because my room felt too far away.",
+        "Things are calm now, but I still jump when someone shouts."
       ],
       "event_tags": [
         "raid",
@@ -176,7 +246,17 @@
         "The baby sleeps a lot, but somehow everyone is still tired.",
         "I wanted to show the baby my favorite spot, but they cannot walk yet.",
         "The grown-ups said I have to be gentle. I was already being gentle.",
-        "I think the baby likes me. It looked in my direction once."
+        "I think the baby likes me. It looked in my direction once.",
+        "The baby has tiny hands and a very loud voice.",
+        "Everyone keeps asking who the baby looks like.",
+        "I want to show the baby every safe place in the village.",
+        "The grown-ups are tired, but they smile anyway.",
+        "I practiced saying hello without getting too close.",
+        "Someone made a little bed that looks impossibly small.",
+        "The whole village got quieter near the sleeping baby.",
+        "I wonder what job the baby will choose someday.",
+        "I promised to teach them the best games when they are bigger.",
+        "Even the golem seems to walk more carefully nearby."
       ],
       "event_tags": [
         "baby_born"
@@ -197,7 +277,17 @@
         "Say what you like. Your actions have been louder.",
         "You have a strange talent for making silence preferable.",
         "That tongue of yours does not mend what your hands have broken.",
-        "We expected little, and somehow you still found room beneath it."
+        "We expected little, and somehow you still found room beneath it.",
+        "You already make people uneasy. Speaking like that will not help.",
+        "If you wanted service, insulting me was a poor beginning.",
+        "The village has heard worse from you and remembers all of it.",
+        "You can keep the remark and whatever business came with it.",
+        "I do not owe patience to someone who treats me that way.",
+        "Try that tone with the guards and see how far it gets you.",
+        "A cruel mouth does not make your reputation unfair.",
+        "You walked in needing goodwill and spent what little you had.",
+        "I have work to do that matters more than your opinion.",
+        "Leave before the rest of the village hears you proving the rumors right."
       ],
       "reputation_levels": [
         "hostile",
@@ -220,7 +310,17 @@
         "I want to know what failed, what held, and what needs changing.",
         "If we write this down properly, it becomes more than a bad night.",
         "Every disaster teaches something, though I wish it used a gentler voice.",
-        "We cannot undo what happened, but we can refuse to be surprised the same way twice."
+        "We cannot undo what happened, but we can refuse to be surprised the same way twice.",
+        "I read what I can before I make a dangerous guess.",
+        "The village records matter because memory changes with every retelling.",
+        "I ask older villagers where a rule came from.",
+        "Maps and ledgers answer different kinds of questions.",
+        "Knowing a name can make a strange problem easier to face.",
+        "I write down details before sleep steals them.",
+        "The library is quiet enough to hear your own mistakes.",
+        "Good information saves more time than fast feet.",
+        "I would rather admit ignorance than build on a lie.",
+        "Every profession knows something the others overlook."
       ],
       "event_tags": [
         "raid",
@@ -245,7 +345,17 @@
         "I have no interest in hiding while others stand in front.",
         "The quiet feels thin today. I am listening through it.",
         "Stay close to the paths and do not ignore the bell.",
-        "We are not helpless just because we were frightened."
+        "We are not helpless just because we were frightened.",
+        "The alarm rope is clear, and I moved the spare shields closer to the square.",
+        "I checked every gate hinge before breakfast. None of them will catch if we need to close up fast.",
+        "I checked the outer paths before coming back to the square.",
+        "The village is calm because someone stayed awake last night.",
+        "I keep my tools close when the road has been too quiet.",
+        "If the bell rings, I know which door I am guarding first.",
+        "Courage is useful. Knowing when to call for help is better.",
+        "I have already made sure the children know where to run.",
+        "We can talk while I keep an eye on the gate.",
+        "Nothing looks wrong yet, and I intend to keep it that way."
       ],
       "min_mood_intensity": 25,
       "mood": "protective",
@@ -266,7 +376,17 @@
         "You made the day easier, and not just in the obvious way.",
         "I hope you know that what you did mattered here.",
         "It is easier to breathe around people who choose gentleness.",
-        "The village remembers kindness, especially when it arrives at the right moment."
+        "The village remembers kindness, especially when it arrives at the right moment.",
+        "I remember who helped when they had nothing to gain.",
+        "Kindness is often a meal, a repair, or a patient answer.",
+        "Small help reaches farther in a village than people think.",
+        "I try to notice who is carrying too much alone.",
+        "A gift matters less than whether it arrived when needed.",
+        "People become neighbors by showing up for ordinary trouble.",
+        "I have received enough kindness to know I should pass it on.",
+        "The village works because favors are not always counted.",
+        "Listening can be the most useful help in the room.",
+        "I trust people who are gentle when nobody is watching."
       ],
       "min_mood_intensity": 25,
       "mood": "grateful",
@@ -279,7 +399,7 @@
       "request": "joke",
       "lines": [
         "That one nearly survived the landing. <jump>Try again</jump>, and I may give it a proper funeral.",
-        "That joke missed. At least no arrows were involved.",
+        "A brave attempt. Comedy is just archery with more witnesses.",
         "You aimed for laughter and hit the fence. Still, I admire the confidence.",
         "I have heard worse. I have also heard better, but let us stay kind.",
         "That joke took a strange road, but it did arrive somewhere.",
@@ -287,7 +407,17 @@
         "I almost laughed at the courage of it.",
         "That one needs sharpening, but the handle is good.",
         "You missed the mark, but somehow made the miss entertaining.",
-        "Try that again after it has had time to become funnier."
+        "Try that again after it has had time to become funnier.",
+        "A good story can make a long chore feel shorter.",
+        "I enjoy people who know when to laugh at themselves.",
+        "Kind words open doors that emeralds cannot.",
+        "A joke works better when it is not aimed at someone weaker.",
+        "I pay attention to who makes the square feel lighter.",
+        "Confidence is pleasant when it leaves room for other voices.",
+        "The best talkers also know when to listen.",
+        "A warm greeting can rescue an awkward first meeting.",
+        "People remember how a conversation made them feel.",
+        "I like wit that does not need cruelty."
       ],
       "dispositions": [
         "respectful",
@@ -311,7 +441,17 @@
         "I did not feel brave at first. I felt ready, and that was enough.",
         "Good tools help, but trained hands make them answer.",
         "I know now that I can work through fear instead of under it.",
-        "The danger came close, but I held my place."
+        "The danger came close, but I held my place.",
+        "Skill shows most clearly when something goes wrong.",
+        "I am proud of work that holds up without needing praise.",
+        "Practice makes difficult choices feel less crowded.",
+        "I still check the basics before trusting experience.",
+        "A good result usually hides many corrected mistakes.",
+        "I ask for feedback before a flaw becomes a habit.",
+        "The village notices reliable work more than flashy work.",
+        "I keep learning because the next problem will not copy the last one.",
+        "Confidence comes from knowing what I can repair.",
+        "I would rather finish carefully than impress someone quickly."
       ],
       "min_mood_intensity": 25,
       "mood": "proud",

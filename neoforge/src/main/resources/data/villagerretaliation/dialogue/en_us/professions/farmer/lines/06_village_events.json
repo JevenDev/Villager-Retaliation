@@ -8,7 +8,22 @@
         "I checked fields, pens, and seed chests after the lightning, then counted heads. No one should be alone after a sky like that.",
         "Near the composter, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
         "That thunder made everyone quiet. I checked the pens twice.",
-        "The sky can keep its lightning. I have pens to set right."
+        "The sky can keep its lightning. I have pens to set right.",
+        "I checked the low fields first. Water always reaches them before anyone thinks it will.",
+        "The cows pushed against the barn door with every strike.",
+        "Lightning split the fence by the wheat and scattered half the herd.",
+        "Rain flattened the young plants, though the roots may still hold.",
+        "Every bucket under a leaking roof was one less bucket in the fields.",
+        "One strike hit near enough to leave my ears ringing.",
+        "Water found cracks in roofs that had survived for years.",
+        "Nobody slept much while the windows kept flashing white.",
+        "The storm moved on quickly, but the puddles stayed for days.",
+        "We checked every roof at first light.",
+        "Branches blocked the lane before the worst rain had passed.",
+        "I never knew thunder could make a locked door feel thin.",
+        "The children tried to act brave until the loudest strike.",
+        "We kept buckets ready in case lightning found dry wood.",
+        "The quiet afterward felt almost as strange as the storm."
       ],
       "event_tags": [
         "thunderstorm"
@@ -24,7 +39,22 @@
         "We passed water hand to hand and kept people away from the smoke. I checked the hay bales after.",
         "The rows can wait. People come first.",
         "We saved what we could reach around the composter, then stopped pretending things matter more than neighbors.",
-        "The smoke is thinning near the composter, but everyone is still sniffing the air like it might lie."
+        "The smoke is thinning near the composter, but everyone is still sniffing the air like it might lie.",
+        "We cut a strip through the dry wheat so the flames had nothing left to eat.",
+        "The animals fought the leads until smoke covered the pens.",
+        "I opened the far gate and drove the herd toward bare ground.",
+        "Burned seed can be replaced. Trapped neighbors cannot.",
+        "The field nearest the road is black now, but the fire stopped there.",
+        "The well felt impossibly far away that night.",
+        "A burning beam fell across the lane and split the village in two.",
+        "We counted every neighbor before we counted the damage.",
+        "Ash kept falling after the last flame was gone.",
+        "The smell stayed in our clothes for days.",
+        "People opened their homes before the smoke had cleared.",
+        "One small ember nearly started the whole fight again.",
+        "Morning showed damage the darkness had hidden.",
+        "We saved what we could and stopped risking lives for the rest.",
+        "Rebuilding began before anyone felt ready."
       ],
       "event_tags": [
         "village_fire"
@@ -40,7 +70,22 @@
         "The horns stopped, but my hands near the composter still expect another wave from the road.",
         "We counted living neighbors before fields, pens, and seed chests. That's the only count worth starting with.",
         "Raiders came looking for easy emeralds. They found barred doors near the fields and a bell that would not stop ringing.",
-        "From the fields, I saw fear cross the square. Then I saw courage get there first."
+        "From the fields, I saw fear cross the square. Then I saw courage get there first.",
+        "The raiders trampled the young wheat before they reached the first house.",
+        "I hid the seed grain where a banner would not think to look.",
+        "We moved the animals behind stone walls before the horns came closer.",
+        "A hay cart blocked the lane long enough for three families to get inside.",
+        "Their boots left a path through the fields I will remember.",
+        "Supplies disappeared quickly once everyone crowded indoors.",
+        "The shouting made it hard to tell where the danger was.",
+        "One barricade failed and the whole street had to fall back.",
+        "We kept watch on the roofs for anyone trying to circle around.",
+        "The fighting stopped before my hands stopped shaking.",
+        "Afterward, we counted neighbors by name.",
+        "Broken doors told most of the story at sunrise.",
+        "Nobody complained about chores during the cleanup.",
+        "The village felt smaller once we saw what nearly happened.",
+        "We posted extra watches before night returned."
       ],
       "event_tags": [
         "raid",
@@ -57,7 +102,22 @@
         "I stayed near the crop rows beyond the torchlight and listened for anyone calling from the dark.",
         "Dawn gave the composter enough light to count wounds, missing blocks, and who made it home.",
         "The dark tested everyone. Most of us passed by keeping a loaf of bread between us and teeth.",
-        "We are safe enough near the composter, though every shadow is being inspected twice."
+        "We are safe enough near the composter, though every shadow is being inspected twice.",
+        "Something crossed the carrot rows before the first shout.",
+        "I brought the animals into the smallest pen so we could count them.",
+        "The dark between the barn and the house felt twice as wide.",
+        "We used the irrigation ditch to move without crossing the open field.",
+        "At dawn, broken stems showed where the attackers had passed.",
+        "The narrow lanes turned dangerous once everyone started running.",
+        "We kept the children away from the windows.",
+        "One broken door left a whole house exposed.",
+        "The moonlight made the rooftops easy to watch and hard to trust.",
+        "We passed warnings in whispers when shouting felt too risky.",
+        "Dawn revealed tracks all around the village.",
+        "No one went back to sleep after the last noise.",
+        "We found dropped weapons beside the eastern wall.",
+        "The attack was brief, but the fear lasted until morning.",
+        "Every night sound seemed suspicious for a week."
       ],
       "event_tags": [
         "night_attack"
@@ -73,7 +133,22 @@
         "I checked fields, pens, and seed chests, then checked who was coughing too hard to answer.",
         "Sand reached the composter, the hinges, and half our eyes, but no one has been reported missing.",
         "A hard wind teaches a farmer which doors actually close and which ones only pretend.",
-        "We are safe enough near the composter, though the whole village sounds like it is chewing gravel."
+        "We are safe enough near the composter, though the whole village sounds like it is chewing gravel.",
+        "The wind buried the seedlings before I could cover the last row.",
+        "We tied cloth around the animals' eyes to keep them calm.",
+        "Sand filled the irrigation channels and stopped the water.",
+        "I found the barn by following its fence with both hands.",
+        "The eastern field has a new dune where the path used to be.",
+        "We lost sight of houses only a few paces away.",
+        "The animals crowded together and refused to move.",
+        "Water mattered more than anything while the air stayed dry.",
+        "We marked doorways with lanterns, though the light barely carried.",
+        "The storm erased paths we had used for years.",
+        "Every hinge complained after the sand got into it.",
+        "We found tools half buried in the yard afterward.",
+        "The wind made talking nearly useless.",
+        "People sheltered wherever they happened to be when it struck.",
+        "Cleanup took longer than the storm itself."
       ],
       "event_tags": [
         "sandstorm"
@@ -89,7 +164,22 @@
         "Snow piled against the doors, but everyone near the fields found shelter.",
         "Cold works quietly around the composter. We are checking on anyone who stayed quiet too long.",
         "I am clearing snow off the paths to the pens and watching for footprints that stop too soon.",
-        "We are alright for now near the composter. Keep the fires fed and the paths open."
+        "We are alright for now near the composter. Keep the fires fed and the paths open.",
+        "I dug a path to the barn before the animals ran out of feed.",
+        "The greenhouse roof bowed low enough to make everyone nervous.",
+        "We moved the weakest animals close to the warmest wall.",
+        "Snow hid the fence tops and made every gate hard to find.",
+        "The winter crops are buried, but the seed stores stayed dry.",
+        "White sky and white ground made distance impossible to judge.",
+        "We cleared roofs before the weight became dangerous.",
+        "The animals needed more feed just to stay warm.",
+        "Footprints vanished minutes after they were made.",
+        "We tied ropes between buildings for anyone forced outside.",
+        "Frozen locks caused almost as much trouble as the snow.",
+        "People slept near one fire rather than heat every room.",
+        "The storm made the whole village strangely quiet.",
+        "At dawn, only the chimney tops looked familiar.",
+        "It took days to reopen the buried paths."
       ],
       "event_tags": [
         "snowstorm"
@@ -101,11 +191,26 @@
       "id": "event_night_attack_farmer_1",
       "request": "village_event_report",
       "lines": [
-        "I can replant crops. I can't replant a night's sleep.",
+        "I can replant crops. I cannot replant a night of sleep.",
         "I am still sorting what happened. The village feels different after it.",
-        "That event left marks. We are counting people before we count damage.",
+        "That attack left marks. We counted people before we counted damage.",
+        "Morning came, but nobody trusted the quiet at first.",
+        "I found myself checking every window while the sun was fully up.",
+        "The animals settled before most of us did.",
+        "Neighbors who barely spoke before are sharing meals now.",
+        "We moved beds away from the outer walls for a few nights.",
+        "Every loose latch sounded urgent after dark.",
+        "The eastern path stayed empty because nobody wanted to walk it alone.",
+        "We repaired the broken doors before touching the damaged fields.",
+        "Some children started sleeping near their parents again.",
+        "I kept an extra lantern lit until the oil ran out.",
+        "The village watch has more volunteers than it did last week.",
+        "A dropped tool near the wall made everyone stop and stare.",
+        "We found courage during the attack and exhaustion after it.",
+        "Nobody laughs at a nervous glance toward the gate anymore.",
+        "The first ordinary evening felt like a gift.",
         "I would rather hear boring news tomorrow. Boring keeps people alive.",
-        "Everyone has an opinion now. Most of them arrived before the facts did."
+        "We are healing, though the night still feels longer than it used to."
       ],
       "event_tags": [
         "night_attack"

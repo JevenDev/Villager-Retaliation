@@ -25,7 +25,17 @@
         "That place is all dry air, sharp stone, and bad footing. I did not enjoy waiting there alone.",
         "Please do not leave me where the ground falls away faster than I can think.",
         "The heat made it hard to stay calm, and the cliffs made it hard to move.",
-        "I was alone, thirsty, and surrounded by more edges than I trusted."
+        "I was alone, thirsty, and surrounded by more edges than I trusted.",
+        "I kept the tallest terracotta ridge in sight while the gullies twisted out of sight.",
+        "I went after you until dry wind swept dust across your footprints.",
+        "Alone in Badlands, my water was running low, so I stopped guessing which way you had gone.",
+        "I waited in a shaded cut in the red stone and watched for you to return.",
+        "While I waited in Badlands, the heat made every minute alone feel longer than it was.",
+        "After you vanished in Badlands, I shouted once, but the dry wind carried my voice away.",
+        "When the light began to fade, I knew the cold night would be another problem. I was still alone in Badlands.",
+        "If you leave the path in Badlands, make sure I see where you turn.",
+        "If we get separated in Badlands again, a small marker would have saved me from checking every gully and ridge.",
+        "I will cross Badlands with you again, but I will not be abandoned there twice."
       ],
       "conditions": [
         {
@@ -61,7 +71,17 @@
         "Please do not leave me somewhere the sun feels like it has a grudge.",
         "The heat was bad enough before I had to worry about being forgotten in it.",
         "Every dune looked the same after a while, and that made waiting worse.",
-        "I was standing in open sand, hoping you came back before something else noticed me."
+        "I was standing in open sand, hoping you came back before something else noticed me.",
+        "I kept the sandstone rise in sight while the heat made the horizon swim.",
+        "I went after you until wind brushed your prints out of the sand.",
+        "Alone in Desert, my water was running low, so I stopped guessing which way you had gone.",
+        "I waited in the shade of a low dune and watched for you to return.",
+        "While I waited in Desert, the heat made every minute alone feel longer than it was.",
+        "After you vanished in Desert, I shouted once, but the dry wind carried my voice away.",
+        "When the light began to fade, I knew the cold night would be another problem. I was still alone in Desert.",
+        "If you leave the path in Desert, make sure I see where you turn.",
+        "If we get separated in Desert again, a small marker would have saved me from checking every gully and ridge.",
+        "I will cross Desert with you again, but I will not be abandoned there twice."
       ],
       "conditions": [
         {
@@ -97,7 +117,17 @@
         "The Eroded Badlands do not feel open. They feel like a maze made of heat.",
         "Please do not leave me somewhere every path looks like it ends badly.",
         "I could not tell whether I was more worried about falling or being found.",
-        "The whole place felt carved into hiding spots for trouble."
+        "The whole place felt carved into hiding spots for trouble.",
+        "I kept the nearest stone spire in sight while every canyon ended in another blind turn.",
+        "I went after you until dust slid down over your tracks.",
+        "Alone in Eroded Badlands, my water was running low, so I stopped guessing which way you had gone.",
+        "I waited in a narrow gap between terracotta towers and watched for you to return.",
+        "While I waited in Eroded Badlands, the heat made every minute alone feel longer than it was.",
+        "After you vanished in Eroded Badlands, I shouted once, but the dry wind carried my voice away.",
+        "When the light began to fade, I knew the cold night would be another problem. I was still alone in Eroded Badlands.",
+        "If you leave the path in Eroded Badlands, make sure I see where you turn.",
+        "If we get separated in Eroded Badlands again, a small marker would have saved me from checking every gully and ridge.",
+        "I will cross Eroded Badlands with you again, but I will not be abandoned there twice."
       ],
       "conditions": [
         {
@@ -133,7 +163,17 @@
         "Please do not leave me somewhere I can be seen from every direction.",
         "The Savanna looked calm, but calm is not the same as safe.",
         "I kept watching the grass line, waiting for either you or something worse.",
-        "The heat, the open ground, and the silence made every minute stretch."
+        "The heat, the open ground, and the silence made every minute stretch.",
+        "I kept the flat-topped acacia in sight while the sun left nowhere cool to wait.",
+        "I went after you until dry grass sprang back after you passed.",
+        "Alone in Savanna, my water was running low, so I stopped guessing which way you had gone.",
+        "I waited in the thin shade under an acacia and watched for you to return.",
+        "While I waited in Savanna, the heat made every minute alone feel longer than it was.",
+        "After you vanished in Savanna, I shouted once, but the dry wind carried my voice away.",
+        "When the light began to fade, I knew the cold night would be another problem. I was still alone in Savanna.",
+        "If you leave the path in Savanna, make sure I see where you turn.",
+        "If we get separated in Savanna again, a small marker would have saved me from checking every gully and ridge.",
+        "I will cross Savanna with you again, but I will not be abandoned there twice."
       ],
       "conditions": [
         {
@@ -169,7 +209,17 @@
         "Please do not leave me somewhere the ground ends so suddenly.",
         "I kept away from the edge, but the edge still felt too close.",
         "The wind had too much room to push, and I had too few places to stand.",
-        "I was exposed, uneasy, and very aware that down was a long way away."
+        "I was exposed, uneasy, and very aware that down was a long way away.",
+        "I kept the acacia at the plateau edge in sight while the cliff made a wrong turn costly.",
+        "I went after you until hard ground kept almost no footprints.",
+        "Alone in Savanna Plateau, my water was running low, so I stopped guessing which way you had gone.",
+        "I waited in an overhang below the rim and watched for you to return.",
+        "While I waited in Savanna Plateau, the heat made every minute alone feel longer than it was.",
+        "After you vanished in Savanna Plateau, I shouted once, but the dry wind carried my voice away.",
+        "When the light began to fade, I knew the cold night would be another problem. I was still alone in Savanna Plateau.",
+        "If you leave the path in Savanna Plateau, make sure I see where you turn.",
+        "If we get separated in Savanna Plateau again, a small marker would have saved me from checking every gully and ridge.",
+        "I will cross Savanna Plateau with you again, but I will not be abandoned there twice."
       ],
       "conditions": [
         {
@@ -205,7 +255,17 @@
         "Please do not leave me where the land is rough and the wind has opinions.",
         "I could barely hear myself think over the gusts.",
         "The Windswept Savanna made standing still feel like a fight.",
-        "I was trying to keep my footing, my direction, and my patience all at once."
+        "I was trying to keep my footing, my direction, and my patience all at once.",
+        "I kept the bent acacia on the ridge in sight while gusts nearly pushed me off the broken ground.",
+        "I went after you until the wind scattered every trace of your path.",
+        "Alone in Windswept Savanna, my water was running low, so I stopped guessing which way you had gone.",
+        "I waited in the sheltered side of a stone outcrop and watched for you to return.",
+        "While I waited in Windswept Savanna, the heat made every minute alone feel longer than it was.",
+        "After you vanished in Windswept Savanna, I shouted once, but the dry wind carried my voice away.",
+        "When the light began to fade, I knew the cold night would be another problem. I was still alone in Windswept Savanna.",
+        "If you leave the path in Windswept Savanna, make sure I see where you turn.",
+        "If we get separated in Windswept Savanna again, a small marker would have saved me from checking every gully and ridge.",
+        "I will cross Windswept Savanna with you again, but I will not be abandoned there twice."
       ],
       "conditions": [
         {
@@ -241,7 +301,17 @@
         "Please do not leave me somewhere that cannot decide whether it is a forest or a cliffside.",
         "The shade was thin, the stone was steep, and I was alone for all of it.",
         "The Wooded Badlands gave me just enough cover to wonder what else was hiding there.",
-        "I was hot, exposed, and surrounded by ledges I did not trust."
+        "I was hot, exposed, and surrounded by ledges I did not trust.",
+        "I kept the oak above the red ravine in sight while roots and ledges blocked the direct way back.",
+        "I went after you until pine needles covered your marks in the dust.",
+        "Alone in Wooded Badlands, my water was running low, so I stopped guessing which way you had gone.",
+        "I waited in a shaded ledge beneath the trees and watched for you to return.",
+        "While I waited in Wooded Badlands, the heat made every minute alone feel longer than it was.",
+        "After you vanished in Wooded Badlands, I shouted once, but the dry wind carried my voice away.",
+        "When the light began to fade, I knew the cold night would be another problem. I was still alone in Wooded Badlands.",
+        "If you leave the path in Wooded Badlands, make sure I see where you turn.",
+        "If we get separated in Wooded Badlands again, a small marker would have saved me from checking every gully and ridge.",
+        "I will cross Wooded Badlands with you again, but I will not be abandoned there twice."
       ],
       "conditions": [
         {

@@ -5,9 +5,9 @@
       "request": "insult",
       "lines": [
         "You could get lost standing still.",
-        "I have seen wrong turns with more sense than that.",
+        "I have erased wrong turns that showed more sense than you.",
         "Careful. Even parchment looks softer than your manners right now.",
-        "I have seen broken cartography with better instincts than you.",
+        "Even a rain-soaked chart has better judgment than that.",
         "You could get lost in a fenced garden.",
         "I have seen blank parchment with clearer purpose.",
         "Your thoughts wander without even bringing a map.",
@@ -22,7 +22,8 @@
         "That remark went nowhere and still took the long way.",
         "A compass near you would spin from embarrassment.",
         "You make a dead end feel ambitious.",
-        "If confusion needed a guide, it would ask you."
+        "If confusion needed a guide, it would ask you.",
+        "You could get lost between the door and the mapping table."
       ],
       "weight": 18
     }

@@ -5,7 +5,7 @@
       "request": "greeting",
       "lines": [
         "Mind the fletching table. Straight arrows do not happen by accident.",
-        "Give the fletching table room. Arrows works better without elbows in it.",
+        "Give the fletching table room. Arrow making works better without elbows in the way.",
         "Step carefully near the fletching table. I would rather greet you than patch you up.",
         "There you are. I was just near the fletching table, trying to keep the day sensible.",
         "Stand clear of the target lane unless you are very confident and very foolish.",
@@ -22,7 +22,8 @@
         "Step around the fletching table and keep your hands friendly.",
         "Good to see you arriving without a target on your back.",
         "I am listening, but one eye is still checking that shaft.",
-        "The range is quiet for now. What do you need?"
+        "The range is quiet for now. What do you need?",
+        "Good timing. I was about to take a break from the fletching table."
       ],
       "weight": 26
     }

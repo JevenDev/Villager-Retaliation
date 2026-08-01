@@ -15,7 +15,6 @@
         "You march beneath that banner against my home? Traitor.",
         "I followed you in trust, and you answer by threatening my village. Traitor.",
         "Lower that horn. Those are my people, and you have betrayed us.",
-        "So this is what your banner means: treachery against my home.",
         "You brought me here to watch you destroy my neighbors? Traitor.",
         "My contract ends where your attack on my home begins.",
         "I know every door in this village, and I will defend every one from you.",
@@ -25,8 +24,14 @@
         "You mistook my loyalty for permission to burn my own home.",
         "The party is over. From this moment, I stand with my village.",
         "You have chosen plunder over friendship, and my answer is no.",
-        "I recognize that banner now: it belongs to a traitor.",
-        "If you cross into my village as a raider, you cross me as an enemy."
+        "If you cross into my village as a raider, you cross me as an enemy.",
+        "I know the people behind those doors. I will not help you harm them.",
+        "You brought war to the place I still call home.",
+        "Take off that banner and turn back before another horn sounds.",
+        "I trusted you with my life, not with the lives of my neighbors.",
+        "Every promise between us ends if you cross that boundary as a raider.",
+        "The bell is ringing because of you. I cannot forgive that.",
+        "My family is in this village, and I will stand between them and you."
       ]
     },
     {
@@ -47,7 +52,12 @@
         "Every one of us remembers where we came from. You should have remembered too.",
         "You have forced my choice, and I choose the village.",
         "Whatever bond we had ends at the boundary of my threatened home.",
-        "You will find no ally in me while that raid horn echoes here."
+        "You will find no ally in me while that raid horn echoes here.",
+        "You will face all of us if you keep marching toward our homes.",
+        "I heard my neighbor refuse you, and I stand with them.",
+        "None of us joined your party to become raiders.",
+        "The road we shared ends here at the village boundary.",
+        "We know these people by name. You only see targets."
       ]
     },
     {
@@ -64,11 +74,16 @@
         "The warning is given. Our golems and our people will answer your attack.",
         "From the smallest house to the tallest bell, this village rejects you.",
         "You are no guest and no friend here now. You are the raider.",
-        "Remember this moment: you chose to make enemies of an entire village.",
         "We have counted our people, armed our defenders, and marked every traitor.",
         "There is still time to flee. There is no time left to pretend loyalty.",
         "The village will not scatter for you. It will close ranks.",
-        "Your horn has finished speaking. Now the village answers."
+        "Your horn has finished speaking. Now the village answers.",
+        "Ring the bell. Every defender needs to know who is coming.",
+        "Barricade the lanes and keep the children away from the square.",
+        "The party has turned. We defend the village now.",
+        "Golems to the front. Archers watch the rooftops.",
+        "No one opens a door for them until the banner is gone.",
+        "We know the streets better than any raider ever will."
       ]
     }
   ]

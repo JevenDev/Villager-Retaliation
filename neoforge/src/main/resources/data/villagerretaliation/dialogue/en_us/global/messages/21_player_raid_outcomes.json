@@ -27,7 +27,12 @@
         "The defenders gave everything. Today, everything was not enough.",
         "Our party held together from the first horn to the last strike.",
         "No defenders remain between us and victory.",
-        "Catch your breath. We won this raid, and we won it together."
+        "Catch your breath. We won this raid, and we won it together.",
+        "Their bells are quiet now. We finished what we came to do.",
+        "Check the wounded, then gather the party. This victory belongs to all of us.",
+        "The last defense has broken. We can finally lower our weapons.",
+        "We leave this fight standing together, and that is worth celebrating.",
+        "The village could not drive us off. The raid is over and we prevailed."
       ],
       "id": "global.messages.21_player_raid_outcomes.messages.interaction.party.player_raid_victory.000"
     },
@@ -48,7 +53,12 @@
         "We could not finish the raid. We can still learn from why.",
         "The village stands, and we are the ones retreating. That is the truth of it.",
         "No excuses. Their defense outlasted our attack.",
-        "We leave empty-handed today. Let the loss make us wiser."
+        "We leave empty-handed today. Let the loss make us wiser.",
+        "Their defenses are still standing. We need to get clear of the village.",
+        "Enough. Pull everyone back before this defeat costs another life.",
+        "We found the limit of our strength today. Let us live long enough to improve it.",
+        "The village won this battle. There is no sense feeding it more blood.",
+        "We came for a victory and found a retreat. Keep moving until we are safe."
       ],
       "id": "global.messages.21_player_raid_outcomes.messages.interaction.party.player_raid_loss.001"
     }

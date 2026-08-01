@@ -12,10 +12,26 @@
     {
       "id": "cleric_opening",
       "lines": [
-        "Mind the brewing stand. What do you need?",
-        "Step clear of the brewing stand. What do you need?",
-        "Mind the brewing stand. I'm listening.",
-        "There you are. I was just near the brewing stand, trying to keep the day sensible."
+        "What do you need?",
+        "Come in. Are you hurt?",
+        "Mind the bottles and tell me what happened.",
+        "I have a moment. Speak.",
+        "Sit down if you feel unsteady.",
+        "You look worried. Start at the beginning.",
+        "Hello. Keep clear of the flame.",
+        "Did someone send you to me?",
+        "If this is urgent, say so plainly.",
+        "I was about to clean up. Your timing is good.",
+        "Come closer. The light is better here.",
+        "Let me put this bottle away first.",
+        "Are you here for medicine or advice?",
+        "You can talk while I work.",
+        "Mind the cat. It guards the empty chair.",
+        "Tell me where it hurts.",
+        "I hope this is a social visit.",
+        "What brings you to the brewing stand?",
+        "Give me the short version first.",
+        "I am listening."
       ]
     }
   ]

@@ -13,9 +13,25 @@
       "id": "armorer_opening",
       "lines": [
         "Mind the forge. What do you need?",
-        "Step clear of the forge. What do you need?",
+        "You caught me between chores, but I have a moment.",
         "Mind the forge. I'm listening.",
-        "There you are. I was just near the forge, trying to keep the day sensible."
+        "There you are. I was just near the forge, trying to keep the day sensible.",
+        "Morning. Or afternoon. The work makes the hours blur if I let it.",
+        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
+        "If you need me, speak up. If you need gossip, speak quieter.",
+        "You caught me before the next little disaster. That is rare timing.",
+        "Hello. Try not to bring the whole village into this unless it is important.",
+        "I have a moment. Not a long one, but a real one.",
+        "Careful near the tongs.",
+        "The forge is busy, but I hear you.",
+        "Come around the cool side.",
+        "Speak over the hammering.",
+        "You found the right smith.",
+        "Watch your sleeves.",
+        "I can spare a moment.",
+        "You look concerned.",
+        "The heat is manageable.",
+        "Leave the door clear."
       ]
     }
   ]
