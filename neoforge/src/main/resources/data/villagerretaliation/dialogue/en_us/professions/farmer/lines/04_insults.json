@@ -22,7 +22,8 @@
         "The field has seen worse weather and still complained less.",
         "You make mud look thoughtful.",
         "A dry well has more to offer than that.",
-        "Your sense needs weeding and a long season."
+        "Your sense needs weeding and a long season.",
+        "Mud carries itself with more dignity than you do."
       ],
       "weight": 18
     },
@@ -31,9 +32,25 @@
       "request": "insult",
       "lines": [
         "I would not plant that opinion in poor soil.",
-        "I have seen trampled crops with more sense than that.",
-        "Careful. Even soil looks softer than your manners right now.",
-        "I have seen broken crops with better instincts than you."
+        "Your manners could sour a full barrel of apples.",
+        "I asked for sense, not noise with boots on.",
+        "Leave the fields out of whatever foolishness you brought here.",
+        "Wipe your feet before you bring the whole road inside.",
+        "If you want respect, begin by showing some.",
+        "Do not touch what you did not help make.",
+        "You have a remarkable gift for arriving at the wrong moment.",
+        "Speak plainly. I am not sorting through your attitude too.",
+        "The village has chores for people with that much spare energy.",
+        "Keep your hands to yourself and your excuses shorter.",
+        "I heard you the first time. Repeating it did not improve it.",
+        "You can leave before your manners get any worse.",
+        "Try asking like the answer belongs to another person.",
+        "I have work that deserves more attention than this.",
+        "Being loud does not make you right.",
+        "If that was meant to impress me, it missed.",
+        "You are testing patience you did not earn.",
+        "Come back when you can manage a civil sentence.",
+        "I will not clean up another mess made by your pride."
       ],
       "dispositions": [
         "rude",

@@ -5,7 +5,7 @@
       "request": "greeting",
       "lines": [
         "Mind the lectern. It has heard better questions than most people ask.",
-        "Give the lectern room. Records works better without elbows in it.",
+        "Give the lectern room. Record keeping works better without elbows in the way.",
         "Step carefully near the lectern. I would rather greet you than patch you up.",
         "There you are. I was just near the lectern, trying to keep the day sensible.",
         "Lower your voice a little. The shelves are dramatic today.",
@@ -22,7 +22,8 @@
         "I am listening, though the margin was speaking first.",
         "Stand away from the open ink and near your better judgment.",
         "You look like a question with boots.",
-        "I can spare a short chapter of attention."
+        "I can spare a short chapter of attention.",
+        "Good timing. I was about to take a break from the library."
       ],
       "weight": 26
     }

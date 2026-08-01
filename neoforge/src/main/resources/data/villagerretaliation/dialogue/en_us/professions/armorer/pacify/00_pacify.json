@@ -14,7 +14,24 @@
       "lines": [
         "Fine. I'll lower my guard, but I am keeping the straps tight.",
         "Fine. I'll set this down before it gets heavier.",
-        "Fine. I can step back, but do not make me regret it."
+        "Fine. I can step back, but do not make me regret it.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance.",
+        "The payment settles this.",
+        "Keep your distance and we have peace.",
+        "We are done fighting.",
+        "Leave the trouble here.",
+        "Walk away calmly.",
+        "I am lowering my guard.",
+        "No more threats or debt.",
+        "Let this be the end.",
+        "We need no more wounds.",
+        "Make your next choice peaceful."
       ],
       "outcomes": [
         "success"
@@ -26,7 +43,24 @@
       "lines": [
         "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}.",
         "That's short of the full repair. Bring {emerald_cost} {emeralds}.",
-        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
+        "You still owe {emerald_cost} {emeralds}.",
+        "Peace costs the full amount.",
+        "That payment is short.",
+        "I will not settle for less.",
+        "Count {emerald_cost} {emeralds}.",
+        "Bring all of it.",
+        "A handful is not enough.",
+        "Your purse changes nothing.",
+        "The price has not moved.",
+        "Return with what you owe.",
+        "I counted carefully.",
+        "This covers only part.",
+        "No partial payment.",
+        "The whole debt remains.",
+        "Do not bargain now.",
+        "Settle it properly.",
+        "We are not finished."
       ],
       "outcomes": [
         "not_enough_emeralds"
@@ -38,7 +72,24 @@
       "lines": [
         "No. Armor is for people I mean to protect, and that is not you right now.",
         "No. Some damage has to cool before payment matters.",
-        "No. Keep {payment_items}. Trust is not ready to trade."
+        "No. Keep {payment_items}. Trust is not ready to trade.",
+        "Keep {payment_items}.",
+        "No payment makes this safe.",
+        "Give me space.",
+        "I will not bargain today.",
+        "This has passed a price.",
+        "Leave before it worsens.",
+        "I do not trust you.",
+        "No offer is open.",
+        "Money cannot repair this.",
+        "The answer is no.",
+        "I need distance.",
+        "Do not push me.",
+        "The village is watching.",
+        "Some wrongs need time.",
+        "Your offer changes nothing.",
+        "Walk away now.",
+        "Trust is not for sale."
       ],
       "outcomes": [
         "blocked_by_reputation"

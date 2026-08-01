@@ -12,6 +12,7 @@
         "A crack is not always disaster. Sometimes it is a warning asking politely.",
         "Most days, I am at the stonecutter, trying to keep cracks and foundations from becoming everyone else's problem.",
         "People think stonework is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
         "I trust a good chisel more than a loud promise. The chisel has less to prove.",
         "Stone tells the truth slowly, but it tells it forever.",
         "A good corner keeps its promise when nobody is watching.",
@@ -37,7 +38,24 @@
       "lines": [
         "After following you that far, I understood why roads need better foundations.",
         "That road needed a mason, and so did my feet.",
-        "Long paths teach you where the ground gives up."
+        "Long paths teach you where the ground gives up.",
+        "I should have asked how far we were going before we left the bell behind.",
+        "The first hill was easy. The fifth one had a personal grudge.",
+        "You kept looking ahead while I kept checking that the village was still behind us.",
+        "My boots found every loose stone between here and wherever that was.",
+        "I learned to save some strength for the walk home.",
+        "The road looked harmless until the daylight started running out.",
+        "I nearly asked to turn back, then saw you checking on everyone behind you.",
+        "That journey taught me how quickly a shortcut can become a long problem.",
+        "I remember the place where the path washed out and we had to climb around it.",
+        "Next time I will bring chalk and mark the turns that all look alike.",
+        "We made better time after we stopped pretending nobody was tired.",
+        "I trusted your sense of direction more than I trusted the ground under us.",
+        "Seeing our roofs again made the last mile feel shorter.",
+        "I came home sore, hungry, and glad I had gone.",
+        "The view was worth seeing once. My knees are not asking to see it twice.",
+        "If we take that road again, I want the route before I pack.",
+        "I know more about the land beyond the village now, including where not to step."
       ],
       "conditions": [
         {
@@ -56,7 +74,24 @@
       "lines": [
         "I do not trust anything with no foundation, but that boat held better than I expected.",
         "That boat had no foundation and too much confidence, but it crossed.",
-        "I still distrust floating floors. Yours happened to survive."
+        "I still distrust floating floors. Yours happened to survive.",
+        "I spent the first half of the crossing watching the seams and the second watching the shore.",
+        "You called the water calm. My stomach used a different word.",
+        "The hull creaked once and I inspected it with both feet planted very still.",
+        "I kept my tools wrapped because river water is a poor finish for iron.",
+        "That little boat carried more weight than I thought it had any right to.",
+        "I liked the river better once the far bank was close enough to count stones on it.",
+        "You handled the oars well. I handled the side of the boat even better.",
+        "The current pulled us off course, but you found a quiet stretch near the reeds.",
+        "I remember cold spray, wet sleeves, and the relief of the landing.",
+        "Next time I will check the boards before we push away from shore.",
+        "A floating floor feels wrong, even when it does exactly what it should.",
+        "We passed one broken dock that made our boat look suddenly trustworthy.",
+        "I was never happier to step onto mud and call it solid ground.",
+        "The crossing saved time and spent all of my patience.",
+        "I would take that boat again after someone checks every plank.",
+        "Our village looked different from the water, smaller but no less welcome.",
+        "We came home damp and upright. That is a good result for a boat trip."
       ],
       "conditions": [
         {
@@ -75,10 +110,23 @@
         "Stone is patient. That's why careless builders should fear it.",
         "A wall is not just blocks. It is everyone sleeping behind it.",
         "Foundations tell me whether a place expects to last.",
-        "Most days, I am at the stonecutter, trying to keep cracks and foundations from becoming everyone else's problem.",
-        "People think stonework is simple until something goes wrong and suddenly it is very important.",
-        "I trust a good chisel more than a loud promise. The chisel has less to prove.",
-        "A crooked block looks worse the longer you stare at it. I notice them all."
+        "I spend most days catching small cracks before they become everyone else's problem.",
+        "Stonework looks easy only from the far side of a finished wall.",
+        "The village depends on repairs nobody stops to notice.",
+        "A crooked block looks worse the longer you stare at it. I notice them all.",
+        "If you want my honest answer, slow down first.",
+        "The village looks calm from a distance. Up close, it is chores and weather.",
+        "I notice little flaws. The stonecutter trained that into me.",
+        "A good answer starts where the whole wall depends on blocks nobody sees.",
+        "I measure twice before I trust the first course with anyone's weight.",
+        "Stonework teaches patience because rushed mistakes become heavy.",
+        "The blocks nobody notices are usually carrying the most weight.",
+        "A straight wall begins with an honest line. So does a straight answer.",
+        "Measurements do not care who sounds important.",
+        "Most failures start small enough for somebody to ignore them.",
+        "The stonecutter taught me to listen before I strike.",
+        "You can hide a crack with plaster, but the weight still finds it.",
+        "Good work survives being checked twice."
       ],
       "show_for_babies": false,
       "weight": 18

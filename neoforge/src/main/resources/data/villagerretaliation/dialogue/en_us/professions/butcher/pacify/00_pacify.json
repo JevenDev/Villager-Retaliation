@@ -13,8 +13,25 @@
       "id": "butcher_pacify_success",
       "lines": [
         "Fine. I have work to get back to, and anger spoils the day.",
-        "Fine. I'll set this down before it gets heavier.",
-        "Fine. I can step back, but do not make me regret it."
+        "All right. I will put the cleaver down and hear you properly.",
+        "I am still angry, but I do not need to feed it.",
+        "You came to settle this honestly. I can meet you there.",
+        "We can stop before either of us says something rotten.",
+        "That is enough for me to step away from the fight.",
+        "I accept the offer. Do not make me regret taking you at your word.",
+        "Let us cool this down before the whole village smells trouble.",
+        "You owned what happened without trimming the ugly parts.",
+        "I would rather clean the block than carry this grudge another day.",
+        "This does not erase the damage, but it ends the quarrel here.",
+        "Put your hands down. Mine are already off the tools.",
+        "We can speak again once the heat has gone out of us.",
+        "I believe you mean it, which is more than I expected this morning.",
+        "Keep your promise afterward and we may be square.",
+        "Peace leaves more time for useful work. I will take it.",
+        "We will call the matter settled, though trust still needs tending.",
+        "Take a breath. I have been holding mine too long.",
+        "I can live with that answer and return to my smoker.",
+        "Enough. We walk away without making another mess."
       ],
       "outcomes": [
         "success"
@@ -24,9 +41,26 @@
     {
       "id": "butcher_pacify_short",
       "lines": [
-        "Too lean an offer. Bring {emerald_cost} {emeralds} if you want this cut clean.",
-        "That's short of the full repair. Bring {emerald_cost} {emeralds}.",
-        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
+        "Too lean. Bring {emerald_cost} {emeralds} if you want this settled.",
+        "I counted what you brought. It does not reach {emerald_cost} {emeralds}.",
+        "That is a portion of the payment, not the whole repair.",
+        "Do not ask me to call short weight fair.",
+        "The agreement was {emerald_cost} {emeralds}. Bring the amount we named.",
+        "Keep these until you can return with everything at once.",
+        "Good intentions do not fill an empty side of the scale.",
+        "You are still short, and I will not trim the cost to spare the conversation.",
+        "Come back after you find the remaining emeralds.",
+        "A clean settlement needs the full payment.",
+        "I weigh meat for a living. I can count {emerald_cost} {emeralds}.",
+        "This is a start, but it does not close the matter.",
+        "Do not hide a shortage beneath a careful apology.",
+        "The price did not change while you were walking here.",
+        "Bring the rest and I will listen again.",
+        "Partial payment leaves us with the same unfinished quarrel.",
+        "I am willing to wait. I am not willing to pretend.",
+        "{emerald_cost} {emeralds} puts this behind us. Less does not.",
+        "Take your offer back before frustration makes things worse.",
+        "Return with the full amount and we can cut this clean."
       ],
       "outcomes": [
         "not_enough_emeralds"
@@ -37,8 +71,25 @@
       "id": "butcher_pacify_blocked",
       "lines": [
         "No. I know bad meat, and I know bad apologies.",
-        "No. Some damage has to cool before payment matters.",
-        "No. Keep {payment_items}. Trust is not ready to trade."
+        "Keep {payment_items}. Trust is not ready to trade.",
+        "Payment cannot cover what you did while the village still fears you.",
+        "I would rather lose the offer than sell you a false peace.",
+        "Put {payment_items} away. Seeing them does not make me safer.",
+        "The wound is too fresh for bargaining.",
+        "You are asking me to forgive before you have changed anything.",
+        "Emeralds can replace supplies. They cannot replace trust.",
+        "Come back after your actions stop giving us reasons to bar the doors.",
+        "I will not weigh this harm like a cut of meat.",
+        "The village remembers, even if you are eager to forget.",
+        "No bargain works while I expect another knife behind it.",
+        "Give us distance instead of gifts.",
+        "Your reputation reached this room before you did.",
+        "Prove you can pass the smokehouse without causing trouble.",
+        "I am not trading away the right to stay cautious.",
+        "Keep the payment and show some patience for once.",
+        "The answer is no today. Pushing will not improve tomorrow.",
+        "I do not believe the danger ends when I accept your offer.",
+        "Leave the shop and give everyone time."
       ],
       "outcomes": [
         "blocked_by_reputation"

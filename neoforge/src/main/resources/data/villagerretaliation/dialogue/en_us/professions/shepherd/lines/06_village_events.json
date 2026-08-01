@@ -4,11 +4,26 @@
       "id": "shepherd_village_event_thunderstorm",
       "request": "village_event_report",
       "lines": [
-        "Thunder shook the loom so hard the flock pressed hard against the fence, but everyone near me is still standing.",
+        "Thunder shook the loom so badly the flock pressed against the fence, but everyone is still standing.",
         "I checked wool, fences, and the flock after the lightning, then counted heads. No one should be alone after a sky like that.",
-        "Near the loom, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "The bell sounded small beneath that thunder. We stayed inside and kept watch on the doors.",
         "That thunder made everyone quiet. I checked the fences twice.",
-        "The sky can keep its lightning. I have fences to set right."
+        "The sky can keep its lightning. I have fences to set right.",
+        "A bolt split the old tree by the pasture. We moved the flock before it fell.",
+        "The lambs crowded under the eaves until the rain eased.",
+        "One strike set every sheep running. It took half the village to settle them.",
+        "The roof held, though water found its way into the wool store.",
+        "I have never heard the windows rattle like that.",
+        "We found a ewe outside after the worst passed. She is frightened but unhurt.",
+        "The north fence washed loose where the ground turned soft.",
+        "Everyone stayed indoors except the iron golem and one very stubborn ram.",
+        "Lightning hit close enough to leave the air tasting sharp.",
+        "I kept the younger villagers away from the windows while the storm crossed.",
+        "The rain filled every trough and half the paths.",
+        "We lost a gate hinge to the wind, but not a single sheep.",
+        "The storm moved east. You can still hear it grumbling over the hills.",
+        "I am hanging the wet blankets before they start smelling like the pen.",
+        "Next time the clouds turn that color, I am bringing everyone in early."
       ],
       "event_tags": [
         "thunderstorm"
@@ -23,8 +38,23 @@
         "I checked wool, fences, and dry grass for sparks first, then checked faces for smoke and <dark_gray><wavy>fear</wavy></dark_gray>.",
         "We passed water hand to hand and kept people away from the smoke. I checked the wool after.",
         "The loom can wait. People come first.",
-        "We saved what we could reach around the loom, then stopped pretending things matter more than neighbors.",
-        "The smoke is thinning near the loom, but everyone is still sniffing the air like it might lie."
+        "We saved what we could reach, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning, but everyone still sniffs the air as if it might lie.",
+        "Dry wool catches quickly. We dragged every bale away from the heat.",
+        "The pen gate jammed while the sheep were panicking. Three of us forced it open.",
+        "One roof is gone, but the family who slept under it is safe.",
+        "We soaked the grass around the pasture before the sparks could spread.",
+        "The dye room is black with soot. That can be cleaned later.",
+        "I wrapped a wet cloth over a child's mouth and led them through the square.",
+        "The sheep bolted from the smoke. We found the last one by the river.",
+        "Our hands are blistered from the buckets, but the flames are down.",
+        "A spark landed in the hayloft. We caught it before the whole store went up.",
+        "The bell brought everyone running before the fire reached the next house.",
+        "Keep clear of the ash pile. There are hot beams underneath.",
+        "The wind changed at the right moment. I will be grateful for that awhile.",
+        "We are checking each home for anyone who breathed too much smoke.",
+        "The flock will sleep outside tonight until I trust the barn again.",
+        "Tomorrow we rebuild. Tonight we make sure no one is alone."
       ],
       "event_tags": [
         "village_fire"
@@ -37,10 +67,25 @@
       "request": "village_event_report",
       "lines": [
         "During a raid, the loom can wait. Who makes it behind a door matters more.",
-        "The horns stopped, but my hands near the loom still expect another wave from the road.",
+        "The horns stopped, but my hands still expect another wave from the road.",
         "We counted living neighbors before wool, fences, and the flock. That's the only count worth starting with.",
-        "Raiders came looking for easy emeralds. They found barred doors near the loom and a bell that would not stop ringing.",
-        "From the loom, I saw fear cross the square. Then I saw courage get there first."
+        "Raiders came looking for easy emeralds. They found barred doors and a bell that would not stop ringing.",
+        "From the wool shed, I saw fear cross the square. Then I saw courage get there first.",
+        "I drove the flock behind the stone wall before the first raider reached the pens.",
+        "The last horn has gone quiet, but nobody is lowering their guard yet.",
+        "They broke the west gate. The iron golem kept them from getting farther.",
+        "A crossbow bolt went through the wool shed door. No one was inside.",
+        "We hid the children below the meeting house until the square was clear.",
+        "The raiders scattered the sheep, so I am counting every field and garden.",
+        "I saw neighbors who barely speak stand shoulder to shoulder at the well.",
+        "They took supplies, but they did not take the village.",
+        "One pillager reached the pasture. The old ram made him regret it.",
+        "The bell rope burned my hands. I kept pulling anyway.",
+        "We are boarding windows before anyone tries to sleep.",
+        "Some homes are damaged, and everyone is helping somewhere.",
+        "The wounded are inside now. Give the healer room to work.",
+        "We defended each other. That is why there is still a village to repair.",
+        "The road is clear for now, though I am still listening for horns."
       ],
       "event_tags": [
         "raid",
@@ -53,11 +98,26 @@
       "id": "shepherd_village_event_night_attack",
       "request": "village_event_report",
       "lines": [
-        "Night trouble tests the loose latch by the loom first. We are fixing those before sunset.",
+        "Night trouble tests the loosest latch first. We are fixing those before sunset.",
         "I stayed near the pen beyond the lantern and listened for anyone calling from the dark.",
-        "Dawn gave the loom enough light to count wounds, missing blocks, and who made it home.",
+        "Dawn gave us enough light to count wounds, damage, and who made it home.",
         "The dark tested everyone. Most of us passed by keeping a length of wool between us and teeth.",
-        "We are safe enough near the loom, though every shadow is being inspected twice."
+        "We are safe for now, though every shadow is being inspected twice.",
+        "Something hit the pen after midnight and sent the flock against the rails.",
+        "We fought by lantern light until the eastern sky began to pale.",
+        "A zombie came through the garden and nearly reached the nearest house.",
+        "No one slept after the first scream. We watched the doors together.",
+        "We found arrows in the fence at dawn, but no tracks inside it.",
+        "The wolves would not stop barking toward the northern path.",
+        "I kept the lambs in the wool room where the walls were thickest.",
+        "The attack ended quickly. The waiting afterward felt much longer.",
+        "We are adding torches beyond the pasture before night returns.",
+        "One villager is missing a window and another is missing a door.",
+        "The golem stood at the crossroads until sunrise.",
+        "I heard the groans before I saw anything. That warning saved us time.",
+        "There are claw marks on the lower gate that were not there yesterday.",
+        "The children are tired, but everyone answered the morning count.",
+        "Tonight we keep two watchers by the pens instead of one."
       ],
       "event_tags": [
         "night_attack"
@@ -70,10 +130,25 @@
       "request": "village_event_report",
       "lines": [
         "The wind threw sand through every crack. I am still cleaning dust from the wool.",
-        "I checked wool, fences, and the flock, then checked who was coughing too hard to answer.",
-        "Sand reached the loom, the hinges, and half our eyes, but no one has been reported missing.",
+        "Once the air cleared, I counted every sheep and checked who was coughing too hard to answer.",
+        "Sand reached the hinges, the wool store, and half our eyes, but no one is missing.",
         "A hard wind teaches a shepherd which doors actually close and which ones only pretend.",
-        "We are safe enough near the loom, though the whole village sounds like it is chewing gravel."
+        "Everyone is safe, though the whole village sounds like it is chewing gravel.",
+        "We tied cloth over our faces and led the flock by touch.",
+        "The pasture vanished behind a wall of dust before noon.",
+        "Sand buried the lower fence rail and filled every water trough.",
+        "One lamb slipped its rope in the confusion. We found it under a cart.",
+        "The wind stripped loose wool from the drying lines.",
+        "We kept everyone inside until we could see the well again.",
+        "I am shaking sand from places I did not know clothing had.",
+        "The western door blew open twice before we braced it with the loom bench.",
+        "Our water is gritty, but the sealed barrels stayed clean.",
+        "The sheep huddled so tightly I could barely count them.",
+        "We heard roof tiles breaking but could not see which roof they left.",
+        "The air is clearing now. Keep a cloth nearby in case it turns again.",
+        "Every hinge in the village needs cleaning after that wind.",
+        "The dye pots survived under their covers, unlike my lunch.",
+        "I will be finding sand in this fleece until winter."
       ],
       "event_tags": [
         "sandstorm"
@@ -86,10 +161,25 @@
       "request": "village_event_report",
       "lines": [
         "The loom can wait. Warm hands, clear paths, and full hearths come first.",
-        "Snow piled against the doors, but everyone near the loom found shelter.",
-        "Cold works quietly around the loom. We are checking on anyone who stayed quiet too long.",
+        "Snow piled against the doors, but everyone found shelter.",
+        "Cold works quietly. We are checking on anyone who stayed quiet too long.",
         "I am clearing snow off the fence rails and watching for footprints that stop too soon.",
-        "We are alright for now near the loom. Keep the fires fed and the paths open."
+        "We are alright for now. Keep the fires fed and the paths open.",
+        "The drifts covered the lower pen, so we moved the flock into the wool shed.",
+        "I found ice in the water buckets thick enough to stand on.",
+        "We tied a rope between the houses before anyone crossed the square.",
+        "One roof bowed under the weight. We cleared it before it gave way.",
+        "The lambs are sharing space with the dye barrels tonight.",
+        "We dug out the baker's door first. Warm bread improves rescue work.",
+        "The wind erased our tracks almost as soon as we made them.",
+        "A villager got turned around between two nearby houses. The rope brought them back.",
+        "We are saving dry wood for the homes with children.",
+        "The flock has enough hay if the road stays closed another day.",
+        "I wrapped every spare blanket around someone who needed it.",
+        "The cold cracked the north gate post straight through.",
+        "No one goes past the bell alone until the snow settles.",
+        "Sunlight is finally touching the roofs. It has not warmed them yet.",
+        "When the thaw comes, we will have fences to mend and mud everywhere."
       ],
       "event_tags": [
         "snowstorm"

@@ -13,7 +13,17 @@
         "That {attack_weapon} made a simple conversation feel less simple.",
         "I am trying to answer you without forgetting why I am careful.",
         "Some wounds fade faster than the caution they leave behind.",
-        "If I seem distant, that {attack_weapon} is part of the reason."
+        "If I seem distant, that {attack_weapon} is part of the reason.",
+        "I remember the {attack_weapon} more clearly than the argument before it.",
+        "You made me flinch at familiar footsteps for days.",
+        "The healer mended the wound. You still have to mend the trust.",
+        "I know exactly where I was standing when you struck me.",
+        "Do not act surprised that I keep my distance now.",
+        "People saw what happened and moved between us afterward.",
+        "The bruise faded before the fear did.",
+        "I kept the damaged clothing because forgetting would be convenient for you.",
+        "A friendly greeting does not erase the swing of a {attack_weapon}.",
+        "If you want this memory to soften, give me better ones."
       ],
       "conditions": [
         {
@@ -42,7 +52,17 @@
         "If the bell stays silent, I will call that a good day.",
         "Peace has been keeping its voice down. I appreciate that.",
         "The village is breathing easy for now.",
-        "A calm day can be rare enough to treat kindly."
+        "A calm day can be rare enough to treat kindly.",
+        "The bell is quiet, so I have time to talk.",
+        "Hello. Let us hope the bell stays silent while we speak.",
+        "Good day. Everything is calm enough for conversation.",
+        "You caught me during a peaceful stretch. What do you need?",
+        "Hello. The paths have been quiet since morning.",
+        "No alarm today, thankfully. How can I help?",
+        "The village is settled for once. What brings you here?",
+        "Good to see a visitor when nobody is running for shelter.",
+        "Hello. I was just enjoying how ordinary the day feels.",
+        "Speak freely. The only bell today has been for the hour."
       ],
       "weight": 22
     },
@@ -59,7 +79,17 @@
         "I would tell you a cheap emerald joke, but those are all out of stock.",
         "The best emerald jokes are rare, green, and somehow overpriced.",
         "I polished this joke myself. That is why it costs more.",
-        "If you do not laugh, I can offer store credit."
+        "If you do not laugh, I can offer store credit.",
+        "Why did the emerald refuse to settle down? It kept changing hands.",
+        "A trader dropped an emerald once. Five villagers offered to help pick it up.",
+        "Why did the emerald stay home? It was feeling spent.",
+        "I had a priceless emerald joke, but a trader offered me two for it.",
+        "An emerald walked into the market and immediately changed hands.",
+        "What do you call an emerald with no friends? Poorly invested.",
+        "I told my emerald a secret. By noon, every trader knew.",
+        "Why are emeralds calm? They know everyone wants their attention.",
+        "I tried to save an emerald joke, but inflation ruined the punchline.",
+        "Never argue with an emerald. It always has the final trade."
       ],
       "weight": 18
     },
@@ -72,11 +102,21 @@
         "The path did nothing wrong, yet you still walk like it owes you.",
         "You have the confidence of someone who has never met a good idea.",
         "I have seen fences with better direction than you.",
-        "You bring the mood down like <aqua><wavy>rain</wavy></aqua> through a bad roof.",
+        "You bring the mood down like rain through a bad roof.",
         "Even the mud seems eager to let you pass.",
         "You make silence look like the wiser choice.",
         "If trouble had footsteps, I imagine they would sound like yours.",
-        "You carry yourself like a warning sign with legs."
+        "You carry yourself like a warning sign with legs.",
+        "A wandering trader has more reason to be here than you do.",
+        "You carry yourself like every doorway was built too narrow for your pride.",
+        "I have met fence posts with more awareness of their surroundings.",
+        "You leave patience behind wherever you walk.",
+        "If confidence were competence, you might be useful.",
+        "The village path has better manners and fewer opinions.",
+        "You could make a quiet room regret listening.",
+        "Even the golem looks tired when you start talking.",
+        "I would explain the problem, but you seem committed to being it.",
+        "Your best quality may be that eventually you leave."
       ],
       "weight": 18
     },
@@ -93,7 +133,17 @@
         "For most villagers, {gift_item} is worth a smile.",
         "{gift_item} makes a good peaceable gift.",
         "Bring {gift_item} and most villagers will understand the gesture.",
-        "{gift_item} is welcome more often than not."
+        "{gift_item} is welcome more often than not.",
+        "{gift_item} is the kind of present that earns its place quickly.",
+        "Most villagers can find a good use for {gift_item}.",
+        "You chose something practical without making it feel thoughtless.",
+        "A gift like {gift_item} helps long after the moment of giving.",
+        "Nobody needs to pretend enthusiasm for something this useful.",
+        "{gift_item} suits village life better than anything flashy.",
+        "It is easy to appreciate a present that solves a real problem.",
+        "Someone receiving {gift_item} will probably use it before nightfall.",
+        "That choice shows you noticed what people here actually need.",
+        "A useful gift is remembered every time it saves a little work."
       ],
       "gift_advice": "global_liked",
       "weight": 186

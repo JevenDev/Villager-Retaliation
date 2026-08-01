@@ -5,10 +5,25 @@
       "request": "gear_report",
       "lines": [
         "It helped. Maybe being ready is a profession of its own for now.",
-        "It did the job when fear was loud. That's praise enough.",
+        "It did the job when <dark_gray><wavy>fear</wavy></dark_gray> was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The finding a calling tell a story if you know where to look.",
-        "Keep your workstation ready. Most people notice damage after it matters."
+        "The straps held, though the fight left dirt ground deep into them.",
+        "There is a new nick near the edge. It must have taken a hard hit.",
+        "One fastening nearly gave way, but it held long enough.",
+        "I can see where the material stretched under the strain.",
+        "Clean it before the dirt works any deeper.",
+        "That repair held better than I expected.",
+        "The marks are fresh. This gear definitely saw the fight.",
+        "I would mend the weak spot before trusting it again.",
+        "The buckles are scratched, but none of them bent.",
+        "You can tell where it rubbed against stone.",
+        "It came back worn instead of broken. I will take that result.",
+        "The edge needs attention before the next trip.",
+        "Something pulled hard against this strap. Check the stitching.",
+        "The damage is small now. It will not stay small if ignored.",
+        "I am glad it protected someone when it mattered.",
+        "Used gear deserves a careful cleaning and an honest repair.",
+        "Whatever happened out there, this equipment did its share."
       ],
       "conditions": [
         {
@@ -25,10 +40,25 @@
       "request": "gear_report",
       "lines": [
         "Unused so far. I may not have a trade, but I know preparation when I see it.",
-        "It did the job when fear was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The finding a calling tell a story if you know where to look.",
-        "Keep your workstation ready. Most people notice damage after it matters."
+        "The straps are clean. Nothing pulled hard enough to test them.",
+        "Good. It stayed ready and never had to prove itself.",
+        "No fresh nicks, no dirt in the seams, and no strain on the buckles.",
+        "The edge is untouched. That means trouble stayed away.",
+        "Keep it stored where someone can reach it quickly.",
+        "Unused gear is not wasted gear if the village stayed safe.",
+        "The leather still lies flat with no fresh scratches.",
+        "Nothing here needs repair. A little cleaning will do.",
+        "The fittings are straight because nobody had to force them.",
+        "I would rather see gear waiting than see it come back broken.",
+        "Keep it dry and ready for the day it is needed.",
+        "The straps have not stretched at all.",
+        "There is no sign this ever left storage.",
+        "Preparation still matters when nothing happens.",
+        "Do not invent a reason to use it just because it is ready.",
+        "A quiet day is the best report this gear could give.",
+        "Everything sits exactly where it should.",
+        "Check it again before storing it, then leave it ready.",
+        "This equipment missed the fight. I wish more of it had."
       ],
       "conditions": [
         {

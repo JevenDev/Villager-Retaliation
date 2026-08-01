@@ -13,7 +13,17 @@
         "Please do not leave me somewhere silence feels alive.",
         "The Deep Dark made darkness feel heavy enough to press on my chest.",
         "I was afraid to move, afraid to speak, and even more afraid to stay alone.",
-        "Down there, being left behind does not feel careless. It feels like a sentence."
+        "Down there, being left behind does not feel careless. It feels like a sentence.",
+        "I waited beside the edge of the sculk because one careless sound could wake something below.",
+        "I tried to follow your path, but the sculk hid every mark on the floor.",
+        "Alone in Deep Dark, my torch count suddenly felt much smaller once I was alone.",
+        "I moved to a patch of bare stone away from the sensors and listened for you.",
+        "While I waited in Deep Dark, every echo sounded close, even when it came from far below.",
+        "After you vanished in Deep Dark, I did not call again after something answered from the dark.",
+        "There was no sunset underground, only fewer torches and more worry. I was still alone in Deep Dark.",
+        "If we enter Deep Dark again, wait at every fork until I catch up.",
+        "If we get separated in Deep Dark again, put torches on one side of the wall so I can read the way back.",
+        "I can follow you into Deep Dark. I cannot follow a path you never marked."
       ],
       "conditions": [
         {
@@ -41,7 +51,17 @@
         "Please do not leave me somewhere the cave has teeth on both sides.",
         "The stone points made every path look like a warning.",
         "I could not relax with sharp rock above me and sharper rock below.",
-        "I was standing in a cave that looked ready to punish the first bad step."
+        "I was standing in a cave that looked ready to punish the first bad step.",
+        "I waited beside the largest stone column because every step risked a fall onto pointed rock.",
+        "I tried to follow your path, but dripping water blurred the dust you disturbed.",
+        "Alone in Dripstone Caves, my torch count suddenly felt much smaller once I was alone.",
+        "I moved to a flat ledge between the spikes and listened for you.",
+        "While I waited in Dripstone Caves, every echo sounded close, even when it came from far below.",
+        "After you vanished in Dripstone Caves, I did not call again after something answered from the dark.",
+        "There was no sunset underground, only fewer torches and more worry. I was still alone in Dripstone Caves.",
+        "If we enter Dripstone Caves again, wait at every fork until I catch up.",
+        "If we get separated in Dripstone Caves again, put torches on one side of the wall so I can read the way back.",
+        "I can follow you into Dripstone Caves. I cannot follow a path you never marked."
       ],
       "conditions": [
         {
@@ -69,7 +89,17 @@
         "Please do not leave me somewhere beautiful enough to distract from the danger.",
         "The moss softened the cave, but it did not make me feel safe.",
         "Every opening looked like it could lead deeper, and deeper was not where I wanted to be.",
-        "I was alone underground, surrounded by green light and too many places for trouble to hide."
+        "I was alone underground, surrounded by green light and too many places for trouble to hide.",
+        "I waited beside the glow berry vines because roots and pools split the cave into winding paths.",
+        "I tried to follow your path, but moss sprang back over your footprints.",
+        "Alone in Lush Caves, my torch count suddenly felt much smaller once I was alone.",
+        "I moved to a dry ledge under the azaleas and listened for you.",
+        "While I waited in Lush Caves, every echo sounded close, even when it came from far below.",
+        "After you vanished in Lush Caves, I did not call again after something answered from the dark.",
+        "There was no sunset underground, only fewer torches and more worry. I was still alone in Lush Caves.",
+        "If we enter Lush Caves again, wait at every fork until I catch up.",
+        "If we get separated in Lush Caves again, put torches on one side of the wall so I can read the way back.",
+        "I can follow you into Lush Caves. I cannot follow a path you never marked."
       ],
       "conditions": [
         {

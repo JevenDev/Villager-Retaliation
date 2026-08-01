@@ -13,7 +13,17 @@
         "Please do not leave me somewhere that looks safe in the strangest possible way.",
         "The Mushroom Fields were quiet enough that my own thoughts started sounding too loud.",
         "I kept looking around, waiting for the oddness to turn into danger.",
-        "I was alone in a place that felt harmless, unfamiliar, and not nearly as comforting as it should have."
+        "I was alone in a place that felt harmless, unfamiliar, and not nearly as comforting as it should have.",
+        "I waited by the tallest red mushroom after the strange hills made distance hard to judge.",
+        "I tried to pick up your trail, but mycelium hid the lighter marks of your steps.",
+        "Alone in Mushroom Fields, a peaceful place stops feeling peaceful when you do not know where your companion went.",
+        "I settled in the shade beneath a broad mushroom and watched the horizon for you.",
+        "While I waited in Mushroom Fields, I heard harmless sounds all around me and still jumped at each one.",
+        "After you vanished in Mushroom Fields, I called until my throat hurt, then saved my voice.",
+        "By sunset I had started planning where to sleep. I was still alone in Mushroom Fields.",
+        "If we cross Mushroom Fields again, say something before you wander out of sight.",
+        "If we get separated in Mushroom Fields again, leave a marker at the place we split up so I do not search in circles.",
+        "I can look after myself in Mushroom Fields. That does not make leaving me there acceptable."
       ],
       "conditions": [
         {
@@ -41,7 +51,17 @@
         "Please do not leave me somewhere open enough to make me feel like a target.",
         "The Plains looked simple, but simple does not mean safe.",
         "Every movement in the grass made me turn my head.",
-        "I was alone under a wide sky, wishing the ground offered more than distance."
+        "I was alone under a wide sky, wishing the ground offered more than distance.",
+        "I waited by the lone tree beyond the grass after the open land made your disappearance feel impossible.",
+        "I tried to pick up your trail, but tall grass covered the line you took.",
+        "Alone in Plains, a peaceful place stops feeling peaceful when you do not know where your companion went.",
+        "I settled in a shallow dip out of the wind and watched the horizon for you.",
+        "While I waited in Plains, I heard harmless sounds all around me and still jumped at each one.",
+        "After you vanished in Plains, I called until my throat hurt, then saved my voice.",
+        "By sunset I had started planning where to sleep. I was still alone in Plains.",
+        "If we cross Plains again, say something before you wander out of sight.",
+        "If we get separated in Plains again, leave a marker at the place we split up so I do not search in circles.",
+        "I can look after myself in Plains. That does not make leaving me there acceptable."
       ],
       "conditions": [
         {
@@ -69,7 +89,17 @@
         "Please do not leave me somewhere bright enough for everything to see me.",
         "The Sunflower Plains looked happy, which made being abandoned there feel almost insulting.",
         "I kept watching the yellow heads sway and hoping nothing moved behind them.",
-        "I was alone in all that open brightness, feeling much less cheerful than the flowers."
+        "I was alone in all that open brightness, feeling much less cheerful than the flowers.",
+        "I waited by the sunflowers at the hilltop after every yellow field looked like the last one.",
+        "I tried to pick up your trail, but stems and grass hid your footprints.",
+        "Alone in Sunflower Plains, a peaceful place stops feeling peaceful when you do not know where your companion went.",
+        "I settled in the shade beside a small rise and watched the horizon for you.",
+        "While I waited in Sunflower Plains, I heard harmless sounds all around me and still jumped at each one.",
+        "After you vanished in Sunflower Plains, I called until my throat hurt, then saved my voice.",
+        "By sunset I had started planning where to sleep. I was still alone in Sunflower Plains.",
+        "If we cross Sunflower Plains again, say something before you wander out of sight.",
+        "If we get separated in Sunflower Plains again, leave a marker at the place we split up so I do not search in circles.",
+        "I can look after myself in Sunflower Plains. That does not make leaving me there acceptable."
       ],
       "conditions": [
         {

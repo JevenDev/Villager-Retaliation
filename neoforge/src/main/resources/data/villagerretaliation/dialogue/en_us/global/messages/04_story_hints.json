@@ -21,7 +21,17 @@
         "There may be unusual ground {vague_direction}, if the talk is more than tavern smoke.",
         "Someone swore the grass, trees, or stone changes {vague_direction}. I would not ignore that.",
         "If you are looking for somewhere new, start {vague_direction}. The rumors point that way.",
-        "There is a <wavy>rumor</wavy> of stranger land {vague_direction}. Rumors like that sometimes have feet."
+        "There is a <wavy>rumor</wavy> of stranger land {vague_direction}. Rumors like that sometimes have feet.",
+        "Pack for a change in weather if you head {vague_direction}. The land may change before the sky does.",
+        "A shepherd saw unfamiliar birds flying in from {vague_direction}. They may have come from different country.",
+        "The cart tracks heading {vague_direction} carry soil I do not recognize.",
+        "If you leave at first light, the horizon {vague_direction} should be worth watching.",
+        "No one agrees on what lies {vague_direction}, which makes me curious enough to mention it.",
+        "Take a long walk {vague_direction}. The plants along the road may tell you when the country changes.",
+        "A trader came from {vague_direction} with mud from somewhere none of us knew.",
+        "The animals avoid one trail {vague_direction} and favor another. Strange land can change their habits.",
+        "You might find a new kind of country {vague_direction}, but leave enough daylight for the walk home.",
+        "I cannot name the place, only the way. Start {vague_direction} and notice when the familiar ground ends."
       ],
       "id": "global.messages.04_story_hints.messages.story_hint.biome.vague.000"
     },
@@ -37,7 +47,17 @@
         "You may find {target_article} if you head {vague_direction} and keep your eyes open.",
         "Someone came through saying {target_article} waits {vague_direction}.",
         "{target_article} has been mentioned more than once, always somewhere {vague_direction}.",
-        "If you want a lead, follow the talk of {target_article} {vague_direction}."
+        "If you want a lead, follow the talk of {target_article} {vague_direction}.",
+        "A trader described {target_article} after coming from {vague_direction}. The dust on their boots matched the tale.",
+        "Take the older road {vague_direction} if you mean to look for {target_article}.",
+        "The weather may shift before you reach {target_article}, so pack for more than this village sky.",
+        "Watch the plants as you travel {vague_direction}. They should tell you when {target_article} is close.",
+        "People returning from {vague_direction} keep mentioning {target_article} without being asked.",
+        "Leave early if you chase {target_article}. The route {vague_direction} is easier to read in daylight.",
+        "I heard animals from {target_article} have wandered in from {vague_direction}. That gives the rumor some weight.",
+        "The skyline changes {vague_direction} near {target_article}, according to the last traveler through.",
+        "Mark your return path while searching {vague_direction}. New country can make old directions feel wrong.",
+        "If you do find {target_article} {vague_direction}, come back and tell me what the rumor left out."
       ],
       "id": "global.messages.04_story_hints.messages.story_hint.biome.named.001"
     },
@@ -52,8 +72,18 @@
         "{target_article} is said to be about {distance} {direction}.",
         "Head {direction} for about {distance}. That should put you near {target_article}.",
         "I would start looking for {target_article} around {distance} {direction}.",
-        "The directions I heard were clear enough: {distance} {direction} for {target_article}.",
-        "About {distance} {direction}, if the rumor has not wandered too far from the truth."
+        "The directions I heard were clear enough. {distance} {direction} for {target_article}.",
+        "About {distance} {direction}, if the rumor has not wandered too far from the truth.",
+        "The traveler who measured it put {target_article} {distance} {direction}.",
+        "Start at sunrise and keep {direction} for {distance}. You should see {target_article} before turning back.",
+        "Bring enough food for {distance} toward the {direction}. The lead ends at {target_article}.",
+        "Watch for the land to change after you have gone {distance} {direction}. That should be {target_article}.",
+        "I checked the route twice. {target_article} belongs about {distance} {direction} from here.",
+        "Bad weather could hide the signs, but the distance is still {distance} {direction} to {target_article}.",
+        "Keep a steady pace {direction}. At roughly {distance}, begin looking for {target_article}.",
+        "The directions are better than the rumor for once. Travel {distance} {direction} to reach {target_article}.",
+        "Put a mark on your map {distance} {direction}. That is where I would search for {target_article}.",
+        "If {target_article} is not at {distance} {direction}, come tell me. Someone gave us a poor measure."
       ],
       "id": "global.messages.04_story_hints.messages.story_hint.biome.precise.002"
     },
@@ -69,7 +99,17 @@
         "Someone claimed {target_article} sits {vague_direction}{vertical}. I cannot promise they were sober.",
         "The road gossip keeps pointing toward {target_article} {vague_direction}{vertical}.",
         "{target_article} may be out there {vague_direction}{vertical}, if the stories have bones under them.",
-        "I would not call it certain, but {target_article} keeps coming up when people mention {vague_direction}{vertical}."
+        "I would not call it certain, but {target_article} keeps coming up when people mention {vague_direction}{vertical}.",
+        "A guide refused to go farther {vague_direction}{vertical} after someone mentioned {target_article}.",
+        "People have seen lights near {target_article} {vague_direction}{vertical}, though no one stayed to count them.",
+        "An old road bends toward {target_article} somewhere {vague_direction}{vertical}. Roads usually remember a reason.",
+        "Tracks have been turning back from {vague_direction}{vertical}. The travelers blame {target_article}.",
+        "Two people argued over where {target_article} stands. Both pointed {vague_direction}{vertical}.",
+        "Approach {vague_direction}{vertical} carefully if you seek {target_article}. A rumor can still lead into danger.",
+        "Do not wait for dusk to search {vague_direction}{vertical}. That is when the stories about {target_article} grow worse.",
+        "A scout claimed to glimpse {target_article} {vague_direction}{vertical}, then changed the subject.",
+        "Villagers who know that country avoid one path {vague_direction}{vertical}. They say it passes {target_article}.",
+        "I cannot vouch for the tale, but the name {target_article} keeps following travelers from {vague_direction}{vertical}."
       ],
       "id": "global.messages.04_story_hints.messages.story_hint.structure.rumor.003"
     },
@@ -83,9 +123,19 @@
         "Try searching about {distance} {direction}{vertical} for {target_article}.",
         "Head {direction} for about {distance}{vertical}. That should bring you near {target_article}.",
         "I would start around {distance} {direction}{vertical} if you want {target_article}.",
-        "The details I heard were {distance} {direction}{vertical}, give or take a little <dark_gray><wavy>fear</wavy></dark_gray>.",
+        "The details I heard were {distance} {direction}{vertical}, give or take a little fear.",
         "{target_article} is said to be close to {distance} {direction}{vertical}.",
-        "About {distance} {direction}{vertical}. That is where the story points."
+        "About {distance} {direction}{vertical}. That is where the story points.",
+        "A careful traveler placed {target_article} {distance} {direction}{vertical}. I trust their measure more than their nerves.",
+        "Leave at dawn for {target_article}. The route runs {distance} {direction}{vertical}.",
+        "Carry supplies for the trip {distance} {direction}{vertical}. You may not find shelter near {target_article}.",
+        "Begin watching the terrain after {distance} {direction}{vertical}. The signs of {target_article} should appear there.",
+        "I would scout the last stretch before walking straight into {target_article}. It lies {distance} {direction}{vertical}.",
+        "The ground may slow you, so judge {distance} {direction}{vertical} by distance rather than travel time.",
+        "If night catches you before {target_article}, camp short of the mark at {distance} {direction}{vertical}.",
+        "Mark the road home while going {distance} {direction}{vertical}. Finding {target_article} is only half the trip.",
+        "The witness sounded certain about the measure. {target_article} waits {distance} {direction}{vertical}.",
+        "If trouble meets you near {distance} {direction}{vertical}, turn back. The lead to {target_article} is not worth your life."
       ],
       "id": "global.messages.04_story_hints.messages.story_hint.structure.precise.004"
     },
@@ -97,11 +147,21 @@
         "This map should lead toward {target_article}, about {distance} {direction}{vertical}.",
         "Take this <color:gold>map</color>. It points toward {target_article}, roughly {distance} {direction}{vertical}.",
         "{target_article} is marked here. Follow the map about {distance} {direction}{vertical}.",
-        "I put the mark where the rumor points: {distance} {direction}{vertical}.",
+        "I put the mark where the rumor points. {distance} {direction}{vertical}.",
         "This should save you some wandering. {target_article} is marked about {distance} {direction}{vertical}.",
         "The <color:gold>map</color> is yours. Use it to find {target_article}.",
         "I marked the route as best I could. Look for {target_article} around {distance} {direction}{vertical}.",
-        "Here. Let the <color:gold>map</color> do some of the remembering for you."
+        "Here. Let the <color:gold>map</color> do some of the remembering for you.",
+        "The inked circle shows {target_article} about {distance} {direction}{vertical}. Keep the map dry.",
+        "I drew the safest route I know toward {target_article}. It ends near {distance} {direction}{vertical}.",
+        "The small cross at {distance} {direction}{vertical} is {target_article}. The rest of the road is your judgment.",
+        "Fold the <color:gold>map</color> along this edge and the mark for {target_article} will stay visible.",
+        "Terrain changes faster than ink. Trust the mark at {distance} {direction}{vertical}, then trust your eyes.",
+        "Do not lose this. It is the only copy I made with {target_article} marked on it.",
+        "If you need to return later, add your own notes beside my mark for {target_article}.",
+        "Use your compass with the map. {target_article} should be {distance} {direction}{vertical}.",
+        "The scale is rough, but the position is sound. Look {distance} {direction}{vertical} for {target_article}.",
+        "Show this <color:gold>map</color> to anyone traveling with you. Everyone should know where {target_article} lies."
       ],
       "id": "global.messages.04_story_hints.messages.story_hint.map.005"
     },
@@ -117,7 +177,17 @@
         "The rumor needs proof before we dress it up as truth.",
         "Find it first. Then I will believe the story has weight.",
         "Bring back what you saw, not just what you hoped was there.",
-        "Go put the rumor under your boots, then come back."
+        "Go put the rumor under your boots, then come back.",
+        "I have no report from you yet. Reach the place before asking what we learned.",
+        "The lead is still untested. I need you to confirm it in person.",
+        "You have not found the destination, so there is nothing new for me to record.",
+        "Come back after the place is behind you instead of ahead of you.",
+        "I can repeat the rumor, but only your journey can settle it.",
+        "There should be a mark worth checking. Find it before we close the matter.",
+        "We are still waiting on your account of the place.",
+        "The question remains open until you return from the destination.",
+        "I need a discovery, not another guess. Follow the lead first.",
+        "No footprints, no answer. Visit the place and then tell me what stood there."
       ],
       "id": "global.messages.04_story_hints.messages.story_hint_report.missing.006"
     },
@@ -133,7 +203,17 @@
         "The thread is too loose. Tell it clearer.",
         "I cannot follow a story that has no shape yet.",
         "That one is slipping through my hands. Start again.",
-        "I need a clearer story before I can answer."
+        "I need a clearer story before I can answer.",
+        "Which place are you talking about? Give me a name or a direction.",
+        "I missed the beginning. Tell me who was there and what happened.",
+        "That could describe a dozen tales. Add something I can recognize.",
+        "You jumped ahead of the story. Start where the trouble began.",
+        "I cannot answer until I know whether this is news, a rumor, or a memory.",
+        "Try that again with the important part left in.",
+        "Whose story is this? I cannot tell from what you said.",
+        "I need a place, a person, or an event before I can follow you.",
+        "The pieces do not connect yet. Put them in an order I can understand.",
+        "Whatever you meant to share did not reach me clearly. Begin again."
       ],
       "id": "global.messages.04_story_hints.messages.share_story.missing.007"
     },
@@ -141,7 +221,7 @@
       "key": "story_hint_report.biome",
       "lines": [
         "So {target_article} was really there. Good. A rumor is lighter once it has footprints under it.",
-        "You reached {target_article}? Then the old talk had a road in it after all.",
+        "You reached {target_article}. The old talk had a road in it after all.",
         "Good. {target_article} is more than rumor now.",
         "Then the land was as strange as they said. That is useful to know.",
         "You found {target_article}. I will pass that on with fewer maybes.",
@@ -149,7 +229,17 @@
         "So the rumor had roots. I am glad you found them.",
         "{target_article}, confirmed. That makes the map in my head a little less foggy.",
         "Good. Now when people speak of {target_article}, I can say someone actually reached it.",
-        "You brought the rumor back with dirt on its boots. That is the best kind."
+        "You brought the rumor back with dirt on its boots. That is the best kind.",
+        "What did the air feel like in {target_article}? Weather tells its own part of the story.",
+        "Bring back a plant from {target_article} next time. It may help others recognize the border.",
+        "Now we can warn travelers what supplies suit the road to {target_article}.",
+        "Did the animals behave differently in {target_article}? New land often has new rules.",
+        "I will add {target_article} to the routes people can ask about here.",
+        "The distance matters less now that you have shown the way to {target_article} can be walked.",
+        "Your account of {target_article} may save the next traveler a wasted journey.",
+        "We should compare your route with the old maps. {target_article} may have been missing from them.",
+        "Knowing {target_article} exists changes where hunters and traders might travel.",
+        "You returned safely from {target_article}. That tells me as much about the route as the place."
       ],
       "weight": 46,
       "id": "global.messages.04_story_hints.messages.story_hint_report.biome.008"
@@ -158,7 +248,7 @@
       "key": "story_hint_report.structure.village",
       "lines": [
         "You found {target_article}. Then there are neighbors beyond the story, not just smoke and guessing.",
-        "{target_article}, truly? Then the road between here and there matters now.",
+        "{target_article} is real. The road between here and there matters now.",
         "Another village at {target_article}. That is not a landmark, that is people.",
         "Good. If {target_article} is real, then so are its doors, its fields, and its worries.",
         "You reached {target_article}. I hope they greeted you better than the wilderness did.",
@@ -166,7 +256,17 @@
         "Then we are not as alone out here as some people like to think.",
         "{target_article} means more than distance now. It means neighbors.",
         "I will remember that road. Villages should know where other villages stand.",
-        "You found people, not just a place. That makes the story <pulse>matter</pulse>."
+        "You found people, not just a place. That makes the story <pulse>matter</pulse>.",
+        "Did anyone in {target_article} say what they need? Trade begins with listening.",
+        "We should send word to {target_article} before strangers tell them about us.",
+        "Knowing the road to {target_article} could help both villages when supplies run short.",
+        "I hope you learned their customs before making promises in our name.",
+        "If {target_article} has a bell, fields, and beds, then people there face the same worries we do.",
+        "Tell our farmers what grows near {target_article}. Neighbors can teach each other useful things.",
+        "A safe route between villages is worth marking more carefully than any ruin.",
+        "Next time you visit {target_article}, carry news as well as goods.",
+        "Children may grow up knowing people from {target_article}. That makes the distance feel smaller.",
+        "We should learn whether the road to {target_article} stays passable through bad weather."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.village.009"
@@ -183,7 +283,17 @@
         "Old places do not need to move to be dangerous.",
         "{target_article} is real, then. That makes the old stories feel heavier.",
         "I respect old stone most when it is far away from me.",
-        "You came back from {target_article}. That is the important part."
+        "You came back from {target_article}. That is the important part.",
+        "Did you see carvings at {target_article}? They may tell us who raised those walls.",
+        "Old temples often hide danger behind ceremony. I hope you tested every step.",
+        "The entrance to {target_article} may be worth marking for anyone tempted to follow you.",
+        "Whatever people worshiped there, they built {target_article} to outlast their own names.",
+        "Finding {target_article} answers where it stands, not why it was made.",
+        "Keep any relic from {target_article} away from curious children until someone understands it.",
+        "I wonder whether the builders meant {target_article} to welcome visitors or frighten them away.",
+        "If you return to {target_article}, bring more light and fewer assumptions.",
+        "The path through {target_article} matters. A safe entrance can become a trap on the way out.",
+        "Write down what you saw while the details of {target_article} are still fresh."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.temple.010"
@@ -200,7 +310,17 @@
         "I hope you did not linger near those windows.",
         "{target_article} is real, then. That makes the woods around it feel colder.",
         "Some roofs do not mean safety. That one sounds like proof.",
-        "You found it and left it behind. That may be the wisest part of the story."
+        "You found it and left it behind. That may be the wisest part of the story.",
+        "If anything still lives in {target_article}, it knows the halls better than you ever will.",
+        "We should warn woodcutters away from the route you took to {target_article}.",
+        "Did the windows of {target_article} show signs of movement, or only darkness?",
+        "A building that size needs supplies. Someone may be using roads we have not noticed.",
+        "Your safe return means we can mark {target_article} without sending another person blind.",
+        "Do not mistake an empty room in {target_article} for an empty house.",
+        "If you go back, count the ways out before opening another door.",
+        "The woods around {target_article} may be as dangerous as whatever waits inside.",
+        "I would rather know where {target_article} stands than wonder when its occupants might find us.",
+        "Keep whatever you brought from {target_article} where we can watch it."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.mansion.011"
@@ -209,7 +329,7 @@
       "key": "story_hint_report.structure.monument",
       "lines": [
         "{target_article}, beneath the <wavy>water</wavy>. I will believe the waves were telling the truth this once.",
-        "You found {target_article}? The sea hides things, but apparently not from you.",
+        "You found {target_article}. The sea hides things, but apparently not from you.",
         "{target_article}, confirmed. I do not trust water that keeps architecture.",
         "Then the rumor sank deep and stayed true. That is rare.",
         "You reached {target_article}. I hope the water let you leave with all your thoughts intact.",
@@ -217,7 +337,17 @@
         "The sea keeps secrets, but you pried one loose.",
         "{target_article} is real, then. I will think twice before trusting calm water.",
         "I hope you had air enough and sense enough down there.",
-        "A place like that makes the <wavy>ocean</wavy> feel less empty and more watchful."
+        "A place like that makes the <wavy>ocean</wavy> feel less empty and more watchful.",
+        "Did guardians circle {target_article}? The sea rarely leaves old stone undefended.",
+        "Plan your air before you return to {target_article}. Curiosity cannot breathe for you.",
+        "The currents around {target_article} may pull harder than the open water suggests.",
+        "Prismarine that deep must look different from stone built under daylight.",
+        "Now sailors can give the waters above {target_article} a wider berth.",
+        "You found {target_article}, but the depth may keep most people from ever seeing it.",
+        "Mark where you entered the water. The surface can hide your route back from {target_article}.",
+        "I wonder what the builders of {target_article} feared enough to sink behind those walls.",
+        "Any treasure inside {target_article} belongs second to the need to reach air again.",
+        "Your report makes that stretch of ocean a place, not just open water."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.monument.012"
@@ -234,7 +364,17 @@
         "I hope you watched the ceiling as much as the path.",
         "{target_article} is real, then. That makes the ground below us feel busier.",
         "Some tunnels keep working long after the miners leave.",
-        "You came back from {target_article}. Good. Not every tunnel gives people back."
+        "You came back from {target_article}. Good. Not every tunnel gives people back.",
+        "Did the rails in {target_article} lead anywhere, or only deeper into trouble?",
+        "Rotten timber can look sound until the whole tunnel answers your weight.",
+        "Mark every turn if you enter {target_article} again. Old mines make circles feel like roads.",
+        "Spiders favor abandoned workings. I hope the webs warned you before the fangs did.",
+        "Whatever ore remains in {target_article} was left behind for a reason.",
+        "A cave-in can erase the way home faster than any map can restore it.",
+        "The echoes in {target_article} may tell you which tunnels are open and which are hungry.",
+        "Bring more torches than you expect to need if you revisit those shafts.",
+        "Finding {target_article} does not make its supports safe. Test them before trusting them.",
+        "The miners are gone, but their rails may still point toward what drove them away."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.mineshaft.013"
@@ -247,11 +387,21 @@
         "{target_article}, confirmed. That is not a discovery I would celebrate loudly.",
         "So the deep rumor was true. Some truths are best carried carefully.",
         "You found {target_article}. I hope you left more silence there than you took.",
-        "That place sounds dark enough to hide trouble right beside you.",
+        "That place sounds like the kind of dark that listens back.",
         "Do not make a campfire tale of {target_article}. Some stories wake things.",
         "You returned from that depth. I would call that fortunate before I called it brave.",
         "{target_article} is real. Then quiet has a shape, and it is down there.",
-        "Carry that name gently. Some places deserve <pulse>silence</pulse> more than songs."
+        "Carry that name gently. Some places deserve <pulse>silence</pulse> more than songs.",
+        "If you heard shrieking near {target_article}, do not answer it with another step.",
+        "Sculk carries a careless footfall farther than stone ever could.",
+        "Leave the treasures of {target_article} alone if taking them means waking the dark.",
+        "Anyone following your route needs to know when to crouch and when to turn back.",
+        "The safest tale about {target_article} may be the one told in a whisper.",
+        "Did you find a quiet path out, or did you simply run until the echoes stopped?",
+        "No torch can make that depth friendly. Light only shows what might hear you.",
+        "Mark {target_article} as a place to avoid, not a prize for the curious.",
+        "You survived because the dark missed you. Do not ask it for a second chance.",
+        "We can learn from {target_article} without sending anyone else down there."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.ancient_city.014"
@@ -268,7 +418,17 @@
         "{target_article} is real, then. I do not like how important that sounds.",
         "A stronghold is a strange thing to find and a stranger thing to need.",
         "If the stone felt like it was watching you, I would not be surprised.",
-        "You found a door under the world. Step carefully if you go back."
+        "You found a door under the world. Step carefully if you go back.",
+        "Did the corridors of {target_article} circle back on themselves?",
+        "A library underground may hold answers, but silverfish make poor librarians.",
+        "If you found an empty frame room, leave the mystery there until you are prepared.",
+        "The stairs into {target_article} may be easier to descend than to find again.",
+        "Mark every doorway if you return. Strong stone can hide a person as well as protect one.",
+        "Whoever built {target_article} expected its purpose to outlive them.",
+        "The route matters now. Others may need to reach {target_article} without digging blind.",
+        "I would bring tools, food, and a clear reason before entering those halls again.",
+        "Finding the walls of {target_article} may only be the first question under the ground.",
+        "Whatever waits beyond that old stone can wait until you understand the way home."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.stronghold.015"
@@ -282,10 +442,20 @@
         "So {target_article} was there. Good. I prefer knowing where the dangerous roads start.",
         "You came back from {target_article}. I would call that lucky, skilled, or both.",
         "Anything tied to that heat deserves caution before curiosity.",
-        "The <gradient:dark_purple:light_purple><pulse>Nether</pulse></gradient> has a way of making distance feel angry.",
+        "The Nether has a way of making distance feel angry.",
         "{target_article} is real, then. I hope you did not breathe too deeply there.",
         "Some roads should be marked less for travel and more for warning.",
-        "You returned from the smoke and heat. That alone is worth noting."
+        "You returned from the smoke and heat. That alone is worth noting.",
+        "Did the route to {target_article} cross open lava or stay on solid ground?",
+        "Ash can hide tracks quickly. Mark the way home before the heat erases it.",
+        "Anything living near {target_article} has learned rules that do not favor visitors.",
+        "Keep a spare path to safety if you enter that burning country again.",
+        "The light there never changes, so distance can fool even careful travelers.",
+        "Tell me what supplies survived the journey to {target_article}. Others may need that lesson.",
+        "A safe portal matters more than a short road through the Nether.",
+        "Do not let valuable ruins near {target_article} make you forget the lava underfoot.",
+        "Your return proves the route can be traveled, not that it can be trusted.",
+        "We should record which turns led to {target_article} before the memory blurs into smoke."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.nether.016"
@@ -302,7 +472,17 @@
         "{target_article} is real, then. We will keep sharper eyes that way.",
         "That kind of tower does not stand for decoration.",
         "Good. Knowing where danger waits is better than meeting it by surprise.",
-        "I will remember that direction with <pulse>caution</pulse>."
+        "I will remember that direction with <pulse>caution</pulse>.",
+        "How many patrols did you see around {target_article}? One quiet tower can hide a busy road.",
+        "We should warn travelers which approach to {target_article} leaves them exposed.",
+        "If there were captives near {target_article}, someone may need to plan a careful rescue.",
+        "A banner on that tower tells us who claims the land, not how far their reach goes.",
+        "Did they spot you near {target_article}? We should know whether they expect company now.",
+        "The road past {target_article} may need watchers of our own.",
+        "Keep children and wandering traders away from that direction.",
+        "Your report gives us time to prepare before a patrol finds this village.",
+        "Next time, watch {target_article} from cover before deciding it is quiet.",
+        "Knowing where the outpost stands lets us choose roads that do not pass under its eyes."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.outpost.017"
@@ -315,11 +495,21 @@
         "You confirmed {target_article}. The past is never quite as empty as it pretends.",
         "So {target_article} was real. I wonder what story broke there first.",
         "You reached {target_article}. Some places are leftovers, but not harmless ones.",
-        "Ruins still tell stories. Most of them start with the roof coming down.",
+        "A ruin is just a story that lost its roof.",
         "{target_article} may be broken, but that does not mean it is finished.",
         "Old stones keep old names, even when no one speaks them anymore.",
         "You found what remains. Sometimes remains are enough to worry over.",
-        "{target_article} is real, then. The past still has <wavy>edges</wavy>."
+        "{target_article} is real, then. The past still has <wavy>edges</wavy>.",
+        "Did you find writing at {target_article}, or only stones too worn to answer?",
+        "A broken wall can still shelter danger from the weather.",
+        "Anything left inside {target_article} survived both its owners and the years.",
+        "We may learn more from the road into those ruins than from what remains at the center.",
+        "Do not move every old stone. Some are the only things holding the rest upright.",
+        "If {target_article} offered shelter, remember that something else may already use it.",
+        "The shape of the foundation might tell us what stood there before it fell.",
+        "Bring a careful sketch next time. Ruins change whenever another wall gives way.",
+        "Finding {target_article} adds a place to the map and a question to our history.",
+        "Whatever ended that settlement may have left signs worth recognizing elsewhere."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.ruins.018"
@@ -336,7 +526,17 @@
         "{target_article} is real, then. I hope you respected its teeth.",
         "Some places do not hide danger. They arrange it.",
         "You came back from {target_article}. That means the place tested you and did not keep you.",
-        "If you go again, carry caution like a shield."
+        "If you go again, carry caution like a shield.",
+        "Did the copper in {target_article} shine, or had the damp turned it green?",
+        "A trial built by strangers may punish mistakes they never bothered to explain.",
+        "If spawners still work inside {target_article}, count the exits before starting a fight.",
+        "Those rooms sound easier with companions who can watch different doors.",
+        "Rest before returning. A tired fighter gives every trap another advantage.",
+        "Whatever reward waits in {target_article} was placed behind danger on purpose.",
+        "Tell us which tools helped. The next visitor should not repeat every mistake.",
+        "A room can be cleared and still become dangerous again. Do not trust silence there.",
+        "Mark the route between chambers. Panic makes similar halls impossible to tell apart.",
+        "You passed the trials once. That does not mean they will greet you the same way twice."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.trial_chambers.019"
@@ -353,7 +553,17 @@
         "Good. Now {target_article} has a place in our knowing, not just our guessing.",
         "You brought back proof, and proof is heavier than rumor.",
         "{target_article} is real. That makes the road to it matter.",
-        "I will mark that story as <pulse>true enough</pulse> for now."
+        "I will mark that story as <pulse>true enough</pulse> for now.",
+        "What stood at the entrance to {target_article}? That detail may help others recognize it.",
+        "Now we can put {target_article} on a map instead of passing around guesses.",
+        "Your route tells us how to reach {target_article}. Your condition tells us how hard the road was.",
+        "Did you see signs that anyone still uses {target_article}?",
+        "We should record what supplies you needed before sending another traveler.",
+        "Finding {target_article} settles one question and opens several better ones.",
+        "Tell me which landmark appeared before {target_article}. It could keep someone from walking past.",
+        "If the place changes or disappears, your account is what we will have left.",
+        "The road back from {target_article} deserves as much attention as the road there.",
+        "You confirmed the location. Now we can decide whether anyone has a reason to return."
       ],
       "weight": 108,
       "id": "global.messages.04_story_hints.messages.story_hint_report.structure.generic.020"
@@ -370,7 +580,17 @@
         "Now we know the tale had more than smoke behind it.",
         "You confirmed it. I will speak of it with less doubt now.",
         "{target_article} is real, then. Good to know, and better to know from someone who returned.",
-        "The rumor has weight now. I will <pulse>remember</pulse>."
+        "The rumor has weight now. I will <pulse>remember</pulse>.",
+        "What you saw at {target_article} matters more than what the rumor promised.",
+        "I can stop sending people after a place that might not exist.",
+        "Your safe return gives the report a voice others here will trust.",
+        "We should write down the route before either of us forgets a turn.",
+        "Did the place match the name, or did the story get that wrong too?",
+        "Now anyone asking about {target_article} can hear an answer from someone who went.",
+        "The journey proved where the lead ended. It may also show where the danger begins.",
+        "I will separate what you witnessed from what travelers merely claimed.",
+        "One confirmed place can straighten several crooked rumors.",
+        "Thank you for following the lead far enough to bring back something certain."
       ],
       "id": "global.messages.04_story_hints.messages.story_hint_report.generic.021"
     }

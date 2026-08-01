@@ -21,7 +21,17 @@
         "That {gift_item} meant more than I knew how to say at the time.",
         "Every now and then, I think about that {gift_item} and smile again.",
         "A gift like that makes a person feel seen.",
-        "That {gift_item} was <pulse>kindness</pulse> I could hold in my hands."
+        "That {gift_item} was <pulse>kindness</pulse> I could hold in my hands.",
+        "I gave the {gift_item} a place where I see it every morning.",
+        "The {gift_item} helped on a day when I needed something good.",
+        "I showed the {gift_item} to a friend because I was proud to have it.",
+        "When I think of your visit, the {gift_item} is the first detail that returns.",
+        "You caught me completely off guard with that {gift_item}.",
+        "I have cared for the {gift_item} as carefully as you chose it.",
+        "The {gift_item} arrived at exactly the right time for me.",
+        "You understood my taste when you picked the {gift_item}. Few people do.",
+        "That {gift_item} made trusting your intentions feel easy.",
+        "I hope I can return the feeling that came with the {gift_item} someday."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.direct.loved.000"
     },
@@ -37,7 +47,17 @@
         "The {gift_item} fit better than I expected.",
         "I have kept that {gift_item} close enough to matter.",
         "That was a sensible gift, and I mean that kindly.",
-        "Thank you again. The {gift_item} has been <pulse>useful</pulse>."
+        "Thank you again. The {gift_item} has been <pulse>useful</pulse>.",
+        "The {gift_item} found a regular place in my day.",
+        "I lent the {gift_item} to someone once and made sure it came straight back.",
+        "You saved me the trouble of finding a {gift_item} for myself.",
+        "The {gift_item} has held up well. You chose better quality than I expected.",
+        "I did not know I needed the {gift_item} until I started using it.",
+        "That {gift_item} was easy to appreciate without making a fuss over it.",
+        "I remember your gift whenever the {gift_item} solves a small problem.",
+        "The {gift_item} suits the way I live rather nicely.",
+        "You picked something I could enjoy without having to learn what to do with it.",
+        "I would gladly recommend a {gift_item} like that to someone else."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.direct.liked.001"
     },
@@ -49,11 +69,21 @@
         "I remember the {gift_item}. It gave me something to think about.",
         "That {gift_item} was not what I expected, but I have not forgotten it.",
         "I have not quite found a place for the {gift_item} yet.",
-        "The {gift_item} surprised me. Not badly, just... surprised me.",
+        "The {gift_item} surprised me. Not badly, just more than I expected.",
         "I am still turning that {gift_item} over in my mind.",
         "It was an unusual choice, that {gift_item}.",
         "I will admit, the {gift_item} made me pause.",
-        "The {gift_item} is still waiting for me to decide what it means."
+        "The {gift_item} is still waiting for me to decide what it means.",
+        "I tried the {gift_item} once. I may need another try before I judge it.",
+        "The {gift_item} is on a shelf until the right use comes along.",
+        "I still wonder what made you choose that {gift_item} for me.",
+        "Your {gift_item} started more conversation than I expected.",
+        "I may trade the {gift_item} if someone needs it more than I do.",
+        "There was nothing wrong with the {gift_item}. It simply did not feel meant for me.",
+        "I accepted the {gift_item} because the gesture mattered, even if the choice puzzled me.",
+        "The {gift_item} might make sense later. Some things take time to find their place.",
+        "I have not thrown the {gift_item} away, if that is what you were wondering.",
+        "Next time, tell me the story behind a gift like that. It might help me understand it."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.direct.neutral.002"
     },
@@ -69,7 +99,17 @@
         "That was the sort of gift that makes a person wonder.",
         "I know you gave me the {gift_item}. I also know how it felt.",
         "If you meant well with the {gift_item}, it did not land that way.",
-        "Some gifts are hard to forget for the wrong reasons."
+        "Some gifts are hard to forget for the wrong reasons.",
+        "I put the {gift_item} out of sight rather than let it bother me.",
+        "The {gift_item} told me you had guessed instead of asking.",
+        "I accepted it politely, but the {gift_item} was never right for me.",
+        "Every time I saw the {gift_item}, I wanted the moment over again.",
+        "I found someone else who could tolerate the {gift_item}. I could not.",
+        "That {gift_item} made a simple visit needlessly uncomfortable.",
+        "I would rather you arrive empty-handed than bring another {gift_item}.",
+        "The problem was not the wrapping. It was the {gift_item} inside.",
+        "I learned to be wary when you say you brought me something.",
+        "Ask before choosing for me again. The {gift_item} was a poor lesson for both of us."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.direct.disliked.003"
     },
@@ -85,7 +125,17 @@
         "If you wanted to hurt my trust, the {gift_item} helped.",
         "That {gift_item} still sits badly in my memory.",
         "Some things should not be handed over with a smile.",
-        "The {gift_item} felt <shake>cruel</shake>, whether you meant it or not."
+        "The {gift_item} felt <shake>cruel</shake>, whether you meant it or not.",
+        "I got the {gift_item} out of my home as soon as I could.",
+        "The {gift_item} changed how safe I felt around you.",
+        "I warned others what you thought was acceptable to hand me.",
+        "An apology would mean more than any excuse for that {gift_item}.",
+        "I should never have had to refuse something like the {gift_item}.",
+        "That {gift_item} crossed a line you should have seen without being told.",
+        "I remember looking at the {gift_item} and wondering whether you knew me at all.",
+        "The harm was done before I could put the {gift_item} down.",
+        "Do not test my patience with another gift like that one.",
+        "You will have to rebuild the trust that {gift_item} cost you."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.direct.hated.004"
     },
@@ -101,7 +151,17 @@
         "A gift like that travels through the village with a warm voice.",
         "{villager_name} seemed truly touched by the {gift_item}.",
         "You chose well. The {gift_item} mattered to {villager_name}.",
-        "That {gift_item} gave {villager_name} a reason to smile."
+        "That {gift_item} gave {villager_name} a reason to smile.",
+        "{villager_name} gave the {gift_item} a place of honor at home.",
+        "The {gift_item} reached {villager_name} on a day when some kindness was badly needed.",
+        "I saw {villager_name} showing the {gift_item} to friends with a proud smile.",
+        "Your choice told everyone that you had actually listened to {villager_name}.",
+        "{villager_name} has been taking special care of the {gift_item}.",
+        "That gift brightened more than one conversation around the village.",
+        "People trust your judgment more after seeing what the {gift_item} meant to {villager_name}.",
+        "{villager_name} was surprised enough by the {gift_item} to go quiet for once.",
+        "The {gift_item} has become part of a happy story {villager_name} keeps telling.",
+        "A gesture like that makes the whole village feel a little more neighborly."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.village.loved.005"
     },
@@ -117,7 +177,17 @@
         "People noticed that {villager_name} appreciated the {gift_item}.",
         "That {gift_item} landed kindly enough.",
         "{villager_name} seemed glad to have it.",
-        "The {gift_item} was a <pulse>welcome</pulse> choice."
+        "The {gift_item} was a <pulse>welcome</pulse> choice.",
+        "{villager_name} has already put the {gift_item} to work.",
+        "I heard the {gift_item} saved {villager_name} a trip to the market.",
+        "{villager_name} keeps the {gift_item} close at hand, which says enough.",
+        "The quality of the {gift_item} impressed {villager_name}.",
+        "You gave {villager_name} something that fit into everyday life without trouble.",
+        "The {gift_item} was a pleasant surprise rather than a grand event.",
+        "{villager_name} mentioned your gift while recommending a {gift_item} to someone else.",
+        "No one had to explain the {gift_item} to {villager_name}. It made sense immediately.",
+        "Your choice for {villager_name} was practical without feeling cold.",
+        "The village saw that small gift as a decent gesture made at a good time."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.village.liked.006"
     },
@@ -133,7 +203,17 @@
         "That gift landed somewhere between useful and confusing.",
         "{villager_name} accepted the {gift_item}, but I would not call it a perfect fit.",
         "The {gift_item} made people curious, if nothing else.",
-        "That was a <wavy>peculiar</wavy> choice for {villager_name}."
+        "That was a <wavy>peculiar</wavy> choice for {villager_name}.",
+        "{villager_name} tried the {gift_item}, though I do not think a decision was reached.",
+        "The {gift_item} is waiting on a shelf while {villager_name} looks for a use.",
+        "People keep asking why you chose the {gift_item} for {villager_name}.",
+        "{villager_name} accepted it politely and changed the subject.",
+        "Someone else may get more use from that {gift_item} if {villager_name} passes it along.",
+        "The gift caused no offense. It simply did not tell anyone what you meant.",
+        "{villager_name} seemed to appreciate the effort more than the {gift_item}.",
+        "The {gift_item} may suit {villager_name} later, but it does not seem to fit now.",
+        "At least your unusual choice gave the neighbors something harmless to discuss.",
+        "Next time, asking {villager_name} a question first might make the gift easier to understand."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.village.neutral.007"
     },
@@ -149,7 +229,17 @@
         "{villager_name} seemed uncomfortable with the {gift_item}.",
         "That gift made things awkward, from what I heard.",
         "I would avoid giving {villager_name} another {gift_item}.",
-        "That {gift_item} left a <wavy>sour</wavy> impression."
+        "That {gift_item} left a <wavy>sour</wavy> impression.",
+        "{villager_name} put the {gift_item} away rather than keep looking at it.",
+        "The gift made it seem as if you had never listened to {villager_name}.",
+        "{villager_name} was polite about the {gift_item}, but only because others were present.",
+        "I heard the visit ended soon after you handed over the {gift_item}.",
+        "That {gift_item} has already been passed to someone who can stand it.",
+        "Your choice made an ordinary exchange uncomfortable for {villager_name}.",
+        "Arriving with nothing would have gone better than bringing that {gift_item}.",
+        "People understood the wrapping. What puzzled them was the thing inside it.",
+        "{villager_name} may be slower to trust your next friendly gesture.",
+        "Ask what someone wants before handing {villager_name} another gift."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.village.disliked.008"
     },
@@ -165,7 +255,17 @@
         "If you meant peace, {gift_item} was the wrong messenger.",
         "People are still talking about that {gift_item}, and not kindly.",
         "{villager_name} had every reason to be upset.",
-        "A gift like that becomes a <shake>warning</shake>, not a favor."
+        "A gift like that becomes a <shake>warning</shake>, not a favor.",
+        "{villager_name} wanted the {gift_item} out of the house immediately.",
+        "What you gave {villager_name} made other people question whether you can be trusted.",
+        "Neighbors now warn one another about gifts like that {gift_item}.",
+        "{villager_name} deserves an apology without excuses attached.",
+        "No one here should have to refuse a {gift_item} to feel safe.",
+        "The gift crossed a boundary the whole village understands.",
+        "People saw {villager_name} go quiet when the {gift_item} appeared.",
+        "The damage lasted longer than the moment it took to hand the gift over.",
+        "Bring another {gift_item} here and someone may ask you to leave.",
+        "You lost goodwill in this village when you treated that {gift_item} like a kindness."
       ],
       "id": "global.messages.03_gifts.messages.gift_memory.village.hated.009"
     },
@@ -175,13 +275,23 @@
         "This is wonderful. You chose like someone who knows me.",
         "You chose carefully. This means a lot.",
         "{gift_item} is exactly the kind of gift I remember kindly.",
-        "This is... truly thoughtful. Thank you.",
+        "This is truly thoughtful. Thank you.",
         "You paid attention. I can tell.",
         "I did not expect something this fitting.",
         "This {gift_item} feels chosen, not just handed over.",
         "That is a rare kindness. I will remember it.",
         "You have made my day warmer than it was.",
-        "Thank you. This is a <pulse>real gift</pulse>."
+        "Thank you. This is a <pulse>real gift</pulse>.",
+        "I know exactly where I want to keep this {gift_item}.",
+        "This arrived on a day when I really needed cheering up.",
+        "I cannot wait to show someone what you brought me.",
+        "You remembered something I only mentioned once.",
+        "I expected a visit, not a gift this personal.",
+        "I will take good care of the {gift_item}.",
+        "The timing of this gift could not have been better.",
+        "You understood my taste perfectly.",
+        "This makes me feel as though I can trust you.",
+        "Let me return the kindness someday."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.global.loved.010"
     },
@@ -197,7 +307,17 @@
         "This will not go to waste.",
         "You chose well enough to make me smile.",
         "I appreciate this. Truly.",
-        "The {gift_item} is welcome here."
+        "The {gift_item} is welcome here.",
+        "I know where the {gift_item} will be useful first.",
+        "You just saved me a trip to find one of these.",
+        "This feels sturdy enough to last.",
+        "I had not thought to get a {gift_item}, but I am glad to have one.",
+        "The gift is simple, useful, and easy to like.",
+        "I can fit this into my day without any trouble.",
+        "Someone gave you good advice about what I enjoy.",
+        "The {gift_item} is nicer than the one I would have chosen for myself.",
+        "You found the right balance between thoughtful and practical.",
+        "I will remember who brought this the first time it helps me."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.global.liked.011"
     },
@@ -212,8 +332,18 @@
         "Interesting choice. I will keep it in mind.",
         "I suppose {gift_item} could be useful.",
         "This gives me something to consider.",
-        "Thank you. It is... different.",
-        "I will take it. Let me think on it."
+        "Thank you. It is different from what I expected.",
+        "I will take it. Let me think on it.",
+        "I might need you to explain why you chose this.",
+        "Let me set the {gift_item} aside until I find a use for it.",
+        "This may suit someone I know better than it suits me.",
+        "I appreciate that you came bearing something, even if I do not understand it yet.",
+        "The {gift_item} has certainly surprised me.",
+        "I will try it before I decide how I feel.",
+        "There is nothing wrong with this. It simply would not have occurred to me.",
+        "Perhaps the {gift_item} will make more sense tomorrow.",
+        "I can accept the gesture without pretending the choice is perfect.",
+        "You have given me a new problem to solve, though not an unpleasant one."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.global.neutral.012"
     },
@@ -229,7 +359,17 @@
         "{gift_item} is a difficult gift to accept warmly.",
         "This is not the best choice for me.",
         "I will take it, but I cannot say I am pleased.",
-        "Next time, maybe choose something else."
+        "Next time, maybe choose something else.",
+        "Please do not mistake politeness for excitement about the {gift_item}.",
+        "I would prefer that you ask me before choosing something like this.",
+        "The {gift_item} can stay, but it will not stay close.",
+        "This makes me feel as though you do not know me very well.",
+        "I can think of someone else who might want it.",
+        "The gift has made this conversation harder than it needed to be.",
+        "I would have been happier to see you arrive empty-handed.",
+        "The wrapping was pleasant. The {gift_item} was not.",
+        "I will accept it once, but please learn from my reaction.",
+        "Keep this kind of {gift_item} in mind as something to avoid for me."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.global.disliked.013"
     },
@@ -245,14 +385,24 @@
         "Take it back. I want no part of it.",
         "{gift_item} is the wrong thing to place in my hands.",
         "If this was meant as kindness, it failed.",
-        "Do not bring me something like this again."
+        "Do not bring me something like this again.",
+        "Get the {gift_item} out of my sight.",
+        "You have made me feel unsafe, not appreciated.",
+        "I will warn others if you keep handing people things like this.",
+        "An apology should be the next thing you offer me.",
+        "I should not have to explain why this is unacceptable.",
+        "You crossed a line the moment you chose the {gift_item}.",
+        "Did you think this would frighten me or amuse you?",
+        "The gesture is already ruined. Taking it away is the least you can do.",
+        "Do not test whether I will tolerate this twice.",
+        "This cost you trust that another present will not restore."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.global.hated.014"
     },
     {
       "key": "gift_response.profession.loved",
       "lines": [
-        "{gift_item}? For my work? That is <pulse>thoughtful</pulse>.",
+        "A {gift_item} for my work? That is <pulse>thoughtful</pulse>.",
         "You chose carefully. {gift_item} means a lot for work like mine.",
         "{gift_item} is exactly the kind of gift I remember kindly.",
         "This is the sort of thing only someone attentive would bring.",
@@ -261,7 +411,17 @@
         "This {gift_item} will serve me well. Thank you.",
         "A gift this fitting is rare.",
         "That is a fine choice for my trade.",
-        "You brought something I can truly <pulse>use</pulse>."
+        "You brought something I can truly <pulse>use</pulse>.",
+        "I have the perfect place for this {gift_item} beside my best tools.",
+        "This solves a problem I have been working around for days.",
+        "Other people in my trade will be jealous when they see it.",
+        "You noticed a need I never thought to mention aloud.",
+        "I expected supplies, not something chosen with this much care.",
+        "I will maintain the {gift_item} properly. Good equipment deserves that.",
+        "This arrived just before I needed it for an important job.",
+        "You understand what matters at my bench.",
+        "A gift like this tells me you respect my craft.",
+        "I would be glad to make something for you in return."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.profession.loved.015"
     },
@@ -277,7 +437,17 @@
         "I know exactly where this can be useful.",
         "You chose something with my work in mind. Thank you.",
         "This {gift_item} will not sit idle for long.",
-        "A useful gift is always welcome at my bench."
+        "A useful gift is always welcome at my bench.",
+        "The {gift_item} can go straight into my working kit.",
+        "You saved me from ordering one through a trader.",
+        "This looks strong enough for regular use.",
+        "I had managed without a {gift_item}, but the work will be easier now.",
+        "Good supplies do not need a grand speech.",
+        "This fits the way I work without needing any changes.",
+        "Whoever advised you knows something about my profession.",
+        "The {gift_item} is better made than the one I planned to buy.",
+        "You chose usefulness without treating my work as dull.",
+        "I will think of your help when this makes the next job quicker."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.profession.liked.016"
     },
@@ -293,7 +463,17 @@
         "An unusual choice for my trade.",
         "I will set it aside until I know where it fits.",
         "It might come in handy. We will see.",
-        "Thank you. The {gift_item} gives me something to think about."
+        "Thank you. The {gift_item} gives me something to think about.",
+        "I am curious what part of my work made you think of this.",
+        "The {gift_item} can wait in storage until a suitable job appears.",
+        "Another trade might make better use of it than mine.",
+        "I value the support, even if the item does not quite fit the task.",
+        "This is unlike anything I normally keep at my station.",
+        "I will test the {gift_item} before deciding whether it belongs in my kit.",
+        "There may be a use for this outside my usual work.",
+        "Perhaps the next unusual job will give the {gift_item} a purpose.",
+        "I can accept it without claiming my trade needed one.",
+        "You have challenged me to find a place for this among my tools."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.profession.neutral.017"
     },
@@ -309,7 +489,17 @@
         "I cannot make much of this.",
         "This feels more careless than useful.",
         "If you meant to support my work, {gift_item} misses the mark.",
-        "Next time, bring something that fits the trade."
+        "Next time, bring something that fits the trade.",
+        "Please do not confuse any tool with the right tool for my job.",
+        "Ask what my work requires before bringing another item like this.",
+        "The {gift_item} would only take up space at my station.",
+        "This suggests you have not watched what I actually do.",
+        "A different craftsperson might want it. I do not.",
+        "Using this would make the work harder instead of easier.",
+        "I would rather have no new supplies than the wrong ones.",
+        "It may be well made, but the {gift_item} still does not belong in my trade.",
+        "I will accept it this time and keep it away from the work.",
+        "Remember my profession before choosing my next gift."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.profession.disliked.018"
     },
@@ -325,7 +515,17 @@
         "I will not pretend this is thoughtful.",
         "Take it away before it causes more trouble.",
         "This is an insult to the work I do.",
-        "Do not bring me something like this again."
+        "Do not bring me something like this again.",
+        "Remove the {gift_item} from my workplace now.",
+        "This puts my work at risk instead of supporting it.",
+        "I will warn the others if you bring dangerous supplies here again.",
+        "You owe me an apology for treating my craft this carelessly.",
+        "Anyone who respected this trade would know better.",
+        "The {gift_item} crosses every rule I follow at this station.",
+        "Were you trying to ruin my work with this?",
+        "Taking it away will not repair the insult, but it is a start.",
+        "Do not test my patience with another gift like this.",
+        "This makes me question whether you should be allowed near my tools."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.profession.hated.019"
     },
@@ -341,7 +541,17 @@
         "If this is an apology, say so. Do not dress it as generosity.",
         "You do not get credit for giving me what was already mine.",
         "I will take the {gift_item} back. I will also remember how it left.",
-        "This is a <pulse>return</pulse>, not a gift."
+        "This is a <pulse>return</pulse>, not a gift.",
+        "I noticed the {gift_item} was missing before you brought it back.",
+        "Thank you for returning my property. Next time, do that without pretending.",
+        "The scratches on this {gift_item} are mine. I know exactly whose it is.",
+        "Did you expect me not to recognize something I use every day?",
+        "A gift should cost the giver something that already belongs to them.",
+        "I was worried the {gift_item} was gone for good. I am relieved, not impressed.",
+        "Put it back where you found it and we can end this quietly.",
+        "If you borrowed the {gift_item}, you should have asked before taking it.",
+        "The honest words here are that you are returning what went missing.",
+        "I will accept my property and decide separately whether to forgive you."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.owned.self.020"
     },
@@ -357,14 +567,24 @@
         "Give this back to {owner_villager}. Then we can talk.",
         "A stolen gift is still stolen, even with nicer words around it.",
         "Do not use me to hide where that {gift_item} came from.",
-        "This needs to go <pulse>back</pulse> to {owner_villager}."
+        "This needs to go <pulse>back</pulse> to {owner_villager}.",
+        "I have seen {owner_villager} use that {gift_item}. It is not yours to give.",
+        "Take this straight back before {owner_villager} notices it is missing.",
+        "The wear on the {gift_item} matches {owner_villager}'s belongings.",
+        "Did you ask {owner_villager} before bringing this to me?",
+        "A present cannot be generous when someone else paid for it unwillingly.",
+        "I do not want {owner_villager} thinking I helped you hide the {gift_item}.",
+        "Leave it where {owner_villager} can find it and explain what happened.",
+        "If you borrowed this, return it before offering me anything else.",
+        "The right recipient for this {gift_item} is its owner.",
+        "I will not keep property that could start a quarrel with {owner_villager}."
       ],
       "id": "global.messages.03_gifts.messages.gift_response.owned.other.021"
     },
     {
       "key": "gift_advice_followup.liked",
       "lines": [
-        "About that gift advice... <pulse>good</pulse>. {tested_villager} liked {gift_item}. Word gets around when a tip lands.",
+        "About that gift advice. <pulse>Good</pulse>. {tested_villager} liked {gift_item}. Word gets around when a tip lands.",
         "So {gift_item} worked for {tested_villager}. I am glad my advice held up.",
         "So {tested_villager} liked {gift_item}. Good. Advice should survive being tested.",
         "I heard {tested_villager} took well to the {gift_item}. That is good to know.",
@@ -373,7 +593,17 @@
         "{tested_villager} liking {gift_item} makes sense. I am glad it helped.",
         "Well done. That gift landed where it should.",
         "Seems my memory served us both this time.",
-        "Good. {gift_item} was the <pulse>right call</pulse>."
+        "Good. {gift_item} was the <pulse>right call</pulse>.",
+        "{tested_villager} used the {gift_item} right away, so you chose well.",
+        "I saw where {tested_villager} put the gift. It has a place of honor.",
+        "Your timing helped as much as the {gift_item} itself.",
+        "{tested_villager} told someone else about your gift before the day was over.",
+        "Now we know the advice was sound for more than one reason.",
+        "You listened to the suggestion without making the gesture feel copied.",
+        "The {gift_item} suited {tested_villager} better than I dared promise.",
+        "That successful gift may make your next conversation easier.",
+        "I am pleased you trusted my memory and still made the choice your own.",
+        "Keep paying attention like that and you may not need advice next time."
       ],
       "weight": 20,
       "id": "global.messages.03_gifts.messages.gift_advice_followup.liked.022"
@@ -381,8 +611,8 @@
     {
       "key": "gift_advice_followup.disliked",
       "lines": [
-        "About that gift advice... hm. If {gift_item} did not suit {gift_subject}, try {alternative_gift} instead.",
-        "That one <wavy>soured</wavy>? Then bring {alternative_gift} next time. {gift_subject} should take that more kindly.",
+        "About that gift advice. If {gift_item} did not suit {gift_subject}, try {alternative_gift} instead.",
+        "That one <wavy>soured</wavy>. Bring {alternative_gift} next time. {gift_subject} should take that more kindly.",
         "Well, now you know. {gift_item} is not the way to win over {gift_subject}. Try {alternative_gift}.",
         "That advice turned sideways. Bring {alternative_gift} and you may get a kinder answer.",
         "If {gift_item} missed the mark, {alternative_gift} is the safer guess.",
@@ -390,7 +620,17 @@
         "So {gift_subject} did not like {gift_item}. Good to know. Try {alternative_gift}.",
         "That one failed, but not all is lost. {alternative_gift} should fit better.",
         "Sometimes a gift teaches by going wrong. Next time, bring {alternative_gift}.",
-        "Let us correct the course: {alternative_gift}, not {gift_item}."
+        "Let us correct the course. {alternative_gift}, not {gift_item}.",
+        "At least {gift_subject} gave us a clear answer about the {gift_item}.",
+        "Try asking what {gift_subject} needs before you bring {alternative_gift}.",
+        "The timing may have hurt, so wait before offering the alternative.",
+        "Choose {alternative_gift} only if it feels like a gift and not a correction.",
+        "An apology may help more than rushing over with another item.",
+        "Watch how {gift_subject} reacts when others mention {alternative_gift}.",
+        "Do not hide the mistake. Acknowledge that the {gift_item} was wrong.",
+        "The better lesson is to listen to {gift_subject}, not merely swap one object for another.",
+        "If you try {alternative_gift}, give it without expecting instant forgiveness.",
+        "One failed gift does not end a friendship if you handle what comes next with care."
       ],
       "weight": 52,
       "id": "global.messages.03_gifts.messages.gift_advice_followup.disliked.023"
@@ -398,16 +638,26 @@
     {
       "key": "gift_advice_followup.disliked",
       "lines": [
-        "Did they? Hm. Maybe {gift_subject} would prefer {alternative_gift}. Or maybe they were in a mood.",
+        "Did they? Maybe {gift_subject} would prefer {alternative_gift}. Or perhaps the timing was wrong.",
         "Advice is not a promise. Still, {alternative_gift} should go over better with {gift_subject}.",
-        "Then try {alternative_gift} for {gift_subject}. Let us improve the guess.",
         "If {gift_item} went poorly, do not press it. Bring {alternative_gift} instead.",
         "Maybe I misread it. Maybe you delivered it badly. Either way, try {alternative_gift}.",
-        "{gift_subject} did not like {gift_item}? Then learn from it and adjust.",
+        "{gift_subject} did not like {gift_item}. Learn from it and adjust.",
         "The safer answer now is {alternative_gift}.",
         "That does not mean every gift is hopeless. Try {alternative_gift}.",
         "I would not bring {gift_item} again. Not to {gift_subject}.",
-        "Try {alternative_gift}. And maybe ask more carefully next time."
+        "Try {alternative_gift}. And maybe ask more carefully next time.",
+        "The second suggestion is only a better chance, not a certainty.",
+        "{gift_subject} may dislike the whole idea of gifts, not only the {gift_item}.",
+        "Wait until the mood has settled before trying {alternative_gift}.",
+        "You should ask whether the timing was the problem.",
+        "Do not arrive with {alternative_gift} as though it erases the first mistake.",
+        "Perhaps my information was old. Preferences can change.",
+        "Pay attention to what {gift_subject} keeps nearby before choosing again.",
+        "A quiet apology might do more good than another present.",
+        "If you use my next suggestion, take responsibility for the final choice.",
+        "The {gift_item} taught us what to avoid. That is all I can promise.",
+        "Leave {gift_subject} some room before you test another piece of advice."
       ],
       "dispositions": [
         "cautious",
@@ -422,15 +672,25 @@
       "key": "gift_advice_followup.disliked",
       "lines": [
         "So {gift_item} went badly. Try {alternative_gift} if you want my better guess.",
-        "Then try {alternative_gift} for {gift_subject}. Let us improve the guess.",
-        "{gift_item} missed, then. {alternative_gift} should be safer.",
         "If you want better results, stop bringing {gift_item}.",
         "Try {alternative_gift}. That is the best answer I have.",
         "{gift_subject} did not like it. Now you know.",
         "Do not force {gift_item} where it clearly is not wanted.",
-        "The lesson seems simple enough: {alternative_gift} next time.",
+        "The lesson seems simple enough. {alternative_gift} next time.",
         "That went badly. Try not to make it worse.",
-        "{alternative_gift} is the safer path. Take it or do not."
+        "{alternative_gift} is the safer path. Take it or do not.",
+        "A different present will not help until you understand the first reaction.",
+        "Now you know exactly where {gift_subject} stands on the {gift_item}.",
+        "You ignored the warning signs and the {gift_item} failed. Learn from that.",
+        "Do not rush back to {gift_subject} with another unwanted thing.",
+        "{alternative_gift} might work, but your judgment still matters.",
+        "An apology is cheaper than a second mistake and probably wiser.",
+        "Stop treating people like a puzzle with one correct item.",
+        "If you cannot read the room, ask before you hand anything over.",
+        "The advice was a guess. Giving the {gift_item} was your decision.",
+        "Wait until {gift_subject} actually wants to speak with you again.",
+        "You can keep arguing with the result or change how you choose gifts.",
+        "I have given you the alternative. What happens next is yours to manage."
       ],
       "dispositions": [
         "rude",
@@ -444,15 +704,25 @@
       "key": "gift_advice_followup.disliked",
       "lines": [
         "You came back to blame me? Try {alternative_gift} next time and call it even.",
-        "Then try {alternative_gift} for {gift_subject}. Let us improve the guess.",
-        "{gift_item} missed, then. {alternative_gift} should be safer.",
         "If you wanted certainty, you should have asked {gift_subject} directly.",
         "Do not make your bad delivery my whole mistake.",
         "Try {alternative_gift}. Or keep guessing badly. Your choice.",
         "Fine. The better guess is {alternative_gift}.",
         "Maybe {gift_item} was wrong. Maybe your timing was. Try {alternative_gift}.",
         "Take the correction and move on.",
-        "Next time, bring {alternative_gift} and less blame."
+        "Next time, bring {alternative_gift} and less blame.",
+        "You asked for advice and made the final choice yourself.",
+        "Go speak to {gift_subject} instead of turning this into an argument with me.",
+        "Do not put your decision on me because {gift_subject} rejected it.",
+        "You chose when and how to give the {gift_item}. Own that part.",
+        "I offered a lead, not a guarantee carved in stone.",
+        "Blaming me will not make {alternative_gift} any more welcome.",
+        "If you spoke to {gift_subject} the way you are speaking now, I see the problem.",
+        "Go cool down before you make another attempt.",
+        "You want someone else to carry the fault. I will not.",
+        "Ask {gift_subject} what went wrong instead of demanding an answer from me.",
+        "The next useful thing you can bring is better manners.",
+        "We are finished discussing gifts until you can accept your own choice."
       ],
       "dispositions": [
         "rude",
@@ -465,15 +735,25 @@
       "key": "gift_advice_followup.disliked",
       "lines": [
         "Maybe I misremembered. Maybe you asked the wrong person. Either way, {alternative_gift} is safer.",
-        "Then try {alternative_gift} for {gift_subject}. Let us improve the guess.",
-        "{gift_item} missed, then. {alternative_gift} should be safer.",
         "I would avoid repeating that mistake.",
         "Try {alternative_gift}. It should be less likely to sour the room.",
         "Gift advice can be slippery. Use {alternative_gift} next time.",
         "If {gift_subject} disliked {gift_item}, do not make them explain it twice.",
         "A safer gift is better than a stubborn one.",
         "Let the first attempt be the lesson. Bring {alternative_gift}.",
-        "Next time, choose {alternative_gift} and step carefully."
+        "Next time, choose {alternative_gift} and step carefully.",
+        "One poor result is enough reason to slow down.",
+        "Respect the answer {gift_subject} already gave you about the {gift_item}.",
+        "Give {gift_subject} time before you mention {alternative_gift}.",
+        "Preferences change, and my memory may have belonged to an older moment.",
+        "The way you offered the {gift_item} could have changed the answer.",
+        "Ask a gentle question instead of making another guess.",
+        "{alternative_gift} is only an option, not a promise.",
+        "Do not let embarrassment push you into a second mistake.",
+        "Watch what {gift_subject} chooses for themselves.",
+        "You can repair the awkwardness without bringing any gift at all.",
+        "If fear made the first exchange strange, choose a calmer setting next time.",
+        "Take the lesson slowly. Caution will help more than certainty now."
       ],
       "dispositions": [
         "cautious",
@@ -495,7 +775,17 @@
         "That memory has wandered off.",
         "I do not want to pretend I know more than I do.",
         "Ask someone else. They may remember better.",
-        "The advice is <wavy>gone</wavy> from me for now."
+        "The advice is <wavy>gone</wavy> from me for now.",
+        "I remember giving advice, but not the person or the item.",
+        "Too many gift conversations have passed since then.",
+        "I could guess, but a bad guess would only make things worse.",
+        "Try reminding me what was happening when we spoke.",
+        "Nothing about that advice is coming back clearly enough to trust.",
+        "My memory has the conversation without any of its useful details.",
+        "Check with the person receiving the gift. Their answer matters more than mine.",
+        "I may remember later, but you should not wait on that hope.",
+        "The safest advice I can give now is to ask before choosing.",
+        "I am sorry. Whatever tip I gave you is no longer in reach."
       ],
       "id": "global.messages.03_gifts.messages.gift_advice_followup.missing.028"
     },
@@ -511,7 +801,17 @@
         "A village remembers kindness. Sometimes it returns it.",
         "Take {gift_item}. You have done right by us.",
         "This is for you. Let it help where it can.",
-        "You gave the village help. Let the village give you this."
+        "You gave the village help. Let the village give you this.",
+        "I kept this {gift_item} aside because it looked suited to you.",
+        "Take the {gift_item} before I find an excuse to keep it.",
+        "This came from my own stores, and I am happy to share it.",
+        "You may need the {gift_item} more than anyone staying safely here.",
+        "Consider this a welcome, not a payment.",
+        "I noticed your supplies were short, so I found you a {gift_item}.",
+        "Use this well and pass the kindness on when you can.",
+        "The village agreed that you should have the {gift_item}.",
+        "No speech is needed. Just take it with our thanks.",
+        "I hope the {gift_item} makes the next part of your journey easier."
       ],
       "weight": 54,
       "id": "global.messages.03_gifts.messages.gift_given.029"
@@ -528,7 +828,17 @@
         "The {gift_item} was yours to give, yes. It was not kind to take back.",
         "That makes the gesture feel smaller than it did before.",
         "I will remember the giving. I will also remember the taking.",
-        "A returned gift leaves colder hands behind."
+        "A returned gift leaves colder hands behind.",
+        "Did you change your mind, or was the {gift_item} never truly meant for me?",
+        "I had already found a place for the {gift_item}. Now there is only an empty spot.",
+        "If you needed it back, you could have asked instead of simply taking it.",
+        "The next gift you offer will be harder for me to believe.",
+        "I will not argue over the {gift_item}, but I will remember this choice.",
+        "You made me grateful and foolish in the same exchange.",
+        "Whatever reason you had, you should have explained it first.",
+        "The value of the {gift_item} matters less than the trust you just removed.",
+        "I hope reclaiming it was worth the harm to your word.",
+        "Keep it. I do not want another gift that might vanish when your mood changes."
       ],
       "weight": 50,
       "id": "global.messages.03_gifts.messages.gift_taken_back.returned.030"
@@ -545,7 +855,17 @@
         "A gift given to me does not become yours again because you want it.",
         "Put the {gift_item} back before this gets worse.",
         "You have taken enough liberties with my trust.",
-        "<shake>Return</shake> the {gift_item}."
+        "<shake>Return</shake> the {gift_item}.",
+        "I saw you take the {gift_item} from where I kept it.",
+        "That belonged to me before your hand closed around it.",
+        "Put it down and explain yourself while you still can.",
+        "You waited until you thought no one was watching. Someone was.",
+        "Theft does not become less serious because the stolen thing began as a gift.",
+        "I will tell the village exactly what went missing and who carried it away.",
+        "You have turned a kind memory into evidence against you.",
+        "Returning the {gift_item} now may keep this from becoming a larger matter.",
+        "I trusted you near my belongings. That trust is gone.",
+        "Do not leave with the {gift_item}. This is your final warning."
       ],
       "weight": 50,
       "id": "global.messages.03_gifts.messages.gift_taken_back.stolen.031"
@@ -562,7 +882,17 @@
         "I held up my end. Do not pull yours away now.",
         "A fair trade needs both sides to stay fair after the exchange.",
         "That {trade_item} stopped being yours when the trade was done.",
-        "Do not make an honest trade look <wavy>crooked</wavy>."
+        "Do not make an honest trade look <wavy>crooked</wavy>.",
+        "If the price troubled you, the time to speak was before the exchange.",
+        "I already counted the {trade_item} into what this stall earned today.",
+        "You received your side of the bargain. Mine does not come back with you.",
+        "Ask to undo a trade properly instead of reaching across the counter.",
+        "Taking the payment after the deal closes makes your word worthless.",
+        "I cannot keep trading with someone who changes the price afterward.",
+        "The {trade_item} belongs with the goods you already carried away.",
+        "We can discuss a mistake, but you may not solve it by taking things.",
+        "Every witness here saw a completed trade before you grabbed that payment.",
+        "Return the {trade_item} and decide whether your reputation is worth more."
       ],
       "weight": 50,
       "id": "global.messages.03_gifts.messages.trade_payment_taken_back.returned.032"
@@ -579,7 +909,17 @@
         "Taking paid goods from my keeping is theft, not cleverness.",
         "Do not confuse a counter with an open pocket.",
         "Put the {trade_item} back before the village hears more.",
-        "<shake>Stop.</shake> That payment is not yours."
+        "<shake>Stop.</shake> That payment is not yours.",
+        "I saw you take the {trade_item} from a sale that was not yours.",
+        "That payment came from another customer and belongs in my accounts.",
+        "You had no part in the bargain, so you have nothing to reclaim.",
+        "Put it on the counter before I call for help.",
+        "Stealing from a merchant leaves a trail in every future price.",
+        "I will tell the other traders who reached into my earnings.",
+        "The person who paid that {trade_item} trusted me to finish the exchange.",
+        "Return it now and this may remain a warning instead of a charge.",
+        "My stall is not a place where loose hands go unnoticed.",
+        "Do not walk away with the {trade_item}. Everyone here knows it is stolen."
       ],
       "weight": 50,
       "id": "global.messages.03_gifts.messages.trade_payment_taken_back.stolen.033"

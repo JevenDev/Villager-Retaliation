@@ -5,10 +5,25 @@
       "request": "gear_report",
       "lines": [
         "It handled ugly work without making a mess of me. I count that as fine quality.",
-        "It did the job when fear was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
+        "It took the blow without turning the force back on you.",
+        "Real use has settled the fit better than any workbench could.",
         "Let me see that. The clean cuts tell a story if you know where to look.",
-        "Keep your knife ready. Most people notice damage after it matters."
+        "Keep your knife ready. Most people notice damage after it matters.",
+        "That wear around the grip came from real work, not careless handling.",
+        "You cleaned the blood away before it dried into the seams. Good.",
+        "The edge took a small roll near the tip, but it will sharpen out.",
+        "I can tell where you braced it when the fighting turned close.",
+        "That strap stretched under weight. Replace it before another hard trip.",
+        "The dents are shallow and the fastening still sits true.",
+        "You found the balance quickly if those marks tell the truth.",
+        "This scrape came from stone. I would know that sound anywhere.",
+        "The gear kept working after it stopped looking new.",
+        "I will oil the moving parts before dirt settles deeper.",
+        "You used it hard without leaving it filthy. That matters.",
+        "The fit has changed where the padding packed down.",
+        "One buckle is starting to pull crooked under the strain.",
+        "Whatever you faced, this took its share and brought you back.",
+        "Leave it with me until the edge and straps are ready again."
       ],
       "conditions": [
         {
@@ -25,10 +40,25 @@
       "request": "gear_report",
       "lines": [
         "Still clean. That's how I prefer tools before the hard work starts.",
-        "It did the job when fear was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
+        "It is still clean enough for my cutting table, which means battle never tested it.",
+        "Gear does not earn trust by staying wrapped in a pack.",
         "Let me see that. The clean cuts tell a story if you know where to look.",
-        "Keep your knife ready. Most people notice damage after it matters."
+        "Keep your knife ready. Most people notice damage after it matters.",
+        "Not a mark on it. Did trouble never come close enough?",
+        "The straps are still stiff from storage, so loosen them before a long walk.",
+        "Clean gear can hide a poor fit until the first hard movement.",
+        "Wear it around the yard before trusting it in a fight.",
+        "The edge is ready, but your hand still needs to learn its weight.",
+        "Unused leather dries too. I will oil this before it cracks.",
+        "You kept it safe, which is different from proving it works.",
+        "Try every fastening while your fingers are calm.",
+        "This buckle catches. Better to learn that here than outside the walls.",
+        "Do not bury it under food where you cannot reach it quickly.",
+        "The balance may feel wrong until you practice a few honest swings.",
+        "I would rather adjust the fit now than patch you later.",
+        "Nothing has tested the stitching yet, so keep watching it.",
+        "A tool waiting for work still deserves a clean, dry place.",
+        "Bring it back after its first use. Then the marks will tell us something."
       ],
       "conditions": [
         {

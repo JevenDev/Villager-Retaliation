@@ -6,7 +6,24 @@
       "lines": [
         "I do not have a trade for it yet, but coming home safely feels like honest work.",
         "Home again, whole enough to <gold><pulse>thank you</pulse></gold> properly. That matters.",
-        "We came back with the village still ahead of us. I'll count that as good work."
+        "We came back with the village still ahead of us. I will count that as good work.",
+        "I never thought the village bell could sound that welcoming.",
+        "Thanks for matching my pace when the road got rough.",
+        "I was running out of food before I was ready to admit it.",
+        "Seeing the first roof over the hill took the weight right off me.",
+        "I learned more about the road than I did about choosing a trade.",
+        "Next time I will pack better, but I would follow that route again.",
+        "You got us home without making a show of it. I respect that.",
+        "The last stretch felt twice as long as the rest of the trip.",
+        "I am glad we shared what food we had instead of pretending there was plenty.",
+        "My feet are sore, but nothing else is broken. Good enough for me.",
+        "I kept track of every turn on the way back. I think I could find it again.",
+        "Coming through the gate felt better than finishing any errand.",
+        "I was worried the road would outlast our supplies. It nearly did.",
+        "Nobody had to carry me home, so I am calling the trip a success.",
+        "I understand now why people look back when the village disappears from sight.",
+        "Give me a night to rest and I might even remember the good parts.",
+        "We left together and came back together. That is what matters."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -21,7 +38,24 @@
       "lines": [
         "I was looking for direction, not bruises. Still, I made it back.",
         "I made it home, but the road took more from me than it should have.",
-        "Next time, let us return with fewer marks and better choices."
+        "Next time, let us return with fewer marks and better choices.",
+        "Every step pulled at the wound by the end.",
+        "I was trying so hard not to slow everyone down.",
+        "The first doorway inside the village looked like a palace.",
+        "Thanks for keeping pace when I could not.",
+        "I should have packed bandages before extra food.",
+        "The blood dried before the road ended. I did not like that.",
+        "Home felt farther away every time I looked up.",
+        "The neighbors helped me through the gate without asking questions.",
+        "I am sore, angry, and very glad to be back.",
+        "Getting home was the only job that mattered by then.",
+        "I kept saying I was fine because stopping felt worse.",
+        "The road did not beat me, but it came close.",
+        "Give me time to heal before anyone calls this a success.",
+        "I learned where every loose stone was on that last stretch.",
+        "Next time I speak up before the pain gets that bad.",
+        "I did not need heroics. I needed a steady arm.",
+        "We came back injured, but we came back together."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -36,7 +70,24 @@
       "lines": [
         "I followed because I thought you knew where we were going. I was wrong about more than the road.",
         "Following you was trust. What happened after was something else.",
-        "A guide who strikes from close by leaves the longest mark."
+        "A guide who strikes from close by leaves the longest mark.",
+        "I keep wondering when the plan changed.",
+        "The walk home felt longer after I stopped trusting you.",
+        "I watched the path while the danger walked beside me.",
+        "Do not ask me to forget just because the bruise faded.",
+        "I believed your directions. That is what you used against me.",
+        "The silence after the attack said more than your excuses do.",
+        "Next time I ask where we are going before I take one step.",
+        "I made it home, but I left my trust on that road.",
+        "You became the threat before I understood what was happening.",
+        "I will listen to an apology. I will not pretend it fixes everything.",
+        "The worst blow came from knowing who struck it.",
+        "I should not have needed to guard myself from the person leading.",
+        "If we travel again, you stay where I can see you.",
+        "I do not know whether the destination was ever real.",
+        "You turned a simple journey into a warning I will remember.",
+        "Trust comes back slower than footsteps.",
+        "We can talk about the road when you are ready to tell the truth."
       ],
       "conditions": [
         {
@@ -55,9 +106,26 @@
       "id": "recruitment_followup_unemployed_boat",
       "request": "recruitment_followup",
       "lines": [
-        "I learned I am not ready for a career in boating. But I survived the lesson.",
+        "I learned I am not ready for a career in boating, but I survived the lesson.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
-        "Water carried us home, which is more than I expected from that journey."
+        "Water carried us home, which is more than I expected from that journey.",
+        "I have never been so happy to stand on ordinary dirt.",
+        "Next time I am bringing dry food and sitting where you tell me.",
+        "The village looked very small from the water and very good on the way back.",
+        "I finally understand why everyone checks a boat before climbing into it.",
+        "My legs still feel like the ground is moving.",
+        "Thanks for not laughing when I grabbed the side with both hands.",
+        "I thought being useful meant helping. In that boat, it meant keeping still.",
+        "The current had more say in our route than either of us did.",
+        "I will remember that knocking under the hull for a while.",
+        "We made it back with the boat upright. That is a respectable result.",
+        "I should have asked how far we were going before we pushed off.",
+        "There was nowhere to stretch and nowhere to hide from the water.",
+        "I spent half the trip watching the shore and the other half missing it.",
+        "If we do that again, I want the seat farthest from the edge.",
+        "I did not enjoy the deep water, but I trusted you to get us across it.",
+        "The first step onto land nearly made me laugh.",
+        "I am glad we went. I am even happier that we are done."
       ],
       "conditions": [
         {

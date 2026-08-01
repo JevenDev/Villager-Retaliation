@@ -4,11 +4,26 @@
       "id": "gear_report_fisherman_used",
       "request": "gear_report",
       "lines": [
-        "It held steady. Better than most nets, and those are meant to catch trouble.",
-        "It did the job when fear was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The weather and water tell a story if you know where to look.",
-        "Keep your net ready. Most people notice damage after it matters."
+        "The gear took the blow and stayed together.",
+        "I used it when the fighting reached the dock.",
+        "It kept the worst of that strike away from me.",
+        "The grip held even after my hands got wet.",
+        "I put it to work and came back with only scratches.",
+        "It carried its weight when trouble started.",
+        "The edge needs attention, but it did not fail me.",
+        "I trusted it once the arrows began falling.",
+        "It turned aside something that would have reached my ribs.",
+        "The straps held through the whole fight.",
+        "I used every part of it except the buckle I was worried about.",
+        "It is scuffed now for a good reason.",
+        "The balance felt right when I had no time to think.",
+        "It earned a proper cleaning after what we survived.",
+        "I would take it into danger again.",
+        "The gear stayed firm when I was knocked against the rail.",
+        "It gave me enough confidence to hold my place.",
+        "One hard hit bent it slightly, but not enough to matter then.",
+        "I came home because good equipment did its share.",
+        "It worked. That is the best report I can give."
       ],
       "conditions": [
         {
@@ -24,11 +39,26 @@
       "id": "gear_report_fisherman_unused",
       "request": "gear_report",
       "lines": [
-        "Dry, unused, and welcome. Some things should stay out of the water and out of danger.",
-        "It did the job when fear was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The weather and water tell a story if you know where to look.",
-        "Keep your net ready. Most people notice damage after it matters."
+        "Dry, unused, and welcome. Some gear should stay out of danger.",
+        "I never had to draw it.",
+        "The fighting ended before I needed the gear.",
+        "It stayed packed through the whole trip.",
+        "I checked it afterward and found no damage.",
+        "We carried it for caution, not because trouble reached us.",
+        "The gear came home exactly as it left.",
+        "I was glad to have it and happier not to use it.",
+        "It never left its straps.",
+        "No blood, no dents, and no repairs needed.",
+        "The weapon stayed sheathed from the first mile to the last.",
+        "I kept it close, but the road remained quiet.",
+        "It was ready when we needed caution and unnecessary when we reached safety.",
+        "The armor never took a hit.",
+        "I did not test it in combat this time.",
+        "It stayed clean apart from road dust.",
+        "The gear was insurance on a journey that went well.",
+        "Nobody forced me to find out how strong it was.",
+        "I will store it until the next trip.",
+        "Unused gear and a safe return make a fine pair."
       ],
       "conditions": [
         {

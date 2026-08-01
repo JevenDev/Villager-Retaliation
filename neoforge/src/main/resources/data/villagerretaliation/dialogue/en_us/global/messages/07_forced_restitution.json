@@ -21,7 +21,17 @@
         "The village is listening now. Make your choice with that in mind.",
         "You can still handle this cleanly, but not by standing there silent.",
         "Repair starts with what you do next, not what you wish had happened.",
-        "Choose plainly. This moment is already <pulse>heavy</pulse> enough."
+        "Choose plainly. This moment is already <pulse>heavy</pulse> enough.",
+        "If you mean to make amends, say so and back it with action.",
+        "Your next answer decides whether this ends as a mistake or an insult.",
+        "No one here can choose for you.",
+        "The damage is done. What matters now is whether you face it.",
+        "You have four ways forward, and silence is not one of them.",
+        "Speak honestly, even if the answer is ugly.",
+        "I am giving you a chance to put this right.",
+        "Do not reach for excuses. Choose what you will actually do.",
+        "There is still a clean way out of this.",
+        "The village wants an answer before tempers get worse."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.prompt.000"
     },
@@ -29,7 +39,7 @@
       "key": "forced.restitution.haggle.accept",
       "lines": [
         "Fine. Not free, but less. Pay {payment_count} {payment_items} and this can end cleanly.",
-        "I will lower it this once: {payment_count} {payment_items}. Do not make me regret the mercy.",
+        "I will lower it this once. {payment_count} {payment_items}. Do not make me regret the mercy.",
         "That is as far as I bend. {payment_count} {payment_items}, and the matter rests.",
         "I will meet you partway. {payment_count} {payment_items}, and we end this here.",
         "Fine. I will take {payment_count} {payment_items}. That is mercy, not forgetfulness.",
@@ -37,7 +47,17 @@
         "That is the lowest I can accept without making the harm feel cheap.",
         "Pay {payment_count} {payment_items}. Less than before, but not nothing.",
         "I will soften the price, not the lesson.",
-        "{payment_count} {payment_items}. That is the <pulse>reduced</pulse> amount, and it is final."
+        "{payment_count} {payment_items}. That is the <pulse>reduced</pulse> amount, and it is final.",
+        "You argued fairly. I will accept {payment_count} {payment_items}.",
+        "I can live with {payment_count} {payment_items}, provided you pay now.",
+        "All right. The new amount is {payment_count} {payment_items}.",
+        "I heard your reason, and I am willing to reduce the payment.",
+        "Bring {payment_count} {payment_items} and we can close this.",
+        "I would rather recover part of the cost than prolong the argument.",
+        "This is the only reduction I will offer.",
+        "The village can accept {payment_count} {payment_items} without calling the debt ignored.",
+        "I am agreeing because you bargained in good faith.",
+        "Pay the smaller amount now, before either of us reconsiders."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.haggle.accept.001"
     },
@@ -53,7 +73,17 @@
         "No. A fair repair does not shrink because it is inconvenient.",
         "The amount is already plain. Do not make me repeat it colder.",
         "You do not bargain down trust after breaking it.",
-        "<shake>No.</shake> The payment stays as it is."
+        "<shake>No.</shake> The payment stays as it is.",
+        "Your argument changes nothing.",
+        "I heard you. The answer is still no.",
+        "The repair costs what it costs.",
+        "Someone else should not lose out because you dislike the price.",
+        "You can object, but the amount will not move.",
+        "This is compensation, not a favor I am selling.",
+        "There is no smaller payment that makes the damage right.",
+        "I will discuss how you pay, not whether the debt is real.",
+        "Stop bargaining and decide whether you mean to settle.",
+        "The village has already named the fair amount."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.haggle.deny.002"
     },
@@ -69,7 +99,17 @@
         "Take it. I want this settled",
         "Here is the payment",
         "I will cover the cost",
-        "I will pay the <pulse>{payment_count} {payment_items}</pulse>"
+        "I will pay the <pulse>{payment_count} {payment_items}</pulse>",
+        "I have the full amount",
+        "Take the payment and leave it there",
+        "I can cover {payment_count} {payment_items}",
+        "Let me pay for the damage",
+        "You will get what I owe",
+        "I brought the <pulse>{payment_count} {payment_items}</pulse>",
+        "This should cover the loss",
+        "I will settle the debt now",
+        "The <pulse>{payment_count} {payment_items}</pulse> are yours",
+        "I have your payment right here"
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.option.pay.label.003"
     },
@@ -85,7 +125,17 @@
         "Can we bargain?",
         "That cost is too steep",
         "Ask for less, and I can settle this",
-        "That amount feels <wavy>too high</wavy>"
+        "That amount feels <wavy>too high</wavy>",
+        "Would you take less?",
+        "That amount does not seem fair",
+        "I can offer something closer to reason",
+        "Give me a price I can actually pay",
+        "Could we meet somewhere in the middle?",
+        "I need a better offer than that",
+        "Let us work out a smaller payment",
+        "I do not have enough for that demand",
+        "Come down on the price",
+        "What if I repay part of it now?"
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.option.haggle.label.004"
     },
@@ -101,7 +151,17 @@
         "I am walking away",
         "No. Find another answer",
         "I will not pay",
-        "<shake>No.</shake>"
+        "<shake>No.</shake>",
+        "No. You will not get a thing",
+        "I am done discussing payment",
+        "Keep asking. My answer stays no",
+        "I owe you nothing",
+        "Find someone else to blame",
+        "This argument is over",
+        "I refuse to hand anything over",
+        "Not one emerald",
+        "You can demand it all day",
+        "I will leave before I pay"
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.option.refuse.label.005"
     },
@@ -117,7 +177,17 @@
         "I can make this worse",
         "You will regret pressing me",
         "Stand aside",
-        "<shake>Threaten them</shake>"
+        "<shake>Threaten them</shake>",
+        "Take one more step and see what happens",
+        "You do not want to force this",
+        "Keep pressing me and you will regret it",
+        "Move before I move you",
+        "Ask again. I dare you",
+        "Do not test my patience",
+        "This ends badly if you keep pushing",
+        "Back away while you still can",
+        "I am giving you one chance to leave",
+        "Reach for me and find out"
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.option.threaten.label.006"
     },
@@ -133,7 +203,17 @@
         "Fine. This matter rests, but the memory stays useful.",
         "You paid what was owed. Now do better with what remains.",
         "That is enough for restitution.",
-        "Payment accepted. Let this end <pulse>cleanly</pulse>."
+        "Payment accepted. Let this end <pulse>cleanly</pulse>.",
+        "The debt is paid. Leave the matter closed.",
+        "I will tell the others that you made good on the damage.",
+        "This covers the repair and the lost supplies.",
+        "You chose the responsible answer.",
+        "The village can work with an honest payment.",
+        "We are even on the cost, though trust will take longer.",
+        "I have counted it. Nothing more is owed today.",
+        "The damaged property can be replaced now.",
+        "You stayed and accepted responsibility. That matters.",
+        "We can end the argument here."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.pay.success.007"
     },
@@ -149,7 +229,17 @@
         "You are short. This cannot settle yet.",
         "The payment is missing, so the problem remains.",
         "No. That is not the {payment_count} {payment_items} owed.",
-        "You do not have enough. The choice is still <pulse>open</pulse>."
+        "You do not have enough. The choice is still <pulse>open</pulse>.",
+        "Count again. You are missing part of the payment.",
+        "I cannot accept a promise in place of the actual items.",
+        "Come back with the full amount if payment is your answer.",
+        "The village cannot repair anything with an incomplete payment.",
+        "You offered {payment_count} {payment_items}, and that is what this requires.",
+        "Choose another answer if you cannot cover the cost.",
+        "There is not enough here to call the debt settled.",
+        "Do not hand me less and hope I fail to notice.",
+        "The agreed payment must be complete.",
+        "You will need to find the missing items or change your choice."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.pay.failure.008"
     },
@@ -165,7 +255,17 @@
         "Do not act surprised when this follows you.",
         "The village offered a way to settle it. You refused.",
         "Then the debt stays where everyone can see it.",
-        "<shake>So be it.</shake> The village will remember."
+        "<shake>So be it.</shake> The village will remember.",
+        "Then leave, and understand why the doors close behind you.",
+        "I will tell the village that you rejected every chance to repair this.",
+        "You are free to refuse. We are free to remember.",
+        "That answer ends the discussion, not the debt.",
+        "Do not expect ordinary trust after this.",
+        "You had a fair choice and turned away from it.",
+        "We will repair the damage without your help.",
+        "Your refusal tells us how seriously you take the harm.",
+        "Go. There is nothing more to settle with words.",
+        "This could have ended differently."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.refuse.response.009"
     },
@@ -181,7 +281,17 @@
         "Then every door here has reason to close.",
         "You could have settled this. You chose fear instead.",
         "The village knows what your apology is worth now.",
-        "<shake>Careful.</shake> You just made this much worse."
+        "<shake>Careful.</shake> You just made this much worse.",
+        "Do not threaten people whose property you already damaged.",
+        "The guards will hear about that answer.",
+        "You were offered a peaceful way through this.",
+        "Back away before the village treats you as an active danger.",
+        "That threat will outlast any apology you offer later.",
+        "You have turned a debt into a question of safety.",
+        "Nobody here is frightened into forgetting what happened.",
+        "Leave now if violence is the only answer you have.",
+        "The village will prepare for your return.",
+        "You have made your intentions plain."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.threaten.response.010"
     },
@@ -197,7 +307,17 @@
         "The bargain is settled. Let the lesson stay with you.",
         "That payment is enough to end this cleanly.",
         "Good. You met the bargain. Now meet the expectation.",
-        "Reduced payment accepted. Keep your hands <pulse>honest</pulse> next time."
+        "Reduced payment accepted. Keep your hands <pulse>honest</pulse> next time.",
+        "I have counted the reduced amount. We are done.",
+        "The smaller payment is enough because we agreed to it.",
+        "You kept the bargain, and I will keep mine.",
+        "This closes the debt at the amount we settled on.",
+        "The village accepted less. Remember that kindness.",
+        "Your payment matches the new terms.",
+        "I will mark the account paid.",
+        "We found a fair compromise and you honored it.",
+        "Nothing more is due under this bargain.",
+        "Take the second chance seriously."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.reduced_pay.success.011"
     }

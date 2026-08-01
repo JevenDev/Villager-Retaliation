@@ -13,7 +13,17 @@
         "There was a point where I thought I was only hunger. You proved otherwise.",
         "Some memories are broken, but gratitude survived them.",
         "You brought me back gently from something that had no gentleness in it.",
-        "I was nearly erased. You helped write me back into the village."
+        "I was nearly erased. You helped write me back into the village.",
+        "I remember your voice reaching me before the room did.",
+        "My thoughts returned in the wrong order, but they returned.",
+        "For a while, every word felt borrowed. You helped me find my own.",
+        "I woke with questions and one clear answer. You saved me.",
+        "The cure gave me back pages I thought were gone.",
+        "Your face stayed familiar while everything else shifted.",
+        "I can read my own notes again without feeling like a stranger.",
+        "The dark took my bearings. You gave them back.",
+        "Some memories are still smudged, but gratitude is not one of them.",
+        "I know what I became, and I know who brought me home."
       ],
       "professions": [
         "cleric",
@@ -36,7 +46,17 @@
         "The map has not changed, but the meaning of this place has.",
         "A new name, a new bed, a new reason for everyone to speak a little softer.",
         "I added them to the records before the ink had fully dried on the news.",
-        "One more voice will grow into this village. That is no small thing."
+        "One more voice will grow into this village. That is no small thing.",
+        "I left room in the record for all the trouble that child may cause.",
+        "The ink was barely dry before someone argued over the name.",
+        "A birth adds a future no map can measure yet.",
+        "We recorded the hour, the weather, and several proud exaggerations.",
+        "That little voice made the library feel less serious.",
+        "One new villager means a lifetime of blank pages.",
+        "The family looked exhausted and happier than words allow.",
+        "I wrote carefully. First records should begin with a steady hand.",
+        "Even the oldest ledgers feel new beside a newborn.",
+        "The village has another story now, and it started with a cry."
       ],
       "event_tags": [
         "baby_born"
@@ -60,7 +80,17 @@
         "You pulled them back from a darkness most of us only fear from a distance.",
         "There are many ways to protect a village. Today, you chose one of the rarest.",
         "I will write this down carefully. Some deeds should not be left to rumor.",
-        "Someone who was almost gone is standing among us again because of you."
+        "Someone who was almost gone is standing among us again because of you.",
+        "I watched recognition return to their eyes.",
+        "They spoke their name again, and the room changed.",
+        "No book makes that kind of recovery feel ordinary.",
+        "You stood beside them until the fear loosened.",
+        "The cure worked slowly, then all at once.",
+        "We prepared for loss and received a neighbor instead.",
+        "Their family heard the news before the church bell stopped.",
+        "I wrote down what happened, though the page feels too small for it.",
+        "You proved that the darkness does not always keep what it takes.",
+        "A familiar voice came back to the village today."
       ],
       "event_tags": [
         "player_cured_villager"
@@ -88,7 +118,17 @@
         "Retaliation is not pride. It is what happens when safety runs out of room.",
         "We would rather trade, farm, read, and pray. But we would also rather survive.",
         "A village can forgive many things. It cannot live by forgiveness alone.",
-        "Today, peace stepped aside because no one left it another path."
+        "Today, peace stepped aside because no one left it another path.",
+        "We discussed every quieter choice before reaching this one.",
+        "The village has stopped asking whether to answer.",
+        "Even peaceful hands can close into fists when harm keeps coming.",
+        "No prayer, record, or map made the decision easier.",
+        "We are defending the lives behind our principles.",
+        "The council spoke softly and chose firmly.",
+        "This is not revenge. It is the end of standing still.",
+        "Every warning was ignored before the village answered.",
+        "I hope the fighting ends quickly and the lesson lasts.",
+        "We know the cost of this choice, and we made it anyway."
       ],
       "event_tags": [
         "villager_retaliation_started"
@@ -114,7 +154,17 @@
         "Trust does not vanish all at once, and it does not return that way either.",
         "People have started speaking of you differently. Listen to the difference.",
         "Every action becomes part of the story people tell when you are not in the room.",
-        "The village has a long memory. Make sure it has a reason to be kind."
+        "The village has a long memory. Make sure it has a reason to be kind.",
+        "Conversations pause differently when your name comes up now.",
+        "A dozen small choices changed how people greet you.",
+        "Trust has begun to settle around you, or pull away.",
+        "No ledger holds every reason the village remembers.",
+        "The square has its own record, written in looks and open doors.",
+        "People decide slowly, then act as if they always knew.",
+        "Your welcome here now carries the weight of what you did.",
+        "I hear your name in kinder voices than before.",
+        "Reputation grows in places no one thinks to measure.",
+        "The village has revised its opinion. Keep giving it good reasons."
       ],
       "event_tags": [
         "reputation_changed"
@@ -139,7 +189,17 @@
         "I will not call it bad. I will call it historically interesting.",
         "There may have been wisdom in that joke, but it escaped before I could cite it.",
         "A bold attempt. Not a successful one, but bold.",
-        "I would shelve that under fiction, far from the good material."
+        "I would shelve that under fiction, far from the good material.",
+        "I understood the joke. Understanding was not the problem.",
+        "The punchline needs a better reference section.",
+        "I found the humor after a brief search.",
+        "That ending belongs in a different chapter.",
+        "Your joke took the scenic route and lost its map.",
+        "I would cite a funnier source, but that seems unkind.",
+        "The premise was sound. The conclusion escaped supervision.",
+        "Even the footnote looked embarrassed.",
+        "I laughed where the argument stopped making sense.",
+        "Please return that joke to the shelf marked unfinished."
       ],
       "professions": [
         "librarian",

@@ -5,10 +5,25 @@
       "request": "gear_report",
       "lines": [
         "I used it and did not drop it. That's two victories, if you ask me.",
-        "It did the job when <dark_gray><wavy>fear</wavy></dark_gray> was loud. That's praise enough.",
+        "It did the job when <dark_gray><wavy>fear</wavy></dark_gray> was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The being blamed for things tell a story if you know where to look.",
-        "Keep your rumor ready. Most people notice damage after it matters."
+        "I swung it at the right thing almost every time.",
+        "It has a new scratch. I put that there while remaining alive.",
+        "The grip stayed in my hand even when the hand wanted to leave.",
+        "I used it until the dangerous part stopped moving toward me.",
+        "It worked better than my plan, so I followed the gear instead.",
+        "The edge held. My courage bent a little.",
+        "I blocked one hit with it and one with a nearby wall.",
+        "It felt heavy at first and wonderfully solid after the first noise.",
+        "I tested it on real trouble. Real trouble did not enjoy the test.",
+        "The strap came loose once, but I noticed before it became exciting.",
+        "I used every useful part and avoided the part that looked decorative.",
+        "It protected me well enough to bring it back and say so.",
+        "I trusted it when my knees had other suggestions.",
+        "There is mud on it, but no blood that belongs to me.",
+        "It survived the fight in better shape than my hat.",
+        "I know how it handles now. Mostly with both hands.",
+        "Keep making them like this. I am fond of equipment that returns with me."
       ],
       "conditions": [
         {
@@ -25,10 +40,25 @@
       "request": "gear_report",
       "lines": [
         "I have not used it. I have practiced looking brave with it, which is almost something.",
-        "It did the job when fear was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The being blamed for things tell a story if you know where to look.",
-        "Keep your rumor ready. Most people notice damage after it matters."
+        "It has stayed clean because trouble has stayed somewhere else.",
+        "I carried it all day and never had to discover what this part does.",
+        "The edge is untouched. I checked with my eyes, not my thumb.",
+        "Nothing attacked us, so the gear spent the trip feeling important.",
+        "I kept it ready. Readiness looks a lot like holding something for hours.",
+        "It never left its strap, which is the best report I could bring.",
+        "I tried the grip twice and the dangerous part zero times.",
+        "No dents, no scratches, and no exciting story. Good.",
+        "I did not need it. I am strangely proud of that.",
+        "The armor stayed new because nothing reached me.",
+        "I wore it, sweated in it, and accomplished no fighting at all.",
+        "I know where to draw it from now. I did not draw it, but I know.",
+        "It is still as sharp as when you gave it to me.",
+        "The shield has not blocked anything except a doorway by accident.",
+        "I carried it home unused and very slightly heavier from dust.",
+        "We saw danger far away. The gear and I agreed to keep it there.",
+        "I practiced once on the air. The air recovered quickly.",
+        "You can inspect it, but there is no battle hiding in the marks.",
+        "I hope it stays unused. It looks happiest that way."
       ],
       "conditions": [
         {

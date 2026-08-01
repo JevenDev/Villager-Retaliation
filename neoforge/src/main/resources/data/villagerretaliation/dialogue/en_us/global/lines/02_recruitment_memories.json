@@ -13,7 +13,17 @@
         "I will remember that you did not leave me behind.",
         "A journey feels different when someone is watching your back.",
         "I came home with my breath steady. That is worth thanking you for.",
-        "You made a hard road feel possible, and I will not forget it."
+        "You made a hard road feel possible, and I will not forget it.",
+        "Walking through my own door felt better after that road.",
+        "I did not realize how much I missed the bell until I heard it again.",
+        "Thank you for making sure I reached the village before dark.",
+        "The trip was hard, but I never felt abandoned out there.",
+        "I slept without my boots on for the first time in days.",
+        "Home looked smaller from the hill and safer with every step.",
+        "I have already told my family you kept your word.",
+        "The familiar paths were a welcome sight after so much traveling.",
+        "Next time I leave, I will remember that you brought me back.",
+        "I am tired, safe, and grateful in that order."
       ],
       "conditions": [
         {
@@ -33,15 +43,25 @@
       "request": "recruitment_followup",
       "lines": [
         "I came back in one piece. That is the kind of help people remember.",
-        "You brought me through that trip safely. That turns a long road into a remembered kindness.",
-        "I am still here in one piece, and that matters more than I can say neatly.",
+        "You proved I could follow you into danger and still expect to come home.",
+        "Nothing is broken, nobody is missing, and I am ready to call that a success.",
         "The road was long, but it did not break us.",
         "You kept your word well enough for me to stand here and say so.",
         "There is comfort in arriving with nothing worse than tired feet.",
         "I trusted you for that journey, and you gave me reason to be glad I did.",
         "A safe return is not a small thing, not out there.",
         "I know better than to take a quiet road for granted.",
-        "You saw me through. That matters."
+        "You saw me through. That matters.",
+        "I am home, rested, and ready for whatever comes next.",
+        "The road tested us without taking anything we could not replace.",
+        "You got me back safely, so I am willing to follow again.",
+        "My supplies need sorting, but I came through just fine.",
+        "A hot meal fixed most of what the journey did to me.",
+        "I learned enough out there to make the next trip easier.",
+        "We kept a good pace and made sensible choices.",
+        "I have no wounds to explain to the healer this time.",
+        "Give me one quiet day and I will be ready to move.",
+        "That is how a hard journey should end, with everyone home."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -63,7 +83,17 @@
         "I followed you through it, and I came back hurt. Both parts matter.",
         "A safe ending does not erase a rough middle.",
         "I am standing, yes, but do not call that the same as unharmed.",
-        "We made it through. Let us make better choices before we need to do that again."
+        "We made it through. Let us make better choices before we need to do that again.",
+        "I made it home, but the healer was waiting when I arrived.",
+        "The pain is easing. The memory of getting hurt is not.",
+        "Next time, we stop before exhaustion makes the choices for us.",
+        "I kept moving because standing still felt even more dangerous.",
+        "The last stretch of road took everything I had left.",
+        "My gear shows exactly where the journey went wrong.",
+        "I need time before I agree to another trip like that.",
+        "A safe return does not make the wounds feel smaller.",
+        "I was too hurt to notice the village until someone called my name.",
+        "I came back alive, but I did not come back unshaken."
       ],
       "conditions": [
         {
@@ -91,7 +121,17 @@
         "Trust walks slowly after betrayal, if it walks at all.",
         "You led me out there, then taught me to fear your hand.",
         "I will think carefully before I follow you anywhere again.",
-        "What you broke was not only skin. Remember that."
+        "What you broke was not only skin. Remember that.",
+        "I followed because I believed you, and you used that against me.",
+        "The wound closed. Trust has been slower.",
+        "I keep wondering when you decided your promise did not matter.",
+        "Danger from the road is one thing. Danger from my guide is another.",
+        "Do not ask me to follow again as if nothing happened.",
+        "I know fear can make people reckless, but that felt deliberate.",
+        "You taught me to watch the hand offering help.",
+        "Getting home did not undo what you did out there.",
+        "If you want forgiveness, start by admitting what you broke.",
+        "I will choose my own path until you earn back my trust."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -113,7 +153,17 @@
         "That boat saved us time, trouble, and more than a few complaints from me.",
         "The river carried its share, and I respect good help when I see it.",
         "I prefer solid ground, but the boat made a fair argument.",
-        "If every journey had a boat for the worst stretch, I would complain less."
+        "If every journey had a boat for the worst stretch, I would complain less.",
+        "The river did most of the walking for us, and my feet are grateful.",
+        "I was nervous when the boat first left shore, but the ride stayed calm.",
+        "You handled the oars well enough that I could watch the banks.",
+        "Keeping our packs dry felt like a victory by itself.",
+        "The village roofs looked good from the water on the way home.",
+        "I learned to sit still when the current pulls sideways.",
+        "That boat saved us a long walk and more than a few blisters.",
+        "I would travel that route again if the weather stays kind.",
+        "Stepping onto the dock felt strange after hours of swaying.",
+        "We arrived with the boat, our supplies, and ourselves intact."
       ],
       "conditions": [
         {
@@ -141,7 +191,17 @@
         "A boat makes deep water feel less like a threat and more like a road.",
         "The ocean stayed below us, which is where I prefer it.",
         "I did not enjoy the crossing, but I enjoyed arriving dry.",
-        "Next time we cross water that wide, I will still vote for a boat."
+        "Next time we cross water that wide, I will still vote for a boat.",
+        "I trusted the boat more once the shoreline disappeared behind us.",
+        "Those ocean waves were larger than anything on the village river.",
+        "You kept our course even when every direction looked like water.",
+        "I will bring a warmer coat if we cross open sea again.",
+        "The boat creaked all night, but it never failed us.",
+        "Seeing land ahead was the best part of the crossing.",
+        "We kept the supplies dry and the bow pointed the right way.",
+        "I understand why sailors watch the sky so closely now.",
+        "The ocean made the journey feel enormous, even from a boat.",
+        "I was glad to reach shore without ever needing to swim."
       ],
       "conditions": [
         {
@@ -170,7 +230,17 @@
         "The waves kept asking if I was tired. I was.",
         "I made it across, but every splash felt like an argument against the plan.",
         "Next time, let the boat do the swimming.",
-        "I am glad to be dry now. I would like to stay that way."
+        "I am glad to be dry now. I would like to stay that way.",
+        "I still cannot believe we crossed that water without a boat.",
+        "My arms stopped aching before my clothes finally dried.",
+        "Next time we face an ocean, we are building something that floats.",
+        "I swallowed enough salt water to remember the trip forever.",
+        "Keeping sight of you was the only way I knew where to swim.",
+        "The current pulled harder than it looked from shore.",
+        "I reached land on shaking legs and kissed the sand.",
+        "We survived the crossing, but I refuse to call it a good plan.",
+        "Every wave hid the horizon for a moment too long.",
+        "I am safe now, and I am never doing that unprepared again."
       ],
       "conditions": [
         {
@@ -198,7 +268,17 @@
         "I can thank the boat and still be angry about the bruises.",
         "The trip had one peaceful stretch, and then the road corrected that.",
         "A boat can carry a body, but it cannot keep trouble from waiting on shore.",
-        "Next time, I would like the boat ride without the injury attached."
+        "Next time, I would like the boat ride without the injury attached.",
+        "Sitting in the boat hurt less than climbing out of it.",
+        "The river carried me home when my legs could not.",
+        "I left blood on the seat, so the boat needs cleaning.",
+        "You kept us steady while I tried to bind the wound.",
+        "The dock felt much farther away once I was hurt.",
+        "I was grateful for every stretch where the current did the work.",
+        "The healer saw us coming and met the boat at shore.",
+        "I could not help with the oars after the injury.",
+        "That quiet ride home gave me too much time to feel every bruise.",
+        "If we take the boat again, I want bandages within reach."
       ],
       "conditions": [
         {
@@ -218,15 +298,25 @@
       "request": "recruitment_followup",
       "lines": [
         "The ocean crossing by boat was manageable. The part where I got hurt was less impressive.",
-        "The water stayed calm. The rest of the journey did not.",
-        "I would remember the boat more kindly if the hurt had not come with it.",
+        "The sea stayed calm while the injury made every mile difficult.",
+        "The ocean crossing might have been peaceful if I had not spent it wounded.",
         "The ocean was not the worst part, which is saying something.",
         "The boat kept me above water, but not away from trouble.",
         "Crossing the ocean was frightening enough without adding bruises to it.",
         "I was grateful for the boat and less grateful for what happened around it.",
         "The deep water behaved better than the rest of the trip.",
         "I came back hurt, but at least the ocean did not get to keep me.",
-        "Next time, let the boat be the most difficult part. That would be enough."
+        "Next time, let the boat be the most difficult part. That would be enough.",
+        "Open water is a poor place to discover how badly you are hurt.",
+        "I could not rest while the waves kept jarring the wound.",
+        "We were too far from shore when the bleeding started.",
+        "The boat got us home, but the crossing felt endless.",
+        "Salt found every cut I had before I could cover it.",
+        "You steered while I held myself together under a blanket.",
+        "I watched the horizon because it was easier than watching the blood.",
+        "The first healer on the dock had no need to ask what happened.",
+        "I am grateful the hull held when I could barely sit upright.",
+        "Next crossing, the medicine stays beside me, not under the cargo."
       ],
       "conditions": [
         {
@@ -255,7 +345,17 @@
         "I made it through, but that does not make it a good idea.",
         "Next time, if I am hurt, we find a boat or we wait.",
         "I still feel that journey when I move too quickly.",
-        "There are safer ways to cross water, and I would like to try one."
+        "There are safer ways to cross water, and I would like to try one.",
+        "Swimming wounded turned every wave into a wall.",
+        "I reached shore because stopping was not an option.",
+        "The salt burned badly enough to make me forget the cold.",
+        "You should never have asked an injured villager to cross that water.",
+        "I could not tell whether I was shaking from pain or exhaustion.",
+        "Someone had to pull me through the last few blocks.",
+        "The healer found sand in every bandage afterward.",
+        "I remember the shore getting closer far too slowly.",
+        "My wound opened again before we were halfway across.",
+        "If there is no boat next time, there is no crossing."
       ],
       "conditions": [
         {
@@ -283,7 +383,17 @@
         "Trust should not sink after reaching shore.",
         "I thought the water was the danger. I was wrong.",
         "You made even that quiet boat ride feel foolish in hindsight.",
-        "Next time, I will think twice before sharing a boat with you."
+        "Next time, I will think twice before sharing a boat with you.",
+        "You waited until we were far from shore to show what your promise meant.",
+        "There is nowhere to walk away from betrayal in a small boat.",
+        "I kept my balance while wondering whether you would strike again.",
+        "The river was not what made that journey dangerous.",
+        "I trusted you with the oars and regretted it before we landed.",
+        "Even now, the sound of a boat scraping shore brings it back.",
+        "You left me choosing between your company and the water.",
+        "I will not board another boat with you until this is settled.",
+        "The bruises faded, but that trapped feeling stayed.",
+        "A shared boat should have meant we were on the same side."
       ],
       "conditions": [
         {
@@ -311,7 +421,17 @@
         "I remember the sounds of {follow_biome} more than I expected.",
         "Some paths through {follow_biome} feel longer after you have already walked them.",
         "I know {follow_biome} better than I planned to.",
-        "Next time you mention {follow_biome}, I may sit down first."
+        "Next time you mention {follow_biome}, I may sit down first.",
+        "{follow_biome} looked different once I knew how far we still had to go.",
+        "I learned which parts of {follow_biome} are worse after sunset.",
+        "You walked ahead while I tried not to lose the path through {follow_biome}.",
+        "I still remember where we stopped to rest in {follow_biome}.",
+        "The weather across {follow_biome} changed faster than I expected.",
+        "I packed for a short walk, not a full crossing of {follow_biome}.",
+        "There were moments in {follow_biome} when the village felt impossibly far away.",
+        "I know a safer route through {follow_biome} now.",
+        "We brought half of {follow_biome} home on our boots.",
+        "If we cross {follow_biome} again, I am choosing where we camp."
       ],
       "conditions": [
         {
@@ -336,7 +456,17 @@
         "I still think my feet should have been thanked after that walk.",
         "There are shorter ways to build trust than dragging someone {follow_distance} blocks.",
         "That walk made every bed in the village look like a miracle.",
-        "Next time we go that far, I am asking about the destination first."
+        "Next time we go that far, I am asking about the destination first.",
+        "I lost count of the miles before I stopped missing my own bed.",
+        "My boots never forgave that {follow_distance} block walk.",
+        "You called it nearby until the village vanished behind us.",
+        "I learned to judge distance by how loudly my knees complained.",
+        "Every hill promised a destination and delivered another hill.",
+        "We should have packed twice the food for a walk that long.",
+        "I remember the places we rested better than the road itself.",
+        "The return trip felt longer because I knew every turn ahead.",
+        "I can walk far, but I would like warning before {follow_distance} blocks.",
+        "Next time, let us agree on what a short trip means before leaving."
       ],
       "conditions": [
         {
@@ -362,7 +492,17 @@
         "I was glad for the boat, even if I pretended not to be nervous.",
         "The water carried us, and for once my feet were not responsible.",
         "I remember wondering if boats always sound that uncertain.",
-        "If nothing else, that boat gave my legs a fine argument for resting."
+        "If nothing else, that boat gave my legs a fine argument for resting.",
+        "I remember when the boat spun because neither of us admitted we were steering.",
+        "You chose the water route, and I spent half of it gripping the sides.",
+        "The oars made more noise than either of us did.",
+        "I watched the shore until I was sure we were going the right way.",
+        "That little boat carried more supplies than seemed sensible.",
+        "I learned that standing up in a boat answers several questions at once.",
+        "We drifted past the turn and pretended it was intentional.",
+        "The dock was wet, crooked, and wonderful when we returned.",
+        "I still remember the current tugging us away from the bank.",
+        "If you invite me boating again, bring a second oar."
       ],
       "conditions": [
         {
@@ -387,7 +527,17 @@
         "I remember looking for shore and finding more water instead.",
         "Every wave seemed to ask why we had no boat. I had no answer.",
         "I still feel tired when I think about that crossing.",
-        "Next time the ocean is involved, I would like wood beneath me."
+        "Next time the ocean is involved, I would like wood beneath me.",
+        "You pointed across the ocean as if swimming it were ordinary.",
+        "I could not hear you over the waves, so I simply kept following.",
+        "The salt stayed in my clothes long after we reached land.",
+        "I spent that crossing wishing you had mentioned the lack of a boat.",
+        "Every time the water went dark below me, I swam faster.",
+        "The shore behind us disappeared before the one ahead looked real.",
+        "I was too tired to be angry until my feet touched sand.",
+        "We made it, though I still think the ocean deserved a better plan.",
+        "I remember checking that you were still beside me after every wave.",
+        "The next ocean trip starts with trees, tools, and a boat."
       ],
       "conditions": [
         {
@@ -412,7 +562,17 @@
         "{follow_distance} blocks is still {follow_distance} blocks, even with a floating shortcut.",
         "The boat made part of the trip peaceful. The rest made up for it.",
         "Water carried us for some of those blocks, and I thank it for its service.",
-        "Next time we travel that far, I want to know how much of it floats."
+        "Next time we travel that far, I want to know how much of it floats.",
+        "The boat spared our feet, but {follow_distance} blocks is still a long journey.",
+        "We spent so long aboard that solid ground felt like it was moving.",
+        "I measured that trip in meals, not miles.",
+        "The river bent often enough to hide how far we had gone.",
+        "Our supplies filled every dry corner of the boat.",
+        "I slept badly because the water kept tapping the hull.",
+        "We passed several places that looked like good camps and stopped at none.",
+        "By the end, even the sound of the oars felt tiring.",
+        "The boat helped, but it did not make {follow_distance} blocks feel close.",
+        "If we travel that far again, I want a larger boat and a proper map."
       ],
       "conditions": [
         {
@@ -438,7 +598,17 @@
         "I learned something about your promises that day.",
         "Being led somewhere and then struck is not easy to forget.",
         "I can still hear the part of me that should have turned back.",
-        "If you wonder why I hesitate, remember what you taught me."
+        "If you wonder why I hesitate, remember what you taught me.",
+        "I remember following you because I thought your word meant something.",
+        "The hit surprised me less than how quickly you acted normal afterward.",
+        "You knew I was there to help when you turned on me.",
+        "I still watch your hands when you ask me to come along.",
+        "The road home gave me plenty of time to reconsider trusting you.",
+        "I can talk about it now without pretending it was harmless.",
+        "You broke more than the journey when you struck me.",
+        "I should not have needed to fear the person I followed.",
+        "Do you remember the promise you made before we left?",
+        "I will not follow again until your actions answer that question."
       ],
       "conditions": [
         {
@@ -456,7 +626,7 @@
       "id": "question_follow_memory_injured",
       "request": "question",
       "lines": [
-        "I remember following you home hurt. I was <gold><pulse>grateful</pulse></gold>, but not exactly comfortable.",
+        "I remember following you home hurt. I was grateful, but not exactly comfortable.",
         "I was grateful to get home and angry that getting home hurt. Both fit.",
         "That journey ended here, but the ache took longer to arrive.",
         "I remember each step better than I wanted to.",
@@ -465,7 +635,17 @@
         "That road felt longer once I was limping through it.",
         "I was glad to see the village again, even through the hurt.",
         "A safe return can still leave a sore memory.",
-        "Next time, I would rather arrive without counting every bruise."
+        "Next time, I would rather arrive without counting every bruise.",
+        "I remember biting down on my sleeve so nobody would hear how much each step hurt.",
+        "I remember trying to keep pace while every step hurt.",
+        "You saw I was injured, and the road still went on.",
+        "The village healer knew from my walk that something was wrong.",
+        "I left part of my gear torn on that journey.",
+        "We should have stopped sooner, whatever was chasing us.",
+        "I remember relief more than pain once the roofs came into view.",
+        "Someone met us at the path because I could barely finish it.",
+        "That trip taught me exactly what I need in a field kit.",
+        "I healed, but I did not forget how far home felt."
       ],
       "conditions": [
         {
@@ -492,7 +672,17 @@
         "I will not pretend I was fearless, but I was ready.",
         "That {gear_kind} made the difference between panic and action.",
         "It is one thing to be given gear. It is another for it to hold under pressure.",
-        "I trust the {gear_kind} more now. It proved itself when it counted."
+        "I trust the {gear_kind} more now. It proved itself when it counted.",
+        "The gear has scratches now, which means it did its job.",
+        "I felt the impact, but the protection kept it from becoming worse.",
+        "One strap loosened in the fight, so I fixed it afterward.",
+        "Nothing broke when I needed it most.",
+        "The equipment fit well enough that I could move without thinking about it.",
+        "I cleaned it carefully after seeing what it stopped.",
+        "There is a dent I plan to keep as a reminder.",
+        "Good gear buys you time, and this bought enough.",
+        "I trusted it in the fight and came home standing.",
+        "It is worn now, but I would rather see wear than blood."
       ],
       "conditions": [
         {

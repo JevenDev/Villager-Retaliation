@@ -4,11 +4,26 @@
       "id": "gear_report_fletcher_used",
       "request": "gear_report",
       "lines": [
-        "It kept its line under pressure. A steady hand is easier with proper tools.",
-        "It did the job when <dark_gray><wavy>fear</wavy></dark_gray> was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The straight shafts tell a story if you know where to look.",
-        "Keep your bow ready. Most people notice damage after it matters."
+        "It kept its line under pressure. A steady hand is easier with proper gear.",
+        "The string held, but it needs replacing before another fight.",
+        "I can see where the grip twisted in your hand.",
+        "Two shafts are warped and one point struck stone.",
+        "This bow earned a cleaning and a quiet night.",
+        "The wear says you fired quickly and moved often.",
+        "Check that fastening before it works loose.",
+        "These feathers are torn, but the shafts can be saved.",
+        "Something hit the bow hard enough to bruise the wood.",
+        "You kept it dry. That spared us a larger repair.",
+        "The nock marks tell me you used every arrow you could reach.",
+        "I would not draw this again until the string is waxed.",
+        "One limb has started pulling harder than the other.",
+        "The dirt around the grip came from real work.",
+        "It did its job. Now let me do mine.",
+        "A quick polish will not fix that split.",
+        "The points need sharpening and the feathers need patience.",
+        "Whoever used this trusted it with their life.",
+        "Most of the damage is honest wear.",
+        "Bring it back tomorrow and it will be ready again."
       ],
       "conditions": [
         {
@@ -25,10 +40,25 @@
       "request": "gear_report",
       "lines": [
         "Still unused. A ready shot is not wasted just because it stays in the quiver.",
-        "It did the job when fear was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The straight shafts tell a story if you know where to look.",
-        "Keep your bow ready. Most people notice damage after it matters."
+        "The string is clean, dry, and exactly where I left it.",
+        "Not one point has touched dirt yet.",
+        "The feathers are still smooth from the table.",
+        "I cannot judge the balance until someone actually carries it.",
+        "Unused gear still needs a proper fit.",
+        "Nothing is worn, but the string has relaxed in storage.",
+        "The first real draw will tell us what the bench could not.",
+        "It has been kept dry and away from careless hands.",
+        "Every shaft is straight. Let us keep them that way.",
+        "A clean surface proves only that it stayed home.",
+        "The grip may need adjusting once someone practices with it.",
+        "No chips, no dirt, and no useful story yet.",
+        "I would rather test it at the range than during a raid.",
+        "The points are sharp enough to handle carefully.",
+        "Storage was kind to it. Time will be less kind to the string.",
+        "Nothing here needs repair, only practice.",
+        "The bow looks ready. The owner should be ready too.",
+        "Fresh gear always feels strange for the first few draws.",
+        "Return after it has seen the target and I can tell you more."
       ],
       "conditions": [
         {
