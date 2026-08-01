@@ -89,7 +89,7 @@ public final class QuestAvailabilityService {
     }
 
     public static boolean cooldownElapsed(long gameTime, long eventTime, long cooldownTicks) {
-        return cooldownTicks <= 0L || eventTime <= 0L || gameTime - eventTime >= cooldownTicks;
+        return cooldownTicks <= 0L || eventTime < 0L || gameTime - eventTime >= cooldownTicks;
     }
 
     public static boolean matchesProviderLock(

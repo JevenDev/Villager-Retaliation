@@ -774,7 +774,7 @@ public final class VillagerQuestGameTests {
         VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
         QuestTriggerDispatcher.markContinuousTriggersUsed(progress, index, 777L);
         helper.assertValueEqual(progress.lastTriggerGameTime("tick_global"), 777L, "global continuous mark");
-        helper.assertValueEqual(progress.lastTriggerGameTime("tick_started"), 0L, "zero-cooldown continuous mark");
+        helper.assertValueEqual(progress.lastTriggerGameTime("tick_started"), -1L, "zero-cooldown continuous mark");
         helper.assertValueEqual(progress.lastTriggerGameTime("tick_done"), 777L, "stage continuous mark");
 
         helper.succeed();
@@ -846,6 +846,55 @@ public final class VillagerQuestGameTests {
         helper.assertFalse(unrelated.dirty(), "unrelated dispatch dirtied progress");
         helper.assertValueEqual(unrelated.trace().candidateTriggers(), 0, "unrelated dispatch candidate count");
         helper.assertValueEqual(unrelated.trace().evaluatedTriggers(), 0, "unrelated dispatch evaluated count");
+
+        VillagerQuestSavedData.QuestProgress zeroTimeProgress = new VillagerQuestSavedData.QuestProgress();
+        zeroTimeProgress.start(UUID.randomUUID(), Level.OVERWORLD, BlockPos.ZERO, 0L);
+        zeroTimeProgress.setCurrentStage("started");
+        List<QuestDefinition.Trigger> continuousTriggers = List.of(
+                registryTrigger("tick_started", QuestDefinition.TriggerEvent.PLAYER_TICK, Set.of("started"), 30L, true));
+        QuestDefinition continuousQuest = registryTriggerQuest(continuousTriggers);
+        QuestTriggerIndex continuousIndex = QuestTriggerRegistry.index(compiledTriggers(continuousTriggers));
+        List<String> zeroTimeRuns = new ArrayList<>();
+        QuestTriggerDispatchResult initialCooldown = QuestTriggerDispatcher.dispatchAtGameTime(
+                null,
+                1L,
+                continuousQuest,
+                continuousIndex,
+                zeroTimeProgress,
+                QuestDefinition.TriggerEvent.PLAYER_TICK,
+                (context, definition, activeProgress, trigger) -> {
+                    zeroTimeRuns.add(trigger.id());
+                    return true;
+                });
+        helper.assertFalse(initialCooldown.dirty(), "quest started at zero must honor initial continuous cooldown");
+        helper.assertTrue(zeroTimeRuns.isEmpty(), "initial continuous cooldown should suppress its trigger");
+
+        zeroTimeRuns.clear();
+        QuestTriggerDispatchResult firstCompletion = QuestTriggerDispatcher.dispatchAtGameTime(
+                null,
+                0L,
+                quest,
+                index,
+                zeroTimeProgress,
+                QuestDefinition.TriggerEvent.COMPLETED,
+                (context, definition, activeProgress, trigger) -> {
+                    zeroTimeRuns.add(trigger.id());
+                    return true;
+                });
+        QuestTriggerDispatchResult duplicateCompletion = QuestTriggerDispatcher.dispatchAtGameTime(
+                null,
+                1L,
+                quest,
+                index,
+                zeroTimeProgress,
+                QuestDefinition.TriggerEvent.COMPLETED,
+                (context, definition, activeProgress, trigger) -> true);
+        helper.assertTrue(firstCompletion.dirty(), "non-repeatable trigger should run at game time zero");
+        helper.assertFalse(duplicateCompletion.dirty(), "non-repeatable trigger run at zero must not run twice");
+        helper.assertValueEqual(zeroTimeRuns, List.of("completed_once"), "zero-time completion trigger");
+        helper.assertFalse(
+                QuestAvailabilityService.cooldownElapsed(1L, 0L, 20L),
+                "event at game time zero must retain its cooldown");
 
         helper.succeed();
     }
@@ -1957,6 +2006,32 @@ public final class VillagerQuestGameTests {
         } finally {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
             VillagerQuestResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void pendingPartyRewardProtectsItsExactProvider(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager provider = spawnVillager(helper, new BlockPos(2, 2, 2));
+        ResourceLocation questId = VillagerRetaliation.id("pending_party_reward_protection_fixture");
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(helper.getLevel());
+        VillagerQuestSavedData.QuestProgress progress = data.getOrCreate(player.getUUID(), questId);
+        progress.start(provider.getUUID(), helper.getLevel().dimension(), provider.blockPosition(), 0L);
+        progress.complete(1L, false);
+        progress.markPendingPartyReward();
+        data.setDirty();
+        try {
+            helper.assertValueEqual(
+                    VillagerQuestDeathProtectionService.pendingPartyRewardQuests(helper.getLevel(), provider),
+                    Set.of(questId),
+                    "pending party reward should protect its exact provider");
+            progress.markPartyRewardClaimed();
+            helper.assertTrue(
+                    VillagerQuestDeathProtectionService.pendingPartyRewardQuests(helper.getLevel(), provider).isEmpty(),
+                    "claiming the pending reward should release provider protection");
+        } finally {
+            data.remove(player.getUUID(), questId);
         }
         helper.succeed();
     }

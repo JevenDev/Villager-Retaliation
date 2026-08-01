@@ -112,16 +112,16 @@ public final class QuestTriggerDispatcher {
             return false;
         }
         long lastTriggered = progress.lastTriggerGameTime(trigger.id());
-        if (!trigger.repeatable() && lastTriggered > 0L) {
+        if (!trigger.repeatable() && lastTriggered >= 0L) {
             return false;
         }
         if (trigger.cooldownTicks() > 0L) {
-            if (lastTriggered > 0L && gameTime - lastTriggered < trigger.cooldownTicks()) {
+            if (lastTriggered >= 0L && gameTime - lastTriggered < trigger.cooldownTicks()) {
                 return false;
             }
-            if (lastTriggered <= 0L
+            if (lastTriggered < 0L
                     && QuestTriggerRegistry.isContinuous(trigger.event())
-                    && progress.startedGameTime() > 0L
+                    && progress.startedGameTime() >= 0L
                     && gameTime - progress.startedGameTime() < trigger.cooldownTicks()) {
                 return false;
             }
