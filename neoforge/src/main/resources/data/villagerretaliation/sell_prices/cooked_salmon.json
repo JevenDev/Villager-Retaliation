@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:cooked_salmon",
-    "item_count":  6,
-    "currency_count":  1
+    "item_count":  10,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:fish"
 }

@@ -1,8 +1,6 @@
 {
     "item":  "minecraft:black_wool",
-    "item_count":  {
-                       "min":  1,
-                       "max":  18
-                   },
-    "currency_count":  1
+    "item_count":  8,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:wool"
 }

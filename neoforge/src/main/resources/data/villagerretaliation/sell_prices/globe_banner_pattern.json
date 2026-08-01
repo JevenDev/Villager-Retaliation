@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:globe_banner_pattern",
     "item_count":  1,
-    "currency_count":  8
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:globe_banner_pattern"
 }

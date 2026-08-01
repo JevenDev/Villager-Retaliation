@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:writable_book",
     "item_count":  2,
-    "currency_count":  1
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:paper"
 }

@@ -1,8 +1,6 @@
 {
     "item":  "minecraft:flint",
-    "item_count":  {
-                       "min":  10,
-                       "max":  30
-                   },
-    "currency_count":  1
+    "item_count":  20,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:flint"
 }

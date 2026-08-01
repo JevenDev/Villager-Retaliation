@@ -1,5 +1,7 @@
 {
+    "enabled":  false,
     "item":  "minecraft:chainmail_chestplate",
     "item_count":  1,
-    "currency_count":  4
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:chainmail_chestplate"
 }

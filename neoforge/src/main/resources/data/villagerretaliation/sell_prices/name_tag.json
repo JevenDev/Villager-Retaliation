@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:name_tag",
     "item_count":  1,
-    "currency_count":  20
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:name_tag"
 }

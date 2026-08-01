@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:bell",
     "item_count":  1,
-    "currency_count":  36
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:bell"
 }

@@ -1,5 +1,7 @@
 {
+    "enabled":  false,
     "item":  "minecraft:leather_boots",
     "item_count":  1,
-    "currency_count":  4
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:leather_boots"
 }

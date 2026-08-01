@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:granite",
     "item_count":  16,
-    "currency_count":  1
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:stone"
 }

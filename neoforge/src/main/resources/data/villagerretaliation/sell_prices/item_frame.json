@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:item_frame",
-    "item_count":  1,
-    "currency_count":  7
+    "item_count":  2,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:item_frame"
 }

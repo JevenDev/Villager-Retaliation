@@ -1,8 +1,6 @@
 {
     "item":  "minecraft:pumpkin",
-    "item_count":  {
-                       "min":  1,
-                       "max":  6
-                   },
-    "currency_count":  1
+    "item_count":  4,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:vegetables"
 }

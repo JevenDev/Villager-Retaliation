@@ -1,8 +1,7 @@
 {
+    "enabled":  false,
     "item":  "minecraft:diamond_leggings",
     "item_count":  1,
-    "currency_count":  {
-                           "min":  19,
-                           "max":  33
-                       }
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:diamond_leggings"
 }

@@ -1,8 +1,7 @@
 {
+    "enabled":  false,
     "item":  "minecraft:diamond_chestplate",
     "item_count":  1,
-    "currency_count":  {
-                           "min":  21,
-                           "max":  35
-                       }
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:diamond_chestplate"
 }

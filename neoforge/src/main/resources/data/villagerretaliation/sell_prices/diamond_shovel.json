@@ -1,8 +1,7 @@
 {
+    "enabled":  false,
     "item":  "minecraft:diamond_shovel",
     "item_count":  1,
-    "currency_count":  {
-                           "min":  10,
-                           "max":  24
-                       }
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:diamond_shovel"
 }

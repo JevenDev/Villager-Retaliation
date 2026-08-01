@@ -1,5 +1,6 @@
 {
     "item":  "minecraft:pumpkin_pie",
     "item_count":  4,
-    "currency_count":  1
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:pumpkin_pie"
 }
