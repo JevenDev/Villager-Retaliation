@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.client.inventory;
 import com.jvn.villagerretaliation.block.SellBoxMenu;
 import com.jvn.villagerretaliation.network.SellBoxSyncPayload;
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
+import com.jvn.villagerretaliation.sell.SupplyBand;
+import com.jvn.villagerretaliation.sell.VillageMarketPolicy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -37,7 +39,9 @@ public final class SellBoxClientState {
                 payload.currencyName(),
                 payload.currencyPluralName(),
                 payload.currencyIconSprite(),
-                payload.prices());
+                payload.validMarket(),
+                payload.villageName(),
+                payload.entries());
     }
 
     public static Snapshot snapshot(int containerId) {
@@ -53,11 +57,11 @@ public final class SellBoxClientState {
             return;
         }
         ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem());
-        CurrencyAmount unitPrice = snapshot.prices().get(itemId);
-        if (unitPrice == null || unitPrice.isZero()) {
+        SellBoxSyncPayload.MarketEntry entry = snapshot.entries().get(itemId);
+        if (entry == null || entry.effectiveUnitPrice().isZero()) {
             return;
         }
-        CurrencyAmount total = unitPrice.multiply(event.getItemStack().getCount());
+        CurrencyAmount total = payout(entry, event.getItemStack().getCount());
         event.getToolTip().add(Component.translatable(
                 "villagerretaliation.sell_box.price",
                 decimalCurrency(total, snapshot)).withStyle(ChatFormatting.GREEN));
@@ -70,6 +74,32 @@ public final class SellBoxClientState {
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         snapshot = Snapshot.empty();
+    }
+
+    public static CurrencyAmount payout(SellBoxSyncPayload.MarketEntry entry, int itemCount) {
+        if (entry == null || itemCount <= 0) {
+            return CurrencyAmount.ZERO;
+        }
+        CurrencyAmount remaining = entry.baseUnitPrice().multiply(itemCount);
+        CurrencyAmount cursor = entry.recoveredPressure();
+        CurrencyAmount payout = CurrencyAmount.ZERO;
+        while (!remaining.isZero()) {
+            SupplyBand band = SupplyBand.forPressure(cursor);
+            CurrencyAmount segment;
+            if (band.upperBound().isPresent()) {
+                segment = remaining.min(band.upperBound().get().subtractClamped(cursor));
+            } else {
+                segment = remaining;
+            }
+            if (segment.isZero()) {
+                return payout;
+            }
+            payout = payout.add(segment.multiply(
+                    VillageMarketPolicy.effectiveMultiplier(entry.demandBand(), band)));
+            cursor = cursor.add(segment);
+            remaining = remaining.subtract(segment);
+        }
+        return payout;
     }
 
     public static String decimalCurrency(CurrencyAmount amount, Snapshot value) {
@@ -119,7 +149,9 @@ public final class SellBoxClientState {
             String currencyName,
             String currencyPluralName,
             ResourceLocation currencyIconSprite,
-            Map<ResourceLocation, CurrencyAmount> prices) {
+            boolean validMarket,
+            String villageName,
+            Map<ResourceLocation, SellBoxSyncPayload.MarketEntry> entries) {
         public Snapshot {
             balance = balance == null ? CurrencyAmount.ZERO : balance;
             currencyName = currencyName == null ? "emerald" : currencyName;
@@ -127,7 +159,8 @@ public final class SellBoxClientState {
             currencyIconSprite = currencyIconSprite == null
                     ? DEFAULT_CURRENCY_ICON
                     : currencyIconSprite;
-            prices = prices == null ? Map.of() : Map.copyOf(prices);
+            villageName = villageName == null ? "" : villageName;
+            entries = entries == null ? Map.of() : Map.copyOf(entries);
         }
 
         public static Snapshot empty() {
@@ -138,6 +171,8 @@ public final class SellBoxClientState {
                     "emerald",
                     "emeralds",
                     DEFAULT_CURRENCY_ICON,
+                    false,
+                    "",
                     Map.of());
         }
     }

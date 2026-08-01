@@ -130,6 +130,10 @@ public final class SellBoxMenu extends AbstractContainerMenu {
         container.stopOpen(player);
     }
 
+    public SellBoxBlockEntity sellBox() {
+        return this.container instanceof SellBoxBlockEntity sellBox ? sellBox : null;
+    }
+
     public boolean isContainer(Container candidate) {
         return this.container == candidate;
     }
@@ -175,9 +179,7 @@ public final class SellBoxMenu extends AbstractContainerMenu {
         com.jvn.villagerretaliation.network.SellBoxSyncPayload.send(
                 player,
                 this.containerId,
-                container instanceof SellBoxBlockEntity sellBox
-                        ? sellBox.balance()
-                        : com.jvn.villagerretaliation.sell.CurrencyAmount.ZERO);
+                (SellBoxBlockEntity) container);
     }
 
     private void addPlayerInventory(Inventory inventory) {
