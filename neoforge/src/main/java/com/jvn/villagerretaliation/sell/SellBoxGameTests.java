@@ -2,9 +2,13 @@ package com.jvn.villagerretaliation.sell;
 
 import com.google.gson.JsonParser;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.block.SellBoxBlockEntity;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import java.math.BigInteger;
+import java.util.UUID;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
@@ -131,6 +135,66 @@ public final class SellBoxGameTests {
             rejected = true;
         }
         helper.assertTrue(rejected, "non-positive datapack ranges must be rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void villageMarketPressureRecoversPersistsAndStaysIsolated(GameTestHelper helper) {
+        VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();
+        VillageAllegianceId first = new VillageAllegianceId(new UUID(1L, 2L));
+        VillageAllegianceId second = new VillageAllegianceId(new UUID(3L, 4L));
+        registry.ensureRecord(first, 0L, helper.getLevel().dimension().location(), BlockPos.ZERO);
+        registry.ensureRecord(second, 0L, helper.getLevel().dimension().location(), new BlockPos(64, 0, 0));
+
+        ResourceLocation logs = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "logs");
+        VillageMarketSavedData data = new VillageMarketSavedData();
+        data.recordPressure(registry, first, logs, CurrencyAmount.of(40, 1), 10L);
+        helper.assertValueEqual(
+                data.pressure(registry, first, logs, 11L),
+                CurrencyAmount.of(24, 1),
+                "one elapsed day must recover sixteen base emeralds");
+        helper.assertValueEqual(
+                data.pressure(registry, first, logs, 9L),
+                CurrencyAmount.of(40, 1),
+                "moving time backward must not reverse recovery");
+        helper.assertValueEqual(
+                data.pressure(registry, second, logs, 11L),
+                CurrencyAmount.ZERO,
+                "villages must keep independent pressure");
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        VillageMarketSavedData loaded = VillageMarketSavedData.load(saved, helper.getLevel().registryAccess());
+        helper.assertValueEqual(
+                loaded.pressure(registry, first, logs, 11L),
+                CurrencyAmount.of(24, 1),
+                "exact pressure must survive save and load");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void villageMarketAliasesMergeRecoveredPressure(GameTestHelper helper) {
+        VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();
+        VillageAllegianceId source = new VillageAllegianceId(new UUID(5L, 6L));
+        VillageAllegianceId target = new VillageAllegianceId(new UUID(7L, 8L));
+        registry.ensureRecord(source, 0L, helper.getLevel().dimension().location(), BlockPos.ZERO);
+        registry.ensureRecord(target, 0L, helper.getLevel().dimension().location(), new BlockPos(64, 0, 0));
+
+        ResourceLocation wool = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "wool");
+        VillageMarketSavedData data = new VillageMarketSavedData();
+        data.recordPressure(registry, source, wool, CurrencyAmount.of(40, 1), 2L);
+        data.recordPressure(registry, target, wool, CurrencyAmount.of(20, 1), 3L);
+        helper.assertTrue(registry.merge(source, target), "the test villages must merge");
+        data.canonicalize(registry, 4L);
+
+        helper.assertValueEqual(data.marketCount(), 1, "alias market state must be retired");
+        helper.assertValueEqual(
+                data.pressure(registry, target, wool, 4L),
+                CurrencyAmount.of(12, 1),
+                "both states must recover to the merge day before pressure is combined");
+        helper.assertValueEqual(
+                data.pressure(registry, source, wool, 4L),
+                CurrencyAmount.of(12, 1),
+                "alias reads must resolve to the canonical market");
         helper.succeed();
     }
 
