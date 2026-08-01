@@ -22,7 +22,7 @@ import net.minecraft.world.item.Items;
 public final class SellPriceResources {
     public static final String RESOURCE_ROOT = "sell_prices";
     private static final Set<String> ALLOWED_KEYS =
-            Set.of("enabled", "item", "item_count", "currency_count");
+            Set.of("enabled", "item", "item_count", "currency_count", "market_group");
     private static final ServerResourceCache<Catalog> CACHE =
             ServerResourceCache.create(Catalog::empty, SellPriceResources::read);
     private static final java.util.concurrent.atomic.AtomicLong GENERATION = new java.util.concurrent.atomic.AtomicLong();
@@ -77,10 +77,13 @@ public final class SellPriceResources {
 
     private static Optional<SellPriceDefinition> readFile(ResourceLocation location, Resource resource) {
         Optional<JsonObject> loaded = DatapackResourceLoader.readObject(location, "sell price", resource);
-        if (loaded.isEmpty()) {
+        return loaded.flatMap(root -> definitionFromJson(location, root));
+    }
+
+    static Optional<SellPriceDefinition> definitionFromJson(ResourceLocation location, JsonObject root) {
+        if (location == null || root == null) {
             return Optional.empty();
         }
-        JsonObject root = loaded.get();
         DatapackDiagnostics.warnUnknownRootKeys(location, "sell price", root, ALLOWED_KEYS);
         if (!DatapackJsonReader.readBoolean(root, "enabled", true)) {
             return Optional.empty();
@@ -96,11 +99,28 @@ public final class SellPriceResources {
         try {
             SellPriceDefinition.IntRange itemCount = readRange(root.get("item_count"), "item_count");
             SellPriceDefinition.IntRange currencyCount = readRange(root.get("currency_count"), "currency_count");
-            return Optional.of(new SellPriceDefinition(resourceId(location), item, itemCount, currencyCount));
+            ResourceLocation marketGroup = readMarketGroup(root, itemId);
+            return Optional.of(new SellPriceDefinition(
+                    resourceId(location), item, itemCount, currencyCount, marketGroup));
         } catch (IllegalArgumentException exception) {
-            DatapackDiagnostics.warnSkippedEntry(location, "sell price", "range", exception.getMessage());
+            DatapackDiagnostics.warnSkippedEntry(location, "sell price", "definition", exception.getMessage());
             return Optional.empty();
         }
+    }
+
+    private static ResourceLocation readMarketGroup(JsonObject root, ResourceLocation defaultGroup) {
+        if (!root.has("market_group")) {
+            return defaultGroup;
+        }
+        JsonElement element = root.get("market_group");
+        if (element == null || !element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
+            throw new IllegalArgumentException("market_group must be a resource location string.");
+        }
+        ResourceLocation parsed = ResourceLocation.tryParse(element.getAsString());
+        if (parsed == null) {
+            throw new IllegalArgumentException("market_group must be a valid resource location.");
+        }
+        return parsed;
     }
 
     private static SellPriceDefinition.IntRange readRange(JsonElement element, String fieldName) {

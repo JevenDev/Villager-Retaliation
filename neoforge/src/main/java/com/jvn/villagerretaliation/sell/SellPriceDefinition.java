@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.sell;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 
@@ -10,11 +11,17 @@ public record SellPriceDefinition(
         ResourceLocation id,
         Item item,
         IntRange itemCount,
-        IntRange currencyCount) {
+        IntRange currencyCount,
+        ResourceLocation marketGroup) {
+
+    public SellPriceDefinition(ResourceLocation id, Item item, IntRange itemCount, IntRange currencyCount) {
+        this(id, item, itemCount, currencyCount, item == null ? null : BuiltInRegistries.ITEM.getKey(item));
+    }
 
     public SellPriceDefinition {
-        if (id == null || item == null || itemCount == null || currencyCount == null) {
-            throw new IllegalArgumentException("Sell price definitions require an id, item, and both ranges");
+        if (id == null || item == null || itemCount == null || currencyCount == null || marketGroup == null) {
+            throw new IllegalArgumentException(
+                    "Sell price definitions require an id, item, both ranges, and a market group");
         }
     }
 

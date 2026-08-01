@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.sell;
 
+import com.google.gson.JsonParser;
+
 import com.jvn.villagerretaliation.block.SellBoxBlockEntity;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import java.math.BigInteger;
@@ -33,6 +35,71 @@ public final class SellBoxGameTests {
                 CurrencyAmount.of(31, 15).withoutWholeUnits(BigInteger.TWO),
                 CurrencyAmount.of(1, 15),
                 "collecting whole units must retain the exact fraction");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void pricingSchemaDefaultsAndValidatesMarketGroups(GameTestHelper helper) {
+        ResourceLocation location =
+                ResourceLocation.fromNamespaceAndPath("test", "sell_prices/legacy_coal.json");
+        SellPriceDefinition legacy = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"item_count\":12,\"currency_count\":1}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                legacy.marketGroup(),
+                ResourceLocation.fromNamespaceAndPath("minecraft", "coal"),
+                "legacy definitions must default their market group to the item id");
+
+        SellPriceDefinition grouped = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"item_count\":{\"min\":12,\"max\":14},"
+                                                + "\"currency_count\":1,\"market_group\":\"villagerretaliation:fuel\"}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                grouped.marketGroup(),
+                ResourceLocation.fromNamespaceAndPath("villagerretaliation", "fuel"),
+                "explicit market groups must parse");
+
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:coal\",\"item_count\":12,\"currency_count\":1,"
+                                                        + "\"market_group\":\"Bad Group\"}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "invalid market groups must reject the definition");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void exactMarketArithmeticSupportsMarginalTiers(GameTestHelper helper) {
+        CurrencyAmount amount = CurrencyAmount.of(31, 5);
+        helper.assertValueEqual(
+                amount.multiplyRatio(125, 100),
+                CurrencyAmount.of(31, 4),
+                "exact rational multipliers must not round");
+        helper.assertValueEqual(
+                amount.subtract(CurrencyAmount.of(6, 1)),
+                CurrencyAmount.of(1, 5),
+                "exact subtraction must retain fractions");
+        helper.assertValueEqual(
+                CurrencyAmount.of(2, 1).subtractClamped(CurrencyAmount.of(3, 1)),
+                CurrencyAmount.ZERO,
+                "clamped subtraction must never become negative");
+        helper.assertValueEqual(
+                CurrencyAmount.of(3, 1).min(CurrencyAmount.of(4, 1)),
+                CurrencyAmount.of(3, 1),
+                "minimum selection must be exact");
+        helper.assertValueEqual(
+                VillageMarketPolicy.effectiveMultiplier(DailyDemandBand.VERY_LOW, SupplyBand.GLUTTED),
+                CurrencyAmount.of(25, 100),
+                "the effective multiplier must honor the 25 percent floor");
         helper.succeed();
     }
 
