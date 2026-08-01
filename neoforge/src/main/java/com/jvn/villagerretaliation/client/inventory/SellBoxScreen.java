@@ -87,14 +87,17 @@ public final class SellBoxScreen extends AbstractContainerScreen<SellBoxMenu> {
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        SellBoxClientState.Snapshot state = SellBoxClientState.snapshot(menu.containerId);
+        Component marketTitle = state.validMarket()
+                ? Component.translatable("villagerretaliation.sell_box.market_title", state.villageName())
+                : Component.translatable("villagerretaliation.sell_box.no_market");
         graphics.drawString(
                 font,
-                title,
+                marketTitle,
                 titleLabelX - 1,
                 titleLabelY,
                 VALUE_TEXT_COLOR,
                 false);
-        SellBoxClientState.Snapshot state = SellBoxClientState.snapshot(menu.containerId);
         CurrencyAmount pendingValue = pendingValue(state);
         renderCurrencyIcon(graphics, state, PENDING_ROW_Y);
         renderCurrencyIcon(graphics, state, BALANCE_ROW_Y);
@@ -156,6 +159,26 @@ public final class SellBoxScreen extends AbstractContainerScreen<SellBoxMenu> {
         List<Component> lines = new ArrayList<>();
         lines.add(Component.translatable(titleKey).withStyle(ChatFormatting.GREEN));
         lines.add(Component.translatable(detailKey).withStyle(ChatFormatting.GRAY));
+        if (isValueRowHovered(localMouseX, localMouseY, PENDING_ROW_Y)) {
+            ItemStack pending = menu.getSlot(0).getItem();
+            var entry = pending.isEmpty()
+                    ? null
+                    : state.entries().get(BuiltInRegistries.ITEM.getKey(pending.getItem()));
+            if (entry != null) {
+                lines.add(Component.translatable(
+                        "villagerretaliation.sell_box.current_rate",
+                        rateText(pending, entry, state)).withStyle(ChatFormatting.GRAY));
+                lines.add(Component.translatable(
+                        "villagerretaliation.sell_box.daily_demand",
+                        titleCase(entry.demandBand().name())).withStyle(ChatFormatting.GRAY));
+                lines.add(Component.translatable(
+                        "villagerretaliation.sell_box.recent_supply",
+                        titleCase(entry.supplyBand().name())).withStyle(ChatFormatting.GRAY));
+                lines.add(Component.translatable(
+                        "villagerretaliation.sell_box.market_group",
+                        entry.marketGroup().toString()).withStyle(ChatFormatting.DARK_GRAY));
+            }
+        }
         if (!amount.isExactlyRepresentable(2)) {
             lines.add(Component.translatable(
                     "villagerretaliation.sell_box.exact",
@@ -176,8 +199,29 @@ public final class SellBoxScreen extends AbstractContainerScreen<SellBoxMenu> {
         if (pending.isEmpty()) {
             return CurrencyAmount.ZERO;
         }
-        CurrencyAmount unitPrice = state.prices().get(BuiltInRegistries.ITEM.getKey(pending.getItem()));
-        return unitPrice == null ? CurrencyAmount.ZERO : unitPrice.multiply(pending.getCount());
+        var entry = state.entries().get(BuiltInRegistries.ITEM.getKey(pending.getItem()));
+        return SellBoxClientState.payout(entry, pending.getCount());
+    }
+
+    private String rateText(
+            ItemStack pending,
+            com.jvn.villagerretaliation.network.SellBoxSyncPayload.MarketEntry entry,
+            SellBoxClientState.Snapshot state) {
+        CurrencyAmount rate = entry.effectiveUnitPrice();
+        if (rate.numerator().bitLength() < 31 && rate.denominator().bitLength() < 31) {
+            return rate.denominator() + " " + pending.getHoverName().getString()
+                    + " -> " + rate.numerator() + " "
+                    + (rate.numerator().equals(java.math.BigInteger.ONE)
+                            ? state.currencyName()
+                            : state.currencyPluralName());
+        }
+        return "~" + CurrencyAmount.of(1, 1).multiply(rate).decimal(3)
+                + " " + state.currencyPluralName() + " each";
+    }
+
+    private static String titleCase(String value) {
+        String normalized = value.toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
+        return normalized.substring(0, 1).toUpperCase(java.util.Locale.ROOT) + normalized.substring(1);
     }
 
     private void clickButton(int id) {
@@ -191,7 +235,7 @@ public final class SellBoxScreen extends AbstractContainerScreen<SellBoxMenu> {
             return;
         }
         SellBoxClientState.Snapshot state = SellBoxClientState.snapshot(menu.containerId);
-        sellButton.active = menu.getSlot(0).hasItem();
+        sellButton.active = state.validMarket() && menu.getSlot(0).hasItem();
         withdrawButton.active = state.balance().wholeUnits().signum() > 0;
     }
 }
