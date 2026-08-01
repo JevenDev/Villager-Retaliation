@@ -7,6 +7,9 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData
 import com.jvn.villagerretaliation.block.SellBoxBlockEntity;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import java.math.BigInteger;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.BlockPos;
@@ -135,6 +138,60 @@ public final class SellBoxGameTests {
             rejected = true;
         }
         helper.assertTrue(rejected, "non-positive datapack ranges must be rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void villageDemandIsDeterministicLocalAndDaySensitive(GameTestHelper helper) {
+        VillageAllegianceId first = new VillageAllegianceId(new UUID(11L, 12L));
+        VillageAllegianceId second = new VillageAllegianceId(new UUID(13L, 14L));
+        Set<ResourceLocation> groups = new LinkedHashSet<>();
+        for (String path : new String[] {"logs", "wool", "fish", "grain", "iron", "flowers", "fuel", "stone", "paper", "gems"}) {
+            groups.add(ResourceLocation.fromNamespaceAndPath("villagerretaliation", path));
+        }
+        Map<ResourceLocation, DailyDemandBand> firstDay =
+                VillageSellMarket.demandBands(3733L, first, 5L, 2L, groups);
+        helper.assertValueEqual(
+                VillageSellMarket.demandBands(3733L, first, 5L, 2L, groups),
+                firstDay,
+                "demand must be restart-stable for the same inputs");
+        helper.assertTrue(
+                !firstDay.equals(VillageSellMarket.demandBands(3733L, second, 5L, 2L, groups)),
+                "different villages must rank commodity groups independently");
+        helper.assertTrue(
+                !firstDay.equals(VillageSellMarket.demandBands(3733L, first, 6L, 2L, groups)),
+                "demand must shift on a new overworld day");
+        helper.assertValueEqual(
+                VillageSellMarket.demandBands(3733L, first, 5L, 3L, groups),
+                firstDay,
+                "resource generations must invalidate caches without changing deterministic demand");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void marginalSaleCrossesSupplyTiersAndAddsFullPressure(GameTestHelper helper) {
+        VillageAllegianceId village = new VillageAllegianceId(new UUID(15L, 16L));
+        MarketQuote quote = VillageSellMarket.calculateQuote(
+                village,
+                "Oakvale",
+                ResourceLocation.fromNamespaceAndPath("villagerretaliation", "logs"),
+                CurrencyAmount.of(1, 1),
+                DailyDemandBand.NORMAL,
+                CurrencyAmount.of(12, 1),
+                60);
+        helper.assertValueEqual(quote.supplySegments().size(), 4, "the sale must cross all four supply tiers");
+        helper.assertValueEqual(
+                quote.stackPayout(),
+                CurrencyAmount.of(34, 1),
+                "marginal tiers must price 4 fresh, 16 active, 32 saturated, and 8 glutted base value");
+        helper.assertValueEqual(
+                quote.pressureAdded(),
+                CurrencyAmount.of(60, 1),
+                "discounted payout must still add the full base value as pressure");
+        helper.assertValueEqual(
+                quote.resultingPressure(),
+                CurrencyAmount.of(72, 1),
+                "resulting pressure must include the complete sale exactly once");
         helper.succeed();
     }
 

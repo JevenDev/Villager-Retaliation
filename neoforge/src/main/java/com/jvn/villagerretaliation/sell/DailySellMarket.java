@@ -12,8 +12,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public final class DailySellMarket {
-    private static final long DAY_TICKS = 24000L;
-
     private DailySellMarket() {
     }
 
@@ -39,7 +37,7 @@ public final class DailySellMarket {
     }
 
     public static long currentDay(MinecraftServer server) {
-        return Math.floorDiv(server.overworld().getDayTime(), DAY_TICKS);
+        return VillageSellMarket.currentDay(server);
     }
 
     private static CurrencyAmount price(MinecraftServer server, SellPriceDefinition definition) {

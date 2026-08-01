@@ -50,6 +50,15 @@ public record CurrencyAmount(BigInteger numerator, BigInteger denominator) imple
         return factor == 0L ? ZERO : new CurrencyAmount(this.numerator.multiply(BigInteger.valueOf(factor)), this.denominator);
     }
 
+    public CurrencyAmount divide(long divisor) {
+        if (divisor <= 0L) {
+            throw new IllegalArgumentException("Currency amount divisor must be positive");
+        }
+        return this.isZero()
+                ? ZERO
+                : new CurrencyAmount(this.numerator, this.denominator.multiply(BigInteger.valueOf(divisor)));
+    }
+
     public CurrencyAmount multiply(CurrencyAmount factor) {
         if (factor == null) {
             throw new IllegalArgumentException("Currency amount multiplier is required");
