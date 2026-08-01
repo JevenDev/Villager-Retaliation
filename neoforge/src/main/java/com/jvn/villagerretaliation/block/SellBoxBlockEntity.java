@@ -138,7 +138,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         }
         this.balance = this.balance.add(sale.get().payout());
         this.items.set(0, ItemStack.EMPTY);
-        changedAndSync();
+        changedAndSync(false);
         SellBoxMenu.syncVillage(serverLevel, sale.get().quote().villageId());
         return true;
     }
@@ -174,7 +174,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
                 soldInVillage = sale.get().quote().villageId();
             }
             this.items.set(0, incoming.copyWithCount(accepted));
-            changedAndSync();
+            changedAndSync(soldInVillage == null);
             if (soldInVillage != null) {
                 SellBoxMenu.syncVillage(serverLevel, soldInVillage);
             }
@@ -360,12 +360,18 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
     }
 
     private void changedAndSync() {
+        changedAndSync(true);
+    }
+
+    private void changedAndSync(boolean syncViewers) {
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
         }
-        SellBoxMenu.syncViewers(this);
+        if (syncViewers) {
+            SellBoxMenu.syncViewers(this);
+        }
     }
 
     private void playSound(SoundEvent sound) {

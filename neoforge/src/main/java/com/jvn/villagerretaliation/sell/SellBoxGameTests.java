@@ -119,14 +119,17 @@ public final class SellBoxGameTests {
                 SellPriceDefinition.IntRange.fixed(1));
         VillageAllegianceId village = new VillageAllegianceId(new UUID(21L, 22L));
         Set<CurrencyAmount> selectedAcrossDays = new LinkedHashSet<>();
+        CurrencyAmount previous = null;
         for (long day = -5; day < 25; day++) {
             CurrencyAmount selected = VillageSellMarket.selectBasePrice(3733L, day, village, definition);
             helper.assertTrue(definition.candidatePrices().contains(selected), "base price must be a configured candidate");
+            helper.assertTrue(!selected.equals(previous), "multi-value prices must not repeat on consecutive days");
             helper.assertValueEqual(
                     VillageSellMarket.selectBasePrice(3733L, day, village, definition),
                     selected,
                     "seed, village, definition, and day must select deterministically");
             selectedAcrossDays.add(selected);
+            previous = selected;
         }
         helper.assertTrue(selectedAcrossDays.size() > 1, "multi-value ranges must vary across days");
 

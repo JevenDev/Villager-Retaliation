@@ -57,10 +57,6 @@ public final class SellBoxMenu extends AbstractContainerMenu {
             case COLLECT_BUTTON -> sellBox.collect(player) > 0;
             default -> false;
         };
-        if (player instanceof ServerPlayer serverPlayer) {
-            broadcastFullState();
-            sync(serverPlayer);
-        }
         return handled;
     }
 
@@ -165,8 +161,7 @@ public final class SellBoxMenu extends AbstractContainerMenu {
             if (player instanceof ServerPlayer serverPlayer
                     && serverPlayer.containerMenu instanceof SellBoxMenu menu
                     && menu.container instanceof SellBoxBlockEntity openBox
-                    && registry.peekAt(level, openBox.getBlockPos())
-                            .flatMap(registry::canonical)
+                    && VillageSellMarket.resolveVillage(registry, level, openBox.getBlockPos())
                             .filter(canonical.get()::equals)
                             .isPresent()) {
                 menu.broadcastFullState();
