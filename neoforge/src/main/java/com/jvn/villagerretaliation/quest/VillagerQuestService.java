@@ -1305,6 +1305,12 @@ public final class VillagerQuestService {
                 deferLifecycleEvent(level, definition, entry.progress(), QuestDefinition.TriggerEvent.EXPIRED);
             }
             changed = true;
+            PartyService.getPartyForPlayer(level, entry.playerId())
+                    .ifPresent(party -> PartyQuestService.detachQuest(
+                            level,
+                            party,
+                            entry.playerId(),
+                            entry.questId()));
             data.removeTrackedQuest(entry.playerId(), entry.questId());
 
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(entry.playerId());
@@ -2282,7 +2288,7 @@ public final class VillagerQuestService {
                 continue;
             }
             ServerPlayer member = context.level().getServer().getPlayerList().getPlayer(playerId);
-            if (member == null) {
+            if (member == null || member.serverLevel() != context.level()) {
                 shared.enroll(playerId, true);
                 continue;
             }
@@ -2740,10 +2746,13 @@ public final class VillagerQuestService {
             if (!progress.pendingPartyReward() || progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
                 continue;
             }
-            QuestDefinition definition = VillagerQuestResources.quest(player.getServer(), entry.getKey()).orElse(null);
-            Villager provider = VillagerEntityResolver.loaded(player.getServer(), progress.startedVillagerId());
-            if (definition == null || provider == null || provider.level() != player.serverLevel()
-                    || !provider.isAlive()) {
+            CompiledQuest compiled = VillagerQuestResources.compiledQuest(player.getServer(), entry.getKey()).orElse(null);
+            QuestDefinition definition = compiled == null ? null : compiled.asQuestDefinition();
+            if (definition == null) {
+                continue;
+            }
+            Villager provider = pendingPartyRewardProvider(player, compiled, progress);
+            if (provider == null) {
                 continue;
             }
             com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = null;
@@ -2764,6 +2773,48 @@ public final class VillagerQuestService {
                 com.jvn.villagerretaliation.party.PartyService.markChanged(player.serverLevel());
             }
         }
+    }
+
+    private static Villager pendingPartyRewardProvider(
+            ServerPlayer player,
+            CompiledQuest compiled,
+            VillagerQuestSavedData.QuestProgress progress) {
+        Villager provider = VillagerEntityResolver.loaded(player.getServer(), progress.startedVillagerId());
+        if (provider != null && provider.isAlive() && provider.level() == player.serverLevel()) {
+            return provider;
+        }
+        if (provider != null && provider.isAlive()) {
+            return null;
+        }
+
+        QuestDefinition definition = compiled.asQuestDefinition();
+        List<Villager> candidates = player.serverLevel().getEntitiesOfClass(
+                Villager.class,
+                player.getBoundingBox().inflate(NEARBY_AVAILABLE_QUEST_RADIUS),
+                Villager::isAlive);
+        candidates.sort(Comparator.comparingDouble(player::distanceToSqr));
+        for (Villager candidate : candidates) {
+            DialogueContext context =
+                    VillagerInteractionService.createDialogueContext(player.serverLevel(), player, candidate);
+            QuestProviderBinding binding = VillagerQuestProviderType.INSTANCE.bindingFromDialogueContext(context);
+            QuestExecutionContext execution =
+                    QuestExecutionContext.fromDialogueContext(context, definition, "pending_party_reward_rebind");
+            if (!compiled.provider().providerType().equals(binding.providerType())
+                    || !VillagerQuestProviderType.INSTANCE.matchesOffer(execution, definition)) {
+                continue;
+            }
+            UUID previousId = progress.startedVillagerId();
+            progress.rebindProvider(binding, player.serverLevel().getGameTime(), "pending_party_reward_rebind");
+            SceneLifecycleIntegration.onQuestProviderRebind(
+                    player.serverLevel(),
+                    player.getUUID(),
+                    definition.id(),
+                    previousId,
+                    candidate,
+                    "compatible_pending_party_reward_rebind");
+            return candidate;
+        }
+        return null;
     }
 
     private static QuestActionOutcome abandonQuest(DialogueContext context, QuestDefinition definition) {
@@ -3895,7 +3946,7 @@ public final class VillagerQuestService {
         }
         long gameTime = player.level().getGameTime();
         boolean expiredByTime = expiration.afterTicks() > 0L
-                && progress.startedGameTime() > 0L
+                && progress.startedGameTime() >= 0L
                 && gameTime - progress.startedGameTime() >= expiration.afterTicks();
         ConditionMatch expirationConditions =
                 expirationConditionsState(player, context, player.serverLevel(), definition, progress);
@@ -6111,17 +6162,17 @@ public final class VillagerQuestService {
                     + progress.currentStage() + " allowed=" + trigger.stages();
         }
         long lastTriggered = progress.lastTriggerGameTime(trigger.id());
-        if (!trigger.repeatable() && lastTriggered > 0L) {
+        if (!trigger.repeatable() && lastTriggered >= 0L) {
             return "trigger_filter id=" + trigger.id() + " result=filtered reason=not_repeatable last=" + lastTriggered;
         }
         if (trigger.cooldownTicks() > 0L) {
-            if (lastTriggered > 0L && gameTime - lastTriggered < trigger.cooldownTicks()) {
+            if (lastTriggered >= 0L && gameTime - lastTriggered < trigger.cooldownTicks()) {
                 return "trigger_filter id=" + trigger.id() + " result=filtered reason=cooldown remaining="
                         + (trigger.cooldownTicks() - (gameTime - lastTriggered));
             }
-            if (lastTriggered <= 0L
+            if (lastTriggered < 0L
                     && QuestTriggerRegistry.isContinuous(trigger.event())
-                    && progress.startedGameTime() > 0L
+                    && progress.startedGameTime() >= 0L
                     && gameTime - progress.startedGameTime() < trigger.cooldownTicks()) {
                 return "trigger_filter id=" + trigger.id() + " result=filtered reason=initial_continuous_cooldown remaining="
                         + (trigger.cooldownTicks() - (gameTime - progress.startedGameTime()));

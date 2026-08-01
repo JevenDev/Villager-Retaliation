@@ -216,6 +216,22 @@ public class VillagerQuestSavedData extends SavedData {
         return List.copyOf(active);
     }
 
+    public List<QuestEntry> pendingPartyRewardsStartedBy(UUID villagerId) {
+        if (villagerId == null || this.entries.isEmpty()) {
+            return List.of();
+        }
+        List<QuestEntry> pending = new ArrayList<>();
+        for (Map.Entry<UUID, Map<ResourceLocation, QuestProgress>> playerEntry : this.entries.entrySet()) {
+            for (Map.Entry<ResourceLocation, QuestProgress> questEntry : playerEntry.getValue().entrySet()) {
+                QuestProgress progress = questEntry.getValue();
+                if (progress.pendingPartyReward() && villagerId.equals(progress.startedVillagerId())) {
+                    pending.add(new QuestEntry(playerEntry.getKey(), questEntry.getKey(), progress));
+                }
+            }
+        }
+        return List.copyOf(pending);
+    }
+
     public List<Map.Entry<ResourceLocation, QuestProgress>> progress(UUID playerId) {
         Map<ResourceLocation, QuestProgress> playerEntries = this.entries.get(playerId);
         if (playerEntries == null || playerEntries.isEmpty()) {
@@ -502,11 +518,11 @@ public class VillagerQuestSavedData extends SavedData {
     public static class QuestProgress {
         private QuestState state = QuestState.NOT_STARTED;
         private UUID startedVillagerId;
-        private long startedGameTime;
-        private long completedGameTime;
-        private long abandonedGameTime;
-        private long expiredGameTime;
-        private long failedGameTime;
+        private long startedGameTime = -1L;
+        private long completedGameTime = -1L;
+        private long abandonedGameTime = -1L;
+        private long expiredGameTime = -1L;
+        private long failedGameTime = -1L;
         private String failureReason = "";
         private boolean visitedTarget;
         private boolean hasProof;
@@ -542,11 +558,16 @@ public class VillagerQuestSavedData extends SavedData {
             if (tag.hasUUID(TAG_STARTED_VILLAGER)) {
                 progress.startedVillagerId = tag.getUUID(TAG_STARTED_VILLAGER);
             }
-            progress.startedGameTime = tag.getLong(TAG_STARTED_TIME);
-            progress.completedGameTime = tag.getLong(TAG_COMPLETED_TIME);
-            progress.abandonedGameTime = tag.getLong(TAG_ABANDONED_TIME);
-            progress.expiredGameTime = tag.getLong(TAG_EXPIRED_TIME);
-            progress.failedGameTime = tag.getLong(TAG_FAILED_TIME);
+            progress.startedGameTime = tag.contains(TAG_STARTED_TIME, Tag.TAG_LONG)
+                    ? tag.getLong(TAG_STARTED_TIME) : -1L;
+            progress.completedGameTime = tag.contains(TAG_COMPLETED_TIME, Tag.TAG_LONG)
+                    ? tag.getLong(TAG_COMPLETED_TIME) : -1L;
+            progress.abandonedGameTime = tag.contains(TAG_ABANDONED_TIME, Tag.TAG_LONG)
+                    ? tag.getLong(TAG_ABANDONED_TIME) : -1L;
+            progress.expiredGameTime = tag.contains(TAG_EXPIRED_TIME, Tag.TAG_LONG)
+                    ? tag.getLong(TAG_EXPIRED_TIME) : -1L;
+            progress.failedGameTime = tag.contains(TAG_FAILED_TIME, Tag.TAG_LONG)
+                    ? tag.getLong(TAG_FAILED_TIME) : -1L;
             progress.failureReason = QuestStateMachine.normalizeCode(tag.getString(TAG_FAILURE_REASON), "");
             progress.visitedTarget = tag.getBoolean(TAG_VISITED_TARGET);
             progress.hasProof = tag.getBoolean(TAG_HAS_PROOF);
@@ -942,10 +963,10 @@ public class VillagerQuestSavedData extends SavedData {
             this.targetPos = pos == null ? null : pos.immutable();
             this.targetObjectiveId = "";
             this.startedGameTime = gameTime;
-            this.completedGameTime = 0L;
-            this.abandonedGameTime = 0L;
-            this.expiredGameTime = 0L;
-            this.failedGameTime = 0L;
+            this.completedGameTime = -1L;
+            this.abandonedGameTime = -1L;
+            this.expiredGameTime = -1L;
+            this.failedGameTime = -1L;
             this.failureReason = "";
             this.visitedTarget = false;
             this.hasProof = false;
@@ -1177,9 +1198,9 @@ public class VillagerQuestSavedData extends SavedData {
 
         public long lastTriggerGameTime(String triggerId) {
             if (triggerId == null || triggerId.isBlank()) {
-                return 0L;
+                return -1L;
             }
-            return this.triggerTimes.getOrDefault(triggerId, 0L);
+            return this.triggerTimes.getOrDefault(triggerId, -1L);
         }
 
         public void markTriggerUsed(String triggerId, long gameTime) {

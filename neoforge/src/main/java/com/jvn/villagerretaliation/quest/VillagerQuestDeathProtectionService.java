@@ -27,6 +27,18 @@ public final class VillagerQuestDeathProtectionService {
         return Set.copyOf(questIds);
     }
 
+    public static Set<ResourceLocation> pendingPartyRewardQuests(ServerLevel level, Villager villager) {
+        if (level == null || villager == null) {
+            return Set.of();
+        }
+        Set<ResourceLocation> questIds = new LinkedHashSet<>();
+        for (VillagerQuestSavedData.QuestEntry entry
+                : VillagerQuestSavedData.get(level).pendingPartyRewardsStartedBy(villager.getUUID())) {
+            questIds.add(entry.questId());
+        }
+        return Set.copyOf(questIds);
+    }
+
     public static Set<ResourceLocation> permanentAfterStartQuests(Villager villager) {
         if (villager == null || !villager.getPersistentData().contains(AFTER_START_QUESTS_KEY, Tag.TAG_LIST)) {
             return Set.of();

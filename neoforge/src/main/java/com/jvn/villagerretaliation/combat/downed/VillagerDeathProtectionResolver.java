@@ -46,6 +46,8 @@ public final class VillagerDeathProtectionResolver {
         }
         VillagerQuestDeathProtectionService.activeWhileActiveQuests(level, villager)
                 .forEach(id -> sources.add("quest:while_active:" + id));
+        VillagerQuestDeathProtectionService.pendingPartyRewardQuests(level, villager)
+                .forEach(id -> sources.add("quest:pending_party_reward:" + id));
         VillagerQuestDeathProtectionService.permanentAfterStartQuests(villager)
                 .forEach(id -> sources.add("quest:after_start:" + id));
         SceneLifecycleIntegration.protectingScenes(level, villager)
