@@ -560,7 +560,7 @@ public final class VillageAllegianceService {
         migratedKnown++;
     }
 
-    private static void normalizeAndTrack(ServerLevel level, Entity entity, VillageAllegianceData data) {
+    static void normalizeAndTrack(ServerLevel level, Entity entity, VillageAllegianceData data) {
         if (entity instanceof Villager villager && !villager.isBaby()
                 && data.assignmentSource() == AllegianceAssignmentSource.BIRTH
                 && !data.protectedParents().isEmpty()) {
@@ -587,7 +587,7 @@ public final class VillageAllegianceService {
         if (!canonical.get().equals(data.primary()) || data.dataVersion() < VillageAllegianceData.CURRENT_VERSION) {
             VillageAllegianceEntityData.write(entity, VillageAllegianceData.known(
                     canonical.get(), data.assignmentSource(), data.confidence(), data.assignedGameTime(),
-                    data.originDimension(), data.originPosition(), List.of()));
+                    data.originDimension(), data.originPosition(), data.protectedParents()));
         }
         if (entity instanceof Villager villager) {
             registry.addOrUpdateResident(
@@ -613,6 +613,7 @@ public final class VillageAllegianceService {
             AllegianceAssignmentSource source,
             AllegianceConfidence confidence,
             List<VillageAllegianceId> protectedParents) {
+        VillageAllegianceRegistrySavedData.get(level).removeResidentEverywhere(entity.getUUID());
         VillageAllegianceEntityData.write(entity, VillageAllegianceData.unknown(
                 source,
                 confidence,
