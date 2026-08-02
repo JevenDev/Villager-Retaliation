@@ -14,6 +14,8 @@ public record SellPriceDefinition(
         IntRange currencyCount,
         ResourceLocation marketGroup) {
 
+    public static final int MAX_ITEM_COUNT = 256;
+
     public SellPriceDefinition(ResourceLocation id, Item item, IntRange itemCount, IntRange currencyCount) {
         this(id, item, itemCount, currencyCount, item == null ? null : BuiltInRegistries.ITEM.getKey(item));
     }
@@ -22,6 +24,10 @@ public record SellPriceDefinition(
         if (id == null || item == null || itemCount == null || currencyCount == null || marketGroup == null) {
             throw new IllegalArgumentException(
                     "Sell price definitions require an id, item, both ranges, and a market group");
+        }
+        if (itemCount.max() > MAX_ITEM_COUNT) {
+            throw new IllegalArgumentException(
+                    "item_count must not exceed " + MAX_ITEM_COUNT);
         }
     }
 

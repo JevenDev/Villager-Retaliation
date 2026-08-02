@@ -2751,7 +2751,7 @@ public final class VillagerQuestService {
             if (definition == null) {
                 continue;
             }
-            Villager provider = pendingPartyRewardProvider(player, compiled, progress);
+            Villager provider = pendingPartyRewardProvider(player, progress);
             if (provider == null) {
                 continue;
             }
@@ -2775,46 +2775,13 @@ public final class VillagerQuestService {
         }
     }
 
-    private static Villager pendingPartyRewardProvider(
+    static Villager pendingPartyRewardProvider(
             ServerPlayer player,
-            CompiledQuest compiled,
             VillagerQuestSavedData.QuestProgress progress) {
         Villager provider = VillagerEntityResolver.loaded(player.getServer(), progress.startedVillagerId());
-        if (provider != null && provider.isAlive() && provider.level() == player.serverLevel()) {
-            return provider;
-        }
-        if (provider != null && provider.isAlive()) {
-            return null;
-        }
-
-        QuestDefinition definition = compiled.asQuestDefinition();
-        List<Villager> candidates = player.serverLevel().getEntitiesOfClass(
-                Villager.class,
-                player.getBoundingBox().inflate(NEARBY_AVAILABLE_QUEST_RADIUS),
-                Villager::isAlive);
-        candidates.sort(Comparator.comparingDouble(player::distanceToSqr));
-        for (Villager candidate : candidates) {
-            DialogueContext context =
-                    VillagerInteractionService.createDialogueContext(player.serverLevel(), player, candidate);
-            QuestProviderBinding binding = VillagerQuestProviderType.INSTANCE.bindingFromDialogueContext(context);
-            QuestExecutionContext execution =
-                    QuestExecutionContext.fromDialogueContext(context, definition, "pending_party_reward_rebind");
-            if (!compiled.provider().providerType().equals(binding.providerType())
-                    || !VillagerQuestProviderType.INSTANCE.matchesOffer(execution, definition)) {
-                continue;
-            }
-            UUID previousId = progress.startedVillagerId();
-            progress.rebindProvider(binding, player.serverLevel().getGameTime(), "pending_party_reward_rebind");
-            SceneLifecycleIntegration.onQuestProviderRebind(
-                    player.serverLevel(),
-                    player.getUUID(),
-                    definition.id(),
-                    previousId,
-                    candidate,
-                    "compatible_pending_party_reward_rebind");
-            return candidate;
-        }
-        return null;
+        return provider != null && provider.isAlive() && provider.level() == player.serverLevel()
+                ? provider
+                : null;
     }
 
     private static QuestActionOutcome abandonQuest(DialogueContext context, QuestDefinition definition) {

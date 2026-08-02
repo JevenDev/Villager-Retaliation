@@ -17,6 +17,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
@@ -88,6 +89,49 @@ public final class SellBoxGameTests {
                                         .getAsJsonObject())
                         .isEmpty(),
                 "invalid market groups must reject the definition");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void pricingSchemaBoundsExactBalanceDenominators(GameTestHelper helper) {
+        ResourceLocation location =
+                ResourceLocation.fromNamespaceAndPath("test", "sell_prices/unsafe_denominator.json");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:coal\",\"item_count\":257,"
+                                                        + "\"currency_count\":1}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "item counts above the exact-balance serialization bound must be rejected");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:coal\",\"item_count\":256,"
+                                                        + "\"currency_count\":2147483647}")
+                                        .getAsJsonObject())
+                        .isPresent(),
+                "the bound applies to denominators without unnecessarily limiting currency numerators");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void successfulMarketSyncRecordsCurrentSnapshot(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        SellBoxMarketSyncService.clear(player.getServer());
+
+        helper.assertFalse(
+                SellBoxMarketSyncService.isSynced(player, sellBox),
+                "an open menu without a sent snapshot must require synchronization");
+        SellBoxMarketSyncService.markSynced(player, sellBox);
+        helper.assertTrue(
+                SellBoxMarketSyncService.isSynced(player, sellBox),
+                "a successful payload send must suppress the duplicate next-tick snapshot");
+
+        SellBoxMarketSyncService.clear(player.getServer());
         helper.succeed();
     }
 

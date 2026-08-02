@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.block;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
+import com.jvn.villagerretaliation.sell.SellBoxMarketSyncService;
 import com.jvn.villagerretaliation.sell.VillageSellMarket;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -175,6 +176,7 @@ public final class SellBoxMenu extends AbstractContainerMenu {
                 player,
                 this.containerId,
                 (SellBoxBlockEntity) container);
+        SellBoxMarketSyncService.markSynced(player, (SellBoxBlockEntity) container);
     }
 
     private void addPlayerInventory(Inventory inventory) {
