@@ -205,6 +205,7 @@ public final class VillagerRetaliationEvents {
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.clearRuntimeState();
         ClipboardWorkforceService.clearRuntimeState();
         ServerRuntimeState.clear(event.getServer());
+        com.jvn.villagerretaliation.sell.SellBoxMarketSyncService.clear(event.getServer());
         com.jvn.villagerretaliation.duel.DuelService.clearRuntimeState(event.getServer());
         VillagerProfileManager.clearRuntimeState();
     }

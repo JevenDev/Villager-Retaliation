@@ -43,6 +43,9 @@ Either count may instead be an inclusive range:
 }
 ```
 
+item_count and the maximum of an item_count range may not exceed 256. Each range may contain at
+most 256 values.
+
 The unit price is `currency_count / item_count`. Every distinct reduced ratio in the configured
 ranges is a candidate. Each village selects one deterministically from the world seed, its village
 identity, the definition ID, and the global overworld day. A definition with multiple candidates

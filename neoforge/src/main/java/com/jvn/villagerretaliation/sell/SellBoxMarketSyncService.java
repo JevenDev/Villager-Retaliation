@@ -38,25 +38,55 @@ public final class SellBoxMarketSyncService {
                 continue;
             }
             openPlayers.add(player.getUUID());
-            ServerLevel level = player.serverLevel();
-            VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-            Optional<VillageAllegianceId> village =
-                    VillageSellMarket.resolveVillage(registry, level, sellBox.getBlockPos());
-            long revision = village
-                    .map(id -> VillageMarketSavedData.get(level).revision(registry, id))
-                    .orElse(0L);
-            SyncKey key = new SyncKey(
-                    level.dimension(),
-                    sellBox.getBlockPos(),
-                    village.orElse(null),
-                    revision,
-                    day,
-                    generation);
-            if (!key.equals(SYNCED.put(player.getUUID(), key))) {
+            SyncKey key = syncKey(player, sellBox, day, generation);
+            if (!key.equals(SYNCED.get(player.getUUID()))) {
                 menu.sync(player);
             }
         }
         SYNCED.keySet().removeIf(playerId -> !openPlayers.contains(playerId));
+    }
+
+    public static void markSynced(ServerPlayer player, SellBoxBlockEntity sellBox) {
+        if (player != null && sellBox != null) {
+            SYNCED.put(player.getUUID(), syncKey(
+                    player,
+                    sellBox,
+                    VillageSellMarket.currentDay(player.getServer()),
+                    SellPriceResources.generation()));
+        }
+    }
+
+    static boolean isSynced(ServerPlayer player, SellBoxBlockEntity sellBox) {
+        if (player == null || sellBox == null) {
+            return false;
+        }
+        return syncKey(
+                        player,
+                        sellBox,
+                        VillageSellMarket.currentDay(player.getServer()),
+                        SellPriceResources.generation())
+                .equals(SYNCED.get(player.getUUID()));
+    }
+
+    private static SyncKey syncKey(
+            ServerPlayer player,
+            SellBoxBlockEntity sellBox,
+            long day,
+            long generation) {
+        ServerLevel level = player.serverLevel();
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> village =
+                VillageSellMarket.resolveVillage(registry, level, sellBox.getBlockPos());
+        long revision = village
+                .map(id -> VillageMarketSavedData.get(level).revision(registry, id))
+                .orElse(0L);
+        return new SyncKey(
+                level.dimension(),
+                sellBox.getBlockPos(),
+                village.orElse(null),
+                revision,
+                day,
+                generation);
     }
 
     public static void clear(MinecraftServer server) {
