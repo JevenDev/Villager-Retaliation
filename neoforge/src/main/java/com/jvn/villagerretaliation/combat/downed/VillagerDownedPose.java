@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityDimensions;
 
 public enum VillagerDownedPose {
@@ -26,6 +27,18 @@ public enum VillagerDownedPose {
 
     public static VillagerDownedPose forVillager(UUID villagerId) {
         return ORIGINAL_VALUES[Math.floorMod(villagerId.hashCode(), ORIGINAL_VALUES.length)];
+    }
+
+    public static VillagerDownedPose randomOriginal(RandomSource random) {
+        return ORIGINAL_VALUES[random.nextInt(ORIGINAL_VALUES.length)];
+    }
+
+    public static VillagerDownedPose randomOriginalExcept(RandomSource random, VillagerDownedPose excluded) {
+        if (excluded == null || excluded == SECOND_WIND_CRAWL) {
+            return randomOriginal(random);
+        }
+        int offset = random.nextInt(ORIGINAL_VALUES.length - 1) + 1;
+        return ORIGINAL_VALUES[(excluded.ordinal() + offset) % ORIGINAL_VALUES.length];
     }
 
     public static Optional<VillagerDownedPose> fromId(ResourceLocation id) {

@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.client.model.VanillaVillagerModelAdapter;
 import com.jvn.villagerretaliation.client.interaction.VillagerDialogueMouthAnimation;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
 import com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache;
+import com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache;
 import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
 import com.jvn.villagerretaliation.client.renderer.layer.CombatItemInHandLayer;
 import com.jvn.villagerretaliation.client.renderer.layer.VillagerCrossedArmsItemLayer;
@@ -106,7 +107,8 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     }
 
     private boolean shouldUseCombatTextureAndModel(T villager, float attackTime) {
-        boolean needsSideArmModel = this.poseProvider.shouldUseCombatModel(villager)
+        boolean needsSideArmModel = VillagerDownedClientCache.isDowned(villager)
+                || this.poseProvider.shouldUseCombatModel(villager)
                 || attackTime > 0.0F
                 || VillagerRenderEquipmentState.hasArmorEquipped(villager)
                 || !VillagerRenderEquipmentState.visibleMainHand(villager).isEmpty()

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.party;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.duel.DuelInventoryClientState;
 import com.jvn.villagerretaliation.client.inventory.VillagerInventoryUiRenderer;
 import com.jvn.villagerretaliation.client.ui.ClientScreenArea;
 import com.jvn.villagerretaliation.mixin.client.AbstractContainerScreenAccessor;
@@ -1063,7 +1064,8 @@ public final class PartyInventoryOverlay {
     }
 
     private static boolean tabsAvailable(InventoryScreen screen) {
-        return isCustomPage(screen) || PartyRosterClient.roster().active();
+        return !DuelInventoryClientState.assignedLoadout()
+                && (isCustomPage(screen) || PartyRosterClient.roster().active());
     }
 
     private static Page tabAt(InventoryScreen screen, double mouseX, double mouseY) {
