@@ -791,7 +791,7 @@ public final class AssignedStorageService {
             UUID excludedOwner,
             List<ItemStack> additionalReservations) {
         if (candidate.container() instanceof SellBoxBlockEntity
-                && VillageSellMarket.quote(level, candidate.pos(), stack).isEmpty()) {
+                && !VillageSellMarket.canAcceptSale(level, candidate.pos(), stack)) {
             return 0;
         }
         ContainerFilterEvaluator.Evaluation evaluation = evaluateContainerRules(

@@ -557,14 +557,14 @@ public final class VillagerWorkerGameTests {
         ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 7, 0, 7, 1);
         BlockPos wrongRel = new BlockPos(3, 2, 2);
-        BlockPos cleanRel = new BlockPos(2, 2, 4);
+        BlockPos cleanRel = new BlockPos(2, 2, 3);
         setBlock(helper, wrongRel, Blocks.FURNACE.defaultBlockState());
         setBlock(helper, cleanRel, Blocks.FURNACE.defaultBlockState());
         Container wrong = container(level, helper.absolutePos(wrongRel));
         Container clean = container(level, helper.absolutePos(cleanRel));
         wrong.setItem(2, new ItemStack(Items.STONE));
 
-        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 3));
         HiredWorkContext context = context(
                 helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(6, 4, 6), true);
         helper.assertTrue(context.inventory().insertSupply(new ItemStack(Items.BEEF, 4)).isEmpty(), "beef should fit");
@@ -585,14 +585,14 @@ public final class VillagerWorkerGameTests {
         ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 7, 0, 7, 1);
         BlockPos wrongRel = new BlockPos(3, 2, 2);
-        BlockPos cleanRel = new BlockPos(2, 2, 4);
+        BlockPos cleanRel = new BlockPos(2, 2, 3);
         setBlock(helper, wrongRel, Blocks.FURNACE.defaultBlockState());
         setBlock(helper, cleanRel, Blocks.FURNACE.defaultBlockState());
         Container wrong = container(level, helper.absolutePos(wrongRel));
         Container clean = container(level, helper.absolutePos(cleanRel));
         wrong.setItem(2, new ItemStack(Items.STONE));
 
-        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 3));
         HiredWorkContext context = context(
                 helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(6, 4, 6), true);
         helper.assertTrue(
@@ -662,15 +662,14 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void cookRecipeFilterHonorsNarrowedCraftingIngredient(GameTestHelper helper) {
+    public static void recipeFilterHonorsNarrowedCraftingIngredient(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 6, 0, 6, 1);
-        setBlock(helper, new BlockPos(3, 2, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
         RecipeHolder<CraftingRecipe> holder = level.getRecipeManager()
                 .getAllRecipesFor(RecipeType.CRAFTING)
                 .stream()
                 .filter(candidate -> candidate.value()
-                        .getResultItem(level.registryAccess()).is(Items.SUSPICIOUS_STEW))
+                        .getResultItem(level.registryAccess()).is(Items.FIRE_CHARGE))
                 .filter(candidate -> candidate.value().getIngredients().stream()
                         .anyMatch(ingredient -> ingredient.getItems().length > 1))
                 .findFirst()
@@ -696,7 +695,6 @@ public final class VillagerWorkerGameTests {
                 "ingredient alternative should narrow");
 
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
-        VillagerItemFilterService.replaceFilter(villager, filter);
         HiredWorkContext context = context(
                 helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
         Map<net.minecraft.world.item.Item, Integer> supplied = new LinkedHashMap<>();
@@ -713,17 +711,18 @@ public final class VillagerWorkerGameTests {
                         context.inventory().insertSupply(new ItemStack(item, count)).isEmpty(),
                         "recipe ingredient should fit"));
 
-        CookingWorker.CraftingAssessment assessment =
-                CookingWorker.assessCraftingTargets(level, villager, context, filter);
-        helper.assertTrue(assessment.selection() != null, "exact narrowed recipe should plan");
+        Map<Integer, net.minecraft.world.item.Item> narrowed =
+                HiredProcessingRecipeFilter.narrowedCraftingIngredients(level, filter, holder);
         helper.assertTrue(
-                assessment.selection().narrowedIngredients().get(narrowedSlot) == narrowedChoice.getItem(),
+                narrowed.get(narrowedSlot) == narrowedChoice.getItem(),
                 "plan should retain the narrowed ingredient");
-        WorkResult result = new CookingWorker().tick(
-                level, villager, fakePlayer(level, "VrNarrowedRecipeCook"), context);
-        helper.assertTrue(result.completed(), "exact narrowed recipe should craft");
         helper.assertTrue(
-                countInventoryItem(context.inventory(), Items.SUSPICIOUS_STEW) > 0,
+                HiredSupplyCrafting.craftCarriedRecipeWithStations(
+                        level, context, holder.value(), narrowed),
+                "exact narrowed recipe should craft");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.FIRE_CHARGE),
+                3,
                 "configured recipe output should be produced");
         villager.discard();
         helper.succeed();

@@ -825,6 +825,7 @@ function buildSellPrices() {
       id: path.basename(file, ".json"),
       item: itemName(definition.item),
       itemId: String(definition.item),
+      marketGroup: String(definition.market_group || definition.item),
       itemCount,
       currencyCount
     }];
@@ -909,7 +910,7 @@ const summary = `${data.quests.length} quests, ${data.advancements.length} advan
 
 if (checkOnly) {
   const current = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "";
-  if (current !== output) {
+  if (normalizeLineEndings(current) !== output) {
     console.error("tools/player-wiki/site-data.js is out of date. Run node tools/player-wiki/build-data.mjs.");
     process.exitCode = 1;
   } else {
@@ -918,4 +919,8 @@ if (checkOnly) {
 } else {
   fs.writeFileSync(outputPath, output, "utf8");
   console.log(`Generated player wiki data: ${summary}.`);
+}
+
+function normalizeLineEndings(source) {
+  return source.replace(/\r\n?/g, "\n");
 }

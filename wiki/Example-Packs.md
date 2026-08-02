@@ -17,7 +17,7 @@ The repo already includes a full starter datapack you can copy from:
 example-packs/dialogue-folder-template/
 ```
 
-This is the best source of real, current beta.12 examples.
+This is the best source of beta.12 dialogue-authoring examples. The beta.13 scene examples above cover the newer quest runtime surface.
 
 ## What Is In The Template
 

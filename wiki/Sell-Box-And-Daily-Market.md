@@ -24,7 +24,8 @@ The resource path is the definition ID. A fixed price uses positive integer coun
 {
   "item": "minecraft:coal",
   "item_count": 15,
-  "currency_count": 1
+  "currency_count": 1,
+  "market_group": "villagerretaliation:fuel"
 }
 ```
 
@@ -37,14 +38,21 @@ Either count may instead be an inclusive range:
     "min": 15,
     "max": 24
   },
-  "currency_count": 1
+  "currency_count": 1,
+  "market_group": "villagerretaliation:fuel"
 }
 ```
 
 The unit price is `currency_count / item_count`. Every distinct reduced ratio in the configured
-ranges is a candidate. The server selects one deterministically from the world seed, definition ID,
-and global overworld day. A definition with multiple candidates does not repeat the same candidate
-on consecutive days.
+ranges is a candidate. Each village selects one deterministically from the world seed, its village
+identity, the definition ID, and the global overworld day. A definition with multiple candidates
+does not repeat the same candidate on consecutive days within that village.
+
+`market_group` is optional and defaults to the sold item's ID. Items in the same group share that
+village's daily demand band and accumulated supply pressure, so overrides of grouped built-in items
+should repeat the built-in group. Daily demand raises or lowers the base rate by group. Completed
+sales then add local supply pressure, progressively reducing later payouts in that village until the
+pressure recovers over subsequent days. Other villages maintain independent rates and pressure.
 
 The active currency item and every item matched by the configured currency tags are always
 unsaleable, even if a price file names them. Item matching ignores durability and components.
@@ -67,5 +75,6 @@ controls replacement at the same resource path. Invalid ranges, unknown items, a
 also reported during reload.
 
 The built-in pack contains definitions derived from the direct Minecraft 1.21.1 villager and
-wandering-trader offers. Demand changes, reputation discounts, mod-added trades, and standalone
-auxiliary inputs are not included.
+wandering-trader offers. Vanilla trade demand changes, reputation discounts, mod-added trades, and
+standalone auxiliary inputs are not part of those base definitions; the village market's own daily
+demand and supply-pressure multipliers are applied afterward.

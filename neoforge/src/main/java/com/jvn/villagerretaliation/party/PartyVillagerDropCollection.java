@@ -117,15 +117,18 @@ public final class PartyVillagerDropCollection {
         return moved;
     }
 
-    public static boolean isRecoverableArrow(Villager villager, AbstractArrow arrow) {
+    public static boolean isOwnedRecoverableArrow(Villager villager, AbstractArrow arrow) {
         return villager != null
                 && arrow != null
                 && arrow.isAlive()
                 && arrow.getOwner() == villager
                 && arrow.pickup == AbstractArrow.Pickup.ALLOWED
                 && (((AbstractArrowAccessor) arrow).villagerretaliation$isInGround() || arrow.isNoPhysics())
-                && arrow.shakeTime <= 0
                 && HiredRangedAmmo.isAmmo(arrow.getPickupItemStackOrigin());
+    }
+
+    public static boolean isRecoverableArrow(Villager villager, AbstractArrow arrow) {
+        return isOwnedRecoverableArrow(villager, arrow) && arrow.shakeTime <= 0;
     }
 
     public static int collectArrow(Villager villager, AbstractArrow arrow) {

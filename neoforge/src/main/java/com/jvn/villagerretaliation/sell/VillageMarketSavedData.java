@@ -191,14 +191,6 @@ public final class VillageMarketSavedData extends SavedData {
     }
 
     private static CurrencyAmount loadPressure(CompoundTag tag) {
-        if (tag == null) {
-            return CurrencyAmount.ZERO;
-        }
-        String numerator = tag.getString("Numerator");
-        String denominator = tag.getString("Denominator");
-        if (numerator.length() > 128 || denominator.length() > 128) {
-            return CurrencyAmount.ZERO;
-        }
         return CurrencyAmount.load(tag);
     }
 

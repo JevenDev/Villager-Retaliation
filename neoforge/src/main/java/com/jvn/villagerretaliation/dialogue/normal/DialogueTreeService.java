@@ -159,7 +159,7 @@ public final class DialogueTreeService {
 
         ActionText responseActionText = executeActions(context, response.actions(), session.replacements());
         String responseLine = resolve(response.selectLine(context.random()), context, responseActionText.replacements());
-        String leadingText = firstNonBlank(responseActionText.text(), responseLine);
+        String leadingText = firstNonBlank(responseLine, responseActionText.text());
         if (!response.next().isBlank()) {
             return Optional.of(enterNode(context, tree, response.next(), leadingText, responseActionText.replacements()));
         }

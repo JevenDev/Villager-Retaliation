@@ -1,6 +1,6 @@
 # Villager Retaliation Wiki
 
-This wiki documents the current `1.0.0-beta.12` pack surface for Villager Retaliation. It is written for datapack authors, resource-pack authors, and modpack maintainers who want concrete file paths, working JSON, and clear override rules.
+This wiki documents the current `1.0.0-beta.13` development surface for Villager Retaliation. The datapack builder still exposes beta.11 and beta.12 authoring targets where those schemas remain current. It is written for datapack authors, resource-pack authors, and modpack maintainers who want concrete file paths, working JSON, and clear override rules.
 
 Every page includes at least one copyable example. Start small, test one system at a time, and only add filters after the base hook works.
 
@@ -76,4 +76,4 @@ Run `/reload`, talk to a villager, and confirm the option appears.
 
 ## Version Note
 
-The builder also ships versioned wiki snapshots under `tools/datapack-builder/wiki/`. This repo wiki and the `1.0.0-beta.12` builder wiki should match. Older snapshots exist so beta.11 packs can keep their historical reference surface.
+The builder ships frozen, versioned wiki snapshots under `tools/datapack-builder/wiki/`. Its beta.11 and beta.12 snapshots document those authoring targets and are intentionally not mirrors of this live beta.13 wiki. Update a versioned snapshot only when correcting documentation for that specific target.

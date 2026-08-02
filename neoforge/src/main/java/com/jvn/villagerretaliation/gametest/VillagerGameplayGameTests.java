@@ -1178,7 +1178,11 @@ public final class VillagerGameplayGameTests {
         BlockPos first = helper.absolutePos(new BlockPos(2, 2, 2));
         BlockPos second = helper.absolutePos(new BlockPos(6, 4, 6));
         HiredStorageClipboardItem.handleLeftClickBlock(level, hirer, clipboard, first);
+        hirer.moveTo(second.getX() + 0.5D, second.getY(), second.getZ() + 0.5D, 0.0F, 0.0F);
         HiredStorageClipboardItem.handleRightClickBlock(level, hirer, clipboard, second);
+        helper.assertTrue(
+                HiredStorageClipboardItem.selectedWorkArea(clipboard).complete(),
+                "held clipboard draft should contain both corners");
 
         VillagerInteractionService.handleClipboardWorkAreaAction(
                 hirer,
