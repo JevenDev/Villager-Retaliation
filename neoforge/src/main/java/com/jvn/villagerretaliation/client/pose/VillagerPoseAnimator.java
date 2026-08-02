@@ -106,11 +106,11 @@ public final class VillagerPoseAnimator {
         head.xRot = 0.16F;
         head.yRot = -side * 0.18F;
 
-        rightArm.x = -1.0F;
+        rightArm.x = -5.0F;
         rightArm.xRot = -0.22F;
         rightArm.yRot = -0.3F;
         rightArm.zRot = 0.12F;
-        leftArm.x = 1.0F;
+        leftArm.x = 5.0F;
         leftArm.xRot = -0.52F;
         leftArm.yRot = 0.28F;
         leftArm.zRot = -0.12F;
@@ -130,31 +130,31 @@ public final class VillagerPoseAnimator {
             ModelPart leftArm,
             ModelPart rightLeg,
             ModelPart leftLeg) {
-        body.y = 11.5F;
-        body.z = 1.0F;
-        body.xRot = 1.28F;
-        head.y = 13.0F;
-        head.z = -4.5F;
-        head.xRot = 0.48F;
+        body.y = 12.5F;
+        body.z = -1.0F;
+        body.xRot = 1.2F;
+        head.y = 15.0F;
+        head.z = -2.5F;
+        head.xRot = 0.4F;
 
-        rightArm.y = 13.0F;
-        rightArm.z = -3.5F;
+        rightArm.y = 13.5F;
+        rightArm.z = -2.5F;
         rightArm.xRot = -0.12F;
         rightArm.yRot = -0.08F;
         rightArm.zRot = 0.06F;
-        leftArm.y = 13.0F;
-        leftArm.z = -3.5F;
+        leftArm.y = 13.5F;
+        leftArm.z = -2.5F;
         leftArm.xRot = -0.12F;
         leftArm.yRot = 0.08F;
         leftArm.zRot = -0.06F;
 
         rightLeg.y = 14.0F;
-        rightLeg.z = 5.0F;
+        rightLeg.z = 8.0F;
         rightLeg.xRot = 0.62F;
         rightLeg.yRot = 0.12F;
         rightLeg.zRot = 0.06F;
         leftLeg.y = 14.0F;
-        leftLeg.z = 5.0F;
+        leftLeg.z = 8.0F;
         leftLeg.xRot = 0.62F;
         leftLeg.yRot = -0.12F;
         leftLeg.zRot = -0.06F;

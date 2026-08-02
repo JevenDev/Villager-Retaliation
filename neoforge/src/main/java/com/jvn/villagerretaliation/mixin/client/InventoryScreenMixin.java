@@ -30,12 +30,15 @@ public abstract class InventoryScreenMixin implements DuelInventoryScreenAccess 
     private void villagerretaliation$configureDuelInventory(CallbackInfo callbackInfo) {
         InventoryScreen screen = (InventoryScreen) (Object) this;
         if (!DuelInventoryClientState.assignedLoadout()) return;
-        this.villagerretaliation$originalSlotX = new int[screen.getMenu().slots.size()];
-        this.villagerretaliation$originalSlotY = new int[screen.getMenu().slots.size()];
-        for (int slotId = 0; slotId < screen.getMenu().slots.size(); slotId++) {
-            Slot slot = screen.getMenu().slots.get(slotId);
-            this.villagerretaliation$originalSlotX[slotId] = slot.x;
-            this.villagerretaliation$originalSlotY[slotId] = slot.y;
+        if (this.villagerretaliation$originalSlotX == null
+                || this.villagerretaliation$originalSlotY == null) {
+            this.villagerretaliation$originalSlotX = new int[screen.getMenu().slots.size()];
+            this.villagerretaliation$originalSlotY = new int[screen.getMenu().slots.size()];
+            for (int slotId = 0; slotId < screen.getMenu().slots.size(); slotId++) {
+                Slot slot = screen.getMenu().slots.get(slotId);
+                this.villagerretaliation$originalSlotX[slotId] = slot.x;
+                this.villagerretaliation$originalSlotY[slotId] = slot.y;
+            }
         }
         ((RecipeBookComponentAccessor) this.recipeBookComponent).villagerretaliation$setVisible(false);
         ((ScreenInvoker) this).villagerretaliation$clearWidgets();

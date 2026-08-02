@@ -22,6 +22,7 @@ import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -40,6 +41,7 @@ public final class VillagerDownedService {
     private static final String PREVIOUS_NO_AI_KEY = "PreviousNoAi";
     private static final String PREVIOUS_PICKUP_KEY = "PreviousCanPickUpLoot";
     private static final String POSE_KEY = "Pose";
+    private static final String LAST_POSE_KEY = "VillagerRetaliationLastDownedPose";
     private static final int DATA_VERSION = 2;
     public static final String DOWNED_STATE_TAG = STATE_KEY;
     private static final long THREAT_SCAN_INTERVAL_TICKS = 20L;
@@ -156,7 +158,8 @@ public final class VillagerDownedService {
         state.putBoolean(PREVIOUS_PICKUP_KEY, villager.canPickUpLoot());
         VillagerDownedPose pose = VillagerSecondWindCompat.resolvePose(villager)
                 .flatMap(VillagerDownedPose::fromId)
-                .orElseGet(() -> VillagerDownedPose.forVillager(villager.getUUID()));
+                .filter(resolved -> resolved == VillagerDownedPose.SECOND_WIND_CRAWL)
+                .orElseGet(() -> VillagerDownedPose.randomOriginalExcept(level.random, lastPose(villager)));
         state.putString(POSE_KEY, pose.id().toString());
         villager.getPersistentData().put(STATE_KEY, state);
         PlayerRaidService.onVillagerDowned(villager);
@@ -169,6 +172,7 @@ public final class VillagerDownedService {
         }
         enforceIncapacitatedState(villager);
         refreshDownedDimensionsSafely(villager);
+        villager.getPersistentData().putString(LAST_POSE_KEY, pose(villager).id().toString());
         VillagerConversationService.endForVillager(villager, true);
         clearNearbyTargets(level, villager);
         SceneLifecycleIntegration.onActorDowned(villager);
@@ -259,6 +263,7 @@ public final class VillagerDownedService {
     public static void clearInheritedStateForNewborn(Villager child) {
         if (child == null) return;
         child.getPersistentData().remove(STATE_KEY);
+        child.getPersistentData().remove(LAST_POSE_KEY);
         NEXT_THREAT_SCAN_TICKS.remove(child.getUUID());
         PENDING_ABSORPTION_RESTORE.remove(child.getUUID());
     }
@@ -316,6 +321,7 @@ public final class VillagerDownedService {
         villager.setHealth(Math.min(villager.getMaxHealth(), Math.max(1.0F, recoveryHealth)));
         villager.setTarget(null);
         villager.setAggressive(false);
+        neutralizePitch(villager);
         SceneLifecycleIntegration.onActorRecovered(villager);
         VillagerReputationNetworking.syncDownedStateToTracking(villager, false);
         VillagerSecondWindCompat.notifyStateChanged(villager);
@@ -334,6 +340,7 @@ public final class VillagerDownedService {
         villager.refreshDimensions();
         villager.setTarget(null);
         villager.setAggressive(false);
+        neutralizePitch(villager);
         VillagerReputationNetworking.syncDownedStateToTracking(villager, false);
         VillagerSecondWindCompat.notifyStateChanged(villager);
     }
@@ -342,16 +349,35 @@ public final class VillagerDownedService {
         return villager.getPersistentData().getCompound(STATE_KEY);
     }
 
+    private static VillagerDownedPose lastPose(Villager villager) {
+        String value = villager.getPersistentData().getString(LAST_POSE_KEY);
+        if (value.isBlank()) {
+            return null;
+        }
+        try {
+            return VillagerDownedPose.fromId(net.minecraft.resources.ResourceLocation.parse(value)).orElse(null);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
     private static void enforceIncapacitatedState(Villager villager) {
         if (villager.isSleeping()) {
             villager.stopSleeping();
         }
         villager.getNavigation().stop();
+        villager.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
         villager.setTarget(null);
         villager.setAggressive(false);
         villager.stopUsingItem();
         villager.setCanPickUpLoot(false);
         villager.setNoAi(true);
+        neutralizePitch(villager);
+    }
+
+    private static void neutralizePitch(Villager villager) {
+        villager.setXRot(0.0F);
+        villager.xRotO = 0.0F;
     }
 
     private static void refreshDownedDimensionsSafely(Villager villager) {

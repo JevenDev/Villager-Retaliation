@@ -312,6 +312,45 @@ public final class DuelGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void debugDuelRecoversDownedVillagerBeforeCombat(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        VillagerDownedService.enterDowned(
+                participant.level(),
+                villager,
+                new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("duel:test")));
+        helper.assertTrue(VillagerDownedService.isDowned(villager),
+                "fixture villager should begin downed");
+        helper.assertTrue(villager.isNoAi(),
+                "downed fixture villager should begin incapacitated");
+
+        DuelService.StartResult start = DuelService.startDebug(
+                player, villager, DuelLoadout.ARMORED, 0);
+        helper.assertTrue(start.started(), "debug duel should start: " + start.reason());
+        try {
+            helper.assertFalse(VillagerDownedService.isDowned(villager),
+                    "debug duel startup must clear the stale downed state");
+            helper.assertFalse(villager.isNoAi(),
+                    "debug duel startup must restore villager AI");
+
+            long now = participant.level().getServer().overworld().getGameTime();
+            player.moveTo(villager.getX() + 1.0D, villager.getY(), villager.getZ());
+            helper.assertTrue(DuelService.driveForTest(player, now, false),
+                    "recovered debug duelist should enter combat tactics");
+            helper.assertTrue(villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD),
+                    "recovered debug duelist should raise its shield");
+
+            VillagerDownedService.onVillagerTickPre(villager);
+            helper.assertTrue(villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD),
+                    "stale incapacitation must not cancel shielding before an axe hit");
+            helper.succeed();
+        } finally {
+            DuelService.resolveForTest(player, DuelResult.CANCELLED);
+        }
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void assignedMeleeLoadoutSuppressesTrackedRangedWeapon(GameTestHelper helper) {
         Participant participant = participant(helper);

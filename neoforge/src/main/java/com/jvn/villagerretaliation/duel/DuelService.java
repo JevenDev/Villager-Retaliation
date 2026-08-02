@@ -167,6 +167,7 @@ public final class DuelService {
         UUID id = UUID.randomUUID();
         long now = level.getServer().overworld().getGameTime();
         Vec3 center = player.position().add(villager.position()).scale(0.5D);
+        VillagerDownedService.recover(villager);
         Set<UUID> spectators = DuelSpectators.recruit(level, villager, center);
         VillagerCombatBehavior.reset(villager);
         VillagerDownedService.ensureStandingDimensions(villager);
