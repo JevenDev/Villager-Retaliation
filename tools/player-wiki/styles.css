@@ -278,9 +278,12 @@ code {
 }
 
 .nav-link span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: break-word;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 1.3;
 }
 
 .nav-disclosure {

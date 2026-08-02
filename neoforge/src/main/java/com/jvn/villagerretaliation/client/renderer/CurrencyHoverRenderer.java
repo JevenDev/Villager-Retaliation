@@ -8,6 +8,7 @@ import java.util.WeakHashMap;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -59,8 +60,10 @@ final class CurrencyHoverRenderer {
         float popScale = eased * (1.0F + 0.12F * Mth.sin(progress * Mth.PI));
         float time = blockEntity.getLevel() == null ? 0.0F : blockEntity.getLevel().getGameTime() + partialTick;
         float hoverY = Mth.sin(time * 0.12F) * 0.035F;
+        int hoverPackedLight = packedLight;
         float boxHeightOffset = 0.0F;
         if (blockEntity.getLevel() != null) {
+            hoverPackedLight = LevelRenderer.getLightColor(blockEntity.getLevel(), blockEntity.getBlockPos().above());
             VoxelShape shape = blockEntity.getBlockState().getShape(
                     blockEntity.getLevel(), blockEntity.getBlockPos());
             if (!shape.isEmpty()) {
@@ -75,7 +78,7 @@ final class CurrencyHoverRenderer {
         this.itemRenderer.renderStatic(
                 currency,
                 ItemDisplayContext.FIXED,
-                packedLight,
+                hoverPackedLight,
                 packedOverlay,
                 poseStack,
                 bufferSource,

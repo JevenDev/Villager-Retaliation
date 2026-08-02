@@ -16,7 +16,7 @@ Builder is a paid, one-off construction project-not a daily worker role. The vil
 
 :::steps
 :::step{title="Choose a structure"}
-The interaction screen creates a pending :item[villagerretaliation:construction_blueprint] with size, required materials, and an emerald quote.
+The interaction screen creates a pending :item[villagerretaliation:construction_blueprint] with size, required materials, and a currency quote.
 :::
 :::step{title="Place the preview"}
 Right-click a block to move it. Scroll to move; add Alt to strafe, Shift for height, or Alt+Shift to rotate. The placement-lock key starts unbound.
@@ -32,7 +32,7 @@ The order ends when planned blocks are complete or the project is cancelled unde
 :::
 :::
 
-Default limits are **4096 planned blocks**, **28 blocks** from builder to site, and a **32-block** material-storage search. The default fee is 8 emeralds plus 3 per 64 planned blocks. The final quote is authoritative.
+Default limits are **4096 planned blocks**, **28 blocks** from builder to site, and a **32-block** material-storage search. The default fee is 8 currency items plus 3 per 64 planned blocks. The built-in currency is emeralds. The final quote is authoritative.
 
 Cancelling before any block is placed returns the full builder payment. After placement begins, payment is released and the villager cannot change roles until the project is resolved.
 

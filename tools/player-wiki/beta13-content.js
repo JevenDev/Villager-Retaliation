@@ -59,6 +59,11 @@
         { value: "13 Worker roles", label: "Optional hired work", icon: "briefcase-business" },
         { value: "5 Social attributes", label: "Persistent personalities", icon: "sparkles" }
       ])}
+      ${section("Beta 13 Preview Guide", `
+        <p>This wiki covers the built-in <strong>1.0.0-beta.13 preview</strong>. It is written for players: use it to learn what to do in game, what a warning means, and which rules can change on a server.</p>
+        <p><strong>Back up your saves before testing.</strong> The client shows a one-time warning before you first create a world or join multiplayer. After three seconds, choose <strong>I Understand</strong> to continue. Backing out leaves the warning active for next time.</p>
+        <p>Server configuration and datapacks can change prices, limits, quests, dialogue, rewards, and feature availability. When a live screen or tooltip differs from this guide, the value shown in game is authoritative.</p>
+      `)}
       ${section("Villagers Who Remember", `
         <p>Villager Retaliation turns villagers into persistent characters who remember how each player treats them. Conversation, trade, gifts, quests, witnessed crimes, village events, combat, and time all shape individual relationships.</p>
         <br />
@@ -141,8 +146,8 @@
       ${section("Price And Duration", `
         <p>Ordinary work is prepaid for 1 to 30 Minecraft days. Extensions cannot push the remaining time above 30 days. The daily wage is based on the server's base price, the villager's relevant skill, and your reputation with that villager, then clamped to the configured minimum and maximum.</p>
         ${beta13FactList([
-          ["Default base wage", "12 emeralds per day before skill and reputation adjustments"],
-          ["Default allowed range", "4 to 128 emeralds per day"],
+          ["Default base wage", "12 currency items per day before skill and reputation adjustments (emeralds in the built-in setup)"],
+          ["Default allowed range", "4 to 128 currency items per day"],
           ["Payment timing", "The full selected duration is charged before work begins"],
           ["Role changes", "Allowed during an active ordinary contract without buying a new contract"],
           ["Builder", "Quoted and paid per construction order instead of per day"]
@@ -239,6 +244,7 @@
     return `
       ${section("Using A Sell Box", `
         <p>Craft a Sell Box from a barrel and any item in the server's Villager Retaliation currency tag. Open the box, place one supported stack in the pending slot, review its exact value, then choose Sell. Use Withdraw to collect whole currency units from the saved balance.</p>
+        <p><strong>Place it inside a village.</strong> A Sell Box needs a tracked village market. Opening a box in a recognizable village can register that village. A box outside any village cannot quote or accept a sale.</p>
         <ol class="step-list icon-step-list">
           <li>${icon("package-plus")}<strong>Insert a supported item.</strong><span>The single pending slot shows the current daily rate and the exact value of the stack.</span></li>
           <li>${icon("badge-dollar-sign")}<strong>Confirm the sale.</strong><span>The item stack is consumed and its exact value moves into the box's persistent balance.</span></li>
@@ -257,7 +263,8 @@
       ${section("Workers And Automation", `
         ${simpleList([
           "Couriers can collect whole currency proceeds from a Sell Box when it is used as a route pickup.",
-          "Automation can insert supported sale items and extract available whole currency through the box's sided item handlers.",
+          "Workers can deposit saleable output into a Sell Box assigned as Output storage and collect proceeds from one assigned as Supplies storage.",
+          "Hoppers and other item handlers insert supported sale items from the top or sides and extract available whole currency from the bottom.",
           "The pending slot holds at most one normal item stack. The balance is stored separately and survives closing or moving the box as an item.",
           "Server datapacks are authoritative, so the in-game screen is the final source for today's exact price."
         ])}
@@ -624,7 +631,7 @@
       `)}
       ${section("Construction Flow", `
         <ol class="step-list icon-step-list">
-          <li>${icon("landmark")}<strong>Choose a supported structure.</strong><span>The interaction screen creates a pending Construction Blueprint with a size, material summary, and quoted emerald cost.</span></li>
+          <li>${icon("landmark")}<strong>Choose a supported structure.</strong><span>The interaction screen creates a pending Construction Blueprint with a size, material summary, and quoted currency cost.</span></li>
           <li>${icon("move-3d")}<strong>Place and rotate the preview.</strong><span>Move the blueprint to a valid nearby site. The optional Placement Lock key starts unbound.</span></li>
           <li>${icon("package-search")}<strong>Supply every required block.</strong><span>The builder uses carried or assigned materials and reports exactly what is missing.</span></li>
           <li>${icon("hammer")}<strong>Let the builder travel and place.</strong><span>The villager validates each target and respects world borders, obstacles, protection rules, and reachable paths.</span></li>
@@ -636,8 +643,8 @@
           ["Maximum structure size", "4096 planned blocks"],
           ["Maximum site distance", "28 blocks from the builder"],
           ["Material-storage search", "32 blocks"],
-          ["Base builder fee", "8 emeralds"],
-          ["Additional fee", "3 emeralds per 64 planned blocks"],
+          ["Base builder fee", "8 currency items (emeralds in the built-in setup)"],
+          ["Additional fee", "3 currency items per 64 planned blocks"],
           ["Soft-block replacement", "Enabled by default"]
         ])}
         <p>These are server defaults. The final quote shown in game is authoritative.</p>
@@ -664,7 +671,7 @@
         ${beta13FactList([
           ["Party player limit", "4 players"],
           ["Recruited villager limit", "4 villagers"],
-          ["Villager contract", "32 emeralds for one Minecraft day"],
+          ["Villager contract", "32 currency items for one Minecraft day (emeralds in the built-in setup)"],
           ["Renewal", "Manual extension. Payment Boxes do not renew party contracts"],
           ["Party invitation", "Player invitations expire after 60 seconds"]
         ])}
@@ -900,7 +907,7 @@
         ])}
       `)}
       ${section("Quests And Tracking", `
-        <p>Press <kbd>J</kbd> to review accepted quests and <kbd>K</kbd> to open the Tracker. Active quests can show objectives, coordinates, HUD notices, highlighted items, and story scenes. What appears depends on the villager, your progress, and earlier choices.</p>
+        <p>Press <kbd>J</kbd> to review accepted quests and <kbd>K</kbd> to toggle the Tracker. Active quests can show objectives, coordinates, HUD notices, highlighted items, and story scenes. What appears depends on the villager, your progress, and earlier choices.</p>
       `)}
       ${section("Memory And Consequences", `
         <p>Dialogue can react to personal reputation, profession, family, social attributes, mood, recent village events, first meetings, time since the last meeting, weather, equipment, nearby danger, stories, and quest history. These systems do not all mean the same thing: reputation is persistent standing, gossip spreads witnessed information, mood is temporary, and village allegiance identifies community membership.</p>
@@ -1074,7 +1081,7 @@
       ${section("Default Player Controls", `
         <div class="table-wrap"><table><thead><tr><th>Action</th><th>Default</th><th>Notes</th></tr></thead><tbody>
           <tr><td>Quest Journal</td><td><kbd>J</kbd></td><td>Browse active and known quest information.</td></tr>
-          <tr><td>Quest Tracker</td><td><kbd>K</kbd></td><td>Show active objective progress and navigation.</td></tr>
+          <tr><td>Quest Tracker</td><td><kbd>K</kbd></td><td>Toggle active objective progress and navigation.</td></tr>
           <tr><td>Party Quick Commands</td><td><kbd>Left Alt</kbd></td><td>Leader command wheel for participating recruited villagers.</td></tr>
           <tr><td>Blueprint Placement Lock</td><td>Unbound</td><td>Optional construction-preview control.</td></tr>
           <tr><td>Toggle Villager Name Tags</td><td>Unbound</td><td>Optional client display toggle.</td></tr>
@@ -1082,7 +1089,7 @@
         </tbody></table></div>
       `)}
       ${section("Config Access", `
-        <p>Open Mod Menu and choose Villager Retaliation to adjust available settings. In multiplayer, the server controls gameplay rules while client display and keybind preferences remain local.</p>
+        <p>Open Minecraft's <strong>Mods</strong> menu, select Villager Retaliation, and choose its configuration screen. In multiplayer, the server controls gameplay rules while client display and keybind preferences remain local.</p>
         ${beta13FeatureCards([
           { icon: "server", title: "Server-controlled gameplay", text: "Contracts, wages, work limits, reputation thresholds, combat, raids, downed recovery, gifts, quests, and social rules follow the server in multiplayer." },
           { icon: "monitor", title: "Client display and controls", text: "Keybinds, name tags, HUD placement, text effects, camera presentation, and similar visual preferences are local controls where supported." },
