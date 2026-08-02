@@ -891,9 +891,12 @@ public final class PartyQuickCommandService {
         }
 
         if (villager.distanceToSqr(drop) <= ITEM_PICKUP_DISTANCE_SQR) {
-            if (drop instanceof ItemEntity item && item.hasPickUpDelay()) {
+            boolean waitingForPickup = drop instanceof ItemEntity item && item.hasPickUpDelay()
+                    || drop instanceof AbstractArrow arrow
+                    && !PartyVillagerDropCollection.isRecoverableArrow(villager, arrow);
+            if (waitingForPickup) {
                 if (order.incrementTargetWaitTicks() > MAX_PICKUP_WAIT_TICKS) {
-                    order.skipEntity(item.getUUID());
+                    order.skipEntity(drop.getUUID());
                     clearActiveTarget(villager.getUUID(), order);
                 }
                 return;
@@ -963,7 +966,7 @@ public final class PartyQuickCommandService {
                 && !order.skippedEntities().contains(drop.getUUID())
                 && (drop instanceof ItemEntity item && !item.getItem().isEmpty()
                 || drop instanceof AbstractArrow arrow
-                && PartyVillagerDropCollection.isRecoverableArrow(villager, arrow));
+                && PartyVillagerDropCollection.isOwnedRecoverableArrow(villager, arrow));
     }
 
     private static boolean isDropClaimedByOther(UUID villagerId, UUID itemId) {

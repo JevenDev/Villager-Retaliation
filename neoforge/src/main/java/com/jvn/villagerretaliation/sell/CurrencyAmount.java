@@ -11,6 +11,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
  * bulk vanilla trades never lose value to rounding.
  */
 public record CurrencyAmount(BigInteger numerator, BigInteger denominator) implements Comparable<CurrencyAmount> {
+    private static final int MAX_SERIALIZED_COMPONENT_LENGTH = 128;
     public static final CurrencyAmount ZERO = new CurrencyAmount(BigInteger.ZERO, BigInteger.ONE);
 
     public CurrencyAmount {
@@ -163,25 +164,28 @@ public record CurrencyAmount(BigInteger numerator, BigInteger denominator) imple
         if (tag == null || !tag.contains("Numerator") || !tag.contains("Denominator")) {
             return ZERO;
         }
-        try {
-            return new CurrencyAmount(
-                    new BigInteger(tag.getString("Numerator")),
-                    new BigInteger(tag.getString("Denominator")));
-        } catch (IllegalArgumentException exception) {
-            return ZERO;
-        }
+        return parse(tag.getString("Numerator"), tag.getString("Denominator"));
     }
 
     public void write(RegistryFriendlyByteBuf buffer) {
-        buffer.writeUtf(this.numerator.toString(), 512);
-        buffer.writeUtf(this.denominator.toString(), 512);
+        buffer.writeUtf(this.numerator.toString(), MAX_SERIALIZED_COMPONENT_LENGTH);
+        buffer.writeUtf(this.denominator.toString(), MAX_SERIALIZED_COMPONENT_LENGTH);
     }
 
     public static CurrencyAmount read(RegistryFriendlyByteBuf buffer) {
+        return parse(
+                buffer.readUtf(MAX_SERIALIZED_COMPONENT_LENGTH),
+                buffer.readUtf(MAX_SERIALIZED_COMPONENT_LENGTH));
+    }
+
+    private static CurrencyAmount parse(String numerator, String denominator) {
+        if (numerator == null || denominator == null
+                || numerator.length() > MAX_SERIALIZED_COMPONENT_LENGTH
+                || denominator.length() > MAX_SERIALIZED_COMPONENT_LENGTH) {
+            return ZERO;
+        }
         try {
-            return new CurrencyAmount(
-                    new BigInteger(buffer.readUtf(512)),
-                    new BigInteger(buffer.readUtf(512)));
+            return new CurrencyAmount(new BigInteger(numerator), new BigInteger(denominator));
         } catch (IllegalArgumentException exception) {
             return ZERO;
         }

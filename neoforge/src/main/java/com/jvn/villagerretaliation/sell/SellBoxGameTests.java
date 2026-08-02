@@ -42,6 +42,13 @@ public final class SellBoxGameTests {
                 CurrencyAmount.of(31, 15).withoutWholeUnits(BigInteger.TWO),
                 CurrencyAmount.of(1, 15),
                 "collecting whole units must retain the exact fraction");
+        CompoundTag oversized = new CompoundTag();
+        oversized.putString("Numerator", "9".repeat(129));
+        oversized.putString("Denominator", "1");
+        helper.assertValueEqual(
+                CurrencyAmount.load(oversized),
+                CurrencyAmount.ZERO,
+                "oversized serialized currency values must be rejected");
         helper.succeed();
     }
 
@@ -368,6 +375,9 @@ public final class SellBoxGameTests {
         int recordsBefore = registry.records().size();
         ItemStack diamonds = new ItemStack(Items.DIAMOND, 4);
 
+        helper.assertFalse(
+                VillageSellMarket.canAcceptSale(helper.getLevel(), sellBox.getBlockPos(), diamonds),
+                "automation planning outside a village must reject sale items");
         helper.assertValueEqual(
                 sellBox.inputHandler().insertItem(0, diamonds, true),
                 diamonds,
@@ -394,6 +404,9 @@ public final class SellBoxGameTests {
     public static void pendingStackWaitsForConfirmation(GameTestHelper helper) {
         SellBoxBlockEntity sellBox = placeBox(helper);
         ItemStack coal = new ItemStack(Items.COAL, 7);
+        helper.assertTrue(
+                VillageSellMarket.canAcceptSale(helper.getLevel(), sellBox.getBlockPos(), coal),
+                "automation planning must accept sale items in a known village");
         ItemStack remainder = sellBox.insertForSale(coal, false);
         helper.assertTrue(remainder.isEmpty(), "valid input should be accepted");
         helper.assertValueEqual(sellBox.getItem(0).getCount(), 7, "the inserted stack should remain pending");

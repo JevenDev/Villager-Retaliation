@@ -37,7 +37,7 @@ const generated = await buildSnapshot();
 
 if (checkOnly) {
   const current = await readFile(outputPath, "utf8");
-  if (current !== generated) {
+  if (normalizeLineEndings(current) !== generated) {
     console.error("tools/datapack-builder/wiki-snapshot.js is out of date. Run node tools/datapack-builder/build-wiki-snapshot.mjs.");
     process.exitCode = 1;
   }

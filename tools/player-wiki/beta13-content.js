@@ -225,10 +225,11 @@
   function beta13RenderMarket() {
     const prices = Array.isArray(DATA.sellPrices) ? DATA.sellPrices : [];
     const rows = prices.map((price) => {
-      const searchValue = `${price.item} ${price.itemId}`.toLowerCase();
+      const searchValue = `${price.item} ${price.itemId} ${price.marketGroup}`.toLowerCase();
       return `
         <tr data-market-row data-market-search="${escapeHtml(searchValue)}">
           <td><strong>${escapeHtml(price.item)}</strong><br><code>${escapeHtml(price.itemId)}</code></td>
+          <td><code>${escapeHtml(price.marketGroup)}</code></td>
           <td>${escapeHtml(price.itemCount)}</td>
           <td>${escapeHtml(price.currencyCount)}</td>
         </tr>
@@ -246,8 +247,8 @@
       `)}
       ${section("How Daily Prices Work", `
         ${beta13FeatureCards([
-          { icon: "sun", title: "One rate per Minecraft day", text: "Each supported item receives a deterministic daily rate based on the world, the day, and its price definition." },
-          { icon: "server", title: "Shared server market", text: "Sell Boxes on the same server use the same current rate for an item. The next Minecraft day can select another allowed rate." },
+          { icon: "sun", title: "One local rate per day", text: "Each village receives deterministic daily rates based on the world, village identity, day, and price definition." },
+          { icon: "map-pin", title: "Village-local market", text: "Sell Boxes in one village share demand and supply pressure. Other villages maintain independent rates and pressure." },
           { icon: "scale", title: "Exact fractional balances", text: "Rates such as one currency for several items retain their fractional value instead of rounding each sale down." },
           { icon: "file-cog", title: "Datapack controlled", text: "Servers can add, remove, disable, or rebalance sell-price definitions and can replace the default currency." }
         ])}
@@ -262,7 +263,7 @@
         ])}
       `)}
       ${section("Built-In Price Catalog", `
-        <p>The default pack currently defines ${plural(prices.length, "sellable item")}. A range means the daily market chooses one allowed rate within that range; it is not a guaranteed minimum payout for every sale.</p>
+        <p>The default pack currently defines ${plural(prices.length, "sellable item")}. A range means each village chooses one allowed base rate within that range. Daily group demand and accumulated local supply pressure then adjust the actual payout.</p>
         <label class="market-filter" for="market-filter">
           <span>Filter items</span>
           <input id="market-filter" type="search" autocomplete="off" spellcheck="false" placeholder="Coal, diamond pickaxe, minecraft:apple">
@@ -270,7 +271,7 @@
         <p id="market-result-count" class="market-result-count" aria-live="polite">Showing all ${prices.length} items.</p>
         <div class="table-wrap">
           <table class="market-price-table">
-            <thead><tr><th>Item</th><th>Items sold</th><th>Currency returned</th></tr></thead>
+            <thead><tr><th>Item</th><th>Market group</th><th>Items sold</th><th>Currency returned</th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>

@@ -2139,6 +2139,7 @@ public final class PartyGameTests {
         Arrow consumedArrow = new Arrow(
                 level, villager, consumedAmmo, new ItemStack(Items.CROSSBOW));
         consumedArrow.moveTo(villager.getX() + 0.75D, villager.getY(), villager.getZ());
+        consumedArrow.setNoPhysics(true);
         ((AbstractArrowAccessor) consumedArrow).villagerretaliation$setInGround(true);
         PartyVillagerDropCollection.onArrowEntityLoaded(consumedArrow);
         helper.assertValueEqual(consumedArrow.pickup, AbstractArrow.Pickup.ALLOWED,
@@ -2150,6 +2151,7 @@ public final class PartyGameTests {
         Arrow multishotCopy = new Arrow(
                 level, villager, multishotAmmo, new ItemStack(Items.CROSSBOW));
         multishotCopy.moveTo(villager.getX() + 0.25D, villager.getY(), villager.getZ());
+        multishotCopy.setNoPhysics(true);
         ((AbstractArrowAccessor) multishotCopy).villagerretaliation$setInGround(true);
         PartyVillagerDropCollection.onArrowEntityLoaded(multishotCopy);
         helper.assertValueEqual(multishotCopy.pickup, AbstractArrow.Pickup.CREATIVE_ONLY,
@@ -2160,21 +2162,19 @@ public final class PartyGameTests {
                 leader,
                 new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
                         PartyQuickCommand.PICK_UP_DROPS));
-        helper.runAfterDelay(1, () -> {
-            PartyQuickCommandService.onVillagerTickPost(villager);
-            helper.assertFalse(consumedArrow.isAlive(),
-                    "pick-up-drops mode should collect the party villager's recoverable arrow");
-            helper.assertTrue(multishotCopy.isAlive(),
-                    "pick-up-drops mode should ignore a closer Multishot copy");
-            helper.assertValueEqual(HiredJobInventory.getJobInventory(villager).countItem(Items.ARROW), 1,
-                    "the recovered arrow should return to party supplies");
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertFalse(consumedArrow.isAlive(),
+                "pick-up-drops mode should collect the party villager's recoverable arrow");
+        helper.assertTrue(multishotCopy.isAlive(),
+                "pick-up-drops mode should ignore a closer Multishot copy");
+        helper.assertValueEqual(HiredJobInventory.getJobInventory(villager).countItem(Items.ARROW), 1,
+                "the recovered arrow should return to party supplies");
 
-            PartyService.deleteParty(level, party.id());
-            PartyQuickCommandService.clearRuntimeState();
-            multishotCopy.discard();
-            villager.discard();
-            helper.succeed();
-        });
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        multishotCopy.discard();
+        villager.discard();
+        helper.succeed();
     }
 
     private static ItemStack findCrossbow(Villager villager, HiredJobInventory jobInventory) {

@@ -2667,11 +2667,10 @@ public final class VillagerQuestGameTests {
                     "v2 mixed inline offer text");
             String startResponse = selectDialogueOption(helper, context,
                     DialogueTreeService.responseOptionId(mixed.treeId(), "accept")).text();
-            helper.assertTrue(
-                    startResponse.toLowerCase(Locale.ROOT).contains(
-                            "i have work that could use your hands: mixed external quest."),
-                    "v2 mixed inline start response should preserve the quest-specific response; actual="
-                            + startResponse);
+            helper.assertValueEqual(
+                    startResponse,
+                    "Mixed quest started.",
+                    "v2 mixed inline start response should preserve the authored response");
 
             context = VillagerInteractionService.createDialogueContext(level, player, villager);
             String externalReminderOptionId = DialogueTreeService.entryOptionId(externalTreeId, "long_scene");

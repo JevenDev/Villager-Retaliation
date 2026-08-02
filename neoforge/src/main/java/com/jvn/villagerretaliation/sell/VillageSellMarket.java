@@ -38,6 +38,19 @@ public final class VillageSellMarket {
         return quote(level, registry, VillageMarketSavedData.get(level), village.get(), stack);
     }
 
+    /**
+     * Read-only eligibility check for automation planning. An undiscovered vanilla village is
+     * eligible here so the eventual insertion can perform normal village discovery.
+     */
+    public static boolean canAcceptSale(ServerLevel level, BlockPos position, ItemStack stack) {
+        if (level == null || position == null || stack == null || stack.isEmpty()
+                || SellPriceResources.definition(level.getServer(), stack).isEmpty()) {
+            return false;
+        }
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        return resolveVillage(registry, level, position).isPresent() || level.isVillage(position);
+    }
+
     public static Optional<MarketQuote> quoteDiscovering(ServerLevel level, BlockPos position, ItemStack stack) {
         if (level == null || position == null || stack == null || stack.isEmpty()) {
             return Optional.empty();
