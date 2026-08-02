@@ -50,6 +50,7 @@
     "client.BannerHelmetCustomHeadLayerMixin",
     "client.InventoryScreenMixin",
     "client.LocalPlayerDuelDropMixin",
+    "client.MinecraftBetaWarningMixin",
     "client.RecipeBookComponentAccessor",
     "client.ScreenInvoker",
     "client.SlotAccessor",

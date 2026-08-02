@@ -2065,5 +2065,11 @@
   "villagerretaliation.gui.village_naming.save": "Save Name",
   "villagerretaliation.gui.village_naming.title": "Name This Village",
   "villagerretaliation.gui.village_naming.trust_met": "Your standing with this village is recognized.",
-  "villagerretaliation.gui.village_naming.trust_required": "Revered or Royalty residents: %s / %s required"
+  "villagerretaliation.gui.village_naming.trust_required": "Revered or Royalty residents: %s / %s required",
+  "screen.villagerretaliation.beta_warning.acknowledge": "I Understand",
+  "screen.villagerretaliation.beta_warning.line1": "Villager Retaliation Beta.13 is still in beta.",
+  "screen.villagerretaliation.beta_warning.line2": "BACK UP your saves before creating a world or joining multiplayer.",
+  "screen.villagerretaliation.beta_warning.line3": "Please acknowledge this warning before continuing.",
+  "screen.villagerretaliation.beta_warning.timer": "I Understand (%s)",
+  "screen.villagerretaliation.beta_warning.title": "Villager Retaliation Beta Warning"
 }

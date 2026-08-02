@@ -12,15 +12,18 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 final class CurrencyHoverRenderer {
     private static final float ITEM_BASE_SCALE = 0.55F;
     private static final float TEXT_BASE_SCALE = 0.018F;
+    private static final float SELL_BOX_HEIGHT = 14.0F / 16.0F;
 
     private final ItemRenderer itemRenderer;
     private final EntityRenderDispatcher entityRenderer;
@@ -56,9 +59,17 @@ final class CurrencyHoverRenderer {
         float popScale = eased * (1.0F + 0.12F * Mth.sin(progress * Mth.PI));
         float time = blockEntity.getLevel() == null ? 0.0F : blockEntity.getLevel().getGameTime() + partialTick;
         float hoverY = Mth.sin(time * 0.12F) * 0.035F;
+        float boxHeightOffset = 0.0F;
+        if (blockEntity.getLevel() != null) {
+            VoxelShape shape = blockEntity.getBlockState().getShape(
+                    blockEntity.getLevel(), blockEntity.getBlockPos());
+            if (!shape.isEmpty()) {
+                boxHeightOffset = (float) shape.max(Direction.Axis.Y) - SELL_BOX_HEIGHT;
+            }
+        }
 
         poseStack.pushPose();
-        poseStack.translate(0.5F, 1.18F + hoverY, 0.5F);
+        poseStack.translate(0.5F, 1.18F + boxHeightOffset + hoverY, 0.5F);
         poseStack.mulPose(Axis.YP.rotationDegrees(time * 4.0F));
         poseStack.scale(ITEM_BASE_SCALE * popScale, ITEM_BASE_SCALE * popScale, ITEM_BASE_SCALE * popScale);
         this.itemRenderer.renderStatic(
@@ -77,7 +88,7 @@ final class CurrencyHoverRenderer {
         float width = this.font.width(amount);
 
         poseStack.pushPose();
-        poseStack.translate(0.5F, 1.58F + hoverY, 0.5F);
+        poseStack.translate(0.5F, 1.58F + boxHeightOffset + hoverY, 0.5F);
         poseStack.mulPose(this.entityRenderer.cameraOrientation());
         float textScale = TEXT_BASE_SCALE * popScale;
         poseStack.scale(textScale, -textScale, textScale);
