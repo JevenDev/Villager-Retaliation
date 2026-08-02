@@ -31,5 +31,5 @@ Placed lava, flint and steel, and fire charges can attribute nearby fire or lava
 Ordinary villagers and hired workers can still die. Only an active protection rule enables the [downed state](combat/downed.md), and some damage bypasses it.
 :::
 
-For community-scale betrayal, see [Player Raids](combat/player-raids.md).
+For consensual combat, see [Villager Duels](combat/duels.md). For community-scale betrayal, see [Player Raids](combat/player-raids.md).
 

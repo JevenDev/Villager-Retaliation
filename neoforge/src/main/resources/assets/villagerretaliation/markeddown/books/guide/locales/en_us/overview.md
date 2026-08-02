@@ -11,10 +11,14 @@ keywords:
 
 # Villager Retaliation!
 
-:entity[minecraft:villager] are persistent characters who remember how each player treats them. Conversation, trade, gifts, quests, witnessed crimes, village events, combat, work, and time all shape those relationships.
+:entity[minecraft:villager] are persistent characters who remember how each player treats them. Conversation, trade, gifts, quests, witnessed crimes, village events, combat, work, and time all shape those relationships. This guide covers the built-in **1.0.0-beta.13 preview**.
 
 :::notice{type="info"}
 This guide describes the built-in defaults. Servers can change costs, thresholds, timing, and features, while datapacks can replace quests, dialogue, gifts, and other content. Values shown by the game are authoritative.
+:::
+
+:::notice{type="warning"}
+Back up your saves before testing beta.13. The client shows a one-time, three-second warning before the first Create World or multiplayer entry. Choose **I Understand** to continue.
 :::
 
 ## First steps
@@ -41,8 +45,10 @@ Open the Quest Journal with :key[key.villagerretaliation.open_quest_journal] and
 - [Quests](start/quests.md)
 - [Gifts and skill trades](social/gifts-trades.md)
 - [Hiring and contracts](work/hiring.md)
+- [Sell Box and daily market](work/sell-box.md)
 - [Parties and recruits](party/_index.md)
 - [Retaliation and combat](combat/_index.md)
+- [Villager duels](combat/duels.md)
 - [Controls and configuration](reference/controls.md)
 
 ## The short version

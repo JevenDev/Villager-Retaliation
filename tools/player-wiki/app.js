@@ -1485,7 +1485,7 @@ function renderSettings() {
       </dl>
     `)}
     ${section("Changing Settings", `
-      <p>Open Mod Menu and choose Villager Retaliation to adjust available controls and display preferences. Multiplayer gameplay rules are controlled by the server.</p>
+      <p>Open Minecraft's <strong>Mods</strong> menu, select Villager Retaliation, and choose its configuration screen. Multiplayer gameplay rules are controlled by the server.</p>
     `)}
   `;
 }

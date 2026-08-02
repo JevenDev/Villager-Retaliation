@@ -18,6 +18,7 @@ Hiring is available through an adult villager's interaction screen. A matching p
 
 - Ordinary work is prepaid for **1–30 Minecraft days**.
 - The default base wage is **12 emeralds per day**, clamped to a default **4–128** range after skill and reputation adjustments.
+- Servers can replace emeralds with another configured currency. Use the item and amount shown in game.
 - The full selected duration is paid before work begins.
 - An active ordinary worker can change roles without buying a new contract.
 - Builder is quoted per project instead.

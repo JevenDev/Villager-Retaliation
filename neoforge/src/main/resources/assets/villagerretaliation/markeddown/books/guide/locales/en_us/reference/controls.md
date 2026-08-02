@@ -22,7 +22,7 @@ keywords:
 - Toggle Villager Name Tags: :key[key.villagerretaliation.toggle_villager_name_tags] (unbound by default)
 - Bypass interaction screen: sneak + :key[use] by default
 
-Open Mod Menu and choose **Villager Retaliation** to adjust available settings. In multiplayer, the server owns gameplay rules; display and key preferences remain client-side where supported.
+Open Minecraft's **Mods** menu, select **Villager Retaliation**, and choose its configuration screen. In multiplayer, the server owns gameplay rules. Display and key preferences remain client-side where supported.
 
 Server-controlled areas include contracts, wages, work limits, reputation, combat, raids, recovery, gifts, quests, social rules, and datapack content. Local settings include keybinds, name tags, HUD placement, presentation, and other supported visuals.
 
