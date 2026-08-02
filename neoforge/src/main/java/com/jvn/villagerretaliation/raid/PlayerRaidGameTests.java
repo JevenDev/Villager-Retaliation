@@ -55,6 +55,24 @@ public final class PlayerRaidGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void emptyGraceVillagesCannotStartPlayerRaids(GameTestHelper helper) {
+        VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();
+        VillageAllegianceId village = registry.create(
+                1L,
+                helper.getLevel().dimension().location(),
+                helper.absolutePos(new BlockPos(1, 2, 1)),
+                "Raid Lifecycle");
+        helper.assertTrue(
+                PlayerRaidService.isRaidableVillage(registry.record(village).orElseThrow()),
+                "active village is raidable");
+        registry.observeEmpty(village, 1L);
+        helper.assertFalse(
+                PlayerRaidService.isRaidableVillage(registry.record(village).orElseThrow()),
+                "empty-grace village is not raidable");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void raidHornConfirmationIsPerPlayerPerVillageAndExpires(GameTestHelper helper) {
         PlayerRaidConfirmationTracker tracker = new PlayerRaidConfirmationTracker();
         UUID firstPlayer = UUID.randomUUID();

@@ -494,7 +494,8 @@ public final class VillagerRetaliationCommands {
         if (source == null || target == null) {
             return 0;
         }
-        boolean merged = VillageAllegianceRegistrySavedData.get(context.getSource().getLevel()).merge(source, target);
+        ServerLevel level = context.getSource().getLevel();
+        boolean merged = VillageAllegianceRegistrySavedData.get(level).merge(level, source, target);
         if (!merged) {
             context.getSource().sendFailure(Component.literal("Allegiance merge rejected (invalid ID or alias cycle)."));
             return 0;

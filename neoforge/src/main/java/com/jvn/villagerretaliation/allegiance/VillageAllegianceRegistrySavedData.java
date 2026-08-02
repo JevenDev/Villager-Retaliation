@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.allegiance;
 
+import com.jvn.villagerretaliation.village.VillageScopeMigrationService;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,8 +55,9 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     public static VillageAllegianceRegistrySavedData load(CompoundTag tag, HolderLookup.Provider provider) {
         VillageAllegianceRegistrySavedData data = new VillageAllegianceRegistrySavedData();
-        if (tag.getInt("FormatVersion") > FORMAT_VERSION) {
-            return data;
+        int formatVersion = tag.getInt("FormatVersion");
+        if (formatVersion > FORMAT_VERSION) {
+            throw new IllegalArgumentException("Unsupported village allegiance registry format " + formatVersion);
         }
         for (Tag raw : tag.getList("Records", Tag.TAG_COMPOUND)) {
             if (!(raw instanceof CompoundTag recordTag) || !recordTag.hasUUID("Id")) {
@@ -261,7 +263,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         if (matches.isEmpty()) {
             resolved = create(level.getGameTime(), dimension, pos, "");
         } else {
-            resolved = chooseObservedIdentity(matches, cluster, pos, level.getGameTime());
+            resolved = chooseObservedIdentity(level, matches, cluster, pos, level.getGameTime());
         }
         AllegianceRecord current = this.records.get(resolved);
         if (current != null) {
@@ -471,7 +473,18 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         return cachePath(path, Optional.empty());
     }
 
+    /**
+     * Compatibility overload for isolated registry use. Server-side callers should provide the
+     * level so position-keyed village-wide data follows the canonical merge.
+     */
     public boolean merge(VillageAllegianceId source, VillageAllegianceId target) {
+        return merge(null, source, target);
+    }
+
+    public boolean merge(
+            ServerLevel level,
+            VillageAllegianceId source,
+            VillageAllegianceId target) {
         Optional<VillageAllegianceId> sourceCanonical = canonical(source);
         Optional<VillageAllegianceId> targetCanonical = canonical(target);
         if (sourceCanonical.isEmpty() || targetCanonical.isEmpty()) {
@@ -481,20 +494,21 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             // Reversing a canonical identity into one of its aliases would create a cycle.
             return !(source.equals(sourceCanonical.get()) && !target.equals(targetCanonical.get()));
         }
-        return mergeCanonical(sourceCanonical.get(), targetCanonical.get());
+        return mergeCanonical(level, sourceCanonical.get(), targetCanonical.get());
     }
 
     /** Reverses one direct merge using the still-retained source record. */
     public boolean undoMerge(VillageAllegianceId source) {
-        VillageAllegianceId target = this.aliases.remove(source);
-        AllegianceRecord sourceRecord = this.records.get(source);
-        AllegianceRecord targetRecord = this.records.get(target);
-        if (target == null || sourceRecord == null || targetRecord == null) {
-            if (target != null) {
-                this.aliases.put(source, target);
-            }
+        VillageAllegianceId target = this.aliases.get(source);
+        if (target == null || this.aliases.containsKey(target)) {
             return false;
         }
+        AllegianceRecord sourceRecord = this.records.get(source);
+        AllegianceRecord targetRecord = this.records.get(target);
+        if (sourceRecord == null || targetRecord == null) {
+            return false;
+        }
+        this.aliases.remove(source);
         this.records.put(target, targetRecord.withoutAbsorbed(sourceRecord));
         this.canonicalCache.clear();
         this.mergeObservations.clear();
@@ -514,7 +528,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         this.footprintIndexDirty = true;
     }
 
-    private VillageAllegianceId autoMerge(Collection<VillageAllegianceId> ids) {
+    private VillageAllegianceId autoMerge(ServerLevel level, Collection<VillageAllegianceId> ids) {
         VillageAllegianceId survivor = ids.stream()
                 .map(this::canonical)
                 .flatMap(Optional::stream)
@@ -526,12 +540,13 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 .orElseThrow();
         for (VillageAllegianceId id : List.copyOf(ids)) {
             canonical(id).filter(candidate -> !candidate.equals(survivor))
-                    .ifPresent(candidate -> mergeCanonical(candidate, survivor));
+                    .ifPresent(candidate -> mergeCanonical(level, candidate, survivor));
         }
         return survivor;
     }
 
     private VillageAllegianceId chooseObservedIdentity(
+            ServerLevel level,
             Collection<VillageAllegianceId> matches,
             Set<Long> occupiedCluster,
             BlockPos observationPosition,
@@ -543,7 +558,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 .filter(id -> intersects(this.records.get(id).sourceSections(), occupiedCluster))
                 .toList();
         if (sourceBacked.size() > 1 && mergeEvidenceConfirmed(sourceBacked, gameTime)) {
-            return autoMerge(sourceBacked);
+            return autoMerge(level, sourceBacked);
         }
         Collection<VillageAllegianceId> candidates = sourceBacked.isEmpty() ? matches : sourceBacked;
         return candidates.stream()
@@ -576,12 +591,20 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         return confirmed;
     }
 
-    private boolean mergeCanonical(VillageAllegianceId source, VillageAllegianceId target) {
+    private boolean mergeCanonical(
+            ServerLevel level,
+            VillageAllegianceId source,
+            VillageAllegianceId target) {
         AllegianceRecord sourceRecord = this.records.get(source);
         AllegianceRecord targetRecord = this.records.get(target);
         if (sourceRecord == null || targetRecord == null || source.equals(target)) {
             return false;
         }
+        List<AllegianceRecord> sourceLineage = level == null
+                ? List.of()
+                : this.records.values().stream()
+                        .filter(record -> canonical(record.id()).filter(source::equals).isPresent())
+                        .toList();
         AllegianceRecord merged = targetRecord.absorb(sourceRecord);
         this.records.put(target, merged);
         for (UUID residentId : merged.residents().keySet()) {
@@ -591,6 +614,9 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         this.mergeObservations.keySet().removeIf(key -> key.contains(source) || key.contains(target));
         this.canonicalCache.clear();
         markFootprintChanged();
+        for (AllegianceRecord sourceLineageRecord : sourceLineage) {
+            VillageScopeMigrationService.merge(level, sourceLineageRecord, merged);
+        }
         return true;
     }
 
@@ -638,7 +664,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 .map(AllegianceRecord::id)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         matches.add(record.id());
-        VillageAllegianceId resolved = chooseObservedIdentity(
+        VillageAllegianceId resolved = chooseObservedIdentity(level,
                 matches, cluster, record.center(), level.getGameTime());
         AllegianceRecord current = this.records.get(resolved);
         if (current != null) {

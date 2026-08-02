@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.item.BannerHelmetData;
@@ -132,7 +133,7 @@ public final class PlayerRaidService {
         VillageAllegianceId villageId = registry.discoverAt(level, position).orElse(null);
         VillageAllegianceRegistrySavedData.AllegianceRecord village =
                 villageId == null ? null : registry.canonicalRecord(villageId).orElse(null);
-        if (village == null || village.archived() || !village.footprintSections().contains(SectionPos.asLong(position))) {
+        if (!isRaidableVillage(village) || !village.footprintSections().contains(SectionPos.asLong(position))) {
             return false;
         }
         villageId = village.id();
@@ -891,6 +892,9 @@ public final class PlayerRaidService {
                 AABB.ofSize(Vec3.atCenterOf(village.center()), 320.0D, 128.0D, 320.0D),
                 villager -> villager.isAlive()
                         && VillageAllegianceApi.canonicalPrimary(level, villager).filter(villageId::equals).isPresent());
+    }
+    static boolean isRaidableVillage(VillageAllegianceRegistrySavedData.AllegianceRecord village) {
+        return village != null && village.lifecycleState() == VillageLifecycleState.ACTIVE;
     }
 
     static void classifyResident(
