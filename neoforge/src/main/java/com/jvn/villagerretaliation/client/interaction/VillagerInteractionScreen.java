@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderCon
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.duel.DuelAvailabilityReason;
+import com.jvn.villagerretaliation.duel.DuelKit;
 import com.jvn.villagerretaliation.duel.DuelLoadout;
 import com.jvn.villagerretaliation.party.PartyAttackMode;
 import com.jvn.villagerretaliation.party.PartyCombatMode;
@@ -320,7 +321,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean animalShearing;
     private boolean forceCameraTowardsVillager;
     private OpenVillagerDuelPayload duelStatus;
-    private DuelLoadout duelLoadout = DuelLoadout.BARE_HANDED;
+    private ResourceLocation duelKitId = DuelLoadout.BARE_HANDED.id();
     private int duelStakeIndex;
     private boolean duelStartPending;
     private final List<DialogueOption> options = new ArrayList<>();
@@ -623,8 +624,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         boolean started = this.duelStartPending && status.reason() == DuelAvailabilityReason.PLAYER_BUSY;
         this.duelStartPending = false;
         this.duelStatus = status;
-        if (!status.bringYourOwnAllowed() && this.duelLoadout == DuelLoadout.BRING_YOUR_OWN) {
-            this.duelLoadout = DuelLoadout.BARE_HANDED;
+        if (status.duelKits().stream().noneMatch(kit -> kit.id().equals(this.duelKitId))) {
+            this.duelKitId = status.duelKits().isEmpty()
+                    ? DuelLoadout.BARE_HANDED.id()
+                    : status.duelKits().getFirst().id();
         }
         if (started) {
             leaveConversation();
@@ -1203,18 +1206,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addOption("duel.back", () -> openPage(DialoguePage.DUEL));
             return;
         }
-        for (DuelLoadout loadout : DuelLoadout.values()) {
-            boolean allowed = loadout != DuelLoadout.BRING_YOUR_OWN || this.duelStatus.bringYourOwnAllowed();
+        for (DuelKit.Summary kit : this.duelStatus.duelKits()) {
             this.options.add(DialogueOption.checkbox(
-                    duelLoadoutOptionLabel(loadout),
-                    this.duelLoadout == loadout,
-                    allowed
-                            ? () -> {
-                                this.duelLoadout = loadout;
-                                openPage(DialoguePage.DUEL);
-                            }
-                            : NO_ACTION,
-                    !allowed));
+                    kit.description(),
+                    this.duelKitId.equals(kit.id()),
+                    () -> {
+                        this.duelKitId = kit.id();
+                        openPage(DialoguePage.DUEL);
+                    },
+                    false));
         }
         addOption("duel.back", () -> openPage(DialoguePage.DUEL));
     }
@@ -1299,15 +1299,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private String selectedDuelLoadoutLabel() {
-        return duelLoadoutLabel(this.duelLoadout);
-    }
-
-    private static String duelLoadoutLabel(DuelLoadout loadout) {
-        return translate("duel.loadout." + loadout.name().toLowerCase(Locale.ROOT));
-    }
-
-    private static String duelLoadoutOptionLabel(DuelLoadout loadout) {
-        return translate("duel.loadout_option." + loadout.name().toLowerCase(Locale.ROOT));
+        if (this.duelStatus != null) {
+            for (DuelKit.Summary kit : this.duelStatus.duelKits()) {
+                if (kit.id().equals(this.duelKitId)) return kit.name();
+            }
+        }
+        return this.duelKitId.toString();
     }
 
     private String selectedDuelStakeLabel() {
@@ -1366,7 +1363,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         sendToServer(new VillagerDuelRequestPayload(
                 this.villagerEntityId,
                 VillagerDuelRequestPayload.Action.START,
-                this.duelLoadout,
+                this.duelKitId,
                 selectedDuelWireStake()));
     }
 

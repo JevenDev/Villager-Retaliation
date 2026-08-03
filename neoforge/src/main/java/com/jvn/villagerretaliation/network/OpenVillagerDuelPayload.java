@@ -1,6 +1,9 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.duel.DuelAvailabilityReason;
+import com.jvn.villagerretaliation.duel.DuelKit;
+import java.util.List;
+import java.util.Objects;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -22,13 +25,22 @@ public record OpenVillagerDuelPayload(
         int villagerBalance,
         String currencyName,
         boolean bringYourOwnAllowed,
+        List<DuelKit.Summary> duelKits,
         String openingDialogue,
         String loadoutDialogue,
         String wagerDialogue,
         String confirmationDialogue,
         String startingDialogue) implements CustomPacketPayload {
     private static final int MAX_TEXT = 128;
+    private static final int MAX_DESCRIPTION = 512;
     private static final int MAX_DIALOGUE_TEXT = 1024;
+    private static final int MAX_KITS = 128;
+    public OpenVillagerDuelPayload {
+        duelKits = duelKits == null
+                ? List.of()
+                : List.copyOf(duelKits.stream().filter(Objects::nonNull).limit(MAX_KITS).toList());
+    }
+
     public static final Type<OpenVillagerDuelPayload> TYPE = VillagerPayloads.type("open_villager_duel");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerDuelPayload> STREAM_CODEC =
             VillagerPayloads.codec(OpenVillagerDuelPayload::encode, OpenVillagerDuelPayload::decode);
@@ -50,6 +62,12 @@ public record OpenVillagerDuelPayload(
         buffer.writeVarInt(payload.villagerBalance());
         buffer.writeUtf(payload.currencyName(), MAX_TEXT);
         buffer.writeBoolean(payload.bringYourOwnAllowed());
+        buffer.writeVarInt(payload.duelKits().size());
+        for (DuelKit.Summary kit : payload.duelKits()) {
+            buffer.writeResourceLocation(kit.id());
+            buffer.writeUtf(kit.name(), MAX_TEXT);
+            buffer.writeUtf(kit.description(), MAX_DESCRIPTION);
+        }
         buffer.writeUtf(payload.openingDialogue(), MAX_DIALOGUE_TEXT);
         buffer.writeUtf(payload.loadoutDialogue(), MAX_DIALOGUE_TEXT);
         buffer.writeUtf(payload.wagerDialogue(), MAX_DIALOGUE_TEXT);
@@ -62,9 +80,22 @@ public record OpenVillagerDuelPayload(
                 buffer.readEnum(DuelAvailabilityReason.class), buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readVarInt(), buffer.readVarLong(), buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
-                buffer.readUtf(MAX_TEXT), buffer.readBoolean(), buffer.readUtf(MAX_DIALOGUE_TEXT), buffer.readUtf(MAX_DIALOGUE_TEXT),
+                buffer.readUtf(MAX_TEXT), buffer.readBoolean(), readKits(buffer),
+                buffer.readUtf(MAX_DIALOGUE_TEXT), buffer.readUtf(MAX_DIALOGUE_TEXT),
                 buffer.readUtf(MAX_DIALOGUE_TEXT), buffer.readUtf(MAX_DIALOGUE_TEXT),
                 buffer.readUtf(MAX_DIALOGUE_TEXT));
+    }
+
+    private static List<DuelKit.Summary> readKits(RegistryFriendlyByteBuf buffer) {
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_KITS, "duel kits");
+        java.util.ArrayList<DuelKit.Summary> kits = new java.util.ArrayList<>(size);
+        for (int index = 0; index < size; index++) {
+            kits.add(new DuelKit.Summary(
+                    buffer.readResourceLocation(),
+                    buffer.readUtf(MAX_TEXT),
+                    buffer.readUtf(MAX_DESCRIPTION)));
+        }
+        return List.copyOf(kits);
     }
 
     public int maximumStake() {

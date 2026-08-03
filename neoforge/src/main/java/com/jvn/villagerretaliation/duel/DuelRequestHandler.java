@@ -25,7 +25,7 @@ public final class DuelRequestHandler {
             sendStatus(player, villager);
             return;
         }
-        DuelService.StartResult result = DuelService.start(player, villager, request.loadout(), request.stake());
+        DuelService.StartResult result = DuelService.start(player, villager, request.kitId(), request.stake());
         if (!result.started()) {
             player.sendSystemMessage(Component.translatable("villagerretaliation.duel.unavailable." + result.reason().name().toLowerCase()));
         }
@@ -47,6 +47,7 @@ public final class DuelRequestHandler {
                 VillagerRetaliationConfig.DUEL_COOLDOWN_DAYS.get(), status.playerCurrency(),
                 status.villagerCurrency(), currency,
                 VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.get(),
+                DuelKitRegistry.summaries(VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.get()),
                 dialogue.opening(), dialogue.loadout(), dialogue.wager(),
                 dialogue.confirmation(), dialogue.starting()));
     }

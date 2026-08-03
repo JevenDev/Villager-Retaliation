@@ -1,0 +1,74 @@
+{
+  "name": "enchanted champion gear",
+  "description": "Diamond armor and enchanted blades.",
+  "sort_order": 100,
+  "combat_style": "melee",
+  "player": {
+    "inventory": [
+      {
+        "slot": 0,
+        "stack": {
+          "id": "minecraft:diamond_sword",
+          "components": {
+            "minecraft:enchantments": {
+              "levels": {
+                "minecraft:sharpness": 3
+              }
+            }
+          }
+        }
+      }
+    ],
+    "equipment": {
+      "offhand": {
+        "id": "minecraft:shield"
+      },
+      "chest": {
+        "id": "minecraft:diamond_chestplate",
+        "components": {
+          "minecraft:enchantments": {
+            "levels": {
+              "minecraft:protection": 2
+            }
+          }
+        }
+      }
+    }
+  },
+  "villager": {
+    "inventory": [
+      {
+        "slot": 0,
+        "stack": {
+          "id": "minecraft:golden_apple",
+          "count": 2
+        }
+      }
+    ],
+    "equipment": {
+      "mainhand": {
+        "id": "minecraft:diamond_sword",
+        "components": {
+          "minecraft:enchantments": {
+            "levels": {
+              "minecraft:sharpness": 3
+            }
+          }
+        }
+      },
+      "offhand": {
+        "id": "minecraft:shield"
+      },
+      "chest": {
+        "id": "minecraft:diamond_chestplate",
+        "components": {
+          "minecraft:enchantments": {
+            "levels": {
+              "minecraft:protection": 2
+            }
+          }
+        }
+      }
+    }
+  }
+}

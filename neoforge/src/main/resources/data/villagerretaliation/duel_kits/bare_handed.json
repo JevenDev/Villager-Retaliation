@@ -1,0 +1,6 @@
+{
+  "name": "fists only",
+  "description": "Fists only. No weapons.",
+  "sort_order": 0,
+  "combat_style": "melee"
+}

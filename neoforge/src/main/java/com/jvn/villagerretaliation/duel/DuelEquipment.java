@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.duel;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -18,16 +19,15 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 final class DuelEquipment {
     private static final String RECOVERY_TAG = "VillagerRetaliationDuelRecovery";
-    private static final int RECOVERY_VERSION = 1;
+    private static final int RECOVERY_VERSION = 2;
     private static final int PLAYER_HOTBAR_SIZE = 9;
 
     private DuelEquipment() {}
 
-    static Snapshots prepare(ServerPlayer player, Villager villager, DuelLoadout loadout) {
+    static Snapshots prepare(ServerPlayer player, Villager villager, DuelKit kit) {
         Snapshots snapshots = new Snapshots(PlayerSnapshot.capture(player), VillagerSnapshot.capture(villager));
         player.removeAllEffects();
         player.setHealth(player.getMaxHealth());
@@ -40,45 +40,38 @@ final class DuelEquipment {
         villager.setAbsorptionAmount(0.0F);
         VillagerRecoveryService.prepareForDuel(villager);
         villager.setCanPickUpLoot(false);
-        if (loadout == DuelLoadout.BRING_YOUR_OWN) return snapshots;
+        if (kit.bringYourOwn()) return snapshots;
         clear(player.getInventory());
         player.getInventory().selected = 0;
         clear(villager);
-        switch (loadout) {
-            case BARE_HANDED -> {}
-            case MELEE -> melee(player, villager);
-            case RANGED -> ranged(player, villager);
-            case ARMORED -> armored(player, villager);
-            case BRING_YOUR_OWN -> {}
-        }
+        apply(player, kit.player());
+        apply(villager, kit.villager());
         return snapshots;
     }
 
-    static void persistRecovery(ServerPlayer player, Villager villager, UUID duelId, DuelLoadout loadout,
+    static void persistRecovery(ServerPlayer player, Villager villager, UUID duelId, DuelKit kit,
                                 int stake, Snapshots snapshots) {
         HolderLookup.Provider provider = player.registryAccess();
         player.getPersistentData().put(RECOVERY_TAG,
-                recoveryTag(duelId, loadout, stake, snapshots.player().save(provider)));
+                recoveryTag(duelId, kit, stake, snapshots.player().save(provider)));
         villager.getPersistentData().put(RECOVERY_TAG,
-                recoveryTag(duelId, loadout, stake, snapshots.villager().save(provider)));
+                recoveryTag(duelId, kit, stake, snapshots.villager().save(provider)));
     }
 
     static PlayerRecovery playerRecovery(ServerPlayer player) {
         CompoundTag root = recoveryTag(player);
         if (root == null) return null;
-        DuelLoadout loadout = loadout(root);
         PlayerSnapshot snapshot = PlayerSnapshot.load(player, root.getCompound("Snapshot"));
-        return loadout == null || snapshot == null ? null
-                : new PlayerRecovery(root.getUUID("Duel"), loadout, Math.max(0, root.getInt("Stake")), snapshot);
+        return snapshot == null ? null : new PlayerRecovery(
+                root.getUUID("Duel"), assignedLoadout(root), Math.max(0, root.getInt("Stake")), snapshot);
     }
 
     static VillagerRecovery villagerRecovery(Villager villager) {
         CompoundTag root = recoveryTag(villager);
         if (root == null) return null;
-        DuelLoadout loadout = loadout(root);
         VillagerSnapshot snapshot = VillagerSnapshot.load(villager, root.getCompound("Snapshot"));
-        return loadout == null || snapshot == null ? null
-                : new VillagerRecovery(root.getUUID("Duel"), loadout, Math.max(0, root.getInt("Stake")), snapshot);
+        return snapshot == null ? null : new VillagerRecovery(
+                root.getUUID("Duel"), assignedLoadout(root), Math.max(0, root.getInt("Stake")), snapshot);
     }
 
     static void copyRecovery(Entity original, Entity replacement) {
@@ -95,11 +88,12 @@ final class DuelEquipment {
         }
     }
 
-    private static CompoundTag recoveryTag(UUID duelId, DuelLoadout loadout, int stake, CompoundTag snapshot) {
+    private static CompoundTag recoveryTag(UUID duelId, DuelKit kit, int stake, CompoundTag snapshot) {
         CompoundTag root = new CompoundTag();
         root.putInt("Version", RECOVERY_VERSION);
         root.putUUID("Duel", duelId);
-        root.putString("Loadout", loadout.name());
+        root.putString("Kit", kit.id().toString());
+        root.putBoolean("AssignedLoadout", !kit.bringYourOwn());
         root.putInt("Stake", Math.max(0, stake));
         root.put("Snapshot", snapshot);
         return root;
@@ -108,16 +102,20 @@ final class DuelEquipment {
     private static CompoundTag recoveryTag(Entity entity) {
         if (entity == null || !entity.getPersistentData().contains(RECOVERY_TAG, Tag.TAG_COMPOUND)) return null;
         CompoundTag root = entity.getPersistentData().getCompound(RECOVERY_TAG);
-        return root.getInt("Version") == RECOVERY_VERSION
+        int version = root.getInt("Version");
+        return (version == 1 || version == RECOVERY_VERSION)
+                && (version == 1 || root.contains("Kit", Tag.TAG_STRING)
+                        && root.contains("AssignedLoadout", Tag.TAG_BYTE))
                 && root.hasUUID("Duel")
                 && root.contains("Snapshot", Tag.TAG_COMPOUND) ? root : null;
     }
 
-    private static DuelLoadout loadout(CompoundTag root) {
+    private static boolean assignedLoadout(CompoundTag root) {
+        if (root.getInt("Version") >= 2) return root.getBoolean("AssignedLoadout");
         try {
-            return DuelLoadout.valueOf(root.getString("Loadout"));
+            return DuelLoadout.valueOf(root.getString("Loadout")) != DuelLoadout.BRING_YOUR_OWN;
         } catch (IllegalArgumentException ignored) {
-            return null;
+            return true;
         }
     }
 
@@ -136,33 +134,25 @@ final class DuelEquipment {
         VillagerRetaliationVillagerEquipment.restoreOwnershipState(villager, new CompoundTag());
     }
 
-    private static void melee(ServerPlayer player, Villager villager) {
-        player.getInventory().setItem(0, new ItemStack(Items.IRON_SWORD));
-        player.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
-        villager.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
-        villager.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+    private static void apply(ServerPlayer player, DuelKit.Participant participant) {
+        for (DuelKit.InventoryItem item : participant.inventory()) {
+            if (item.slot() < player.getInventory().items.size()) {
+                player.getInventory().setItem(item.slot(), item.stack().copy());
+            }
+        }
+        participant.equipment().forEach((slot, stack) -> player.setItemSlot(slot, stack.copy()));
+        player.getInventory().setChanged();
     }
 
-    private static void ranged(ServerPlayer player, Villager villager) {
-        player.getInventory().setItem(0, new ItemStack(Items.BOW));
-        player.getInventory().setItem(1, new ItemStack(Items.ARROW, 64));
-        villager.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
-        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.ARROW, 64));
-    }
-
-    private static void armored(ServerPlayer player, Villager villager) {
-        melee(player, villager);
-        player.getInventory().setItem(1, new ItemStack(Items.IRON_AXE));
-        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.IRON_AXE));
-        equip(player, villager, EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
-        equip(player, villager, EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
-        equip(player, villager, EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
-        equip(player, villager, EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
-    }
-
-    private static void equip(ServerPlayer player, Villager villager, EquipmentSlot slot, ItemStack stack) {
-        player.setItemSlot(slot, stack.copy());
-        villager.setItemSlot(slot, stack.copy());
+    private static void apply(Villager villager, DuelKit.Participant participant) {
+        if (!participant.inventory().isEmpty()) {
+            List<ItemStack> inventory = new ArrayList<>(VillagerInventoryAccess.captureFullInventory(villager));
+            for (DuelKit.InventoryItem item : participant.inventory()) {
+                if (item.slot() < inventory.size()) inventory.set(item.slot(), item.stack().copy());
+            }
+            VillagerInventoryAccess.replaceFullInventory(villager, inventory);
+        }
+        participant.equipment().forEach((slot, stack) -> villager.setItemSlot(slot, stack.copy()));
     }
 
     record Snapshots(PlayerSnapshot player, VillagerSnapshot villager) {}
@@ -335,8 +325,8 @@ final class DuelEquipment {
         }
     }
 
-    record PlayerRecovery(UUID duelId, DuelLoadout loadout, int stake, PlayerSnapshot snapshot) {}
-    record VillagerRecovery(UUID duelId, DuelLoadout loadout, int stake, VillagerSnapshot snapshot) {}
+    record PlayerRecovery(UUID duelId, boolean assignedLoadout, int stake, PlayerSnapshot snapshot) {}
+    record VillagerRecovery(UUID duelId, boolean assignedLoadout, int stake, VillagerSnapshot snapshot) {}
 
     private static ListTag saveStacks(List<ItemStack> stacks, HolderLookup.Provider provider) {
         ListTag saved = new ListTag();

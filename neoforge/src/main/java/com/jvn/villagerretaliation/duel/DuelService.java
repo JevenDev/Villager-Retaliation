@@ -124,19 +124,29 @@ public final class DuelService {
     }
 
     public static StartResult start(ServerPlayer player, Villager villager, DuelLoadout loadout, int requestedStake) {
-        if (loadout == null) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
-        if (loadout == DuelLoadout.BRING_YOUR_OWN
-                && !VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.get()) {
+        return start(player, villager, loadout == null ? null : loadout.id(), requestedStake);
+    }
+
+    public static StartResult start(ServerPlayer player, Villager villager, ResourceLocation kitId, int requestedStake) {
+        DuelKit kit = DuelKitRegistry.find(kitId).orElse(null);
+        if (kit == null) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
+        if (kit.bringYourOwn() && !VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.get()) {
             return new StartResult(false, DuelAvailabilityReason.LOADOUT_DISABLED, null);
         }
         ServerLevel level = player.serverLevel();
         DuelAvailability available = availability(level, player, villager);
         if (!available.available()) return new StartResult(false, available.reason(), null);
-        return begin(player, villager, loadout, requestedStake, available.maximumStake());
+        return begin(player, villager, kit, requestedStake, available.maximumStake());
     }
 
     public static StartResult startDebug(ServerPlayer player, Villager villager, DuelLoadout loadout, int requestedStake) {
-        if (player == null || villager == null || loadout == null || !player.isAlive() || !villager.isAlive()) {
+        return startDebug(player, villager, loadout == null ? null : loadout.id(), requestedStake);
+    }
+
+    public static StartResult startDebug(
+            ServerPlayer player, Villager villager, ResourceLocation kitId, int requestedStake) {
+        DuelKit kit = DuelKitRegistry.find(kitId).orElse(null);
+        if (player == null || villager == null || kit == null || !player.isAlive() || !villager.isAlive()) {
             return new StartResult(false, DuelAvailabilityReason.INVALID, null);
         }
         if (player.level() != villager.level()) return new StartResult(false, DuelAvailabilityReason.TOO_FAR, null);
@@ -144,13 +154,13 @@ public final class DuelService {
         if (BY_ENTITY.containsKey(villager.getUUID())) return new StartResult(false, DuelAvailabilityReason.VILLAGER_BUSY, null);
         int maximumStake = Math.max(0, Math.min(
                 VillagerCurrencyPayment.count(player), VillagerWalletService.getCurrentEmeralds(villager)));
-        return begin(player, villager, loadout, requestedStake, maximumStake);
+        return begin(player, villager, kit, requestedStake, maximumStake);
     }
 
     private static StartResult begin(
             ServerPlayer player,
             Villager villager,
-            DuelLoadout loadout,
+            DuelKit kit,
             int requestedStake,
             int maximumStake) {
         ServerLevel level = player.serverLevel();
@@ -171,9 +181,9 @@ public final class DuelService {
         Set<UUID> spectators = DuelSpectators.recruit(level, villager, center);
         VillagerCombatBehavior.reset(villager);
         VillagerDownedService.ensureStandingDimensions(villager);
-        DuelEquipment.Snapshots snapshots = DuelEquipment.prepare(player, villager, loadout);
-        DuelEquipment.persistRecovery(player, villager, id, loadout, stake, snapshots);
-        ActiveDuel duel = new ActiveDuel(id, level.dimension(), player.getUUID(), villager.getUUID(), loadout, stake,
+        DuelEquipment.Snapshots snapshots = DuelEquipment.prepare(player, villager, kit);
+        DuelEquipment.persistRecovery(player, villager, id, kit, stake, snapshots);
+        ActiveDuel duel = new ActiveDuel(id, level.dimension(), player.getUUID(), villager.getUUID(), kit, stake,
                 center, VillagerRetaliationConfig.DUEL_ARENA_RADIUS.get(),
                 VillagerRetaliationConfig.DUEL_BOUNDARY_GRACE_TICKS.get(),
                 now + COUNTDOWN_TICKS, now + COUNTDOWN_TICKS + VillagerRetaliationConfig.DUEL_TIMEOUT_TICKS.get(),
@@ -182,7 +192,7 @@ public final class DuelService {
         BY_ENTITY.put(player.getUUID(), id);
         BY_ENTITY.put(villager.getUUID(), id);
         player.inventoryMenu.broadcastFullState();
-        syncInventoryState(player, true, loadout != DuelLoadout.BRING_YOUR_OWN);
+        syncInventoryState(player, true, !kit.bringYourOwn());
         DuelSavedData.get(level).markStarted(villager.getUUID(), player.getUUID(), now);
         VillagerConversationService.endForVillager(villager, true);
         player.sendSystemMessage(Component.translatable("villagerretaliation.duel.started", VillagerPresetNameRegistry.resolveDisplayName(villager)));
@@ -447,7 +457,7 @@ public final class DuelService {
             ClickType clickType) {
         ActiveDuel duel = active(player);
         if (duel == null) return true;
-        if (menu != player.inventoryMenu || duel.loadout() != DuelLoadout.BRING_YOUR_OWN) return false;
+        if (menu != player.inventoryMenu || !duel.kit().bringYourOwn()) return false;
         if (slotId < InventoryMenu.ARMOR_SLOT_START || slotId > InventoryMenu.SHIELD_SLOT) return false;
         return clickType != ClickType.THROW
                 && clickType != ClickType.CLONE
@@ -534,7 +544,7 @@ public final class DuelService {
     public static boolean recoverPendingPlayer(ServerPlayer player) {
         DuelEquipment.PlayerRecovery recovery = DuelEquipment.playerRecovery(player);
         if (recovery == null || BY_ID.containsKey(recovery.duelId())) return false;
-        recovery.snapshot().restore(player, recovery.loadout() != DuelLoadout.BRING_YOUR_OWN);
+        recovery.snapshot().restore(player, recovery.assignedLoadout());
         giveCurrency(player, recovery.stake());
         DuelEquipment.clearRecovery(player, recovery.duelId());
         player.inventoryMenu.broadcastFullState();
@@ -584,9 +594,12 @@ public final class DuelService {
         if (duel != null) duel.spectators().add(spectator.getUUID());
     }
 
-    static void forgetRuntimeStateForTest() {
-        BY_ID.clear();
-        BY_ENTITY.clear();
+    static void forgetRuntimeStateForTest(ServerPlayer player) {
+        ActiveDuel duel = active(player);
+        if (duel == null) return;
+        BY_ID.remove(duel.id());
+        BY_ENTITY.remove(duel.playerId(), duel.id());
+        BY_ENTITY.remove(duel.villagerId(), duel.id());
     }
 
     public static void clearRuntimeState(MinecraftServer server) {
@@ -620,7 +633,7 @@ public final class DuelService {
             }
         }
         if (player != null) {
-            boolean assignedLoadout = duel.loadout() != DuelLoadout.BRING_YOUR_OWN;
+            boolean assignedLoadout = !duel.kit().bringYourOwn();
             duel.snapshots().player().restore(player, assignedLoadout);
             player.inventoryMenu.broadcastFullState();
             syncInventoryState(player, false, false);
@@ -724,7 +737,7 @@ public final class DuelService {
     }
 
     private static void train(ServerLevel level, Villager villager, ActiveDuel duel) {
-        VillagerSkill combat = duel.loadout() == DuelLoadout.RANGED || duel.loadout() == DuelLoadout.BRING_YOUR_OWN
+        VillagerSkill combat = duel.kit().rangedCombat() || duel.kit().bringYourOwn()
                 && isUsingRangedWeapon(villager) ? VillagerSkill.ARCHERY : VillagerSkill.GUARDING;
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
         VillagerSkillProgressionService.apply(profile, List.of(
@@ -752,22 +765,22 @@ public final class DuelService {
 
     private static final class ActiveDuel {
         private final UUID id; private final ResourceKey<Level> dimension; private final UUID playerId, villagerId;
-        private final DuelLoadout loadout; private final int stake; private final Vec3 center;
+        private final DuelKit kit; private final int stake; private final Vec3 center;
         private final int arenaRadius, boundaryGraceTicks; private final long countdownEndsAt, timeoutAt;
         private final DuelEquipment.Snapshots snapshots;
         private final Set<UUID> spectators, projectiles = new HashSet<>();
         private long playerOutsideSince = -1L, villagerOutsideSince = -1L, nextAttackAt;
         private int lastCountdownSecond = -1, lastBoundarySecond = -1;
         private DuelResult pendingResult; private boolean villagerKnockedOut;
-        ActiveDuel(UUID id, ResourceKey<Level> dimension, UUID playerId, UUID villagerId, DuelLoadout loadout, int stake,
+        ActiveDuel(UUID id, ResourceKey<Level> dimension, UUID playerId, UUID villagerId, DuelKit kit, int stake,
                    Vec3 center, int arenaRadius, int boundaryGraceTicks, long countdownEndsAt, long timeoutAt,
                    DuelEquipment.Snapshots snapshots, Set<UUID> spectators) {
-            this.id=id;this.dimension=dimension;this.playerId=playerId;this.villagerId=villagerId;this.loadout=loadout;this.stake=stake;
+            this.id=id;this.dimension=dimension;this.playerId=playerId;this.villagerId=villagerId;this.kit=kit;this.stake=stake;
             this.center=center;this.arenaRadius=arenaRadius;this.boundaryGraceTicks=boundaryGraceTicks;
             this.countdownEndsAt=countdownEndsAt;this.timeoutAt=timeoutAt;this.snapshots=snapshots;this.spectators=new HashSet<>(spectators);
         }
         UUID id(){return id;} ResourceKey<Level> dimension(){return dimension;} UUID playerId(){return playerId;} UUID villagerId(){return villagerId;}
-        DuelLoadout loadout(){return loadout;} int stake(){return stake;} Vec3 center(){return center;}
+        DuelKit kit(){return kit;} int stake(){return stake;} Vec3 center(){return center;}
         int arenaRadius(){return arenaRadius;} int boundaryGraceTicks(){return boundaryGraceTicks;} long countdownEndsAt(){return countdownEndsAt;}
         long timeoutAt(){return timeoutAt;} DuelEquipment.Snapshots snapshots(){return snapshots;} Set<UUID> spectators(){return spectators;}
         Set<UUID> projectiles(){return projectiles;}

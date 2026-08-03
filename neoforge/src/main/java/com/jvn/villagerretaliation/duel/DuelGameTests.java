@@ -365,9 +365,17 @@ public final class DuelGameTests {
                 "melee duel should replace the villager's tracked ranged weapon");
         helper.assertTrue(villager.getItemBySlot(EquipmentSlot.OFFHAND).is(Items.SHIELD),
                 "melee duel should equip the assigned shield");
+        helper.assertTrue(DuelService.isParticipant(villager),
+                "the villager should be registered as an active duel participant");
+        helper.assertFalse(VillagerRetaliationVillagerEquipment.hasPickedUpMainHand(villager),
+                "assigned duel gear should temporarily clear tracked weapon ownership");
 
         helper.runAfterDelay(10, () -> {
             try {
+                helper.assertTrue(DuelService.isParticipant(villager),
+                        "the villager should remain an active duel participant");
+                helper.assertFalse(VillagerRetaliationVillagerEquipment.hasPickedUpMainHand(villager),
+                        "tracked weapon ownership must stay suppressed during the duel");
                 helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
                         "normal equipment maintenance must not restore a tracked weapon during a duel");
                 helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW),
@@ -914,7 +922,7 @@ public final class DuelGameTests {
         player.getInventory().add(new ItemStack(Items.DIAMOND_BLOCK, 4));
         VillagerInventoryAccess.addItem(villager, new ItemStack(Items.EMERALD_BLOCK));
 
-        DuelService.forgetRuntimeStateForTest();
+        DuelService.forgetRuntimeStateForTest(player);
         helper.assertTrue(DuelService.recoverPendingPlayer(player),
                 "orphaned player snapshot should recover after runtime state is lost");
         helper.assertTrue(DuelService.recoverPendingVillager(villager),
