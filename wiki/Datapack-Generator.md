@@ -19,11 +19,13 @@ Use the generator when you want to:
 
 ## Current Target
 
-The current rewrite in this repo targets `VR 1.0.0-beta.12` plus the current quest module v2 authoring surface.
+The generator keeps structured authoring targets for `1.0.0-beta.11` and `1.0.0-beta.12`. Its quest editor also understands the current quest module v2 surface used by beta.13.
 
-- Choose `1.0.0-beta.12` for new work against this wiki.
+- Use this live developer wiki as the source of truth for hand-authored `1.0.0-beta.13` packs.
+- Choose `1.0.0-beta.12` in the generator for the folderized dialogue, notification, gift, pacification, story, name, loot, and skill-trade surfaces it currently writes.
 - Keep using the `1.0.0-beta.11` snapshot for older packs that have not been manually migrated.
 - The builder does not convert beta.11 packs to beta.12 for you.
+- For beta.13 persistent scenes and encounter orchestration, start from the repository example packs and [Persistent Quest Scenes](Quest-Scenes.md).
 
 ## What It Writes
 
