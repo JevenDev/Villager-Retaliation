@@ -48,6 +48,7 @@
     "client.ChatComponentMixin",
     "client.EffectRenderingInventoryScreenMixin",
     "client.BannerHelmetCustomHeadLayerMixin",
+    "client.CreateWorldScreenAccessor",
     "client.InventoryScreenMixin",
     "client.LocalPlayerDuelDropMixin",
     "client.MinecraftBetaWarningMixin",
