@@ -35,15 +35,21 @@ function icon(name, className = "inline-icon") {
 function renderIcons() {
   window.lucide?.createIcons({ attrs: { "stroke-width": 1.8 } });
 }
+function cleanRenderedCopy(...roots) {
+  roots.forEach((root) => window.VR_WIKI_SEARCH.cleanTypographyWithin(root));
+}
+
 function pageUrl(slug) {
   return `#/docs/${slug}`;
 }
 function currentRoute() {
   const value = location.hash.replace(/^#\/?/, "");
-  if (!value || value === "home") return { type: "home", id: "home" };
-  const [type, ...rest] = value.split("/");
-  if (["docs", "example", "examples"].includes(type)) return { type, id: rest.join("/") };
-  return { type: "docs", id: type };
+  const [routePath, queryString = ""] = value.split("?");
+  const searchQuery = new URLSearchParams(queryString).get("search") || "";
+  if (!routePath || routePath === "home") return { type: "home", id: "home", searchQuery };
+  const [type, ...rest] = routePath.split("/");
+  if (["docs", "example", "examples"].includes(type)) return { type, id: rest.join("/"), searchQuery };
+  return { type: "docs", id: type, searchQuery };
 }
 function groupBy(items) {
   return items.reduce((groups, item) => {
@@ -402,6 +408,11 @@ function searchIndex() {
 function runWikiSearch(query, limit = 12) {
   return window.VR_WIKI_SEARCH.search(searchIndex(), query, { limit });
 }
+function searchResultUrl(url, query) {
+  const value = String(query || "").trim();
+  if (!value) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}search=${encodeURIComponent(value)}`;
+}
 
 function paletteResultElements() {
   return [...els.paletteResults.querySelectorAll(".palette-result")];
@@ -442,7 +453,7 @@ function renderPaletteResults() {
     : "Suggested references and examples";
 
   els.paletteResults.innerHTML = outcome.results.length ? outcome.results.map((result, index) => `
-    <a id="palette-result-${index}" class="palette-result ${index === 0 ? "is-current" : ""}" href="${result.url}" role="option" aria-selected="${index === 0}">
+    <a id="palette-result-${index}" class="palette-result ${index === 0 ? "is-current" : ""}" href="${searchResultUrl(result.url, query)}" role="option" aria-selected="${index === 0}">
       ${icon(result.icon || "file-text")}
       <span>${escapeHtml(result.type)}</span>
       <strong>${window.VR_WIKI_SEARCH.highlight(result.title, query)}</strong>
@@ -454,6 +465,7 @@ function renderPaletteResults() {
       <span>Try fewer words, check the spelling, or search for a system, JSON field, example, or pack feature.</span>
     </div>
   `;
+  cleanRenderedCopy(els.paletteResults, els.paletteStatus);
   renderIcons();
   setPaletteActive(outcome.results.length ? 0 : -1, { scroll: false });
 }
@@ -516,6 +528,14 @@ function render() {
   renderIcons();
   document.body.classList.remove("is-menu-open");
   els.menuToggle.setAttribute("aria-expanded", "false");
+  cleanRenderedCopy(els.nav, els.content, els.toc, els.crumb);
+  if (route.searchQuery) {
+    window.requestAnimationFrame(() => {
+      const scope = route.type === "example" ? document.getElementById(route.id) || els.content : els.content;
+      const firstMatch = window.VR_WIKI_SEARCH.highlightWithin(scope, route.searchQuery);
+      firstMatch?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
 }
 
 els.search.addEventListener("click", openPalette);
@@ -576,6 +596,7 @@ els.content.addEventListener("click", (event) => {
   if (filter) {
     exampleFilter = filter.dataset.exampleFilter;
     renderExamples();
+    cleanRenderedCopy(els.content, els.toc, els.crumb);
     renderIcons();
   }
 });

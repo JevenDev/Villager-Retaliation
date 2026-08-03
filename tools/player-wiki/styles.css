@@ -2509,7 +2509,8 @@ blockquote p {
 }
 
 .palette-result mark,
-.search-result mark {
+.search-result mark,
+.page-search-hit {
   padding: 0 1px;
   border-bottom: 1px solid var(--warn);
   border-radius: 2px;

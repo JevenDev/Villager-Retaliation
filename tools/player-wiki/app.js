@@ -158,6 +158,10 @@ function restoreRouteScroll(route) {
   });
 }
 
+function cleanRenderedCopy(...roots) {
+  roots.forEach((root) => window.VR_WIKI_SEARCH.cleanTypographyWithin(root));
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -247,14 +251,16 @@ function focusAdvancementRow(advancementId) {
 
 function currentRoute() {
   const hash = location.hash.replace(/^#\/?/, "");
-  if (!hash) return { type: "page", id: "home" };
-  const [type, ...rest] = hash.split("/");
-  if (type === "quest") return { type: "quest", id: rest.join("/") };
-  if (type === "questline") return { type: "questline", id: decodeURIComponent(rest.join("/")) };
-  if (type === "advancement") return { type: "advancement", id: decodeURIComponent(rest.join("/")) };
-  if (type === "search") return { type: "search", id: "search" };
-  if (type === "page") return { type: "page", id: rest[0] || "home" };
-  return { type: "page", id: type || "home" };
+  const [routePath, queryString = ""] = hash.split("?");
+  const searchQuery = new URLSearchParams(queryString).get("search") || "";
+  if (!routePath) return { type: "page", id: "home", searchQuery };
+  const [type, ...rest] = routePath.split("/");
+  if (type === "quest") return { type: "quest", id: rest.join("/"), searchQuery };
+  if (type === "questline") return { type: "questline", id: decodeURIComponent(rest.join("/")), searchQuery };
+  if (type === "advancement") return { type: "advancement", id: decodeURIComponent(rest.join("/")), searchQuery };
+  if (type === "search") return { type: "search", id: "search", searchQuery };
+  if (type === "page") return { type: "page", id: rest[0] || "home", searchQuery };
+  return { type: "page", id: type || "home", searchQuery };
 }
 
 function groupBy(items, key) {
@@ -460,7 +466,14 @@ function render() {
         : null
     });
   } finally {
+    cleanRenderedCopy(els.nav, els.content, els.toc, els.crumb);
     restoreRouteScroll(route);
+    if (route.searchQuery) {
+      window.requestAnimationFrame(() => {
+        const firstMatch = window.VR_WIKI_SEARCH.highlightWithin(els.content, route.searchQuery);
+        firstMatch?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
   }
 }
 function renderDocument(title, description, body, meta = {}) {
@@ -1567,6 +1580,12 @@ function highlightSearchText(value, query) {
   return window.VR_WIKI_SEARCH.highlight(value, query);
 }
 
+function searchResultUrl(url, query) {
+  const value = String(query || "").trim();
+  if (!value) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}search=${encodeURIComponent(value)}`;
+}
+
 function renderSearch() {
   const query = searchQuery.trim();
   const outcome = query ? runWikiSearch(query, 40) : { total: 0, results: [] };
@@ -1574,7 +1593,7 @@ function renderSearch() {
   renderDocument("Search", query ? `${resultLabel} for ${query}` : "Search the player wiki.", `
     ${section("Results", `
       ${outcome.results.length ? `<div class="search-results">${outcome.results.map((result) => `
-        <a class="search-result" href="${result.url}">
+        <a class="search-result" href="${searchResultUrl(result.url, query)}">
           ${icon(result.icon || resultIcon(result.type))}
           <span>${escapeHtml(result.type)}</span>
           <strong>${highlightSearchText(result.title, query)}</strong>
@@ -1627,7 +1646,7 @@ function renderPaletteResults() {
     : "Suggested pages and guides";
 
   els.paletteResults.innerHTML = outcome.results.length ? outcome.results.map((result, index) => `
-    <a id="palette-result-${index}" class="palette-result ${index === 0 ? "is-current" : ""}" href="${result.url}" role="option" aria-selected="${index === 0}">
+    <a id="palette-result-${index}" class="palette-result ${index === 0 ? "is-current" : ""}" href="${searchResultUrl(result.url, query)}" role="option" aria-selected="${index === 0}">
       ${icon(result.icon || resultIcon(result.type))}
       <span>${escapeHtml(result.type)}</span>
       <strong>${highlightSearchText(result.title, query)}</strong>
@@ -1639,6 +1658,7 @@ function renderPaletteResults() {
       <span>Try fewer words, check the spelling, or search for a feature, quest, item, or profession.</span>
     </div>
   `;
+  cleanRenderedCopy(els.paletteResults, els.paletteStatus);
   renderIcons();
   setPaletteActive(outcome.results.length ? 0 : -1, { scroll: false });
 }

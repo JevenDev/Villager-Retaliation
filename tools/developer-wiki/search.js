@@ -235,5 +235,64 @@
       : escapeHtml(part)).join("");
   }
 
-  window.VR_WIKI_SEARCH = { highlight, normalize, search };
+  function cleanTypography(value) {
+    return String(value ?? "")
+      .replace(/\s*\u2014\s*/g, " - ")
+      .replace(/\s*;\s*/g, ", ");
+  }
+
+  function cleanTypographyWithin(root) {
+    if (!root) return root;
+    const documentRef = root.ownerDocument || document;
+    const nodeFilter = documentRef.defaultView?.NodeFilter || NodeFilter;
+    const walker = documentRef.createTreeWalker(root, nodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent) return nodeFilter.FILTER_REJECT;
+        if (parent.closest("pre, code, script, style, textarea")) return nodeFilter.FILTER_REJECT;
+        return nodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    for (const textNode of textNodes) textNode.nodeValue = cleanTypography(textNode.nodeValue);
+
+    const attributeNames = ["aria-label", "placeholder", "title"];
+    const elements = [root, ...root.querySelectorAll(attributeNames.map((name) => `[${name}]`).join(","))];
+    for (const element of elements) {
+      for (const attributeName of attributeNames) {
+        if (element.hasAttribute?.(attributeName)) {
+          element.setAttribute(attributeName, cleanTypography(element.getAttribute(attributeName)));
+        }
+      }
+    }
+    return root;
+  }
+
+  function highlightWithin(root, query) {
+    if (!root || !normalize(query)) return null;
+    const documentRef = root.ownerDocument || document;
+    const nodeFilter = documentRef.defaultView?.NodeFilter || NodeFilter;
+    const walker = documentRef.createTreeWalker(root, nodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent || !node.nodeValue?.trim()) return nodeFilter.FILTER_REJECT;
+        if (parent.closest("mark, script, style, button, input, textarea, svg")) return nodeFilter.FILTER_REJECT;
+        return nodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+    for (const textNode of textNodes) {
+      const highlighted = highlight(textNode.nodeValue, query);
+      if (!highlighted.includes("<mark>")) continue;
+      const template = documentRef.createElement("template");
+      template.innerHTML = highlighted.replaceAll("<mark>", '<mark class="page-search-hit">');
+      textNode.replaceWith(template.content);
+    }
+    return root.querySelector(".page-search-hit");
+  }
+
+  window.VR_WIKI_SEARCH = { cleanTypography, cleanTypographyWithin, highlight, highlightWithin, normalize, search };
 })();
