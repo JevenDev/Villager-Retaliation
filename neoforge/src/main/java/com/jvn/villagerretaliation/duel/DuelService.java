@@ -111,7 +111,7 @@ public final class DuelService {
         if (level.getRaidAt(villager.blockPosition()) != null) return DuelAvailabilityReason.RAID;
         if (record.refuses()) return DuelAvailabilityReason.REFUSES;
         if (cooldown > 0L) return DuelAvailabilityReason.COOLDOWN;
-        if (BY_ENTITY.containsKey(player.getUUID())) return DuelAvailabilityReason.PLAYER_BUSY;
+        if (isParticipantId(player.getUUID())) return DuelAvailabilityReason.PLAYER_BUSY;
         if (BY_ENTITY.containsKey(villager.getUUID())) return DuelAvailabilityReason.VILLAGER_BUSY;
         if (villager.getTarget() != null || villager.isSleeping() || villager.isTrading()) return DuelAvailabilityReason.BUSY;
         return DuelAvailabilityReason.AVAILABLE;
@@ -150,7 +150,7 @@ public final class DuelService {
             return new StartResult(false, DuelAvailabilityReason.INVALID, null);
         }
         if (player.level() != villager.level()) return new StartResult(false, DuelAvailabilityReason.TOO_FAR, null);
-        if (BY_ENTITY.containsKey(player.getUUID())) return new StartResult(false, DuelAvailabilityReason.PLAYER_BUSY, null);
+        if (isParticipantId(player.getUUID())) return new StartResult(false, DuelAvailabilityReason.PLAYER_BUSY, null);
         if (BY_ENTITY.containsKey(villager.getUUID())) return new StartResult(false, DuelAvailabilityReason.VILLAGER_BUSY, null);
         int maximumStake = Math.max(0, Math.min(
                 VillagerCurrencyPayment.count(player), VillagerWalletService.getCurrentEmeralds(villager)));
@@ -199,7 +199,7 @@ public final class DuelService {
         return new StartResult(true, DuelAvailabilityReason.AVAILABLE, id);
     }
 
-    private static boolean validStake(int stake, int maximum) {
+    static boolean validStake(int stake, int maximum) {
         if (stake < 0 || stake > maximum) return false;
         if (stake == maximum) return true;
         for (int fixed : FIXED_STAKES) if (stake == fixed) return true;
@@ -207,6 +207,7 @@ public final class DuelService {
     }
 
     public static void tick(MinecraftServer server) {
+        PlayerDuelService.tick(server);
         for (ActiveDuel duel : List.copyOf(BY_ID.values())) tick(server, duel);
         long now = server.overworld().getGameTime();
         FINISHERS.entrySet().removeIf(entry -> now > entry.getValue().expiresAt());
@@ -356,6 +357,7 @@ public final class DuelService {
     }
 
     public static boolean onIncomingDamage(LivingIncomingDamageEvent event) {
+        if (PlayerDuelService.onIncomingDamage(event)) return true;
         LivingEntity attacker = event.getSource().getEntity() instanceof LivingEntity living ? living : null;
         ActiveDuel attackerDuel = active(attacker);
         if (attackerDuel != null && !isOpponent(attackerDuel, event.getEntity(), attacker)) {
@@ -392,6 +394,7 @@ public final class DuelService {
 
     public static void onAttackEntity(AttackEntityEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (PlayerDuelService.onAttackEntity(event)) return;
         ActiveDuel duel = active(player);
         if (duel != null && !event.getTarget().getUUID().equals(duel.villagerId())) {
             event.setCanceled(true);
@@ -401,6 +404,7 @@ public final class DuelService {
     }
 
     public static boolean onFinalDamage(LivingDamageEvent.Pre event) {
+        if (PlayerDuelService.onFinalDamage(event)) return true;
         ActiveDuel duel = active(event.getEntity());
         if (duel == null) return false;
         LivingEntity attacker = event.getSource().getEntity() instanceof LivingEntity living ? living : null;
@@ -419,7 +423,9 @@ public final class DuelService {
 
     public static boolean isDuelDamage(LivingEntity target, net.minecraft.world.damagesource.DamageSource source) {
         ActiveDuel duel = active(target);
-        return duel != null && source.getEntity() instanceof LivingEntity attacker && isOpponent(duel, target, attacker);
+        return duel != null && source.getEntity() instanceof LivingEntity attacker
+                && isOpponent(duel, target, attacker)
+                || PlayerDuelService.isDuelDamage(target, source);
     }
 
     private static boolean isProtectedSpectator(LivingEntity target, net.minecraft.world.entity.Entity attacker) {
@@ -432,19 +438,19 @@ public final class DuelService {
     }
 
     public static void onItemToss(ItemTossEvent event) {
-        if (event.getPlayer() instanceof ServerPlayer player && active(player) != null) {
+        if (event.getPlayer() instanceof ServerPlayer player && isParticipant(player)) {
             event.setCanceled(true);
         }
     }
     public static void onItemPickup(ItemEntityPickupEvent.Pre event) {
-        if (event.getPlayer() instanceof ServerPlayer player && active(player) != null) {
+        if (event.getPlayer() instanceof ServerPlayer player && isParticipant(player)) {
             event.setCanPickup(TriState.FALSE);
         }
     }
 
     public static void onContainerOpen(PlayerContainerEvent.Open event) {
         if (event.getEntity() instanceof ServerPlayer player
-                && active(player) != null
+                && isParticipant(player)
                 && event.getContainer() != player.inventoryMenu) {
             player.closeContainer();
         }
@@ -456,6 +462,8 @@ public final class DuelService {
             int slotId,
             ClickType clickType) {
         ActiveDuel duel = active(player);
+        if (duel == null && PlayerDuelService.isParticipant(player.getUUID()))
+            return PlayerDuelService.allowsInventoryClick(player, menu, slotId, clickType);
         if (duel == null) return true;
         if (menu != player.inventoryMenu || !duel.kit().bringYourOwn()) return false;
         if (slotId < InventoryMenu.ARMOR_SLOT_START || slotId > InventoryMenu.SHIELD_SLOT) return false;
@@ -464,10 +472,14 @@ public final class DuelService {
                 && clickType != ClickType.QUICK_CRAFT;
     }
 
-    public static boolean isParticipant(LivingEntity entity) { return active(entity) != null; }
+    public static boolean isParticipant(LivingEntity entity) {
+        return active(entity) != null
+                || entity != null && PlayerDuelService.isParticipant(entity.getUUID());
+    }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide() || !(event.getEntity() instanceof Projectile projectile)) return;
+        if (PlayerDuelService.onEntityJoinLevel(event)) return;
         if (projectile.getPersistentData().hasUUID(DUEL_PROJECTILE_TAG)) {
             UUID duelId = projectile.getPersistentData().getUUID(DUEL_PROJECTILE_TAG);
             ActiveDuel duel = BY_ID.get(duelId);
@@ -532,7 +544,13 @@ public final class DuelService {
         return id == null ? null : BY_ID.get(id);
     }
 
+    static boolean isParticipantId(UUID entityId) {
+        return entityId != null
+                && (BY_ENTITY.containsKey(entityId) || PlayerDuelService.isParticipant(entityId));
+    }
+
     public static void onPlayerLogout(ServerPlayer player) {
+        if (PlayerDuelService.onPlayerLogout(player)) return;
         ActiveDuel duel = active(player);
         if (duel != null) finish(player.getServer(), duel, DuelResult.VILLAGER_WIN, false, player);
     }
@@ -543,7 +561,8 @@ public final class DuelService {
 
     public static boolean recoverPendingPlayer(ServerPlayer player) {
         DuelEquipment.PlayerRecovery recovery = DuelEquipment.playerRecovery(player);
-        if (recovery == null || BY_ID.containsKey(recovery.duelId())) return false;
+        if (recovery == null || BY_ID.containsKey(recovery.duelId())
+                || PlayerDuelService.isActiveDuel(recovery.duelId())) return false;
         recovery.snapshot().restore(player, recovery.assignedLoadout());
         giveCurrency(player, recovery.stake());
         DuelEquipment.clearRecovery(player, recovery.duelId());
@@ -603,6 +622,7 @@ public final class DuelService {
     }
 
     public static void clearRuntimeState(MinecraftServer server) {
+        PlayerDuelService.clearRuntimeState(server);
         for (ActiveDuel duel : List.copyOf(BY_ID.values())) finish(server, duel, DuelResult.CANCELLED, false);
         BY_ID.clear(); BY_ENTITY.clear(); FINISHERS.clear(); LOSS_ATTACK_LOCKOUTS.clear();
     }
@@ -657,7 +677,7 @@ public final class DuelService {
         if (player != null) player.sendSystemMessage(Component.translatable("villagerretaliation.duel.result." + settledResult.name().toLowerCase()));
     }
 
-    private static void playPlayerDuelVictorySound(ServerPlayer player) {
+    static void playPlayerDuelVictorySound(ServerPlayer player) {
         player.serverLevel().playSound(
                 null,
                 player.blockPosition(),
@@ -667,7 +687,7 @@ public final class DuelService {
                 DUEL_VICTORY_SOUND_PITCH);
     }
 
-    private static void applyLossPenalty(MinecraftServer server, ServerPlayer player) {
+    static void applyLossPenalty(MinecraftServer server, ServerPlayer player) {
         LOSS_ATTACK_LOCKOUTS.put(player.getUUID(), server.overworld().getGameTime() + LOSS_PENALTY_TICKS);
         player.addEffect(new MobEffectInstance(
                 MobEffects.MOVEMENT_SLOWDOWN, LOSS_PENALTY_TICKS, LOSS_SLOWNESS_AMPLIFIER));
@@ -717,7 +737,8 @@ public final class DuelService {
         }
     }
 
-    private static void giveCurrency(ServerPlayer player, int amount) {
+    static void giveCurrency(ServerPlayer player, int amount) {
+        if (player == null) return;
         for (int remaining = amount; remaining > 0;) {
             ItemStack stack = VillagerCurrencyResources.createStack(player.getServer(), remaining);
             if (stack.isEmpty()) return;
@@ -727,7 +748,7 @@ public final class DuelService {
         player.getInventory().setChanged();
     }
 
-    private static void syncInventoryState(ServerPlayer player, boolean active, boolean assignedLoadout) {
+    static void syncInventoryState(ServerPlayer player, boolean active, boolean assignedLoadout) {
         try {
             net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
                     player, new DuelInventoryStatePayload(active, assignedLoadout));

@@ -29,12 +29,7 @@ final class DuelEquipment {
 
     static Snapshots prepare(ServerPlayer player, Villager villager, DuelKit kit) {
         Snapshots snapshots = new Snapshots(PlayerSnapshot.capture(player), VillagerSnapshot.capture(villager));
-        player.removeAllEffects();
-        player.setHealth(player.getMaxHealth());
-        player.setAbsorptionAmount(0.0F);
-        player.getFoodData().setFoodLevel(20);
-        player.getFoodData().setSaturation(20.0F);
-        player.getFoodData().setExhaustion(0.0F);
+        reset(player);
         villager.removeAllEffects();
         villager.setHealth(villager.getMaxHealth());
         villager.setAbsorptionAmount(0.0F);
@@ -49,6 +44,22 @@ final class DuelEquipment {
         return snapshots;
     }
 
+    static PlayerSnapshots preparePlayers(ServerPlayer challenger, ServerPlayer opponent, DuelKit kit) {
+        PlayerSnapshots snapshots = new PlayerSnapshots(
+                PlayerSnapshot.capture(challenger), PlayerSnapshot.capture(opponent));
+        reset(challenger);
+        reset(opponent);
+        if (!kit.bringYourOwn()) {
+            clear(challenger.getInventory());
+            clear(opponent.getInventory());
+            challenger.getInventory().selected = 0;
+            opponent.getInventory().selected = 0;
+            apply(challenger, kit.player());
+            apply(opponent, kit.player());
+        }
+        return snapshots;
+    }
+
     static void persistRecovery(ServerPlayer player, Villager villager, UUID duelId, DuelKit kit,
                                 int stake, Snapshots snapshots) {
         HolderLookup.Provider provider = player.registryAccess();
@@ -56,6 +67,12 @@ final class DuelEquipment {
                 recoveryTag(duelId, kit, stake, snapshots.player().save(provider)));
         villager.getPersistentData().put(RECOVERY_TAG,
                 recoveryTag(duelId, kit, stake, snapshots.villager().save(provider)));
+    }
+
+    static void persistPlayerRecovery(
+            ServerPlayer player, UUID duelId, DuelKit kit, int stake, PlayerSnapshot snapshot) {
+        player.getPersistentData().put(RECOVERY_TAG,
+                recoveryTag(duelId, kit, stake, snapshot.save(player.registryAccess())));
     }
 
     static PlayerRecovery playerRecovery(ServerPlayer player) {
@@ -119,6 +136,15 @@ final class DuelEquipment {
         }
     }
 
+    private static void reset(ServerPlayer player) {
+        player.removeAllEffects();
+        player.setHealth(player.getMaxHealth());
+        player.setAbsorptionAmount(0.0F);
+        player.getFoodData().setFoodLevel(20);
+        player.getFoodData().setSaturation(20.0F);
+        player.getFoodData().setExhaustion(0.0F);
+    }
+
     private static void clear(Inventory inventory) {
         inventory.items.replaceAll(ignored -> ItemStack.EMPTY);
         inventory.armor.replaceAll(ignored -> ItemStack.EMPTY);
@@ -156,6 +182,8 @@ final class DuelEquipment {
     }
 
     record Snapshots(PlayerSnapshot player, VillagerSnapshot villager) {}
+
+    record PlayerSnapshots(PlayerSnapshot challenger, PlayerSnapshot opponent) {}
 
     record PlayerSnapshot(List<ItemStack> items, List<ItemStack> armor, List<ItemStack> offhand,
                           int selectedSlot, float health, float absorption, CompoundTag foodData,

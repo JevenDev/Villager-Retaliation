@@ -12,6 +12,8 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class PartyActionHandler {
@@ -189,9 +191,11 @@ public final class PartyActionHandler {
         PartyService.PartyResult result = PartyService.acceptInvitation(target, invitationId);
         notice(target, result.messageKey());
         if (result.success()) {
+            playAcceptanceSound(target);
             if (invitation != null) {
                 ServerPlayer inviter = target.getServer().getPlayerList().getPlayer(invitation.inviterId());
                 if (inviter != null) {
+                    playAcceptanceSound(inviter);
                     if (createsParty) {
                         notice(inviter, "villagerretaliation.party.created");
                     }
@@ -343,6 +347,13 @@ public final class PartyActionHandler {
         if (player != null && key != null && !key.isBlank()) {
             player.sendSystemMessage(Component.translatable(key, args)
                     .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+        }
+    }
+
+    private static void playAcceptanceSound(ServerPlayer player) {
+        if (player != null) {
+            player.playNotifySound(
+                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.7F, 1.15F);
         }
     }
 

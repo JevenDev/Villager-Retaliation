@@ -16,8 +16,10 @@ import com.jvn.villagerretaliation.allegiance.VillageAssignmentResolution;
 import com.jvn.villagerretaliation.allegiance.VillageAssignmentResolver;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.duel.DuelKitRegistry;
 import com.jvn.villagerretaliation.duel.DuelLoadout;
 import com.jvn.villagerretaliation.duel.DuelService;
+import com.jvn.villagerretaliation.duel.PlayerDuelService;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.debug.HiredStressGridService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
@@ -112,6 +114,7 @@ public final class VillagerRetaliationCommands {
     }
 
     public static void onRegisterCommands(RegisterCommandsEvent event) {
+        event.getDispatcher().register(playerDuelCommands());
         event.getDispatcher().register(
                 literal(VillagerRetaliation.MOD_ID)
                         .then(partyCommands())
@@ -241,6 +244,52 @@ public final class VillagerRetaliationCommands {
                                         .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::exportSkills))))
         );
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> playerDuelCommands() {
+        return literal("duel")
+                .then(literal("accept")
+                        .then(argument("player", EntityArgument.player())
+                                .executes(context -> {
+                                    PlayerDuelService.accept(
+                                            context.getSource().getPlayerOrException(),
+                                            EntityArgument.getPlayer(context, "player"));
+                                    return 1;
+                                })))
+                .then(literal("decline")
+                        .then(argument("player", EntityArgument.player())
+                                .executes(context -> {
+                                    PlayerDuelService.decline(
+                                            context.getSource().getPlayerOrException(),
+                                            EntityArgument.getPlayer(context, "player"));
+                                    return 1;
+                                })))
+                .then(argument("player", EntityArgument.player())
+                        .then(argument("kit", StringArgumentType.word())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        java.util.stream.Stream.concat(
+                                                java.util.stream.Stream.of(
+                                                        "byo", "bare_handed", "melee", "ranged", "armored"),
+                                                DuelKitRegistry.values().stream()
+                                                        .map(kit -> kit.id().toString()))
+                                                .distinct(),
+                                        builder))
+                                .then(argument("wager", IntegerArgumentType.integer(0))
+                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                Arrays.stream(DuelService.FIXED_STAKES)
+                                                        .mapToObj(Integer::toString),
+                                                builder))
+                                        .executes(context -> {
+                                            ServerPlayer challenger =
+                                                    context.getSource().getPlayerOrException();
+                                            PlayerDuelService.challenge(
+                                                    challenger,
+                                                    EntityArgument.getPlayer(context, "player"),
+                                                    DuelKitRegistry.resolveId(
+                                                            StringArgumentType.getString(context, "kit")),
+                                                    IntegerArgumentType.getInteger(context, "wager"));
+                                            return 1;
+                                        }))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> partyCommands() {
