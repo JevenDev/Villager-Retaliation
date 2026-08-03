@@ -30,7 +30,10 @@ public abstract class MinecraftBetaWarningMixin {
         }
 
         Minecraft minecraft = (Minecraft) (Object) this;
-        minecraft.setScreen(new BetaWarningScreen(this.screen, nextScreen));
+        Screen parent = nextScreen instanceof CreateWorldScreen
+                ? ((CreateWorldScreenAccessor) nextScreen).villagerretaliation$getLastScreen()
+                : this.screen;
+        minecraft.setScreen(new BetaWarningScreen(parent, nextScreen));
         callbackInfo.cancel();
     }
 
