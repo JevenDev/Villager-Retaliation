@@ -1,0 +1,7 @@
+{
+  "name": "whatever we carry",
+  "description": "We each fight with what we carry.",
+  "sort_order": 40,
+  "combat_style": "melee",
+  "bring_your_own": true
+}

@@ -1,0 +1,39 @@
+{
+  "name": "bows and arrows",
+  "description": "Bows and a quiver of arrows.",
+  "sort_order": 20,
+  "combat_style": "ranged",
+  "player": {
+    "inventory": [
+      {
+        "slot": 0,
+        "stack": {
+          "id": "minecraft:bow"
+        }
+      },
+      {
+        "slot": 1,
+        "stack": {
+          "id": "minecraft:arrow",
+          "count": 64
+        }
+      }
+    ]
+  },
+  "villager": {
+    "inventory": [
+      {
+        "slot": 0,
+        "stack": {
+          "id": "minecraft:arrow",
+          "count": 64
+        }
+      }
+    ],
+    "equipment": {
+      "mainhand": {
+        "id": "minecraft:bow"
+      }
+    }
+  }
+}

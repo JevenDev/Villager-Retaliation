@@ -1,0 +1,69 @@
+{
+  "name": "full iron battle gear",
+  "description": "Full iron armor, blades, and shields.",
+  "sort_order": 30,
+  "combat_style": "melee",
+  "player": {
+    "inventory": [
+      {
+        "slot": 0,
+        "stack": {
+          "id": "minecraft:iron_sword"
+        }
+      },
+      {
+        "slot": 1,
+        "stack": {
+          "id": "minecraft:iron_axe"
+        }
+      }
+    ],
+    "equipment": {
+      "offhand": {
+        "id": "minecraft:shield"
+      },
+      "feet": {
+        "id": "minecraft:iron_boots"
+      },
+      "legs": {
+        "id": "minecraft:iron_leggings"
+      },
+      "chest": {
+        "id": "minecraft:iron_chestplate"
+      },
+      "head": {
+        "id": "minecraft:iron_helmet"
+      }
+    }
+  },
+  "villager": {
+    "inventory": [
+      {
+        "slot": 0,
+        "stack": {
+          "id": "minecraft:iron_axe"
+        }
+      }
+    ],
+    "equipment": {
+      "mainhand": {
+        "id": "minecraft:iron_sword"
+      },
+      "offhand": {
+        "id": "minecraft:shield"
+      },
+      "feet": {
+        "id": "minecraft:iron_boots"
+      },
+      "legs": {
+        "id": "minecraft:iron_leggings"
+      },
+      "chest": {
+        "id": "minecraft:iron_chestplate"
+      },
+      "head": {
+        "id": "minecraft:iron_helmet"
+      }
+    }
+  }
+}

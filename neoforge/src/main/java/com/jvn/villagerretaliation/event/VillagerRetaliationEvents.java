@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
+import com.jvn.villagerretaliation.duel.DuelKitRegistry;
 import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.scene.SceneRuntime;
@@ -211,9 +212,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
+        var registryAccess = event.getRegistryAccess();
         event.addListener((barrier, resourceManager, preparationProfiler, reloadProfiler, backgroundExecutor, gameExecutor) ->
                 java.util.concurrent.CompletableFuture
                         .runAsync(() -> {
+                            DuelKitRegistry.reload(resourceManager, registryAccess);
                             VillagerDataWarmup.clearResourceCaches();
                             com.jvn.villagerretaliation.item.VillagerRecipeSemantics.markReloaded();
                             BUILDER_CATALOG_SYNC_DIRTY.set(true);
