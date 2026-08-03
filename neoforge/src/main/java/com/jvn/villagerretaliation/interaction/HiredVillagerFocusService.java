@@ -20,6 +20,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.phys.Vec3;
 
 public final class HiredVillagerFocusService {
     private static final String NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG = "NextProfessionSuppressionGameTime";
@@ -314,8 +315,11 @@ public final class HiredVillagerFocusService {
             return;
         }
 
-        if (currentWorkLookTarget(worker) == null) {
+        BlockPos workLookTarget = currentWorkLookTarget(worker);
+        if (workLookTarget == null) {
             brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
+        } else if (isActivelyWorkingAtTarget(villager, worker, workLookTarget)) {
+            maintainWorkLookTarget(villager, worker);
         }
         brain.eraseMemory(MemoryModuleType.INTERACTION_TARGET);
         brain.eraseMemory(MemoryModuleType.BREED_TARGET);
@@ -368,18 +372,44 @@ public final class HiredVillagerFocusService {
                 && targetPos.distSqr(walkTarget.getTarget().currentBlockPosition()) <= 4.0D;
     }
 
+    public static BlockPos activeWorkLookTarget(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !HiredWorkStateStore.isPerformingWork(villager)
+                || shouldSkipHiredFocus(level, villager)) {
+            return null;
+        }
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        BlockPos target = currentWorkLookTarget(worker);
+        return target != null && isActivelyWorkingAtTarget(villager, worker, target) ? target : null;
+    }
+
     private static void maintainWorkLookTarget(Villager villager, HiredWorkerBrain.Snapshot worker) {
         BlockPos target = currentWorkLookTarget(worker);
         if (target == null) {
             return;
         }
         Brain<Villager> brain = villager.getBrain();
-        if (brain.getMemory(MemoryModuleType.LOOK_TARGET)
-                .map(lookTarget -> target.equals(lookTarget.currentBlockPosition()))
-                .orElse(false)) {
+        boolean alreadyTracksTarget = brain.getMemory(MemoryModuleType.LOOK_TARGET)
+                .map(lookTarget -> lookTarget instanceof BlockPosTracker
+                        && target.equals(lookTarget.currentBlockPosition()))
+                .orElse(false);
+        if (!alreadyTracksTarget) {
+            brain.setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target));
+        }
+        faceActiveWorkTarget(villager, worker, target);
+    }
+
+    private static void faceActiveWorkTarget(Villager villager, HiredWorkerBrain.Snapshot worker, BlockPos target) {
+        if (!isActivelyWorkingAtTarget(villager, worker, target)) {
             return;
         }
-        brain.setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target));
+        Vec3 center = Vec3.atCenterOf(target);
+        villager.getLookControl().setLookAt(center.x, center.y, center.z, 60.0F, 60.0F);
+    }
+
+    private static boolean isActivelyWorkingAtTarget(Villager villager, HiredWorkerBrain.Snapshot worker, BlockPos target) {
+        return worker.taskState() == HiredWorkerTaskState.WORKING && !target.equals(villager.blockPosition());
     }
 
     private static BlockPos currentWorkLookTarget(HiredWorkerBrain.Snapshot worker) {

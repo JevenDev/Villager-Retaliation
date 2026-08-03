@@ -106,6 +106,15 @@ public final class HiredWorkStateStore {
         return !HiredWorkerTaskState.byId(state.getString("WorkerTaskState")).isWaitingState();
     }
 
+    public static boolean isPerformingWork(Villager villager) {
+        if (villager == null || !villager.getPersistentData().contains(TAG, Tag.TAG_COMPOUND)) {
+            return false;
+        }
+        CompoundTag state = villager.getPersistentData().getCompound(TAG);
+        return state.getBoolean("Enabled")
+                && HiredWorkerTaskState.WORKING.id().equals(state.getString("WorkerTaskState"));
+    }
+
     public static void clearInheritedStateForNewborn(Villager child) {
         if (child != null) {
             child.getPersistentData().remove(TAG);
