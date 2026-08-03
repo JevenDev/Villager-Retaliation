@@ -708,6 +708,8 @@ final class MiningTargetPlanner {
             return true;
         }
         int radius = MiningWorkerState.pocketRadius(context);
-        return anchor.distSqr(pos) <= radius * radius;
+        return Math.abs(anchor.getX() - pos.getX()) <= radius
+                && Math.abs(anchor.getZ() - pos.getZ()) <= radius
+                && Math.abs(anchor.getY() - pos.getY()) <= context.verticalRadius();
     }
 }

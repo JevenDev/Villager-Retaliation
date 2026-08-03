@@ -3225,7 +3225,10 @@ public final class VillagerWorkerGameTests {
         ServerLevel level = helper.getLevel();
         BlockPos oreRel = new BlockPos(3, 2, 2);
         BlockPos ore = helper.absolutePos(oreRel);
+        BlockPos cornerOreRel = new BlockPos(6, 5, 5);
+        BlockPos cornerOre = helper.absolutePos(cornerOreRel);
         setBlock(helper, oreRel, Blocks.COAL_ORE.defaultBlockState());
+        setBlock(helper, cornerOreRel, Blocks.IRON_ORE.defaultBlockState());
         HiredOreBlockTracker.clearRuntimeState();
 
         helper.assertTrue(
@@ -3239,6 +3242,10 @@ public final class VillagerWorkerGameTests {
         helper.assertFalse(
                 HiredOreBlockTracker.recentlyExposedOreBlocks(level, ore.east(6), 1, 4).contains(ore),
                 "recent exposure queries should remain bounded to their requested radius");
+
+        helper.assertTrue(
+                HiredOreBlockTracker.nearbyOreBlocks(level, ore, 3, 3).contains(cornerOre),
+                "ore search should include vertical corners of its rectangular work bounds");
 
         level.setBlock(ore, Blocks.AIR.defaultBlockState(), 3);
         helper.assertFalse(
