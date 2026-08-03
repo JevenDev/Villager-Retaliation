@@ -175,6 +175,10 @@ final class MiningWorkerState {
         return (int) Math.clamp(now - previous, 1L, 200L);
     }
 
+    static void pauseBreakProgress(HiredWorkContext context) {
+        context.state().remove(LAST_BREAK_PROGRESS_GAME_TIME_TAG);
+    }
+
     static boolean hasFreshExcavationLayerCache(ServerLevel level, HiredWorkContext context) {
         return context.state().contains(CURRENT_EXCAVATION_LAYER_PRESENT_TAG)
                 && context.state().getLong(CURRENT_EXCAVATION_LAYER_EXPIRES_GAME_TIME_TAG) > level.getGameTime();

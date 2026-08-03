@@ -243,7 +243,8 @@ public final class MiningWorker extends AbstractBlockWorker {
 
         prepareBreakingTarget(level, context, villager, target);
         if (!canStartMining(level, villager, context, target, mode)) {
-            context.setProgressTicks(0);
+            clearBreakProgress(level, villager, target.blockPos());
+            MiningWorkerState.pauseBreakProgress(context);
             MiningWorkerState.set(context, MiningWorkerState.Phase.PATH_TO_TARGET);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target.blockPos());
             boolean closeEnough = isCloseEnough(villager, target);
