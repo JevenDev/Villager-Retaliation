@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompat;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
@@ -59,7 +60,11 @@ public final class VillagerDownedService {
 
         boolean authorizedFinisher = com.jvn.villagerretaliation.duel.DuelService
                 .isAuthorizedFinisher(villager, event.getSource());
-        if (authorizedFinisher || canBypassDownedProtection(villager, event.getSource())) {
+        boolean partyFriendlyFireFinisher = isDowned(villager)
+                && PartyService.allowsPlayerFriendlyFire(villager, event.getSource().getEntity());
+        if (authorizedFinisher
+                || partyFriendlyFireFinisher
+                || canBypassDownedProtection(villager, event.getSource())) {
             float healthDamage = Math.max(0.0F, event.getNewDamage() - villager.getAbsorptionAmount());
             if (isDowned(villager) && healthDamage >= villager.getHealth()) {
                 if (authorizedFinisher) {

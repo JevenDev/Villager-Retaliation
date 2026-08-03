@@ -77,6 +77,7 @@ public record PartyActionRequestPayload(
         SET_ATTACK_MODE,
         SET_SHARED_VILLAGER_INVENTORIES,
         SET_ADMIN_PRIVILEGES,
-        SET_QUICK_COMMANDS_ENABLED
+        SET_QUICK_COMMANDS_ENABLED,
+        SET_FRIENDLY_FIRE_ALLOWED
     }
 }

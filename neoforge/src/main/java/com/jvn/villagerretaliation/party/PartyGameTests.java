@@ -11,6 +11,8 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRangedCombatHelper;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService;
+import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
@@ -336,6 +338,7 @@ public final class PartyGameTests {
         helper.assertValueEqual(party.combatMode(), PartyCombatMode.ATTACK_WITH_PARTY,
                 "new parties default to attack with party");
         party.setAttackMode(PartyAttackMode.HOSTILES);
+        party.setFriendlyFireAllowed(true);
         party.setSharedVillagerInventories(false);
         party.setMountMode(true);
         helper.assertTrue(data.addPlayer(party, second), "second player should join");
@@ -406,6 +409,7 @@ public final class PartyGameTests {
         helper.assertValueEqual(restored.attackMode(), PartyAttackMode.HOSTILES,
                 "global attack-mode persistence");
         helper.assertFalse(restored.sharedVillagerInventories(), "shared-inventory policy persistence");
+        helper.assertTrue(restored.friendlyFireAllowed(), "friendly-fire policy persistence");
         helper.assertTrue(restored.hasAdminPrivileges(leader), "leader admin privileges should remain implicit");
         helper.assertTrue(restored.hasAdminPrivileges(second), "member admin privileges should persist");
         helper.assertFalse(restored.hasAdminPrivileges(third), "ordinary members should remain non-admin after reload");
@@ -414,6 +418,10 @@ public final class PartyGameTests {
         legacyMountParty.remove("MountMode");
         helper.assertFalse(PartyRecord.load(legacyMountParty).mountMode(),
                 "legacy parties must begin with mounted party travel disabled");
+        CompoundTag legacyFriendlyFireParty = party.save();
+        legacyFriendlyFireParty.remove("FriendlyFireAllowed");
+        helper.assertFalse(PartyRecord.load(legacyFriendlyFireParty).friendlyFireAllowed(),
+                "legacy parties must begin with friendly fire disabled");
         helper.assertValueEqual(restored.villager(villagers.getFirst()).combatMode(),
                 PartyCombatMode.ATTACK_WITH_PARTY,
                 "individual combat-mode persistence");
@@ -2690,6 +2698,51 @@ public final class PartyGameTests {
             helper.assertTrue(
                     VillagerReputationManager.getReputation(level, recruited, player.getUUID()) < reputationBefore,
                     "own recruit direct reputation must decrease after the direct hit");
+        } finally {
+            PartyService.deleteParty(level, party.id());
+            recruited.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyFriendlyFireControlsDownedFinishers(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_friendly_fire_leader"));
+        ServerPlayer outsider = fakePlayer(level, uniqueName("party_friendly_fire_outsider"));
+        Villager recruited = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        try {
+            PartySavedData.get(level).addVillager(
+                    party,
+                    villagerRecord(recruited.getUUID(), leader.getUUID(), 0, now));
+            VillagerDownedService.enterDowned(
+                    level,
+                    recruited,
+                    new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("party")));
+
+            helper.assertFalse(party.friendlyFireAllowed(), "new parties should disable friendly fire");
+            helper.assertTrue(recruited.hurt(level.damageSources().playerAttack(leader), 1000.0F),
+                    "the party leader's protected hit should still register");
+            helper.assertTrue(recruited.isAlive() && VillagerDownedService.isDowned(recruited),
+                    "friendly fire off should preserve a downed party companion");
+
+            helper.assertTrue(PartyService.setPolicies(leader, null, null, null, true).success(),
+                    "the party leader should enable friendly fire");
+            recruited.invulnerableTime = 0;
+            helper.assertTrue(recruited.hurt(level.damageSources().playerAttack(outsider), 1000.0F),
+                    "an outsider's protected hit should still register");
+            helper.assertTrue(recruited.isAlive() && VillagerDownedService.isDowned(recruited),
+                    "friendly fire should not authorize players outside the villager's party");
+
+            recruited.invulnerableTime = 0;
+            helper.assertTrue(recruited.hurt(level.damageSources().playerAttack(leader), 1000.0F),
+                    "the same-party friendly-fire finisher should land");
+            helper.assertTrue(recruited.isDeadOrDying() || recruited.isRemoved(),
+                    "friendly fire should let a party player finish their downed companion");
+            helper.assertFalse(VillagerDownedService.isDowned(recruited),
+                    "a lethal friendly-fire finisher should release the downed state");
         } finally {
             PartyService.deleteParty(level, party.id());
             recruited.discard();

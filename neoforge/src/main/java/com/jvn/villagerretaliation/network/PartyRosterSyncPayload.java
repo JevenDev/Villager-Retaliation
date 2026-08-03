@@ -23,6 +23,7 @@ public record PartyRosterSyncPayload(
         PartyCombatModeState combatMode,
         PartyAttackModeState attackMode,
         boolean sharedVillagerInventories,
+        boolean friendlyFireAllowed,
         boolean mountMode,
         boolean mountFeatureAvailable,
         ResourceLocation quickCommandMoveDimension,
@@ -42,7 +43,7 @@ public record PartyRosterSyncPayload(
     public static PartyRosterSyncPayload empty() {
         return new PartyRosterSyncPayload(false, null, "", false,
                 PartyCombatModeState.ATTACK_WITH_PARTY, PartyAttackModeState.ALL,
-                true, false, false, null, null, false, List.of(), List.of());
+                true, false, false, false, null, null, false, List.of(), List.of());
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, PartyRosterSyncPayload payload) {
@@ -56,6 +57,7 @@ public record PartyRosterSyncPayload(
         buffer.writeEnum(payload.combatMode());
         buffer.writeEnum(payload.attackMode());
         buffer.writeBoolean(payload.sharedVillagerInventories());
+        buffer.writeBoolean(payload.friendlyFireAllowed());
         buffer.writeBoolean(payload.mountMode());
         buffer.writeBoolean(payload.mountFeatureAvailable());
         boolean hasMoveTarget = payload.quickCommandMoveDimension() != null
@@ -105,6 +107,7 @@ public record PartyRosterSyncPayload(
         PartyCombatModeState combatMode = buffer.readEnum(PartyCombatModeState.class);
         PartyAttackModeState attackMode = buffer.readEnum(PartyAttackModeState.class);
         boolean sharedVillagerInventories = buffer.readBoolean();
+        boolean friendlyFireAllowed = buffer.readBoolean();
         boolean mountMode = buffer.readBoolean();
         boolean mountFeatureAvailable = buffer.readBoolean();
         boolean hasMoveTarget = buffer.readBoolean();
@@ -141,7 +144,8 @@ public record PartyRosterSyncPayload(
                     buffer.readBoolean()));
         }
         return new PartyRosterSyncPayload(true, partyId, leaderName, recipientLeader,
-                combatMode, attackMode, sharedVillagerInventories, mountMode, mountFeatureAvailable,
+                combatMode, attackMode, sharedVillagerInventories, friendlyFireAllowed,
+                mountMode, mountFeatureAvailable,
                 quickCommandMoveDimension, quickCommandMoveTarget, standGuardActive,
                 List.copyOf(players), List.copyOf(villagers));
     }

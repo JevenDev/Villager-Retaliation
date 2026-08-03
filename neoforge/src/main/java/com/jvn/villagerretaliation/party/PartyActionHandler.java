@@ -85,9 +85,10 @@ public final class PartyActionHandler {
             case LEAVE_PARTY -> leaveParty(player);
             case REMOVE_PLAYER -> removePlayer(player, payload.targetId());
             case DISBAND_PARTY -> disband(player);
-            case SET_COMBAT_MODE -> setPolicies(player, payload.combatMode(), null, null);
-            case SET_ATTACK_MODE -> setPolicies(player, null, payload.attackMode(), null);
-            case SET_SHARED_VILLAGER_INVENTORIES -> setPolicies(player, null, null, payload.enabled());
+            case SET_COMBAT_MODE -> setPolicies(player, payload.combatMode(), null, null, null);
+            case SET_ATTACK_MODE -> setPolicies(player, null, payload.attackMode(), null, null);
+            case SET_SHARED_VILLAGER_INVENTORIES -> setPolicies(player, null, null, payload.enabled(), null);
+            case SET_FRIENDLY_FIRE_ALLOWED -> setPolicies(player, null, null, null, payload.enabled());
             case SET_ADMIN_PRIVILEGES -> setAdminPrivileges(player, payload.targetId(), payload.enabled());
             case SET_QUICK_COMMANDS_ENABLED -> PartyQuickCommandService.setParticipation(
                     player, payload.targetId(), payload.enabled());
@@ -130,9 +131,10 @@ public final class PartyActionHandler {
             ServerPlayer leader,
             PartyCombatMode combatMode,
             PartyAttackMode attackMode,
-            Boolean sharedVillagerInventories) {
+            Boolean sharedVillagerInventories,
+            Boolean friendlyFireAllowed) {
         PartyService.PartyResult result = PartyService.setPolicies(
-                leader, combatMode, attackMode, sharedVillagerInventories);
+                leader, combatMode, attackMode, sharedVillagerInventories, friendlyFireAllowed);
         if (!result.success()) {
             notice(leader, result.messageKey());
             return;

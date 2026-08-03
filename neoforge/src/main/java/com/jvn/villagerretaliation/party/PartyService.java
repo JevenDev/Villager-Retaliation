@@ -13,6 +13,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.player.Player;
 
 public final class PartyService {
     public static final int MAX_PLAYERS = 4;
@@ -93,6 +94,21 @@ public final class PartyService {
         return playerPartyId != null && playerPartyId.equals(data.partyIdForVillager(villagerId));
     }
 
+    public static boolean allowsPlayerFriendlyFire(Villager villager, Entity attacker) {
+        if (villager == null
+                || !(attacker instanceof Player player)
+                || !(villager.level() instanceof ServerLevel level)
+                || attacker.level().getServer() != level.getServer()) {
+            return false;
+        }
+        PartySavedData data = partyData(level);
+        UUID partyId = data.partyIdForVillager(villager.getUUID());
+        PartyRecord party = data.party(partyId).orElse(null);
+        return party != null
+                && party.friendlyFireAllowed()
+                && party.playerIds().contains(player.getUUID());
+    }
+
     /**
      * Returns whether recruited villagers may rally against a party member's combat target.
      * Village residents and their iron golems stay protected even when a party member starts
@@ -109,6 +125,15 @@ public final class PartyService {
             PartyCombatMode combatMode,
             PartyAttackMode attackMode,
             Boolean sharedVillagerInventories) {
+        return setPolicies(leader, combatMode, attackMode, sharedVillagerInventories, null);
+    }
+
+    public static PartyResult setPolicies(
+            ServerPlayer leader,
+            PartyCombatMode combatMode,
+            PartyAttackMode attackMode,
+            Boolean sharedVillagerInventories,
+            Boolean friendlyFireAllowed) {
         if (leader == null) {
             return PartyResult.failure("villagerretaliation.party.error.not_in_party");
         }
@@ -127,6 +152,9 @@ public final class PartyService {
         }
         if (sharedVillagerInventories != null) {
             party.setSharedVillagerInventories(sharedVillagerInventories);
+        }
+        if (friendlyFireAllowed != null) {
+            party.setFriendlyFireAllowed(friendlyFireAllowed);
         }
         data.changed();
         return PartyResult.success("villagerretaliation.party.settings_updated", party.id(), null);

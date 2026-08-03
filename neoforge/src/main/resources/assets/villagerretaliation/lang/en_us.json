@@ -1807,6 +1807,8 @@
   "villagerretaliation.party.manage.combat_mode.tooltip": "Kill on Sight attacks eligible nearby targets, Attack with Party joins party combat, and Self Defense only retaliates against direct attackers.",
   "villagerretaliation.party.manage.custom": "Custom",
   "villagerretaliation.party.manage.custom.tooltip": "Individual settings differ - On: %1$s. Off: %2$s. Change one villager from their interaction screen, or click here to apply one setting to every recruit.",
+  "villagerretaliation.party.manage.friendly_fire": "Allow Friendly Fire",
+  "villagerretaliation.party.manage.friendly_fire.tooltip": "When On, players can deal a lethal follow-up hit to a downed villager in their own party. The initial lethal hit still downs the villager, and allied-party players still cannot finish them.",
   "villagerretaliation.party.manage.remove": "Remove %s",
   "villagerretaliation.party.manage.setting": "%s: %s",
   "villagerretaliation.party.manage.shared_inventories": "Shared Villager Inventories",
