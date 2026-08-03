@@ -78,6 +78,7 @@ import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.ai.behavior.HarvestFarmland;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.Animal;
@@ -7509,6 +7510,36 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(
                 HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager),
                 "output-backpressured hired work should not run unrelated vanilla behaviors");
+
+        BlockPos workTarget = helper.absolutePos(new BlockPos(5, 2, 3));
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.WORKING, workTarget);
+        hirer.moveTo(workTarget.getX() + 0.5D, workTarget.getY(), workTarget.getZ() + 0.5D);
+        villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(hirer, true));
+        villager.getLookControl().setLookAt(hirer, 30.0F, 30.0F);
+
+        villager.getLookControl().tick();
+
+        helper.assertValueEqual(
+                villager.getLookControl().getWantedX(),
+                workTarget.getX() + 0.5D,
+                "work look-control mixin target x");
+        helper.assertValueEqual(
+                villager.getLookControl().getWantedY(),
+                workTarget.getY() + 0.5D,
+                "work look-control mixin target y");
+        helper.assertValueEqual(
+                villager.getLookControl().getWantedZ(),
+                workTarget.getZ() + 0.5D,
+                "work look-control mixin target z");
+
+        HiredVillagerFocusService.onVillagerTickPre(villager);
+
+        helper.assertTrue(
+                villager.getBrain().getMemory(MemoryModuleType.LOOK_TARGET)
+                        .map(lookTarget -> !(lookTarget instanceof EntityTracker)
+                                && workTarget.equals(lookTarget.currentBlockPosition()))
+                        .orElse(false),
+                "active block work should replace a player look target with the work target");
 
         state.putBoolean("Enabled", false);
         helper.assertFalse(HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager), "disabled work should clear suppression");
