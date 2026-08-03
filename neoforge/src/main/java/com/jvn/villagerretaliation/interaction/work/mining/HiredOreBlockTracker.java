@@ -149,7 +149,6 @@ public final class HiredOreBlockTracker {
             int maxChunkZ = SectionPos.blockToSectionCoord(center.getZ() + radius);
             int minY = Math.max(level.getMinBuildHeight(), center.getY() - verticalRadius);
             int maxY = Math.min(level.getMaxBuildHeight() - 1, center.getY() + verticalRadius);
-            int radiusSqr = radius * radius;
             List<BlockPos> matches = new ArrayList<>();
 
             for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
@@ -165,7 +164,8 @@ public final class HiredOreBlockTracker {
                         BlockPos pos = BlockPos.of(packedPos);
                         if (pos.getY() >= minY
                                 && pos.getY() <= maxY
-                                && center.distSqr(pos) <= radiusSqr) {
+                                && Math.abs(pos.getX() - center.getX()) <= radius
+                                && Math.abs(pos.getZ() - center.getZ()) <= radius) {
                             matches.add(pos);
                         }
                     }
@@ -185,7 +185,6 @@ public final class HiredOreBlockTracker {
             int maxChunkZ = SectionPos.blockToSectionCoord(center.getZ() + radius);
             int minY = Math.max(level.getMinBuildHeight(), center.getY() - verticalRadius);
             int maxY = Math.min(level.getMaxBuildHeight() - 1, center.getY() + verticalRadius);
-            int radiusSqr = radius * radius;
             List<BlockPos> matches = new ArrayList<>();
 
             for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
@@ -205,7 +204,8 @@ public final class HiredOreBlockTracker {
                         BlockPos pos = BlockPos.of(packedPos);
                         if (pos.getY() >= minY
                                 && pos.getY() <= maxY
-                                && center.distSqr(pos) <= radiusSqr) {
+                                && Math.abs(pos.getX() - center.getX()) <= radius
+                                && Math.abs(pos.getZ() - center.getZ()) <= radius) {
                             matches.add(pos);
                         }
                     }
