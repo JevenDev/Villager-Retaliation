@@ -1015,6 +1015,22 @@ public final class PartyInventoryOverlay {
                                     : "villagerretaliation.party.manage.attack_mode.tooltip")))
                     .build());
 
+            boolean[] friendlyFireAllowed = {roster.friendlyFireAllowed()};
+            invoker.villagerretaliation$addRenderableWidget(Button.builder(
+                    friendlyFireLabel(friendlyFireAllowed[0]),
+                    button -> {
+                        friendlyFireAllowed[0] = !friendlyFireAllowed[0];
+                        button.setMessage(friendlyFireLabel(friendlyFireAllowed[0]));
+                        PacketDistributor.sendToServer(new PartyActionRequestPayload(
+                                PartyActionRequestPayload.Action.SET_FRIENDLY_FIRE_ALLOWED,
+                                null, null, friendlyFireAllowed[0]));
+                    })
+                    .bounds(left, top + SETTINGS_BUTTON_SPACING * 2,
+                            SETTINGS_BUTTON_WIDTH, SETTINGS_BUTTON_HEIGHT)
+                    .tooltip(Tooltip.create(Component.translatable(
+                            "villagerretaliation.party.manage.friendly_fire.tooltip")))
+                    .build());
+
 
         }
 
@@ -1049,6 +1065,12 @@ public final class PartyInventoryOverlay {
         return settingLabel(
                 "villagerretaliation.party.manage.attack_mode",
                 "villagerretaliation.party.attack_mode." + state.name().toLowerCase(java.util.Locale.ROOT));
+    }
+
+    private static Component friendlyFireLabel(boolean allowed) {
+        return settingLabel(
+                "villagerretaliation.party.manage.friendly_fire",
+                "villagerretaliation.gui.party.setting." + (allowed ? "on" : "off"));
     }
 
     private static Component settingLabel(String labelKey, String valueKey) {

@@ -218,6 +218,98 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerArmorUsesVanillaAttributesEnchantmentsAndDurability(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Zombie attacker = spawnZombie(helper, new BlockPos(6, 2, 2));
+        attacker.setNoAi(true);
+
+        Villager unarmored = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Villager armored = spawnVillager(helper, new BlockPos(2, 2, 1));
+        Villager plainFireArmor = spawnVillager(helper, new BlockPos(3, 2, 1));
+        Villager enchantedFireArmor = spawnVillager(helper, new BlockPos(4, 2, 1));
+
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                armored,
+                EquipmentSlot.CHEST,
+                new ItemStack(Items.IRON_CHESTPLATE)
+        );
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                plainFireArmor,
+                EquipmentSlot.CHEST,
+                new ItemStack(Items.IRON_CHESTPLATE)
+        );
+        ItemStack fireProtectedChestplate = new ItemStack(Items.IRON_CHESTPLATE);
+        var enchantments = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        fireProtectedChestplate.enchant(enchantments.getOrThrow(Enchantments.FIRE_PROTECTION), 4);
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                enchantedFireArmor,
+                EquipmentSlot.CHEST,
+                fireProtectedChestplate
+        );
+
+        helper.runAfterDelay(2, () -> {
+            helper.assertValueEqual(armored.getArmorValue(), 6,
+                    "equipped armor should contribute its vanilla armor attribute");
+
+            float unarmoredHealth = unarmored.getHealth();
+            float armoredHealth = armored.getHealth();
+            unarmored.hurt(level.damageSources().mobAttack(attacker), 8.0F);
+            armored.hurt(level.damageSources().mobAttack(attacker), 8.0F);
+            float unarmoredDamage = unarmoredHealth - unarmored.getHealth();
+            float armoredDamage = armoredHealth - armored.getHealth();
+            helper.assertTrue(armoredDamage > 0.0F && armoredDamage < unarmoredDamage,
+                    "equipped armor should reduce villager damage through vanilla combat rules");
+            helper.assertTrue(armored.getItemBySlot(EquipmentSlot.CHEST).getDamageValue() > 0,
+                    "villager armor should lose durability through NeoForge's armor hook");
+
+            float plainFireHealth = plainFireArmor.getHealth();
+            float enchantedFireHealth = enchantedFireArmor.getHealth();
+            plainFireArmor.hurt(level.damageSources().lava(), 8.0F);
+            enchantedFireArmor.hurt(level.damageSources().lava(), 8.0F);
+            float plainFireDamage = plainFireHealth - plainFireArmor.getHealth();
+            float enchantedFireDamage = enchantedFireHealth - enchantedFireArmor.getHealth();
+            helper.assertTrue(enchantedFireDamage > 0.0F && enchantedFireDamage < plainFireDamage,
+                    "Fire Protection should reduce lava damage for equipped villager armor");
+
+            attacker.discard();
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void fullyEnchantedUnprotectedVillagerStillDiesFromLava(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        var enchantments = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        for (EquipmentSlot slot : List.of(
+                EquipmentSlot.HEAD,
+                EquipmentSlot.CHEST,
+                EquipmentSlot.LEGS,
+                EquipmentSlot.FEET)) {
+            ItemStack armor = switch (slot) {
+                case HEAD -> new ItemStack(Items.NETHERITE_HELMET);
+                case CHEST -> new ItemStack(Items.NETHERITE_CHESTPLATE);
+                case LEGS -> new ItemStack(Items.NETHERITE_LEGGINGS);
+                case FEET -> new ItemStack(Items.NETHERITE_BOOTS);
+                default -> ItemStack.EMPTY;
+            };
+            armor.enchant(enchantments.getOrThrow(Enchantments.FIRE_PROTECTION), 4);
+            VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, armor);
+        }
+
+        helper.runAfterDelay(2, () -> {
+            helper.assertValueEqual(villager.getArmorValue(), 20,
+                    "full netherite should contribute its complete armor value");
+            villager.hurt(level.damageSources().lava(), 1000.0F);
+            helper.assertTrue(villager.isDeadOrDying() || villager.isRemoved(),
+                    "armor and Fire Protection must not make an unprotected villager immortal");
+            helper.assertFalse(VillagerDownedService.isDowned(villager),
+                    "ordinary equipped villagers should not enter the protected downed state");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void partyEquipmentCannotBeDuplicatedByGroundUpgrades(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         HiredJobInventory partyInventory = HiredJobInventory.getJobInventory(villager);
