@@ -8,6 +8,10 @@ on:
       - "tools/quest-builder/**"
       - "tools/test-quest-builder-*.mjs"
       - "tools/player-wiki/**"
+      - "tools/developer-wiki/**"
+      - "wiki/**"
+      - "docs/**"
+      - "example-packs/**"
       - ".github/workflows/deploy-pages.yml"
   pull_request:
     branches: ["1.21.1"]
@@ -16,6 +20,10 @@ on:
       - "tools/quest-builder/**"
       - "tools/test-quest-builder-*.mjs"
       - "tools/player-wiki/**"
+      - "tools/developer-wiki/**"
+      - "wiki/**"
+      - "docs/**"
+      - "example-packs/**"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
@@ -50,6 +58,9 @@ jobs:
           node --check tools/player-wiki/app.js
           node --check tools/player-wiki/beta13-content.js
 
+      - name: Check developer wiki JavaScript syntax
+        run: node --check tools/developer-wiki/app.js
+
       - name: Check quest builder
         run: |
           node --check tools/quest-builder/app.js
@@ -63,6 +74,7 @@ jobs:
         run: |
           node tools/datapack-builder/build-wiki-snapshot.mjs --check
           node tools/player-wiki/build-data.mjs --check
+          node tools/developer-wiki/build-data.mjs --check
 
       - name: Verify datapack builder entry files
         run: |
@@ -77,6 +89,14 @@ jobs:
           test -f tools/player-wiki/app.js
           test -f tools/player-wiki/beta13-content.js
           test -f tools/player-wiki/site-data.js
+
+      - name: Verify developer wiki entry files
+        run: |
+          test -f tools/developer-wiki/index.html
+          test -f tools/developer-wiki/styles.css
+          test -f tools/developer-wiki/developer.css
+          test -f tools/developer-wiki/app.js
+          test -f tools/developer-wiki/site-data.js
 
       - name: Verify quest builder entry files
         run: |
@@ -108,9 +128,11 @@ jobs:
           rm -rf _site
           mkdir -p _site/datapack-builder
           mkdir -p _site/quest-builder
+          mkdir -p _site/developer-wiki
           cp -R tools/player-wiki/. _site/
           cp -R tools/datapack-builder/. _site/datapack-builder/
           cp -R tools/quest-builder/. _site/quest-builder/
+          cp -R tools/developer-wiki/. _site/developer-wiki/
           touch _site/.nojekyll
 
       - name: Upload static site

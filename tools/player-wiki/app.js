@@ -101,12 +101,15 @@ const els = {
   palette: document.querySelector("#search-palette"),
   paletteSearch: document.querySelector("#palette-search"),
   paletteResults: document.querySelector("#palette-results"),
+  paletteStatus: document.querySelector("#palette-status"),
   menuToggle: document.querySelector("#menu-toggle"),
   sidebar: document.querySelector(".sidebar")
 };
 
 let searchQuery = "";
 let paletteQuery = "";
+let paletteActiveIndex = -1;
+let cachedSearchItems = null;
 let activeRouteKey = "";
 let scrollRestoreFrame = 0;
 
@@ -1490,52 +1493,94 @@ function renderSettings() {
   `;
 }
 
+function pageSearchText(page) {
+  try {
+    const container = document.createElement("div");
+    container.innerHTML = page.render();
+    return container.textContent || "";
+  } catch {
+    return "";
+  }
+}
+
 function searchIndex() {
+  if (cachedSearchItems) return cachedSearchItems;
+
+  const featuredPages = new Set(["home", "reputation", "quests", "jobs", "market", "combat", "settings"]);
   const pageResults = PAGES.map((page) => ({
-    type: "Page",
+    kind: "page",
+    type: page.group || "Page",
     title: page.title,
     description: page.description,
     url: pageUrl(page.id),
-    haystack: `${page.title} ${page.description} ${page.group}`.toLowerCase()
+    icon: page.icon || "file-text",
+    keywords: `${page.id} ${page.group || ""} ${pageSearchText(page)} guide controls gameplay feature`,
+    featured: featuredPages.has(page.id),
+    boost: featuredPages.has(page.id) ? 30 : 0
   }));
   const questResults = DATA.quests.map((quest) => ({
+    kind: "quest",
     type: "Quest",
     title: quest.title,
     description: `${quest.questlineLabel || quest.groupLabel} - ${quest.description}`,
     url: questUrl(quest.slug),
-    haystack: `${quest.title} ${quest.description} ${quest.questlineLabel} ${quest.groupLabel} ${(quest.tags || []).join(" ")} ${quest.objectives.join(" ")} ${quest.requirements.professions.join(" ")} ${quest.requirements.skills.map((skill) => skill.skill).join(" ")}`.toLowerCase()
+    icon: questIcon(quest),
+    keywords: [
+      quest.questlineLabel,
+      quest.groupLabel,
+      ...(quest.tags || []),
+      ...(quest.objectives || []),
+      ...(quest.requirements?.professions || []),
+      ...(quest.requirements?.skills || []).map((skill) => skill.skill),
+      JSON.stringify(quest.rewards || {})
+    ].join(" ")
   }));
   const marketResults = (Array.isArray(DATA.sellPrices) ? DATA.sellPrices : []).map((price) => ({
-    type: "Market",
+    kind: "market",
+    type: "Market price",
     title: price.item,
     description: `${price.itemCount} item${price.itemCount === "1" ? "" : "s"} for ${price.currencyCount} currency`,
     url: pageUrl("market"),
-    haystack: `${price.item} ${price.itemId} sell box market price currency ${price.itemCount} ${price.currencyCount}`.toLowerCase()
+    icon: "store",
+    keywords: `${price.itemId} sell box market price currency ${price.itemCount} ${price.currencyCount}`
   }));
   const advancements = Array.isArray(DATA.advancements) ? DATA.advancements : [];
   const advancementResults = advancements.filter((advancement) => !advancement.hidden).map((advancement) => ({
+    kind: "advancement",
     type: "Advancement",
     title: advancement.title,
-    description: `${advancement.frame}${advancement.hidden ? " hidden" : ""} - ${advancement.description || "Reputation tab advancement."}`,
+    description: `${advancement.frame} - ${advancement.description || "Reputation tab advancement."}`,
     url: advancementUrl(advancement.id),
-    haystack: `${advancement.title} ${advancement.id} ${compactId(advancement.id)} ${advancement.parent || ""} ${advancement.frame} ${advancement.description || ""} reputation advancement challenge hidden`.toLowerCase()
+    icon: "trophy",
+    keywords: `${advancement.id} ${compactId(advancement.id)} ${advancement.parent || ""} reputation advancement challenge`
   }));
-  return [...pageResults, ...questResults, ...marketResults, ...advancementResults];
+
+  cachedSearchItems = [...pageResults, ...questResults, ...marketResults, ...advancementResults];
+  return cachedSearchItems;
+}
+
+function runWikiSearch(query, limit = 12) {
+  return window.VR_WIKI_SEARCH.search(searchIndex(), query, { limit });
+}
+
+function highlightSearchText(value, query) {
+  return window.VR_WIKI_SEARCH.highlight(value, query);
 }
 
 function renderSearch() {
-  const query = searchQuery.trim().toLowerCase();
-  const results = query ? searchIndex().filter((item) => item.haystack.includes(query)).slice(0, 40) : [];
-  renderDocument("Search", query ? `${results.length} results for ${searchQuery}` : "Search the player wiki.", `
+  const query = searchQuery.trim();
+  const outcome = query ? runWikiSearch(query, 40) : { total: 0, results: [] };
+  const resultLabel = outcome.total === 1 ? "1 result" : `${outcome.total} results`;
+  renderDocument("Search", query ? `${resultLabel} for ${query}` : "Search the player wiki.", `
     ${section("Results", `
-      ${results.length ? `<div class="search-results">${results.map((result) => `
+      ${outcome.results.length ? `<div class="search-results">${outcome.results.map((result) => `
         <a class="search-result" href="${result.url}">
-          ${icon(resultIcon(result.type))}
+          ${icon(result.icon || resultIcon(result.type))}
           <span>${escapeHtml(result.type)}</span>
-          <strong>${escapeHtml(result.title)}</strong>
-          <p>${escapeHtml(result.description)}</p>
+          <strong>${highlightSearchText(result.title, query)}</strong>
+          <p>${highlightSearchText(result.description, query)}</p>
         </a>
-      `).join("")}</div>` : `<p>${query ? "No matches found. Try a quest, market item, villager profession, reward, or feature." : "Search for a quest, market item, villager profession, reward, control, or feature."}</p>`}
+      `).join("")}</div>` : `<p>${query ? `No results for "${escapeHtml(query)}". Try fewer words or search for a quest, market item, villager profession, reward, or feature.` : "Search for a quest, market item, villager profession, reward, control, or feature."}</p>`}
     `)}
   `, {
     icon: "search",
@@ -1543,23 +1588,59 @@ function renderSearch() {
   });
 }
 
-function paletteResults(query) {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return searchIndex().slice(0, 8);
-  return searchIndex().filter((item) => item.haystack.includes(normalized)).slice(0, 10);
+function paletteResultElements() {
+  return [...els.paletteResults.querySelectorAll(".palette-result")];
+}
+
+function setPaletteActive(index, options = {}) {
+  const results = paletteResultElements();
+  if (!results.length) {
+    paletteActiveIndex = -1;
+    els.paletteSearch.removeAttribute("aria-activedescendant");
+    return;
+  }
+
+  paletteActiveIndex = Math.max(0, Math.min(index, results.length - 1));
+  results.forEach((result, resultIndex) => {
+    const isCurrent = resultIndex === paletteActiveIndex;
+    result.classList.toggle("is-current", isCurrent);
+    result.setAttribute("aria-selected", String(isCurrent));
+  });
+
+  const activeResult = results[paletteActiveIndex];
+  els.paletteSearch.setAttribute("aria-activedescendant", activeResult.id);
+  if (options.scroll !== false) activeResult.scrollIntoView({ block: "nearest" });
+}
+
+function movePaletteSelection(direction) {
+  const results = paletteResultElements();
+  if (!results.length) return;
+  const current = paletteActiveIndex < 0 ? 0 : paletteActiveIndex;
+  setPaletteActive((current + direction + results.length) % results.length);
 }
 
 function renderPaletteResults() {
-  const results = paletteResults(paletteQuery);
-  els.paletteResults.innerHTML = results.length ? results.map((result, index) => `
-    <a class="palette-result ${index === 0 ? "is-current" : ""}" href="${result.url}" role="option">
-      ${icon(resultIcon(result.type))}
+  const query = paletteQuery.trim();
+  const outcome = runWikiSearch(query, 12);
+  els.paletteStatus.textContent = query
+    ? `${outcome.total} result${outcome.total === 1 ? "" : "s"} for "${query}"`
+    : "Suggested pages and guides";
+
+  els.paletteResults.innerHTML = outcome.results.length ? outcome.results.map((result, index) => `
+    <a id="palette-result-${index}" class="palette-result ${index === 0 ? "is-current" : ""}" href="${result.url}" role="option" aria-selected="${index === 0}">
+      ${icon(result.icon || resultIcon(result.type))}
       <span>${escapeHtml(result.type)}</span>
-      <strong>${escapeHtml(result.title)}</strong>
-      <p>${escapeHtml(result.description)}</p>
+      <strong>${highlightSearchText(result.title, query)}</strong>
+      <p>${highlightSearchText(result.description, query)}</p>
     </a>
-  `).join("") : `<div class="palette-empty">No matches yet.</div>`;
+  `).join("") : `
+    <div class="palette-empty">
+      <strong>No results for "${escapeHtml(query)}".</strong>
+      <span>Try fewer words, check the spelling, or search for a feature, quest, item, or profession.</span>
+    </div>
+  `;
   renderIcons();
+  setPaletteActive(outcome.results.length ? 0 : -1, { scroll: false });
 }
 
 function openPalette(seed = "") {
@@ -1569,6 +1650,7 @@ function openPalette(seed = "") {
   document.body.classList.add("is-search-open");
   els.palette.classList.add("is-open");
   els.palette.setAttribute("aria-hidden", "false");
+  els.search.setAttribute("aria-expanded", "true");
   window.requestAnimationFrame(() => {
     els.paletteSearch.focus();
     els.paletteSearch.select();
@@ -1579,6 +1661,9 @@ function closePalette() {
   document.body.classList.remove("is-search-open");
   els.palette.classList.remove("is-open");
   els.palette.setAttribute("aria-hidden", "true");
+  els.search.setAttribute("aria-expanded", "false");
+  els.paletteSearch.removeAttribute("aria-activedescendant");
+  paletteActiveIndex = -1;
 }
 
 function followPaletteResult(result) {
@@ -1619,10 +1704,28 @@ els.paletteSearch.addEventListener("input", () => {
 });
 
 els.paletteSearch.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
+  if (event.key === "ArrowDown") {
     event.preventDefault();
-    followPaletteResult(els.paletteResults.querySelector(".palette-result"));
+    movePaletteSelection(1);
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    movePaletteSelection(-1);
+  } else if (event.key === "Home") {
+    event.preventDefault();
+    setPaletteActive(0);
+  } else if (event.key === "End") {
+    event.preventDefault();
+    setPaletteActive(paletteResultElements().length - 1);
+  } else if (event.key === "Enter") {
+    event.preventDefault();
+    followPaletteResult(paletteResultElements()[paletteActiveIndex]);
   }
+});
+
+els.paletteResults.addEventListener("mousemove", (event) => {
+  const result = event.target.closest(".palette-result");
+  if (!result) return;
+  setPaletteActive(paletteResultElements().indexOf(result), { scroll: false });
 });
 
 els.paletteResults.addEventListener("click", (event) => {
@@ -1662,6 +1765,11 @@ window.addEventListener("hashchange", () => {
   render();
 });
 window.addEventListener("pagehide", () => saveRouteScroll());
+
+const developerWikiLink = document.querySelector("#developer-wiki-link");
+if (developerWikiLink && location.protocol === "file:") {
+  developerWikiLink.href = "../developer-wiki/index.html";
+}
 
 if (!location.hash) location.hash = "#/home";
 render();

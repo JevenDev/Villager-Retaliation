@@ -4,9 +4,24 @@ This page is the migration note for pack authors, not the player-facing changelo
 
 ## Current Target
 
-The current repo wiki targets `1.0.0-beta.12`.
+The current repo wiki targets `1.0.0-beta.13`. The datapack generator keeps frozen beta.11 and beta.12 documentation snapshots for packs that intentionally remain on those targets.
 
 If you are still maintaining a beta.11 pack, keep using the beta.11 snapshot in `tools/datapack-builder/wiki/1.0.0-beta.11/` until you are ready to retarget manually.
+
+## Beta.12 To Beta.13 Checklist
+
+Beta.13 is primarily additive for pack authors. Existing beta.12 dialogue, notification, gift, pacification, loot, trade, name, story, and builder-structure files do not need a format-only rewrite.
+
+1. Quest runs now receive a persisted, repeat-safe UUID before entry actions and `STARTED` triggers execute.
+2. Persistent scene definitions live under `data/<namespace>/quest_scenes/` and use `schema: "villagerretaliation:scene/v1"`.
+3. Encounter definitions live under `data/<namespace>/quest_encounters/` and can coordinate scaling, phases, objectives, cleanup, retries, navigation guidance, and rewards.
+4. Quest actions can launch or reuse a scene and optionally wait for its durable terminal result before continuing.
+5. Quest providers and scene actors can opt into the downed-state protection contract when the story requires a villager to survive ordinary lethal damage.
+6. New beta.13 examples live in `example-packs/cinematic-gate-ambush/` and `example-packs/repeatable-scene-run-id/`.
+
+Start with [Persistent Quest Scenes](Quest-Scenes.md) for the authoring surface. [Quest Scene Runtime](../docs/quest-scene-runtime.md) defines the underlying ownership, continuation, recovery, and cleanup guarantees for developers who need the high-level runtime contract.
+
+Basic quest module v2 files remain valid without an extracted scene. Add `quest_scenes` and `quest_encounters` only when a sequence needs persistent actors, resumable timing, controlled combat, or recovery across unloads.
 
 ## Beta.11 To Beta.12 Checklist
 

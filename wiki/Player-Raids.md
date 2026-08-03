@@ -39,6 +39,28 @@ data/villagerretaliation/player_raid_loadouts/*.json
 
 Each file supports `replace` and a `loadouts` array. A loadout has a stable `id`, optional `professions` and `excluded_professions` filters, and `difficulty_pools` keyed by `peaceful`, `easy`, `normal`, and `hard`. Each pool can define `weapons`, `armor_chance`, `enchant_chance`, and weighted `armor_sets`.
 
+### Minimal profession weapon pool
+
+This smallest useful profile gives fletchers a crossbow on every difficulty. When a requested difficulty is absent, the loader uses the first pool in the profile.
+
+```json
+{
+  "loadouts": [
+    {
+      "id": "my_pack_fletcher_crossbow",
+      "professions": ["minecraft:fletcher"],
+      "difficulty_pools": {
+        "normal": {
+          "weapons": ["minecraft:crossbow"]
+        }
+      }
+    }
+  ]
+}
+```
+
+### Advanced militia armor
+
 ```json
 {
   "replace": false,

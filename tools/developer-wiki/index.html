@@ -3,61 +3,55 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A Villager Retaliation wiki covering reputation, quests, hiring, jobs, parties, villages, duels, the daily market, gifts, and villager progression.">
-    <title>Villager Retaliation Wiki</title>
+    <meta name="description" content="Datapack, resource-pack, quest, dialogue, economy, and world-integration documentation for Villager Retaliation pack developers.">
+    <title>Villager Retaliation Developer Wiki</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles.css?v=62">
+    <link rel="stylesheet" href="./styles.css?v=4">
+    <link rel="stylesheet" href="./developer.css?v=6">
   </head>
   <body>
     <div class="site-shell">
-      <aside class="sidebar" aria-label="Wiki navigation">
-        <a class="brand" href="#/home" aria-label="Villager Retaliation Wiki home">
+      <aside class="sidebar" aria-label="Developer wiki navigation">
+        <a class="brand" href="#/home" aria-label="Developer Wiki home">
           <img src="./assets/villager_retaliation_logo.png?v=2" alt="Villager Retaliation logo">
-          <span>Villager Retaliation Wiki</span>
+          <span>Developer Wiki</span>
         </a>
-
         <div class="search-box">
-          <span class="search-box-label">Search Wiki</span>
-          <button id="wiki-search" type="button" aria-label="Search Wiki" aria-haspopup="dialog" aria-controls="search-palette" aria-expanded="false">
-            <span id="wiki-search-query">Search Wiki</span>
+          <span class="search-box-label">Search Developer Wiki</span>
+          <button id="wiki-search" type="button" aria-label="Search Developer Wiki" aria-haspopup="dialog" aria-controls="search-palette" aria-expanded="false">
+            <span id="wiki-search-query">Search documentation</span>
           </button>
           <span class="search-shortcut" aria-hidden="true">Alt Q</span>
         </div>
-
         <nav id="wiki-nav" class="nav-list"></nav>
       </aside>
-
       <main class="content-frame">
         <header class="topbar">
           <button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="wiki-nav">Menu</button>
           <div id="page-crumb" class="page-crumb" aria-label="Current page"></div>
           <div class="topbar-links">
-            <a href="https://modrinth.com/mod/Villager-Retaliation" target="_blank" rel="noreferrer"><i data-lucide="box" aria-hidden="true"></i>Modrinth</a>
-            <a href="https://www.curseforge.com/minecraft/mc-mods/villager-retaliation" target="_blank" rel="noreferrer"><i data-lucide="flame" aria-hidden="true"></i>CurseForge</a>
+            <a id="player-wiki-link" href="../index.html"><i data-lucide="book-open" aria-hidden="true"></i>Player Wiki</a>
             <span class="topbar-link-divider" aria-hidden="true"></span>
-            <a id="developer-wiki-link" href="./developer-wiki/index.html"><i data-lucide="code-xml" aria-hidden="true"></i>Developer Wiki</a>
-            <a href="./quest-builder/index.html"><i data-lucide="git-branch" aria-hidden="true"></i>Quest Builder</a>
-            <a href="./datapack-builder/index.html"><i data-lucide="hammer" aria-hidden="true"></i>Datapack Generator</a>
-            <a href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noreferrer"><i data-lucide="git-branch" aria-hidden="true"></i>GitHub</a>
+            <a href="../quest-builder/index.html"><i data-lucide="git-branch" aria-hidden="true"></i>Quest Builder</a>
+            <a href="../datapack-builder/index.html"><i data-lucide="hammer" aria-hidden="true"></i>Datapack Generator</a>
+            <a href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noreferrer"><i data-lucide="github" aria-hidden="true"></i>GitHub</a>
           </div>
         </header>
-
         <div class="document-layout">
           <article id="wiki-content" class="wiki-content" tabindex="-1"></article>
           <aside id="page-toc" class="toc" aria-label="On this page"></aside>
         </div>
       </main>
     </div>
-
     <div id="search-palette" class="search-palette" aria-hidden="true">
       <section class="search-palette-window" role="dialog" aria-modal="true" aria-labelledby="search-palette-title">
-        <h2 id="search-palette-title">Search the wiki</h2>
+        <h2 id="search-palette-title">Search the developer wiki</h2>
         <label class="palette-search-row" for="palette-search">
           <span>Search</span>
           <i data-lucide="search" class="palette-search-icon" aria-hidden="true"></i>
-          <input id="palette-search" type="search" autocomplete="off" spellcheck="false" aria-describedby="palette-status" aria-controls="palette-results" aria-autocomplete="list" placeholder="Try raid cooldown, farmer jobs, or reputation">
+          <input id="palette-search" type="search" autocomplete="off" spellcheck="false" aria-describedby="palette-status" aria-controls="palette-results" aria-autocomplete="list" placeholder="Try quest scenes, gift JSON, or sell prices">
           <kbd>Esc</kbd>
         </label>
         <div id="palette-status" class="palette-status" role="status" aria-live="polite"></div>
@@ -65,11 +59,10 @@
         <div class="palette-help" aria-hidden="true"><span><kbd>&uarr;</kbd><kbd>&darr;</kbd> navigate</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></div>
       </section>
     </div>
-
+    <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="./site-data.js?v=57"></script>
+    <script src="./site-data.js?v=1"></script>
     <script src="./search.js?v=7"></script>
-    <script src="./app.js?v=68"></script>
-    <script src="./beta13-content.js?v=60"></script>
+    <script src="./app.js?v=8"></script>
   </body>
 </html>
