@@ -3181,6 +3181,44 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void miningWorkerKeepsSameOreProgressWhileRepositioning(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerMiningReposition");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredOreBlockTracker.clearRuntimeState();
+
+        BlockPos oreRel = new BlockPos(3, 2, 2);
+        setBlock(helper, oreRel, Blocks.DEEPSLATE_COAL_ORE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(7, 4, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.STONE_PICKAXE));
+        MiningWorker worker = new MiningWorker();
+
+        worker.tick(level, villager, hirer, context);
+        int startedProgress = context.progressTicks();
+        helper.assertTrue(startedProgress > 0, "miner should begin breaking the exposed ore");
+
+        BlockPos repositioned = helper.absolutePos(new BlockPos(7, 2, 4));
+        villager.moveTo(repositioned.getX() + 0.5D, repositioned.getY(), repositioned.getZ() + 0.5D, 0.0F, 0.0F);
+        worker.tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(
+                context.progressTicks(),
+                startedProgress,
+                "temporary same-target repositioning must not restart ore break progress");
+        helper.assertTrue(
+                level.getBlockState(helper.absolutePos(oreRel)).is(Blocks.DEEPSLATE_COAL_ORE),
+                "repositioning must not complete the block early");
+
+        HiredOreBlockTracker.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
     public static void miningOreTrackerIndexesLoadedChunksAndTracksRecentExposure(GameTestHelper helper) {
         buildFloor(helper, 0, 7, 0, 5, 1);
