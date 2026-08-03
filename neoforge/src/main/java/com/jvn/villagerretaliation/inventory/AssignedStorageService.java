@@ -251,7 +251,7 @@ public final class AssignedStorageService {
             return blockEntity instanceof PaymentBoxBlockEntity;
         }
         if (blockEntity instanceof PaymentBoxBlockEntity) {
-            return false;
+            return OUTPUT_PURPOSE.equals(normalizedPurpose);
         }
         return !(blockEntity instanceof SellBoxBlockEntity)
                 || SUPPLY_PURPOSE.equals(normalizedPurpose)

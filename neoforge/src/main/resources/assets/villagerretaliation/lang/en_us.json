@@ -935,7 +935,7 @@
   "villagerretaliation.clipboard.message.no_route_assigned": "No route is assigned.",
   "villagerretaliation.clipboard.message.no_work_area": "No work area assigned.",
   "villagerretaliation.clipboard.message.payment_box_selected": "Payment box selected.",
-  "villagerretaliation.clipboard.message.payment_box_wrong_mode": "Payment boxes can only be assigned in payment mode.",
+  "villagerretaliation.clipboard.message.payment_box_wrong_mode": "Payment boxes can only be assigned in payment or output mode.",
   "villagerretaliation.clipboard.message.payment_containers": "Payment containers: %s.",
   "villagerretaliation.clipboard.message.preview_job_site_mode": "Preview Job Site mode: use the clipboard on a hired villager.",
   "villagerretaliation.clipboard.message.removed_container": "Removed %s assigned container.",

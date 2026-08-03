@@ -1149,6 +1149,22 @@ public final class VillagerGameplayGameTests {
                 HiredStorageClipboardItem.mode(clipboard).opensClipboardAssignmentMenu(),
                 "payment mode should open the same clipboard assignment menu instead of assigning directly");
 
+        HiredStorageClipboardItem.clearSelection(clipboard);
+        HiredStorageClipboardItem.cycleMode(clipboard, -1);
+        HiredStorageClipboardItem.cycleMode(clipboard, 1, true);
+        HiredStorageClipboardItem.cycleMode(clipboard, 1, true);
+        helper.assertValueEqual(
+                HiredStorageClipboardItem.mode(clipboard),
+                HiredStorageClipboardItem.ClipboardMode.ASSIGN_OUTPUT_STORAGE,
+                "clipboard output mode");
+        HiredStorageClipboardItem.handleRightClickBlock(level, hirer, clipboard, paymentBox);
+        helper.assertTrue(
+                HiredStorageClipboardItem.selectedStoragePositions(
+                                clipboard,
+                                AssignedStorageService.OUTPUT_PURPOSE).stream()
+                        .anyMatch(selected -> selected.position().pos().equals(paymentBox)),
+                "payment box should be selectable as output storage");
+
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();
         helper.succeed();
