@@ -42,6 +42,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
@@ -117,6 +118,33 @@ public final class VillageAllegianceGameTests {
         source.getPersistentData().put(VillageAllegianceEntityData.ROOT_TAG, malformed);
         helper.assertValueEqual(VillageAllegianceEntityData.read(source).orElseThrow().state(),
                 AllegianceState.UNKNOWN, "unsupported future data is conservative");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void zombieVillagerAllegianceDoesNotChangeDespawnPersistence(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        VillageAllegianceData unknown = VillageAllegianceData.unknown(
+                AllegianceAssignmentSource.NATURAL_SPAWN, AllegianceConfidence.LEGACY_INFERRED,
+                level.getGameTime(), level.dimension().location(), BlockPos.ZERO);
+
+        ZombieVillager ordinary = EntityType.ZOMBIE_VILLAGER.create(level);
+        if (ordinary == null) {
+            throw new IllegalStateException("Could not create ordinary zombie villager");
+        }
+        helper.assertFalse(ordinary.isPersistenceRequired(), "ordinary zombie starts despawn-eligible");
+        VillageAllegianceEntityData.write(ordinary, unknown);
+        helper.assertFalse(ordinary.isPersistenceRequired(),
+                "allegiance must not make an ordinary zombie villager persistent");
+
+        ZombieVillager protectedZombie = EntityType.ZOMBIE_VILLAGER.create(level);
+        if (protectedZombie == null) {
+            throw new IllegalStateException("Could not create protected zombie villager");
+        }
+        protectedZombie.setPersistenceRequired();
+        VillageAllegianceEntityData.write(protectedZombie, unknown);
+        helper.assertTrue(protectedZombie.isPersistenceRequired(),
+                "allegiance must preserve persistence established by another system");
         helper.succeed();
     }
 
