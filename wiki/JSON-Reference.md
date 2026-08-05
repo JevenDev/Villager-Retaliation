@@ -139,7 +139,7 @@ Use tags with `#` when any item in the tag should count:
 }
 ```
 
-The same pattern is used in gifts, pacification, and some forced-dialogue payment selectors.
+The same pattern is used in sell prices, gifts, pacification, and some forced-dialogue payment selectors.
 
 ## Currency
 

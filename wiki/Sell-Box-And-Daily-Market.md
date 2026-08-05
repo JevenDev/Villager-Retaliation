@@ -10,7 +10,7 @@ Hoppers and other item handlers insert sale items through the top or sides. They
 
 ## Price Definition Path
 
-Add one JSON file for each item price:
+Add one JSON file for each item or item-tag price:
 
 ```text
 data/<namespace>/sell_prices/<path>.json
@@ -39,6 +39,21 @@ Before daily demand and local supply adjustments, 15 coal are worth one primary-
 
 Market adjustments can produce a fractional result. For example, a final value of 1.75 adds that exact amount to the box balance. The player can collect one item now, while 0.75 remains for later.
 
+## Item Tag Example
+
+```json
+{
+  "item": "#minecraft:logs",
+  "item_count": 5,
+  "currency_count": 1,
+  "market_group": "villagerretaliation:logs"
+}
+```
+
+Prefix an item tag with `#` to apply one price definition to every item currently in that tag, including modded members. Tags are resolved again after `/reload`. If `market_group` is omitted, a tag definition defaults to the tag ID without the `#`.
+
+An unknown or empty tag is rejected and reported by datapack diagnostics.
+
 ## Daily Price Range Example
 
 ```json
@@ -61,10 +76,10 @@ The choice is stable for that village and day. Reloading does not reroll it. Vil
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `item` | Yes | Registered item that can be sold. |
+| `item` | Yes | Registered item ID or `#`-prefixed item tag that can be sold. |
 | `item_count` | Yes | Fixed positive count or an inclusive `min` and `max` range. This is the amount sold. |
 | `currency_count` | Yes | Fixed positive count or an inclusive range. This is the base currency value. |
-| `market_group` | No | Demand and supply group shared with related items. Defaults to the sold item ID. |
+| `market_group` | No | Demand and supply group shared with related items. Defaults to the item ID, or to the tag ID for a tag selector. |
 | `enabled` | No | Set to `false` to disable a lower-priority definition at the same resource path. |
 
 `item_count` and its maximum cannot exceed 256. Each count range can contain at most 256 values.
@@ -82,7 +97,7 @@ Other villages keep separate rates and supply pressure. If you replace a built-i
 
 The primary currency item and every item matched by the configured currency tags are never saleable. A sell-price file cannot override that safety rule.
 
-Item matching uses the item ID. Durability and data components do not create separate prices.
+Item matching uses the item ID or current item-tag membership. Durability and data components do not create separate prices.
 
 ## Add, Replace, Or Disable
 
@@ -98,9 +113,9 @@ Disable a lower-priority definition by replacing the same resource path with:
 }
 ```
 
-If two different definition IDs name the same item, the ID that sorts later wins. The server also reports the conflict in datapack diagnostics. Pack priority decides replacement only when both packs use the same resource path.
+If two different definition IDs select the same item, including through overlapping tags, the ID that sorts later wins. The server also reports the conflict in datapack diagnostics. Pack priority decides replacement only when both packs use the same resource path.
 
-Invalid ranges, unknown items, and unknown fields are reported during reload.
+Invalid ranges, unknown items or tags, and unknown fields are reported during reload.
 
 ## Built-In Price Basis
 

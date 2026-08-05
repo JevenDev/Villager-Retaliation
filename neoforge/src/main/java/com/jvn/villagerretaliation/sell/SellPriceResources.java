@@ -8,13 +8,16 @@ import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.ServerResourceCache;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -61,7 +64,7 @@ public final class SellPriceResources {
         Map<Item, SellPriceDefinition> definitions = new LinkedHashMap<>();
         Map<Item, ResourceLocation> sources = new LinkedHashMap<>();
         DatapackResourceLoader.forEachJsonResource(server, RESOURCE_ROOT, (location, resource) ->
-                readFile(location, resource).ifPresent(definition -> {
+                readFile(location, resource).forEach(definition -> {
                     ResourceLocation previous = sources.put(definition.item(), location);
                     if (previous != null) {
                         DatapackDiagnostics.warnDuplicateId(
@@ -75,37 +78,76 @@ public final class SellPriceResources {
         return new Catalog(Map.copyOf(definitions));
     }
 
-    private static Optional<SellPriceDefinition> readFile(ResourceLocation location, Resource resource) {
+    private static List<SellPriceDefinition> readFile(ResourceLocation location, Resource resource) {
         Optional<JsonObject> loaded = DatapackResourceLoader.readObject(location, "sell price", resource);
-        return loaded.flatMap(root -> definitionFromJson(location, root));
+        return loaded.map(root -> definitionsFromJson(location, root)).orElseGet(List::of);
     }
 
     static Optional<SellPriceDefinition> definitionFromJson(ResourceLocation location, JsonObject root) {
+        return definitionsFromJson(location, root).stream().findFirst();
+    }
+
+    static List<SellPriceDefinition> definitionsFromJson(ResourceLocation location, JsonObject root) {
         if (location == null || root == null) {
-            return Optional.empty();
+            return List.of();
         }
         DatapackDiagnostics.warnUnknownRootKeys(location, "sell price", root, ALLOWED_KEYS);
         if (!DatapackJsonReader.readBoolean(root, "enabled", true)) {
-            return Optional.empty();
+            return List.of();
         }
 
-        ResourceLocation itemId = ResourceLocation.tryParse(DatapackJsonReader.readString(root, "item"));
-        Item item = itemId == null ? Items.AIR : BuiltInRegistries.ITEM.getOptional(itemId).orElse(Items.AIR);
-        if (item == Items.AIR) {
-            DatapackDiagnostics.warnSkippedEntry(location, "sell price", "item", "unknown or missing item id.");
-            return Optional.empty();
+        ItemSelection selection;
+        try {
+            selection = readItemSelection(root);
+        } catch (IllegalArgumentException exception) {
+            DatapackDiagnostics.warnSkippedEntry(location, "sell price", "item", exception.getMessage());
+            return List.of();
         }
 
         try {
             SellPriceDefinition.IntRange itemCount = readRange(root.get("item_count"), "item_count");
             SellPriceDefinition.IntRange currencyCount = readRange(root.get("currency_count"), "currency_count");
-            ResourceLocation marketGroup = readMarketGroup(root, itemId);
-            return Optional.of(new SellPriceDefinition(
-                    resourceId(location), item, itemCount, currencyCount, marketGroup));
+            ResourceLocation marketGroup = readMarketGroup(root, selection.defaultMarketGroup());
+            ResourceLocation definitionId = resourceId(location);
+            return selection.items().stream()
+                    .map(item -> new SellPriceDefinition(
+                            definitionId, item, itemCount, currencyCount, marketGroup))
+                    .toList();
         } catch (IllegalArgumentException exception) {
             DatapackDiagnostics.warnSkippedEntry(location, "sell price", "definition", exception.getMessage());
-            return Optional.empty();
+            return List.of();
         }
+    }
+
+    private static ItemSelection readItemSelection(JsonObject root) {
+        String selector = DatapackJsonReader.readString(root, "item").trim();
+        boolean isTag = selector.startsWith("#");
+        String rawId = isTag ? selector.substring(1) : selector;
+        ResourceLocation selectorId = ResourceLocation.tryParse(rawId);
+        if (selectorId == null) {
+            throw new IllegalArgumentException("must be a valid item id or #item tag.");
+        }
+        if (!isTag) {
+            Item item = BuiltInRegistries.ITEM.getOptional(selectorId).orElse(Items.AIR);
+            if (item == Items.AIR) {
+                throw new IllegalArgumentException("references an unknown item id.");
+            }
+            return new ItemSelection(List.of(item), selectorId);
+        }
+
+        TagKey<Item> tag = TagKey.create(Registries.ITEM, selectorId);
+        List<Item> items = BuiltInRegistries.ITEM.getTag(tag)
+                .map(holders -> holders.stream()
+                        .map(holder -> holder.value())
+                        .filter(item -> item != Items.AIR)
+                        .sorted(java.util.Comparator.comparing(
+                                item -> BuiltInRegistries.ITEM.getKey(item).toString()))
+                        .toList())
+                .orElseGet(List::of);
+        if (items.isEmpty()) {
+            throw new IllegalArgumentException("references an unknown or empty item tag.");
+        }
+        return new ItemSelection(items, selectorId);
     }
 
     private static ResourceLocation readMarketGroup(JsonObject root, ResourceLocation defaultGroup) {
@@ -164,6 +206,9 @@ public final class SellPriceResources {
                 ? path.substring(prefix.length(), path.length() - suffix.length())
                 : path;
         return ResourceLocation.fromNamespaceAndPath(location.getNamespace(), idPath);
+    }
+
+    private record ItemSelection(List<Item> items, ResourceLocation defaultMarketGroup) {
     }
 
     private record Catalog(Map<Item, SellPriceDefinition> byItem) {
