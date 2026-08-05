@@ -89,12 +89,29 @@ public final class HiredVillagerFocusService {
     }
 
     public static boolean shouldUseVanillaRest(ServerLevel level, Villager villager) {
-        if (HiredStressGridService.isStressWorker(villager)) {
+        if (HiredStressGridService.isStressWorker(villager) || isOnDutyGuard(level, villager)) {
             return false;
         }
         Brain<Villager> brain = villager.getBrain();
         return isVanillaRestActive(villager)
                 || scheduledActivity(level, brain) == Activity.REST;
+    }
+
+    /** Guards are the one hired role that remains on duty through the vanilla rest schedule. */
+    public static boolean isOnDutyGuard(ServerLevel level, Villager villager) {
+        if (level == null
+                || villager == null
+                || villager.isBaby()
+                || !villager.isAlive()
+                || !HiredVillagerContractService.hasActiveOrPendingContract(villager)
+                || HiredVillagerContractService.isAwaitingAutoPayment(level, villager)
+                || HiredVillagerContractService.activeRoleWithoutMaintenance(level, villager)
+                        != HiredVillagerRole.COMBAT) {
+            return false;
+        }
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
+        return state.getBoolean("Enabled");
     }
 
     public static boolean isVanillaRestActive(Villager villager) {
@@ -105,7 +122,7 @@ public final class HiredVillagerFocusService {
         boolean stressWorker = HiredStressGridService.isStressWorker(villager);
         return villager.isBaby()
                 || !villager.isAlive()
-                || (!stressWorker && villager.isSleeping())
+                || (!stressWorker && villager.isSleeping() && shouldUseVanillaRest(level, villager))
                 || villager.isTrading()
                 || VillagerConversationService.isConversing(villager)
                 || (!stressWorker && villager.getTarget() != null)

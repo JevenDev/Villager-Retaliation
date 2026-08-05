@@ -121,8 +121,8 @@ public final class HiredVillagerWorkService {
             pauseForRecruitmentCommand(level, villager, session);
             return;
         }
-        if (!HiredStressGridService.isStressWorker(villager)
-                && HiredVillagerFocusService.isVanillaRestActive(villager)) {
+        if (HiredVillagerFocusService.isVanillaRestActive(villager)
+                && HiredVillagerFocusService.shouldUseVanillaRest(level, villager)) {
             pauseForVanillaRest(level, villager, session);
             return;
         }
