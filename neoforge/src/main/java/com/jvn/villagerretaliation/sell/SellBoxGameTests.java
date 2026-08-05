@@ -80,6 +80,30 @@ public final class SellBoxGameTests {
                 ResourceLocation.fromNamespaceAndPath("villagerretaliation", "fuel"),
                 "explicit market groups must parse");
 
+        var tagged = SellPriceResources.definitionsFromJson(
+                ResourceLocation.fromNamespaceAndPath("test", "sell_prices/logs.json"),
+                JsonParser.parseString(
+                                "{\"item\":\"#minecraft:logs\",\"item_count\":5,\"currency_count\":1}")
+                        .getAsJsonObject());
+        helper.assertTrue(
+                tagged.stream().anyMatch(definition -> definition.item() == Items.OAK_LOG),
+                "item tags must expand to matching sellable items");
+        helper.assertTrue(
+                tagged.stream().anyMatch(definition -> definition.item() == Items.SPRUCE_LOG),
+                "one tag definition must cover multiple variants");
+        helper.assertTrue(
+                tagged.stream().allMatch(definition -> definition.marketGroup().equals(
+                        ResourceLocation.fromNamespaceAndPath("minecraft", "logs"))),
+                "tag definitions must default their market group to the tag id");
+        helper.assertTrue(
+                SellPriceResources.definitionsFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"#minecraft:not_a_real_tag\",\"item_count\":5,\"currency_count\":1}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "unknown item tags must reject the definition");
+
         helper.assertTrue(
                 SellPriceResources.definitionFromJson(
                                 location,
