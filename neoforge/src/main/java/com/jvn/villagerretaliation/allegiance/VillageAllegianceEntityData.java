@@ -12,6 +12,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.ZombieVillager;
 
 public final class VillageAllegianceEntityData {
     public static final String ROOT_TAG = "VillagerRetaliationVillageAllegiance";
@@ -89,7 +90,11 @@ public final class VillageAllegianceEntityData {
         tag.put(PROTECTED_PARENTS, parents);
         tag.put(HISTORY, writeHistory(history));
         entity.getPersistentData().put(ROOT_TAG, tag);
-        if (entity instanceof Mob mob) {
+        // Villagers, golems, and other village residents are durable entities, but naturally spawned
+        // zombie villagers must retain vanilla despawn behavior. Legitimately persistent zombie
+        // villagers (name-tagged, converted, encounters, explicit NBT, and so on) already have their
+        // persistence set by the system responsible for it; allegiance must neither add nor clear it.
+        if (entity instanceof Mob mob && !(entity instanceof ZombieVillager)) {
             mob.setPersistenceRequired();
         }
     }
