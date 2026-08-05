@@ -2,12 +2,12 @@
 
 Place this folder in a world's `datapacks` directory and run `/reload`. The `duel_examples:champion` kit is then added to the duel loadout option list.
 
-A kit lives at `data/<namespace>/duel_kits/<path>.json`; that path becomes its stable ID. Higher-priority datapacks can replace a kit by using the same ID.
+A kit lives at `data/<namespace>/duel_kits/<path>.json`. That path becomes its stable ID. Higher-priority datapacks can replace a kit by using the same ID.
 
 - `name`: short text shown in the selected-kit summary.
 - `description`: text shown in the kit option list.
 - `sort_order`: lower values appear first. The ID breaks ties.
-- `combat_style`: `melee` or `ranged`; controls the villager skill trained.
+- `combat_style`: `melee` or `ranged`. Controls the villager skill trained.
 - `bring_your_own`: optional. When true, both item sections must be absent.
 - `player` and `villager`: optional temporary item assignments.
 - `inventory`: entries with a zero-based `slot` and native Minecraft

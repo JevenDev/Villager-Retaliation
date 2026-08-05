@@ -48,7 +48,7 @@ The built-in English definition uses numeric counts, but a locale can define any
 {
   "forms": [
     { "id": "one", "count_pattern": "1", "format": "{item}" },
-    { "id": "few", "count_pattern": "(?:2|3|4)", "format": "{count} {item}" },
+    { "id": "few", "count_pattern": "(,:2|3|4)", "format": "{count} {item}" },
     { "id": "other", "format": "{count} {item}" }
   ],
   "currency": {
@@ -66,7 +66,7 @@ The built-in English definition uses numeric counts, but a locale can define any
   "rules": [
     {
       "forms": ["few", "other"],
-      "pattern": "(?i)(.*[^aeiou])y$",
+      "pattern": "(,i)(.*[^aeiou])y$",
       "replacement": "$1ies"
     }
   ]

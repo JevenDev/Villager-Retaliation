@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.inventory;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.ui.ClientScreenArea;
 import com.jvn.villagerretaliation.client.ui.VillagerNineSlice;
 import com.jvn.villagerretaliation.inventory.VillagerAttributeFilterMenu;
 import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
@@ -206,12 +207,14 @@ public final class VillagerAttributeFilterScreen
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
-    public boolean isReferenceSlotAt(int mouseX, int mouseY) {
+    /** Screen-coordinate area that accepts a recipe-viewer ghost ingredient. */
+    public ClientScreenArea referenceSlotArea() {
         var slot = this.menu.slots.get(VillagerAttributeFilterMenu.REFERENCE_SLOT);
-        int slotX = this.leftPos + slot.x;
-        int slotY = this.topPos + slot.y;
-        return mouseX >= slotX && mouseX < slotX + 18
-                && mouseY >= slotY && mouseY < slotY + 18;
+        return new ClientScreenArea(this.leftPos + slot.x, this.topPos + slot.y, 18, 18);
+    }
+
+    public boolean isReferenceSlotAt(int mouseX, int mouseY) {
+        return referenceSlotArea().contains(mouseX, mouseY);
     }
 
     private void renderAttributeSelector(

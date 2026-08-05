@@ -7,7 +7,7 @@ This example adds four custom skill trades under the `trade_examples` namespace.
 - a targetable cartographer order with multiple possible results
 - an enchanted fletcher trade gated by a config flag
 
-Install the folder in a world's `datapacks` directory, ensure the Skill Trade Overhaul and Special Orders are enabled, and run `/reload`. Existing loaded villagers reconcile the new definitions into their current weighted request cycle; you do not need to spawn replacement villagers.
+Install the folder in a world's `datapacks` directory, ensure the Skill Trade Overhaul and Special Orders are enabled, and run `/reload`. Existing loaded villagers reconcile the new definitions into their current weighted request cycle. You do not need to spawn replacement villagers.
 
 The `chance` field affects initial natural trade generation. Requested random refreshes use `weight` to order the persistent without-replacement cycle and consider every otherwise eligible entry. A larger weight makes a definition likely to appear earlier, but it does not allow that definition to repeat before the current eligible pool is exhausted.
 

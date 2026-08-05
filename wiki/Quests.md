@@ -4,7 +4,7 @@ Quest module v2 is the preferred shape for new quest datapacks. A v2 module can 
 
 Legacy v1 quest files are still supported. Keep existing v1 packs working, but use v2 for new simple quests and for migrations where you want dialogue and quest state to live together.
 
-Every active quest has a persisted run UUID. Solo IDs are player-scoped and repeat-safe; party members share the party quest instance ID. The definitive ID is saved before entry actions and `STARTED` triggers, so scene operation IDs remain stable across packets and reloads without colliding between players.
+Each quest run receives a saved unique ID before its first actions run. A solo run belongs to one player. A party run uses one shared ID for the party. Persistent scenes use this saved ID so a reload resumes the same scene instead of starting a duplicate.
 
 ## Paths
 
@@ -200,7 +200,7 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 | `provider` | Who can offer or own the quest |
 | `availability` | Ordered prerequisites, repeat limits, abandonment, cooldowns, locking, and active gates |
 | `target` | Optional world target such as a structure search |
-| `entry_stage` | Authoritative first stage id; a later stage named `started` does not override it |
+| `entry_stage` | Authoritative first stage id. A later stage named `started` does not override it |
 | `stages` | Objectives, stage-local dialogue, responses, scenes, events, and UI |
 | `events` | Quest-level triggers that run while the quest exists |
 | `rewards` | XP, reputation, gossip, loot, memory events, or reward actions |
@@ -237,9 +237,10 @@ Do not combine direct transition fields with a transition action on the same res
 
 ## Prerequisites And Restart Rules
 
-Put every required quest in `availability.prerequisites`. The list is ordered for journal/debug presentation and every entry must be completed; `metadata.parent` remains a singular compatibility and organization field for older content.
+Put every required quest in `availability.prerequisites`. The list is ordered for journal/debug presentation and every entry must be completed. `metadata.parent` remains a singular compatibility and organization field for older content.
 
 ```json
+{
 "availability": {
   "prerequisites": [
     "my_pack:first_steps",
@@ -247,13 +248,14 @@ Put every required quest in `availability.prerequisites`. The list is ordered fo
     "my_pack:find_the_map"
   ]
 }
+}
 ```
 
 Failed quests can restart only when `repeatable` is true. `max_starts`, `max_completions`, provider locking, and completion scope still apply. Failure does not consume the quest by itself. Abandoned quests continue to follow `abandonment`, abandonment cooldown, and `consume_on_abandonment`.
 
 ## Missing Providers And Rebind
 
-Active progress remains in the journal using the saved provider name, profession, location, and UUID when the live villager is gone. The journal's **Abandon quest** action works without the live provider. If abandonment or expiration has an authored lifecycle hook, the runtime persists that event instead of dropping its provider-bound actions. It replays the event once when the original provider is live again, or immediately after an operator supplies a compatible replacement. Turning in through another matching provider is allowed only with `cross_villager_compatible: true`; the runtime never chooses a nearby villager automatically.
+Active progress remains in the journal using the saved provider name, profession, location, and UUID when the live villager is gone. The journal's **Abandon quest** action works without the live provider. If abandonment or expiration has an authored lifecycle hook, the runtime persists that event instead of dropping its provider-bound actions. It replays the event once when the original provider is live again, or immediately after an operator supplies a compatible replacement. Turning in through another matching provider is allowed only with `cross_villager_compatible: true`. The runtime never chooses a nearby villager automatically.
 
 Operators can explicitly repair a missing binding with:
 
@@ -261,7 +263,7 @@ Operators can explicitly repair a missing binding with:
 /villagerretaliation quest debug rebind <quest_id> <provider_name>
 ```
 
-The command refuses a rebind while the current provider is live, verifies the provider type and authored filters, retains the previous snapshot in save history, and reports the accepted or rejected audit result. A terminal quest can be rebound only while it has deferred lifecycle work; the rebind consumes that work after one dispatch without reopening the quest. The debug inspector lists pending lifecycle events alongside provider history.
+The command refuses a rebind while the current provider is live, verifies the provider type and authored filters, retains the previous snapshot in save history, and reports the accepted or rejected audit result. A terminal quest can be rebound only while it has deferred lifecycle work. The rebind consumes that work after one dispatch without reopening the quest. The debug inspector lists pending lifecycle events alongside provider history.
 
 ## Branch Example
 
@@ -308,7 +310,7 @@ This module records a route choice, moves to the chosen stage, and completes fro
           "label": "Choose Supply Route",
           "request": "question",
           "lines": [
-            "The village needs a safer supply route. River or ridge?"
+            "The village needs a safer supply route. River or ridge,"
           ],
           "responses": [
             {
@@ -502,7 +504,7 @@ Root `target` fields define a structure search, discovery radius, and proof item
 
 ## Forced Or External Scene Example
 
-Use external scenes when another file owns a long conversation. Use `forced_dialogue` actions when the quest needs an event-driven locked scene. These actions need live player and provider context; if the quest giver is unloaded, the runtime records diagnostics and waits until it can safely run the live action.
+Use external scenes when another file owns a long conversation. Use `forced_dialogue` actions when the quest needs an event-driven locked scene. These actions need live player and provider context. If the quest giver is unloaded, the runtime records diagnostics and waits until it can safely run the live action.
 
 ```json
 {
@@ -687,7 +689,7 @@ Dialogue slots and scenes also accept `text_key`, `label_key`, and keyed lines w
 
 ## Capabilities And Live Context
 
-Conditions and actions come from the generated quest registries. The datapack builder reads `tools/datapack-builder/quest-registry-metadata.json`; the Node validator and Java schema generator use the same runtime metadata.
+Conditions and actions come from the generated quest registries. The datapack builder reads `tools/datapack-builder/quest-registry-metadata.json`. The Node validator and Java schema generator use the same runtime metadata.
 
 Some registry entries need live entities:
 
@@ -699,7 +701,7 @@ Prefer saved-state conditions for active quest gates that must continue while th
 
 ## Diagnostics And Trace Commands
 
-Useful commands while testing:
+Available diagnostic commands:
 
 ```text
 /villagerretaliation datapack diagnostics

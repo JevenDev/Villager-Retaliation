@@ -23,13 +23,30 @@ Use a datapack for behavior and authored text:
     my_pack/
       builder_structures/
       dialogue/en_us/
+      generated_containers/
+      duel_kits/
       dialogue_trees/en_us/
       forced_dialogue/
+      quest_encounters/
+      quest_scenes/
       quests/
+      sell_prices/
       skill_trades/
       story_structures/
       story_biomes/
+      villager_events/
       loot_table/
+```
+
+Every datapack also needs a `pack.mcmeta` at its root. For Minecraft 1.21.1 datapacks:
+
+```json
+{
+  "pack": {
+    "pack_format": 48,
+    "description": "My Villager Retaliation addon"
+  }
+}
 ```
 
 Use a resource pack for GUI text, textures, and model JSON:
@@ -69,6 +86,11 @@ These systems can live in your own namespace:
 - Builder structures
 - Story structures
 - Story biomes
+- Villager event triggers
+- Duel kits
+- Sell prices
+- Persistent quest scenes and encounter templates
+- Generated-container lists
 - Referenced loot tables
 
 Example:
@@ -97,7 +119,13 @@ Minecraft resolves exact resource paths first. Villager Retaliation then merges 
 | Dialogue trees | Yes | `replace: true` | `remove: true` with `id` |
 | Quests | Yes | `replace: true` | `remove: true` with `id` |
 | Forced dialogue | Yes | `replace: true` | `remove: true` with `id` |
-| Notifications, gifts, pacification, villager names, village names | Loader-specific merge rules | Same-path replacement | Usually replace by file or entry `id` |
+| Notifications and gifts | Yes | `replace: true` | Replace or remove by entry `id` |
+| Pacification | Yes | Same-path file replacement only | No entry removal |
+| Profession loot | Yes | `replace: true` | `remove: true` with rule `id` |
+| Villager and village names | Yes | `replace: true` | No entry removal |
+| Duel kits and sell prices | One definition per resource path | Replace the same resource path | Disable sell prices with `enabled: false` |
+| Story discovery and generated containers | Yes | Same-path file replacement only | Redefine a story target ID |
+| Villager event triggers | Yes | Replace by trigger `id` | No removal flag |
 
 Use your own file names when you want additive content:
 
@@ -141,7 +169,7 @@ data/my_pack/dialogue/en_us/my_pack/messages/00_test.json
 
 If the file loads, you know the path and JSON shape are valid before you build something more complex around it.
 
-## Testing Commands
+## Reload And Diagnostic Commands
 
 ```mcfunction
 /reload
@@ -150,7 +178,7 @@ If the file loads, you know the path and JSON shape are valid before you build s
 /villagerretaliation dialogue explain <villager> <request> [option_id]
 ```
 
-Use `datapack diagnostics` after a reload whenever a file appears to do nothing. Use `dialogue explain` when a line should match but does not.
+`datapack diagnostics` reports loading and validation problems. `dialogue explain` reports why a line matched or was rejected.
 
 ## Common Mistakes
 
@@ -159,6 +187,7 @@ Use `datapack diagnostics` after a reload whenever a file appears to do nothing.
 - Forgetting to add stable `id` values to content you want to translate or override later.
 - Copying a built-in file path when you only meant to add one extra line.
 - Adding heavy filters before verifying the unfiltered version works.
+- Using resource-pack format `34` for a Minecraft 1.21.1 datapack. Datapacks use format `48`.
 
 ## Example Layout
 

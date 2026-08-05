@@ -6,28 +6,28 @@ Player Raids turn a tracked village into a continuous siege with the player and 
 
 Wear a helmet with an attached banner, stand inside a tracked village footprint, and begin using a goat horn. A raid cannot start during a vanilla raid, while that village or any participant is already in another Player Raid, or while a successfully defended village is on cooldown.
 
-The initiating player's current party is snapshotted. Later party changes do not change either side. Recruited villagers whose recorded home is the target village permanently leave the party, confront the initiating player in chained forced dialogue, and defend their home. Every snapshotted defender sets every raider player's reputation to at most `-250`; values already below `-250` lose another `250`.
+The initiating player's current party is snapshotted. Later party changes do not change either side. Recruited villagers whose recorded home is the target village permanently leave the party, confront the initiating player in chained forced dialogue, and defend their home. Every snapshotted defender sets every raider player's reputation to at most `-250`. Values already below `-250` lose another `250`.
 
 ## Siege rules
 
 - The red ten-segment bar fills during the default 10-second preparation period.
-- Once active, it displays combat-capable defenders remaining. Babies and nitwits are snapshotted separately as noncombatants; defectors remain on the appropriate side of that split, and iron golems do not count.
+- Once active, it displays combat-capable defenders remaining. Babies and nitwits are snapshotted separately as noncombatants. Defectors remain on the appropriate side of that split, and iron golems do not count.
 - Adults other than nitwits fill empty equipment slots from the `player_raid_loadouts` datapack catalog. Equipment persists and uses normal low mob-equipment drop chances.
 - Babies and nitwits seek hiding places until the armed defense is defeated. Capable villagers and aligned iron golems engage raiders, including when the villager's reputation tier is Feared.
 - Golems arrive in batches at activation and the 75%, 50%, and 25% defender thresholds. The fixed budget is calculated once, and dead golems are not replaced.
 - When every combat-capable defender is dead or converted, the raid enters its mercy stage. Births and visiting villagers after declaration are not added, and villagers snapshotted as babies remain mercy candidates even if they mature during the raid.
-- A living raider player can empty-hand right-click each unresolved baby or nitwit and choose **Spare**, **Kill**, or **Say nothing**. Spare leaves the villager alive and sets their reputation toward every snapshotted raider player to exactly `-1000`. Kill closes the menu so the player must attack manually, and Say nothing closes it without a response; either unresolved choice can be reconsidered later.
+- A living raider player can empty-hand right-click each unresolved baby or nitwit and choose **Spare**, **Kill**, or **Say nothing**. Spare leaves the villager alive and sets their reputation toward every snapshotted raider player to exactly `-1000`. Kill closes the menu so the player must attack manually, and Say nothing closes it without a response. Either unresolved choice can be reconsidered later.
 - Mercy candidates plead only when a raider comes within normal dialogue range. Each villager waits 30–60 seconds between pleas, and the raid allows at most one plea every five seconds.
 - Raiders win after every mercy candidate has been spared, killed, or converted. The normal abandonment timer continues during mercy.
 - The village wins if no living, non-spectator raider player remains inside its footprint for the configured abandonment time (30 seconds by default).
 - At either outcome, each surviving recruited raider villager delivers one of 15 victory or 15 loss reactions to online raider players.
-- During the active siege, a raider player wearing a banner helmet can use a goat horn to make tracked defenders within 48 blocks glow for 3 seconds; during mercy, the same signal reveals unresolved mercy candidates.
+- During the active siege, a raider player wearing a banner helmet can use a goat horn to make tracked defenders within 48 blocks glow for 3 seconds. During mercy, the same signal reveals unresolved mercy candidates.
 
 Operators can settle the Player Raid involving them or containing their current position with `/villagerretaliation debug raid win` or `/villagerretaliation debug raid lose`.
 
 ## Configuration
 
-The `playerRaids` config section controls activation, preparation and abandonment ticks, defended-village cooldown days, boss-bar range, and the golem formula. `reputation.fearedThreshold` now defaults to `-1000`; the exact legacy default of `-750` migrates automatically, while custom values are preserved.
+The `playerRaids` config section controls activation, preparation and abandonment ticks, defended-village cooldown days, boss-bar range, and the golem formula. `reputation.fearedThreshold` now defaults to `-1000`. The exact legacy default of `-750` migrates automatically, while custom values are preserved.
 
 ## Datapack loadouts
 

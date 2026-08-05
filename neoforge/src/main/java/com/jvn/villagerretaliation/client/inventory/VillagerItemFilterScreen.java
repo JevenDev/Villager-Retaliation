@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.inventory;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.ui.ClientScreenArea;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterMenu;
 import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
@@ -338,15 +339,27 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
                 && policy.stockTarget().orElse(0) < VillagerFilterPolicy.MAX_STOCK_TARGET;
     }
 
+    /** Screen-coordinate areas that accept recipe-viewer ghost ingredients. */
+    public List<ClientScreenArea> ghostSlotAreas() {
+        List<ClientScreenArea> areas = new ArrayList<>(VillagerItemFilterMenu.GHOST_SLOT_COUNT);
+        for (int slot = 0; slot < VillagerItemFilterMenu.GHOST_SLOT_COUNT; slot++) {
+            var ghostSlot = this.menu.slots.get(slot);
+            areas.add(new ClientScreenArea(
+                    this.leftPos + ghostSlot.x,
+                    this.topPos + ghostSlot.y,
+                    18,
+                    18));
+        }
+        return List.copyOf(areas);
+    }
+
     /**
      * Returns the ghost-slot index at the given screen coordinates, or {@code -1} when none is hit.
      */
     public int ghostSlotAt(int mouseX, int mouseY) {
-        for (int slot = 0; slot < VillagerItemFilterMenu.GHOST_SLOT_COUNT; slot++) {
-            var ghostSlot = this.menu.slots.get(slot);
-            int slotX = this.leftPos + ghostSlot.x;
-            int slotY = this.topPos + ghostSlot.y;
-            if (mouseX >= slotX && mouseX < slotX + 18 && mouseY >= slotY && mouseY < slotY + 18) {
+        List<ClientScreenArea> areas = ghostSlotAreas();
+        for (int slot = 0; slot < areas.size(); slot++) {
+            if (areas.get(slot).contains(mouseX, mouseY)) {
                 return slot;
             }
         }

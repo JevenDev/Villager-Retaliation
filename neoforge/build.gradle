@@ -166,6 +166,9 @@ dependencies {
     annotationProcessor "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
     implementation "dev.architectury:architectury-neoforge:${rootProject.architectury_version}"
     compileOnly "dev.emi:emi-neoforge:${rootProject.emi_version}:api"
+    compileOnly "mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}"
+    compileOnly "mezz.jei:jei-${rootProject.minecraft_version}-neoforge-api:${rootProject.jei_version}"
+    compileOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rootProject.rei_version}"
 
     providers.gradleProperty('rideOnIntegrationJar').orNull?.with { jarPath ->
         localRuntime files(jarPath)
@@ -222,6 +225,18 @@ side="BOTH"
 """,
             neoforge_emi_dependency: """[[dependencies."${rootProject.mod_id}"]]
 modId="emi"
+type="optional"
+ordering="AFTER"
+side="CLIENT"
+""",
+            neoforge_jei_dependency: """[[dependencies."${rootProject.mod_id}"]]
+modId="jei"
+type="optional"
+ordering="AFTER"
+side="CLIENT"
+""",
+            neoforge_rei_dependency: """[[dependencies."${rootProject.mod_id}"]]
+modId="roughlyenoughitems"
 type="optional"
 ordering="AFTER"
 side="CLIENT"

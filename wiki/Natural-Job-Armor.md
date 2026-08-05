@@ -82,7 +82,9 @@ Chance objects support `peaceful`, `easy`, `normal`, and `hard`, with values fro
 Modded professions are supported by using their full registry id:
 
 ```json
+{
 "professions": ["examplemod:guard", "examplemod:archer"]
+}
 ```
 
 Modded villager entities can use these rules when they are villager-like entities that expose normal villager data through Minecraft's `VillagerDataHolder` contract.
@@ -118,3 +120,5 @@ Or provide explicit item ids:
 Armor set weights can be a single `weight` or a per-difficulty `weight_by_difficulty` object.
 
 When `mixed_gear_chance` passes, the piece rerolls from the same `armor_sets` list, excluding the base set when another weighted set is available.
+
+These profiles apply when a fresh villager enters the world and later resolves its profession. Existing villagers keep their current equipment.

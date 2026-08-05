@@ -40,8 +40,10 @@ data/<namespace>/skill_trades/<file>.json
 Use `min_rank` plus `max_rank` to keep a trade in the low tier only.
 
 ```json
+{
 "min_rank": "novice",
 "max_rank": "apprentice"
+}
 ```
 
 ### High-Skill Specialty Offer
@@ -69,12 +71,14 @@ Use `min_rank` plus `max_rank` to keep a trade in the low tier only.
 Beta.12 lets high-reputation players request specific skill trades directly.
 
 ```json
+{
 "request": {
   "targetable": true,
   "display_priority": 20,
   "min_reputation": "respected",
   "wait_days": 2,
   "cooldown_days": 3
+}
 }
 ```
 
@@ -112,11 +116,11 @@ Use the wandering trader profession id:
 
 Each villager keeps a persistent cycle for its current profession. Random trade refreshes use weighted sampling without replacement: a larger `weight` makes an entry more likely to appear earlier, but every currently eligible definition is exposed at most once before the cycle resets. The last fulfilled definition is held across the boundary so a multi-entry pool cannot immediately repeat it.
 
-Displayed results, definitions already reserved by another pending slot, entries that no longer match, and offers that cannot currently be constructed are skipped without stalling the cycle. `chance` still applies to initial natural trade generation; requested refresh cycles consider every otherwise eligible definition.
+Displayed results, definitions already reserved by another pending slot, entries that no longer match, and offers that cannot currently be constructed are skipped without stalling the cycle. `chance` still applies to initial natural trade generation. Requested refresh cycles consider every otherwise eligible definition.
 
 On a datapack reload, loaded villagers reconcile lazily the next time their trade state is used. Newly added definitions join the current remainder, removed or invalid definitions leave it, and valid pending requests keep their accepted definition and deterministic offer seed. A malformed or removed pending request is canceled independently so its slot and active-order reservation are cleared.
 
-If a canceled Special Order was prepaid, the villager stores a refund claim for the player who paid. That player receives the items the next time they interact with the same villager; inventory overflow is dropped safely at the player, and a delivered claim cannot be paid twice.
+If a canceled Special Order was prepaid, the villager stores a refund claim for the player who paid. That player receives the items the next time they interact with the same villager. Inventory overflow is dropped safely at the player, and a delivered claim cannot be paid twice.
 
 ## Authoring and Validation
 
@@ -128,7 +132,7 @@ Validate a file offline with:
 node tools/validate-dialogue-data.mjs --skill-trade path/to/trades.json
 ```
 
-The authoritative generated schema is `tools/datapack-builder/skill-trades.schema.json`. Runtime diagnostics identify the resource, entry index or id, field path, reason, and corrective guidance. Invalid siblings are skipped individually; valid entries in the same file continue loading. Duplicate ids resolve deterministically in resource load order, while `remove` deletes the definition currently associated with that id and root-level `replace` clears definitions loaded earlier.
+The authoritative generated schema is `tools/datapack-builder/skill-trades.schema.json`. Runtime diagnostics identify the resource, entry index or id, field path, reason, and corrective guidance. Invalid siblings are skipped individually. Valid entries in the same file continue loading. Duplicate ids resolve deterministically in resource load order, while `remove` deletes the definition currently associated with that id and root-level `replace` clears definitions loaded earlier.
 
 ## Best Practice
 
@@ -139,3 +143,5 @@ Model skill trades in bands:
 - rare high tier for expert or master villagers
 
 That gives progression without flooding early villagers with endgame stock.
+
+Loaded offers are not rebuilt immediately after a datapack reload. Newly generated offers and later refresh cycles use the updated definitions.

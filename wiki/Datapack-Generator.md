@@ -22,6 +22,7 @@ Use the generator when you want to:
 The generator keeps structured authoring targets for `1.0.0-beta.11` and `1.0.0-beta.12`. Its quest editor also understands the current quest module v2 surface used by beta.13.
 
 - Use this live developer wiki as the source of truth for hand-authored `1.0.0-beta.13` packs.
+- For Minecraft 1.21.1, set `pack_format` to `48` before export.
 - Choose `1.0.0-beta.12` in the generator for the folderized dialogue, notification, gift, pacification, story, name, loot, and skill-trade surfaces it currently writes.
 - Keep using the `1.0.0-beta.11` snapshot for older packs that have not been manually migrated.
 - The builder does not convert beta.11 packs to beta.12 for you.
