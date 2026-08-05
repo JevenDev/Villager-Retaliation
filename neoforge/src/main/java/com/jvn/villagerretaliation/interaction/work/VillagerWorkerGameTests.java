@@ -41,6 +41,7 @@ import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
@@ -7655,6 +7656,56 @@ public final class VillagerWorkerGameTests {
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void guardStaysAwakeAndWorkingDuringVanillaRest(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        level.setDayTime(13000L);
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager guard = spawnVillager(helper, new BlockPos(3, 2, 3));
+        guard.setVillagerData(guard.getVillagerData().setProfession(VillagerProfession.WEAPONSMITH));
+
+        HiredVillagerContractService.startHireContract(
+                level, guard, hirer, 1, 8, HiredVillagerRole.COMBAT);
+        HiredVillagerWorkService.initializeWorkArea(level, guard);
+        HiredWorkSession session = HiredWorkSession.active(level, guard);
+        CompoundTag state = session.state();
+        state.putBoolean("Enabled", true);
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, guard.blockPosition());
+
+        guard.getBrain().setActiveActivityIfPossible(Activity.REST);
+        guard.startSleeping(guard.blockPosition());
+
+        helper.assertFalse(
+                HiredVillagerFocusService.shouldUseVanillaRest(level, guard),
+                "an on-duty guard should reject vanilla rest");
+        helper.assertTrue(
+                VillagerBehaviorSuppressionPolicy.suppresses(
+                        guard, VillagerBehaviorSuppressionPolicy.Behavior.SLEEPING),
+                "an on-duty guard should suppress sleeping behavior");
+        helper.assertValueEqual(
+                com.jvn.villagerretaliation.interaction.VillagerAiArbitration.currentPriority(level, guard),
+                com.jvn.villagerretaliation.interaction.VillagerAiArbitration.Priority.HIRED_ROLE_TASK,
+                "guard duty should outrank an existing sleeping pose");
+
+        VillagerBehaviorSuppressionPolicy.enforce(level, guard);
+        helper.assertFalse(guard.isSleeping(), "guard policy should wake a guard already in bed");
+        helper.assertTrue(
+                VillagerBehaviorSuppressionPolicy.shouldSuppressVanillaBrainTick(level, guard),
+                "the vanilla rest schedule should stay suppressed while guard duty is active");
+
+        HiredVillagerWorkService.onVillagerTickPost(guard);
+        helper.assertFalse(
+                state.getString("Status").equals("interaction.work.status.sleeping")
+                        || state.getString("Status").equals("interaction.work.status.tired"),
+                "guard work should continue instead of reporting a vanilla rest pause");
+
+        HiredVillagerContractService.endHireContract(level, guard, hirer);
+        guard.discard();
         helper.succeed();
     }
 

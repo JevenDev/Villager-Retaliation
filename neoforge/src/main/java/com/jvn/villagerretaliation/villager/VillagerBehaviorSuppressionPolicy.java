@@ -45,12 +45,17 @@ public final class VillagerBehaviorSuppressionPolicy {
     }
 
     public static boolean suppresses(Villager villager, Behavior behavior) {
+        if (villager != null
+                && behavior == Behavior.SLEEPING && villager.level() instanceof ServerLevel level
+                && HiredVillagerFocusService.isOnDutyGuard(level, villager)) {
+            return true;
+        }
         return SUPPRESSED.get(state(villager)).contains(behavior);
     }
 
     /**
      * Only a concrete hired-role task suppresses the vanilla Brain. Danger, conversation, trading,
-     * rest, and ordinary schedules remain available to the arbiter.
+     * ordinary schedules, and rest for non-guards remain available to the arbiter.
      */
     public static boolean shouldSuppressVanillaBrainTick(ServerLevel level, Villager villager) {
         ControlState state = state(villager);
@@ -63,9 +68,7 @@ public final class VillagerBehaviorSuppressionPolicy {
         if (villager.isTrading() || VillagerConversationService.isConversing(villager)) {
             return false;
         }
-        Brain<Villager> brain = villager.getBrain();
-        Activity scheduled = brain.getSchedule().getActivityAt((int) (level.getDayTime() % 24000L));
-        if (villager.isSleeping() || brain.isActive(Activity.REST) || scheduled == Activity.REST) {
+        if (HiredVillagerFocusService.shouldUseVanillaRest(level, villager)) {
             return false;
         }
         return HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager);

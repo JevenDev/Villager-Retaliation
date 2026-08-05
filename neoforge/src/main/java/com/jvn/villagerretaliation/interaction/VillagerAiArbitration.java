@@ -28,7 +28,7 @@ public final class VillagerAiArbitration {
         if (villager.isTrading() || VillagerConversationService.isConversing(villager)) {
             return Priority.TRADING_OR_CONVERSATION;
         }
-        if (villager.isSleeping()) {
+        if (villager.isSleeping() && HiredVillagerFocusService.shouldUseVanillaRest(level, villager)) {
             return Priority.SLEEP;
         }
 
