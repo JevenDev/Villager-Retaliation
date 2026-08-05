@@ -74,7 +74,7 @@ Gift files stay language-neutral by using a response key:
 {
   "id": "my_pack.gift_message.favorite_book",
   "key": "my_pack.gift.librarian.favorite_book",
-  "text": "{gift_item}? This belongs near a reading lamp, not forgotten in a chest."
+  "text": "{gift_item}, This belongs near a reading lamp, not forgotten in a chest."
 }
 ```
 

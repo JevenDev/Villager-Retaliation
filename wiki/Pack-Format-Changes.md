@@ -112,12 +112,14 @@ V1 quest files without `schema: "villagerretaliation:quest/v2"` still load. New 
 Entries can now expose direct requests:
 
 ```json
+{
 "request": {
   "targetable": true,
   "display_priority": 20,
   "min_reputation": "respected",
   "wait_days": 2,
   "cooldown_days": 3
+}
 }
 ```
 
@@ -145,7 +147,7 @@ See [Builder Structures](Builder-Structures.md) for remove and replace examples.
 1. Leave the pack on beta.11 while you review it.
 2. Move dialogue into folderized beta.12 paths if the current files are large.
 3. Leave working v1 quests in place unless you are intentionally migrating them.
-4. Convert new or migrated simple quests to quest module v2 first; extract dialogue trees only when needed.
+4. Convert new or migrated simple quests to quest module v2 first. Extract dialogue trees only when needed.
 5. Replace older helper-heavy logic with `conditions` where practical.
 6. Test each system separately.
 7. Only then change the pack target to beta.12.

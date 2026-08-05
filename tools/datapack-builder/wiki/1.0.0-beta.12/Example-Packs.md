@@ -69,7 +69,7 @@ Copy the whole `dialogue-folder-template` when you want:
 ```json
 {
   "pack": {
-    "pack_format": 34,
+    "pack_format": 48,
     "description": "Villager Retaliation example pack"
   }
 }

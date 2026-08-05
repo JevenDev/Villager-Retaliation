@@ -169,7 +169,8 @@ You can still include explicit `professions` filters when needed, but the path i
 
 - Keep one idea per file when possible.
 - Use stable `id` values.
-- Start without filters, then add filters after the line works.
 - Prefer `conditions` once several helper flags are stacking up.
 
 For request-specific patterns, see [Dialogue Requests](Dialogue-Requests.md).
+
+The command `/villagerretaliation dialogue explain <villager> <request> [option_id]` reports which request and filters caused a line to match or be rejected.

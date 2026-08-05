@@ -1,24 +1,30 @@
-# Sell Box and Daily Market
+# Sell Box And Daily Market
 
-The Sell Box is a public one-slot market container. Put a saleable stack in its slot and press
-**Sell** to convert the whole stack at today's price. Putting another valid stack into an occupied
-box sells the old stack first, as one transaction, and leaves the new stack pending.
+The Sell Box is a public one-slot market container. Put a saleable stack in its slot and press **Sell** to convert the whole stack at today's village price.
 
-The box keeps an exact shared balance. **Collect** moves only whole primary-currency items that fit
-in the player's inventory; any fractional remainder stays in the box. Hoppers and other item
-handlers insert through the top or sides and extract whole primary-currency items from the bottom.
-An assigned output courier can deposit saleable items, while a courier can collect currency from
-assigned Supplies storage. Pending sale items are never exposed as courier supplies.
+Putting another valid stack into an occupied box sells the old stack as one transaction. The new stack remains in the box until it is sold.
 
-## Price definitions
+The box keeps an exact shared balance. **Collect** moves only whole primary-currency items that fit in the player's inventory. Any fraction smaller than one item stays in the balance until later sales add enough value.
 
-Add one JSON file per definition at:
+Hoppers and other item handlers insert sale items through the top or sides. They extract whole primary-currency items from the bottom. An assigned output courier can deposit saleable items. A courier can collect currency from assigned Supplies storage. Pending sale items are never exposed as courier supplies.
+
+## Price Definition Path
+
+Add one JSON file for each item price:
 
 ```text
 data/<namespace>/sell_prices/<path>.json
 ```
 
-The resource path is the definition ID. A fixed price uses positive integer counts:
+The namespace and path become the definition ID. For example:
+
+```text
+data/my_pack/sell_prices/coal.json
+```
+
+creates `my_pack:coal`.
+
+## Fixed Price Example
 
 ```json
 {
@@ -29,7 +35,11 @@ The resource path is the definition ID. A fixed price uses positive integer coun
 }
 ```
 
-Either count may instead be an inclusive range:
+Before daily demand and local supply adjustments, 15 coal are worth one primary-currency item. A stack of 30 coal starts from a value of two.
+
+Market adjustments can produce a fractional result. For example, a final value of 1.75 adds that exact amount to the box balance. The player can collect one item now, while 0.75 remains for later.
+
+## Daily Price Range Example
 
 ```json
 {
@@ -43,28 +53,44 @@ Either count may instead be an inclusive range:
 }
 ```
 
-item_count and the maximum of an item_count range may not exceed 256. Each range may contain at
-most 256 values.
+This allows the daily base offer to range from 15 coal per currency item through 24 coal per currency item. Each village chooses a daily value from the valid range.
 
-The unit price is `currency_count / item_count`. Every distinct reduced ratio in the configured
-ranges is a candidate. Each village selects one deterministically from the world seed, its village
-identity, the definition ID, and the global overworld day. A definition with multiple candidates
-does not repeat the same candidate on consecutive days within that village.
+The choice is stable for that village and day. Reloading does not reroll it. Villages can have different prices on the same day, and a multi-value definition does not use the same choice on two consecutive days in one village.
 
-`market_group` is optional and defaults to the sold item's ID. Items in the same group share that
-village's daily demand band and accumulated supply pressure, so overrides of grouped built-in items
-should repeat the built-in group. Daily demand raises or lowers the base rate by group. Completed
-sales then add local supply pressure, progressively reducing later payouts in that village until the
-pressure recovers over subsequent days. Other villages maintain independent rates and pressure.
+## Fields
 
-The active currency item and every item matched by the configured currency tags are always
-unsaleable, even if a price file names them. Item matching ignores durability and components.
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `item` | Yes | Registered item that can be sold. |
+| `item_count` | Yes | Fixed positive count or an inclusive `min` and `max` range. This is the amount sold. |
+| `currency_count` | Yes | Fixed positive count or an inclusive range. This is the base currency value. |
+| `market_group` | No | Demand and supply group shared with related items. Defaults to the sold item ID. |
+| `enabled` | No | Set to `false` to disable a lower-priority definition at the same resource path. |
 
-## Override, add, or disable
+`item_count` and its maximum cannot exceed 256. Each count range can contain at most 256 values.
 
-- Add a new resource path to add an item.
-- Use the same namespace and resource path in a higher-priority pack to replace a definition.
-- Replace the same resource path with the following file to remove the lower-priority definition:
+When both counts use ranges, the mod considers every distinct valid value of `currency_count / item_count`. Equivalent fractions count as one price. The village then chooses one of those prices for the day.
+
+## Market Groups And Supply Pressure
+
+Items in the same `market_group` share two village-specific adjustments:
+
+- Daily demand can raise or lower the group's base rate.
+- Completed sales add supply pressure, which lowers later payouts until the pressure recovers over subsequent days.
+
+Other villages keep separate rates and supply pressure. If you replace a built-in grouped item, keep its built-in `market_group` unless you intentionally want it to use a separate market.
+
+The primary currency item and every item matched by the configured currency tags are never saleable. A sell-price file cannot override that safety rule.
+
+Item matching uses the item ID. Durability and data components do not create separate prices.
+
+## Add, Replace, Or Disable
+
+Add a new resource path to add a price.
+
+Use the same namespace and path in a higher-priority pack to replace a definition.
+
+Disable a lower-priority definition by replacing the same resource path with:
 
 ```json
 {
@@ -72,12 +98,10 @@ unsaleable, even if a price file names them. Item matching ignores durability an
 }
 ```
 
-If two active definitions use different resource paths for the same item, the lexicographically later
-resource ID wins deterministically and the server reports a datapack diagnostic. Pack priority only
-controls replacement at the same resource path. Invalid ranges, unknown items, and unknown fields are
-also reported during reload.
+If two different definition IDs name the same item, the ID that sorts later wins. The server also reports the conflict in datapack diagnostics. Pack priority decides replacement only when both packs use the same resource path.
 
-The built-in pack contains definitions derived from the direct Minecraft 1.21.1 villager and
-wandering-trader offers. Vanilla trade demand changes, reputation discounts, mod-added trades, and
-standalone auxiliary inputs are not part of those base definitions; the village market's own daily
-demand and supply-pressure multipliers are applied afterward.
+Invalid ranges, unknown items, and unknown fields are reported during reload.
+
+## Built-In Price Basis
+
+Built-in definitions are based on direct Minecraft 1.21.1 villager and wandering-trader offers. They do not copy live trade demand, reputation discounts, mod-added offers, or secondary recipe inputs. The village market applies its own daily demand and supply pressure after the base definition.

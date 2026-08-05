@@ -288,13 +288,13 @@ const PACK_VERSIONS = [
   {
     id: "1.0.0-beta.11",
     label: "VR 1.0.0-beta.11",
-    packFormat: 34,
+    packFormat: 48,
     feature: "beta.11"
   },
   {
     id: "1.0.0-beta.12",
     label: "VR 1.0.0-beta.12",
-    packFormat: 34,
+    packFormat: 48,
     feature: "beta.12"
   }
 ];
@@ -9538,7 +9538,7 @@ function updateOverviewFromInput(target) {
       state.meta.packFormat = nextDefault;
     }
   }
-  if (id === "meta-packFormat") state.meta.packFormat = parseInteger(target.value) || 34;
+  if (id === "meta-packFormat") state.meta.packFormat = parseInteger(target.value) || 48;
   if (id === "meta-namespace") {
     state.meta.namespace = namespaceify(target.value);
     state.stories.namespace = state.meta.namespace;

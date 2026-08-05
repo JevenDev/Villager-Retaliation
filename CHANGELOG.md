@@ -45,7 +45,7 @@ Beta.13 is the Hired Help and Village Life update. It adds complete worker logis
 - Added separate Personal, Job, and Party inventory views on top of the beta.12 storage foundation, with nine-slot hotbars, job equipment and filter slots, protected gear, authorization rules, reclaim windows, overflow handling, and safe return of supplied equipment.
 - Added role-aware tool selection, dynamic combat weapon switching, transient-gear tracking, and safeguards against duplicated or leaked equipment.
 - Added item filters with item and tag entries, quantities, allow/deny modes, all/any combination rules, stock targets, and configurable transfer policies.
-- Added Attribute Filters for component and item-property matching and Recipe Filters for selecting crafted, cooked, or processed outputs; EMI drag-and-drop can populate compatible ghost slots.
+- Added Attribute Filters for component and item-property matching and Recipe Filters for selecting crafted, cooked, or processed outputs; EMI, JEI, and REI drag-and-drop can populate compatible ghost slots.
 - Added composable container filters, including attached item-frame rules, persisted filter snapshots, per-container collection and destination policies, and cached matching for large logistics networks.
 - Added output backpressure so workers pause when every valid destination is full or filter-capped, report the blocking reason, and resume when capacity returns.
 - Added Courier routes with ordered nodes, out-and-back branches, branch previews, reach hints, node-tethered container stops, bounded chunk tickets, nearest-node recovery, batching, and return traversal.
@@ -101,7 +101,7 @@ Beta.13 is the Hired Help and Village Life update. It adds complete worker logis
 - Added non-binary villager gender support across profiles, family data, breeding compatibility, preset names, UI labels, networking, persistence, and the operator `set_gender` command.
 - Added a centralized breeding and birth policy for managed villagers so party, hired, downed, and otherwise protected villagers keep consistent eligibility and newborn initialization.
 - Added configurable villager stat nameplates with health, armor, and hunger in Always, Hired Only, Party Only, or Never modes, plus a reputation debug overlay and an optional reputation icon in the vanilla trade screen.
-- Added optional EMI exclusion zones and filter-slot drag-and-drop so recipe panels avoid villager, party, Payment Box, and filter interfaces.
+- Added optional EMI, JEI, and REI exclusion zones and filter-slot drag-and-drop so recipe panels avoid villager, party, Payment Box, and filter interfaces.
 - Added resource-pack support for dual-arm combat villagers, crossed-arm and side-arm layouts, armor and profession overlays, and OptiFine CEM/EMF-style villager models.
 
 ### Changed

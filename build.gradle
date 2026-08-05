@@ -25,6 +25,10 @@ allprojects {
             url = 'https://maven.architectury.dev/'
         }
         maven {
+            name = 'BlameJared'
+            url = 'https://maven.blamejared.com/'
+        }
+        maven {
             name = 'ParchmentMC'
             url = 'https://maven.parchmentmc.org/'
         }

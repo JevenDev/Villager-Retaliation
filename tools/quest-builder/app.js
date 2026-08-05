@@ -950,7 +950,7 @@
     const files = {
       "pack.mcmeta": JSON.stringify({
         pack: {
-          pack_format: 34,
+          pack_format: 48,
           description: project.name || "Villager Retaliation quest pack"
         },
         villagerretaliation: {

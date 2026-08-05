@@ -83,7 +83,7 @@ Forced-dialogue options can take items directly from the player.
 }
 ```
 
-`take_items` removes matching items from the player's inventory. Its default `destination` is `discard`, which is best for fees, bribes, and abstract payments. `take_stolen_items` or `return_stolen_items` returns the exact stolen stacks; its default `destination` is `villager_inventory_then_source_container`.
+`take_items` removes matching items from the player's inventory. Its default `destination` is `discard`, which is best for fees, bribes, and abstract payments. `take_stolen_items` or `return_stolen_items` returns the exact stolen stacks. Its default `destination` is `villager_inventory_then_source_container`.
 
 Destination values:
 
@@ -139,7 +139,7 @@ Supported key fields:
 | payment or stolen-item success | `success_response_key`, `success_response_keys` |
 | payment or stolen-item failure | `failure_response_key`, `failure_response_keys` |
 
-When a key is present, the keyed message is used first and the inline text is only a fallback. Explicit key fields win over `message_prefix`; use explicit keys when several filtered options should share one label but use separate response prefixes.
+When a key is present, the keyed message is used first and the inline text is only a fallback. Explicit key fields win over `message_prefix`. Use explicit keys when several filtered options should share one label but use separate response prefixes.
 
 ## Example: Chat Bark
 
@@ -198,7 +198,7 @@ Use `trigger: "player_item_proximity"` for lines that fire when a nearby player 
 
 `requires_held_trade_item: true` makes the entry match only adult, non-nitwit villagers the player can currently trade with, and only when the player's main hand or off hand matches one of that villager's active trade cost items. It uses vanilla's `ShowTradesToPlayer` item check, extended to also consider the off hand, so counts and components do not need to match. Out-of-stock offers are ignored. You can also use `requires_trade_item` or `requires_matching_trade_item` as aliases.
 
-Trade-cost entries can use `{held_item}`, `{trade_cost}`, `{trade_cost_count}`, `{trade_result}`, `{trade_result_stack}`, and `{trade_offer_index}`. Trade-level filters use villager levels 1 through 5; `min_villager_trade_level` and `max_villager_trade_level` are accepted aliases for `min_trade_level` and `max_trade_level`.
+Trade-cost entries can use `{held_item}`, `{trade_cost}`, `{trade_cost_count}`, `{trade_result}`, `{trade_result_stack}`, and `{trade_offer_index}`. Trade-level filters use villager levels 1 through 5. `min_villager_trade_level` and `max_villager_trade_level` are accepted aliases for `min_trade_level` and `max_trade_level`.
 
 ## Replacing Or Removing Built-Ins
 

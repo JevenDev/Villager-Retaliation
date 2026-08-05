@@ -35,7 +35,7 @@ VillagerRetaliationExample/
 ```json
 {
   "pack": {
-    "pack_format": 34,
+    "pack_format": 48,
     "description": "Villager Retaliation example datapack"
   }
 }

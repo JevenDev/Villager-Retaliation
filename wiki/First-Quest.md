@@ -204,27 +204,15 @@ What this file does:
 | `rewards` | What the player receives on turn-in |
 | `ui` | Tracker text, icon, and color |
 
-## Test The File
+## Validation And Diagnostics
 
-From the repo root:
+The repository validator accepts a quest file directly:
 
 ```text
 node tools/validate-dialogue-data.mjs --quest path/to/data/my_pack/quests/village_supply/bread_delivery.json
 ```
 
-In game:
-
-1. Put the datapack in the world's `datapacks` folder.
-2. Run `/reload`.
-3. Talk to a farmer.
-4. Choose `Bread Delivery`.
-5. Accept the quest.
-6. Press `J` to open the Quest Journal.
-7. Gather 16 bread.
-8. Return to the quest giver and choose `About Bread Delivery`.
-9. Turn it in.
-
-If the button does not appear, run:
+Runtime diagnostics are available through:
 
 ```text
 /villagerretaliation datapack diagnostics
@@ -233,7 +221,7 @@ If the button does not appear, run:
 /villagerretaliation quest debug inspect my_pack:bread_delivery
 ```
 
-The debug inspector shows saved state, availability, active conditions, issuer data, objective counters, cooldowns, current stage, and branch locks.
+The debug inspector reports saved state, availability, active conditions, issuer data, objective counters, cooldowns, current stage, and branch locks.
 
 ## Common Mistakes
 
@@ -244,8 +232,8 @@ The debug inspector shows saved state, availability, active conditions, issuer d
 | Any villager offers the quest | `provider.filters.professions` is missing or too broad |
 | Quest appears for the wrong story branch | Missing `metadata.parent`, `availability.conditions`, or branch-lock rules |
 | Tracker text is vague | Add `ui.tracker_text` or objective `tracker.text` |
-| Player cannot find the quest giver | Keep `locked_to_villager: true` for personal favors; use `cross_villager_compatible: true` only when another villager should continue the same quest |
-| Advanced item objective highlights the wrong stack | The client highlights by item id; explain enchantment, durability, or custom-data requirements in tracker text |
+| Player cannot find the quest giver | Keep `locked_to_villager: true` for personal favors. Use `cross_villager_compatible: true` only when another villager should continue the same quest |
+| Advanced item objective highlights the wrong stack | The client highlights by item id. Explain enchantment, durability, or custom-data requirements in tracker text |
 
 ## When To Add More Files
 

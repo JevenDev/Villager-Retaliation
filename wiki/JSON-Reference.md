@@ -78,8 +78,10 @@ Builder structures also support removal by structure id:
 
 Many fields accept one value or several values.
 
-```jsonc
-"professions": ["minecraft:farmer", "minecraft:fletcher"]
+```json
+{
+  "professions": ["minecraft:farmer", "minecraft:fletcher"]
+}
 ```
 
 When in doubt, prefer arrays. They are clearer and easier to extend later.
@@ -123,14 +125,18 @@ Example:
 
 Use item ids for exact matches:
 
-```jsonc
-"items": ["minecraft:emerald"]
+```json
+{
+  "items": ["minecraft:emerald"]
+}
 ```
 
 Use tags with `#` when any item in the tag should count:
 
-```jsonc
-"items": ["#minecraft:flowers"]
+```json
+{
+  "items": ["#minecraft:flowers"]
+}
 ```
 
 The same pattern is used in gifts, pacification, and some forced-dialogue payment selectors.
@@ -417,7 +423,7 @@ Common action types:
 | `set_tag` | `tag` or `set_tag`, optional `scope`, optional `quest` |
 | `clear_tag` | `tag` or `clear_tag`, optional `scope`, optional `quest` |
 | `set_variable` | `key` or `variable`, `value`, optional `scope`, optional `quest` |
-| `set_stage` | `stage`, optional `quest`; stores quest-scoped branch state |
+| `set_stage` | `stage`, optional `quest`. Stores quest-scoped branch state |
 | `counter` | `key` or `counter`, optional `amount`, `by`, or `delta`, optional `scope`, optional `quest` |
 
 Quest facts default to `quest` scope when the action has a quest id or is inside a quest-owned trigger. Otherwise they default to `player` scope.

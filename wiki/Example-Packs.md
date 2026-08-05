@@ -1,9 +1,16 @@
 # Example Packs
 
-## Sell prices
+These folders are working test packs, not just JSON fragments. Copy the smallest example that covers your system, change its namespace and IDs, then run `/reload`.
+
+## Sell Prices
 
 `example-packs/sell-prices-example/` shows all three market operations: adding a new item under your own namespace, overriding the built-in coal definition at the same resource ID, and disabling the built-in rotten-flesh definition.
-## Persistent cinematic gate ambush
+
+## Custom Duel Kits
+
+`example-packs/custom-duel-kits/` adds an enchanted `duel_examples:champion` kit with temporary equipment for the player and villager. See [Duel Kits](Duel-Kits.md) for every field.
+
+## Persistent Cinematic Gate Ambush
 
 `example-packs/cinematic-gate-ambush/` is the complete beta.13 scene-orchestration example: two named villagers, player/party ownership, a recorded choice branch, movement, dialogue, a persisted wait, controlled encounter scaling and cleanup, quest completion/failure, and provider-unload recovery.
 
@@ -80,7 +87,7 @@ Copy the whole `dialogue-folder-template` when you want:
 ```json
 {
   "pack": {
-    "pack_format": 34,
+    "pack_format": 48,
     "description": "Villager Retaliation example pack"
   }
 }

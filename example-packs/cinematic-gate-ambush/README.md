@@ -6,4 +6,4 @@ Choose the bold or cautious response, then unload the provider's chunk during th
 
 The authored gate coordinates are intentionally obvious placeholders (`0 64 12`) because dynamic marker discovery remains a future authoring primitive. Change them for the test world. Stable actor aliases, step IDs, and `operation_id` values should not be renamed once a world has active instances.
 
-`wait_for_result` now suspends the response sequence without blocking the server thread. The continuation survives reload, records success/failure/cancellation separately, and resumes once. The final `target: "complete"` transition is compiled as a typed terminal quest transition; its quest callback excludes this originating scene while applying cancellation policy to siblings.
+`wait_for_result` now suspends the response sequence without blocking the server thread. The continuation survives reload, records success/failure/cancellation separately, and resumes once. The final `target: "complete"` transition is compiled as a typed terminal quest transition. Its quest callback excludes this originating scene while applying cancellation policy to siblings.

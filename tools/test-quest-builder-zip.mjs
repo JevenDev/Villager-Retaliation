@@ -9,7 +9,7 @@ const decoder = new TextDecoder();
 async function testRoundTrip() {
   const quest = model.createBranchingQuest("zip_test");
   const path = model.questFilePath(quest);
-  const packMeta = JSON.stringify({ pack: { pack_format: 34, description: "Zip test" } });
+  const packMeta = JSON.stringify({ pack: { pack_format: 48, description: "Zip test" } });
   const bytes = zip.createZip({
     "pack.mcmeta": packMeta,
     [path]: JSON.stringify(quest)

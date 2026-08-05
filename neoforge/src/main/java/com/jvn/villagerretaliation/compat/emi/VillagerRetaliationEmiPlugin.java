@@ -5,7 +5,7 @@ import com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen;
 import com.jvn.villagerretaliation.client.inventory.VillagerItemFilterScreen;
 import com.jvn.villagerretaliation.client.party.PartyInventoryOverlay;
 import com.jvn.villagerretaliation.client.ui.ClientScreenArea;
-import com.jvn.villagerretaliation.network.ItemFilterGhostSlotPayload;
+import com.jvn.villagerretaliation.compat.RecipeViewerFilterGhostSupport;
 import dev.emi.emi.api.EmiDragDropHandler;
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
@@ -13,7 +13,6 @@ import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.widget.Bounds;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 @EmiEntrypoint
 public final class VillagerRetaliationEmiPlugin implements EmiPlugin {
@@ -39,9 +38,7 @@ public final class VillagerRetaliationEmiPlugin implements EmiPlugin {
                 if (stack.isEmpty()) {
                     return false;
                 }
-                screen.getMenu().setGhostEntry(slot, stack);
-                PacketDistributor.sendToServer(new ItemFilterGhostSlotPayload(slot, stack));
-                return true;
+                return RecipeViewerFilterGhostSupport.setItemFilterSlot(screen, slot, stack);
             }
         });
         registry.addDragDropHandler(VillagerAttributeFilterScreen.class, new EmiDragDropHandler<>() {
@@ -55,9 +52,7 @@ public final class VillagerRetaliationEmiPlugin implements EmiPlugin {
                 if (stack.isEmpty()) {
                     return false;
                 }
-                screen.getMenu().setReference(stack);
-                PacketDistributor.sendToServer(new ItemFilterGhostSlotPayload(0, stack));
-                return true;
+                return RecipeViewerFilterGhostSupport.setAttributeFilterReference(screen, stack);
             }
         });
     }

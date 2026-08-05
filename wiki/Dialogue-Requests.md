@@ -28,7 +28,7 @@
 | `greeting` | hello-style replies | `"Good to see you."` |
 | `question` | custom questions and general talk | `"Work goes better when nobody panics."` |
 | `gift_preferences` | hints about liked and disliked gifts | `"Useful gifts last longer than flashy ones."` |
-| `gift_advice_followup` | talking after advice was tested | `"So, did the gift land well?"` |
+| `gift_advice_followup` | talking after advice was tested | `"So, did the gift land well,"` |
 | `map_report` | reporting a cartographer map discovery | `"So the map was honest after all."` |
 | `story_hint_report` | reporting a rumor or discovery lead | `"Then the rumor had a real road under it."` |
 | `combat_survival_report` | talking after a villager survives danger | `"Still standing. That counts."` |

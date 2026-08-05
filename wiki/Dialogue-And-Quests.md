@@ -148,7 +148,7 @@ Trigger it from a quest event:
 }
 ```
 
-`forced_dialogue` is a live-context action. It needs the player and provider loaded; if the issuer is unloaded, the runtime records diagnostics instead of pretending the action succeeded.
+`forced_dialogue` is a live-context action. It needs the player and provider loaded. If the issuer is unloaded, the runtime records diagnostics instead of pretending the action succeeded.
 
 ## Do Not Duplicate Gates
 
