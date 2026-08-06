@@ -86,7 +86,10 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardModeClient::onMouseScroll);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardModeClient::onMouseButtonPressed);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ItemFilterModeClient::onMouseButtonPressed);
-        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyInventoryOverlay::onMousePressed);
+        NeoForge.EVENT_BUS.addListener(
+                net.neoforged.bus.api.EventPriority.HIGHEST,
+                com.jvn.villagerretaliation.client.party.PartyInventoryOverlay::onMousePressed);
+        com.jvn.villagerretaliation.client.party.AccessoriesPartyTabsCompat.register();
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyRosterClient::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onClientTickPre);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onClientTickPost);

@@ -50,6 +50,7 @@
     "client.EffectRenderingInventoryScreenMixin",
     "client.BannerHelmetCustomHeadLayerMixin",
     "client.CreateWorldScreenAccessor",
+    "client.EmeraldPouchClientMixin",
     "client.InventoryScreenMixin",
     "client.LocalPlayerDuelDropMixin",
     "client.MinecraftBetaWarningMixin",

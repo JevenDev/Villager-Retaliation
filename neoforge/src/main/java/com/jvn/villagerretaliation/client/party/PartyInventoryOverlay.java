@@ -67,6 +67,8 @@ public final class PartyInventoryOverlay {
     private static final int TAB_ICON_SIZE = 18;
     private static final int SMALL_TAB_ICON_TOP = 3;
     private static final int LARGE_TAB_ICON_TOP = 4;
+    private static final float EXTERNAL_ACTIVE_TAB_Z = 500.0F;
+    private static final float EXTERNAL_TOOLTIP_Z = EXTERNAL_ACTIVE_TAB_Z + 1.0F;
     private static final int VILLAGER_ICON_SIZE = 8;
     private static final int VILLAGER_ICON_START_X = 124;
     private static final int VILLAGER_ICON_Y = 35;
@@ -101,21 +103,29 @@ public final class PartyInventoryOverlay {
     private static final int PUSH_BUTTON_COUNT = 7;
     private static final Map<InventoryScreen, Page> PAGES = new WeakHashMap<>();
     private static Page preferredInventoryPage = Page.INVENTORY;
+    private static Page nextInventoryPage;
 
     private PartyInventoryOverlay() {
     }
 
     public static Page page(InventoryScreen screen) {
-        return PAGES.computeIfAbsent(screen, ignored -> preferredInventoryPage);
+        return PAGES.computeIfAbsent(screen, ignored -> {
+            if (nextInventoryPage == null) return preferredInventoryPage;
+            Page initialPage = nextInventoryPage;
+            nextInventoryPage = null;
+            return initialPage;
+        });
     }
 
     public static void resetPreferredInventoryPage() {
         preferredInventoryPage = Page.INVENTORY;
+        nextInventoryPage = null;
     }
 
     /** Returns an open inventory to vanilla immediately after its party roster is cleared. */
     public static void resetOpenInventoryPage() {
         preferredInventoryPage = Page.INVENTORY;
+        nextInventoryPage = null;
         if (!(Minecraft.getInstance().screen instanceof InventoryScreen screen)) return;
         PAGES.remove(screen);
         screen.init(Minecraft.getInstance(), screen.width, screen.height);
@@ -168,6 +178,59 @@ public final class PartyInventoryOverlay {
 
     public static void renderActiveTab(GuiGraphics graphics, InventoryScreen screen) {
         if (tabsAvailable(screen)) renderTab(graphics, screen, page(screen));
+    }
+
+    public static boolean externalTabsAvailable() {
+        return !DuelInventoryClientState.assignedLoadout() && PartyRosterClient.roster().active();
+    }
+
+    /**
+     * Draws the inventory tab group against the top-right edge of an inventory-like external panel.
+     * The inventory tab is active because the external view is another form of player inventory.
+     */
+    public static void renderExternalTabs(
+            GuiGraphics graphics,
+            int panelRight,
+            int panelTop,
+            int mouseX,
+            int mouseY) {
+        if (!externalTabsAvailable()) return;
+        for (Page tab : Page.values()) {
+            if (tab != Page.INVENTORY) {
+                renderTab(graphics, bounds(panelRight, panelTop, tab), tab, Page.INVENTORY);
+            }
+        }
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, EXTERNAL_ACTIVE_TAB_Z);
+        renderTab(
+                graphics,
+                bounds(panelRight, panelTop, Page.INVENTORY),
+                Page.INVENTORY,
+                Page.INVENTORY);
+        graphics.pose().popPose();
+
+        Page hovered = externalTabAt(panelRight, panelTop, mouseX, mouseY);
+        if (hovered != null) {
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, 0.0F, EXTERNAL_TOOLTIP_Z);
+            graphics.renderTooltip(
+                    Minecraft.getInstance().font,
+                    Component.translatable(hovered.tooltipKey()),
+                    mouseX,
+                    mouseY);
+            graphics.pose().popPose();
+        }
+    }
+
+    public static Page externalTabAt(
+            int panelRight, int panelTop, double mouseX, double mouseY) {
+        if (!externalTabsAvailable()) return null;
+        Page[] tabs = Page.values();
+        for (int index = tabs.length - 1; index >= 0; index--) {
+            Page tab = tabs[index];
+            if (bounds(panelRight, panelTop, tab).contains(mouseX, mouseY)) return tab;
+        }
+        return null;
     }
 
     public static void renderTooltips(
@@ -929,6 +992,16 @@ public final class PartyInventoryOverlay {
                 SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }
 
+    public static void openFromExternalInventory(Page page, Runnable openBaseInventory) {
+        if (page == null || openBaseInventory == null || !externalTabsAvailable()) return;
+        if (page != Page.SETTINGS) {
+            preferredInventoryPage = page;
+        }
+        nextInventoryPage = page;
+        playButtonSound();
+        openBaseInventory.run();
+    }
+
     private static void open(InventoryScreen screen, Page page) {
         Minecraft minecraft = Minecraft.getInstance();
         if (page != Page.SETTINGS) preferredInventoryPage = page;
@@ -1101,6 +1174,11 @@ public final class PartyInventoryOverlay {
 
     private static void renderTab(GuiGraphics graphics, InventoryScreen screen, Page tab) {
         Bounds bounds = bounds(screen, tab);
+        renderTab(graphics, bounds, tab, page(screen));
+    }
+
+    private static void renderTab(
+            GuiGraphics graphics, Bounds bounds, Page tab, Page activePage) {
         graphics.blit(
                 tab == Page.PARTY
                         ? VillagerRetaliationClientAssets.PLAYER_PARTY_INVENTORY_LARGE_TAB_TEXTURE
@@ -1108,7 +1186,7 @@ public final class PartyInventoryOverlay {
                 bounds.left(), bounds.top(), 0, 0,
                 bounds.width(), bounds.height(), bounds.width(), bounds.height());
 
-        int activeOffset = tab == page(screen) ? (tab == Page.PARTY ? 2 : 1) : 0;
+        int activeOffset = tab == activePage ? (tab == Page.PARTY ? 2 : 1) : 0;
         int iconLeft = bounds.left() + (bounds.width() - TAB_ICON_SIZE) / 2;
         int iconTop = bounds.top()
                 + (tab == Page.PARTY ? LARGE_TAB_ICON_TOP : SMALL_TAB_ICON_TOP)
@@ -1124,15 +1202,19 @@ public final class PartyInventoryOverlay {
     }
 
     private static Bounds bounds(InventoryScreen screen, Page tab) {
-        int partyLeft = screen.getGuiLeft() + CONTAINER_WIDTH - LARGE_TAB_WIDTH;
-        int smallTop = screen.getGuiTop() - SMALL_TAB_HEIGHT + TAB_INSET - 1;
+        return bounds(screen.getGuiLeft() + CONTAINER_WIDTH, screen.getGuiTop(), tab);
+    }
+
+    private static Bounds bounds(int panelRight, int panelTop, Page tab) {
+        int partyLeft = panelRight - LARGE_TAB_WIDTH;
+        int smallTop = panelTop - SMALL_TAB_HEIGHT + TAB_INSET - 1;
         return switch (tab) {
             case SETTINGS -> new Bounds(
                     partyLeft - SMALL_TAB_WIDTH * 2 + 2, smallTop, SMALL_TAB_WIDTH, SMALL_TAB_HEIGHT);
             case INVENTORY -> new Bounds(
                     partyLeft - SMALL_TAB_WIDTH + 1, smallTop, SMALL_TAB_WIDTH, SMALL_TAB_HEIGHT);
             case PARTY -> new Bounds(
-                    partyLeft, screen.getGuiTop() - LARGE_TAB_HEIGHT + TAB_INSET - 1,
+                    partyLeft, panelTop - LARGE_TAB_HEIGHT + TAB_INSET - 1,
                     LARGE_TAB_WIDTH, LARGE_TAB_HEIGHT);
         };
     }
