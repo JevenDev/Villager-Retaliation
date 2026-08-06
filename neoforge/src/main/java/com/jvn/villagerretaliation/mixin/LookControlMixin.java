@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
+import com.jvn.villagerretaliation.interaction.VillagerInWorldDialogueFocusService;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.npc.Villager;
@@ -25,10 +27,14 @@ public abstract class LookControlMixin {
             return;
         }
         BlockPos target = HiredVillagerFocusService.activeWorkLookTarget(villager);
-        if (target == null) {
+        if (target != null) {
+            Vec3 center = Vec3.atCenterOf(target);
+            ((LookControl) (Object) this).setLookAt(center.x, center.y, center.z, 60.0F, 60.0F);
             return;
         }
-        Vec3 center = Vec3.atCenterOf(target);
-        ((LookControl) (Object) this).setLookAt(center.x, center.y, center.z, 60.0F, 60.0F);
+        ServerPlayer dialogueTarget = VillagerInWorldDialogueFocusService.activeFocusTarget(villager);
+        if (dialogueTarget != null) {
+            ((LookControl) (Object) this).setLookAt(dialogueTarget, 30.0F, 30.0F);
+        }
     }
 }

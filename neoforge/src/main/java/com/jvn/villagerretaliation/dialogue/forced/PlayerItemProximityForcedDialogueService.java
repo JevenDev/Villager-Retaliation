@@ -16,11 +16,15 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 final class PlayerItemProximityForcedDialogueService {
     private static final long SCAN_INTERVAL_TICKS = 80L;
@@ -105,6 +109,8 @@ final class PlayerItemProximityForcedDialogueService {
                     || !delegate.matchesReputation(level, villager, player, definition)
                     || villager.distanceToSqr(player) > definition.witnessRadius() * definition.witnessRadius()
                     || (definition.requiresLineOfSight() && !villager.hasLineOfSight(player))
+                    || (definition.requiresPlayerAimingAtWitness()
+                    && !isAimingAtWitness(player, villager, definition.witnessRadius()))
                     || !cooldownReady(gameTime, villager.getUUID(), player.getUUID(), definition.id())) {
                 continue;
             }
@@ -115,6 +121,33 @@ final class PlayerItemProximityForcedDialogueService {
             }
         }
         return false;
+    }
+
+    static boolean isAimingAtWitness(ServerPlayer player, Villager witness, double maxDistance) {
+        if (player == null || witness == null || player.level() != witness.level() || maxDistance <= 0.0D) {
+            return false;
+        }
+        ServerLevel level = player.serverLevel();
+        Vec3 eye = player.getEyePosition();
+        Vec3 rayEnd = eye.add(player.getViewVector(1.0F).scale(maxDistance));
+        HitResult blockHit = level.clip(new ClipContext(
+                eye, rayEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        Vec3 visibleEnd = blockHit.getType() == HitResult.Type.BLOCK ? blockHit.getLocation() : rayEnd;
+        Optional<Vec3> witnessIntersection = witness.getBoundingBox().inflate(0.1D).clip(eye, visibleEnd);
+        if (witnessIntersection.isEmpty()) return false;
+
+        double witnessDistanceSqr = eye.distanceToSqr(witnessIntersection.get());
+        AABB search = player.getBoundingBox().expandTowards(visibleEnd.subtract(eye)).inflate(1.0D);
+        for (Entity entity : level.getEntities(player, search, candidate ->
+                candidate != witness && candidate.isAlive() && candidate.isPickable())) {
+            AABB bounds = entity.getBoundingBox();
+            Optional<Vec3> intersection = bounds.contains(eye) ? Optional.of(eye) : bounds.clip(eye, visibleEnd);
+            if (intersection.isPresent()
+                    && eye.distanceToSqr(intersection.get()) + 1.0E-6D < witnessDistanceSqr) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static Optional<TradeItemMatch> matchingHeldTradeItem(

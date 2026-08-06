@@ -11986,29 +11986,291 @@
       ]
     },
     {
-      "id": "forced.player_item_proximity.diamond_sword_warning.line",
-      "key": "forced.player_item_proximity.diamond_sword_warning.line",
+      "id": "forced.player_item_proximity.aiming_sword.royalty.line",
+      "key": "forced.player_item_proximity.aiming_sword.royalty.line",
       "lines": [
-        "That diamond blade is hard to miss, {player}. Keep it pointed elsewhere.",
-        "Walk <pulse>softer</pulse> with {held_item} in your hand.",
-        "A sword like that changes the shape of a conversation.",
-        "Easy with {held_item}. This is a village, not a battlefield.",
-        "Keep that sword lowered while you are near the village.",
-        "A diamond blade makes people nervous when you hold it like that.",
-        "Put some distance between the edge and everyone else.",
-        "You can carry a weapon without waving it at our doors.",
-        "Sheathe the sword before someone mistakes your intent.",
-        "The guards are watching where that blade points.",
-        "No trade requires an unsheathed sword.",
-        "A good weapon deserves a careful hand.",
-        "Keep the edge away from the children.",
-        "You have nothing to prove with that sword here.",
-        "Carry it peacefully or carry it somewhere else.",
-        "The village notices armed strangers.",
-        "There is no enemy here that needs a diamond edge.",
-        "Rest your hand somewhere other than the hilt.",
-        "We have seen too many raids to ignore a drawn weapon.",
-        "The bell will ring if you keep threatening people with that blade."
+        "Your Majesty, please lower {held_item}; no ceremony makes that angle harmless.",
+        "My liege, the edge is pointed at me, and I would rather not test it.",
+        "The crown has my loyalty, but that blade still has my full attention.",
+        "Please mind your sword, Your Majesty. It is resting far too close to my future.",
+        "Royal hands should steady a village, not make its people flinch.",
+        "I will bow when {held_item} is no longer aimed through me.",
+        "Your guards would object if I stood this way before you, my liege.",
+        "One step aside with that weapon, please; dignity needs room to breathe.",
+        "You have nothing to prove at swordpoint here, Your Majesty.",
+        "Command me if you must, but do not let the blade speak for you."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_ranged.royalty.line",
+      "key": "forced.player_item_proximity.aiming_ranged.royalty.line",
+      "lines": [
+        "Your Majesty, turn {held_item} away before someone mistakes this for an order to fire.",
+        "My liege, I can see exactly where that shot would land.",
+        "Please lower your aim; loyalty is poor armor against an arrow.",
+        "The crown should not place its own villagers beneath a drawn sight.",
+        "Even a royal bolt cannot be recalled once loosed.",
+        "I trust your judgment, Your Majesty, so show me by pointing elsewhere.",
+        "Your hunters taught us never to cover an ally with a bow.",
+        "That line of fire passes straight through me, my liege.",
+        "A ruler may command attention without taking aim at it.",
+        "Please give the string and my nerves a moment to relax."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_sword.revered.line",
+      "key": "forced.player_item_proximity.aiming_sword.revered.line",
+      "lines": [
+        "{player}, you are honored here. Do not make us fear {held_item}.",
+        "I have praised your name before; I do not want to whisper it beneath a blade.",
+        "That sword belongs between us and danger, not between you and me.",
+        "You earned our admiration without threats. Keep it that way.",
+        "Please lower the steel, hero. This village still wants to trust you.",
+        "I expected protection when you reached for that weapon, not this.",
+        "People follow your example, {player}; give them a better one.",
+        "Your victories mean little if your friends must watch your sword hand.",
+        "Take the edge off me and I will hear whatever you came to say.",
+        "We built respect carefully. Do not cut through it in one careless moment."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_ranged.revered.line",
+      "key": "forced.player_item_proximity.aiming_ranged.revered.line",
+      "lines": [
+        "{player}, heroes aim beyond their neighbors, not through them.",
+        "I have trusted your eye in battle; move it off me now.",
+        "That bow once made us feel safe. At this angle, it does the opposite.",
+        "Your reputation deserves better than a frightened misfire.",
+        "Ease the crossbow down, and let me remember why we cheer for you.",
+        "You know the cost of a loose shot better than anyone here.",
+        "Do not turn a weapon of rescue into a reason to scatter.",
+        "The village looks up to you, {player}. We should not have to duck.",
+        "Shift your sights and we can speak as allies again.",
+        "I would rather tell stories about your marksmanship than become one."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_sword.respected.line",
+      "key": "forced.player_item_proximity.aiming_sword.respected.line",
+      "lines": [
+        "{player}, you have standing here, but not permission to put steel in my face.",
+        "We know you better than this. Lower the sword.",
+        "Respect goes both ways, and mine is not shaped like a blade.",
+        "That stance is beneath the reputation you worked to earn.",
+        "I will assume this is carelessness if you correct it now.",
+        "There are enemies outside the village. I am not one of them.",
+        "Keep {held_item} at your side and your welcome intact.",
+        "You should know how quickly a pointed sword changes a conversation.",
+        "We have defended your name before; do not make that difficult.",
+        "Step back, lower the edge, and let good sense return."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_ranged.respected.line",
+      "key": "forced.player_item_proximity.aiming_ranged.respected.line",
+      "lines": [
+        "{player}, your aim is usually better than this choice of target.",
+        "Point the bow toward the road, not a villager who respects you.",
+        "You have earned patience, so I am giving you one chance to lower it.",
+        "That crossbow is making a poor argument on your behalf.",
+        "I know your record. I also know a bolt does not care about reputations.",
+        "Move your sights before the square notices where they are resting.",
+        "We call you dependable; do not make me revise that while staring down a string.",
+        "A respected guest checks the line of fire before raising a weapon.",
+        "Take me out of your aim and keep your good name.",
+        "I expected a greeting from you, not a firing solution."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_sword.trusted.line",
+      "key": "forced.player_item_proximity.aiming_sword.trusted.line",
+      "lines": [
+        "{player}, friend, put {held_item} down before this becomes something neither of us meant.",
+        "I trust you, but I do not trust any blade pointed at my ribs.",
+        "We have shared too much for you to stand over me like an enemy.",
+        "If this is a joke, it has reached the part where you lower the sword.",
+        "Come on, {player}. Sheathe it and talk to me normally.",
+        "You know my face. Aim that steel at someone who means us harm.",
+        "Do not spend our friendship on one threatening gesture.",
+        "I should not need courage to ask a friend to move their weapon.",
+        "The village door is open to you; keep the sword out of the doorway.",
+        "Lower the edge, and I will forget how close it came."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_ranged.trusted.line",
+      "key": "forced.player_item_proximity.aiming_ranged.trusted.line",
+      "lines": [
+        "{player}, we are friends. Friends do not keep each other in their sights.",
+        "Take the crossbow off me before my trust starts arguing with my instincts.",
+        "I know you can hit what you aim at, which is exactly why I am worried.",
+        "Relax the bow and tell me what is actually wrong.",
+        "We have watched each other's backs; stop lining up mine.",
+        "Your finger is too close to making a very permanent mistake.",
+        "Point {held_item} at the horizon and we can laugh about this later.",
+        "I trust your heart, {player}, but the arrow cannot see it.",
+        "You are making an old friend feel like prey.",
+        "Drop your sights and give me a reason to keep calling you welcome."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_sword.neutral.line",
+      "key": "forced.player_item_proximity.aiming_sword.neutral.line",
+      "lines": [
+        "Stranger, lower {held_item}. We have not met well enough for this.",
+        "Keep the sword down if you want to remain a guest.",
+        "I do not know your intentions, but I know where that edge is pointing.",
+        "There is no quarrel here unless you bring one with that blade.",
+        "Back the steel away and state your business plainly.",
+        "A village is not a practice yard, stranger.",
+        "You are close enough to talk and far too close to swing.",
+        "Sheathe it. First impressions should not need bandages.",
+        "Whatever you came for, a sword at my chest will not help you get it.",
+        "Turn the weapon aside before the bell gets a reason to ring."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_ranged.neutral.line",
+      "key": "forced.player_item_proximity.aiming_ranged.neutral.line",
+      "lines": [
+        "Stranger, point {held_item} somewhere that does not breathe.",
+        "I do not know you, and your crossbow is doing a terrible introduction.",
+        "Take me out of your sights before anyone calls the guards.",
+        "An arrow aimed through a conversation ends it quickly.",
+        "Lower the bow, then tell me why you are here.",
+        "There are targets beyond the walls. I am standing inside them.",
+        "Your aim is making every peaceful explanation harder to believe.",
+        "Keep the bolt in its groove and move the weapon away.",
+        "We welcome travelers, not firing lines.",
+        "Point at the ground, stranger, while you still have the choice."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_sword.suspicious.line",
+      "key": "forced.player_item_proximity.aiming_sword.suspicious.line",
+      "lines": [
+        "I knew there was something wrong with you. Lower that sword.",
+        "So this is why you have been watching us. Put the blade away.",
+        "One more inch and the whole village hears about it.",
+        "You have given me no reason to trust you and a sharp reason not to.",
+        "Keep {held_item} where I can see it—down by your side.",
+        "Do not pretend that stance is accidental.",
+        "The guards already know your face. Shall I give them a direction too?",
+        "You came under suspicion; pointing steel confirms plenty.",
+        "Back away before caution turns into an alarm.",
+        "I was willing to hear you out. The sword has changed my mind."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_ranged.suspicious.line",
+      "key": "forced.player_item_proximity.aiming_ranged.suspicious.line",
+      "lines": [
+        "Of course you brought a crossbow into this. Unmark me as your target.",
+        "I have been watching your hands, and now everyone else should too.",
+        "Lower the bow slowly; sudden movements will answer the wrong question.",
+        "You expect me to believe that bolt found me by accident?",
+        "Move your aim before I shout your name across the square.",
+        "This is exactly the kind of trouble we expected from you.",
+        "Keep the string quiet and your excuses shorter.",
+        "You are measuring the shot. I am measuring the distance to the bell.",
+        "Take your sights off me; suspicion is about to become certainty.",
+        "A traveler with honest business does not line up villagers."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_sword.hostile.line",
+      "key": "forced.player_item_proximity.aiming_sword.hostile.line",
+      "lines": [
+        "Drop the sword now, before I decide you came here to use it.",
+        "You have threatened this village enough. Point that steel away.",
+        "I will not stand still while you choose where to strike.",
+        "Lower {held_item}, or the next voices you hear will be armed.",
+        "We know what you are capable of, and we are done giving ground.",
+        "That blade confirms every warning we have shared about you.",
+        "Try one swing and see how quickly the square closes around you.",
+        "You are not feared here; you are watched.",
+        "Put the weapon down and leave while leaving is still offered.",
+        "I have no patience left for your threats, spoken or sharpened."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_ranged.hostile.line",
+      "key": "forced.player_item_proximity.aiming_ranged.hostile.line",
+      "lines": [
+        "Uncock that crossbow or prepare to be treated as an attacker.",
+        "Take the shot off me. This village is already ready for you.",
+        "We will not wait for the string to snap before defending ourselves.",
+        "Your next movement decides whether this remains a warning.",
+        "Aim elsewhere, outsider; every rooftop is watching.",
+        "That bow has bought you no distance from the consequences.",
+        "You think range makes this safe for you? It does not.",
+        "Lower the weapon before someone faster answers it.",
+        "I see the bolt, the angle, and the choice you are making.",
+        "Release your aim—not the arrow—and get out."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_sword.despised.line",
+      "key": "forced.player_item_proximity.aiming_sword.despised.line",
+      "lines": [
+        "Of course it comes to this with you. Get that sword out of my face.",
+        "You have taken enough from us without reaching for blood.",
+        "Lower the blade; your name is already a curse here.",
+        "Nobody in this village mistakes you for a protector anymore.",
+        "Keep your filthy threat to yourself and keep walking.",
+        "I would call for help, but half the square is already watching you.",
+        "You make every weapon look like proof of bad character.",
+        "Do not stain our road with another one of your decisions.",
+        "The only mercy left for you is a chance to put the sword away.",
+        "You are despised for reasons, and that raised edge is another."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_ranged.despised.line",
+      "key": "forced.player_item_proximity.aiming_ranged.despised.line",
+      "lines": [
+        "Put the crossbow down. We have buried enough because of you.",
+        "Your aim is as welcome here as the rest of you.",
+        "Do not hide cowardice behind a bowstring.",
+        "Every villager you cover with that weapon adds another witness.",
+        "We know better than to trust you with distance and a loaded bolt.",
+        "Turn it away; nobody here owes you a clean shot.",
+        "You have made enemies without firing. Imagine what happens if you do.",
+        "That crossbow cannot make us respect you, only resist you.",
+        "Keep the arrow and take your hatred beyond our walls.",
+        "I would rather face your sneer than the point you put behind it."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_sword.feared.line",
+      "key": "forced.player_item_proximity.aiming_sword.feared.line",
+      "lines": [
+        "Please—lower the sword. I will not stand in your way.",
+        "Do not point that at me. I have seen what happens next.",
+        "Take whatever space you need, just move the blade away.",
+        "I am backing up. You do not need to raise {held_item}.",
+        "No alarm, no argument—please let me leave.",
+        "My hands are empty. Keep yours from swinging.",
+        "Everyone told me not to meet your eyes. Now I understand.",
+        "I cannot breathe with that edge so close.",
+        "You have already frightened me; there is nothing more to prove.",
+        "Lower it, and I swear I will be gone before you count to three."
+      ]
+    },
+    {
+      "id": "forced.player_item_proximity.aiming_ranged.feared.line",
+      "key": "forced.player_item_proximity.aiming_ranged.feared.line",
+      "lines": [
+        "Please take the crossbow off me. I will do whatever keeps it quiet.",
+        "I see the bolt. You do not have to show me what it can do.",
+        "Let me step aside before your finger slips.",
+        "Do not loose it—I am moving, I promise.",
+        "The sight is on my chest. Please, point anywhere else.",
+        "I cannot outrun an arrow, and we both know it.",
+        "Say what you want without drawing the string tighter.",
+        "Please stop tracking me with that weapon.",
+        "I have heard the stories about your aim. Spare me the proof.",
+        "Turn the bow away and I will not call anyone."
       ]
     },
     {

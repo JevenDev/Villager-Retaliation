@@ -41,6 +41,7 @@ import com.jvn.villagerretaliation.dialogue.forced.PlayerItemProximityForcedDial
 import com.jvn.villagerretaliation.event.VillagerEventTriggerSavedData;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.interaction.VillagerInWorldDialogueFocusService;
 import com.jvn.villagerretaliation.network.GeneratedContainerTooltipPayload;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
@@ -134,7 +135,7 @@ public final class ForcedDialogueService {
     private static final String ROYALTY_AGGRO_BYPASS_MESSAGE_KEY = "retaliation.royalty_aggro_bypass";
     public static final String SPECIAL_ORDER_STATUS_ROOT_OPTION_ID = "trade_refresh.special_order.status";
     private static final ForcedDialogueOutput SIMPLE_FORCED_OUTPUT =
-            new ForcedDialogueOutput(ForcedDialogueOutputMode.FORCED_DIALOGUE, 0.0D);
+            new ForcedDialogueOutput(ForcedDialogueOutputMode.FORCED_DIALOGUE, 0.0D, false);
     private static final ForcedDialogueOption SIMPLE_LEAVE_OPTION = new ForcedDialogueOption(
             LEAVE_OPTION_ID,
             LocalizedText.inline("Leave"),
@@ -156,10 +157,12 @@ public final class ForcedDialogueService {
     private static final long TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS = 40L;
     private static final long SHARED_PARTICIPANT_SCAN_INTERVAL_TICKS = 20L;
     private static final long LOW_GUTS_CONFRONTATION_ESCALATION_WINDOW_TICKS = 20L * 15L;
+    private static final int PLAYER_ITEM_PROXIMITY_LINE_SELECTION_ATTEMPTS = 5;
     private static final Map<UUID, RecentContainerClick> RECENT_CONTAINER_CLICKS = new HashMap<>();
     private static final Map<UUID, ContainerSnapshot> OPEN_CONTAINER_SNAPSHOTS = new HashMap<>();
     private static final Map<UUID, ForcedDialogueSession> FORCED_SESSIONS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_SHARED_PARTICIPANT_SCAN_TICKS = new HashMap<>();
+    private static final Map<UUID, String> LAST_PLAYER_ITEM_PROXIMITY_CHAT_LINES = new HashMap<>();
     private static final PlayerItemProximityForcedDialogueService.Delegate PLAYER_ITEM_PROXIMITY_DELEGATE =
             new PlayerItemProximityForcedDialogueService.Delegate() {
                 @Override
@@ -202,7 +205,9 @@ public final class ForcedDialogueService {
         OPEN_CONTAINER_SNAPSHOTS.clear();
         FORCED_SESSIONS.clear();
         NEXT_SHARED_PARTICIPANT_SCAN_TICKS.clear();
+        LAST_PLAYER_ITEM_PROXIMITY_CHAT_LINES.clear();
         PlayerItemProximityForcedDialogueService.clearRuntimeState();
+        VillagerInWorldDialogueFocusService.clearRuntimeState();
     }
 
     public static void rememberPotentialContainerOpen(PlayerInteractEvent.RightClickBlock event) {
@@ -416,6 +421,7 @@ public final class ForcedDialogueService {
                 1,
                 5,
                 false,
+                false,
                 VillagerEquipmentCondition.empty(),
                 VillagerPlayerItemCondition.empty(),
                 VillagerReputationCondition.empty(),
@@ -455,7 +461,7 @@ public final class ForcedDialogueService {
                 EXPIRED_PARTY_DEFINITION_ID, null, ForcedDialogueTrigger.QUEST, SIMPLE_FORCED_OUTPUT,
                 List.of(LocalizedText.inline(line)), true, false, true, false, 0.0D, 1.0D,
                 0, 0, 0L, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE,
-                Set.of(), Set.of(), Set.of(), 1, 5, false,
+                Set.of(), Set.of(), Set.of(), 1, 5, false, false,
                 VillagerEquipmentCondition.empty(), VillagerPlayerItemCondition.empty(),
                 VillagerReputationCondition.empty(), options, SIMPLE_LEAVE_OPTION, options);
         return openProgrammaticForcedDialogue(player, villager, line, definition);
@@ -1411,6 +1417,7 @@ public final class ForcedDialogueService {
                 source.minTradeLevel(),
                 source.maxTradeLevel(),
                 source.requiresHeldTradeItem(),
+                source.requiresPlayerAimingAtWitness(),
                 source.witnessEquipmentCondition(),
                 source.playerItemCondition(),
                 source.reputationCondition(),
@@ -1522,6 +1529,7 @@ public final class ForcedDialogueService {
                 optionDefinition.minTradeLevel(),
                 optionDefinition.maxTradeLevel(),
                 optionDefinition.requiresHeldTradeItem(),
+                optionDefinition.requiresPlayerAimingAtWitness(),
                 optionDefinition.witnessEquipmentCondition(),
                 optionDefinition.playerItemCondition(),
                 optionDefinition.reputationCondition(),
@@ -2615,6 +2623,7 @@ public final class ForcedDialogueService {
                 source.minTradeLevel(),
                 source.maxTradeLevel(),
                 source.requiresHeldTradeItem(),
+                source.requiresPlayerAimingAtWitness(),
                 source.witnessEquipmentCondition(),
                 source.playerItemCondition(),
                 source.reputationCondition(),
@@ -2902,15 +2911,7 @@ public final class ForcedDialogueService {
                 context,
                 safeReplacements);
         if (ForcedDialogueTriggerGates.isChatOutput(definition)) {
-            if (!line.isBlank()) {
-                VillagerInteractionService.broadcastForcedVillagerChat(
-                        level,
-                        villager,
-                        line,
-                        VillagerInteractionService.villagerSpeakerLabel(villager),
-                        outputRadius(definition)
-                );
-            }
+            broadcastDataDrivenChat(level, villager, player, definition, line);
             return true;
         }
         if (definition.aggroImmediately()) {
@@ -3196,13 +3197,8 @@ public final class ForcedDialogueService {
         );
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
-            VillagerInteractionService.broadcastForcedVillagerChat(
-                    level,
-                    villager,
-                    line,
-                    VillagerInteractionService.villagerSpeakerLabel(villager),
-                    outputRadius(definition)
-            );
+            broadcastDataDrivenChat(
+                    level, villager, target instanceof ServerPlayer player ? player : null, definition, line);
         }
         return true;
     }
@@ -3476,13 +3472,7 @@ public final class ForcedDialogueService {
         );
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
-            VillagerInteractionService.broadcastForcedVillagerChat(
-                    level,
-                    witness,
-                    line,
-                    VillagerInteractionService.villagerSpeakerLabel(witness),
-                    outputRadius(definition)
-            );
+            broadcastDataDrivenChat(level, witness, player, definition, line);
             markContainerTheftCooldown(level, player, snapshot, definition);
         }
         return true;
@@ -3657,18 +3647,9 @@ public final class ForcedDialogueService {
         }
         Map<String, String> replacements = playerItemProximityReplacements(definition, player, tradeItemMatch);
         ForcedDialogueContext context = playerItemProximityContext(villager, player, replacements);
-        String line = ForcedDialogueResources.resolveTemplate(
-                definition.selectLine(level.getRandom()),
-                context,
-                replacements);
+        String line = resolvePlayerItemProximityLine(level, villager, definition, context, replacements);
         if (!line.isBlank()) {
-            VillagerInteractionService.broadcastForcedVillagerChat(
-                    level,
-                    villager,
-                    line,
-                    VillagerInteractionService.villagerSpeakerLabel(villager),
-                    outputRadius(definition)
-            );
+            broadcastDataDrivenChat(level, villager, player, definition, line);
         }
         return true;
     }
@@ -3689,10 +3670,7 @@ public final class ForcedDialogueService {
             VillagerGossipHooks.spreadReputation(level, villager, player.getUUID(), definition.reputationDelta());
         }
 
-        String line = ForcedDialogueResources.resolveTemplate(
-                definition.selectLine(level.getRandom()),
-                context,
-                replacements);
+        String line = resolvePlayerItemProximityLine(level, villager, definition, context, replacements);
         if (definition.aggroImmediately()) {
             if (!line.isBlank()) {
                 VillagerInteractionService.sendVillagerNotice(player, villager, line);
@@ -3740,6 +3718,29 @@ public final class ForcedDialogueService {
             VillagerInteractionService.sendVillagerNotice(player, villager, line);
         }
         return true;
+    }
+
+    private static String resolvePlayerItemProximityLine(
+            ServerLevel level,
+            Villager villager,
+            ForcedDialogueDefinition definition,
+            ForcedDialogueContext context,
+            Map<String, String> replacements) {
+        String previous = LAST_PLAYER_ITEM_PROXIMITY_CHAT_LINES.get(villager.getUUID());
+        String selected = "";
+        for (int attempt = 0; attempt < PLAYER_ITEM_PROXIMITY_LINE_SELECTION_ATTEMPTS; attempt++) {
+            selected = ForcedDialogueResources.resolveTemplate(
+                    definition.selectLine(level.getRandom()),
+                    context,
+                    replacements);
+            if (!selected.isBlank() && !selected.equals(previous)) {
+                break;
+            }
+        }
+        if (!selected.isBlank()) {
+            LAST_PLAYER_ITEM_PROXIMITY_CHAT_LINES.put(villager.getUUID(), selected);
+        }
+        return selected;
     }
 
     private static ForcedDialogueContext playerItemProximityContext(
@@ -4043,15 +4044,24 @@ public final class ForcedDialogueService {
         );
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
-            VillagerInteractionService.broadcastForcedVillagerChat(
-                    level,
-                    villager,
-                    line,
-                    VillagerInteractionService.villagerSpeakerLabel(villager),
-                    outputRadius(definition)
-            );
+            broadcastDataDrivenChat(level, villager, player, definition, line);
         }
         return true;
+    }
+
+    private static void broadcastDataDrivenChat(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition,
+            String line) {
+        if (line == null || line.isBlank()) return;
+        if (player != null && definition.output().lookAtPlayer()) {
+            VillagerInWorldDialogueFocusService.requestFocus(villager, player);
+        }
+        VillagerInteractionService.broadcastForcedVillagerChat(
+                level, villager, line, VillagerInteractionService.villagerSpeakerLabel(villager),
+                outputRadius(definition));
     }
 
     private static List<DialogueOptionDefinition> forcedOptions(

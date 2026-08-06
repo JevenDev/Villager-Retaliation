@@ -1,14 +1,23 @@
 package com.jvn.villagerretaliation.dialogue.forced;
 
+import com.mojang.authlib.GameProfile;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -123,6 +132,41 @@ public final class PlayerItemProximityForcedDialogueGameTests {
                 List.of("chat-first", "chat-second", "forced-first", "forced-second"),
                 "selection should remain chat-first and stable within each output kind");
         helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void aimRayRequiresTheWitnessToBeTheFirstVisibleLivingTarget(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrAimingDialogue");
+        BlockPos playerPos = helper.absolutePos(new BlockPos(1, 2, 1));
+        player.moveTo(playerPos.getX() + 0.5D, playerPos.getY(), playerPos.getZ() + 0.5D, 0.0F, 0.0F);
+        Villager witness = helper.spawn(EntityType.VILLAGER, new BlockPos(5, 2, 1));
+        witness.setNoAi(true);
+        player.lookAt(EntityAnchorArgument.Anchor.EYES, witness.getEyePosition());
+
+        helper.assertTrue(
+                PlayerItemProximityForcedDialogueService.isAimingAtWitness(player, witness, 8.0D),
+                "an unobstructed sight ray through the witness hitbox should count as aiming");
+
+        Villager blocker = helper.spawn(EntityType.VILLAGER, new BlockPos(3, 2, 1));
+        blocker.setNoAi(true);
+        helper.assertFalse(
+                PlayerItemProximityForcedDialogueService.isAimingAtWitness(player, witness, 8.0D),
+                "a nearer living entity should own the sight ray");
+
+        blocker.discard();
+        player.lookAt(EntityAnchorArgument.Anchor.EYES, witness.getEyePosition().add(0.0D, 0.0D, 3.0D));
+        helper.assertFalse(
+                PlayerItemProximityForcedDialogueService.isAimingAtWitness(player, witness, 8.0D),
+                "a sight ray outside the witness hitbox should not count as aiming");
+
+        witness.discard();
+        helper.succeed();
+    }
+
+    private static ServerPlayer fakePlayer(ServerLevel level, String name) {
+        UUID id = UUID.nameUUIDFromBytes(("villagerretaliation:" + name).getBytes(StandardCharsets.UTF_8));
+        return FakePlayerFactory.get(level, new GameProfile(id, name));
     }
 
     private static MerchantOffer offer(
