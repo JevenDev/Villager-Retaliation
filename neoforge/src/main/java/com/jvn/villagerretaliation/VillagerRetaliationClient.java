@@ -26,6 +26,7 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::registerGuiLayer);
         com.jvn.villagerretaliation.client.item.VillagerFishingRodItemProperties.register();
         modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintItemProperties::register);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::registerShaders);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onClientTick);
@@ -67,6 +68,11 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelInventoryClientState::onScreenClosing);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelInventoryClientState::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onRenderGuiPost);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onScreenRenderPost);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onItemTooltip);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.SellBoxClientState::onItemTooltip);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.SellBoxClientState::onLoggingOut);

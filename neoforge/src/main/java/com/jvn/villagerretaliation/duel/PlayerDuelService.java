@@ -234,7 +234,9 @@ public final class PlayerDuelService {
         int remaining = seconds(duel.boundaryGraceTicks() - (now - outsideSince));
         int previous = challenger ? duel.challengerBoundarySecond() : duel.opponentBoundarySecond();
         if (remaining > 0 && remaining != previous) {
-            notice(player, "villagerretaliation.duel.boundary_countdown", remaining);
+            player.sendSystemMessage(Component.translatable(
+                    "villagerretaliation.duel.boundary_countdown",
+                    remaining).withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
             if (challenger) duel.challengerBoundarySecond(remaining);
             else duel.opponentBoundarySecond(remaining);
         }
