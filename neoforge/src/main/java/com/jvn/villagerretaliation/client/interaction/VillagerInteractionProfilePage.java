@@ -15,6 +15,7 @@ import net.minecraft.util.Mth;
 final class VillagerInteractionProfilePage {
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
 
+    private static final int PROFILE_TOOLTIP_MAX_WIDTH = 220;
     private VillagerInteractionProfilePage() {
     }
 
@@ -199,8 +200,53 @@ final class VillagerInteractionProfilePage {
         tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.level", context.localizedRank(rank)).withStyle(ChatFormatting.YELLOW));
         tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.value(attribute)).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.empty());
-        tooltip.add(Component.literal(context.localizedAttributeDescription(attribute)).withStyle(ChatFormatting.GRAY));
+        appendWrappedTooltipText(tooltip, context.font(), context.localizedAttributeDescription(attribute));
         VillagerInteractionUiUtil.renderBoundedComponentTooltipInCurrentPose(graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
+    }
+
+    private static void appendWrappedTooltipText(List<Component> tooltip, Font font, String text) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+
+        for (String paragraph : text.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1)) {
+            if (paragraph.isBlank()) {
+                tooltip.add(Component.empty());
+                continue;
+            }
+
+            String remaining = paragraph.stripLeading();
+            while (!remaining.isEmpty()) {
+                String line = font.plainSubstrByWidth(remaining, PROFILE_TOOLTIP_MAX_WIDTH);
+                if (line.isEmpty()) {
+                    int nextCodePointEnd = remaining.offsetByCodePoints(0, 1);
+                    line = remaining.substring(0, nextCodePointEnd);
+                    remaining = remaining.substring(nextCodePointEnd).stripLeading();
+                } else if (line.length() < remaining.length()) {
+                    int breakIndex = lastWhitespaceBreak(line);
+                    if (breakIndex > 0) {
+                        line = remaining.substring(0, breakIndex);
+                        remaining = remaining.substring(breakIndex).stripLeading();
+                    } else {
+                        remaining = remaining.substring(line.length()).stripLeading();
+                    }
+                } else {
+                    remaining = "";
+                }
+                tooltip.add(Component.literal(line.stripTrailing()).withStyle(ChatFormatting.GRAY));
+            }
+        }
+    }
+
+    private static int lastWhitespaceBreak(String text) {
+        for (int index = text.length(); index > 0; ) {
+            int codePoint = text.codePointBefore(index);
+            index -= Character.charCount(codePoint);
+            if (Character.isWhitespace(codePoint)) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private static double profileAttributeAngle(int index, int attributeCount) {

@@ -109,6 +109,7 @@ public final class VillagerInteractionClientHandler {
                 villagerName,
                 professionName,
                 payload.baby(),
+                payload.genderName(),
                 payload.canTrade(),
                 payload.duelVisible(),
                 payload.reputation(),

@@ -18,7 +18,7 @@ import net.minecraft.util.Mth;
 final class VillagerInteractionJobStatsPage {
     private static final int CONTAINER_WIDTH = 431;
     private static final int CONTAINER_HEIGHT = 139;
-    private static final int TITLE_TOP = 6;
+    private static final int TITLE_TOP = 7;
     private static final int FIRST_COLUMN_X = 10;
     private static final int SECOND_COLUMN_X = 219;
     private static final int FIRST_ROW_Y = 25;
