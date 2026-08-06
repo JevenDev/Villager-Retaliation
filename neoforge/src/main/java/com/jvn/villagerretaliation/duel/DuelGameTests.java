@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.duel;
 
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
+import com.jvn.villagerretaliation.compat.AccessoryInventoryCompat;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -1015,6 +1016,33 @@ public final class DuelGameTests {
         helper.assertTrue(DuelEquipment.VillagerSnapshot.load(
                         participant.villager(), villagerSnapshot) == null,
                 "a truncated villager inventory snapshot must be rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void accessoryRecoverySnapshotsRoundTrip(GameTestHelper helper) {
+        AccessoryInventoryCompat.Snapshot original = new AccessoryInventoryCompat.Snapshot(
+                "curios",
+                List.of(new AccessoryInventoryCompat.SlotSnapshot(
+                        "charm", 1, new ItemStack(Items.EMERALD, 3),
+                        new ItemStack(Items.GOLD_INGOT), false)));
+
+        CompoundTag saved = original.save(helper.getLevel().registryAccess());
+        AccessoryInventoryCompat.Snapshot loaded = AccessoryInventoryCompat.Snapshot.load(
+                saved, helper.getLevel().registryAccess());
+
+        helper.assertValueEqual(loaded.backend(), "curios",
+                "the accessory backend must survive crash-recovery serialization");
+        helper.assertValueEqual(loaded.slots().size(), 1,
+                "the accessory slot list must survive crash-recovery serialization");
+        AccessoryInventoryCompat.SlotSnapshot slot = loaded.slots().getFirst();
+        helper.assertValueEqual(slot.slot(), "charm", "the accessory slot id must round-trip");
+        helper.assertValueEqual(slot.index(), 1, "the accessory slot index must round-trip");
+        helper.assertTrue(slot.stack().is(Items.EMERALD) && slot.stack().getCount() == 3,
+                "the equipped accessory must round-trip");
+        helper.assertTrue(slot.cosmetic().is(Items.GOLD_INGOT),
+                "the cosmetic accessory must round-trip");
+        helper.assertFalse(slot.render(), "the accessory render toggle must round-trip");
         helper.succeed();
     }
 

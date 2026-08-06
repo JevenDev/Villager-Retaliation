@@ -34,6 +34,18 @@ ${neoforge_jei_dependency}
 
 ${neoforge_rei_dependency}
 
+[[dependencies."${mod_id}"]]
+modId="curios"
+type="optional"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies."${mod_id}"]]
+modId="accessories"
+type="optional"
+ordering="AFTER"
+side="BOTH"
+
 ${neoforge_toucanlib_dependency}
 
 [[dependencies."${mod_id}"]]

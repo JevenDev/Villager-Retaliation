@@ -159,7 +159,7 @@ const CONSTANTS = {
     "player_container_theft",
     "villager_retaliation_started"
   ],
-  itemSlots: ["main_hand", "off_hand", "hands", "armor", "hotbar", "inventory", "equipment", "any"],
+  itemSlots: ["main_hand", "off_hand", "hands", "armor", "hotbar", "inventory", "accessories", "equipment", "any"],
   dialogueItemDestinations: ["discard", "villager_inventory", "drop_at_villager"],
   forcedItemDestinations: ["discard", "villager_inventory", "villager_inventory_then_source_container", "source_container", "drop_at_villager", "drop_at_container"],
   weather: ["clear", "rain", "thunder"],

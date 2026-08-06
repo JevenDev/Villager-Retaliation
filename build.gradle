@@ -37,6 +37,10 @@ allprojects {
             url = 'https://maven.wispforest.io/releases/'
         }
         maven {
+            name = 'Curios'
+            url = 'https://maven.theillusivec4.top/'
+        }
+        maven {
             name = 'Su5ed'
             url = 'https://maven.su5ed.dev/releases'
         }

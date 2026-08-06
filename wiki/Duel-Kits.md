@@ -1,5 +1,7 @@
 # Duel Kits
 
+When Curios or Accessories is installed, assigned duel kits temporarily clear equipped accessory and cosmetic slots so their combat effects cannot bypass the kit. The exact slot contents and render toggles are restored after the duel, including through disconnect or crash recovery. Bring-your-own-loadout duels leave accessory gear active and preserve normal durability changes.
+
 Duel kits control the temporary equipment offered when a player challenges a villager or another player to a duel. A kit can use vanilla or modded items.
 
 ## Path And ID

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.util;
 
+import com.jvn.villagerretaliation.compat.AccessoryInventoryCompat;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
@@ -151,6 +152,7 @@ public record VillagerPlayerItemCondition(
                 case ARMOR -> matchingStack(player.getArmorSlots(), ItemSlot.ARMOR);
                 case HOTBAR -> matchingHotbarStack(player);
                 case INVENTORY -> matchingStack(player.getInventory().items, ItemSlot.INVENTORY);
+                case ACCESSORIES -> matchingStack(AccessoryInventoryCompat.equippedStacks(player), ItemSlot.ACCESSORIES);
                 case HANDS, EQUIPMENT, ANY -> Optional.empty();
             };
             if (match.isPresent()) {
@@ -173,10 +175,12 @@ public record VillagerPlayerItemCondition(
                 case ARMOR -> expanded.add(ItemSlot.ARMOR);
                 case HOTBAR -> expanded.add(ItemSlot.HOTBAR);
                 case INVENTORY -> expanded.add(ItemSlot.INVENTORY);
+                case ACCESSORIES -> expanded.add(ItemSlot.ACCESSORIES);
                 case EQUIPMENT -> {
                     expanded.add(ItemSlot.MAIN_HAND);
                     expanded.add(ItemSlot.OFF_HAND);
                     expanded.add(ItemSlot.ARMOR);
+                    expanded.add(ItemSlot.ACCESSORIES);
                 }
                 case ANY -> {
                     expanded.add(ItemSlot.MAIN_HAND);
@@ -184,6 +188,7 @@ public record VillagerPlayerItemCondition(
                     expanded.add(ItemSlot.ARMOR);
                     expanded.add(ItemSlot.HOTBAR);
                     expanded.add(ItemSlot.INVENTORY);
+                    expanded.add(ItemSlot.ACCESSORIES);
                 }
             }
         }
@@ -450,6 +455,7 @@ public record VillagerPlayerItemCondition(
         ARMOR("armor"),
         HOTBAR("hotbar"),
         INVENTORY("inventory"),
+        ACCESSORIES("accessories"),
         EQUIPMENT("equipment"),
         ANY("any");
 
