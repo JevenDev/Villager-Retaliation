@@ -29,8 +29,10 @@ final class VillagerCombatStateMachine {
         UUID villagerId = villager.getUUID();
         CombatMode previous = MODES.get(villagerId);
         boolean targetBlocking = isShielding(target);
-        boolean hasAxe = VillagerCombatLoadoutService.hasCombatWeapon(
-                villager, stack -> stack.getItem() instanceof AxeItem);
+        boolean hasAxe = villager.level() instanceof net.minecraft.server.level.ServerLevel level
+                && VillagerCombatSkillBehavior.canUseAxeBreaker(level, villager)
+                && VillagerCombatLoadoutService.hasCombatWeapon(
+                        villager, stack -> stack.getItem() instanceof AxeItem);
         boolean hasMelee = VillagerCombatLoadoutService.hasCombatWeapon(
                 villager, VillagerRetaliationVillagerWeapons::isMeleeWeapon);
         boolean hasRanged = VillagerCombatLoadoutService.hasCombatWeapon(
@@ -108,7 +110,10 @@ final class VillagerCombatStateMachine {
      * @return {@code true} when the attack was consumed breaking a shield
      */
     static boolean tryBreakTargetShield(Villager villager, LivingEntity target) {
-        if (!(villager.getMainHandItem().getItem() instanceof AxeItem) || !isShielding(target)) {
+        if (!(villager.level() instanceof net.minecraft.server.level.ServerLevel level)
+                || !VillagerCombatSkillBehavior.canUseAxeBreaker(level, villager)
+                || !(villager.getMainHandItem().getItem() instanceof AxeItem)
+                || !isShielding(target)) {
             return false;
         }
         if (target instanceof ServerPlayer player) {

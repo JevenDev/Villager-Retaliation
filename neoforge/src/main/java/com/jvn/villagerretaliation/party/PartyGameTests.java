@@ -2013,21 +2013,46 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
-    public static void villagerInteractionRequiresAtLeastOneEmptyPlayerHand(GameTestHelper helper) {
-        ServerPlayer player = fakePlayer(helper.getLevel(), uniqueName("interaction_empty_hand"));
-        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.APPLE));
-        player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
-        helper.assertFalse(VillagerInteractionService.hasEmptyHandForVillagerInteraction(player),
-                "a main-hand item plus an off-hand shield should block villager interaction");
+    public static void villagerInteractionDefersOnlyToUsableHeldItems(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper.getLevel(), uniqueName("interaction_item_use"));
+        player.setItemInHand(
+                net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+        player.setItemInHand(
+                net.minecraft.world.InteractionHand.OFF_HAND, new ItemStack(Items.COBBLESTONE));
+        helper.assertTrue(
+                VillagerInteractionService.canStartVillagerInteractionWithHeldItems(player),
+                "two occupied hands with no entity or air use should permit villager interaction");
 
-        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-        helper.assertTrue(VillagerInteractionService.hasEmptyHandForVillagerInteraction(player),
-                "an empty main hand should permit villager interaction");
+        player.setItemInHand(
+                net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.APPLE));
+        helper.assertFalse(
+                VillagerInteractionService.canStartVillagerInteractionWithHeldItems(player),
+                "food should retain its right-click action");
 
-        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.APPLE));
-        player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, ItemStack.EMPTY);
-        helper.assertTrue(VillagerInteractionService.hasEmptyHandForVillagerInteraction(player),
-                "an empty off hand should permit villager interaction");
+        player.setItemInHand(
+                net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_CHESTPLATE));
+        helper.assertFalse(
+                VillagerInteractionService.canStartVillagerInteractionWithHeldItems(player),
+                "right-click armor swapping should take priority over villager interaction");
+
+        player.setItemInHand(
+                net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+        player.setItemInHand(
+                net.minecraft.world.InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+        helper.assertFalse(
+                VillagerInteractionService.canStartVillagerInteractionWithHeldItems(player),
+                "an off-hand shield should receive the click after an inert main-hand item passes");
+        helper.assertTrue(
+                VillagerInteractionService.shouldDeferVillagerInteractionToHeldItem(
+                        player, net.minecraft.world.InteractionHand.MAIN_HAND),
+                "an inert main hand must pass through so the usable off hand can receive the click");
+
+        player.setItemInHand(
+                net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.NAME_TAG));
+        helper.assertFalse(
+                VillagerInteractionService.shouldDeferVillagerInteractionToHeldItem(
+                        player, net.minecraft.world.InteractionHand.MAIN_HAND),
+                "an active-hand bypass item must retain its dedicated entity interaction");
         helper.succeed();
     }
 

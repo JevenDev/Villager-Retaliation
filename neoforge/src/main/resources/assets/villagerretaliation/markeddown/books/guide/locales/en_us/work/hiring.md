@@ -12,7 +12,7 @@ keywords:
 
 # Hiring & Contracts
 
-Hiring is available through an adult villager's interaction screen. A matching profession automatically qualifies for its associated role; otherwise the role's primary and support skills must total at least **61**. Courier is open to every adult, Nitwit work is nitwit-only, and Builder uses a separate project order.
+Hiring is available through an adult villager's interaction screen. Every adult can perform any ordinary role, regardless of profession or starting skills. Nitwit work is nitwit-only, and Builder uses a separate project order. Skills determine how efficiently the villager performs the selected work.
 
 ## Price and duration
 

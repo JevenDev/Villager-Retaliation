@@ -541,11 +541,7 @@ public final class VillagerRetaliationHandler {
             }
             RETALIATION.setNextAttackTick(
                     villager,
-                    gameTime + VillagerSocialAttributeBehavior.adjustCombatCooldownTicks(
-                            level,
-                            villager,
-                            ACTOR_POLICY.attackCooldown(villager)
-                    )
+                    gameTime + ACTOR_POLICY.attackCooldown(villager)
             );
             VillagerArmorerCombatTactics.onMeleeAttackCommitted(villager);
             if (waveringUnarmedCounter) {

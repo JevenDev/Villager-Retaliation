@@ -79,7 +79,7 @@ public class VillagerFishingHook extends Projectile {
         this.setOwner(owner);
         this.luck = Math.max(0, luck);
         this.lureSpeed = Math.max(0, lureSpeed);
-        this.workSpeedPercent = Math.clamp(workSpeedPercent, 75, 125);
+        this.workSpeedPercent = Math.clamp(workSpeedPercent, 50, 125);
         Vec3 start = castStart(owner);
         Vec3 delta = target.subtract(start);
         double distance = Math.max(0.001D, delta.length());
@@ -474,7 +474,7 @@ public class VillagerFishingHook extends Projectile {
         this.luck = compound.getInt("Luck");
         this.lureSpeed = compound.getInt("LureSpeed");
         if (compound.contains("WorkSpeedPercent")) {
-            this.workSpeedPercent = Math.clamp(compound.getInt("WorkSpeedPercent"), 75, 125);
+            this.workSpeedPercent = Math.clamp(compound.getInt("WorkSpeedPercent"), 50, 125);
         }
     }
 

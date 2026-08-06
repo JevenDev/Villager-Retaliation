@@ -108,11 +108,11 @@ An authorized party leader or hirer can take the front seat of a saddled assigne
 
 ### Hired Work, Skills, and Job Stats
 
-Every hired role uses one primary skill and one support skill. An adult villager qualifies when those skills total at least 61. A matching vanilla profession automatically qualifies for its canonical role even with lower skills. Courier is available to every adult, Nitwit work is restricted to nitwits, and Builder is offered as a one-off service instead of an ordinary contract.
+Every adult villager can perform any ordinary hired role, regardless of profession or starting skills. Nitwit work remains restricted to nitwits, while Builder is offered as a one-off service instead of an ordinary contract.
 
-The interaction screen cycles between **Skills**, **Profile**, and **Job Stats**. Job Stats shows each role's qualification progress and explains any profession override. Selecting a role shows its two contributing skills, weighted aptitude, work speed, and transfer capacity where applicable.
+The interaction screen cycles between **Skills**, **Profile**, and **Job Stats**. Job Stats shows whether each role is available and exactly how this villager's two relevant skills affect its performance.
 
-Role aptitude weights the primary skill at 70% and the support skill at 30%. Aptitude produces 75%-125% skill work speed and 50%-150% transfer capacity. This changes real throughput: block work and ordinary task cadence, fishing bite waits, hired combat recovery, courier cargo, and cook, smelter, and brewer collection trips. It does not alter shared furnace, smoker, blast-furnace, or brewing-stand processing timers. Successful hired work keeps the same total practice budget while training both role skills at the same 70/30 split.
+Role aptitude weights the primary skill at 70% and the support skill at 30%, with aptitude 60 as the standard point. Farming, Animal Handling, Fishing, and Nitwit work range from 50%-125% action speed. Mining and Logging instead add a modest 85%-110% block-speed modifier on top of tool quality, enchantments, and block hardness; Builder construction and Hunter tracking use the same narrow range. Craftsman, Cook, Smelter, and Brewer collection trips range from 50%-150% capacity without shortening station processing timers. Courier aptitude affects pickup capacity instead of speed, stepping through 1, 2, 4, 8, 16, 32, 64, 96, and 128 items per input; 60 aptitude carries 64 and 100 carries 128. In combat, Guarding slightly improves melee speed and damage and unlocks axe shield-breaking at 60, while Archery improves ranged speed and accuracy. Personality affects choices, moods, and reactions; it does not determine learned job or combat capability. Successful hired work trains both role skills at the same 70/30 split.
 
 | Role | Primary skill | Support skill | Automatic profession    |
 | --- | --- | --- |-------------------------|
@@ -396,7 +396,7 @@ Planned focus:
 - Hiring villagers
 - Expanded follow behavior
 - Hired jobs linked to villager professions and relevant skills
-- Skill-based job efficiency, so a profession match with weak job skills works more slowly
+- Role-specific skill efficiency, including work cadence, item capacity, tool-assisted block speed, and combat technique
 - Hired work that gradually improves the skills used by that job
 - Better inventory, gear, and equipment support for recruited villagers
 

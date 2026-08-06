@@ -518,14 +518,6 @@ public final class VillagerRetaliationEvents {
         }
 
         if (event.getTarget() instanceof Villager villager
-                && !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)
-                && !isPacificationPaymentInteraction(villager, player, event.getHand())) {
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.FAIL);
-            return;
-        }
-
-        if (event.getTarget() instanceof Villager villager
                 && VillagerBehaviorSuppressionPolicy.suppresses(
                         villager, VillagerBehaviorSuppressionPolicy.Behavior.INTERACTION_MENUS)) {
             if (player instanceof ServerPlayer serverPlayer) {
@@ -623,6 +615,11 @@ public final class VillagerRetaliationEvents {
             }
         }
 
+        if (event.getTarget() instanceof Villager
+                && VillagerInteractionService.shouldDeferVillagerInteractionToHeldItem(player, event.getHand())) {
+            return;
+        }
+
         if (event.getTarget() instanceof Villager villager) {
             tryGiveHighReputationGift(villager, player, event.getHand());
         }
@@ -707,12 +704,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
-        if (event.getTarget() instanceof Villager villager
+        if (event.getTarget() instanceof Villager
                 && event.getEntity() instanceof Player player
-                && !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)
-                && !isPacificationPaymentInteraction(villager, player, event.getHand())) {
-            event.setCancellationResult(InteractionResult.FAIL);
-            event.setCanceled(true);
+                && VillagerInteractionService.shouldDeferVillagerInteractionToHeldItem(player, event.getHand())) {
             return;
         }
         if (event.getTarget() instanceof Villager villager

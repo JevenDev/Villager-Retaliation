@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
-import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -238,7 +237,8 @@ public final class VillagerRangedCombatHelper {
                 dy + horizontal * 0.2D,
                 dz,
                 1.6F,
-                VillagerSocialAttributeBehavior.adjustRangedInaccuracy(level, villager, (float) (14 - level.getDifficulty().getId() * 4))
+                VillagerCombatSkillBehavior.adjustRangedInaccuracy(
+                        level, villager, (float) (14 - level.getDifficulty().getId() * 4))
         );
         level.addFreshEntity(thrownTrident);
         VillageCombatAuthorizationService.associateProjectile(thrownTrident, villager, target);
@@ -333,7 +333,8 @@ public final class VillagerRangedCombatHelper {
                 dy + horizontal * 0.2D,
                 dz,
                 1.6F,
-                VillagerSocialAttributeBehavior.adjustRangedInaccuracy(level, villager, (float) (14 - level.getDifficulty().getId() * 4))
+                VillagerCombatSkillBehavior.adjustRangedInaccuracy(
+                        level, villager, (float) (14 - level.getDifficulty().getId() * 4))
         );
         villager.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (villager.getRandom().nextFloat() * 0.4F + 0.8F));
         level.addFreshEntity(arrow);
@@ -504,7 +505,8 @@ public final class VillagerRangedCombatHelper {
                 hand,
                 weapon,
                 1.6F,
-                (float) (14 - level.getDifficulty().getId() * 4),
+                VillagerCombatSkillBehavior.adjustRangedInaccuracy(
+                        level, villager, (float) (14 - level.getDifficulty().getId() * 4)),
                 target
         );
         syncRangedWeaponStack(villager, hand, weapon);
@@ -519,8 +521,9 @@ public final class VillagerRangedCombatHelper {
 
     private static int attackRecoveryTicks(AbstractVillager villager, int normalTicks) {
         return villager instanceof Villager villageResident
-                ? VillagerCombatRoles.hiredAttackRecoveryTicks(villageResident, normalTicks)
-                : normalTicks;
+                ? VillagerCombatRoles.rangedAttackRecoveryTicks(villageResident, normalTicks)
+                : VillagerCombatSkillBehavior.adjustRangedRecoveryTicks(
+                        (ServerLevel) villager.level(), villager, normalTicks);
     }
 
     private static boolean isWithinCrossbowAttackRange(AbstractVillager villager, LivingEntity target, ItemStack weapon) {

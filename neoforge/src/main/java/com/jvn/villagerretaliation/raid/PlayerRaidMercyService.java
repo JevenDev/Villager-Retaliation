@@ -117,7 +117,7 @@ public final class PlayerRaidMercyService {
             ServerPlayer player,
             InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND
-                || !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)
+                || !VillagerInteractionService.canStartVillagerInteractionWithHeldItems(player)
                 || villager == null
                 || !villager.isAlive()
                 || VillagerDownedService.isDowned(villager)

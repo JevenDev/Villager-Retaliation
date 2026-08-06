@@ -13,8 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 
 public final class HiredVillagerRoles {
-    public static final int QUALIFICATION_THRESHOLD_EXCLUSIVE = 60;
-    public static final int QUALIFICATION_REQUIRED_TOTAL = QUALIFICATION_THRESHOLD_EXCLUSIVE + 1;
+    public static final int STANDARD_APTITUDE = 60;
     public static final double PRIMARY_SKILL_WEIGHT = 0.70D;
     public static final double SUPPORT_SKILL_WEIGHT = 0.30D;
     private static final Map<HiredVillagerRole, RoleDefinition> DEFINITIONS = definitions();
@@ -87,19 +86,6 @@ public final class HiredVillagerRoles {
         return Math.clamp((int) Math.round(primary * PRIMARY_SKILL_WEIGHT + support * SUPPORT_SKILL_WEIGHT), 0, 100);
     }
 
-    public static int qualificationTotal(ServerLevel level, Villager villager, HiredVillagerRole role) {
-        return qualificationTotal(VillagerProfileManager.getSkills(level, villager), role);
-    }
-
-    public static int qualificationTotal(VillagerSkillSet skills, HiredVillagerRole role) {
-        RoleDefinition definition = definition(role);
-        VillagerSkillSet safeSkills = skills == null ? VillagerSkillSet.EMPTY : skills;
-        return Math.clamp(
-                safeSkills.get(definition.primarySkill()) + safeSkills.get(definition.supportSkill()),
-                0,
-                200);
-    }
-
     public static int skillWorkSpeedPercent(ServerLevel level, Villager villager, HiredVillagerRole role) {
         return skillWorkSpeedPercent(roleScore(level, villager, role));
     }
@@ -108,8 +94,47 @@ public final class HiredVillagerRoles {
         return skillWorkSpeedPercent(roleScore(skills, role));
     }
 
+    /**
+     * Broad action-speed curve used only by roles whose learned skill directly changes
+     * repeated work cadence, such as Farming, Animal Handling, Fishing, and Nitwit work.
+     */
     public static int skillWorkSpeedPercent(int aptitude) {
-        return Math.clamp(75 + Math.round(Math.clamp(aptitude, 0, 100) / 2.0F), 75, 125);
+        return piecewisePercent(aptitude, 50, 100, 125);
+    }
+
+    /**
+     * Narrow block-work curve. Tool material, enchantments, and block hardness remain
+     * the dominant factors for Mining and Logging.
+     */
+    public static int blockWorkSpeedPercent(int aptitude) {
+        return piecewisePercent(aptitude, 85, 100, 110);
+    }
+
+    /** Skill-controlled speed for an action performed inside a worker implementation. */
+    public static int roleActionSpeedPercent(HiredVillagerRole role, int aptitude) {
+        if (role == null) {
+            return 100;
+        }
+        return switch (role) {
+            case MINING, LOGGING -> blockWorkSpeedPercent(aptitude);
+            case FISHING -> skillWorkSpeedPercent(aptitude);
+            default -> 100;
+        };
+    }
+
+    /**
+     * Skill-controlled decision cadence. Roles with a concrete action or capacity
+     * effect stay at neutral cadence so aptitude is never counted twice.
+     */
+    public static int roleCadencePercent(HiredVillagerRole role, int aptitude) {
+        if (role == null) {
+            return 100;
+        }
+        return switch (role) {
+            case FARMING, ANIMAL_HANDLING, NITWIT -> skillWorkSpeedPercent(aptitude);
+            case HUNTING, BUILDER -> blockWorkSpeedPercent(aptitude);
+            default -> 100;
+        };
     }
 
     public static int transferCapacityPercent(ServerLevel level, Villager villager, HiredVillagerRole role) {
@@ -121,7 +146,7 @@ public final class HiredVillagerRoles {
     }
 
     public static int transferCapacityPercent(int aptitude) {
-        return Math.clamp(50 + Math.clamp(aptitude, 0, 100), 50, 150);
+        return piecewisePercent(aptitude, 50, 100, 150);
     }
 
     public static int transferLimit(int baseItems, int transferCapacityPercent) {
@@ -132,7 +157,23 @@ public final class HiredVillagerRoles {
     }
 
     public static int courierTransferLimit(int aptitude) {
-        return 64 + Math.round(64 * Math.clamp(aptitude, 0, 100) / 100.0F);
+        int score = Math.clamp(aptitude, 0, 100);
+        if (score >= 100) {
+            return 128;
+        }
+        if (score >= 80) {
+            return 96;
+        }
+        if (score >= 60) {
+            return 64;
+        }
+        if (score >= 50) {
+            return 32;
+        }
+        if (score >= 40) {
+            return 16;
+        }
+        return score >= 30 ? 8 : score >= 20 ? 4 : score >= 10 ? 2 : 1;
     }
 
     public static int scaledDurationTicks(int normalTicks, int skillWorkSpeedPercent) {
@@ -140,17 +181,19 @@ public final class HiredVillagerRoles {
             return 0;
         }
         return Math.max(1, Math.round(normalTicks * 100.0F
-                / Math.clamp(skillWorkSpeedPercent, 75, 125)));
+                / Math.clamp(skillWorkSpeedPercent, 50, 125)));
     }
 
     public static int baseTransferItems(HiredVillagerRole role) {
         if (role == HiredVillagerRole.COURIER) {
             return 64;
         }
+        if (role == HiredVillagerRole.CRAFTSMAN) {
+            return 32;
+        }
         return role == HiredVillagerRole.COOK
                 || role == HiredVillagerRole.SMELTER
-                || role == HiredVillagerRole.BREWING
-                || role == HiredVillagerRole.CRAFTSMAN ? 16 : 0;
+                || role == HiredVillagerRole.BREWING ? 16 : 0;
     }
 
     public static List<VillagerSkill> roleSkills(HiredVillagerRole role) {
@@ -189,36 +232,19 @@ public final class HiredVillagerRoles {
         if (baby || role == null) {
             return false;
         }
-        RoleDefinition definition = definition(role);
-        String profession = safeProfession(professionKey);
-        if (!definition.restrictedProfessions().isEmpty()
-                && !definition.restrictedProfessions().contains(profession)) {
-            return false;
-        }
-        if (definition.universallyAvailable() || definition.canonicalProfessions().contains(profession)) {
-            return true;
-        }
-        return qualificationTotal(skills, role) > QUALIFICATION_THRESHOLD_EXCLUSIVE;
+        Set<String> restrictedProfessions = definition(role).restrictedProfessions();
+        return restrictedProfessions.isEmpty()
+                || restrictedProfessions.contains(safeProfession(professionKey));
     }
 
-    /** Compatibility overload for callers that already resolved a cumulative qualification total. */
-    public static boolean isSkillUnlocked(Villager villager, HiredVillagerRole role, int qualificationTotal) {
+    /** Compatibility overload for callers that previously resolved a qualification total. */
+    public static boolean isSkillUnlocked(Villager villager, HiredVillagerRole role, int ignoredQualificationTotal) {
         if (villager == null || villager.isBaby() || role == null) {
             return false;
         }
-        RoleDefinition definition = definition(role);
-        String profession = VillagerProfessionSkills.professionKey(villager);
-        if (!definition.restrictedProfessions().isEmpty()
-                && !definition.restrictedProfessions().contains(profession)) {
-            return false;
-        }
-        return definition.universallyAvailable()
-                || definition.canonicalProfessions().contains(profession)
-                || qualificationTotal > QUALIFICATION_THRESHOLD_EXCLUSIVE;
-    }
-
-    public static int eligibilityThreshold(Villager villager, HiredVillagerRole role) {
-        return QUALIFICATION_REQUIRED_TOTAL;
+        Set<String> restrictedProfessions = definition(role).restrictedProfessions();
+        return restrictedProfessions.isEmpty()
+                || restrictedProfessions.contains(VillagerProfessionSkills.professionKey(villager));
     }
 
     public static boolean isProfessionPreferred(Villager villager, HiredVillagerRole role) {
@@ -278,6 +304,16 @@ public final class HiredVillagerRoles {
             Set<String> restrictedProfessions,
             String... canonicalProfessions) {
         return new RoleDefinition(primary, support, Set.of(canonicalProfessions), false, restrictedProfessions);
+    }
+
+    private static int piecewisePercent(int aptitude, int minimum, int standard, int maximum) {
+        int score = Math.clamp(aptitude, 0, 100);
+        if (score <= STANDARD_APTITUDE) {
+            return minimum + Math.round(score * (standard - minimum) / (float) STANDARD_APTITUDE);
+        }
+        return standard + Math.round(
+                (score - STANDARD_APTITUDE) * (maximum - standard)
+                        / (float) (100 - STANDARD_APTITUDE));
     }
 
     private static String safeProfession(String professionKey) {

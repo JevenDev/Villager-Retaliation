@@ -2,9 +2,6 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
-import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
-import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
-import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
@@ -117,21 +114,16 @@ public final class VillagerCombatRoles {
     }
 
     public static int attackCooldown(Villager villager) {
-        return hiredAttackRecoveryTicks(villager, ATTACK_COOLDOWNS.getOrDefault(profession(villager), 20));
+        int normalTicks = ATTACK_COOLDOWNS.getOrDefault(profession(villager), 20);
+        return villager.level() instanceof ServerLevel level
+                ? VillagerCombatSkillBehavior.adjustMeleeRecoveryTicks(level, villager, normalTicks)
+                : normalTicks;
     }
 
-    static int hiredAttackRecoveryTicks(Villager villager, int normalTicks) {
-        if (!(villager.level() instanceof ServerLevel level)
-                || !HiredVillagerContractService.hasContract(villager)
-                || !HiredVillagerContractService.isHired(level, villager)) {
-            return normalTicks;
-        }
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        if (role != HiredVillagerRole.COMBAT && role != HiredVillagerRole.HUNTING) {
-            return normalTicks;
-        }
-        int speed = HiredVillagerRoles.skillWorkSpeedPercent(level, villager, role);
-        return HiredVillagerRoles.scaledDurationTicks(normalTicks, speed);
+    static int rangedAttackRecoveryTicks(Villager villager, int normalTicks) {
+        return villager.level() instanceof ServerLevel level
+                ? VillagerCombatSkillBehavior.adjustRangedRecoveryTicks(level, villager, normalTicks)
+                : normalTicks;
     }
 
     public static boolean isArmorer(Villager villager) {

@@ -1,12 +1,19 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.VillagerRetaliation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
 
 public final class VillagerCombatAttributeCompat {
+    private static final net.minecraft.resources.ResourceLocation GUARDING_DAMAGE_MODIFIER_ID =
+            VillagerRetaliation.id("guarding_damage");
+
     private VillagerCombatAttributeCompat() {
     }
 
@@ -45,6 +52,18 @@ public final class VillagerCombatAttributeCompat {
                 entity.getMainHandItem(), entity.level().getDifficulty());
         if (attackDamage.getBaseValue() != desiredBaseDamage) {
             attackDamage.setBaseValue(desiredBaseDamage);
+        }
+
+        attackDamage.removeModifier(GUARDING_DAMAGE_MODIFIER_ID);
+        if (entity instanceof AbstractVillager villager && entity.level() instanceof ServerLevel level) {
+            int damagePercent = VillagerCombatSkillBehavior.meleeDamagePercent(
+                    VillagerCombatSkillBehavior.guarding(level, villager));
+            if (damagePercent != 100) {
+                attackDamage.addTransientModifier(new AttributeModifier(
+                        GUARDING_DAMAGE_MODIFIER_ID,
+                        (damagePercent - 100) / 100.0D,
+                        AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+            }
         }
         return true;
     }
