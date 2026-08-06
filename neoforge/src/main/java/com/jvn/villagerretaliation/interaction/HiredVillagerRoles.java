@@ -131,7 +131,7 @@ public final class HiredVillagerRoles {
             return 100;
         }
         return switch (role) {
-            case FARMING, ANIMAL_HANDLING, NITWIT -> skillWorkSpeedPercent(aptitude);
+            case FARMING, ANIMAL_HANDLING, BREWING, CRAFTSMAN, NITWIT -> skillWorkSpeedPercent(aptitude);
             case HUNTING, BUILDER -> blockWorkSpeedPercent(aptitude);
             default -> 100;
         };
@@ -143,6 +143,14 @@ public final class HiredVillagerRoles {
 
     public static int transferCapacityPercent(VillagerSkillSet skills, HiredVillagerRole role) {
         return transferCapacityPercent(roleScore(skills, role));
+    }
+
+    /** Role-specific material capacity. Brewer and Craftsman aptitude affects preparation speed instead. */
+    public static int roleTransferCapacityPercent(HiredVillagerRole role, int aptitude) {
+        if (role == HiredVillagerRole.COOK || role == HiredVillagerRole.SMELTER) {
+            return transferCapacityPercent(aptitude);
+        }
+        return 100;
     }
 
     public static int transferCapacityPercent(int aptitude) {

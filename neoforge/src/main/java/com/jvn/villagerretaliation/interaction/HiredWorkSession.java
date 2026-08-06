@@ -45,7 +45,7 @@ public record HiredWorkSession(
         HiredWorkArea area = metadata.jobSite.workArea();
         HiredRoute route = HiredRoute.fromState(state);
         int skillWorkSpeedPercent = HiredVillagerRoles.roleActionSpeedPercent(safeRole, metadata.roleScore);
-        int transferCapacityPercent = HiredVillagerRoles.transferCapacityPercent(metadata.roleScore);
+        int transferCapacityPercent = HiredVillagerRoles.roleTransferCapacityPercent(safeRole, metadata.roleScore);
         HiredWorkContext context = new HiredWorkContext(
                 inventory,
                 state,

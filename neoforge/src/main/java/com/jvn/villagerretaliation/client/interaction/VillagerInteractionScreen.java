@@ -3287,10 +3287,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             case COURIER -> lines.add(translate(
                     "job_stats.detail.courier_transfer",
                     HiredVillagerRoles.courierTransferLimit(aptitude)));
-            case CRAFTSMAN, COOK, SMELTER, BREWING -> lines.add(translate(
+            case COOK, SMELTER -> lines.add(translate(
                     "job_stats.detail.transfer",
                     HiredVillagerRoles.transferLimit(
-                            transferBase, HiredVillagerRoles.transferCapacityPercent(aptitude))));
+                            transferBase, HiredVillagerRoles.roleTransferCapacityPercent(role, aptitude))));
+            case CRAFTSMAN, BREWING -> lines.add(translate("job_stats.detail.work_speed", cadenceSpeed));
             case MINING, LOGGING -> lines.add(translate("job_stats.detail.block_speed", actionSpeed));
             case BUILDER -> lines.add(translate("job_stats.detail.build_speed", cadenceSpeed));
             case COMBAT -> {
@@ -3365,7 +3366,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             case COMBAT -> "combat";
             case HUNTING -> "hunting";
             case FISHING -> "fishing";
-            case CRAFTSMAN, COOK, SMELTER, BREWING -> "transfer";
+            case CRAFTSMAN -> "crafting";
+            case BREWING -> "brewing_preparation";
+            case COOK, SMELTER -> "transfer";
             case COURIER -> "courier";
             case NITWIT -> "nitwit";
             default -> "cadence";

@@ -147,11 +147,14 @@ final class VillagerInteractionJobStatsPage {
             case COURIER -> tooltip.add(Component.translatable(
                     "villagerretaliation.gui.job_stats.detail.courier_transfer",
                     HiredVillagerRoles.courierTransferLimit(aptitude)).withStyle(color));
-            case CRAFTSMAN, COOK, SMELTER, BREWING -> tooltip.add(Component.translatable(
+            case COOK, SMELTER -> tooltip.add(Component.translatable(
                     "villagerretaliation.gui.job_stats.detail.transfer",
                     HiredVillagerRoles.transferLimit(
                             HiredVillagerRoles.baseTransferItems(role),
-                            HiredVillagerRoles.transferCapacityPercent(aptitude))).withStyle(color));
+                            HiredVillagerRoles.roleTransferCapacityPercent(role, aptitude))).withStyle(color));
+            case CRAFTSMAN, BREWING -> tooltip.add(Component.translatable(
+                    "villagerretaliation.gui.job_stats.detail.work_speed",
+                    HiredVillagerRoles.roleCadencePercent(role, aptitude)).withStyle(color));
             case MINING, LOGGING -> tooltip.add(Component.translatable(
                     "villagerretaliation.gui.job_stats.detail.block_speed",
                     HiredVillagerRoles.blockWorkSpeedPercent(aptitude)).withStyle(color));
