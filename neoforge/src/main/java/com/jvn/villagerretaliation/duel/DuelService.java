@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.network.DuelFxStatePayload;
 import com.jvn.villagerretaliation.network.DuelInventoryStatePayload;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -68,8 +70,8 @@ public final class DuelService {
     public static final int[] FIXED_STAKES = {0, 8, 16, 32, 64};
     private static final long DAY_TICKS = 24000L;
     private static final long COUNTDOWN_TICKS = 60L;
-    private static final long ARENA_PARTICLE_INTERVAL_TICKS = 20L;
-    private static final int ARENA_PARTICLE_POINTS = 48;
+    private static final long ARENA_PARTICLE_INTERVAL_TICKS = 10L;
+    private static final int ARENA_PARTICLE_POINTS = 24;
     private static final float DUEL_VICTORY_SOUND_VOLUME = 0.8F;
     private static final float DUEL_VICTORY_SOUND_PITCH = 1.4F;
     private static final double VILLAGER_CLEARANCE = 3.0D;
@@ -193,6 +195,7 @@ public final class DuelService {
         BY_ENTITY.put(villager.getUUID(), id);
         player.inventoryMenu.broadcastFullState();
         syncInventoryState(player, true, !kit.bringYourOwn());
+        syncFxState(player, duel, null);
         DuelSavedData.get(level).markStarted(villager.getUUID(), player.getUUID(), now);
         VillagerConversationService.endForVillager(villager, true);
         player.sendSystemMessage(Component.translatable("villagerretaliation.duel.started", VillagerPresetNameRegistry.resolveDisplayName(villager)));
@@ -270,7 +273,9 @@ public final class DuelService {
         long remainingTicks = duel.boundaryGraceTicks() - (now - duel.playerOutsideSince());
         int seconds = ticksToSeconds(remainingTicks);
         if (seconds > 0 && seconds != duel.lastBoundarySecond()) {
-            player.sendSystemMessage(Component.translatable("villagerretaliation.duel.boundary_countdown", seconds));
+            player.sendSystemMessage(Component.translatable(
+                    "villagerretaliation.duel.boundary_countdown",
+                    seconds).withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
             duel.lastBoundarySecond(seconds);
         }
     }
@@ -284,12 +289,14 @@ public final class DuelService {
                 || Math.floorMod(now, ARENA_PARTICLE_INTERVAL_TICKS) != 0L) {
             return;
         }
+        double phase = now * 0.08D;
         for (int point = 0; point < ARENA_PARTICLE_POINTS; point++) {
             double angle = Math.PI * 2.0D * point / ARENA_PARTICLE_POINTS;
             double x = duel.center().x + Math.cos(angle) * duel.arenaRadius();
             double z = duel.center().z + Math.sin(angle) * duel.arenaRadius();
-            level.sendParticles(player, ParticleTypes.END_ROD, true,
-                    x, duel.center().y + 0.15D, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+            double height = 0.35D + 1.8D * (0.5D + 0.5D * Math.sin(angle * 3.0D + phase));
+            level.sendParticles(player, ParticleTypes.WHITE_ASH, true,
+                    x, duel.center().y + height, z, 1, 0.03D, 0.08D, 0.03D, 0.005D);
         }
     }
     private static boolean isUsingRangedWeapon(Villager villager) {
@@ -657,6 +664,7 @@ public final class DuelService {
             duel.snapshots().player().restore(player, assignedLoadout);
             player.inventoryMenu.broadcastFullState();
             syncInventoryState(player, false, false);
+            syncFxState(player, null, settledResult);
         }
         if (villager != null) {
             VillagerCombatBehavior.reset(villager);
@@ -755,6 +763,36 @@ public final class DuelService {
         } catch (UnsupportedOperationException ignored) {
             // Mock GameTest connections do not negotiate custom payloads.
         }
+    }
+
+    private static void syncFxState(ServerPlayer player, ActiveDuel duel, DuelResult result) {
+        try {
+            DuelFxStatePayload payload = duel == null
+                    ? DuelFxStatePayload.inactive(visualResult(result))
+                    : new DuelFxStatePayload(
+                            true,
+                            VillagerRetaliationConfig.SHOW_DUEL_ARENA_PARTICLES.get(),
+                            duel.center().x,
+                            duel.center().y,
+                            duel.center().z,
+                            duel.arenaRadius(),
+                            duel.boundaryGraceTicks(),
+                            (int) COUNTDOWN_TICKS,
+                            DuelFxStatePayload.RESULT_NONE);
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, payload);
+        } catch (UnsupportedOperationException ignored) {
+            // Mock GameTest connections do not negotiate custom payloads.
+        }
+    }
+
+    private static int visualResult(DuelResult result) {
+        if (result == null) return DuelFxStatePayload.RESULT_NONE;
+        return switch (result) {
+            case PLAYER_WIN -> DuelFxStatePayload.RESULT_WIN;
+            case VILLAGER_WIN -> DuelFxStatePayload.RESULT_LOSS;
+            case DRAW -> DuelFxStatePayload.RESULT_DRAW;
+            case CANCELLED -> DuelFxStatePayload.RESULT_NONE;
+        };
     }
 
     private static void train(ServerLevel level, Villager villager, ActiveDuel duel) {

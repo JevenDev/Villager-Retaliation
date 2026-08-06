@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "68";
+    private static final String PROTOCOL_VERSION = "70";
 
     private VillagerReputationNetworking() {
     }
@@ -111,6 +111,12 @@ public final class VillagerReputationNetworking {
                 DuelInventoryStatePayload.TYPE,
                 DuelInventoryStatePayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.duel.DuelInventoryClientState",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                DuelFxStatePayload.TYPE,
+                DuelFxStatePayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.duel.DuelFxClient",
                 "accept"
         );
         network.safePlayToClientThreaded(
