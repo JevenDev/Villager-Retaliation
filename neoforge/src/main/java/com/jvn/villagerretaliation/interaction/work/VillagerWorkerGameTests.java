@@ -2774,10 +2774,20 @@ public final class VillagerWorkerGameTests {
                 "Mining should use the narrow block-work curve");
         helper.assertValueEqual(HiredVillagerRoles.roleActionSpeedPercent(HiredVillagerRole.COURIER, 100), 100,
                 "Courier aptitude must not change action speed");
+        helper.assertValueEqual(HiredVillagerRoles.roleCadencePercent(HiredVillagerRole.CRAFTSMAN, 0), 50,
+                "Craftsman aptitude should control recipe crafting cadence");
+        helper.assertValueEqual(HiredVillagerRoles.roleCadencePercent(HiredVillagerRole.BREWING, 100), 125,
+                "Brewer aptitude should control preparation and stand-transfer cadence");
         helper.assertValueEqual(HiredVillagerRoles.roleCadencePercent(HiredVillagerRole.COOK, 100), 100,
                 "Cook aptitude must affect capacity rather than cadence");
         helper.assertValueEqual(HiredVillagerRoles.roleCadencePercent(HiredVillagerRole.FARMING, 100), 125,
                 "Farming should use the broad action-cadence curve");
+        helper.assertValueEqual(HiredVillagerRoles.roleTransferCapacityPercent(HiredVillagerRole.BREWING, 0), 100,
+                "Brewer material pickup should stay at its standard batch size");
+        helper.assertValueEqual(HiredVillagerRoles.roleTransferCapacityPercent(HiredVillagerRole.CRAFTSMAN, 100), 100,
+                "Craftsman material pickup should stay at its standard batch size");
+        helper.assertValueEqual(HiredVillagerRoles.roleTransferCapacityPercent(HiredVillagerRole.COOK, 0), 50,
+                "Cook aptitude should continue to control material capacity");
         helper.assertValueEqual(VillagerCombatSkillBehavior.meleeAttackSpeedPercent(0), 91,
                 "minimum Guarding attack speed");
         helper.assertValueEqual(VillagerCombatSkillBehavior.meleeAttackSpeedPercent(60), 100,
