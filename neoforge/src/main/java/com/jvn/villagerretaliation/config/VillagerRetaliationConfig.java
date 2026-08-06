@@ -322,10 +322,20 @@ public final class VillagerRetaliationConfig {
         ConfigWrapper<?> config = instantiateConfigWrapper();
         boolean migrateCraftsmanSkillGrowth =
                 VillagerRetaliationConfigCompatibility.shouldMigrateCraftsmanSkillGrowth(config.fileLocation());
+        boolean disableLegacyExperimentalTradeFeatures =
+                VillagerRetaliationConfigCompatibility.shouldDisableLegacyExperimentalTradeFeatures(config.fileLocation());
         if (!migrateLegacyTomlIfNeeded(config)) {
             config.load();
         }
+        boolean configChanged = false;
         if (migrateCraftsmanSkillGrowth && VillagerRetaliationConfigCompatibility.inheritLegacyCraftsmanSkillGrowth(config)) {
+            configChanged = true;
+        }
+        if (disableLegacyExperimentalTradeFeatures
+                && VillagerRetaliationConfigCompatibility.disableLegacyExperimentalTradeFeatures(config)) {
+            configChanged = true;
+        }
+        if (configChanged) {
             config.save();
         }
         return config;

@@ -9,6 +9,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 public record ServerConfigSyncPayload(
         boolean showVillagerNameTags,
         boolean villagerGiftsEnabled,
+        boolean skillTradeFeaturesEnabled,
         VillagerStatDisplayMode villagerStatDisplayMode) implements CustomPacketPayload {
     public static final Type<ServerConfigSyncPayload> TYPE = VillagerPayloads.type("server_config_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, ServerConfigSyncPayload> STREAM_CODEC =
@@ -17,11 +18,13 @@ public record ServerConfigSyncPayload(
     private static void encode(RegistryFriendlyByteBuf buffer, ServerConfigSyncPayload payload) {
         buffer.writeBoolean(payload.showVillagerNameTags());
         buffer.writeBoolean(payload.villagerGiftsEnabled());
+        buffer.writeBoolean(payload.skillTradeFeaturesEnabled());
         buffer.writeEnum(payload.villagerStatDisplayMode());
     }
 
     private static ServerConfigSyncPayload decode(RegistryFriendlyByteBuf buffer) {
         return new ServerConfigSyncPayload(
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readEnum(VillagerStatDisplayMode.class));

@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 
 final class VillagerRetaliationConfigCompatibility {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final String EXPERIMENTAL_TRADE_MIGRATION_PROPERTY =
+            "experimentalTradeFeaturesMigrationVersion";
 
     private VillagerRetaliationConfigCompatibility() {
     }
@@ -25,6 +27,25 @@ final class VillagerRetaliationConfigCompatibility {
             LOGGER.warn("Failed to inspect existing config for the Craftsman skill-growth setting", exception);
             return false;
         }
+    }
+
+    static boolean shouldDisableLegacyExperimentalTradeFeatures(Path configPath) {
+        if (!Files.exists(configPath)) {
+            Path configDirectory = configPath.getParent();
+            return configDirectory != null
+                    && (Files.exists(configDirectory.resolve("villagerretaliation-common.toml"))
+                    || Files.exists(configDirectory.resolve("villagerretaliation-client.toml")));
+        }
+        try {
+            return configTextRequiresExperimentalTradeMigration(Files.readString(configPath));
+        } catch (IOException exception) {
+            LOGGER.warn("Failed to inspect existing config for the experimental trade-feature migration", exception);
+            return false;
+        }
+    }
+
+    static boolean configTextRequiresExperimentalTradeMigration(String configText) {
+        return !configTextHasProperty(configText, EXPERIMENTAL_TRADE_MIGRATION_PROPERTY);
     }
 
     static boolean configTextHasProperty(String configText, String propertyName) {
@@ -50,6 +71,26 @@ final class VillagerRetaliationConfigCompatibility {
             return true;
         } catch (Exception exception) {
             LOGGER.warn("Failed to initialize the Craftsman skill-growth setting from Logging", exception);
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    static boolean disableLegacyExperimentalTradeFeatures(ConfigWrapper<?> config) {
+        Option enabled = config.optionForKey(new Option.Key("trade.enableSkillTradeOverhaul"));
+        Option migrationVersion = config.optionForKey(
+                new Option.Key("trade." + EXPERIMENTAL_TRADE_MIGRATION_PROPERTY));
+        if (enabled == null || migrationVersion == null) {
+            return false;
+        }
+        try {
+            enabled.set(false);
+            migrationVersion.set(1);
+            LOGGER.info(
+                    "Disabled experimental skill trades, trade cycling, and trade requests for the one-time config migration");
+            return true;
+        } catch (Exception exception) {
+            LOGGER.warn("Failed to disable legacy experimental trade features", exception);
             return false;
         }
     }
