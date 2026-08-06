@@ -9,31 +9,6 @@
   },
   "entries": [
     {
-      "id": "player_item_proximity_diamond_sword_warning",
-      "message_prefix": "forced.player_item_proximity.diamond_sword_warning",
-      "trigger": "player_item_proximity",
-      "output": {
-        "mode": "chat",
-        "radius": 16
-      },
-      "lines": [
-        "That diamond blade is hard to miss, {player}. Keep it pointed elsewhere.",
-        "Walk <pulse>softer</pulse> with {held_item} in your hand.",
-        "A sword like that changes the shape of a conversation.",
-        "Easy with {held_item}. This is a village, not a battlefield."
-      ],
-      "priority": -50,
-      "chance": 0.5,
-      "witness_radius": 4,
-      "requires_line_of_sight": true,
-      "player_items": [
-        "minecraft:diamond_sword"
-      ],
-      "player_item_slots": [
-        "main_hand"
-      ]
-    },
-    {
       "id": "player_item_proximity_trade_cost_novice",
       "trigger": "player_item_proximity",
       "output": {

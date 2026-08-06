@@ -49,6 +49,7 @@ public final class ForcedDialogueResources {
             "requires_witness_unarmed", "witness_unarmed", "requires_witness_armed", "witness_armed",
             "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
             "requires_held_trade_item", "requires_trade_item", "requires_matching_trade_item",
+            "requires_player_aiming_at_witness",
             "min_trade_level", "max_trade_level", "min_villager_trade_level", "max_villager_trade_level",
             "min_player_item_durability", "max_player_item_durability", "min_player_item_durability_percent", "max_player_item_durability_percent",
             "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
@@ -306,6 +307,7 @@ public final class ForcedDialogueResources {
                 readTradeLevel(entry, "min_trade_level", "min_villager_trade_level", 1),
                 readTradeLevel(entry, "max_trade_level", "max_villager_trade_level", 5),
                 readRequiresHeldTradeItem(entry),
+                readBoolean(entry, "requires_player_aiming_at_witness"),
                 VillagerEquipmentCondition.read(entry, "witness"),
                 VillagerPlayerItemCondition.read(entry),
                 VillagerReputationCondition.read(entry),
@@ -330,7 +332,8 @@ public final class ForcedDialogueResources {
         double radius = readDouble(output, "radius", 0.0D);
         return new ForcedDialogueOutput(
                 mode,
-                radius > 0.0D ? radius : 0.0D
+                radius > 0.0D ? radius : 0.0D,
+                readBoolean(output, "look_at_player")
         );
     }
 
@@ -1052,6 +1055,7 @@ public final class ForcedDialogueResources {
             int minTradeLevel,
             int maxTradeLevel,
             boolean requiresHeldTradeItem,
+            boolean requiresPlayerAimingAtWitness,
             VillagerEquipmentCondition witnessEquipmentCondition,
             VillagerPlayerItemCondition playerItemCondition,
             VillagerReputationCondition reputationCondition,
@@ -1110,9 +1114,10 @@ public final class ForcedDialogueResources {
 
     public record ForcedDialogueOutput(
             ForcedDialogueOutputMode mode,
-            double radius) {
+            double radius,
+            boolean lookAtPlayer) {
         private static ForcedDialogueOutput forcedDialogue() {
-            return new ForcedDialogueOutput(ForcedDialogueOutputMode.FORCED_DIALOGUE, 0.0D);
+            return new ForcedDialogueOutput(ForcedDialogueOutputMode.FORCED_DIALOGUE, 0.0D, false);
         }
     }
 

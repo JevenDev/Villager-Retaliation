@@ -151,7 +151,8 @@ When a key is present, the keyed message is used first and the inline text is on
       "trigger": "retaliation_started",
       "output": {
         "mode": "chat",
-        "radius": 18
+        "radius": 18,
+        "look_at_player": true
       },
       "lines": [
         "You picked the wrong village.",
@@ -162,6 +163,8 @@ When a key is present, the keyed message is used first and the inline text is on
   ]
 }
 ```
+
+`output.look_at_player: true` asks the speaking villager to face the triggering player for the chat bark. This is best-effort: active vanilla work, hired-role work, combat, panic, sleep, trading, conversations, and player movement orders keep control of the villager's attention.
 
 ## When To Use Forced Dialogue Instead Of Normal Dialogue
 
@@ -182,19 +185,22 @@ Use `trigger: "player_item_proximity"` for lines that fire when a nearby player 
 
 ```json
 {
-  "id": "my_pack.trade_cost_pitch",
+  "id": "my_pack.aimed_sword_warning",
   "trigger": "player_item_proximity",
   "output": {
-    "mode": "chat"
+    "mode": "chat",
+    "look_at_player": true
   },
-  "line": "I could use {trade_cost}. I have {trade_result_stack} ready if you are interested.",
-  "witness_radius": 4,
-  "chance": 0.35,
-  "requires_held_trade_item": true,
-  "min_trade_level": 2,
-  "max_trade_level": 4
+  "line": "Lower {held_item}, {player}.",
+  "witness_radius": 8,
+  "chance": 1.0,
+  "requires_player_aiming_at_witness": true,
+  "player_items": ["minecraft:diamond_sword"],
+  "player_item_slots": ["hands"]
 }
 ```
+
+`requires_player_aiming_at_witness: true` requires the player's unobstructed server-side sight ray to hit this villager before another living entity. It can be combined with `player_items` and `player_item_slots` to author weapon-specific warnings.
 
 `requires_held_trade_item: true` makes the entry match only adult, non-nitwit villagers the player can currently trade with, and only when the player's main hand or off hand matches one of that villager's active trade cost items. It uses vanilla's `ShowTradesToPlayer` item check, extended to also consider the off hand, so counts and components do not need to match. Out-of-stock offers are ignored. You can also use `requires_trade_item` or `requires_matching_trade_item` as aliases.
 
@@ -214,7 +220,7 @@ Use `remove: true` with an `id` to remove one definition:
 
 ```json
 {
-  "id": "player_item_proximity_diamond_sword_warning",
+  "id": "player_aiming_sword_neutral",
   "remove": true
 }
 ```

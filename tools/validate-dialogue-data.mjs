@@ -4433,7 +4433,7 @@ function checkForcedDialogueEntryText(file, entry, location, messagePrefix = "")
   checkOptionalBoolean(file, entry, location, "remove");
   checkOptionalString(file, entry, location, "message_prefix");
   checkOptionalString(file, entry, location, "text_prefix");
-  for (const key of ["initiate_dialogue", "aggro_immediately", "force_camera_towards_villager", "requires_line_of_sight", "requires_held_trade_item", "requires_trade_item", "requires_matching_trade_item"]) {
+  for (const key of ["initiate_dialogue", "aggro_immediately", "force_camera_towards_villager", "requires_line_of_sight", "requires_held_trade_item", "requires_trade_item", "requires_matching_trade_item", "requires_player_aiming_at_witness"]) {
     checkOptionalBoolean(file, entry, location, key);
   }
   checkOptionalInteger(file, entry, location, "priority");
@@ -4472,9 +4472,10 @@ function checkForcedDialogueOutput(file, output, location) {
     errors.push(`${relative(file)}: ${location} must be an object.`);
     return;
   }
-  checkUnknownObjectKeys(file, output, location, new Set(["mode", "radius"]));
+  checkUnknownObjectKeys(file, output, location, new Set(["mode", "radius", "look_at_player"]));
   checkStringValues(file, output, location, ["mode"], forcedDialogueOutputModes, "forced dialogue output mode");
   checkOptionalNumber(file, output, location, "radius", { min: 0 });
+  checkOptionalBoolean(file, output, location, "look_at_player");
 }
 
 function checkForcedDialogueOptions(file, options, location, defaultQuestId = "", messagePrefix = "", kind = "option") {
