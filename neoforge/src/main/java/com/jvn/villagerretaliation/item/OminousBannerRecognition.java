@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.item;
 
+import com.jvn.villagerretaliation.compat.AccessoryInventoryCompat;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import java.util.Objects;
 import net.minecraft.core.component.DataComponents;
@@ -42,7 +43,8 @@ public final class OminousBannerRecognition {
             return true;
         }
         return isOminousBanner(entity.getMainHandItem(), entity)
-                || isOminousBanner(entity.getOffhandItem(), entity);
+                || isOminousBanner(entity.getOffhandItem(), entity)
+                || AccessoryInventoryCompat.equippedStacks(entity).stream().anyMatch(stack -> isOminousBanner(stack, entity));
     }
 
     /** Retained as a source-compatible alias for the original helmet-only API. */

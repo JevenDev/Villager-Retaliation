@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.duel;
 
+import com.jvn.villagerretaliation.compat.AccessoryInventoryCompat;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
@@ -22,7 +23,7 @@ import net.minecraft.world.item.ItemStack;
 
 final class DuelEquipment {
     private static final String RECOVERY_TAG = "VillagerRetaliationDuelRecovery";
-    private static final int RECOVERY_VERSION = 2;
+    private static final int RECOVERY_VERSION = 3;
     private static final int PLAYER_HOTBAR_SIZE = 9;
 
     private DuelEquipment() {}
@@ -38,6 +39,8 @@ final class DuelEquipment {
         if (kit.bringYourOwn()) return snapshots;
         clear(player.getInventory());
         player.getInventory().selected = 0;
+        snapshots.player().accessories().clear(player);
+        snapshots.villager().accessories().clear(villager);
         clear(villager);
         apply(player, kit.player());
         apply(villager, kit.villager());
@@ -55,6 +58,8 @@ final class DuelEquipment {
             challenger.getInventory().selected = 0;
             opponent.getInventory().selected = 0;
             apply(challenger, kit.player());
+            snapshots.challenger().accessories().clear(challenger);
+            snapshots.opponent().accessories().clear(opponent);
             apply(opponent, kit.player());
         }
         return snapshots;
@@ -120,7 +125,7 @@ final class DuelEquipment {
         if (entity == null || !entity.getPersistentData().contains(RECOVERY_TAG, Tag.TAG_COMPOUND)) return null;
         CompoundTag root = entity.getPersistentData().getCompound(RECOVERY_TAG);
         int version = root.getInt("Version");
-        return (version == 1 || version == RECOVERY_VERSION)
+        return (version >= 1 && version <= RECOVERY_VERSION)
                 && (version == 1 || root.contains("Kit", Tag.TAG_STRING)
                         && root.contains("AssignedLoadout", Tag.TAG_BYTE))
                 && root.hasUUID("Duel")
@@ -187,14 +192,16 @@ final class DuelEquipment {
 
     record PlayerSnapshot(List<ItemStack> items, List<ItemStack> armor, List<ItemStack> offhand,
                           int selectedSlot, float health, float absorption, CompoundTag foodData,
-                          List<MobEffectInstance> effects) {
+                          List<MobEffectInstance> effects,
+                          AccessoryInventoryCompat.Snapshot accessories) {
         static PlayerSnapshot capture(ServerPlayer player) {
             CompoundTag foodData = new CompoundTag();
             player.getFoodData().addAdditionalSaveData(foodData);
             return new PlayerSnapshot(copy(player.getInventory().items), copy(player.getInventory().armor),
                     copy(player.getInventory().offhand), player.getInventory().selected, player.getHealth(), player.getAbsorptionAmount(),
                     foodData,
-                    player.getActiveEffects().stream().map(MobEffectInstance::new).toList());
+                    player.getActiveEffects().stream().map(MobEffectInstance::new).toList(),
+                    AccessoryInventoryCompat.capture(player));
         }
 
         void restore(ServerPlayer player, boolean restoreInventory) {
@@ -203,6 +210,7 @@ final class DuelEquipment {
                 restoreList(player.getInventory().armor, this.armor);
                 restoreList(player.getInventory().offhand, this.offhand);
                 player.getInventory().selected = this.selectedSlot;
+                this.accessories.restore(player);
             }
             player.getInventory().setChanged();
             player.removeAllEffects();
@@ -222,6 +230,7 @@ final class DuelEquipment {
             tag.putFloat("Absorption", this.absorption);
             tag.put("Food", this.foodData.copy());
             tag.put("Effects", saveEffects(this.effects));
+            tag.put("Accessories", this.accessories.save(provider));
             return tag;
         }
 
@@ -256,14 +265,18 @@ final class DuelEquipment {
                     tag.getFloat("Health"),
                     tag.getFloat("Absorption"),
                     tag.getCompound("Food").copy(),
-                    loadEffects(tag, "Effects"));
+                    loadEffects(tag, "Effects"),
+                    tag.contains("Accessories", Tag.TAG_COMPOUND)
+                            ? AccessoryInventoryCompat.Snapshot.load(tag.getCompound("Accessories"), provider)
+                            : AccessoryInventoryCompat.Snapshot.empty());
         }
     }
 
     record VillagerSnapshot(List<ItemStack> inventory, Map<EquipmentSlot, ItemStack> equipment,
                             CompoundTag equipmentOwnership,
                             float health, float absorption, List<MobEffectInstance> effects, boolean pickup,
-                            VillagerRecoveryService.RecoverySnapshot recovery) {
+                            VillagerRecoveryService.RecoverySnapshot recovery,
+                            AccessoryInventoryCompat.Snapshot accessories) {
         static VillagerSnapshot capture(Villager villager) {
             List<ItemStack> inventory = VillagerInventoryAccess.captureFullInventory(villager);
             Map<EquipmentSlot, ItemStack> equipment = new EnumMap<>(EquipmentSlot.class);
@@ -271,12 +284,14 @@ final class DuelEquipment {
             return new VillagerSnapshot(List.copyOf(inventory), equipment,
                     VillagerRetaliationVillagerEquipment.captureOwnershipState(villager), villager.getHealth(),
                     villager.getAbsorptionAmount(), villager.getActiveEffects().stream().map(MobEffectInstance::new).toList(),
-                    villager.canPickUpLoot(), VillagerRecoveryService.captureRecoveryState(villager));
+                    villager.canPickUpLoot(), VillagerRecoveryService.captureRecoveryState(villager),
+                    AccessoryInventoryCompat.capture(villager));
         }
 
         void restore(Villager villager) {
             VillagerInventoryAccess.replaceFullInventory(villager, this.inventory);
             this.equipment.forEach((slot, stack) -> villager.setItemSlot(slot, stack.copy()));
+            this.accessories.restore(villager);
             VillagerRetaliationVillagerEquipment.restoreOwnershipState(villager, this.equipmentOwnership);
             villager.removeAllEffects();
             this.effects.forEach(effect -> villager.addEffect(new MobEffectInstance(effect)));
@@ -304,6 +319,7 @@ final class DuelEquipment {
             recoveryTag.putFloat("Exhaustion", this.recovery.exhaustion());
             recoveryTag.putInt("HealTimer", this.recovery.healTimer());
             tag.put("Recovery", recoveryTag);
+            tag.put("Accessories", this.accessories.save(provider));
             return tag;
         }
 
@@ -349,7 +365,10 @@ final class DuelEquipment {
                             recoveryTag.getInt("Food"),
                             recoveryTag.getFloat("Saturation"),
                             recoveryTag.getFloat("Exhaustion"),
-                            recoveryTag.getInt("HealTimer")));
+                            recoveryTag.getInt("HealTimer")),
+                    tag.contains("Accessories", Tag.TAG_COMPOUND)
+                            ? AccessoryInventoryCompat.Snapshot.load(tag.getCompound("Accessories"), provider)
+                            : AccessoryInventoryCompat.Snapshot.empty());
         }
     }
 

@@ -124,7 +124,7 @@ Two item tags make ominous-symbol recognition extensible:
 | `villagerretaliation:ominous_banner_pattern_carriers` | Items whose `banner_patterns` component should be compared with the vanilla ominous design. It contains banners and shields by default. Add compatible modded shields or wearable banner items here. |
 | `villagerretaliation:ominous_banner_equivalents` | Items that always count as displaying the ominous symbol, without requiring banner-pattern components. Add custom insignia, uniforms, masks, or other modded gear here. |
 
-For other gear-specific dialogue, openings and closings accept the same `player_item`, `player_items`, `player_item_tag`, `player_item_tags`, `player_item_slot`, and `player_item_slots` filters as normal dialogue lines. Slots can be `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. Item-filtered conversation text can use placeholders such as `{player_item}`, `{player_item_id}`, and `{player_item_slot}`.
+For other gear-specific dialogue, openings and closings accept the same `player_item`, `player_items`, `player_item_tag`, `player_item_tags`, `player_item_slot`, and `player_item_slots` filters as normal dialogue lines. Slots can be `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `accessories`, `equipment`, or `any`. The `accessories` slot reads equipped Curios or Accessories items when either optional mod is installed; `equipment` and `any` include them as well. Item-filtered conversation text can use placeholders such as `{player_item}`, `{player_item_id}`, and `{player_item_slot}`.
 
 ```json
 {
