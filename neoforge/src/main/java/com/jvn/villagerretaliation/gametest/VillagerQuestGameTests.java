@@ -150,27 +150,10 @@ public final class VillagerQuestGameTests {
             VillagerActionDefinition.Kind.LOOT,
             VillagerActionDefinition.Kind.NOTIFICATION,
             VillagerActionDefinition.Kind.FORCED_DIALOGUE);
-    private static final Map<String, Integer> EXPECTED_QUESTLINE_COUNTS = orderedMap(
-            Map.entry("cartographers_atlas", 11),
-            Map.entry("courier_roads", 2),
-            Map.entry("dangerous_commissions", 4),
-            Map.entry("deep_delvers", 4),
-            Map.entry("end_survey", 4),
-            Map.entry("field_medicine", 2),
-            Map.entry("green_thumb", 4),
-            Map.entry("hearthbound", 2),
-            Map.entry("last_ember", 4),
-            Map.entry("lost_civilization", 2),
-            Map.entry("nether_routes", 4),
-            Map.entry("old_roads", 2),
-            Map.entry("redstone_works", 4),
-            Map.entry("village_commissions", 15),
-            Map.entry("village_defense", 3),
-            Map.entry("village_supply", 16),
-            Map.entry("workshop_oaths", 2));
-    private static final int EXPECTED_QUEST_COUNT = EXPECTED_QUESTLINE_COUNTS.values().stream()
-            .mapToInt(Integer::intValue)
-            .sum();
+    private static final Map<String, Integer> EXPECTED_QUESTLINE_COUNTS =
+            BuiltInQuestContentGameTests.expectedQuestlineCounts();
+    private static final int EXPECTED_QUEST_COUNT =
+            BuiltInQuestContentGameTests.expectedQuestCount();
 
     static {
         configureGameTestStructures();
