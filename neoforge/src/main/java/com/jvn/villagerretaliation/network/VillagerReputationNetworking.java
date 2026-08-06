@@ -710,6 +710,7 @@ public final class VillagerReputationNetworking {
         trySendToPlayer(player, new ServerConfigSyncPayload(
                 VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get(),
                 VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get(),
+                VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get(),
                 VillagerRetaliationConfig.VILLAGER_STAT_DISPLAY_MODE.get()
         ));
         sendBuilderStructureCatalog(player);

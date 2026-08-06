@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.trade;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.villager.VillagerTradingTargetFinder;
 import com.jvn.villagerretaliation.network.VillagerTradeRefreshRequestPayload;
@@ -48,7 +49,8 @@ public final class VillagerTradeRefreshButtons {
     }
 
     public static void onScreenRender(ScreenEvent.Render.Post event) {
-        if (!(event.getScreen() instanceof MerchantScreen screen)) {
+        if (!VillagerRetaliationServerConfigClient.skillTradeFeaturesEnabled()
+                || !(event.getScreen() instanceof MerchantScreen screen)) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
@@ -69,7 +71,9 @@ public final class VillagerTradeRefreshButtons {
     }
 
     public static void onMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
-        if (!(event.getScreen() instanceof MerchantScreen screen) || event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (!VillagerRetaliationServerConfigClient.skillTradeFeaturesEnabled()
+                || !(event.getScreen() instanceof MerchantScreen screen)
+                || event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();

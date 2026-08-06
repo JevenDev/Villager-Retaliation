@@ -16,6 +16,16 @@ public final class VillagerConfigurationGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void experimentalTradeFeaturesAreDisabledByDefault(GameTestHelper helper) {
+        VillagerRetaliationConfigModel.Trade defaults = new VillagerRetaliationConfigModel.Trade();
+        helper.assertFalse(defaults.enableSkillTradeOverhaul,
+                "Experimental skill trades, trade cycling, and trade requests must remain opt-in");
+        helper.assertValueEqual(defaults.experimentalTradeFeaturesMigrationVersion, 1,
+                "Experimental trade migration marker must identify configs written with the opt-in default");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void villagerHungerOptionsHaveExpectedDefaultsAndBindings(GameTestHelper helper) {
         VillagerRetaliationConfigModel.Balance balanceDefaults =
                 new VillagerRetaliationConfigModel.Balance();
@@ -69,6 +79,20 @@ public final class VillagerConfigurationGameTests {
                         "{\n  \"logging\": 0.65\n}",
                         "craftsman"),
                 "missing Craftsman property was reported as present");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void experimentalTradeCompatibilityDetectsPendingMigration(GameTestHelper helper) {
+        helper.assertTrue(
+                VillagerRetaliationConfigCompatibility.configTextRequiresExperimentalTradeMigration(
+                        "{\n  trade: {\n    enableSkillTradeOverhaul: true\n  }\n}"),
+                "A legacy config without the migration marker must be forced off once");
+        helper.assertFalse(
+                VillagerRetaliationConfigCompatibility.configTextRequiresExperimentalTradeMigration(
+                        "{\n  trade: {\n    enableSkillTradeOverhaul: true,\n"
+                                + "    experimentalTradeFeaturesMigrationVersion: 1\n  }\n}"),
+                "A migrated config must preserve a later explicit opt-in");
         helper.succeed();
     }
 

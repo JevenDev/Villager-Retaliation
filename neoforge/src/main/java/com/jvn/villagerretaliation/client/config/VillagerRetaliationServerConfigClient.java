@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.network.ServerConfigSyncPayload;
 public final class VillagerRetaliationServerConfigClient {
     private static boolean showVillagerNameTags = true;
     private static boolean villagerGiftsEnabled = true;
+    private static boolean skillTradeFeaturesEnabled;
     private static VillagerStatDisplayMode villagerStatDisplayMode = VillagerStatDisplayMode.PARTY_ONLY;
 
     private VillagerRetaliationServerConfigClient() {
@@ -14,6 +15,7 @@ public final class VillagerRetaliationServerConfigClient {
     public static void accept(ServerConfigSyncPayload payload) {
         showVillagerNameTags = payload.showVillagerNameTags();
         villagerGiftsEnabled = payload.villagerGiftsEnabled();
+        skillTradeFeaturesEnabled = payload.skillTradeFeaturesEnabled();
         villagerStatDisplayMode = payload.villagerStatDisplayMode();
     }
 
@@ -25,6 +27,10 @@ public final class VillagerRetaliationServerConfigClient {
         return villagerGiftsEnabled;
     }
 
+    public static boolean skillTradeFeaturesEnabled() {
+        return skillTradeFeaturesEnabled;
+    }
+
     public static VillagerStatDisplayMode villagerStatDisplayMode() {
         return villagerStatDisplayMode;
     }
@@ -33,5 +39,6 @@ public final class VillagerRetaliationServerConfigClient {
         showVillagerNameTags = true;
         villagerGiftsEnabled = true;
         villagerStatDisplayMode = VillagerStatDisplayMode.PARTY_ONLY;
+        skillTradeFeaturesEnabled = false;
     }
 }

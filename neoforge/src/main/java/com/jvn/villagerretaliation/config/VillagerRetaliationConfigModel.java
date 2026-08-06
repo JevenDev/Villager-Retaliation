@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.config;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import io.wispforest.owo.config.annotation.Config;
+import io.wispforest.owo.config.annotation.ExcludeFromScreen;
 import io.wispforest.owo.config.annotation.Expanded;
 import io.wispforest.owo.config.annotation.Modmenu;
 import io.wispforest.owo.config.annotation.Nest;
@@ -596,7 +597,9 @@ public final class VillagerRetaliationConfigModel {
     }
 
     public static final class Trade {
-        public boolean enableSkillTradeOverhaul = true;
+        public boolean enableSkillTradeOverhaul = false;
+        @ExcludeFromScreen
+        public int experimentalTradeFeaturesMigrationVersion = 1;
 
         public boolean disableVillagerWalletLimit = false;
 
