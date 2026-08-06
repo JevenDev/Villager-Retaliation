@@ -17,7 +17,7 @@ final class VillagerInteractionSkillsPage {
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
     private static final int SKILLS_CONTAINER_WIDTH = 431;
     private static final int SKILLS_CONTAINER_HEIGHT = 139;
-    private static final int SKILLS_TITLE_TOP = 6;
+    private static final int SKILLS_TITLE_TOP = 7;
     private static final int SKILLS_FIRST_COLUMN_X = 10;
     private static final int SKILLS_SECOND_COLUMN_X = 219;
     private static final int SKILLS_FIRST_ROW_Y = 26;

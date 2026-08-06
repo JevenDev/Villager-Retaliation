@@ -214,6 +214,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_PORTRAIT_TOP = 4;
     private static final int INTERACTION_PORTRAIT_RIGHT = 55;
     private static final int INTERACTION_PORTRAIT_BOTTOM = 60;
+    private static final int INTERACTION_PORTRAIT_SCISSOR_LEFT_EXTENSION = 1;
     private static final int INTERACTION_PORTRAIT_SCISSOR_RIGHT_EXTENSION = 1;
     private static final int INTERACTION_PORTRAIT_SCALE = 54;
     private static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 1;
@@ -267,6 +268,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
+    private final VillagerGender gender;
     private final boolean baby;
     private final boolean canTrade;
     private final boolean duelVisible;
@@ -413,6 +415,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             String villagerName,
             String professionName,
             boolean baby,
+            String genderName,
             boolean canTrade,
             boolean duelVisible,
             int reputation,
@@ -477,6 +480,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
+        this.gender = VillagerGender.bySerializedName(genderName);
         this.baby = baby;
         this.canTrade = canTrade;
         this.duelVisible = duelVisible;
@@ -3851,7 +3855,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         float scale = livingEntity.getScale();
         graphics.enableScissor(
-                portraitLeft,
+                portraitLeft - INTERACTION_PORTRAIT_SCISSOR_LEFT_EXTENSION,
                 portraitTop + this.renderSlideOffsetY,
                 portraitRight + INTERACTION_PORTRAIT_SCISSOR_RIGHT_EXTENSION,
                 portraitBottom + this.renderSlideOffsetY);
@@ -4385,7 +4389,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     graphics,
                     List.of(
                             Component.literal(this.villagerName).withStyle(ChatFormatting.WHITE),
-                            Component.literal(this.professionName).withStyle(ChatFormatting.GRAY)),
+                            Component.literal(this.professionName).withStyle(ChatFormatting.GRAY),
+                            Component.translatable(GUI_KEY_PREFIX + "gender."
+                                            + (this.gender == null ? "unknown" : this.gender.serializedName()))
+                                    .withStyle(ChatFormatting.GRAY)),
                     mouseX,
                     mouseY);
             return;
