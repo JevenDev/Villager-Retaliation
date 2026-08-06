@@ -287,6 +287,7 @@ public final class VillagerBehaviorSuppressionGameTests {
                     InteractionResult.FAIL,
                     "an unowned vanilla trade entry must remain suppressed");
 
+            player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.APPLE));
             InteractionResult controlledResult = VillagerInteractionService.openTrading(player, villager, false);
             helper.assertTrue(
                     controlledResult.consumesAction(),

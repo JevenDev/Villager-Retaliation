@@ -93,7 +93,7 @@
       `)}
       ${section("Work, Parties, And Village Life", `
         ${beta13FeatureCards([
-          { icon: "hand-coins", title: "Hire villagers", text: "Offer qualified adults paid contracts for farming, mining, logging, fishing, brewing, building, transport, combat, and other practical work." },
+          { icon: "hand-coins", title: "Hire villagers", text: "Offer adults paid contracts for farming, mining, logging, fishing, brewing, building, transport, combat, and other practical work." },
           { icon: "users", title: "Travel as a party", text: "Recruit villagers, share supplies, issue movement and combat orders, form alliances, and assign mounts for longer journeys." },
           { icon: "landmark", title: "Belong to a village", text: "Villagers remember their home community, defend fellow residents, settle as Wanderers, and can help trusted players shape village identity." },
           { icon: "heart-pulse", title: "Care and recovery", text: "Food, mood, sleep, healing, danger, and protected downed recovery affect villagers in daily life, at work, and in combat." }
@@ -105,13 +105,13 @@
           <li>${icon("handshake")}<strong>Build a good history.</strong><span>Talk, trade, help, and avoid harming villagers or taking from watched containers while trust is low.</span></li>
           <li>${icon("gift")}<strong>Learn what they value.</strong><span>Gift reactions depend on the item, profession, repetition, personality, and the relationship you already have.</span></li>
           <li>${icon("book-open")}<strong>Follow a quest.</strong><span>Use <kbd>J</kbd> for the Quest Journal and <kbd>K</kbd> for the Quest Tracker. Offers can depend on profession, trade level, skill, reputation, and earlier choices.</span></li>
-          <li>${icon("briefcase-business")}<strong>Explore advanced roles when ready.</strong><span>Job Stats explains hiring qualifications, while party and village pages cover recruitment, allegiance, mounts, and community defense.</span></li>
+          <li>${icon("briefcase-business")}<strong>Explore advanced roles when ready.</strong><span>Job Stats explains job aptitude and performance, while party and village pages cover recruitment, allegiance, mounts, and community defense.</span></li>
         </ol>
       `)}
       ${section("How The Systems Connect", `
         ${beta13FactList([
           ["Reputation", "Changes dialogue, trade pressure, gifts, services, quest access, pacification, fleeing, and aggression"],
-          ["Skills and profession", "Shape special trades, quest gates, job qualification, aptitude, work speed, and transfer capacity"],
+          ["Skills and profession", "Shape special trades, quest gates, job aptitude, work speed, and transfer capacity"],
           ["Memories, gossip, and mood", "Connect personal history, witnessed events, short-term emotion, dialogue, and work efficiency"],
           ["Party and village allegiance", "Determine leadership, allies, protected targets, community defense, and combat consequences"],
           ["Food, health, and recovery", "Affect natural healing, sleep recovery, urgent care, work readiness, and survival in combat"]
@@ -137,9 +137,9 @@
       ${section("Who Can Be Hired", `
         <p>Hiring is available through an adult villager's interaction screen. A villager cannot be hired while recruited into a party, and starting a hired contract ends ordinary recruitment or follow behavior.</p>
         ${beta13FeatureCards([
-          { icon: "badge-check", title: "Profession qualification", text: "A matching vanilla profession automatically qualifies for its role, even when the contributing skills are low." },
-          { icon: "brain-circuit", title: "Skill qualification", text: "Otherwise, the role's primary and support skills must total at least 61. Job Stats shows the exact progress." },
-          { icon: "route", title: "Universal and restricted roles", text: "Courier is available to every adult. Nitwit work is available only to nitwits. Builder uses a separate construction order." },
+          { icon: "badge-check", title: "Ordinary roles", text: "Every adult villager can perform any ordinary job, regardless of profession or starting skills." },
+          { icon: "brain-circuit", title: "Aptitude", text: "Each role's two relevant skills determine its speed or capacity. Job Stats shows the exact effect before you hire." },
+          { icon: "route", title: "Special roles", text: "Nitwit work is available only to nitwits. Builder is available to adults through a separate construction order." },
           { icon: "lock-keyhole", title: "One active controller", text: "Only the hirer manages the contract, work setup, storage, assigned mount, and ordinary job inventory." }
         ])}
       `)}
@@ -185,39 +185,39 @@
   }
 
   const beta13JobRows = [
-    ["Combat", "Weaponsmith, or Guarding + Archery", "Work area or route, usable weapon, and ammunition for ranged weapons", "Guard protects against attacks. Roaming searches natural hostiles. It does not independently hunt players, villagers, golems, or tame animals."],
-    ["Hunting", "Fletcher, or Archery + Survival", "Work area or route, bow, crossbow, axe, or sword, plus ranged ammunition", "Can target selected animals, hostiles, or players and collect drops. Enabling player targets creates a real PvP risk."],
-    ["Mining", "Toolsmith, or Mining + Masonry", "Work area and pickaxe", "Exposed Ore, Horizontal Excavation, or Vertical Excavation. Excavation can need ladders or floor-patching blocks."],
+    ["Combat", "Guarding + Archery", "Work area or route, usable weapon, and ammunition for ranged weapons", "Guard protects against attacks. Roaming searches natural hostiles. It does not independently hunt players, villagers, golems, or tame animals."],
+    ["Hunting", "Archery + Survival", "Work area or route, bow, crossbow, axe, or sword, plus ranged ammunition", "Can target selected animals, hostiles, or players and collect drops. Enabling player targets creates a real PvP risk."],
+    ["Mining", "Mining + Masonry", "Work area and pickaxe", "Exposed Ore, Horizontal Excavation, or Vertical Excavation. Excavation can need ladders or floor-patching blocks."],
     ["Logging", "Gathering + Crafting", "Work area and axe", "Fells connected natural trees. Optional replanting, bonemeal, and leaf-clearing behavior depend on supplies and settings."],
-    ["Farming", "Farmer, or Farming + Gathering", "Farmer profession, hoe, seeds, and either an area or claimed farmer job site", "Harvests mature crops, replants, and can plant farmland. Tilling is an explicit-area option. Immature crops produce a waiting state."],
-    ["Fishing", "Fisherman, or Fishing + Survival", "Work area, fishing rod, accessible open water", "Performs actual casts and retrieves catches. No usable water or rod blocks the job."],
-    ["Brewing", "Cleric, or Medicine + Scholarship", "Work area, brewing stand, bottles, ingredients, and blaze powder", "Runs supported potion orders. It will not overwrite incompatible stand contents or brew arbitrary unsupported combinations."],
-    ["Builder", "Mason, or Masonry + Crafting", "One-off blueprint order, valid site, quoted payment, and all required materials", "Builds structures from the provided catalog. It is not a daily role and does not capture arbitrary player schematics."],
-    ["Animal Handling", "Shepherd or Leatherworker, or Animal Handling + Farming", "Work area, enabled animal types, breeding food, and output space", "Breeds animals and collects products. An optional population cap may cull excess animals and needs a weapon."],
-    ["Cook", "Butcher, or Cooking + Gathering", "Work area, furnace or smoker, crafting table for supported foods, fuel, and ingredients", "Prepares supported food outputs and follows the item filter. It is not general-purpose recipe automation."],
-    ["Smelter", "Armorer, or Smithing + Mining", "Work area, furnace or blast furnace, fuel, and raw ore materials", "Processes supported ore and raw-material outputs. It does not run every possible furnace recipe."],
-    ["Courier", "Every adult", "Usable route plus assigned Input and Output storage", "Patrols the route, collects cargo, delivers it, and returns. Empty starting storage does not stop later route pickups."],
-    ["Nitwit", "Nitwit only. Diplomacy + Survival is shown in Job Stats", "No work area", "Produces occasional novelty work reports rather than practical resources."]
+    ["Farming", "Farming + Gathering", "Hoe, seeds, and either an area or claimed farmer job site", "Harvests mature crops, replants, and can plant farmland. Tilling is an explicit-area option. Immature crops produce a waiting state."],
+    ["Fishing", "Fishing + Survival", "Work area, fishing rod, accessible open water", "Performs actual casts and retrieves catches. No usable water or rod blocks the job."],
+    ["Brewing", "Medicine + Scholarship", "Work area, brewing stand, bottles, ingredients, and blaze powder", "Runs supported potion orders. It will not overwrite incompatible stand contents or brew arbitrary unsupported combinations."],
+    ["Builder", "Masonry + Crafting", "One-off blueprint order, valid site, quoted payment, and all required materials", "Builds structures from the provided catalog. It is not a daily role and does not capture arbitrary player schematics."],
+    ["Animal Handling", "Animal Handling + Farming", "Work area, enabled animal types, breeding food, and output space", "Breeds animals and collects products. An optional population cap may cull excess animals and needs a weapon."],
+    ["Cook", "Cooking + Gathering", "Work area, furnace or smoker, crafting table for supported foods, fuel, and ingredients", "Prepares supported food outputs and follows the item filter. It is not general-purpose recipe automation."],
+    ["Smelter", "Smithing + Mining", "Work area, furnace or blast furnace, fuel, and raw ore materials", "Processes supported ore and raw-material outputs. It does not run every possible furnace recipe."],
+    ["Courier", "Gathering + Survival", "Usable route plus assigned Input and Output storage", "Patrols the route, collects cargo, delivers it, and returns. Empty starting storage does not stop later route pickups."],
+    ["Nitwit", "Diplomacy + Survival; nitwits only", "No work area", "Produces occasional novelty work reports rather than practical resources."]
   ];
 
   function beta13RenderJobs() {
     return `
-      ${section("Qualification Rules", `
-        <p>Each ordinary role has a primary and support skill. A matching profession qualifies automatically. Otherwise, the two scores must total at least 61. Role aptitude weights the primary skill at 70 percent and the support skill at 30 percent.</p>
+      ${section("Availability And Aptitude", `
+        <p>Every adult can perform any ordinary role. Each role's aptitude weights its primary skill at 70 percent and support skill at 30 percent; aptitude affects performance, not access. Nitwit work remains nitwit-only, and Builder is a separate project service.</p>
         ${beta13FeatureCards([
-          { icon: "gauge", title: "Work speed", text: "Aptitude scales skill-controlled work speed from 75 to 125 percent." },
-          { icon: "package", title: "Transfer capacity", text: "Aptitude scales supported transfer trips from 50 to 150 percent." },
+          { icon: "gauge", title: "Role-specific output", text: "Aptitude 60 is standard. Depending on the role, skill changes cadence, capacity, block speed, tracking, or combat technique." },
+          { icon: "package", title: "Transfer capacity", text: "Craftsman, Cook, Smelter, and Brewer collection trips scale from 50 to 150 percent. Courier pickup capacity steps from 1 item at aptitude 0 to 64 at 60 and 128 at 100." },
           { icon: "timer", title: "Shared station timers", text: "Skill does not speed the built-in processing timer of furnaces, smokers, blast furnaces, or brewing stands." },
           { icon: "graduation-cap", title: "Practice", text: "Successful measurable work can train the role's two skills at the same 70/30 split when growth is enabled." }
         ])}
       `)}
       ${section("Roles", beta13Table(
-        ["Role", "Qualification", "Required setup", "What it does and important rules"],
+        ["Role", "Relevant skills", "Required setup", "What it does and important rules"],
         beta13JobRows
       ))}
       ${section("Choosing The Right Role", `
         ${simpleList([
-          "Use Job Stats before paying: it explains profession overrides, contributing skills, aptitude, work speed, and transfer capacity.",
+          "Use Job Stats before paying: it explains availability, contributing skills, aptitude, work speed, and transfer capacity.",
           "Choose Courier when you need movement between assigned storage rather than resource production.",
           "Use Combat for local defense and Hunting for configured target seeking and loot collection.",
           "Treat Builder as a paid project with a start and finish, not as a permanent workforce slot.",
@@ -357,7 +357,7 @@
         <p>Work does not bypass unloaded chunks, solid obstacles, world borders, claim or protection rules, or an unreachable storage face.</p>
       `)}
       ${section("Efficiency", `
-        <p>The displayed efficiency starts from the configured base, applies skill work speed, then applies current mood and missing-tool penalties. It is clamped to the server's configured minimum and maximum. The defaults are 25 to 175 percent.</p>
+        <p>The displayed efficiency is operational cadence: it starts from the configured base, applies a role cadence modifier where relevant, then applies current mood and missing-tool penalties. It is clamped to the server's configured minimum and maximum. Capacity, block work, fishing, and combat expose their skill effects separately.</p>
         ${beta13Table(
           ["Condition", "Default effect on displayed efficiency"],
           [
@@ -368,7 +368,7 @@
             ["Other moods", "No direct mood adjustment"]
           ]
         )}
-        <p>Efficiency changes skill-controlled cadence, movement between actions, block work, fishing waits, combat recovery, courier cargo, and supported transfer trips. It does not shorten the vanilla processing time of a furnace or brewing stand.</p>
+        <p>Skill effects depend on the job: cadence for Farming, Animal Handling, and Nitwit work; fishing timing; modest tool-assisted block speed for Mining and Logging; tracking response for Hunting; construction cadence for Builder; material capacity for processing roles; Courier pickup capacity; and learned melee or ranged technique in combat. Skills do not shorten vanilla furnace or brewing-stand processing time.</p>
       `)}
       ${section("Job States And Warnings", beta13Table(["Status", "What it means"], beta13StateRows))}
       ${section("Troubleshooting Order", `
@@ -542,9 +542,9 @@
       ${section("Reading A Villager", `
         <p>Open an adult villager's interaction screen and use the page switcher to cycle through Skills, Profile, and Job Stats. Hover a Profile point or Job Stats role for a quick readout, then select the role for its full capability details.</p>
         ${beta13FactList([
-          ["Skills", "Learned capability that affects trades, quest gates, job qualification, and hired-work performance"],
+          ["Skills", "Learned capability that affects trades, quest gates, job aptitude, and hired-work performance"],
           ["Profile", "Persistent personality attributes that describe how a villager tends to think and react"],
-          ["Job Stats", "The hiring view for role readiness, skill pairings, aptitude, speed, and transfer capacity"]
+          ["Job Stats", "The hiring view for role availability, skill pairings, aptitude, speed, and transfer capacity"]
         ])}
       `)}
       ${section("Profile", `
@@ -554,7 +554,7 @@
           [
             ["Knowledge", "Understanding, memory, and social awareness", "Suspicion, dialogue, and social awareness"],
             ["Guts", "Courage under pressure and appetite for risk", "Fear, anger, protective behavior, and standing ground"],
-            ["Proficiency", "Practical capability, precision, and tool handling", "Stress, pride, combat recovery, and ranged accuracy"],
+            ["Composure", "Steadiness and emotional control under pressure", "Stress, pride, and helping a brave villager stand their ground"],
             ["Kindness", "Patience, generosity, and care for others", "Gratitude, contentment, grief, and social reactions"],
             ["Charm", "Warmth, persuasion, and social grace", "Dialogue and grateful social moments"]
           ]
@@ -566,7 +566,7 @@
           ["Strong", "60 to 79"],
           ["Exceptional", "80 to 100"]
         ])}
-        <p>Profile effects are configurable. When Social Attribute behavior or one of its sub-options is disabled, the profile can still be viewed but does not apply that behavioral effect.</p>
+        <p>Profile effects are configurable. They shape choices, moods, and reactions; they do not determine learned work speed, carrying capacity, accuracy, or damage. When Social Attribute behavior or one of its sub-options is disabled, the profile can still be viewed but does not apply that behavioral effect.</p>
       `)}
       ${section("Skills", `
         <p>Every villager has persistent skill scores from 1 to 100. Profession influences the starting profile, but the values remain individual and can grow through configured trade and hired-work systems.</p>
@@ -583,14 +583,16 @@
         ])}
       `)}
       ${section("Job Stats", `
-        <p>Job Stats is the practical hiring view. Each role shows a ready or locked status and a bar for its two relevant skills. The bar is the unweighted skill total toward 61; a matching profession can make a role ready before that total is reached.</p>
+        <p>Job Stats is the practical hiring view. Each role shows whether it is available and a 0–100 aptitude bar based on its two relevant skills. Select a role to see its exact performance.</p>
         ${beta13FactList([
-          ["Ordinary qualification", "Primary skill + support skill must total at least 61; exactly 60 remains locked"],
-          ["Profession qualification", "A matching vanilla profession automatically qualifies for its canonical role"],
-          ["Universal and restricted roles", "Courier is ready for every adult; Nitwit work is available only to nitwits"],
+          ["Ordinary availability", "Every adult villager can perform any ordinary role, regardless of profession or aptitude"],
+          ["Special restrictions", "Nitwit work is nitwit-only; Builder is purchased as a separate one-off project"],
           ["Aptitude", "Rounded 70 percent primary skill + 30 percent support skill"],
-          ["Skill work speed", "75 to 125 percent from aptitude; it changes task cadence, not furnace, smoker, blast-furnace, or brewing timers"],
-          ["Transfer capacity", "50 to 150 percent from aptitude for supported collection trips; Couriers carry 64 to 128 items per assigned supply container"]
+          ["Action cadence", "50 to 125 percent for Farming, Animal Handling, Fishing, and Nitwit work; aptitude 60 is standard"],
+          ["Block and project speed", "85 to 110 percent for Mining, Logging, Builder construction, and Hunter tracking, layered with the job's other factors"],
+          ["Facility capacity", "50 to 150 percent for Craftsman, Cook, Smelter, and Brewer collection trips; aptitude 60 is standard"],
+          ["Courier capacity", "1, 2, 4, 8, 16, 32, 64, 96, or 128 items per assigned input; aptitude 60 carries 64 and aptitude 100 carries 128. Aptitude does not change Courier speed"],
+          ["Combat technique", "Guarding slightly improves melee speed and damage and unlocks axe shield-breaking at 60; Archery improves ranged speed and accuracy"]
         ])}
       `)}
       ${section("Role Skill Pairs", beta13Table(
@@ -617,7 +619,7 @@
           "Successful hired actions can train the role's primary and support skills at a 70/30 split when hired-work growth is enabled.",
           "Larger measurable jobs train more than trivial actions, while repeated equivalent work has diminishing returns.",
           "Trading and villager trade-level progression can also grow relevant skills when the server enables those options.",
-          "Skill affects job throughput and skill-generated trades, and some quests use hidden skill minimums.",
+          "Skill affects role-specific throughput and skill-generated trades, and some quests use hidden skill minimums.",
           "Station processing timers remain unchanged even when the worker's transfer and action cadence improve."
         ])}
       `)}
@@ -627,7 +629,7 @@
   function beta13RenderBuilding() {
     return `
       ${section("Builder Is Not A Daily Job", `
-        <p>Builder appears with the worker roles because it uses Masonry and Crafting, but it is purchased as a single construction project. The villager must qualify, the structure must be available in the build catalog, and the proposed site must pass the server's checks.</p>
+        <p>Builder appears with the worker roles because it uses Masonry and Crafting, but it is purchased as a single construction project. Any adult villager can accept an order; the structure must be available in the build catalog, and the proposed site must pass the server's checks.</p>
       `)}
       ${section("Construction Flow", `
         <ol class="step-list icon-step-list">
@@ -1171,7 +1173,7 @@
       "Jobs And Professions",
       "Work And Economy",
       "briefcase-business",
-      "All thirteen worker roles, qualification rules, required tools and stations, outputs, modes, and important rules.",
+      "All thirteen worker roles, availability and aptitude rules, required tools and stations, outputs, modes, and important rules.",
       beta13RenderJobs
     ),
     beta13NewPage(
@@ -1211,7 +1213,7 @@
       "Skills, Attributes, And Job Stats",
       "Villager Life",
       "brain-circuit",
-      "All 18 skills, five social attributes, role qualification, aptitude, work speed, transfer capacity, trades, quests, and growth.",
+      "All 18 skills, five social attributes, role aptitude, work speed, transfer capacity, trades, quests, and growth.",
       beta13RenderSkills
     ),
     beta13NewPage(

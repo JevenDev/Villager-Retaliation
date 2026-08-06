@@ -28,6 +28,7 @@ import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
@@ -2381,8 +2382,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 origin,
                 toolId,
                 efficiencyLevel(axe),
-                100,
-                () -> calculateTreeHarvestProgressGoal(level, context, origin, axe));
+                context.skillWorkSpeedPercent(),
+                () -> HiredVillagerRoles.scaledDurationTicks(
+                        calculateTreeHarvestProgressGoal(level, context, origin, axe),
+                        context.skillWorkSpeedPercent()));
     }
 
     private int calculateTreeHarvestProgressGoal(

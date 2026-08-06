@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.combat.VillagerCombatSkillBehavior;
 import com.jvn.villagerretaliation.duel.DuelAvailabilityReason;
 import com.jvn.villagerretaliation.duel.DuelKit;
 import com.jvn.villagerretaliation.duel.DuelLoadout;
@@ -3252,7 +3253,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return String.join(
                     "\n\n",
                     translate("job_stats.info.title"),
-                    translate("job_stats.info.qualification"),
+                    translate("job_stats.info.availability"),
                     translate("job_stats.info.profession"),
                     translate("job_stats.info.practice"));
         }
@@ -3264,9 +3265,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         HiredVillagerRoles.RoleDefinition definition = HiredVillagerRoles.definition(role);
         int primary = profile.skillValue(definition.primarySkill());
         int support = profile.skillValue(definition.supportSkill());
-        int total = HiredVillagerRoles.qualificationTotal(profile.skills(), role);
         int aptitude = HiredVillagerRoles.roleScore(profile.skills(), role);
-        int workSpeed = HiredVillagerRoles.skillWorkSpeedPercent(aptitude);
+        int actionSpeed = HiredVillagerRoles.roleActionSpeedPercent(role, aptitude);
+        int cadenceSpeed = HiredVillagerRoles.roleCadencePercent(role, aptitude);
         int transferBase = HiredVillagerRoles.baseTransferItems(role);
         boolean ready = HiredVillagerRoles.isSkillUnlocked(
                 profile.professionKey(), this.baby, profile.skills(), role);
@@ -3274,22 +3275,61 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         lines.add(jobRoleLabel(role));
         lines.add("");
         lines.add(translate("job_stats.detail.readiness", translate(ready ? "job_stats.ready" : "job_stats.locked")));
-        lines.add(translate("job_stats.detail.qualification", total, HiredVillagerRoles.QUALIFICATION_REQUIRED_TOTAL));
         lines.add(translate("job_stats.detail.primary", localizedSkill(definition.primarySkill()), primary));
         lines.add(translate("job_stats.detail.support", localizedSkill(definition.supportSkill()), support));
         lines.add("");
         lines.add(translate("job_stats.detail.aptitude", aptitude));
-        lines.add(translate("job_stats.detail.work_speed", workSpeed));
-        if (transferBase > 0) {
-            int transfer = role == HiredVillagerRole.COURIER
-                    ? HiredVillagerRoles.courierTransferLimit(aptitude)
-                    : HiredVillagerRoles.transferLimit(
-                            transferBase, HiredVillagerRoles.transferCapacityPercent(aptitude));
-            lines.add(translate(role == HiredVillagerRole.COURIER
-                    ? "job_stats.detail.courier_transfer"
-                    : "job_stats.detail.transfer", transfer));
+        switch (role) {
+            case COURIER -> lines.add(translate(
+                    "job_stats.detail.courier_transfer",
+                    HiredVillagerRoles.courierTransferLimit(aptitude)));
+            case CRAFTSMAN, COOK, SMELTER, BREWING -> lines.add(translate(
+                    "job_stats.detail.transfer",
+                    HiredVillagerRoles.transferLimit(
+                            transferBase, HiredVillagerRoles.transferCapacityPercent(aptitude))));
+            case MINING, LOGGING -> lines.add(translate("job_stats.detail.block_speed", actionSpeed));
+            case BUILDER -> lines.add(translate("job_stats.detail.build_speed", cadenceSpeed));
+            case COMBAT -> {
+                int guarding = profile.skillValue(VillagerSkill.GUARDING);
+                int archery = profile.skillValue(VillagerSkill.ARCHERY);
+                lines.add(translate(
+                        "job_stats.detail.melee_speed",
+                        VillagerCombatSkillBehavior.meleeAttackSpeedPercent(guarding)));
+                lines.add(translate(
+                        "job_stats.detail.melee_damage",
+                        VillagerCombatSkillBehavior.meleeDamagePercent(guarding)));
+                lines.add(translate(
+                        "job_stats.detail.ranged_speed",
+                        VillagerCombatSkillBehavior.rangedAttackSpeedPercent(archery)));
+                lines.add(translate(
+                        "job_stats.detail.ranged_spread",
+                        VillagerCombatSkillBehavior.rangedSpreadPercent(archery)));
+                lines.add(translate(
+                        "job_stats.detail.axe_breaker",
+                        guarding >= VillagerCombatSkillBehavior.AXE_BREAKER_GUARDING_REQUIRED
+                                ? translate("job_stats.detail.available")
+                                : translate(
+                                        "job_stats.detail.requires_skill",
+                                        localizedSkill(VillagerSkill.GUARDING),
+                                        VillagerCombatSkillBehavior.AXE_BREAKER_GUARDING_REQUIRED)));
+            }
+            case HUNTING -> {
+                int archery = profile.skillValue(VillagerSkill.ARCHERY);
+                lines.add(translate(
+                        "job_stats.detail.ranged_speed",
+                        VillagerCombatSkillBehavior.rangedAttackSpeedPercent(archery)));
+                lines.add(translate(
+                        "job_stats.detail.ranged_spread",
+                        VillagerCombatSkillBehavior.rangedSpreadPercent(archery)));
+                lines.add(translate("job_stats.detail.tracking_speed", cadenceSpeed));
+            }
+            default -> lines.add(translate(
+                    "job_stats.detail.work_speed",
+                    actionSpeed != 100 ? actionSpeed : cadenceSpeed));
         }
-        lines.add(translate("job_stats.detail.effect." + roleEffectKey(role), workSpeed));
+        lines.add(translate(
+                "job_stats.detail.effect." + roleEffectKey(role),
+                actionSpeed != 100 ? actionSpeed : cadenceSpeed));
         lines.add("");
         lines.add(translate("job_stats.detail.reason." + readinessReason(profile, role, ready)));
         lines.add(translate("job_stats.detail.practice"));
@@ -3318,9 +3358,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static String roleEffectKey(HiredVillagerRole role) {
         return switch (role) {
             case MINING, LOGGING, BUILDER -> "block";
-            case COMBAT, HUNTING -> "combat";
+            case COMBAT -> "combat";
+            case HUNTING -> "hunting";
             case FISHING -> "fishing";
-            case COOK, SMELTER, BREWING, COURIER -> "transfer";
+            case CRAFTSMAN, COOK, SMELTER, BREWING -> "transfer";
+            case COURIER -> "courier";
             case NITWIT -> "nitwit";
             default -> "cadence";
         };

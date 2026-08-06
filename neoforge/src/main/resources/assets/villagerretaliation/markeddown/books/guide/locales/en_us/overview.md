@@ -31,7 +31,7 @@ Use an empty main hand on an adult villager to open the interaction screen. By d
 Talk, trade, help, heal, and avoid harming villagers or taking from watched containers.
 :::
 :::step{title="Learn what matters"}
-Try a thoughtful gift, inspect the villager's skills and profile, then look for quests or work they are qualified to offer.
+Try a thoughtful gift, inspect the villager's skills and profile, then look for quests or work that suits them.
 :::
 :::step{title="Use the journals"}
 Open the Quest Journal with :key[key.villagerretaliation.open_quest_journal] and toggle the tracker with :key[key.villagerretaliation.toggle_quest_tracker].

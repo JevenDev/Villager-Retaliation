@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.debug.HiredStressGridService;
+import com.jvn.villagerretaliation.combat.VillagerCombatSkillBehavior;
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
@@ -2694,7 +2695,7 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void cumulativeJobEligibilityUsesCanonicalOverridesAndStrictThreshold(GameTestHelper helper) {
+    public static void adultJobAvailabilityOnlyKeepsExplicitRoleRestrictions(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 6, 0, 6, 1);
         Villager farmer = spawnVillager(helper, new BlockPos(2, 2, 2));
@@ -2703,44 +2704,16 @@ public final class VillagerWorkerGameTests {
         mason.setVillagerData(mason.getVillagerData().setProfession(VillagerProfession.MASON));
 
         VillagerSkillSet lowSkills = VillagerSkillSet.filled(1);
-        VillagerSkillSet exactlySixty = lowSkills
-                .with(VillagerSkill.MINING, 30)
-                .with(VillagerSkill.MASONRY, 30);
-        VillagerSkillSet sixtyOne = exactlySixty.with(VillagerSkill.MINING, 31);
 
         helper.assertTrue(
-                HiredVillagerRoles.availableContractRoles(level, farmer).contains(HiredVillagerRole.FARMING),
-                "a farmer should automatically qualify for canonical Farming work");
-        helper.assertFalse(
-                HiredVillagerRoles.isSkillUnlocked("none", false, exactlySixty, HiredVillagerRole.MINING),
-                "a cumulative total of exactly 60 must remain locked");
+                HiredVillagerRoles.isSkillUnlocked("none", false, lowSkills, HiredVillagerRole.MINING),
+                "low aptitude must not prevent an adult from taking Mining work");
         helper.assertTrue(
-                HiredVillagerRoles.isSkillUnlocked("none", false, sixtyOne, HiredVillagerRole.MINING),
-                "a cumulative total of 61 should unlock the role");
-        helper.assertTrue(
-                HiredVillagerRoles.isSkillUnlocked("weaponsmith", false, lowSkills, HiredVillagerRole.COMBAT),
-                "a weaponsmith should bypass Combat's skill threshold");
-        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("fletcher", false, lowSkills, HiredVillagerRole.HUNTING),
-                "a fletcher should bypass Hunting's skill threshold");
-        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("toolsmith", false, lowSkills, HiredVillagerRole.MINING),
-                "a toolsmith should bypass Mining's skill threshold");
-        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("fisherman", false, lowSkills, HiredVillagerRole.FISHING),
-                "a fisherman should bypass Fishing's skill threshold");
-        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("cleric", false, lowSkills, HiredVillagerRole.BREWING),
-                "a cleric should bypass Brewing's skill threshold");
-        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("mason", false, lowSkills, HiredVillagerRole.BUILDER),
-                "a mason should bypass Builder's skill threshold");
-        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("shepherd", false, lowSkills, HiredVillagerRole.ANIMAL_HANDLING),
-                "a shepherd should bypass Animal Handling's skill threshold");
-        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("leatherworker", false, lowSkills, HiredVillagerRole.ANIMAL_HANDLING),
-                "a leatherworker should bypass Animal Handling's skill threshold");
-        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("butcher", false, lowSkills, HiredVillagerRole.COOK),
-                "a butcher should bypass Cook's skill threshold");
-        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("armorer", false, lowSkills, HiredVillagerRole.SMELTER),
-                "an armorer should bypass Smelter's skill threshold");
-        helper.assertFalse(
                 HiredVillagerRoles.isSkillUnlocked("weaponsmith", false, lowSkills, HiredVillagerRole.MINING),
-                "canonical overrides must not unlock noncanonical roles");
+                "profession must not gate an adult's noncanonical jobs");
+        helper.assertTrue(
+                HiredVillagerRoles.availableContractRoles(level, farmer).contains(HiredVillagerRole.COMBAT),
+                "every ordinary role should be available to an adult villager");
         helper.assertTrue(
                 HiredVillagerRoles.isSkillUnlocked("none", false, lowSkills, HiredVillagerRole.COURIER),
                 "Courier should be universally available to adults");
@@ -2755,7 +2728,7 @@ public final class VillagerWorkerGameTests {
                 "nitwits should automatically qualify for Nitwit work");
         helper.assertTrue(
                 HiredVillagerRoles.canOfferBuilderService(level, mason),
-                "a mason should automatically qualify for one-off Builder services");
+                "an adult villager should be able to offer one-off Builder services");
         helper.assertFalse(
                 HiredVillagerRoles.availableContractRoles(level, mason).contains(HiredVillagerRole.BUILDER),
                 "Builder should remain excluded from ordinary contracts");
@@ -2770,48 +2743,90 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(HiredVillagerRoles.aptitude(0, 0), 0, "zero aptitude endpoint");
         helper.assertValueEqual(HiredVillagerRoles.aptitude(50, 50), 50, "midpoint aptitude");
         helper.assertValueEqual(HiredVillagerRoles.aptitude(100, 100), 100, "maximum aptitude endpoint");
-        helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(0), 75, "minimum work speed");
-        helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(50), 100, "midpoint work speed");
+        helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(0), 50, "minimum work speed");
+        helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(30), 75, "developing work speed");
+        helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(60), 100, "standard work speed");
+        helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(80), 113, "advanced work speed");
         helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(100), 125, "maximum work speed");
+        helper.assertValueEqual(HiredVillagerRoles.blockWorkSpeedPercent(0), 85, "minimum block-work speed");
+        helper.assertValueEqual(HiredVillagerRoles.blockWorkSpeedPercent(60), 100, "standard block-work speed");
+        helper.assertValueEqual(HiredVillagerRoles.blockWorkSpeedPercent(100), 110, "maximum block-work speed");
         helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(0), 50, "minimum transfer capacity");
-        helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(50), 100, "midpoint transfer capacity");
+        helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(50), 92, "developing transfer capacity");
+        helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(60), 100, "standard transfer capacity");
         helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(100), 150, "maximum transfer capacity");
-        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(0), 64, "courier minimum per container");
-        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(50), 96, "courier midpoint per container");
-        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(100), 128, "courier maximum per container");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(0), 1, "courier zero aptitude capacity");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(10), 2, "courier aptitude 10 capacity");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(20), 4, "courier aptitude 20 capacity");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(30), 8, "courier aptitude 30 capacity");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(40), 16, "courier aptitude 40 capacity");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(50), 32, "courier aptitude 50 capacity");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(60), 64, "courier standard capacity");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(79), 64, "courier standard tier upper boundary");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(80), 96, "courier advanced capacity");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(99), 96, "courier advanced tier upper boundary");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(100), 128, "courier maximum capacity");
         helper.assertValueEqual(HiredVillagerRoles.transferLimit(16, 50), 8, "low-skill facility collection");
         helper.assertValueEqual(HiredVillagerRoles.transferLimit(16, 150), 24, "high-skill facility collection");
-        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(400, 75), 533, "low-skill fishing wait");
+        helper.assertValueEqual(HiredVillagerRoles.baseTransferItems(HiredVillagerRole.CRAFTSMAN), 32,
+                "Craftsman transfer display must match its material pull");
+        helper.assertValueEqual(HiredVillagerRoles.roleActionSpeedPercent(HiredVillagerRole.MINING, 0), 85,
+                "Mining should use the narrow block-work curve");
+        helper.assertValueEqual(HiredVillagerRoles.roleActionSpeedPercent(HiredVillagerRole.COURIER, 100), 100,
+                "Courier aptitude must not change action speed");
+        helper.assertValueEqual(HiredVillagerRoles.roleCadencePercent(HiredVillagerRole.COOK, 100), 100,
+                "Cook aptitude must affect capacity rather than cadence");
+        helper.assertValueEqual(HiredVillagerRoles.roleCadencePercent(HiredVillagerRole.FARMING, 100), 125,
+                "Farming should use the broad action-cadence curve");
+        helper.assertValueEqual(VillagerCombatSkillBehavior.meleeAttackSpeedPercent(0), 91,
+                "minimum Guarding attack speed");
+        helper.assertValueEqual(VillagerCombatSkillBehavior.meleeAttackSpeedPercent(60), 100,
+                "standard Guarding attack speed");
+        helper.assertValueEqual(VillagerCombatSkillBehavior.meleeDamagePercent(100), 108,
+                "maximum Guarding damage modifier");
+        helper.assertValueEqual(VillagerCombatSkillBehavior.rangedAttackSpeedPercent(100), 110,
+                "maximum Archery attack speed");
+        helper.assertValueEqual(VillagerCombatSkillBehavior.rangedSpreadPercent(0), 135,
+                "minimum Archery projectile spread");
+        helper.assertValueEqual(VillagerCombatSkillBehavior.rangedSpreadPercent(60), 100,
+                "standard Archery projectile spread");
+        helper.assertValueEqual(VillagerCombatSkillBehavior.rangedSpreadPercent(100), 75,
+                "maximum Archery projectile spread");
+        helper.assertFalse(VillagerCombatSkillBehavior.canUseAxeBreaker(59),
+                "Guarding below standard should not unlock axe shield-breaking");
+        helper.assertTrue(VillagerCombatSkillBehavior.canUseAxeBreaker(60),
+                "standard Guarding should unlock axe shield-breaking");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(400, 50), 800, "low-skill fishing wait");
         helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(400, 100), 400, "baseline fishing wait");
         helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(400, 125), 320, "high-skill fishing wait");
-        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(20, 75), 27, "low-skill attack recovery");
-        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(20, 125), 16, "high-skill attack recovery");
-        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(30, 75), 40, "low-skill block completion");
-        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(30, 125), 24, "high-skill block completion");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(30, 85), 35,
+                "low-skill tool-assisted block completion");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(30, 110), 27,
+                "high-skill tool-assisted block completion");
         helper.assertValueEqual(
-                HiredVillagerWorkService.calculateEfficiencyPercent(100, 75, 0, false, 25, 175),
-                75,
+                HiredVillagerWorkService.calculateEfficiencyPercent(100, 50, 0, false, 25, 175),
+                50,
                 "low aptitude efficiency");
         helper.assertValueEqual(
                 HiredVillagerWorkService.calculateEfficiencyPercent(100, 125, 0, false, 25, 175),
                 125,
                 "high aptitude efficiency");
         helper.assertValueEqual(
-                HiredVillagerWorkService.calculateEfficiencyPercent(100, 75, 0, true, 25, 175),
-                55,
+                HiredVillagerWorkService.calculateEfficiencyPercent(100, 50, 0, true, 25, 175),
+                30,
                 "missing-tool penalty after skill scaling");
         helper.assertValueEqual(
                 HiredVillagerWorkService.calculateEfficiencyPercent(300, 125, 8, false, 25, 175),
                 175,
                 "maximum configured efficiency clamp");
         helper.assertValueEqual(
-                HiredVillagerWorkService.calculateEfficiencyPercent(1, 75, -15, true, 25, 175),
+                HiredVillagerWorkService.calculateEfficiencyPercent(1, 50, -15, true, 25, 175),
                 25,
                 "minimum configured efficiency clamp");
-        helper.assertValueEqual(HiredVillagerWorkService.effectiveWorkTickInterval(40, 75), 53, "low-skill work cadence");
+        helper.assertValueEqual(HiredVillagerWorkService.effectiveWorkTickInterval(40, 50), 80, "low-skill work cadence");
         helper.assertValueEqual(HiredVillagerWorkService.effectiveWorkTickInterval(40, 100), 40, "baseline work cadence");
         helper.assertValueEqual(HiredVillagerWorkService.effectiveWorkTickInterval(40, 125), 32, "high-skill work cadence");
-        helper.assertValueEqual(HiredVillagerWorkService.completedTaskCooldownTicks(75), 107, "low-skill completion cooldown");
+        helper.assertValueEqual(HiredVillagerWorkService.completedTaskCooldownTicks(50), 160, "low-skill completion cooldown");
         helper.assertValueEqual(HiredVillagerWorkService.completedTaskCooldownTicks(100), 80, "baseline completion cooldown");
         helper.assertValueEqual(HiredVillagerWorkService.completedTaskCooldownTicks(125), 64, "high-skill completion cooldown");
         helper.assertValueEqual(

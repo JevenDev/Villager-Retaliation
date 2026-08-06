@@ -2,8 +2,10 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
+import com.jvn.villagerretaliation.combat.VillagerCombatSkillBehavior;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -69,18 +71,17 @@ final class VillagerInteractionJobStatsPage {
             int row = index % ROWS_PER_COLUMN;
             int textX = column == 0 ? FIRST_COLUMN_X : SECOND_COLUMN_X;
             int textY = FIRST_ROW_Y + row * ROW_STRIDE;
-            int total = HiredVillagerRoles.qualificationTotal(profile.skills(), role);
-            boolean ready = HiredVillagerRoles.isSkillUnlocked(
+            int aptitude = HiredVillagerRoles.roleScore(profile.skills(), role);
+            boolean available = HiredVillagerRoles.isSkillUnlocked(
                     profile.professionKey(), context.baby(), profile.skills(), role);
-            int fill = Mth.clamp(Math.round(total * BAR_FILL_WIDTH
-                    / (float) HiredVillagerRoles.QUALIFICATION_REQUIRED_TOTAL), 0, BAR_FILL_WIDTH);
+            int fill = Mth.clamp(aptitude, 0, BAR_FILL_WIDTH);
             drawOutlinedString(
                     graphics,
                     font,
                     context.roleLabel(role),
                     textX,
                     textY,
-                    ready ? READY_TEXT_COLOR : LOCKED_TEXT_COLOR);
+                    available ? READY_TEXT_COLOR : LOCKED_TEXT_COLOR);
             renderBar(graphics, textX + BAR_X_OFFSET, textY + BAR_TOP_OFFSET, fill);
         }
         graphics.pose().popPose();
@@ -117,24 +118,67 @@ final class VillagerInteractionJobStatsPage {
             HiredVillagerRole role,
             int mouseX,
             int mouseY) {
-        int total = HiredVillagerRoles.qualificationTotal(profile.skills(), role);
-        boolean ready = HiredVillagerRoles.isSkillUnlocked(
+        int aptitude = HiredVillagerRoles.roleScore(profile.skills(), role);
+        boolean available = HiredVillagerRoles.isSkillUnlocked(
                 profile.professionKey(), context.baby(), profile.skills(), role);
         List<Component> tooltip = new ArrayList<>();
         tooltip.add(Component.literal(context.roleLabel(role)).withStyle(ChatFormatting.WHITE));
         tooltip.add(Component.translatable(
                 "villagerretaliation.gui.job_stats.tooltip.readiness",
-                context.translate(ready ? "job_stats.ready" : "job_stats.locked")).withStyle(
-                        ready ? ChatFormatting.GREEN : ChatFormatting.RED));
+                context.translate(available ? "job_stats.ready" : "job_stats.locked")).withStyle(
+                        available ? ChatFormatting.GREEN : ChatFormatting.RED));
         tooltip.add(Component.translatable(
-                "villagerretaliation.gui.job_stats.tooltip.qualification",
-                total,
-                HiredVillagerRoles.QUALIFICATION_REQUIRED_TOTAL).withStyle(ChatFormatting.GRAY));
+                "villagerretaliation.gui.job_stats.detail.aptitude", aptitude).withStyle(ChatFormatting.GRAY));
+        addPerformanceTooltip(tooltip, profile, role, aptitude);
         tooltip.add(Component.empty());
         tooltip.add(Component.translatable("villagerretaliation.gui.job_stats.tooltip.click")
                 .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         VillagerInteractionUiUtil.renderScaledComponentTooltip(
                 graphics, context.font(), tooltip, mouseX, mouseY, 1.0F);
+    }
+
+    private static void addPerformanceTooltip(
+            List<Component> tooltip,
+            VillagerProfileClientCache.DisplayEntry profile,
+            HiredVillagerRole role,
+            int aptitude) {
+        ChatFormatting color = ChatFormatting.GRAY;
+        switch (role) {
+            case COURIER -> tooltip.add(Component.translatable(
+                    "villagerretaliation.gui.job_stats.detail.courier_transfer",
+                    HiredVillagerRoles.courierTransferLimit(aptitude)).withStyle(color));
+            case CRAFTSMAN, COOK, SMELTER, BREWING -> tooltip.add(Component.translatable(
+                    "villagerretaliation.gui.job_stats.detail.transfer",
+                    HiredVillagerRoles.transferLimit(
+                            HiredVillagerRoles.baseTransferItems(role),
+                            HiredVillagerRoles.transferCapacityPercent(aptitude))).withStyle(color));
+            case MINING, LOGGING -> tooltip.add(Component.translatable(
+                    "villagerretaliation.gui.job_stats.detail.block_speed",
+                    HiredVillagerRoles.blockWorkSpeedPercent(aptitude)).withStyle(color));
+            case BUILDER -> tooltip.add(Component.translatable(
+                    "villagerretaliation.gui.job_stats.detail.build_speed",
+                    HiredVillagerRoles.roleCadencePercent(role, aptitude)).withStyle(color));
+            case COMBAT -> tooltip.add(Component.translatable(
+                    "villagerretaliation.gui.job_stats.tooltip.combat_performance",
+                    VillagerCombatSkillBehavior.meleeAttackSpeedPercent(
+                            profile.skillValue(VillagerSkill.GUARDING)),
+                    VillagerCombatSkillBehavior.meleeDamagePercent(
+                            profile.skillValue(VillagerSkill.GUARDING)),
+                    VillagerCombatSkillBehavior.rangedSpreadPercent(
+                            profile.skillValue(VillagerSkill.ARCHERY))).withStyle(color));
+            case HUNTING -> tooltip.add(Component.translatable(
+                    "villagerretaliation.gui.job_stats.tooltip.hunting_performance",
+                    VillagerCombatSkillBehavior.rangedAttackSpeedPercent(
+                            profile.skillValue(VillagerSkill.ARCHERY)),
+                    VillagerCombatSkillBehavior.rangedSpreadPercent(
+                            profile.skillValue(VillagerSkill.ARCHERY)),
+                    HiredVillagerRoles.roleCadencePercent(role, aptitude)).withStyle(color));
+            default -> tooltip.add(Component.translatable(
+                    "villagerretaliation.gui.job_stats.detail.work_speed",
+                    HiredVillagerRoles.roleActionSpeedPercent(role, aptitude) != 100
+                            ? HiredVillagerRoles.roleActionSpeedPercent(role, aptitude)
+                            : HiredVillagerRoles.roleCadencePercent(role, aptitude)).withStyle(color));
+        }
     }
 
     private static void renderBar(GuiGraphics graphics, int left, int top, int fillWidth) {

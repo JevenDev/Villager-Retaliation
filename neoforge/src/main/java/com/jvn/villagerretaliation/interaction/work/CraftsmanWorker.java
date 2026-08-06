@@ -102,7 +102,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         holdWorkPosition(villager, pathTarget);
         faceBlock(villager, table);
         setTaskState(context, HiredWorkerTaskState.WORKING, table);
-        int neededTicks = Math.max(1, Math.round(CRAFT_TICKS * 100.0F / context.skillWorkSpeedPercent()));
+        int neededTicks = CRAFT_TICKS;
         int progress = context.progressTicks() + 1;
         context.setProgressTicks(progress);
         if (progress < neededTicks) {

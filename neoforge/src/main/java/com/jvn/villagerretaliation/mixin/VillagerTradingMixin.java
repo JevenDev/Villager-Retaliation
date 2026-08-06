@@ -18,7 +18,9 @@ public abstract class VillagerTradingMixin {
             InteractionHand hand,
             CallbackInfoReturnable<InteractionResult> cir) {
         Villager villager = (Villager) (Object) this;
-        if (VillagerInteractionService.shouldSuppressVanillaTradeFallback(villager, player, hand)) {
+        if (VillagerInteractionService.shouldDeferVillagerInteractionToHeldItem(villager, player, hand)) {
+            cir.setReturnValue(InteractionResult.PASS);
+        } else if (VillagerInteractionService.shouldSuppressVanillaTradeFallback(villager, player, hand)) {
             cir.setReturnValue(InteractionResult.FAIL);
         }
     }

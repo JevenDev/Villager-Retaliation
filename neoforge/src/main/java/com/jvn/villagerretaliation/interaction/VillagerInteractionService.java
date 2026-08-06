@@ -101,11 +101,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
@@ -130,6 +133,17 @@ public final class VillagerInteractionService {
     private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
     private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
     private static final ThreadLocal<TradeOpenPermit> VANILLA_TRADE_OPEN_PERMIT = new ThreadLocal<>();
+    private static final ClassValue<Boolean> HAS_INNATE_RIGHT_CLICK_BEHAVIOR = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(Class<?> itemClass) {
+            return overridesItemMethod(
+                    itemClass, "use", Level.class, Player.class, InteractionHand.class)
+                    || overridesItemMethod(
+                    itemClass,
+                    "interactLivingEntity",
+                    ItemStack.class, Player.class, LivingEntity.class, InteractionHand.class);
+        }
+    };
     private static final String EDMUNDO_OMINOUS_FORCED_LINE =
             "Loud, I am aware of what you have done. Do not think the village has forgotten. Do not mistake this calm for mercy. Even when the roads fall silent, your name still travels in whispers after dark. Jvn has tried to silence me, it will only be a matter of time before all is revealed.";
 
@@ -139,7 +153,7 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && (VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() || player.isInvisible())
-                && hasEmptyHandForVillagerInteraction(player)
+                && canStartVillagerInteractionWithHeldItems(player)
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && shouldInterceptVanillaInteraction(
                 player,
@@ -150,7 +164,7 @@ public final class VillagerInteractionService {
     public static boolean shouldSuppressClientVanillaInteraction(Villager villager, Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND
                 || (!VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() && !player.isInvisible())
-                || !hasEmptyHandForVillagerInteraction(player)
+                || !canStartVillagerInteractionWithHeldItems(player)
                 || shouldBypassInteractionScreen(player.getItemInHand(hand))
                 || villager.isTrading()
                 || !villager.isAlive()
@@ -191,7 +205,7 @@ public final class VillagerInteractionService {
         }
         if (hand != InteractionHand.MAIN_HAND
                 || (!VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() && !player.isInvisible())
-                || !hasEmptyHandForVillagerInteraction(player)
+                || !canStartVillagerInteractionWithHeldItems(player)
                 || shouldBypassInteractionScreen(player.getItemInHand(hand))
                 || villager.isTrading()
                 || !villager.isAlive()
@@ -207,7 +221,7 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleSleepingInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
-                && hasEmptyHandForVillagerInteraction(player)
+                && canStartVillagerInteractionWithHeldItems(player)
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && villager.isSleeping()
                 && shouldStayConversable(player, villager);
@@ -216,7 +230,6 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleClipboardInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
-                && hasEmptyHandForVillagerInteraction(player)
                 && VillagerRetaliationItems.isClipboard(player.getItemInHand(hand))
                 && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
@@ -224,7 +237,6 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleConstructionBlueprintInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
-                && hasEmptyHandForVillagerInteraction(player)
                 && ConstructionBlueprintItem.isBlueprint(player.getItemInHand(hand))
                 && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
@@ -232,7 +244,6 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleItemFilterInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
-                && hasEmptyHandForVillagerInteraction(player)
                 && VillagerRetaliationItems.isFilter(player.getItemInHand(hand))
                 && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
@@ -2883,9 +2894,54 @@ public final class VillagerInteractionService {
                 villager.getUUID()));
     }
 
-    public static boolean hasEmptyHandForVillagerInteraction(Player player) {
+    /**
+     * Returns whether normal villager interaction may claim the current right click.
+     *
+     * <p>Minecraft tries entity interaction before an item's general {@code use} action. Returning
+     * {@link InteractionResult#PASS} for a villager is therefore required for food, shields,
+     * equippable items, projectiles, and modded right-click items to receive the input. Items that
+     * only implement block-targeted use remain non-conflicting when the player targets a villager.
+     */
+    public static boolean canStartVillagerInteractionWithHeldItems(Player player) {
         return player != null
-                && (player.getMainHandItem().isEmpty() || player.getOffhandItem().isEmpty());
+                && !hasRightClickBehavior(player.getMainHandItem(), player)
+                && !hasRightClickBehavior(player.getOffhandItem(), player);
+    }
+
+    public static boolean shouldDeferVillagerInteractionToHeldItem(
+            Player player,
+            InteractionHand hand) {
+        return player != null
+                && hand != null
+                && !shouldBypassInteractionScreen(player.getItemInHand(hand))
+                && !canStartVillagerInteractionWithHeldItems(player);
+    }
+
+    public static boolean shouldDeferVillagerInteractionToHeldItem(
+            Villager villager,
+            Player player,
+            InteractionHand hand) {
+        TradeOpenPermit permit = VANILLA_TRADE_OPEN_PERMIT.get();
+        return (permit == null || !permit.matches(villager, player, hand))
+                && shouldDeferVillagerInteractionToHeldItem(player, hand);
+    }
+
+    private static boolean hasRightClickBehavior(ItemStack stack, Player player) {
+        return !stack.isEmpty()
+                && (stack.getFoodProperties(player) != null
+                || HAS_INNATE_RIGHT_CLICK_BEHAVIOR.get(stack.getItem().getClass()));
+    }
+
+    private static boolean overridesItemMethod(
+            Class<?> itemClass,
+            String name,
+            Class<?>... parameterTypes) {
+        try {
+            return itemClass.getMethod(name, parameterTypes).getDeclaringClass() != Item.class;
+        } catch (ReflectiveOperationException | SecurityException ignored) {
+            // Unknown item implementations should keep their input instead of opening a menu.
+            return true;
+        }
     }
 
     private static boolean shouldInterceptVanillaInteraction(
@@ -3317,7 +3373,7 @@ public final class VillagerInteractionService {
     public static InteractionResult handleSleepingVillagerBedInteraction(ServerLevel level, ServerPlayer player, BlockPos pos, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND
                 || !VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
-                || !hasEmptyHandForVillagerInteraction(player)
+                || !canStartVillagerInteractionWithHeldItems(player)
                 || player.getItemInHand(hand).is(Items.VILLAGER_SPAWN_EGG)
                 || !level.getBlockState(pos).is(BlockTags.BEDS)) {
             return InteractionResult.PASS;

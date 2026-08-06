@@ -1953,7 +1953,7 @@ public final class HiredVillagerWorkService {
         int min = Math.max(1, VillagerRetaliationConfig.HIRED_WORK_MINIMUM_EFFICIENCY_PERCENT.get());
         int max = Math.max(min, VillagerRetaliationConfig.HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT.get());
         int base = Math.max(1, VillagerRetaliationConfig.HIRED_WORK_BASE_EFFICIENCY_PERCENT.get());
-        int skillWorkSpeed = HiredVillagerRoles.skillWorkSpeedPercent(roleScore);
+        int skillWorkSpeed = HiredVillagerRoles.roleCadencePercent(role, roleScore);
         VillagerMoodState mood = VillagerMoodService.mood(level, villager);
         int moodModifier = switch (mood.primaryMood()) {
             case CONTENT, GRATEFUL, PROUD, HOPEFUL -> 8;
@@ -1979,7 +1979,7 @@ public final class HiredVillagerWorkService {
         int minimum = Math.max(1, configuredMinimum);
         int maximum = Math.max(minimum, configuredMaximum);
         int efficiency = Math.round(Math.max(1, configuredBase)
-                * Math.clamp(skillWorkSpeedPercent, 75, 125) / 100.0F);
+                * Math.clamp(skillWorkSpeedPercent, 50, 125) / 100.0F);
         efficiency += moodModifier;
         if (missingRequiredTool) {
             efficiency -= 20;

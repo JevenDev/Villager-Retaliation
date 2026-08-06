@@ -12,7 +12,7 @@ keywords:
 
 # Builder & Blueprints
 
-Builder is a paid, one-off construction project-not a daily worker role. The villager must qualify through Mason profession or Masonry + Crafting, the structure must be in the server's catalog, and the site must pass validation.
+Builder is a paid, one-off construction project-not a daily worker role. Any adult villager can take an order; Masonry and Crafting determine their aptitude. The structure must be in the server's catalog, and the site must pass validation.
 
 :::steps
 :::step{title="Choose a structure"}

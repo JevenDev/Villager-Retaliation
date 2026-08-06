@@ -189,7 +189,7 @@ public record HiredWorkContext(
             assignment = HiredWorkAssignment.of(HiredJobSite.fromWorkArea(area), HiredRoute.empty());
         }
         aptitude = Math.clamp(aptitude, 0, 100);
-        skillWorkSpeedPercent = Math.clamp(skillWorkSpeedPercent, 75, 125);
+        skillWorkSpeedPercent = Math.clamp(skillWorkSpeedPercent, 50, 125);
         transferCapacityPercent = Math.clamp(transferCapacityPercent, 50, 150);
         efficiency = Math.max(1, efficiency);
     }
