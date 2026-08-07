@@ -704,6 +704,8 @@ public final class DuelGameTests {
             walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
         }
 
+        VillagerProfileManager.setAttribute(
+                participant.level(), villager, VillagerSocialAttribute.GUTS, 98);
         DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.MELEE, 8);
         helper.assertTrue(start.started(), "staked duel should start: " + start.reason());
         helper.assertValueEqual(VillagerCurrencyPayment.count(player), 0,
@@ -712,10 +714,16 @@ public final class DuelGameTests {
                 "winning duel should resolve");
         helper.assertValueEqual(VillagerCurrencyPayment.count(player), 16,
                 "winner should receive the two-stake pot exactly once");
+        helper.assertValueEqual(
+                VillagerProfileManager.getOrCreateProfile(participant.level(), villager).socialAttributes().guts(),
+                100, "completing a duel should increase the villager's guts by two");
         helper.assertTrue(!DuelService.resolveForTest(player, DuelResult.PLAYER_WIN),
                 "completed duel must reject a second settlement");
         helper.assertValueEqual(VillagerCurrencyPayment.count(player), 16,
                 "replayed completion must not duplicate payout");
+        helper.assertValueEqual(
+                VillagerProfileManager.getOrCreateProfile(participant.level(), villager).socialAttributes().guts(),
+                100, "replayed completion must not duplicate guts growth");
         if (!VillagerWalletService.hasUnlimitedCurrency()) {
             helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBefore - 8,
                     "losing villager stake should remain deducted");
