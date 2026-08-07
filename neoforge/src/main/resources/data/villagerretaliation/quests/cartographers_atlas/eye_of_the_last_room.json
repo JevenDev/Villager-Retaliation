@@ -8,14 +8,15 @@
     "tags": [
       "group.exploration",
       "role.story",
-      "activity.gather",
       "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.late",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.exploration"
     ],
     "parent": "villagerretaliation:nether_meridian",
     "title_key": "quest.cartographers_atlas.eye_of_the_last_room.title",

@@ -8,12 +8,15 @@
     "tags": [
       "group.village_supply",
       "role.request",
-      "activity.gather",
       "activity.deliver",
+      "activity.gather",
       "destination.village",
       "tier.early",
       "difficulty.easy",
-      "commitment.quick"
+      "commitment.quick",
+      "theme.community",
+      "pool.daily",
+      "pool.quest_board"
     ]
   },
   "provider": {

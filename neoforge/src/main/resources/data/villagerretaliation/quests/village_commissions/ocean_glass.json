@@ -8,14 +8,18 @@
     "tags": [
       "group.village_commissions",
       "role.request",
-      "activity.gather",
       "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.mid",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.community",
+      "theme.exploration",
+      "pool.commission",
+      "pool.quest_board"
     ]
   },
   "provider": {

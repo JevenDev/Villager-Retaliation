@@ -9,13 +9,15 @@
     "tags": [
       "group.last_ember",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
       "activity.combat",
+      "activity.deliver",
+      "activity.gather",
       "destination.overworld",
       "tier.mid",
       "difficulty.normal",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.exploration",
+      "theme.mystery"
     ]
   },
   "provider": {

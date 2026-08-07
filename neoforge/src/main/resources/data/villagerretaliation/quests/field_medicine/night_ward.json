@@ -9,13 +9,18 @@
     "tags": [
       "group.field_medicine",
       "role.side",
-      "activity.gather",
-      "activity.deliver",
       "activity.combat",
+      "activity.deliver",
+      "activity.gather",
       "destination.village",
       "tier.mid",
       "difficulty.normal",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.community",
+      "theme.defense",
+      "feature.encounter",
+      "feature.scene",
+      "party.challenge"
     ]
   },
   "provider": {

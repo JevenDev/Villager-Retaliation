@@ -9,17 +9,20 @@
     "tags": [
       "group.nether_routes",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
-      "activity.combat",
-      "activity.explore",
       "activity.choice",
+      "activity.combat",
+      "activity.deliver",
+      "activity.explore",
+      "activity.gather",
       "destination.nether",
       "destination.remote",
       "tier.late",
       "difficulty.hard",
       "commitment.expedition",
-      "feature.branching"
+      "theme.exploration",
+      "feature.branching",
+      "feature.scene",
+      "party.recommended"
     ]
   },
   "provider": {

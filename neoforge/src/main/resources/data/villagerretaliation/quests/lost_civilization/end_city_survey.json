@@ -9,14 +9,16 @@
     "tags": [
       "group.lost_civilization",
       "role.side",
-      "activity.gather",
       "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.end",
       "destination.remote",
       "tier.endgame",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.exploration",
+      "theme.mystery"
     ]
   },
   "provider": {

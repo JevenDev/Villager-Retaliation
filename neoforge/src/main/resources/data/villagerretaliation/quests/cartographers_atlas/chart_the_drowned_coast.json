@@ -8,15 +8,17 @@
     "tags": [
       "group.exploration",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
       "activity.combat",
+      "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.late",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.exploration",
+      "party.recommended"
     ],
     "parent": "villagerretaliation:choose_the_horizon",
     "title_key": "quest.cartographers_atlas.chart_the_drowned_coast.title",

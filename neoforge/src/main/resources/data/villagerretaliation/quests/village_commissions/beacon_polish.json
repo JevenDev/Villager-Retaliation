@@ -8,13 +8,18 @@
     "tags": [
       "group.village_commissions",
       "role.request",
-      "activity.gather",
-      "activity.deliver",
       "activity.combat",
+      "activity.deliver",
+      "activity.gather",
       "destination.village",
       "tier.late",
       "difficulty.extreme",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.community",
+      "theme.defense",
+      "party.challenge",
+      "pool.commission",
+      "pool.quest_board"
     ]
   },
   "provider": {

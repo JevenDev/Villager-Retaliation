@@ -8,15 +8,17 @@
     "tags": [
       "group.exploration",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
       "activity.combat",
+      "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.end",
       "destination.remote",
       "tier.endgame",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.exploration",
+      "party.recommended"
     ],
     "parent": "villagerretaliation:eye_of_the_last_room",
     "title_key": "quest.cartographers_atlas.end_city_margin.title",

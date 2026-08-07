@@ -8,14 +8,16 @@
     "tags": [
       "group.dangerous_commissions",
       "role.side",
-      "activity.gather",
       "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.nether",
       "destination.remote",
       "tier.late",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.defense",
+      "theme.exploration"
     ]
   },
   "provider": {

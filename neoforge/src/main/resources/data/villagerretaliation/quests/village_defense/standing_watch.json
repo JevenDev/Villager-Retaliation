@@ -13,7 +13,12 @@
       "destination.village",
       "tier.mid",
       "difficulty.normal",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.community",
+      "theme.defense",
+      "feature.encounter",
+      "feature.scene",
+      "party.challenge"
     ]
   },
   "provider": {

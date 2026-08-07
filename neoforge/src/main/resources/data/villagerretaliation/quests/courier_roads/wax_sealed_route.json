@@ -8,12 +8,14 @@
     "tags": [
       "group.courier_roads",
       "role.side",
-      "activity.gather",
       "activity.deliver",
+      "activity.gather",
       "destination.overworld",
       "tier.early",
       "difficulty.easy",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.community",
+      "theme.exploration"
     ]
   },
   "provider": {

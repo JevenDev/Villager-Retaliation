@@ -8,14 +8,16 @@
     "tags": [
       "group.old_roads",
       "role.side",
-      "activity.gather",
       "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.mid",
       "difficulty.normal",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.exploration",
+      "theme.mystery"
     ]
   },
   "provider": {

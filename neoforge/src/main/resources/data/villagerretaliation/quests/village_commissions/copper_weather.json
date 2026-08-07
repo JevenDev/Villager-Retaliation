@@ -8,12 +8,15 @@
     "tags": [
       "group.village_commissions",
       "role.request",
-      "activity.gather",
       "activity.deliver",
+      "activity.gather",
       "destination.village",
       "tier.mid",
       "difficulty.normal",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.community",
+      "pool.commission",
+      "pool.quest_board"
     ]
   },
   "provider": {

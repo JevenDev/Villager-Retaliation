@@ -9,13 +9,14 @@
     "tags": [
       "group.redstone_works",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
       "activity.choice",
+      "activity.deliver",
+      "activity.gather",
       "destination.village",
       "tier.mid",
       "difficulty.normal",
       "commitment.standard",
+      "theme.craftsmanship",
       "feature.branching"
     ]
   },

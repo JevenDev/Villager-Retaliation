@@ -9,13 +9,14 @@
     "tags": [
       "group.end_survey",
       "role.story",
-      "activity.gather",
       "activity.deliver",
+      "activity.gather",
       "destination.end",
       "destination.remote",
       "tier.endgame",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.exploration"
     ]
   },
   "provider": {
