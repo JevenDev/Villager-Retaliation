@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.scene.encounter;
 
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.scene.SceneResources;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
@@ -33,6 +35,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -164,7 +167,68 @@ public final class EncounterService {
     private static boolean restoreEnvironment(MinecraftServer server,SceneSavedData data,EncounterInstance encounter){boolean complete=true;for(EncounterInstance.EnvironmentBlock owned:encounter.environmentBlocks().values()){if(owned.state()==EncounterInstance.EnvironmentBlockState.RESTORED||owned.state()==EncounterInstance.EnvironmentBlockState.PRESERVED)continue;ServerLevel level=server.getLevel(ResourceKey.create(Registries.DIMENSION,owned.dimension()));if(level==null||!level.hasChunkAt(owned.position())){complete=false;continue;}var current=level.getBlockState(owned.position());if(current.equals(owned.placed())){level.setBlock(owned.position(),owned.original(),Block.UPDATE_CLIENTS);encounter.replaceEnvironmentBlock(owned.restored());}else encounter.replaceEnvironmentBlock(owned.preserved());data.changed();}return complete;}
     public static void maintainCleanup(MinecraftServer server,SceneSavedData data){for(EncounterInstance encounter:data.encounters()){if(encounter.completionRewardEligible())EncounterResources.template(server,encounter.templateId()).ifPresent(template->grantEligibleRewards(server,data,encounter,template));if(encounter.state()==EncounterInstance.EncounterState.CLEANING_UP)cleanup(server,data,encounter,false);else if(encounter.state()==EncounterInstance.EncounterState.COMPLETED||encounter.state()==EncounterInstance.EncounterState.FAILED||encounter.state()==EncounterInstance.EncounterState.CANCELLED){restoreEnvironment(server,data,encounter);removeGuidance(server,data,encounter);}}}
 
-    private static String grantEligibleRewards(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,EncounterTemplate template){EncounterTemplate.RewardPolicy policy=template.rewards();if(policy==null||policy.waves().isEmpty()&&policy.phases().isEmpty()&&policy.completion().isEmpty())return "";if(encounter.state()!=EncounterInstance.EncounterState.ACTIVE&&!encounter.completionRewardEligible())return "";SceneInstance scene=data.get(encounter.sceneId()).orElse(null);if(scene==null)return "encounter rewards require their owning scene";List<RewardGrant> grants=new ArrayList<>();int gone=encounter.defeated().size()+(encounter.completionCondition()==EncounterTemplate.CompletionCondition.ALL_GONE?encounter.missing().size():0);for(EncounterTemplate.Reward reward:policy.waves()){int index=-1;for(int i=0;i<template.waveCount();i++)if(template.wave(i).id().equals(reward.target())){index=i;break;}if(index>=0&&gone>=template.waveStart(index,encounter.partySize())+template.scaledCount(template.wave(index),encounter.partySize()))grants.add(new RewardGrant(reward,"wave/"+reward.target()));}for(EncounterTemplate.Reward reward:policy.phases()){int fires=encounter.phaseFireCounts().getOrDefault(reward.target(),0);for(int ordinal=1;ordinal<=fires;ordinal++)grants.add(new RewardGrant(reward,"phase/"+reward.target()+"/"+ordinal));}if(encounter.completionRewardEligible())for(EncounterTemplate.Reward reward:policy.completion())grants.add(new RewardGrant(reward,"completion"));for(RewardGrant grant:grants){if(grant.reward().lootTable()!=null&&server.reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE,grant.reward().lootTable()))==LootTable.EMPTY)return "encounter reward "+grant.reward().id()+" references unavailable loot table "+grant.reward().lootTable();for(UUID participant:encounter.participants()){var player=server.getPlayerList().getPlayer(participant);if(player==null)continue;String operation=scene.id()+"/encounter/"+encounter.id()+"/reward/"+grant.trigger()+"/"+grant.reward().id()+"/player/"+participant;SceneOperationReceipt existing=scene.receipts().get(operation);if(existing!=null){if(existing.state()!=SceneOperationReceipt.ReceiptState.COMPLETED)existing.completed(server.overworld().getGameTime(),"reserved before reward delivery; replay suppressed");data.changed();continue;}SceneOperationReceipt receipt=scene.prepareReceipt(operation,grant.reward().lootTable()==null?SceneOperationReceipt.Kind.ITEM_GRANT:SceneOperationReceipt.Kind.LOOT_GRANT,server.overworld().getGameTime());receipt.applied(server.overworld().getGameTime(),"recipient="+participant);receipt.completed(server.overworld().getGameTime(),"reserved before reward delivery");data.changed();deliverReward(player,encounter,grant.reward(),grant.trigger());}}return "";}
+    private static String grantEligibleRewards(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,EncounterTemplate template){String profileError=grantVillagerCompletionGuts(server,data,encounter,template);if(!profileError.isBlank())return profileError;EncounterTemplate.RewardPolicy policy=template.rewards();if(policy==null||policy.waves().isEmpty()&&policy.phases().isEmpty()&&policy.completion().isEmpty())return "";if(encounter.state()!=EncounterInstance.EncounterState.ACTIVE&&!encounter.completionRewardEligible())return "";SceneInstance scene=data.get(encounter.sceneId()).orElse(null);if(scene==null)return "encounter rewards require their owning scene";List<RewardGrant> grants=new ArrayList<>();int gone=encounter.defeated().size()+(encounter.completionCondition()==EncounterTemplate.CompletionCondition.ALL_GONE?encounter.missing().size():0);for(EncounterTemplate.Reward reward:policy.waves()){int index=-1;for(int i=0;i<template.waveCount();i++)if(template.wave(i).id().equals(reward.target())){index=i;break;}if(index>=0&&gone>=template.waveStart(index,encounter.partySize())+template.scaledCount(template.wave(index),encounter.partySize()))grants.add(new RewardGrant(reward,"wave/"+reward.target()));}for(EncounterTemplate.Reward reward:policy.phases()){int fires=encounter.phaseFireCounts().getOrDefault(reward.target(),0);for(int ordinal=1;ordinal<=fires;ordinal++)grants.add(new RewardGrant(reward,"phase/"+reward.target()+"/"+ordinal));}if(encounter.completionRewardEligible())for(EncounterTemplate.Reward reward:policy.completion())grants.add(new RewardGrant(reward,"completion"));for(RewardGrant grant:grants){if(grant.reward().lootTable()!=null&&server.reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE,grant.reward().lootTable()))==LootTable.EMPTY)return "encounter reward "+grant.reward().id()+" references unavailable loot table "+grant.reward().lootTable();for(UUID participant:encounter.participants()){var player=server.getPlayerList().getPlayer(participant);if(player==null)continue;String operation=scene.id()+"/encounter/"+encounter.id()+"/reward/"+grant.trigger()+"/"+grant.reward().id()+"/player/"+participant;SceneOperationReceipt existing=scene.receipts().get(operation);if(existing!=null){if(existing.state()!=SceneOperationReceipt.ReceiptState.COMPLETED)existing.completed(server.overworld().getGameTime(),"reserved before reward delivery; replay suppressed");data.changed();continue;}SceneOperationReceipt receipt=scene.prepareReceipt(operation,grant.reward().lootTable()==null?SceneOperationReceipt.Kind.ITEM_GRANT:SceneOperationReceipt.Kind.LOOT_GRANT,server.overworld().getGameTime());receipt.applied(server.overworld().getGameTime(),"recipient="+participant);receipt.completed(server.overworld().getGameTime(),"reserved before reward delivery");data.changed();deliverReward(player,encounter,grant.reward(),grant.trigger());}}return "";}
+    public static int completionGutsReward(EncounterTemplate template) {
+        if (template == null) return 0;
+        boolean elite = false;
+        for (int waveIndex = 0; waveIndex < template.waveCount(); waveIndex++) {
+            for (EncounterTemplate.Member member : template.wave(waveIndex).members()) {
+                if (member.options().boss()) return 5;
+                elite |= !member.options().attributes().isEmpty();
+            }
+        }
+        return elite ? 3 : 0;
+    }
+
+    private static String grantVillagerCompletionGuts(
+            MinecraftServer server,
+            SceneSavedData data,
+            EncounterInstance encounter,
+            EncounterTemplate template) {
+        int amount = completionGutsReward(template);
+        if (amount == 0 || !encounter.completionRewardEligible()) return "";
+        SceneInstance scene = data.get(encounter.sceneId()).orElse(null);
+        if (scene == null) return "encounter profile rewards require their owning scene";
+        long gameTime = server.overworld().getGameTime();
+        ResourceLocation villagerType = BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.VILLAGER);
+        for (EncounterInstance.AllyIdentity ally : encounter.allies().values()) {
+            if (ally.state() == EncounterInstance.AllyState.DEAD
+                    || ally.state() == EncounterInstance.AllyState.REMOVED) continue;
+            Entity entity = find(server, ally.entityId());
+            Villager villager = entity instanceof Villager value ? value : null;
+            if (entity != null && villager == null) continue;
+            ServerLevel profileLevel = villager != null
+                    ? (ServerLevel) villager.level()
+                    : server.getLevel(ResourceKey.create(Registries.DIMENSION, ally.dimension()));
+            if (profileLevel == null || villager == null
+                    && (!ally.entityType().equals(villagerType)
+                    || VillagerProfileManager.getProfile(profileLevel, ally.entityId()).isEmpty())) continue;
+            String operation = scene.id() + "/encounter/" + encounter.id()
+                    + "/profile/guts/" + ally.key();
+            SceneOperationReceipt existing = scene.receipts().get(operation);
+            if (existing != null) {
+                if (existing.state() != SceneOperationReceipt.ReceiptState.COMPLETED) {
+                    existing.completed(gameTime, "reserved before profile reward delivery; replay suppressed");
+                    data.changed();
+                }
+                continue;
+            }
+            if (villager != null) {
+                VillagerProfileManager.adjustAttribute(
+                        profileLevel, villager, VillagerSocialAttribute.GUTS, amount);
+            } else {
+                VillagerProfileManager.adjustAttribute(
+                        profileLevel, ally.entityId(), VillagerSocialAttribute.GUTS, amount);
+            }
+            SceneOperationReceipt receipt = scene.prepareReceipt(
+                    operation, SceneOperationReceipt.Kind.PROFILE_ATTRIBUTE_CHANGE, gameTime);
+            String evidence = "villager=" + ally.entityId() + " guts=" + amount;
+            receipt.applied(gameTime, evidence);
+            receipt.completed(gameTime, evidence);
+            data.changed();
+        }
+        return "";
+    }
     private static void deliverReward(net.minecraft.server.level.ServerPlayer player,EncounterInstance encounter,EncounterTemplate.Reward reward,String trigger){if(reward.item()!=null){ItemStack stack=new ItemStack(BuiltInRegistries.ITEM.get(reward.item()),reward.count());if(!reward.trophyName().isBlank())stack.set(DataComponents.CUSTOM_NAME,Component.literal(reward.trophyName()));give(player,stack);return;}LootTable table=player.getServer().reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE,reward.lootTable()));LootParams params=new LootParams.Builder(player.serverLevel()).withLuck(player.getLuck()).create(LootContextParamSets.EMPTY);long seed=encounter.variantSeed()^encounter.id().getMostSignificantBits()^player.getUUID().getLeastSignificantBits()^reward.id().hashCode()^trigger.hashCode();for(ItemStack stack:table.getRandomItems(params,RandomSource.create(seed)))if(!stack.isEmpty())give(player,stack.copy());}
     private static void give(net.minecraft.server.level.ServerPlayer player,ItemStack stack){if(!player.addItem(stack)&&!stack.isEmpty())player.drop(stack,false);}
     private record RewardGrant(EncounterTemplate.Reward reward,String trigger){}
