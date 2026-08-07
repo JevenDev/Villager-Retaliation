@@ -636,15 +636,28 @@ public record QuestDefinition(
             String title,
             String titleKey,
             java.util.Map<String, Step> steps,
-            java.util.Map<String, String> metadata
+            java.util.Map<String, String> metadata,
+            ResourceLocation icon,
+            String color,
+            int priority,
+            boolean hidden
     ) {
-        public static final Tracker EMPTY = new Tracker("", "", java.util.Map.of(), java.util.Map.of());
+        public static final Tracker EMPTY = new Tracker("", "", java.util.Map.of(), java.util.Map.of(), null, "", 0, false);
+
+        public Tracker(
+                String title,
+                String titleKey,
+                java.util.Map<String, Step> steps,
+                java.util.Map<String, String> metadata) {
+            this(title, titleKey, steps, metadata, null, "", 0, false);
+        }
 
         public Tracker {
             title = title == null ? "" : title;
             titleKey = titleKey == null ? "" : titleKey;
             steps = steps == null ? java.util.Map.of() : java.util.Map.copyOf(steps);
             metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
+            color = color == null ? "" : color.trim();
         }
 
         public Step step(String key, Step fallback) {

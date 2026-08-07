@@ -58,7 +58,16 @@ window.VR_WIKI_DATA = {
       "group": "courier_roads",
       "groupLabel": "Courier Roads",
       "tags": [
-        "group.courier_roads"
+        "group.courier_roads",
+        "role.side",
+        "activity.deliver",
+        "activity.gather",
+        "destination.overworld",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.standard",
+        "theme.community",
+        "theme.exploration"
       ],
       "relationKey": "questline:courier_roads",
       "parent": "",
@@ -730,7 +739,21 @@ window.VR_WIKI_DATA = {
       "group": "courier_roads",
       "groupLabel": "Courier Roads",
       "tags": [
-        "group.courier_roads"
+        "group.courier_roads",
+        "role.side",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.expedition",
+        "theme.community",
+        "theme.exploration",
+        "feature.encounter",
+        "feature.scene",
+        "party.challenge"
       ],
       "relationKey": "questline:courier_roads",
       "parent": "villagerretaliation:wax_sealed_route",
@@ -1413,7 +1436,18 @@ window.VR_WIKI_DATA = {
       "group": "dangerous_commissions",
       "groupLabel": "Dangerous Commissions",
       "tags": [
-        "group.dangerous_commissions"
+        "group.dangerous_commissions",
+        "role.side",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.nether",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.defense",
+        "theme.exploration"
       ],
       "relationKey": "questline:dangerous_commissions",
       "parent": "",
@@ -2136,7 +2170,18 @@ window.VR_WIKI_DATA = {
       "group": "dangerous_commissions",
       "groupLabel": "Dangerous Commissions",
       "tags": [
-        "group.dangerous_commissions"
+        "group.dangerous_commissions",
+        "role.side",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.nether",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.defense",
+        "theme.exploration"
       ],
       "relationKey": "questline:dangerous_commissions",
       "parent": "",
@@ -2864,7 +2909,21 @@ window.VR_WIKI_DATA = {
       "group": "dangerous_commissions",
       "groupLabel": "Dangerous Commissions",
       "tags": [
-        "group.dangerous_commissions"
+        "group.dangerous_commissions",
+        "role.request",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.defense",
+        "theme.exploration",
+        "feature.scene",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:dangerous_commissions",
       "parent": "",
@@ -3605,7 +3664,21 @@ window.VR_WIKI_DATA = {
       "group": "dangerous_commissions",
       "groupLabel": "Dangerous Commissions",
       "tags": [
-        "group.dangerous_commissions"
+        "group.dangerous_commissions",
+        "role.side",
+        "activity.combat",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.defense",
+        "theme.exploration",
+        "feature.scene",
+        "party.recommended"
       ],
       "relationKey": "questline:dangerous_commissions",
       "parent": "villagerretaliation:trial_chamber_recall",
@@ -4341,7 +4414,16 @@ window.VR_WIKI_DATA = {
       "group": "deep_delvers",
       "groupLabel": "Deep Delvers",
       "tags": [
-        "group.deep_delvers"
+        "group.deep_delvers",
+        "role.story",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.craftsmanship",
+        "theme.exploration"
       ],
       "relationKey": "questline:deep_delvers",
       "parent": "",
@@ -5042,7 +5124,18 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Deep Delvers",
       "tags": [
         "group.deep_delvers",
-        "branching"
+        "role.story",
+        "activity.build",
+        "activity.choice",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.craftsmanship",
+        "theme.exploration",
+        "feature.branching"
       ],
       "relationKey": "questline:deep_delvers",
       "parent": "villagerretaliation:below_the_bell",
@@ -6042,7 +6135,17 @@ window.VR_WIKI_DATA = {
       "group": "deep_delvers",
       "groupLabel": "Deep Delvers",
       "tags": [
-        "group.deep_delvers"
+        "group.deep_delvers",
+        "role.story",
+        "activity.build",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.craftsmanship",
+        "theme.exploration"
       ],
       "relationKey": "questline:deep_delvers",
       "parent": "villagerretaliation:mark_the_shaft",
@@ -6760,7 +6863,18 @@ window.VR_WIKI_DATA = {
       "group": "deep_delvers",
       "groupLabel": "Deep Delvers",
       "tags": [
-        "group.deep_delvers"
+        "group.deep_delvers",
+        "role.story",
+        "activity.build",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.craftsmanship",
+        "theme.exploration"
       ],
       "relationKey": "questline:deep_delvers",
       "parent": "villagerretaliation:mark_the_shaft",
@@ -7479,7 +7593,16 @@ window.VR_WIKI_DATA = {
       "group": "end_survey",
       "groupLabel": "End Survey",
       "tags": [
-        "group.end_survey"
+        "group.end_survey",
+        "role.story",
+        "activity.deliver",
+        "activity.gather",
+        "destination.end",
+        "destination.remote",
+        "tier.endgame",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration"
       ],
       "relationKey": "questline:end_survey",
       "parent": "",
@@ -8188,7 +8311,21 @@ window.VR_WIKI_DATA = {
       "groupLabel": "End Survey",
       "tags": [
         "group.end_survey",
-        "branching"
+        "role.story",
+        "activity.choice",
+        "activity.combat",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.end",
+        "destination.remote",
+        "tier.endgame",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "feature.branching",
+        "feature.scene",
+        "party.recommended"
       ],
       "relationKey": "questline:end_survey",
       "parent": "villagerretaliation:empty_sky",
@@ -9204,7 +9341,16 @@ window.VR_WIKI_DATA = {
       "group": "end_survey",
       "groupLabel": "End Survey",
       "tags": [
-        "group.end_survey"
+        "group.end_survey",
+        "role.story",
+        "activity.deliver",
+        "activity.gather",
+        "destination.end",
+        "destination.remote",
+        "tier.endgame",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration"
       ],
       "relationKey": "questline:end_survey",
       "parent": "villagerretaliation:choose_a_star",
@@ -9923,7 +10069,18 @@ window.VR_WIKI_DATA = {
       "group": "end_survey",
       "groupLabel": "End Survey",
       "tags": [
-        "group.end_survey"
+        "group.end_survey",
+        "role.story",
+        "activity.build",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.end",
+        "destination.remote",
+        "tier.endgame",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration"
       ],
       "relationKey": "questline:end_survey",
       "parent": "villagerretaliation:choose_a_star",
@@ -10650,7 +10807,15 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.deliver",
+        "activity.gather",
+        "destination.overworld",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.standard",
+        "theme.exploration"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "",
@@ -11440,7 +11605,17 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.choice",
+        "activity.deliver",
+        "activity.gather",
+        "destination.overworld",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.exploration",
+        "feature.branching"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:blank_map_promise",
@@ -12377,7 +12552,17 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.expedition",
+        "theme.exploration"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:ink_and_bearings",
@@ -13108,7 +13293,16 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.overworld",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.exploration"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:first_far_marker",
@@ -13825,7 +14019,21 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.choice",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.overworld",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.exploration",
+        "feature.branching",
+        "feature.encounter",
+        "feature.scene",
+        "party.challenge"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:roads_that_remember",
@@ -14729,7 +14937,20 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.choice",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "feature.branching",
+        "feature.scene"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:the_atlas_test",
@@ -15657,7 +15878,19 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.combat",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "party.recommended"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:choose_the_horizon",
@@ -16334,7 +16567,19 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.combat",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "party.recommended"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:choose_the_horizon",
@@ -17013,7 +17258,17 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.nether",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:choose_the_horizon",
@@ -17610,7 +17865,17 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:nether_meridian",
@@ -18199,7 +18464,19 @@ window.VR_WIKI_DATA = {
       "group": "exploration",
       "groupLabel": "Exploration",
       "tags": [
-        "group.exploration"
+        "group.exploration",
+        "role.story",
+        "activity.combat",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.end",
+        "destination.remote",
+        "tier.endgame",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "party.recommended"
       ],
       "relationKey": "questline:cartographers_atlas",
       "parent": "villagerretaliation:eye_of_the_last_room",
@@ -18802,7 +19079,16 @@ window.VR_WIKI_DATA = {
       "group": "field_medicine",
       "groupLabel": "Field Medicine",
       "tags": [
-        "group.field_medicine"
+        "group.field_medicine",
+        "role.side",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.standard",
+        "theme.community",
+        "theme.defense"
       ],
       "relationKey": "questline:field_medicine",
       "parent": "",
@@ -19474,7 +19760,20 @@ window.VR_WIKI_DATA = {
       "group": "field_medicine",
       "groupLabel": "Field Medicine",
       "tags": [
-        "group.field_medicine"
+        "group.field_medicine",
+        "role.side",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community",
+        "theme.defense",
+        "feature.encounter",
+        "feature.scene",
+        "party.challenge"
       ],
       "relationKey": "questline:field_medicine",
       "parent": "villagerretaliation:clean_bandages",
@@ -20155,7 +20454,15 @@ window.VR_WIKI_DATA = {
       "group": "green_thumb",
       "groupLabel": "Green Thumb",
       "tags": [
-        "group.green_thumb"
+        "group.green_thumb",
+        "role.story",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.standard",
+        "theme.community"
       ],
       "relationKey": "questline:green_thumb",
       "parent": "",
@@ -20858,7 +21165,17 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Green Thumb",
       "tags": [
         "group.green_thumb",
-        "branching"
+        "role.story",
+        "activity.build",
+        "activity.choice",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community",
+        "feature.branching"
       ],
       "relationKey": "questline:green_thumb",
       "parent": "villagerretaliation:new_furrows",
@@ -21852,7 +22169,16 @@ window.VR_WIKI_DATA = {
       "group": "green_thumb",
       "groupLabel": "Green Thumb",
       "tags": [
-        "group.green_thumb"
+        "group.green_thumb",
+        "role.story",
+        "activity.build",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community"
       ],
       "relationKey": "questline:green_thumb",
       "parent": "villagerretaliation:choose_the_soil",
@@ -22563,7 +22889,15 @@ window.VR_WIKI_DATA = {
       "group": "green_thumb",
       "groupLabel": "Green Thumb",
       "tags": [
-        "group.green_thumb"
+        "group.green_thumb",
+        "role.story",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community"
       ],
       "relationKey": "questline:green_thumb",
       "parent": "villagerretaliation:choose_the_soil",
@@ -23276,7 +23610,15 @@ window.VR_WIKI_DATA = {
       "group": "hearthbound",
       "groupLabel": "Hearthbound",
       "tags": [
-        "group.hearthbound"
+        "group.hearthbound",
+        "role.side",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.standard",
+        "theme.community"
       ],
       "relationKey": "questline:hearthbound",
       "parent": "",
@@ -23818,7 +24160,15 @@ window.VR_WIKI_DATA = {
       "group": "hearthbound",
       "groupLabel": "Hearthbound",
       "tags": [
-        "group.hearthbound"
+        "group.hearthbound",
+        "role.side",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.standard",
+        "theme.community"
       ],
       "relationKey": "questline:hearthbound",
       "parent": "villagerretaliation:first_fire",
@@ -24369,7 +24719,16 @@ window.VR_WIKI_DATA = {
       "group": "last_ember",
       "groupLabel": "Last Ember",
       "tags": [
-        "group.last_ember"
+        "group.last_ember",
+        "role.story",
+        "activity.deliver",
+        "activity.gather",
+        "destination.overworld",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.exploration",
+        "theme.mystery"
       ],
       "relationKey": "questline:last_ember",
       "parent": "",
@@ -24899,7 +25258,19 @@ window.VR_WIKI_DATA = {
       "group": "last_ember",
       "groupLabel": "Last Ember",
       "tags": [
-        "group.last_ember"
+        "group.last_ember",
+        "role.story",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.nether",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "theme.mystery",
+        "party.recommended"
       ],
       "relationKey": "questline:last_ember",
       "parent": "villagerretaliation:pearl_lessons",
@@ -25580,7 +25951,17 @@ window.VR_WIKI_DATA = {
       "group": "last_ember",
       "groupLabel": "Last Ember",
       "tags": [
-        "group.last_ember"
+        "group.last_ember",
+        "role.story",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.overworld",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.exploration",
+        "theme.mystery"
       ],
       "relationKey": "questline:last_ember",
       "parent": "villagerretaliation:nether_candle",
@@ -26253,7 +26634,20 @@ window.VR_WIKI_DATA = {
       "group": "last_ember",
       "groupLabel": "Last Ember",
       "tags": [
-        "group.last_ember"
+        "group.last_ember",
+        "role.story",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.end",
+        "destination.remote",
+        "tier.endgame",
+        "difficulty.extreme",
+        "commitment.expedition",
+        "theme.exploration",
+        "theme.mystery",
+        "feature.scene",
+        "party.challenge"
       ],
       "relationKey": "questline:last_ember",
       "parent": "villagerretaliation:eye_before_dawn",
@@ -26926,7 +27320,18 @@ window.VR_WIKI_DATA = {
       "group": "lost_civilization",
       "groupLabel": "Lost Civilization",
       "tags": [
-        "group.lost_civilization"
+        "group.lost_civilization",
+        "role.side",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "theme.mystery"
       ],
       "relationKey": "questline:lost_civilization",
       "parent": "",
@@ -27911,7 +28316,18 @@ window.VR_WIKI_DATA = {
       "group": "lost_civilization",
       "groupLabel": "Lost Civilization",
       "tags": [
-        "group.lost_civilization"
+        "group.lost_civilization",
+        "role.side",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.end",
+        "destination.remote",
+        "tier.endgame",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "theme.mystery"
       ],
       "relationKey": "questline:lost_civilization",
       "parent": "villagerretaliation:tales_of_a_lost_civilization",
@@ -28639,7 +29055,16 @@ window.VR_WIKI_DATA = {
       "group": "nether_routes",
       "groupLabel": "Nether Routes",
       "tags": [
-        "group.nether_routes"
+        "group.nether_routes",
+        "role.story",
+        "activity.deliver",
+        "activity.gather",
+        "destination.nether",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration"
       ],
       "relationKey": "questline:nether_routes",
       "parent": "",
@@ -29348,7 +29773,21 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Nether Routes",
       "tags": [
         "group.nether_routes",
-        "branching"
+        "role.story",
+        "activity.choice",
+        "activity.combat",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.nether",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "feature.branching",
+        "feature.scene",
+        "party.recommended"
       ],
       "relationKey": "questline:nether_routes",
       "parent": "villagerretaliation:through_fire",
@@ -30373,7 +30812,18 @@ window.VR_WIKI_DATA = {
       "group": "nether_routes",
       "groupLabel": "Nether Routes",
       "tags": [
-        "group.nether_routes"
+        "group.nether_routes",
+        "role.story",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.nether",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "party.recommended"
       ],
       "relationKey": "questline:nether_routes",
       "parent": "villagerretaliation:choose_a_road",
@@ -31092,7 +31542,18 @@ window.VR_WIKI_DATA = {
       "group": "nether_routes",
       "groupLabel": "Nether Routes",
       "tags": [
-        "group.nether_routes"
+        "group.nether_routes",
+        "role.story",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.nether",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.exploration",
+        "party.recommended"
       ],
       "relationKey": "questline:nether_routes",
       "parent": "villagerretaliation:choose_a_road",
@@ -31811,7 +32272,18 @@ window.VR_WIKI_DATA = {
       "group": "old_roads",
       "groupLabel": "Old Roads",
       "tags": [
-        "group.old_roads"
+        "group.old_roads",
+        "role.side",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.expedition",
+        "theme.exploration",
+        "theme.mystery"
       ],
       "relationKey": "questline:old_roads",
       "parent": "",
@@ -32534,7 +33006,18 @@ window.VR_WIKI_DATA = {
       "group": "old_roads",
       "groupLabel": "Old Roads",
       "tags": [
-        "group.old_roads"
+        "group.old_roads",
+        "role.side",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.expedition",
+        "theme.exploration",
+        "theme.mystery"
       ],
       "relationKey": "questline:old_roads",
       "parent": "",
@@ -33256,7 +33739,15 @@ window.VR_WIKI_DATA = {
       "group": "redstone_works",
       "groupLabel": "Redstone Works",
       "tags": [
-        "group.redstone_works"
+        "group.redstone_works",
+        "role.story",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.craftsmanship"
       ],
       "relationKey": "questline:redstone_works",
       "parent": "",
@@ -33965,7 +34456,16 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Redstone Works",
       "tags": [
         "group.redstone_works",
-        "branching"
+        "role.story",
+        "activity.choice",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.craftsmanship",
+        "feature.branching"
       ],
       "relationKey": "questline:redstone_works",
       "parent": "villagerretaliation:small_spark",
@@ -34965,7 +35465,16 @@ window.VR_WIKI_DATA = {
       "group": "redstone_works",
       "groupLabel": "Redstone Works",
       "tags": [
-        "group.redstone_works"
+        "group.redstone_works",
+        "role.story",
+        "activity.build",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.craftsmanship"
       ],
       "relationKey": "questline:redstone_works",
       "parent": "villagerretaliation:power_the_gate",
@@ -35683,7 +36192,18 @@ window.VR_WIKI_DATA = {
       "group": "redstone_works",
       "groupLabel": "Redstone Works",
       "tags": [
-        "group.redstone_works"
+        "group.redstone_works",
+        "role.story",
+        "activity.build",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.craftsmanship"
       ],
       "relationKey": "questline:redstone_works",
       "parent": "villagerretaliation:power_the_gate",
@@ -36411,7 +36931,19 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.late"
+        "role.request",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.late",
+        "difficulty.extreme",
+        "commitment.expedition",
+        "theme.community",
+        "theme.defense",
+        "party.challenge",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -37136,7 +37668,20 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.late"
+        "role.request",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.nether",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.community",
+        "theme.defense",
+        "party.recommended",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -37863,7 +38408,20 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.late"
+        "role.request",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.end",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.community",
+        "theme.defense",
+        "party.recommended",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -38590,7 +39148,17 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.early"
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.commission",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -39297,7 +39865,16 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.mid"
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -40010,7 +40587,18 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.mid"
+        "role.request",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community",
+        "theme.defense",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -40723,7 +41311,19 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.late"
+        "role.request",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.community",
+        "theme.exploration",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -41450,7 +42050,16 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.early"
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -42163,7 +42772,19 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.mid"
+        "role.request",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.mid",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.community",
+        "theme.exploration",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -42898,7 +43519,16 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.early"
+        "role.request",
+        "activity.trade",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "theme.craftsmanship",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -43604,7 +44234,22 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.late"
+        "role.request",
+        "activity.combat",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.end",
+        "destination.remote",
+        "tier.late",
+        "difficulty.hard",
+        "commitment.expedition",
+        "theme.community",
+        "theme.defense",
+        "theme.exploration",
+        "party.recommended",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -44339,7 +44984,18 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.mid"
+        "role.request",
+        "activity.build",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community",
+        "theme.craftsmanship",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -45051,7 +45707,16 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.early"
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -45763,7 +46428,16 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.early"
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -46475,7 +47149,18 @@ window.VR_WIKI_DATA = {
       "groupLabel": "Village Commissions",
       "tags": [
         "group.village_commissions",
-        "tier.mid"
+        "role.request",
+        "activity.combat",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community",
+        "theme.defense",
+        "pool.commission",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_commissions",
       "parent": "",
@@ -47187,7 +47872,18 @@ window.VR_WIKI_DATA = {
       "group": "village_defense",
       "groupLabel": "Village Defense",
       "tags": [
-        "group.village_defense"
+        "group.village_defense",
+        "role.side",
+        "activity.deliver",
+        "activity.explore",
+        "activity.gather",
+        "destination.overworld",
+        "destination.remote",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.expedition",
+        "theme.community",
+        "theme.defense"
       ],
       "relationKey": "questline:village_defense",
       "parent": "",
@@ -47909,7 +48605,17 @@ window.VR_WIKI_DATA = {
       "group": "village_defense",
       "groupLabel": "Village Defense",
       "tags": [
-        "group.village_defense"
+        "group.village_defense",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "theme.defense",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_defense",
       "parent": "",
@@ -48619,7 +49325,18 @@ window.VR_WIKI_DATA = {
       "group": "village_defense",
       "groupLabel": "Village Defense",
       "tags": [
-        "group.village_defense"
+        "group.village_defense",
+        "role.side",
+        "activity.combat",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community",
+        "theme.defense",
+        "feature.encounter",
+        "feature.scene",
+        "party.challenge"
       ],
       "relationKey": "questline:village_defense",
       "parent": "villagerretaliation:watch_arrows",
@@ -49318,7 +50035,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -50029,7 +50756,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -50735,7 +51472,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -51446,7 +52193,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -52151,7 +52908,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -52856,7 +53623,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -53567,7 +54344,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -54278,7 +55065,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -54989,7 +55786,16 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -55700,7 +56506,16 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -56408,7 +57223,16 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -57119,7 +57943,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -57825,7 +58659,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -58530,7 +59374,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -59242,7 +60096,16 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -59949,7 +60812,17 @@ window.VR_WIKI_DATA = {
       "group": "village_supply",
       "groupLabel": "Village Supply",
       "tags": [
-        "group.village_supply"
+        "group.village_supply",
+        "role.request",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.quick",
+        "theme.community",
+        "pool.daily",
+        "pool.quest_board"
       ],
       "relationKey": "questline:village_supply",
       "parent": "",
@@ -60660,7 +61533,16 @@ window.VR_WIKI_DATA = {
       "group": "workshop_oaths",
       "groupLabel": "Workshop Oaths",
       "tags": [
-        "group.workshop_oaths"
+        "group.workshop_oaths",
+        "role.side",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.early",
+        "difficulty.easy",
+        "commitment.standard",
+        "theme.community",
+        "theme.craftsmanship"
       ],
       "relationKey": "questline:workshop_oaths",
       "parent": "",
@@ -61332,7 +62214,16 @@ window.VR_WIKI_DATA = {
       "group": "workshop_oaths",
       "groupLabel": "Workshop Oaths",
       "tags": [
-        "group.workshop_oaths"
+        "group.workshop_oaths",
+        "role.side",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.normal",
+        "commitment.standard",
+        "theme.community",
+        "theme.craftsmanship"
       ],
       "relationKey": "questline:workshop_oaths",
       "parent": "villagerretaliation:honed_handles",

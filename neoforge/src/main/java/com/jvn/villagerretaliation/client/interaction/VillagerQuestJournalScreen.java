@@ -19,10 +19,12 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
@@ -129,6 +131,8 @@ public final class VillagerQuestJournalScreen extends Screen {
     private int detailsSelectedOption = Integer.MIN_VALUE;
     private int detailsPage;
     private String selectedQuestId = "";
+    private String searchQuery = "";
+    private boolean searchActive;
     private QuestJournalTab selectedTab = QuestJournalTab.AVAILABLE;
     private boolean draggingOptionScrollbar;
     private float optionScrollbarDragOffset;
@@ -212,8 +216,26 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
         return switch (keyCode) {
             case GLFW.GLFW_KEY_ESCAPE -> {
+                if (this.searchActive || !this.searchQuery.isBlank()) {
+                    this.searchActive = false;
+                    this.searchQuery = "";
+                    resetFilteredSelection();
+                    yield true;
+                }
                 closeJournal();
                 yield true;
+            }
+            case GLFW.GLFW_KEY_SLASH -> {
+                this.searchActive = true;
+                yield true;
+            }
+            case GLFW.GLFW_KEY_BACKSPACE -> {
+                if (this.searchActive && !this.searchQuery.isEmpty()) {
+                    this.searchQuery = this.searchQuery.substring(0, this.searchQuery.length() - 1);
+                    resetFilteredSelection();
+                    yield true;
+                }
+                yield super.keyPressed(keyCode, scanCode, modifiers);
             }
             case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> {
                 moveSelection(-1);
@@ -225,6 +247,16 @@ public final class VillagerQuestJournalScreen extends Screen {
             }
             default -> super.keyPressed(keyCode, scanCode, modifiers);
         };
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (this.searchActive && !Character.isISOControl(codePoint) && this.searchQuery.length() < 48) {
+            this.searchQuery += codePoint;
+            resetFilteredSelection();
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
     }
 
     @Override
@@ -351,9 +383,12 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private void renderTabTitle(GuiGraphics graphics) {
+        Component title = this.searchActive || !this.searchQuery.isBlank()
+                ? Component.translatable(GUI_KEY_PREFIX + "search", this.searchQuery.isBlank() ? "_" : this.searchQuery)
+                : this.selectedTab.title();
         graphics.drawString(
                 this.font,
-                this.selectedTab.title(),
+                title,
                 journalLeft() + TAB_TITLE_LEFT_OFFSET,
                 journalTop() + TAB_TITLE_BOTTOM_OFFSET - this.font.lineHeight,
                 TITLE_COLOR,
@@ -670,9 +705,19 @@ public final class VillagerQuestJournalScreen extends Screen {
         QuestJournalEntryState state = QuestJournalEntryState.iconFor(entry);
         int iconLeft = left + QUEST_OPTION_STATE_ICON_LEFT_PADDING;
         int iconTop = top + QUEST_OPTION_STATE_ICON_TOP_PADDING;
-        renderQuestOptionIcon(graphics, state.texture(), iconLeft, iconTop);
-        if (selected) {
-            renderQuestOptionIcon(graphics, state.selectedTexture(), iconLeft, iconTop);
+        ItemStack authoredIcon = journalIcon(entry);
+        if (!authoredIcon.isEmpty()) {
+            float scale = QUEST_OPTION_STATE_ICON_SIZE / 16.0F;
+            graphics.pose().pushPose();
+            graphics.pose().translate(iconLeft, iconTop, 0.0F);
+            graphics.pose().scale(scale, scale, 1.0F);
+            graphics.renderItem(authoredIcon, 0, 0);
+            graphics.pose().popPose();
+        } else {
+            renderQuestOptionIcon(graphics, state.texture(), iconLeft, iconTop);
+            if (selected) {
+                renderQuestOptionIcon(graphics, state.selectedTexture(), iconLeft, iconTop);
+            }
         }
         if (hasQuestUpdate(entry)) {
             int updateIconLeft = left + QUEST_OPTION_WIDTH - QUEST_OPTION_UPDATE_ICON_RIGHT_PADDING - QUEST_OPTION_UPDATE_ICON_WIDTH;
@@ -696,6 +741,13 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
     }
 
+    private static ItemStack journalIcon(QuestTrackerSyncPayload.Entry entry) {
+        ResourceLocation icon = entry == null ? null : ResourceLocation.tryParse(entry.journal().icon());
+        return icon == null
+                ? ItemStack.EMPTY
+                : BuiltInRegistries.ITEM.getOptional(icon).map(ItemStack::new).orElse(ItemStack.EMPTY);
+    }
+
     private void renderQuestOptionIcon(GuiGraphics graphics, ResourceLocation texture, int left, int top) {
         renderQuestOptionIcon(graphics, texture, left, top, QUEST_OPTION_STATE_ICON_SIZE, QUEST_OPTION_STATE_ICON_SIZE);
     }
@@ -715,7 +767,9 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private void renderQuestOptionTitle(GuiGraphics graphics, int index, int hovered, int left, int top) {
         boolean selected = index == this.state.selectedOption();
-        int textColor = selected ? SELECTED_TEXT_COLOR : index == hovered ? HOVERED_TEXT_COLOR : TEXT_COLOR;
+        QuestTrackerSyncPayload.Entry entry = visibleEntries().get(index);
+        int authoredColor = journalColor(entry, TEXT_COLOR);
+        int textColor = selected ? SELECTED_TEXT_COLOR : index == hovered ? HOVERED_TEXT_COLOR : authoredColor;
         int textLeft = left + QUEST_OPTION_TEXT_LEFT_PADDING;
         int textTop = top + QUEST_OPTION_TEXT_TOP_PADDING;
         int lineStep = this.font.lineHeight + QUEST_OPTION_TEXT_LINE_GAP;
@@ -857,7 +911,7 @@ public final class VillagerQuestJournalScreen extends Screen {
                 lines,
                 selected.title(),
                 wrapWidth - titleIconTextIndent(),
-                TITLE_COLOR,
+                journalColor(selected, TITLE_COLOR),
                 y,
                 lineStep,
                 0,
@@ -865,6 +919,21 @@ public final class VillagerQuestJournalScreen extends Screen {
                 true);
         y = addDividerLine(lines, y + 3, 3);
         y = addWrappedDetailLines(lines, statusLine(selected), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 2);
+        QuestTrackerSyncPayload.Journal journal = selected.journal();
+        if (!journal.questline().isBlank()) {
+            y = addWrappedDetailLines(lines, Component.translatable(GUI_KEY_PREFIX + "questline", journal.questline()), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
+        }
+        if (!journal.tags().isEmpty()) {
+            y = addWrappedDetailLines(lines, Component.translatable(GUI_KEY_PREFIX + "tags", String.join(", ", journal.tags())), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
+        }
+        Component timing = journalTimingLine(selected);
+        if (timing != null) {
+            y = addWrappedDetailLines(lines, timing, wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
+        }
+        Component waypoint = journalWaypointLine(selected);
+        if (waypoint != null) {
+            y = addWrappedDetailLines(lines, waypoint, wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
+        }
         if (!selected.issuer().isBlank()) {
             y = addWrappedDetailLines(
                     lines,
@@ -1533,10 +1602,87 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private List<QuestTrackerSyncPayload.Entry> visibleEntries() {
+        String query = normalized(this.searchQuery);
         return entries().stream()
+                .filter(entry -> !entry.journal().hidden())
                 .filter(entry -> this.selectedTab.includes(QuestJournalEntryState.from(entry)))
-                .sorted(Comparator.comparingInt(VillagerQuestJournalScreen::activeTrackedSortKey))
+                .filter(entry -> query.isBlank() || journalSearchText(entry).contains(query))
+                .sorted(Comparator.comparingInt(VillagerQuestJournalScreen::activeTrackedSortKey)
+                        .thenComparing(Comparator.comparingInt((QuestTrackerSyncPayload.Entry entry) -> entry.journal().priority()).reversed())
+                        .thenComparing(entry -> normalized(entry.journal().questline()))
+                        .thenComparing(entry -> normalized(entry.title())))
                 .toList();
+    }
+
+    private void resetFilteredSelection() {
+        this.state.resetOptions(!visibleEntries().isEmpty());
+        this.visualOptionScroll = 0.0F;
+        this.visualDetailsScroll = 0.0F;
+        this.selectedQuestId = "";
+        this.detailsPage = 0;
+    }
+
+    private static String journalSearchText(QuestTrackerSyncPayload.Entry entry) {
+        return normalized(String.join(" ",
+                entry.title(), entry.description(), entry.objective(), entry.status(), entry.journal().questline(),
+                String.join(" ", entry.journal().tags())));
+    }
+
+    private static int journalColor(QuestTrackerSyncPayload.Entry entry, int fallback) {
+        String value = entry == null ? "" : entry.journal().color().trim();
+        if (value.startsWith("#") && value.length() == 7) {
+            try {
+                return 0xFF000000 | Integer.parseInt(value.substring(1), 16);
+            } catch (NumberFormatException ignored) {
+                return fallback;
+            }
+        }
+        net.minecraft.ChatFormatting formatting = net.minecraft.ChatFormatting.getByName(value);
+        return formatting != null && formatting.getColor() != null ? 0xFF000000 | formatting.getColor() : fallback;
+    }
+
+    private static Component journalTimingLine(QuestTrackerSyncPayload.Entry entry) {
+        long now = currentGameTime();
+        if (entry.journal().expiresAtGameTime() > 0L && "active".equals(normalized(entry.state()))) {
+            long remaining = Math.max(0L, entry.journal().expiresAtGameTime() - now);
+            return Component.translatable(GUI_KEY_PREFIX + "expires", formatDuration(remaining));
+        }
+        if (entry.journal().completedGameTime() >= 0L) {
+            return Component.translatable(GUI_KEY_PREFIX + "completed_ago", formatDuration(Math.max(0L, now - entry.journal().completedGameTime())));
+        }
+        return null;
+    }
+
+    private static Component journalWaypointLine(QuestTrackerSyncPayload.Entry entry) {
+        QuestTrackerSyncPayload.Waypoint waypoint = entry.journal().waypoint();
+        if (!waypoint.present()) {
+            return null;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        String distance = "";
+        if (minecraft.player != null && minecraft.level != null
+                && minecraft.level.dimension().location().toString().equals(waypoint.dimension())) {
+            int dx = waypoint.x() - minecraft.player.blockPosition().getX();
+            int dz = waypoint.z() - minecraft.player.blockPosition().getZ();
+            distance = " • " + Math.round(Math.sqrt((double) dx * dx + (double) dz * dz)) + " blocks";
+        }
+        return Component.translatable(GUI_KEY_PREFIX + "waypoint", waypoint.x(), waypoint.y(), waypoint.z(), waypoint.dimension(), distance);
+    }
+
+    private static long currentGameTime() {
+        return Minecraft.getInstance().level == null ? 0L : Minecraft.getInstance().level.getGameTime();
+    }
+
+    private static String formatDuration(long ticks) {
+        long seconds = Math.max(0L, ticks / 20L);
+        long days = seconds / 86400L;
+        long hours = (seconds % 86400L) / 3600L;
+        long minutes = (seconds % 3600L) / 60L;
+        long remainder = seconds % 60L;
+        if (days > 0L) return days + "d " + hours + "h";
+        if (hours > 0L) return hours + "h " + minutes + "m";
+        if (minutes > 0L) return minutes + "m " + remainder + "s";
+        return remainder + "s";
     }
 
     private static int activeTrackedSortKey(QuestTrackerSyncPayload.Entry entry) {

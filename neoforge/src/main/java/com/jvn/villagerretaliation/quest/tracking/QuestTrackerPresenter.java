@@ -25,7 +25,7 @@ public final class QuestTrackerPresenter {
     public static QuestTrackerSyncPayload.Entry entry(EntryInput input) {
         QuestDefinition definition = input.definition();
         QuestDefinition.Step step = input.step();
-        return new QuestTrackerSyncPayload.Entry(
+        QuestTrackerSyncPayload.Entry entry = new QuestTrackerSyncPayload.Entry(
                 definition.id().toString(),
                 resolveText(input.player(), input.title(), input.replacements()),
                 resolveText(input.player(), new QuestDefinition.SelectedText(step.text(), step.textKey()), input.replacements()),
@@ -44,6 +44,17 @@ public final class QuestTrackerPresenter {
                 input.objectiveSteps(),
                 false,
                 false);
+        QuestDefinition.Tracker tracker = definition.tracker();
+        return entry.withJournal(new QuestTrackerSyncPayload.Journal(
+                definition.questline(),
+                definition.tags().stream().sorted().toList(),
+                tracker.icon() == null ? "" : tracker.icon().toString(),
+                tracker.color(),
+                tracker.priority(),
+                tracker.hidden(),
+                -1L,
+                -1L,
+                QuestTrackerSyncPayload.Waypoint.NONE));
     }
 
     private static String appendSceneStatus(String metadata,String sceneStatus){
@@ -115,6 +126,7 @@ public final class QuestTrackerPresenter {
         appendPrerequisiteSignature(builder, entry.prerequisites());
         builder.append('|');
         appendObjectiveStepSignature(builder, entry.objectiveSteps());
+        appendJournalSignature(builder, entry.journal());
         return builder.toString();
     }
 
@@ -146,6 +158,7 @@ public final class QuestTrackerPresenter {
         appendPrerequisiteSignature(builder, entry.prerequisites());
         builder.append('|');
         appendObjectiveStepSignature(builder, entry.objectiveSteps());
+        appendJournalSignature(builder, entry.journal());
         return builder.toString();
     }
 
@@ -176,6 +189,19 @@ public final class QuestTrackerPresenter {
             builder.append(objectiveStep.label()).append(',')
                     .append(objectiveStep.completed()).append(';');
         }
+    }
+
+    private static void appendJournalSignature(StringBuilder builder, QuestTrackerSyncPayload.Journal journal) {
+        builder.append('|').append(journal.questline()).append('|')
+                .append(journal.icon()).append('|').append(journal.color()).append('|')
+                .append(journal.priority()).append('|').append(journal.hidden()).append('|')
+                .append(journal.expiresAtGameTime()).append('|').append(journal.completedGameTime()).append('|');
+        for (String tag : journal.tags()) {
+            builder.append(tag).append(';');
+        }
+        QuestTrackerSyncPayload.Waypoint waypoint = journal.waypoint();
+        builder.append('|').append(waypoint.dimension()).append(',').append(waypoint.x()).append(',')
+                .append(waypoint.y()).append(',').append(waypoint.z());
     }
 
     public static QuestDefinition.Step fallbackStep(

@@ -20,10 +20,20 @@ public final class QuestStateMachine {
             ResourceKey<Level> dimension,
             BlockPos target,
             long gameTime) {
+        return start(progress, providerId, dimension, target, gameTime, false);
+    }
+
+    public static TransitionResult start(
+            VillagerQuestSavedData.QuestProgress progress,
+            UUID providerId,
+            ResourceKey<Level> dimension,
+            BlockPos target,
+            long gameTime,
+            boolean forceRestart) {
         if (progress == null) {
             return blocked(null, "missing_progress");
         }
-        if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
+        if (!forceRestart && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
             return blocked(progress, "quest_already_active");
         }
         return mutate(progress, LifecycleEvent.STARTED, "", () -> progress.start(providerId, dimension, target, gameTime),

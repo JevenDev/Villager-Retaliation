@@ -45,19 +45,22 @@ public final class VillagerQuestTrackerOverlay {
     }
 
     public static void accept(QuestTrackerSyncPayload payload) {
-        for (QuestTrackerSyncPayload.Entry entry : payload.entries()) {
+        List<QuestTrackerSyncPayload.Entry> visiblePayloadEntries = payload.entries().stream()
+                .filter(entry -> !entry.journal().hidden())
+                .toList();
+        for (QuestTrackerSyncPayload.Entry entry : visiblePayloadEntries) {
             if (entry.questUpdate() && !entry.questAvailable() && !entry.questId().isBlank()) {
                 questUpdateQuestIds.add(entry.questId());
             }
         }
         Set<String> acceptedQuestIds = new HashSet<>();
-        for (QuestTrackerSyncPayload.Entry entry : payload.entries()) {
+        for (QuestTrackerSyncPayload.Entry entry : visiblePayloadEntries) {
             if (!entry.questAvailable() && !entry.questId().isBlank()) {
                 acceptedQuestIds.add(entry.questId());
             }
         }
         questUpdateQuestIds.removeIf(questId -> !acceptedQuestIds.contains(questId));
-        entries = applyQuestUpdateCache(mergeCompletedEntries(payload.entries()));
+        entries = applyQuestUpdateCache(mergeCompletedEntries(visiblePayloadEntries));
         trackedQuestIds = payload.trackedQuestIds();
         if (payload.flash() && trackedEntry().isPresent()) {
             flashTicks = FLASH_LIFETIME_TICKS;

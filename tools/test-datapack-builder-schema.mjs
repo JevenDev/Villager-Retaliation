@@ -375,12 +375,15 @@ function testAdvancedQuestRoundTrip(app) {
     ui: { icon: "minecraft:filled_map", color: "#d4a35a", priority: 20, hidden: false }
   };
   const pool = {
+    schema: "villagerretaliation:quest_pool/v1",
     id: "storypack:daily_routes",
     scope: "village",
-    size: 2,
-    refresh_ticks: 24000,
-    avoid_recent: 2,
-    entries: [{ quest: "storypack:old_road", weight: 3 }, { tags: ["storypack:daily"], weight: 1 }]
+    refresh_days: 1,
+    max_offers: 2,
+    anti_repeat_rotations: 2,
+    quests: ["storypack:old_road"],
+    any_tags: ["storypack:daily"],
+    weights: { "storypack:old_road": 3 }
   };
 
   assert(app.ingestKnownJson(questPath, JSON.stringify(quest)), "Advanced quest import failed.");

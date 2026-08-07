@@ -253,6 +253,11 @@ public final class QuestV2Compiler {
         putString(tracker, "title_key", firstNonBlank(
                 uiString(resource.ui(), "title_key"),
                 metadataString(resource, "title_key")));
+        copyIfPresent(resource.ui().data(), tracker, "icon");
+        copyIfPresent(resource.ui().data(), tracker, "color");
+        copyIfPresent(resource.ui().data(), tracker, "priority");
+        copyIfPresent(resource.ui().data(), tracker, "hidden");
+        copyIfPresent(resource.ui().data(), tracker, "metadata");
         JsonObject steps = new JsonObject();
         JsonObject rootStep = trackerStep(resource.ui());
         if (rootStep.size() > 0) {

@@ -20,6 +20,18 @@ public final class QuestLifecycleService {
             long gameTime,
             UUID playerId,
             UUID sharedRunId) {
+        return start(questId, progress, providerBinding, target, gameTime, playerId, sharedRunId, false);
+    }
+
+    public static LifecycleEvent start(
+            ResourceLocation questId,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestProviderBinding providerBinding,
+            VillagerQuestTargets.LocatedTarget target,
+            long gameTime,
+            UUID playerId,
+            UUID sharedRunId,
+            boolean forceRestart) {
         if (progress == null || providerBinding == null) {
             return event(LifecycleEventType.NONE, questId, progress, gameTime, "missing_start_context");
         }
@@ -28,7 +40,8 @@ public final class QuestLifecycleService {
                 providerBinding.providerId(),
                 target == null ? providerBinding.dimension() : target.dimension(),
                 target == null ? null : target.pos(),
-                gameTime);
+                gameTime,
+                forceRestart);
         if (!result.dirty()) {
             return blockedEvent(questId, progress, gameTime, result);
         }
