@@ -13,7 +13,10 @@
       "activity.combat",
       "activity.explore",
       "destination.end",
-      "destination.remote"
+      "destination.remote",
+      "tier.endgame",
+      "difficulty.hard",
+      "commitment.expedition"
     ],
     "parent": "villagerretaliation:eye_of_the_last_room",
     "title_key": "quest.cartographers_atlas.end_city_margin.title",

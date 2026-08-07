@@ -10,7 +10,9 @@
       "role.request",
       "activity.trade",
       "destination.village",
-      "tier.early"
+      "tier.early",
+      "difficulty.easy",
+      "commitment.quick"
     ]
   },
   "provider": {

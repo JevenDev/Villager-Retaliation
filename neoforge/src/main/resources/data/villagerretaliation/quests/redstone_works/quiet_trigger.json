@@ -14,7 +14,10 @@
       "activity.explore",
       "activity.build",
       "destination.overworld",
-      "destination.remote"
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition"
     ]
   },
   "provider": {

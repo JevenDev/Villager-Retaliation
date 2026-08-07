@@ -10,7 +10,10 @@
       "role.story",
       "activity.gather",
       "activity.deliver",
-      "destination.overworld"
+      "destination.overworld",
+      "tier.early",
+      "difficulty.easy",
+      "commitment.standard"
     ],
     "title_key": "quest.cartographers_atlas.blank_map_promise.title",
     "description_key": "quest.cartographers_atlas.blank_map_promise.description"

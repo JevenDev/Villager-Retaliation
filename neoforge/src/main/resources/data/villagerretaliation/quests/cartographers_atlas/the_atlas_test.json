@@ -12,7 +12,10 @@
       "activity.deliver",
       "activity.combat",
       "activity.choice",
-      "destination.overworld"
+      "destination.overworld",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard"
     ],
     "parent": "villagerretaliation:roads_that_remember",
     "title_key": "quest.cartographers_atlas.the_atlas_test.title",

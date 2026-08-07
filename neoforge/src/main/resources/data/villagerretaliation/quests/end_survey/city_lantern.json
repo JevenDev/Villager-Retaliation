@@ -14,7 +14,10 @@
       "activity.explore",
       "activity.build",
       "destination.end",
-      "destination.remote"
+      "destination.remote",
+      "tier.endgame",
+      "difficulty.hard",
+      "commitment.expedition"
     ]
   },
   "provider": {

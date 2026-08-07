@@ -13,7 +13,9 @@
       "activity.explore",
       "destination.overworld",
       "destination.remote",
-      "tier.mid"
+      "tier.mid",
+      "difficulty.hard",
+      "commitment.expedition"
     ]
   },
   "provider": {

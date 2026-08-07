@@ -12,7 +12,10 @@
       "activity.deliver",
       "activity.explore",
       "destination.overworld",
-      "destination.remote"
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition"
     ],
     "parent": "villagerretaliation:nether_meridian",
     "title_key": "quest.cartographers_atlas.eye_of_the_last_room.title",

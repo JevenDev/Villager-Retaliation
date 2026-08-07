@@ -13,7 +13,10 @@
       "activity.deliver",
       "activity.combat",
       "destination.overworld",
-      "destination.remote"
+      "destination.remote",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.expedition"
     ]
   },
   "provider": {
