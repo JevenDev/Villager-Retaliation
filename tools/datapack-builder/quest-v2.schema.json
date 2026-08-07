@@ -1293,6 +1293,7 @@
           "enum": [
             "add_counter",
             "add_tag",
+            "attribute_reward",
             "branch_transition",
             "clear_tag",
             "counter",
@@ -1313,6 +1314,7 @@
             "message",
             "notification",
             "notify",
+            "profile_attribute",
             "quest",
             "quest_action",
             "quest_response_transition",
@@ -1330,6 +1332,7 @@
             "set_stage",
             "set_tag",
             "set_variable",
+            "social_attribute",
             "stage",
             "start_scene",
             "tag",
@@ -1344,6 +1347,7 @@
           "enum": [
             "add_counter",
             "add_tag",
+            "attribute_reward",
             "branch_transition",
             "clear_tag",
             "counter",
@@ -1364,6 +1368,7 @@
             "message",
             "notification",
             "notify",
+            "profile_attribute",
             "quest",
             "quest_action",
             "quest_response_transition",
@@ -1381,6 +1386,7 @@
             "set_stage",
             "set_tag",
             "set_variable",
+            "social_attribute",
             "stage",
             "start_scene",
             "tag",
@@ -1397,6 +1403,19 @@
             "village",
             "villager"
           ]
+        },
+        "attribute": {
+          "type": "string",
+          "enum": [
+            "charm",
+            "guts",
+            "kindness",
+            "knowledge",
+            "proficiency"
+          ]
+        },
+        "amount": {
+          "type": "integer"
         }
       }
     }

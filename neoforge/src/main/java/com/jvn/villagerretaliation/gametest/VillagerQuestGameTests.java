@@ -3222,6 +3222,10 @@ public final class VillagerQuestGameTests {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         movePlayer(helper, player, new BlockPos(1, 2, 2));
+        VillagerProfileManager.setAttribute(
+                level, villager, VillagerSocialAttribute.GUTS, 50);
+        VillagerProfileManager.setAttribute(
+                level, villager, VillagerSocialAttribute.KNOWLEDGE, 50);
 
         try {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
@@ -3260,6 +3264,14 @@ public final class VillagerQuestGameTests {
                             .orElse(""),
                     "alpha",
                     "v2 fact action before transition");
+            helper.assertValueEqual(
+                    VillagerProfileManager.getOrCreateProfile(level, villager).socialAttributes().guts(),
+                    55,
+                    "alpha resolution should grant its data-driven guts reward");
+            helper.assertValueEqual(
+                    VillagerProfileManager.getOrCreateProfile(level, villager).socialAttributes().knowledge(),
+                    50,
+                    "alpha resolution should not grant beta's knowledge reward");
 
             JsonObject conditionsRoot = JsonParser.parseString("""
                     {
@@ -3304,6 +3316,10 @@ public final class VillagerQuestGameTests {
                     Map.of());
             helper.assertTrue(duplicate.text().contains("already"), "v2 duplicate response replay was not reported");
             helper.assertValueEqual(progress.currentStage(), "alpha", "v2 duplicate replay changed stage");
+            helper.assertValueEqual(
+                    VillagerProfileManager.getOrCreateProfile(level, villager).socialAttributes().guts(),
+                    55,
+                    "duplicate resolution replay granted its attribute reward twice");
 
             VillagerQuestService.DebugInspectResult inspect =
                     VillagerQuestService.debugInspectQuest(player, branch.quest().id());
@@ -3346,6 +3362,14 @@ public final class VillagerQuestGameTests {
             helper.assertValueEqual(progress.currentStage(), "beta", "v2 beta transition stage");
             helper.assertValueEqual(progress.choiceHistory().getFirst().responseId(), "beta", "v2 beta choice history");
             helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "v2 branch transition emitted diagnostics");
+            helper.assertValueEqual(
+                    VillagerProfileManager.getOrCreateProfile(level, villager).socialAttributes().knowledge(),
+                    53,
+                    "beta resolution should grant its data-driven knowledge reward");
+            helper.assertValueEqual(
+                    VillagerProfileManager.getOrCreateProfile(level, villager).socialAttributes().guts(),
+                    55,
+                    "beta resolution should not repeat alpha's guts reward");
             DatapackDiagnostics.clear();
         } finally {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
@@ -5768,6 +5792,11 @@ public final class VillagerQuestGameTests {
                       },
                       "ui": {
                         "tracker_text": "Alpha branch."
+                      },
+                      "rewards": {
+                        "actions": [
+                          {"type": "profile_attribute", "attribute": "guts", "amount": 5}
+                        ]
                       }
                     },
                     {
@@ -5780,6 +5809,11 @@ public final class VillagerQuestGameTests {
                       },
                       "ui": {
                         "tracker_text": "Beta branch."
+                      },
+                      "rewards": {
+                        "actions": [
+                          {"type": "profile_attribute", "attribute": "knowledge", "amount": 3}
+                        ]
                       }
                     }
                   ]

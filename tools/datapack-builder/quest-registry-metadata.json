@@ -296,6 +296,17 @@
         ]
       },
       {
+        "id": "profile_attribute",
+        "aliases": [
+          "attribute_reward",
+          "social_attribute"
+        ],
+        "kind": "profile_attribute",
+        "capabilities": [
+          "provider_live"
+        ]
+      },
+      {
         "id": "memory",
         "aliases": [
           "memory_event"
@@ -1904,6 +1915,7 @@
       "enum": [
         "add_counter",
         "add_tag",
+        "attribute_reward",
         "branch_transition",
         "clear_tag",
         "counter",
@@ -1924,6 +1936,7 @@
         "message",
         "notification",
         "notify",
+        "profile_attribute",
         "quest",
         "quest_action",
         "quest_response_transition",
@@ -1941,6 +1954,7 @@
         "set_stage",
         "set_tag",
         "set_variable",
+        "social_attribute",
         "stage",
         "start_scene",
         "tag",
