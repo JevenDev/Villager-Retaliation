@@ -7,7 +7,10 @@
     "questline": "courier_roads",
     "tags": [
       "group.courier_roads",
-      "role.side"
+      "role.side",
+      "activity.gather",
+      "activity.deliver",
+      "destination.overworld"
     ]
   },
   "provider": {

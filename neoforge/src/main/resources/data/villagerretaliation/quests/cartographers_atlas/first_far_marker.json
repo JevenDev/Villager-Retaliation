@@ -7,7 +7,12 @@
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.explore",
+      "destination.overworld",
+      "destination.remote"
     ],
     "parent": "villagerretaliation:ink_and_bearings",
     "title_key": "quest.cartographers_atlas.first_far_marker.title",

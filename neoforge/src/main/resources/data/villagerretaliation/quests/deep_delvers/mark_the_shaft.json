@@ -9,6 +9,11 @@
     "tags": [
       "group.deep_delvers",
       "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.build",
+      "activity.choice",
+      "destination.village",
       "feature.branching"
     ]
   },

@@ -7,7 +7,11 @@
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.combat",
+      "destination.overworld"
     ],
     "parent": "villagerretaliation:first_far_marker",
     "title_key": "quest.cartographers_atlas.roads_that_remember.title",

@@ -7,7 +7,10 @@
     "questline": "last_ember",
     "tags": [
       "group.last_ember",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "destination.overworld"
     ]
   },
   "provider": {

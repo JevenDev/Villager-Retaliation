@@ -8,7 +8,12 @@
     "parent": "villagerretaliation:wax_sealed_route",
     "tags": [
       "group.courier_roads",
-      "role.side"
+      "role.side",
+      "activity.gather",
+      "activity.deliver",
+      "activity.combat",
+      "destination.overworld",
+      "destination.remote"
     ]
   },
   "provider": {

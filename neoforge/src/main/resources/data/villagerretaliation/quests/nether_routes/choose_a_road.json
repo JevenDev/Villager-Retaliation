@@ -9,6 +9,13 @@
     "tags": [
       "group.nether_routes",
       "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.combat",
+      "activity.explore",
+      "activity.choice",
+      "destination.nether",
+      "destination.remote",
       "feature.branching"
     ]
   },

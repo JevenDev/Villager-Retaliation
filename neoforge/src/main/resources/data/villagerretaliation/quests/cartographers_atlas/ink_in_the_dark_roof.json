@@ -7,7 +7,13 @@
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.combat",
+      "activity.explore",
+      "destination.overworld",
+      "destination.remote"
     ],
     "parent": "villagerretaliation:choose_the_horizon",
     "title_key": "quest.cartographers_atlas.ink_in_the_dark_roof.title",

@@ -7,7 +7,11 @@
     "questline": "nether_routes",
     "tags": [
       "group.nether_routes",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "destination.nether",
+      "destination.remote"
     ]
   },
   "provider": {

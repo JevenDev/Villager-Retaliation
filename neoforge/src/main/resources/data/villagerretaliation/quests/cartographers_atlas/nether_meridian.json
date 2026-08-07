@@ -7,7 +7,12 @@
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.explore",
+      "destination.nether",
+      "destination.remote"
     ],
     "parent": "villagerretaliation:choose_the_horizon",
     "title_key": "quest.cartographers_atlas.nether_meridian.title",

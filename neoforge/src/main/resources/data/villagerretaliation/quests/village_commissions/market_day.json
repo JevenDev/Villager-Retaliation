@@ -8,6 +8,8 @@
     "tags": [
       "group.village_commissions",
       "role.request",
+      "activity.trade",
+      "destination.village",
       "tier.early"
     ]
   },

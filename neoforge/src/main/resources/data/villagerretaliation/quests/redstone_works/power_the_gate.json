@@ -9,6 +9,10 @@
     "tags": [
       "group.redstone_works",
       "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.choice",
+      "destination.village",
       "feature.branching"
     ]
   },

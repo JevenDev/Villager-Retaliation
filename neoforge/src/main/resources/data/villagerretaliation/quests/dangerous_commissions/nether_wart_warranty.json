@@ -7,7 +7,12 @@
     "questline": "dangerous_commissions",
     "tags": [
       "group.dangerous_commissions",
-      "role.side"
+      "role.side",
+      "activity.gather",
+      "activity.deliver",
+      "activity.explore",
+      "destination.nether",
+      "destination.remote"
     ]
   },
   "provider": {

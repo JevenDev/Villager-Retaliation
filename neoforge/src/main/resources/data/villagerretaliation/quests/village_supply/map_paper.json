@@ -7,7 +7,10 @@
     "questline": "village_supply",
     "tags": [
       "group.village_supply",
-      "role.request"
+      "role.request",
+      "activity.gather",
+      "activity.deliver",
+      "destination.village"
     ]
   },
   "provider": {

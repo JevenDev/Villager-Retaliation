@@ -7,7 +7,13 @@
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.combat",
+      "activity.explore",
+      "destination.end",
+      "destination.remote"
     ],
     "parent": "villagerretaliation:eye_of_the_last_room",
     "title_key": "quest.cartographers_atlas.end_city_margin.title",

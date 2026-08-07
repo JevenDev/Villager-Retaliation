@@ -7,7 +7,12 @@
     "questline": "village_defense",
     "tags": [
       "group.village_defense",
-      "role.side"
+      "role.side",
+      "activity.gather",
+      "activity.deliver",
+      "activity.explore",
+      "destination.overworld",
+      "destination.remote"
     ]
   },
   "provider": {

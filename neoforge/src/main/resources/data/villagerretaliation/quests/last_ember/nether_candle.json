@@ -8,7 +8,12 @@
     "parent": "villagerretaliation:pearl_lessons",
     "tags": [
       "group.last_ember",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.combat",
+      "destination.nether",
+      "destination.remote"
     ]
   },
   "provider": {

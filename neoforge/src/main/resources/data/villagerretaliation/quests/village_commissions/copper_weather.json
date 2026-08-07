@@ -8,6 +8,9 @@
     "tags": [
       "group.village_commissions",
       "role.request",
+      "activity.gather",
+      "activity.deliver",
+      "destination.village",
       "tier.mid"
     ]
   },

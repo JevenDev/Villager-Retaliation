@@ -9,7 +9,12 @@
     "questline": "lost_civilization",
     "tags": [
       "group.lost_civilization",
-      "role.side"
+      "role.side",
+      "activity.gather",
+      "activity.deliver",
+      "activity.explore",
+      "destination.overworld",
+      "destination.remote"
     ]
   },
   "provider": {
