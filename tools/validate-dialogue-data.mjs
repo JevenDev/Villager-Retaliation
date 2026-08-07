@@ -856,19 +856,19 @@ const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availa
 const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "author", "version"]);
 const questV2TargetKeys = new Set(["structure", "dimension", "pieces", "search_radius", "discovery_radius", "proof_item"]);
 const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "filters", "data"]);
-const questV2AvailabilityKeys = new Set(["conditions", "active", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
+const questV2AvailabilityKeys = new Set(["conditions", "active", "expiration", "branch", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "exclusive_on", "blocks_on_start", "blocks_on_completion", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
 const questV2LifecycleKeys = new Set(["on_start", "on_complete", "on_abandon", "on_expire", "on_fail", "on_stage_enter", "on_stage_exit", "dialogue"]);
 const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stage", "scene", "complete", "abandon", "fail"]);
 const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
-const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
+const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "criterion", "match", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
 const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
 const questV2SceneKeys = new Set(["id", "slot", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "external", "external_scene", "external_entry", "scene_ref", "metadata"]);
 const questV2ExternalSceneKeys = new Set(["tree", "tree_id", "dialogue_tree", "entry", "entry_id", "metadata"]);
 const questV2ResponseKeys = new Set(["id", "label", "label_key", "text", "text_key", "lines", "conditions", "actions", "transition", "next", "stage", "scene", "response", "complete", "abandon", "fail", "request", "order", "metadata"]);
 const questV2TransitionKeys = new Set(["stage", "scene", "response", "complete", "abandon", "fail"]);
 const questV2EventKeys = new Set(["id", "event", "type", "trigger", "stage", "stages", "conditions", "actions", "transition", "next", "cooldown", "cooldown_ticks", "cooldown_seconds", "cooldown_days", "radius", "repeatable", "metadata"]);
-const questV2RewardsKeys = new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event"]);
-const questV2UiKeys = new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "show_progress", "progress", "placeholders", "icon", "color", "priority", "hidden"]);
+const questV2RewardsKeys = new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event", "memory_scope"]);
+const questV2UiKeys = new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "tracker_complete_text", "tracker_complete_text_key", "show_progress", "progress", "placeholders", "metadata", "icon", "color", "priority", "hidden"]);
 const questV2LifecycleCoverageSlots = new Set(["offer", "reminder", "turn_in"]);
 
 const cli = parseValidatorArgs(process.argv.slice(2));
@@ -1612,7 +1612,26 @@ function checkQuestV2Availability(file, availability, pointer, location, questId
   }
   checkQuestV2UnknownKeys(file, availability, pointer, location, questV2AvailabilityKeys);
   checkQuestV2Conditions(file, availability.conditions, `${pointer}/conditions`, `${location}.conditions`, questId, "quest module v2 availability");
-  checkQuestV2OptionalBoolean(file, availability, pointer, location, "active");
+  if (availability.active !== undefined) {
+    if (!availability.active || typeof availability.active !== "object" || Array.isArray(availability.active)) {
+      questV2Error(file, `${pointer}/active`, `${location}.active`, "active must be an object.", "Use active.conditions and active pause/display controls.");
+    } else {
+      checkQuestV2Conditions(file, availability.active.conditions, `${pointer}/active/conditions`, `${location}.active.conditions`, questId, "quest module v2 active state");
+      checkQuestV2OptionalBoolean(file, availability.active, `${pointer}/active`, `${location}.active`, "hide_when_unmet");
+      checkQuestV2OptionalBoolean(file, availability.active, `${pointer}/active`, `${location}.active`, "pause_progress_when_unmet");
+    }
+  }
+  if (availability.expiration !== undefined) {
+    if (!availability.expiration || typeof availability.expiration !== "object" || Array.isArray(availability.expiration)) {
+      questV2Error(file, `${pointer}/expiration`, `${location}.expiration`, "expiration must be an object.", "Use expiration.after_ticks, conditions, and outcome controls.");
+    } else {
+      checkQuestV2Conditions(file, availability.expiration.conditions, `${pointer}/expiration/conditions`, `${location}.expiration.conditions`, questId, "quest module v2 expiration");
+      checkQuestV2OptionalInteger(file, availability.expiration, `${pointer}/expiration`, `${location}.expiration`, "after_ticks", { min: 0 });
+      checkQuestV2OptionalBoolean(file, availability.expiration, `${pointer}/expiration`, `${location}.expiration`, "consume");
+      checkQuestV2OptionalBoolean(file, availability.expiration, `${pointer}/expiration`, `${location}.expiration`, "allow_repickup");
+      checkQuestV2OptionalBoolean(file, availability.expiration, `${pointer}/expiration`, `${location}.expiration`, "notify");
+    }
+  }
   checkQuestV2OptionalString(file, availability, pointer, location, "cooldown");
   checkQuestV2OptionalInteger(file, availability, pointer, location, "cooldown_ticks", { min: 0 });
   checkQuestV2OptionalInteger(file, availability, pointer, location, "cooldown_days", { min: 0 });
@@ -2459,6 +2478,14 @@ function readQuestV2ObjectiveReferences(value) {
   if (typeof value === "string") {
     return value.trim() ? [value.trim()] : [];
   }
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const ref = firstString(
+      value.objective,
+      value.objective_id,
+      ["objective", "objectives"].includes(normalizedString(value.type)) ? value.id : ""
+    );
+    return ref ? [ref] : [];
+  }
   if (!Array.isArray(value)) {
     return [];
   }
@@ -2467,7 +2494,11 @@ function readQuestV2ObjectiveReferences(value) {
     if (typeof entry === "string" && entry.trim()) {
       refs.push(entry.trim());
     } else if (entry && typeof entry === "object" && !Array.isArray(entry)) {
-      const ref = firstString(entry.objective, entry.objective_id, entry.id);
+      const ref = firstString(
+        entry.objective,
+        entry.objective_id,
+        ["objective", "objectives"].includes(normalizedString(entry.type)) ? entry.id : ""
+      );
       if (ref) {
         refs.push(ref);
       }

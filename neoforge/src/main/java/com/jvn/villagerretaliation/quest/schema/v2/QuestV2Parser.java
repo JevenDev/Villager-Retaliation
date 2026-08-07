@@ -76,6 +76,8 @@ public final class QuestV2Parser {
     private static final Set<String> AVAILABILITY_KEYS = Set.of(
             "conditions",
             "active",
+            "expiration",
+            "branch",
             "cooldown",
             "cooldown_ticks",
             "cooldown_days",
@@ -89,6 +91,9 @@ public final class QuestV2Parser {
             "prerequisite_cooldown_days",
             "prerequisite_cooldown_seconds",
             "exclusive_group",
+            "exclusive_on",
+            "blocks_on_start",
+            "blocks_on_completion",
             "repeatable",
             "max_starts",
             "max_completions",
@@ -289,7 +294,8 @@ public final class QuestV2Parser {
             "reputation",
             "gossip_reputation",
             "loot_table",
-            "memory_event");
+            "memory_event",
+            "memory_scope");
     private static final Set<String> UI_KEYS = Set.of(
             "title",
             "title_key",
@@ -297,9 +303,12 @@ public final class QuestV2Parser {
             "description_key",
             "tracker_text",
             "tracker_text_key",
+            "tracker_complete_text",
+            "tracker_complete_text_key",
             "show_progress",
             "progress",
             "placeholders",
+            "metadata",
             "icon",
             "color",
             "priority",
@@ -1234,6 +1243,15 @@ public final class QuestV2Parser {
         if (element.isJsonPrimitive()) {
             return readStringList(element);
         }
+        if (element.isJsonObject()) {
+            JsonObject object = element.getAsJsonObject();
+            String objective = readString(object, "objective", "objective_id");
+            String type = readString(object, "type");
+            if (objective.isBlank() && ("objective".equals(type) || "objectives".equals(type))) {
+                objective = readString(object, "id");
+            }
+            return objective.isBlank() ? List.of() : List.of(objective);
+        }
         JsonArray array = validator.array(element, pointer, "objective references", true);
         if (array == null) {
             return List.of();
@@ -1250,7 +1268,11 @@ public final class QuestV2Parser {
             }
             JsonObject object = validator.object(child, pointer + "/" + index, "objective predicate", true);
             if (object != null) {
-                String objective = readString(object, "objective", "objective_id", "id");
+                String objective = readString(object, "objective", "objective_id");
+                String type = readString(object, "type");
+                if (objective.isBlank() && ("objective".equals(type) || "objectives".equals(type))) {
+                    objective = readString(object, "id");
+                }
                 if (!objective.isBlank()) {
                     references.add(objective);
                 }

@@ -206,19 +206,31 @@ function buildAvailability(quest, report) {
     copyValue(quest.offer, availability, "conditions");
   }
   if (quest.rules && typeof quest.rules === "object" && !Array.isArray(quest.rules)) {
-    copyValue(quest.rules, availability, "repeatable");
-    copyValue(quest.rules, availability, "cooldown_ticks", "cooldown_ticks");
-    copyValue(quest.rules, availability, "completion_cooldown_ticks", "cooldown_ticks");
+    const parityRules = [
+      "repeatable", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days",
+      "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks",
+      "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "max_starts", "max_completions",
+      "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks",
+      "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion",
+      "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "active", "expiration"
+    ];
+    parityRules.forEach((key) => copyValue(quest.rules, availability, key));
+    if (quest.rules.cooldown_ticks !== undefined && availability.completion_cooldown_ticks === undefined) {
+      availability.completion_cooldown_ticks = clone(quest.rules.cooldown_ticks);
+    }
     if (quest.rules.branch && typeof quest.rules.branch === "object" && !Array.isArray(quest.rules.branch)) {
-      copyValue(quest.rules.branch, availability, "exclusive_group");
+      availability.branch = clone(quest.rules.branch);
     }
     for (const key of Object.keys(quest.rules)) {
-      if (!["repeatable", "cooldown_ticks", "completion_cooldown_ticks", "branch"].includes(key)) {
+      if (![...parityRules, "cooldown_ticks", "branch"].includes(key)) {
         report.warnings.push(issue(`rules.${key}`, `Rule "${key}" has no direct quest module v2 availability field.`, "Review the generated v2 resource manually."));
       }
     }
   }
-  if (quest.parent) {
+  const prerequisites = stringArray(quest.prerequisites);
+  if (prerequisites.length > 0) {
+    availability.prerequisites = prerequisites;
+  } else if (quest.parent) {
     availability.prerequisites = [quest.parent];
   }
   return availability;
@@ -265,6 +277,10 @@ function buildStages(quest, questId, dialogueTree, report) {
     }
     copyValue(rawStage, migratedStage, "entry_actions", "on_enter");
     copyValue(rawStage, migratedStage, "exit_actions", "on_exit");
+    const stageUi = trackerStepUi(quest.tracker, stageId);
+    if (Object.keys(stageUi).length > 0) {
+      migratedStage.ui = stageUi;
+    }
     const responses = branchResponses(rawStage.branches, report);
     if (responses.length > 0) {
       migratedStage.responses = responses;
@@ -297,7 +313,11 @@ function migrateObjective(objective, questId, report) {
       migrated.location = migrated.location || {};
       migrated.location[key] = clone(value);
     } else if (key === "complete_text") {
-      report.warnings.push(issue(`objectives.${stringValue(objective.id)}.complete_text`, "Objective complete_text is not represented in quest module v2 objective UI.", "Move completion copy into tracker or dialogue if still needed."));
+      migrated.tracker = migrated.tracker || {};
+      migrated.tracker.complete_text = clone(value);
+    } else if (key === "complete_text_key") {
+      migrated.tracker = migrated.tracker || {};
+      migrated.tracker.complete_text_key = clone(value);
     } else {
       migrated[key] = clone(value);
     }
@@ -460,6 +480,24 @@ function buildUi(quest) {
       copyString(proof, ui, "text_key", "tracker_text_key");
     }
   }
+  return ui;
+}
+
+function trackerStepUi(tracker, stageId) {
+  if (!tracker || typeof tracker !== "object" || Array.isArray(tracker)
+      || !tracker.steps || typeof tracker.steps !== "object" || Array.isArray(tracker.steps)) {
+    return {};
+  }
+  const step = tracker.steps[stageId];
+  if (!step || typeof step !== "object" || Array.isArray(step)) {
+    return {};
+  }
+  const ui = {};
+  copyString(step, ui, "text", "tracker_text");
+  copyString(step, ui, "text_key", "tracker_text_key");
+  copyValue(step, ui, "show_progress");
+  copyValue(step, ui, "progress");
+  copyValue(step, ui, "metadata");
   return ui;
 }
 

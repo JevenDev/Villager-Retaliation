@@ -2160,6 +2160,78 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2CompilerPreservesAdvancedRuntimeRules(GameTestHelper helper) {
+        JsonObject root = validQuestV2Fixture();
+        JsonObject availability = root.getAsJsonObject("availability");
+        availability.add("active", JsonParser.parseString("""
+                {
+                  "conditions": [{"type": "quest_fact", "tag": "active"}],
+                  "hide_when_unmet": true,
+                  "pause_progress_when_unmet": false
+                }
+                """));
+        availability.add("expiration", JsonParser.parseString("""
+                {
+                  "after_ticks": 2400,
+                  "conditions": [{"type": "quest_fact", "tag": "expired"}],
+                  "consume": true,
+                  "allow_repickup": false,
+                  "notify": false
+                }
+                """));
+        availability.add("branch", JsonParser.parseString("""
+                {
+                  "exclusive_group": "villagerretaliation:test_route",
+                  "exclusive_on": "completed",
+                  "blocks_on_start": ["villagerretaliation:start_blocked"],
+                  "blocks_on_completion": ["villagerretaliation:finish_blocked"]
+                }
+                """));
+        JsonObject firstStage = root.getAsJsonArray("stages").get(0).getAsJsonObject();
+        firstStage.add("complete_when", JsonParser.parseString("""
+                [{"type": "quest_fact", "scope": "quest", "key": "route_ready", "value": "yes"}]
+                """));
+        JsonObject objectiveUi = new JsonObject();
+        objectiveUi.addProperty("tracker_text", "Choose a route.");
+        objectiveUi.addProperty("tracker_complete_text", "Route chosen.");
+        firstStage.getAsJsonArray("objectives").get(0).getAsJsonObject().add("ui", objectiveUi);
+        JsonObject rewards = root.getAsJsonObject("rewards");
+        rewards.addProperty("memory_event", "villagerretaliation:test_memory");
+        rewards.addProperty("memory_scope", "village");
+
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_parity_fixture.json");
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
+        CompiledQuest compiled = QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow();
+        QuestDefinition definition = compiled.asQuestDefinition();
+        helper.assertTrue(definition.rules().activeState().hideWhenUnmet(), "v2 active hide rule");
+        helper.assertFalse(definition.rules().activeState().pauseProgressWhenUnmet(), "v2 active pause rule");
+        helper.assertValueEqual(definition.rules().expiration().afterTicks(), 2400L, "v2 expiration ticks");
+        helper.assertTrue(definition.rules().expiration().consume(), "v2 expiration consume rule");
+        helper.assertValueEqual(
+                definition.rules().branching().exclusiveOn(),
+                QuestDefinition.BranchLockEvent.COMPLETED,
+                "v2 branch lock event");
+        helper.assertTrue(
+                definition.rules().branching().blocksOnStart().contains(VillagerRetaliation.id("start_blocked")),
+                "v2 blocks_on_start rule");
+        helper.assertTrue(
+                definition.stages().get("offer").completeWhen().getFirst().objective().isBlank(),
+                "v2 conditional complete_when should remain a condition predicate");
+        helper.assertFalse(
+                definition.stages().get("offer").completeWhen().getFirst().conditions().isEmpty(),
+                "v2 conditional complete_when lost its condition");
+        helper.assertValueEqual(
+                definition.objectives().getFirst().tracker().completeText(),
+                "Route chosen.",
+                "v2 objective completion tracker text");
+        helper.assertValueEqual(
+                definition.rewards().memoryScope(),
+                com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.VILLAGE,
+                "v2 reward memory scope");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2EntryStageRemainsAuthoritativeWhenStartedStageExists(GameTestHelper helper) {
         ResourceLocation location = VillagerRetaliation.id("quests/v2_entry_stage_contract.json");
         JsonObject root = validQuestV2Fixture();
