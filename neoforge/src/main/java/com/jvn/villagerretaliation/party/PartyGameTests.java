@@ -2895,6 +2895,57 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void drawnPartyWeaponDropsOnceAfterDownedFinisher(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_drawn_weapon_death"));
+        Villager recruited = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        try {
+            PartySavedData.get(level).addVillager(
+                    party,
+                    villagerRecord(recruited.getUUID(), leader.getUUID(), 0, now));
+            HiredJobInventory.getJobInventory(recruited).setItem(
+                    HiredJobInventory.MAINHAND_SLOT,
+                    new ItemStack(Items.IRON_SWORD));
+
+            PartyQuickCommandService.handle(
+                    leader,
+                    new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                            PartyQuickCommand.MELEE));
+            helper.assertTrue(recruited.getMainHandItem().is(Items.IRON_SWORD),
+                    "melee command should draw the supplied sword");
+
+            VillagerDownedService.enterDowned(
+                    level,
+                    recruited,
+                    new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("party")));
+            helper.assertTrue(PartyService.setPolicies(leader, null, null, null, true).success(),
+                    "party fixture should allow the leader to finish a downed member");
+
+            recruited.invulnerableTime = 0;
+            helper.assertTrue(recruited.hurt(level.damageSources().playerAttack(leader), 1000.0F),
+                    "the downed finisher should land");
+            helper.assertTrue(recruited.isDeadOrDying() || recruited.isRemoved(),
+                    "the downed party villager should die");
+
+            int droppedSwords = level.getEntitiesOfClass(
+                            ItemEntity.class,
+                            recruited.getBoundingBox().inflate(5.0D),
+                            entity -> entity.getItem().is(Items.IRON_SWORD))
+                    .stream()
+                    .mapToInt(entity -> entity.getItem().getCount())
+                    .sum();
+            helper.assertValueEqual(droppedSwords, 1,
+                    "a drawn job weapon must drop exactly once after a downed finisher");
+        } finally {
+            PartyService.deleteParty(level, party.id());
+            recruited.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void thirdAbuseIncidentCommitsOneNonlethalDisciplinaryAttempt(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = fakePlayer(level, uniqueName("party_discipline"));
