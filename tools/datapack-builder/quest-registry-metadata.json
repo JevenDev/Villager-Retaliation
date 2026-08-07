@@ -607,6 +607,20 @@
         "implementation": "FactObjectiveType"
       },
       {
+        "id": "criterion",
+        "aliases": [
+          "criterion_event",
+          "custom_event"
+        ],
+        "type": "criterion",
+        "requirements": [
+          "counter",
+          "event"
+        ],
+        "has_runtime": true,
+        "implementation": "CriterionObjectiveType"
+      },
+      {
         "id": "condition",
         "aliases": [],
         "type": "condition",
@@ -1992,6 +2006,9 @@
         "coordinate",
         "coordinates",
         "coords",
+        "criterion",
+        "criterion_event",
+        "custom_event",
         "dialogue_choice",
         "entity_kill",
         "event",

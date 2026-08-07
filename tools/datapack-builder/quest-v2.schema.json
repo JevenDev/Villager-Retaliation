@@ -110,6 +110,53 @@
         },
         "version": {
           "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "migration": {
+          "$ref": "#/$defs/migration"
+        }
+      }
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "active_policy": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "keep",
+            "reset_stage",
+            "restart"
+          ]
+        },
+        "on_active_change": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "keep",
+            "reset_stage",
+            "restart"
+          ]
+        },
+        "stage_aliases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+          }
+        },
+        "objective_aliases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+          }
         }
       }
     },
@@ -177,56 +224,94 @@
           }
         },
         "active": {
-          "type": "boolean"
+          "$ref": "#/$defs/active_state"
+        },
+        "expiration": {
+          "$ref": "#/$defs/expiration"
+        },
+        "branch": {
+          "$ref": "#/$defs/branch"
         },
         "cooldown": {
           "type": "string"
         },
         "cooldown_ticks": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "cooldown_days": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "cooldown_seconds": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "completion_cooldown": {
           "type": "string"
         },
         "completion_cooldown_ticks": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "completion_cooldown_days": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "completion_cooldown_seconds": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "prerequisite_cooldown": {
           "type": "string"
         },
         "prerequisite_cooldown_ticks": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "prerequisite_cooldown_days": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "prerequisite_cooldown_seconds": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "exclusive_group": {
           "type": "string",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
         },
+        "exclusive_on": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "started"
+          ]
+        },
+        "blocks_on_start": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        },
+        "blocks_on_completion": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        },
         "repeatable": {
           "type": "boolean"
         },
         "max_starts": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "max_completions": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "completion_scope": {
           "type": "string"
@@ -241,13 +326,16 @@
           "type": "string"
         },
         "abandonment_cooldown_ticks": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "abandonment_cooldown_days": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "abandonment_cooldown_seconds": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "consume_on_completion": {
           "type": "boolean"
@@ -262,6 +350,87 @@
           "type": "boolean"
         },
         "prerequisites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        }
+      }
+    },
+    "active_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "hide_when_unmet": {
+          "type": "boolean"
+        },
+        "pause_progress_when_unmet": {
+          "type": "boolean"
+        }
+      }
+    },
+    "expiration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "after_ticks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "consume": {
+          "type": "boolean"
+        },
+        "allow_repickup": {
+          "type": "boolean"
+        },
+        "notify": {
+          "type": "boolean"
+        }
+      }
+    },
+    "branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "exclusive_group": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "exclusive_on": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "started"
+          ]
+        },
+        "blocks_on_start": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        },
+        "blocks_on_completion": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        },
+        "blocks": {
           "type": "array",
           "items": {
             "type": "string",
@@ -404,11 +573,37 @@
           }
         },
         "complete_when": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/predicate"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/predicate"
+              }
+            }
+          ]
+        },
+        "completion": {
+          "$ref": "#/$defs/completion"
+        },
+        "completion_mode": {
+          "type": "string",
+          "enum": [
+            "all",
+            "any",
+            "at_least"
+          ]
+        },
+        "completion_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bonuses": {
           "type": "array",
           "items": {
-            "type": "string",
-            "minLength": 1,
-            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+            "$ref": "#/$defs/bonus"
           }
         },
         "next": {
@@ -482,9 +677,84 @@
         }
       }
     },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "all",
+            "any",
+            "at_least"
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "predicate": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "bonus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "when"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "when": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/predicate"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/predicate"
+              }
+            }
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "all",
+            "any",
+            "at_least"
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      }
+    },
     "objective": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "required": [
         "id",
         "type"
@@ -509,6 +779,9 @@
             "coordinate",
             "coordinates",
             "coords",
+            "criterion",
+            "criterion_event",
+            "custom_event",
             "dialogue_choice",
             "entity_kill",
             "event",
@@ -554,13 +827,14 @@
           "type": "boolean"
         },
         "count": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
         },
         "consume": {
           "type": "boolean"
         },
         "tracker": {
-          "type": "object"
+          "$ref": "#/$defs/tracker"
         },
         "conditions": {
           "type": "array",
@@ -568,11 +842,320 @@
             "$ref": "#/$defs/condition"
           }
         },
+        "criterion": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "match": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        "target": {
+          "type": "object"
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "structure": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "dimension": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "location": {
+          "type": "object"
+        },
+        "radius": {
+          "type": "number"
+        },
+        "search_radius": {
+          "type": "number"
+        },
+        "discovery_radius": {
+          "type": "number"
+        },
+        "item": {
+          "type": "string"
+        },
+        "item_tag": {
+          "type": "string"
+        },
+        "entity": {
+          "type": "string"
+        },
+        "entity_tag": {
+          "type": "string"
+        },
+        "block": {
+          "type": "string"
+        },
+        "block_tag": {
+          "type": "string"
+        },
+        "memory": {
+          "type": "string"
+        },
+        "memory_tag": {
+          "type": "string"
+        },
+        "quest": {
+          "type": "string"
+        },
+        "quest_id": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "items": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "item_tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "entities": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "entity_tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "blocks": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "block_tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "memory_tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "gift_reactions": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "reputation_levels": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "values": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "stages": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "choices": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "gift_reaction": {
+          "type": "string"
+        },
+        "reputation_level": {
+          "type": "string"
+        },
+        "min": {
+          "type": "integer"
+        },
+        "max": {
+          "type": "integer"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
         "metadata": {
           "type": "object"
         },
         "ui": {
           "$ref": "#/$defs/ui"
+        }
+      }
+    },
+    "tracker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "complete_text": {
+          "type": "string"
+        },
+        "complete_text_key": {
+          "type": "string"
+        },
+        "show_progress": {
+          "type": "boolean"
+        },
+        "progress": {
+          "type": "number"
+        },
+        "metadata": {
+          "type": "object"
         }
       }
     },
@@ -1188,6 +1771,14 @@
         "memory_event": {
           "type": "string",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "memory_scope": {
+          "type": "string",
+          "enum": [
+            "both",
+            "village",
+            "villager"
+          ]
         }
       }
     },
@@ -1213,6 +1804,12 @@
         "tracker_text_key": {
           "type": "string"
         },
+        "tracker_complete_text": {
+          "type": "string"
+        },
+        "tracker_complete_text_key": {
+          "type": "string"
+        },
         "show_progress": {
           "type": "boolean"
         },
@@ -1224,6 +1821,9 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "metadata": {
+          "type": "object"
         },
         "icon": {
           "type": "string",
