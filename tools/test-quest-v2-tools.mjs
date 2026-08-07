@@ -15,6 +15,13 @@ try {
   await writeJson(validQuest, {
     schema: "villagerretaliation:quest/v2",
     id: "villagerretaliation:tool_valid",
+    metadata: {
+      revision: 2,
+      migration: {
+        active_policy: "keep",
+        stage_aliases: { old_started: "started" }
+      }
+    },
     provider: {
       type: "villagerretaliation:villager"
     },

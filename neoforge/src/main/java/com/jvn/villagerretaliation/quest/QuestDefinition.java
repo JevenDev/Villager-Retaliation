@@ -43,7 +43,8 @@ public record QuestDefinition(
         Rewards rewards,
         Dialogue dialogue,
         DialogueEntryMetadata metadata,
-        Links links
+        Links links,
+        Revision revision
 ) {
     public QuestDefinition {
         title = title == null || title.isBlank() ? id.toString() : title;
@@ -72,6 +73,68 @@ public record QuestDefinition(
         dialogue = dialogue == null ? Dialogue.EMPTY : dialogue;
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
         links = links == null ? Links.EMPTY : links;
+        revision = revision == null ? Revision.DEFAULT : revision;
+    }
+
+    public QuestDefinition(
+            ResourceLocation id,
+            String title,
+            String description,
+            String titleKey,
+            String descriptionKey,
+            String questline,
+            Set<String> tags,
+            ResourceLocation parent,
+            List<ResourceLocation> prerequisites,
+            boolean showLockedAdventureHint,
+            Offer offer,
+            Target target,
+            List<Objective> objectives,
+            Rules rules,
+            Tracker tracker,
+            String entryStage,
+            Map<String, Stage> stages,
+            List<Trigger> triggers,
+            Rewards rewards,
+            Dialogue dialogue,
+            DialogueEntryMetadata metadata,
+            Links links) {
+        this(id, title, description, titleKey, descriptionKey, questline, tags, parent, prerequisites,
+                showLockedAdventureHint, offer, target, objectives, rules, tracker, entryStage, stages, triggers,
+                rewards, dialogue, metadata, links, Revision.DEFAULT);
+    }
+
+    public record Revision(
+            int number,
+            RevisionPolicy activePolicy,
+            Map<String, String> stageAliases,
+            Map<String, String> objectiveAliases
+    ) {
+        public static final Revision DEFAULT = new Revision(1, RevisionPolicy.KEEP, Map.of(), Map.of());
+
+        public Revision {
+            number = Math.max(1, number);
+            activePolicy = activePolicy == null ? RevisionPolicy.KEEP : activePolicy;
+            stageAliases = stageAliases == null ? Map.of() : Map.copyOf(stageAliases);
+            objectiveAliases = objectiveAliases == null ? Map.of() : Map.copyOf(objectiveAliases);
+        }
+    }
+
+    public enum RevisionPolicy {
+        KEEP,
+        RESET_STAGE,
+        RESTART,
+        FAIL;
+
+        public static RevisionPolicy bySerializedName(String value) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+            return switch (normalized) {
+                case "reset", "reset_stage", "stage_reset" -> RESET_STAGE;
+                case "restart", "restart_quest" -> RESTART;
+                case "fail", "fail_quest" -> FAIL;
+                default -> KEEP;
+            };
+        }
     }
 
     public record Links(

@@ -58,7 +58,9 @@ public final class QuestV2Parser {
             "parent",
             "show_locked_adventure_hint",
             "author",
-            "version");
+            "version",
+            "revision",
+            "migration");
     private static final Set<String> TARGET_KEYS = Set.of(
             "structure",
             "dimension",

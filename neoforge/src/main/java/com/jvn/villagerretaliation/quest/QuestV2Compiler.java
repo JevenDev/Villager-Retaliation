@@ -166,6 +166,14 @@ public final class QuestV2Compiler {
         if (showLockedAdventureHint != null && showLockedAdventureHint.isJsonPrimitive()) {
             root.add("show_locked_adventure_hint", showLockedAdventureHint.deepCopy());
         }
+        JsonElement revision = resource.metadata().get("revision");
+        if (revision != null && !revision.isJsonNull()) {
+            root.add("revision", revision.deepCopy());
+        }
+        JsonElement migration = resource.metadata().get("migration");
+        if (migration != null && migration.isJsonObject()) {
+            root.add("migration", migration.deepCopy());
+        }
     }
 
     private static void addOffer(JsonObject root, QuestV2Resource resource) {

@@ -536,8 +536,29 @@ public final class VillagerQuestResources {
                 readRewards(root),
                 readDialogue(root),
                 DialogueEntryMetadata.read(location, "quest", "quest", root),
-                readLinks(root)
+                readLinks(root),
+                readRevision(root)
         );
+    }
+
+    private static QuestDefinition.Revision readRevision(JsonObject root) {
+        JsonElement revisionElement = root.get("revision");
+        JsonObject revisionObject = revisionElement != null && revisionElement.isJsonObject()
+                ? revisionElement.getAsJsonObject()
+                : null;
+        int number = revisionObject == null
+                ? DatapackJsonReader.readInt(root, "revision", 1)
+                : DatapackJsonReader.readInt(revisionObject, "number", 1);
+        JsonObject migration = DatapackJsonReader.readObject(root, "migration");
+        if (migration == null && revisionObject != null) {
+            migration = DatapackJsonReader.readObject(revisionObject, "migration");
+        }
+        return new QuestDefinition.Revision(
+                number,
+                QuestDefinition.RevisionPolicy.bySerializedName(
+                        migration == null ? "" : DatapackJsonReader.readString(migration, "active_policy", "on_active_change")),
+                migration == null ? Map.of() : readStringMap(DatapackJsonReader.readObject(migration, "stage_aliases")),
+                migration == null ? Map.of() : readStringMap(DatapackJsonReader.readObject(migration, "objective_aliases")));
     }
 
     private static List<ResourceLocation> readQuestPrerequisites(JsonObject root, ResourceLocation parent) {
