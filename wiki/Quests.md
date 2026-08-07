@@ -211,6 +211,28 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 
 `metadata.tags` classifies quests for journal filters, quest-board pools, authoring tools, diagnostics, and content tests. Tags describe a quest; they do not replace authoritative fields such as `availability.repeatable`, `completion_scope`, `ui.hidden`, `ui.priority`, provider filters, or objective definitions.
 
+## Quest Pools
+
+Quest pools turn quest tags or explicit quest IDs into bounded rotating offers. Put pool resources under `data/<namespace>/quest_pools/`. A pool only controls quests that match one of its selectors; quests not claimed by any pool keep their normal availability.
+
+```json
+{
+  "schema": "villagerretaliation:quest_pool/v1",
+  "id": "my_pack:daily_commissions",
+  "scope": "village",
+  "refresh_days": 1,
+  "max_offers": 3,
+  "anti_repeat_rotations": 2,
+  "any_tags": ["pool.daily", "pool.commission"],
+  "exclude_tags": ["difficulty.extreme"],
+  "weights": {
+    "my_pack:urgent_repairs": 4
+  }
+}
+```
+
+Selection is deterministic for the pool, scope key, and refresh epoch. `scope` accepts `player`, `village`, `provider`, or `world`. `quests`, `any_tags`, and `all_tags` select candidates; `exclude_quests` and `exclude_tags` remove candidates. Selection is weighted without replacement, and `anti_repeat_rotations` avoids recent selections when the pool has enough alternatives.
+
 Built-in quests use these families:
 
 | Family | Values | Use |
