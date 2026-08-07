@@ -30,6 +30,17 @@ try {
             count: 1
           }
         ],
+        completion: {
+          mode: "any",
+          count: 1
+        },
+        bonuses: [
+          {
+            id: "quick_delivery",
+            when: ["bring_paper"],
+            actions: [{ type: "experience", amount: 2 }]
+          }
+        ],
         dialogue: {
           offer: {
             lines: ["Bring one paper."]

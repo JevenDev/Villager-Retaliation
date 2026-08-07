@@ -314,6 +314,30 @@ Stage `dialogue` slots normally use these names:
 
 Inline scenes stay inside the quest module. Use `external` or `external_scene` only when the scene is large, shared, localized separately, or deliberately owned by another datapack resource.
 
+## Objective Composition And Bonuses
+
+Stages use `all` completion by default. Set `completion.mode` to `any` when one predicate is enough, or `at_least` with `count` for k-of-n goals. Both objective references and condition predicates in `complete_when` participate in the count.
+
+```json
+{
+  "complete_when": ["secure_gate", "rescue_smith", "recover_ledger"],
+  "completion": { "mode": "at_least", "count": 2 },
+  "bonuses": [
+    {
+      "id": "save_everyone",
+      "when": ["secure_gate", "rescue_smith", "recover_ledger"],
+      "mode": "all",
+      "actions": [
+        { "type": "experience", "amount": 100 },
+        { "type": "reputation", "amount": 5 }
+      ]
+    }
+  ]
+}
+```
+
+Bonus outcomes are one-shot per quest run and stage. Their claimed IDs are saved before actions run, so reconnects and reloads cannot duplicate rewards. A bonus supports the same `all`, `any`, and `at_least` modes and can use any normal action type.
+
 ## Transition Rules
 
 Keep each response to one transition source. Pick one of:

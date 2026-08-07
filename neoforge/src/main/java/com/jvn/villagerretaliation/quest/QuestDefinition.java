@@ -613,19 +613,36 @@ public record QuestDefinition(
             String id,
             List<String> objectives,
             List<StagePredicate> completeWhen,
+            CompletionMode completionMode,
+            int completionCount,
             String next,
             List<VillagerActionDefinition> entryActions,
             List<VillagerActionDefinition> exitActions,
-            List<StageBranch> branches
+            List<StageBranch> branches,
+            List<BonusOutcome> bonuses
     ) {
         public Stage {
             id = id == null ? "" : id.trim();
             objectives = objectives == null ? List.of() : List.copyOf(objectives);
             completeWhen = completeWhen == null ? List.of() : List.copyOf(completeWhen);
+            completionMode = completionMode == null ? CompletionMode.ALL : completionMode;
+            completionCount = Math.max(1, completionCount);
             next = next == null ? "" : next.trim();
             entryActions = entryActions == null ? List.of() : List.copyOf(entryActions);
             exitActions = exitActions == null ? List.of() : List.copyOf(exitActions);
             branches = branches == null ? List.of() : List.copyOf(branches);
+            bonuses = bonuses == null ? List.of() : List.copyOf(bonuses);
+        }
+
+        public Stage(
+                String id,
+                List<String> objectives,
+                List<StagePredicate> completeWhen,
+                String next,
+                List<VillagerActionDefinition> entryActions,
+                List<VillagerActionDefinition> exitActions,
+                List<StageBranch> branches) {
+            this(id, objectives, completeWhen, CompletionMode.ALL, 1, next, entryActions, exitActions, branches, List.of());
         }
 
         public boolean hasEntryActions() {
@@ -634,6 +651,37 @@ public record QuestDefinition(
 
         public boolean hasExitActions() {
             return !this.exitActions.isEmpty();
+        }
+    }
+
+    public enum CompletionMode {
+        ALL,
+        ANY,
+        AT_LEAST;
+
+        public static CompletionMode bySerializedName(String value) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+            return switch (normalized) {
+                case "any", "one", "one_of" -> ANY;
+                case "at_least", "atleast", "count", "k_of_n" -> AT_LEAST;
+                default -> ALL;
+            };
+        }
+    }
+
+    public record BonusOutcome(
+            String id,
+            List<StagePredicate> when,
+            CompletionMode mode,
+            int count,
+            List<VillagerActionDefinition> actions
+    ) {
+        public BonusOutcome {
+            id = id == null ? "" : id.trim();
+            when = when == null ? List.of() : List.copyOf(when);
+            mode = mode == null ? CompletionMode.ALL : mode;
+            count = Math.max(1, count);
+            actions = actions == null ? List.of() : List.copyOf(actions);
         }
     }
 

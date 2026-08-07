@@ -291,6 +291,8 @@ public final class QuestV2Compiler {
         if (completeWhen.size() > 0) {
             canonical.add("complete_when", completeWhen);
         }
+        addCompletionComposition(stage, canonical);
+        addBonuses(stage, canonical, canonicalIds);
         if (!stage.next().stage().isBlank()) {
             canonical.addProperty("next", stage.next().stage());
         }
@@ -356,6 +358,49 @@ public final class QuestV2Compiler {
             result.add(canonicalPredicate(authored, canonicalIds));
         }
         return result;
+    }
+
+    private static void addCompletionComposition(QuestV2Resource.Stage stage, JsonObject canonical) {
+        JsonObject completion = optionalObject(stage.data().get("completion"));
+        if (completion != null) {
+            copyIfPresent(completion, canonical, "mode", "completion_mode");
+            copyIfPresent(completion, canonical, "count", "completion_count");
+        }
+        copyIfMissing(stage.data(), canonical, "completion_mode");
+        copyIfMissing(stage.data(), canonical, "completion_count");
+    }
+
+    private static void addBonuses(
+            QuestV2Resource.Stage stage,
+            JsonObject canonical,
+            Map<String, String> canonicalIds) {
+        JsonElement authored = stage.data().get("bonuses");
+        if (authored == null || !authored.isJsonArray()) {
+            return;
+        }
+        JsonArray bonuses = new JsonArray();
+        for (JsonElement child : authored.getAsJsonArray()) {
+            if (!child.isJsonObject()) {
+                continue;
+            }
+            JsonObject bonus = child.getAsJsonObject().deepCopy();
+            JsonElement when = bonus.get("when");
+            if (when != null) {
+                JsonArray predicates = new JsonArray();
+                if (when.isJsonArray()) {
+                    for (JsonElement predicate : when.getAsJsonArray()) {
+                        predicates.add(canonicalPredicate(predicate, canonicalIds));
+                    }
+                } else {
+                    predicates.add(canonicalPredicate(when, canonicalIds));
+                }
+                bonus.add("when", predicates);
+            }
+            bonuses.add(bonus);
+        }
+        if (!bonuses.isEmpty()) {
+            canonical.add("bonuses", bonuses);
+        }
     }
 
     private static JsonElement canonicalPredicate(
