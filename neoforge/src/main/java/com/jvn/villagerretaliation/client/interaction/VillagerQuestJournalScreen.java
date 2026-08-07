@@ -97,6 +97,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int MUTED_TEXT_COLOR = 0xFF000000;
     private static final int SELECTED_TEXT_COLOR = 0xFFFFFFFF;
     private static final int HOVERED_TEXT_COLOR = 0xFF000000;
+    private static final int LINK_TEXT_COLOR = 0xFF315B8A;
     private static final int QUEST_COUNT_TEXT_COLOR = 0xFFFFFFFF;
     private static final int PAGE_TEXT_COLOR = 0xFFE1DAC7;
     private static final Style QUEST_COUNT_ACTIVE_STYLE = Style.EMPTY.withColor(0xF9CB5F);
@@ -199,6 +200,8 @@ public final class VillagerQuestJournalScreen extends Screen {
         renderQuestOptions(graphics, mouseX, journalMouseY, slideOffset);
         renderQuestDetails(graphics, slideOffset);
         graphics.pose().popPose();
+        renderQuestlineTooltip(graphics, mouseX, mouseY, slideOffset);
+        renderPreviousStepTooltip(graphics, mouseX, mouseY, slideOffset);
         renderQuestCountTooltip(graphics, mouseX, mouseY, slideOffset);
         renderBookmarkTooltip(graphics, mouseX, mouseY, slideOffset);
         VillagerClientUiUtil.popGuiLayer(graphics);
@@ -273,6 +276,11 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
 
         if (tryBeginOptionScrollbarDrag(mouseX, journalMouseY)) {
+            return true;
+        }
+
+        QuestDetailLine previousStepLink = detailLinkAt(mouseX, journalMouseY);
+        if (previousStepLink != null && openQuestPage(previousStepLink.targetQuestId())) {
             return true;
         }
 
@@ -951,10 +959,25 @@ public final class VillagerQuestJournalScreen extends Screen {
         y = addWrappedDetailLines(lines, descriptionLine(selected), wrapWidth, TEXT_COLOR, y, lineStep, 0);
         if (!selected.prerequisites().isEmpty()) {
             y = addDividerLine(lines, y + 3, 3);
-            y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.prerequisites"), TITLE_COLOR, y, lineStep, 0);
+            String sectionKey = selected.prerequisites().size() == 1
+                    ? "section.previous_step"
+                    : "section.previous_steps";
+            y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + sectionKey), TITLE_COLOR, y, lineStep, 0);
             y = addDividerLine(lines, y + 3, 3);
             for (QuestTrackerSyncPayload.Prerequisite prerequisite : selected.prerequisites()) {
-                y = addQuestStepLines(lines, prerequisiteLine(prerequisite), prerequisite.met(), y, lineStep, 2);
+                QuestTrackerSyncPayload.Entry target = journalEntryForQuestId(prerequisite.questId());
+                if (target == null) {
+                    y = addQuestStepLines(lines, prerequisiteLine(prerequisite), prerequisite.met(), y, lineStep, 2);
+                } else {
+                    y = addQuestLinkLines(
+                            lines,
+                            prerequisiteLine(prerequisite),
+                            prerequisite.met(),
+                            prerequisite.questId(),
+                            y,
+                            lineStep,
+                            2);
+                }
             }
         }
         y = addDividerLine(lines, y + 3, 3);
@@ -1132,6 +1155,40 @@ public final class VillagerQuestJournalScreen extends Screen {
                 icon,
                 false,
                 strikeCompleted && completed);
+    }
+
+    private int addQuestLinkLines(
+            List<QuestDetailLine> lines,
+            String text,
+            boolean completed,
+            String targetQuestId,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        if (text == null || text.isBlank() || targetQuestId == null || targetQuestId.isBlank()) {
+            return top;
+        }
+        ResourceLocation icon = completed
+                ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_COMPLETED_TEXTURE
+                : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_TEXTURE;
+        Component component = Component.literal(text).withStyle(Style.EMPTY.withUnderlined(true));
+        int y = top;
+        boolean first = true;
+        for (FormattedCharSequence line : this.font.split(component, Math.max(1, DETAILS_WIDTH - questStepTextIndent()))) {
+            lines.add(new QuestDetailLine(
+                    line,
+                    LINK_TEXT_COLOR,
+                    y,
+                    this.font.lineHeight,
+                    first ? icon : null,
+                    false,
+                    false,
+                    false,
+                    targetQuestId));
+            y += lineStep;
+            first = false;
+        }
+        return y - lineStep + this.font.lineHeight + gapAfter;
     }
 
     private static int detailContentHeight(List<QuestDetailLine> detailLines) {
@@ -1455,6 +1512,119 @@ public final class VillagerQuestJournalScreen extends Screen {
             }
         }
         return -1;
+    }
+
+    private void renderQuestlineTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        QuestTrackerSyncPayload.Entry entry = questTitleAt(mouseX, mouseY - slideOffset);
+        if (entry == null || entry.journal().questline().isBlank()) {
+            return;
+        }
+        graphics.renderComponentTooltip(
+                this.font,
+                List.of(Component.translatable(GUI_KEY_PREFIX + "questline", entry.journal().questline())),
+                mouseX,
+                mouseY);
+    }
+
+    private QuestTrackerSyncPayload.Entry questTitleAt(double mouseX, double journalMouseY) {
+        int index = questOptionAt(mouseX, journalMouseY);
+        if (index < 0) {
+            return null;
+        }
+        int left = optionsLeft() + QUEST_OPTION_TEXT_LEFT_PADDING;
+        int top = Mth.floor(optionsTop() + optionOffset(index) - optionRenderScroll()) + QUEST_OPTION_TEXT_TOP_PADDING;
+        List<FormattedCharSequence> titleLines = questOptionTitleLines(index);
+        int width = titleLines.stream().mapToInt(this.font::width).max().orElse(0);
+        int height = titleLines.isEmpty()
+                ? 0
+                : this.font.lineHeight + (titleLines.size() - 1) * (this.font.lineHeight + QUEST_OPTION_TEXT_LINE_GAP);
+        return isPointInside(mouseX, journalMouseY, left, top, left + width, top + height)
+                ? visibleEntries().get(index)
+                : null;
+    }
+
+    private void renderPreviousStepTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        QuestDetailLine link = detailLinkAt(mouseX, mouseY - slideOffset);
+        if (link == null) {
+            return;
+        }
+        graphics.renderComponentTooltip(
+                this.font,
+                List.of(Component.translatable(GUI_KEY_PREFIX + "view_previous_step")),
+                mouseX,
+                mouseY);
+    }
+
+    private QuestDetailLine detailLinkAt(double mouseX, double journalMouseY) {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (selected == null || !isPointInsideDetailsScrollArea(mouseX, journalMouseY)) {
+            return null;
+        }
+        List<QuestDetailLine> lines = buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP);
+        int viewportHeight = detailsPageViewportHeight(selected);
+        List<Integer> pageStarts = detailPageStarts(lines, viewportHeight);
+        int page = Mth.clamp(this.detailsPage, 0, pageStarts.size() - 1);
+        int pageTop = pageStarts.get(page);
+        for (QuestDetailLine line : lines) {
+            if (!line.link() || line.top() < pageTop || line.top() + line.height() > pageTop + viewportHeight) {
+                continue;
+            }
+            int top = detailsTop() + line.top() - pageTop;
+            int left = detailsLeft() + (line.icon() == null ? 0 : questStepTextIndent());
+            int width = line.text() == null ? 0 : this.font.width(line.text());
+            if (isPointInside(mouseX, journalMouseY, left, top, left + width, top + line.height())) {
+                return line;
+            }
+        }
+        return null;
+    }
+
+    private boolean openQuestPage(String targetQuestId) {
+        QuestTrackerSyncPayload.Entry target = journalEntryForQuestId(targetQuestId);
+        if (target == null) {
+            return false;
+        }
+        this.searchActive = false;
+        this.searchQuery = "";
+        QuestJournalTab targetTab = switch (QuestJournalEntryState.from(target)) {
+            case COMPLETED -> QuestJournalTab.COMPLETED;
+            case ACTIVE -> QuestJournalTab.ACTIVE;
+            default -> QuestJournalTab.AVAILABLE;
+        };
+        selectTab(targetTab);
+        int index = indexOfQuestId(visibleEntries(), target.questId());
+        if (index < 0) {
+            return false;
+        }
+        setSelectedOption(index);
+        acknowledgeSelectedQuestUpdate();
+        ensureSelectedVisible(true);
+        return true;
+    }
+
+    private static QuestTrackerSyncPayload.Entry journalEntryForQuestId(String questId) {
+        if (questId == null || questId.isBlank()) {
+            return null;
+        }
+        for (QuestTrackerSyncPayload.Entry entry : entries()) {
+            if (!entry.journal().hidden() && questId.equals(entry.questId())) {
+                return entry;
+            }
+        }
+        for (QuestTrackerSyncPayload.Entry entry : entries()) {
+            if (!entry.journal().hidden() && questId.equals(baseQuestId(entry.questId()))) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    private static String baseQuestId(String questId) {
+        if (questId == null) {
+            return "";
+        }
+        int historySuffix = questId.indexOf("#completed/");
+        return historySuffix < 0 ? questId : questId.substring(0, historySuffix);
     }
 
     private void setTargetOptionScroll(float scroll) {
@@ -1839,7 +2009,23 @@ public final class VillagerQuestJournalScreen extends Screen {
             ResourceLocation icon,
             boolean centered,
             boolean divider,
-            boolean titleIcon) {
+            boolean titleIcon,
+            String targetQuestId) {
+        private QuestDetailLine(
+                FormattedCharSequence text,
+                int color,
+                int top,
+                int height,
+                ResourceLocation icon,
+                boolean centered,
+                boolean divider,
+                boolean titleIcon) {
+            this(text, color, top, height, icon, centered, divider, titleIcon, "");
+        }
+
+        private boolean link() {
+            return this.targetQuestId != null && !this.targetQuestId.isBlank();
+        }
     }
 
     private record QuestCountSummary(int active, int accepted, int nearby, int completed) {
