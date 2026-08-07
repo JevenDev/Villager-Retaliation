@@ -6,7 +6,8 @@
     "description": "Follow the atlas to a Stronghold and return with Ender Eye bearings.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:nether_meridian",
     "title_key": "quest.cartographers_atlas.eye_of_the_last_room.title",

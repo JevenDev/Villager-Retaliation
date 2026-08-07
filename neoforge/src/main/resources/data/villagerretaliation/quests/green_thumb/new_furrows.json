@@ -6,7 +6,8 @@
     "description": "Prepare seed, water, and a sound hoe for a new village field.",
     "questline": "green_thumb",
     "tags": [
-      "group.green_thumb"
+      "group.green_thumb",
+      "role.story"
     ]
   },
   "provider": {

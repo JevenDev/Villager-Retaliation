@@ -6,7 +6,8 @@
     "description": "Bring lanterns before the watch loses the edges of the village to darkness.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

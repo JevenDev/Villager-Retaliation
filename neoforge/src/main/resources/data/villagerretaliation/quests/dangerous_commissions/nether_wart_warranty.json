@@ -6,7 +6,8 @@
     "description": "Reach a Nether Fortress and return with Nether Wart and a Blaze Rod.",
     "questline": "dangerous_commissions",
     "tags": [
-      "group.dangerous_commissions"
+      "group.dangerous_commissions",
+      "role.side"
     ]
   },
   "provider": {

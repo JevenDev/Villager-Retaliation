@@ -6,7 +6,8 @@
     "description": "Bring ink so ledgers, maps, and warning notices remain legible.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

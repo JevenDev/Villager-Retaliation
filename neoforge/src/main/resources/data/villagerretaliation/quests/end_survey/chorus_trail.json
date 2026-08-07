@@ -7,7 +7,8 @@
     "questline": "end_survey",
     "parent": "villagerretaliation:choose_a_star",
     "tags": [
-      "group.end_survey"
+      "group.end_survey",
+      "role.story"
     ]
   },
   "provider": {

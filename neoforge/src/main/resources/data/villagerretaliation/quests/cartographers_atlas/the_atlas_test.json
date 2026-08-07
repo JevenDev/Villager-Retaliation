@@ -6,7 +6,8 @@
     "description": "Choose a safer supply route or a riskier combat route to prove the atlas can guide real decisions.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:roads_that_remember",
     "title_key": "quest.cartographers_atlas.the_atlas_test.title",

@@ -6,7 +6,8 @@
     "description": "Carry the atlas into the End, survey an End City, and return with shulker proof.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:eye_of_the_last_room",
     "title_key": "quest.cartographers_atlas.end_city_margin.title",

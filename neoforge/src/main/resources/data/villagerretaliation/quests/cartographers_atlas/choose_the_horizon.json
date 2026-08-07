@@ -6,7 +6,8 @@
     "description": "Set the completed atlas toward the drowned coast or the dark roof road.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:the_atlas_test",
     "title_key": "quest.cartographers_atlas.choose_the_horizon.title",

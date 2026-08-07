@@ -6,7 +6,8 @@
     "description": "Help prepare simple medical supplies before the next village injury.",
     "questline": "field_medicine",
     "tags": [
-      "group.field_medicine"
+      "group.field_medicine",
+      "role.side"
     ]
   },
   "provider": {

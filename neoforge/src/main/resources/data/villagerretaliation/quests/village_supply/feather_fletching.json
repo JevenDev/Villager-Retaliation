@@ -6,7 +6,8 @@
     "description": "Bring feathers so arrows and message shafts can be finished in proper batches.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

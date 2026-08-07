@@ -6,7 +6,8 @@
     "description": "Help a cook gather the first shared hearth supplies for the village.",
     "questline": "hearthbound",
     "tags": [
-      "group.hearthbound"
+      "group.hearthbound",
+      "role.side"
     ]
   },
   "provider": {

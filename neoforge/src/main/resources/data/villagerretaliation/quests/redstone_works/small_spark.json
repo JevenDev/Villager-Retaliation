@@ -6,7 +6,8 @@
     "description": "Supply the first components for a village redstone workshop.",
     "questline": "redstone_works",
     "tags": [
-      "group.redstone_works"
+      "group.redstone_works",
+      "role.story"
     ]
   },
   "provider": {

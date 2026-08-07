@@ -8,7 +8,8 @@
     "parent": "villagerretaliation:small_spark",
     "tags": [
       "group.redstone_works",
-      "branching"
+      "role.story",
+      "feature.branching"
     ]
   },
   "provider": {

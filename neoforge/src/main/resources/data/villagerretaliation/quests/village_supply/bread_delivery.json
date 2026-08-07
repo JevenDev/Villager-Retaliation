@@ -6,7 +6,8 @@
     "description": "Bring bread so the village can stretch its stores through a hard night.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

@@ -6,7 +6,8 @@
     "description": "Begin the Last Ember line by studying ender pearls without treating fear as wisdom.",
     "questline": "last_ember",
     "tags": [
-      "group.last_ember"
+      "group.last_ember",
+      "role.story"
     ]
   },
   "provider": {

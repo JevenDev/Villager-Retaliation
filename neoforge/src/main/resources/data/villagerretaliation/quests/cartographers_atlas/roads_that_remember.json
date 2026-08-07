@@ -6,7 +6,8 @@
     "description": "Record a village defense memory and turn it into a road the atlas can understand.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:first_far_marker",
     "title_key": "quest.cartographers_atlas.roads_that_remember.title",

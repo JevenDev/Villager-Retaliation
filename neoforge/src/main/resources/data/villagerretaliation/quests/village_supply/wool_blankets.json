@@ -6,7 +6,8 @@
     "description": "Bring wool for clean bedding and warm wraps.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

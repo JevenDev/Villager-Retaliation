@@ -6,7 +6,8 @@
     "description": "Find nearby Trail Ruins and bring a brush and stone to restore the road marker.",
     "questline": "old_roads",
     "tags": [
-      "group.old_roads"
+      "group.old_roads",
+      "role.side"
     ]
   },
   "provider": {

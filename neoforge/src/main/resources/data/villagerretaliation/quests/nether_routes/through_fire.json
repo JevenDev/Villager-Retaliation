@@ -6,7 +6,8 @@
     "description": "Prepare the supplies for a permanent village route through the Nether.",
     "questline": "nether_routes",
     "tags": [
-      "group.nether_routes"
+      "group.nether_routes",
+      "role.story"
     ]
   },
   "provider": {

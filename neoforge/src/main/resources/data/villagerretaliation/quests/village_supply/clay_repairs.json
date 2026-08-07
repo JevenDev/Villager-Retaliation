@@ -6,7 +6,8 @@
     "description": "Bring clay for small repairs around wells, ovens, and cracked walls.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

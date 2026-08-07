@@ -6,7 +6,8 @@
     "description": "Bring paper so village records, maps, and warnings can stay current.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

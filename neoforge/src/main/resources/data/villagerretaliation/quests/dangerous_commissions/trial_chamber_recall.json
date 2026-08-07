@@ -6,7 +6,8 @@
     "description": "Survey a Trial Chamber and return with a Trial Key and Breeze Rod.",
     "questline": "dangerous_commissions",
     "tags": [
-      "group.dangerous_commissions"
+      "group.dangerous_commissions",
+      "role.request"
     ]
   },
   "provider": {

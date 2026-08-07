@@ -6,7 +6,8 @@
     "description": "Open a village mine and recover its first useful iron.",
     "questline": "deep_delvers",
     "tags": [
-      "group.deep_delvers"
+      "group.deep_delvers",
+      "role.story"
     ]
   },
   "provider": {

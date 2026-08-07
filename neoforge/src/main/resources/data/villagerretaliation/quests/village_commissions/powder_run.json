@@ -7,6 +7,7 @@
     "questline": "village_commissions",
     "tags": [
       "group.village_commissions",
+      "role.request",
       "tier.mid"
     ]
   },

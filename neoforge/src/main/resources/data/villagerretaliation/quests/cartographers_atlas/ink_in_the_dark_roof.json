@@ -6,7 +6,8 @@
     "description": "Follow the dark roof horizon to a Woodland Mansion and return with its stolen records.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:choose_the_horizon",
     "title_key": "quest.cartographers_atlas.ink_in_the_dark_roof.title",

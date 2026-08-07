@@ -7,7 +7,8 @@
     "questline": "green_thumb",
     "parent": "villagerretaliation:choose_the_soil",
     "tags": [
-      "group.green_thumb"
+      "group.green_thumb",
+      "role.story"
     ]
   },
   "provider": {

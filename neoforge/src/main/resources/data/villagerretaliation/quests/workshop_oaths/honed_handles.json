@@ -6,7 +6,8 @@
     "description": "Help a village workshop rebuild the handles, grips, and lashings tools depend on.",
     "questline": "workshop_oaths",
     "tags": [
-      "group.workshop_oaths"
+      "group.workshop_oaths",
+      "role.side"
     ]
   },
   "provider": {
