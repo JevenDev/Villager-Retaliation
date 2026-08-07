@@ -109,6 +109,8 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onPlayerStartTracking)
                 .listener(VillagerRetaliationEvents::onPlayerLoggedOut)
                 .listener(VillagerRetaliationEvents::onPlayerChangedDimension)
+                .listener(VillagerRetaliationEvents::onItemCrafted)
+                .listener(VillagerRetaliationEvents::onItemSmelted)
                 .listener(VillageBoundsDebugService::onPlayerLoggedOut)
                 .listener(PlayerRaidDialogueService::onPlayerLoggedOut)
                 .listener(VillagerRetaliationEvents::onPlayerClone)

@@ -18,6 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -106,6 +107,12 @@ public final class QuestObjectiveRegistry {
                     aliases("quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"),
                     requirements(QuestObjectiveRequirement.POLLING),
                     new FactObjectiveType()),
+            register(
+                    "criterion",
+                    QuestDefinition.ObjectiveType.CRITERION,
+                    aliases("custom_event", "criterion_event"),
+                    requirements(QuestObjectiveRequirement.EVENT, QuestObjectiveRequirement.COUNTER),
+                    new CriterionObjectiveType()),
             register(
                     "condition",
                     QuestDefinition.ObjectiveType.CONDITION,
@@ -351,6 +358,55 @@ public final class QuestObjectiveRegistry {
         }
     }
 
+    private static final class CriterionObjectiveType extends CounterEventObjectiveType {
+        @Override
+        public Optional<String> validationError(QuestDefinition.Objective objective) {
+            return objective.criterion() == null
+                    ? Optional.of("criterion objective must define criterion.")
+                    : Optional.empty();
+        }
+
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return "criterion";
+        }
+
+        @Override
+        public Set<QuestObjectiveEventKind> eventKinds(QuestDefinition.Objective objective) {
+            return Set.of(QuestObjectiveEventKind.CRITERION);
+        }
+
+        @Override
+        public Set<ResourceLocation> eventSubscriptionKeys(QuestDefinition.Objective objective) {
+            return objective.criterion() == null ? Set.of() : Set.of(objective.criterion());
+        }
+
+        @Override
+        public boolean matchesEvent(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective,
+                QuestObjectiveEvent event) {
+            if (objective.criterion() == null || !objective.criterion().equals(event.criterion())) {
+                return false;
+            }
+            for (Map.Entry<String, String> expected : objective.criterionData().entrySet()) {
+                if (!expected.getValue().equals(event.criterionData().get(expected.getKey()))) {
+                    return false;
+                }
+            }
+            if (objective.item() != null && !context.matchesItem(objective, event.itemStack())) {
+                return false;
+            }
+            LivingEntity entity = event.killedEntity();
+            if (!objective.entityTypes().isEmpty() || !objective.entityTags().isEmpty()) {
+                if (entity == null || !matchesEntity(objective, entity)) {
+                    return false;
+                }
+            }
+            return entity == null || matchesDimensionAndLocation(context, entity.blockPosition(), objective);
+        }
+    }
+
     private static final class BlockObjectiveType extends CounterEventObjectiveType {
         private final QuestObjectiveEventKind eventKind;
 
@@ -502,6 +558,19 @@ public final class QuestObjectiveRegistry {
             }
             return objective.item() == null || context.matchesItem(objective, stack);
         }
+    }
+
+    private static boolean matchesEntity(QuestDefinition.Objective objective, LivingEntity entity) {
+        ResourceLocation entityType = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+        if (entityType != null && objective.entityTypes().contains(entityType)) {
+            return true;
+        }
+        for (ResourceLocation tagId : objective.entityTags()) {
+            if (entity.getType().is(TagKey.create(Registries.ENTITY_TYPE, tagId))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean matchesQuestProvider(

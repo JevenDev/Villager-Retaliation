@@ -204,6 +204,8 @@ public record QuestDefinition(
             Set<String> factValues,
             Integer factMin,
             Integer factMax,
+            ResourceLocation criterion,
+            Map<String, String> criterionData,
             int count,
             boolean consume,
             ItemRequirements itemRequirements,
@@ -229,10 +231,50 @@ public record QuestDefinition(
             factTags = factTags == null ? Set.of() : Set.copyOf(factTags);
             factKey = factKey == null ? "" : factKey;
             factValues = factValues == null ? Set.of() : Set.copyOf(factValues);
+            criterionData = criterionData == null ? Map.of() : Map.copyOf(criterionData);
             count = Math.max(1, count);
             itemRequirements = itemRequirements == null ? ItemRequirements.EMPTY : itemRequirements;
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
             tracker = tracker == null ? ObjectiveTracker.EMPTY : tracker;
+        }
+
+        public Objective(
+                String id,
+                ObjectiveType type,
+                boolean optional,
+                ResourceLocation structure,
+                ResourceKey<Level> dimension,
+                BlockPos location,
+                int radius,
+                List<String> pieces,
+                int searchRadius,
+                int discoveryRadius,
+                ResourceLocation item,
+                Set<ResourceLocation> entityTypes,
+                Set<ResourceLocation> entityTags,
+                Set<ResourceLocation> blockTypes,
+                Set<ResourceLocation> blockTags,
+                Set<ResourceLocation> memoryTags,
+                Set<String> giftReactions,
+                Set<VillagerReputationLevel> reputationLevels,
+                Integer minReputation,
+                Integer maxReputation,
+                QuestFactScope factScope,
+                ResourceLocation factQuestId,
+                Set<ResourceLocation> factTags,
+                String factKey,
+                Set<String> factValues,
+                Integer factMin,
+                Integer factMax,
+                int count,
+                boolean consume,
+                ItemRequirements itemRequirements,
+                List<DialogueCondition> conditions,
+                ObjectiveTracker tracker) {
+            this(id, type, optional, structure, dimension, location, radius, pieces, searchRadius, discoveryRadius,
+                    item, entityTypes, entityTags, blockTypes, blockTags, memoryTags, giftReactions,
+                    reputationLevels, minReputation, maxReputation, factScope, factQuestId, factTags, factKey,
+                    factValues, factMin, factMax, null, Map.of(), count, consume, itemRequirements, conditions, tracker);
         }
     }
 
@@ -338,6 +380,7 @@ public record QuestDefinition(
         REPUTATION,
         CHOICE,
         FACT,
+        CRITERION,
         CONDITION;
 
         public static ObjectiveType bySerializedName(String value) {

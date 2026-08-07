@@ -665,6 +665,22 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(related.evaluatedObjectives(), 1, "related event evaluated objective count");
         helper.assertValueEqual(related.matchedObjectives(), 1, "related event matched objective count");
 
+        ResourceLocation crafted = ResourceLocation.fromNamespaceAndPath("test", "crafted");
+        QuestDefinition.Objective criterionObjective = registryCriterionObjective(
+                crafted,
+                Map.of("quality", "fine"));
+        QuestObjectiveEventTrace criterionMismatch = QuestObjectiveRegistry.traceEventMatches(
+                context,
+                List.of(criterionObjective),
+                QuestObjectiveEvent.criterion(crafted, Map.of("quality", "rough"), ItemStack.EMPTY, null));
+        helper.assertValueEqual(criterionMismatch.matchedObjectives(), 0, "criterion match data must be exact");
+        QuestObjectiveEventTrace criterionMatch = QuestObjectiveRegistry.traceEventMatches(
+                context,
+                List.of(criterionObjective),
+                QuestObjectiveEvent.criterion(crafted, Map.of("quality", "fine", "source", "test"), ItemStack.EMPTY, null));
+        helper.assertValueEqual(criterionMatch.evaluatedObjectives(), 1, "criterion event evaluated objective count");
+        helper.assertValueEqual(criterionMatch.matchedObjectives(), 1, "criterion event matched objective count");
+
         helper.succeed();
     }
 
@@ -4741,6 +4757,46 @@ public final class VillagerQuestGameTests {
                 Set.of(),
                 null,
                 null,
+                1,
+                false,
+                QuestDefinition.ItemRequirements.EMPTY,
+                List.of(),
+                QuestDefinition.ObjectiveTracker.EMPTY);
+    }
+
+    private static QuestDefinition.Objective registryCriterionObjective(
+            ResourceLocation criterion,
+            Map<String, String> match) {
+        return new QuestDefinition.Objective(
+                "registry_criterion",
+                QuestDefinition.ObjectiveType.CRITERION,
+                false,
+                null,
+                Level.OVERWORLD,
+                null,
+                8,
+                List.of(),
+                16,
+                8,
+                null,
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                null,
+                null,
+                QuestFactScope.PLAYER,
+                null,
+                Set.of(),
+                "",
+                Set.of(),
+                null,
+                null,
+                criterion,
+                match,
                 1,
                 false,
                 QuestDefinition.ItemRequirements.EMPTY,

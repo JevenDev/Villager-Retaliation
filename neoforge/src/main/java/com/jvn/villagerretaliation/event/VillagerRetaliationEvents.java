@@ -185,6 +185,39 @@ public final class VillagerRetaliationEvents {
     public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             HiredDebugPreviewService.disableForPlayer(player);
+            VillagerQuestService.onCriterion(
+                    player.serverLevel(),
+                    player,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "dimension_changed"),
+                    java.util.Map.of(
+                            "from", event.getFrom().location().toString(),
+                            "to", event.getTo().location().toString()));
+        }
+    }
+
+    public static void onItemCrafted(PlayerEvent.ItemCraftedEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            ItemStack stack = event.getCrafting();
+            VillagerQuestService.onCriterion(
+                    player.serverLevel(),
+                    player,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "crafted"),
+                    java.util.Map.of("item", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()),
+                    stack,
+                    null);
+        }
+    }
+
+    public static void onItemSmelted(PlayerEvent.ItemSmeltedEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            ItemStack stack = event.getSmelting();
+            VillagerQuestService.onCriterion(
+                    player.serverLevel(),
+                    player,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "smelted"),
+                    java.util.Map.of("item", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()),
+                    stack,
+                    null);
         }
     }
 
@@ -265,6 +298,19 @@ public final class VillagerRetaliationEvents {
                 && com.jvn.villagerretaliation.duel.DuelService.isDuelDamage(living, event.getSource())) return;
 
         HiredCombatSkillPracticeService.onDamageDealt(event);
+        if (event.getSource().getEntity() instanceof ServerPlayer player
+                && event.getEntity() instanceof LivingEntity target
+                && event.getNewDamage() > 0.0F) {
+            VillagerQuestService.onCriterion(
+                    player.serverLevel(),
+                    player,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "damage_dealt"),
+                    java.util.Map.of(
+                            "entity", net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString(),
+                            "damage_type", event.getSource().typeHolder().getRegisteredName()),
+                    player.getMainHandItem(),
+                    target);
+        }
         if (event.getEntity() instanceof AbstractVillager villager) {
             VillagerEquipmentDurability.hurtArmor(villager, event.getSource(), event.getOriginalDamage());
         }
@@ -514,6 +560,17 @@ public final class VillagerRetaliationEvents {
         }
         if (!(event.getEntity() instanceof Player player)) {
             return;
+        }
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            VillagerQuestService.onCriterion(
+                    serverPlayer.serverLevel(),
+                    serverPlayer,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "entity_interacted"),
+                    java.util.Map.of(
+                            "entity", net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(event.getTarget().getType()).toString()),
+                    player.getItemInHand(event.getHand()),
+                    event.getTarget() instanceof LivingEntity living ? living : null);
         }
 
         if (event.getTarget() instanceof Villager villager
