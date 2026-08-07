@@ -353,6 +353,7 @@ public record QuestDefinition(
             int maxCompletions,
             CompletionScope completionScope,
             long completionCooldownTicks,
+            long prerequisiteCooldownTicks,
             AbandonmentMode abandonment,
             long abandonmentCooldownTicks,
             boolean consumeOnCompletion,
@@ -369,6 +370,7 @@ public record QuestDefinition(
                 1,
                 CompletionScope.PLAYER,
                 0L,
+                0L,
                 AbandonmentMode.ALLOW_REPICKUP,
                 0L,
                 false,
@@ -383,6 +385,7 @@ public record QuestDefinition(
             maxCompletions = Math.max(0, maxCompletions);
             completionScope = completionScope == null ? CompletionScope.PLAYER : completionScope;
             completionCooldownTicks = Math.max(0L, completionCooldownTicks);
+            prerequisiteCooldownTicks = Math.max(0L, prerequisiteCooldownTicks);
             abandonment = abandonment == null ? AbandonmentMode.ALLOW_REPICKUP : abandonment;
             abandonmentCooldownTicks = Math.max(0L, abandonmentCooldownTicks);
             activeState = activeState == null ? ActiveState.DEFAULT : activeState;

@@ -62,13 +62,39 @@
             "show_progress": true,
             "progress": 0.55
           }
+        },
+        {
+          "id": "bring_bowls",
+          "type": "item_check",
+          "item": "minecraft:bowl",
+          "count": 6,
+          "tracker": {
+            "text": "Bring 6 bowls for the first shared meal.",
+            "complete_text": "The bowls are ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_cooked_cod",
+          "type": "item_check",
+          "item": "minecraft:cooked_cod",
+          "count": 6,
+          "tracker": {
+            "text": "Bring 6 cooked cod to fill the first pots.",
+            "complete_text": "The meal has enough fish.",
+            "show_progress": true,
+            "progress": 0.85
+          }
         }
       ],
       "complete_when": [
         "bring_campfire",
-        "bring_charcoal"
+        "bring_charcoal",
+        "bring_bowls",
+        "bring_cooked_cod"
       ],
-      "next": "fill_pots",
+      "next": "return",
       "dialogue": {
         "offer": {
           "label": "Kindling",
@@ -77,7 +103,7 @@
           "show_for_babies": false,
           "lines": [
             "A village does not become steady because one person eats well. It becomes steady when there is a warm place people trust.",
-            "Bring a campfire and clean charcoal. After that, we can talk about what goes over the flame."
+            "Bring a campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That will give the first fire both a place and a purpose."
           ],
           "responses": [
             {
@@ -98,7 +124,7 @@
           "order": -23,
           "show_for_babies": false,
           "lines": [
-            "The first fire still needs its place and its fuel. A cold hearth is only furniture."
+            "The first fire still needs a campfire, charcoal, bowls, and cooked cod. The list will not change before the hearth is ready."
           ],
           "responses": [
             {
@@ -126,7 +152,7 @@
                   "The first fire is already warming the village."
                 ],
                 "started": [
-                  "Good. Bring a campfire and 6 charcoal. Nothing grand, just the start of somewhere people can gather."
+                  "Good. Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That is the complete list for this hearth."
                 ],
                 "unavailable": [
                   "The hearth is not ready to ask for help right now."
@@ -143,7 +169,7 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Bring 1 campfire and 6 charcoal for the shared hearth."
+                  "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod for the shared hearth."
                 ],
                 "unavailable": [
                   "I do not have that hearth note open right now."
@@ -166,94 +192,7 @@
         }
       ],
       "ui": {
-        "tracker_text": "Bring a campfire and 6 charcoal.",
-        "show_progress": true,
-        "progress": 0.55
-      }
-    },
-    {
-      "id": "fill_pots",
-      "objectives": [
-        {
-          "id": "bring_bowls",
-          "type": "item_check",
-          "item": "minecraft:bowl",
-          "count": 6,
-          "tracker": {
-            "text": "Bring 6 bowls for the first shared meal.",
-            "complete_text": "The bowls are ready.",
-            "show_progress": true,
-            "progress": 0.75
-          }
-        },
-        {
-          "id": "bring_cooked_cod",
-          "type": "item_check",
-          "item": "minecraft:cooked_cod",
-          "count": 6,
-          "tracker": {
-            "text": "Bring 6 cooked cod to fill the first pots.",
-            "complete_text": "The meal has enough fish.",
-            "show_progress": true,
-            "progress": 0.85
-          }
-        }
-      ],
-      "complete_when": [
-        "bring_bowls",
-        "bring_cooked_cod"
-      ],
-      "next": "return",
-      "dialogue": {
-        "reminder": {
-          "label": "About Kindling",
-          "request": "question",
-          "order": -23,
-          "show_for_babies": false,
-          "lines": [
-            "The fire is one thing. The point of it is another. Bring bowls and cooked cod so no one has to eat standing alone."
-          ],
-          "responses": [
-            {
-              "id": "details",
-              "label": "Repeat the meal.",
-              "scene": "reminder_details"
-            },
-            {
-              "id": "leave",
-              "label": "I will gather it.",
-              "scene": "leave"
-            }
-          ]
-        }
-      },
-      "scenes": [
-        {
-          "id": "reminder_details",
-          "actions": [
-            {
-              "type": "quest",
-              "action": "remind",
-              "lines": {
-                "reminder": [
-                  "Bring 6 bowls and 6 cooked cod for the first shared meal."
-                ],
-                "unavailable": [
-                  "The bowls can wait until the first fire is ready."
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "id": "leave",
-          "lines": [
-            "A meal is better when it reaches the quiet people too."
-          ]
-        }
-      ],
-      "ui": {
-        "tracker_text": "Bring 6 bowls and 6 cooked cod.",
+        "tracker_text": "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod.",
         "show_progress": true,
         "progress": 0.85
       }

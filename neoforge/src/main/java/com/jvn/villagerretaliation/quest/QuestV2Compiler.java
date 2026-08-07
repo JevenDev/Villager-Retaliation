@@ -204,6 +204,10 @@ public final class QuestV2Compiler {
         copyIfPresent(availability, rules, "completion_cooldown_ticks");
         copyIfPresent(availability, rules, "completion_cooldown_days");
         copyIfPresent(availability, rules, "completion_cooldown_seconds");
+        copyIfPresent(availability, rules, "prerequisite_cooldown");
+        copyIfPresent(availability, rules, "prerequisite_cooldown_ticks");
+        copyIfPresent(availability, rules, "prerequisite_cooldown_days");
+        copyIfPresent(availability, rules, "prerequisite_cooldown_seconds");
         copyIfPresent(availability, rules, "max_starts");
         copyIfPresent(availability, rules, "max_completions");
         copyIfPresent(availability, rules, "completion_scope");

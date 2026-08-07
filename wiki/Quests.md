@@ -237,6 +237,8 @@ Do not combine direct transition fields with a transition action on the same res
 
 ## Prerequisites And Restart Rules
 
+Use `prerequisite_cooldown` (or its `_ticks`, `_seconds`, and `_days` forms) when a follow-up quest should wait after its prerequisites are completed. The cooldown is checked against every prerequisite, so the quest unlocks only after the most recently completed prerequisite has aged past the configured duration.
+
 Put every required quest in `availability.prerequisites`. The list is ordered for journal/debug presentation and every entry must be completed. `metadata.parent` remains a singular compatibility and organization field for older content.
 
 ```json

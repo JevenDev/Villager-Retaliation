@@ -37,6 +37,7 @@ public final class QuestDebugFormatter {
                 + " max_completions=" + rules.maxCompletions()
                 + " completion_scope=" + enumName(rules.completionScope())
                 + " completion_cooldown_ticks=" + rules.completionCooldownTicks()
+                + " prerequisite_cooldown_ticks=" + rules.prerequisiteCooldownTicks()
                 + " locked_to_villager=" + rules.lockedToVillager()
                 + " cross_villager=" + rules.crossVillagerCompatible();
     }

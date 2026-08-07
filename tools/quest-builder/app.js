@@ -449,6 +449,7 @@
           ${checkboxField({ label: "Repeatable", detail: "Allow players to start this quest again.", checked: Boolean(availability.repeatable), field: "availability.repeatable" })}
           ${numberField({ label: "Maximum completions", value: availability.max_completions ?? 1, field: "availability.max_completions", min: 0 })}
           ${field({ label: "Completion cooldown", value: availability.completion_cooldown || "", field: "availability.completion_cooldown", placeholder: "1d", help: "Examples: 30m, 1d. Leave blank for no cooldown." })}
+          ${field({ label: "Prerequisite cooldown", value: availability.prerequisite_cooldown || "", field: "availability.prerequisite_cooldown", placeholder: "1d", help: "Wait this long after all prerequisite quests are completed before offering this quest." })}
           ${field({ label: "Exclusive group", value: availability.exclusive_group || "", field: "availability.exclusive_group", placeholder: `${project.namespace}:village_choice`, help: "Optional. Prevents another quest in the same group from being active." })}
         </div>
       </section>

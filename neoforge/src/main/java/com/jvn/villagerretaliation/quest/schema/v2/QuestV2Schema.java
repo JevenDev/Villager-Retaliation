@@ -139,6 +139,10 @@ public final class QuestV2Schema {
         properties.add("completion_cooldown_ticks", integer());
         properties.add("completion_cooldown_days", integer());
         properties.add("completion_cooldown_seconds", integer());
+        properties.add("prerequisite_cooldown", string());
+        properties.add("prerequisite_cooldown_ticks", integer());
+        properties.add("prerequisite_cooldown_days", integer());
+        properties.add("prerequisite_cooldown_seconds", integer());
         properties.add("exclusive_group", resourceLocation());
         properties.add("repeatable", booleanSchema());
         properties.add("max_starts", integer());

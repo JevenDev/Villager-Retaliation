@@ -856,7 +856,7 @@ const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availa
 const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "author", "version"]);
 const questV2TargetKeys = new Set(["structure", "dimension", "pieces", "search_radius", "discovery_radius", "proof_item"]);
 const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "filters", "data"]);
-const questV2AvailabilityKeys = new Set(["conditions", "active", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "exclusive_group", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
+const questV2AvailabilityKeys = new Set(["conditions", "active", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
 const questV2LifecycleKeys = new Set(["on_start", "on_complete", "on_abandon", "on_expire", "on_fail", "on_stage_enter", "on_stage_exit", "dialogue"]);
 const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stage", "scene", "complete", "abandon", "fail"]);
 const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
@@ -1621,6 +1621,10 @@ function checkQuestV2Availability(file, availability, pointer, location, questId
   checkQuestV2OptionalInteger(file, availability, pointer, location, "completion_cooldown_ticks", { min: 0 });
   checkQuestV2OptionalInteger(file, availability, pointer, location, "completion_cooldown_days", { min: 0 });
   checkQuestV2OptionalInteger(file, availability, pointer, location, "completion_cooldown_seconds", { min: 0 });
+  checkQuestV2OptionalString(file, availability, pointer, location, "prerequisite_cooldown");
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "prerequisite_cooldown_ticks", { min: 0 });
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "prerequisite_cooldown_days", { min: 0 });
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "prerequisite_cooldown_seconds", { min: 0 });
   checkQuestV2OptionalString(file, availability, pointer, location, "exclusive_group");
   checkQuestV2OptionalBoolean(file, availability, pointer, location, "repeatable");
   checkQuestV2OptionalInteger(file, availability, pointer, location, "max_starts", { min: 0 });

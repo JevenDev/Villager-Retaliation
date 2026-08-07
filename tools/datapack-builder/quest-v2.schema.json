@@ -203,6 +203,18 @@
         "completion_cooldown_seconds": {
           "type": "integer"
         },
+        "prerequisite_cooldown": {
+          "type": "string"
+        },
+        "prerequisite_cooldown_ticks": {
+          "type": "integer"
+        },
+        "prerequisite_cooldown_days": {
+          "type": "integer"
+        },
+        "prerequisite_cooldown_seconds": {
+          "type": "integer"
+        },
         "exclusive_group": {
           "type": "string",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"

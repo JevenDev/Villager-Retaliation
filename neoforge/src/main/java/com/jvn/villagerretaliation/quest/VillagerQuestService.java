@@ -1186,7 +1186,15 @@ public final class VillagerQuestService {
                 continue;
             }
             VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            boolean migratedStage = migrateRetiredHearthboundStage(definition, progress);
+            if (migratedStage) {
+                changed = true;
+                progressNotice = true;
+            }
             DialogueContext questContext = contextForStartedVillager(level, player, progress).orElse(null);
+            if (migratedStage && questContext != null) {
+                syncQuestStageFact(questContext, definition, progress.currentStage());
+            }
             if (expireQuestIfNeeded(player, definition, progress, questContext)) {
                 changed = true;
                 progressNotice = true;
@@ -1260,6 +1268,19 @@ public final class VillagerQuestService {
         } else if (player.tickCount % (QUEST_PROGRESS_SCAN_INTERVAL_TICKS * 2) == 0) {
             sendTrackerSync(player, false);
         }
+    }
+
+    public static boolean migrateRetiredHearthboundStage(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (definition == null || progress == null) {
+            return false;
+        }
+        String stage = progress.currentStage();
+        boolean retiredStage =
+                (definition.id().equals(VillagerRetaliation.id("first_fire")) && stage.equals("fill_pots"))
+                        || (definition.id().equals(VillagerRetaliation.id("shared_table")) && stage.equals("sweeten"));
+        return retiredStage && progress.setCurrentStage(definition.entryStage());
     }
 
     private static boolean hasActiveQuestItemTracking(
@@ -2947,6 +2968,13 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress prerequisiteProgress =
                     VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), prerequisite.id());
             if (!matchesState(context, prerequisite, prerequisiteProgress, "completed")) {
+                return false;
+            }
+            if (prerequisiteProgress == null
+                    || !cooldownElapsed(
+                            context.level().getGameTime(),
+                            prerequisiteProgress.completedGameTime(),
+                            definition.rules().prerequisiteCooldownTicks())) {
                 return false;
             }
         }
