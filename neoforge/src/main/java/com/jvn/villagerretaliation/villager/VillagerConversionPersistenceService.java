@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.mood.VillagerMoodSavedData;
+import com.jvn.villagerretaliation.party.PartySavedData;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import java.util.Set;
@@ -119,5 +120,6 @@ public final class VillagerConversionPersistenceService {
         VillagerMoodSavedData.get(level).transferVillagerMood(sourceVillagerId, targetVillagerId);
         AssignedStorageSavedData.get(level).transferVillagerAssignments(sourceVillagerId, targetVillagerId);
         VillagerQuestSavedData.get(level).transferVillagerIdentity(sourceVillagerId, targetVillagerId);
+        PartySavedData.get(level).transferSharedQuestProvider(sourceVillagerId, targetVillagerId);
     }
 }

@@ -114,6 +114,24 @@ public final class PartySavedData extends SavedData {
         return this.partyRecords;
     }
 
+    public int transferSharedQuestProvider(UUID sourceVillagerId, UUID targetVillagerId) {
+        if (sourceVillagerId == null || targetVillagerId == null || sourceVillagerId.equals(targetVillagerId)) {
+            return 0;
+        }
+        int changed = 0;
+        for (PartyRecord party : this.partyRecords) {
+            for (PartySharedQuestRecord sharedQuest : party.sharedQuests()) {
+                if (sharedQuest.replaceSourceVillagerId(sourceVillagerId, targetVillagerId)) {
+                    changed++;
+                }
+            }
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public List<PartyInvitation> invitationsFor(UUID targetId, long gameTime) {
         pruneExpiredInvitations(gameTime);
         return this.invitationsById.values().stream()
