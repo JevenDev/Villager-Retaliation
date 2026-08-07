@@ -132,6 +132,28 @@ public final class HiredVillagerContractService {
                 .flatMap(HireContract::owner);
     }
 
+    public static Optional<UUID> transferOwnership(ServerLevel level, Villager villager, UUID newOwnerId) {
+        if (level == null || villager == null || newOwnerId == null) {
+            return Optional.empty();
+        }
+        HireContract contract = HireContractStore.load(villager)
+                .filter(HireContract::isActiveOrAwaitingAutoPayment)
+                .orElse(null);
+        UUID currentOwnerId = contract == null ? null : contract.owner().orElse(null);
+        if (currentOwnerId == null) {
+            return Optional.empty();
+        }
+        if (!currentOwnerId.equals(newOwnerId)) {
+            contract.owner(newOwnerId);
+            HireContractStore.save(villager, contract);
+            VillagerAssignmentStore.transferOwner(villager, currentOwnerId, newOwnerId);
+            HireContractAssignmentAdapter.synchronize(level, villager);
+            HiredWorkSession.invalidate(villager);
+            HiredVillagerIndex.update(level, villager);
+        }
+        return Optional.of(currentOwnerId);
+    }
+
     public static boolean hasBlockingJobInventoryOverflow(ServerLevel level, Villager villager) {
         return activeOverflowClaim(level, villager).isPresent();
     }

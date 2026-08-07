@@ -65,6 +65,21 @@ public final class PartyActionHandler {
         removePlayer(leader, targetId);
     }
 
+    public static void promoteLeaderCommand(ServerPlayer leader, UUID targetId) {
+        PartyRecord party = PartyService.getPartyForPlayer(leader.serverLevel(), leader.getUUID()).orElse(null);
+        PartyService.PartyResult result = PartyService.promoteLeader(leader, targetId);
+        notice(leader, result.messageKey());
+        if (!result.success() || party == null) {
+            return;
+        }
+        ServerPlayer promoted = leader.getServer().getPlayerList().getPlayer(targetId);
+        if (promoted != null) {
+            notice(promoted, "villagerretaliation.party.leader_promoted.self");
+        }
+        PartySyncService.syncParty(leader.getServer(), party.id());
+        refreshPartyTrackers(leader, party);
+    }
+
     public static void disbandCommand(ServerPlayer leader) {
         disband(leader);
     }

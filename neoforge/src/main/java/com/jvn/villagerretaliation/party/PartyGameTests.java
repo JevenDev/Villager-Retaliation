@@ -14,7 +14,9 @@ import com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.debug.VillagerOwnershipTransferService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentStore;
@@ -23,6 +25,9 @@ import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
+import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData;
+import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization;
@@ -112,6 +117,120 @@ public final class PartyGameTests {
     }
 
     private PartyGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void partyLeaderPromotionPersistsAndRetainsMembership(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("promotion_leader"));
+        ServerPlayer member = fakePlayer(level, uniqueName("promotion_member"));
+        PartySavedData data = PartySavedData.get(level);
+        PartyRecord party = data.createParty(leader.getUUID(), level.getGameTime());
+        data.addPlayer(party, member.getUUID());
+
+        PartyService.PartyResult result = PartyService.promoteLeader(leader, member.getUUID());
+        helper.assertTrue(result.success(), "a leader should be able to promote a party member");
+        helper.assertValueEqual(party.leaderId(), member.getUUID(), "promoted member should become leader");
+        helper.assertTrue(party.playerIds().contains(leader.getUUID()),
+                "the previous leader should remain a party member");
+        PartyRecord loaded = PartyRecord.load(party.save());
+        helper.assertValueEqual(loaded.leaderId(), member.getUUID(),
+                "promoted leadership should survive serialization");
+        helper.assertTrue(loaded.playerIds().contains(leader.getUUID()),
+                "previous leader membership should survive serialization");
+
+        PartyService.deleteParty(level, party.id());
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void debugTransferMovesPartyVillagerAndAssignedStorage(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_transfer_source"));
+        ServerPlayer newOwner = fakePlayer(level, uniqueName("party_transfer_target"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        PartySavedData data = PartySavedData.get(level);
+        PartyRecord sourceParty = data.createParty(leader.getUUID(), level.getGameTime());
+        data.addVillager(sourceParty,
+                villagerRecord(villager.getUUID(), leader.getUUID(), 0, level.getGameTime()));
+        BlockPos storagePos = helper.absolutePos(new BlockPos(3, 2, 2));
+        AssignedStorageSavedData.get(level).assign(new AssignedContainerRecord(
+                level.dimension(),
+                storagePos,
+                villager.getUUID(),
+                leader.getUUID(),
+                AssignedStorageService.GENERAL_PURPOSE,
+                0,
+                "valid"));
+
+        VillagerOwnershipTransferService.TransferResult result =
+                VillagerOwnershipTransferService.transfer(level, villager, newOwner.getUUID());
+        helper.assertTrue(result.success(), "party villager ownership transfer should succeed");
+        helper.assertValueEqual(result.type(), VillagerOwnershipTransferService.OwnershipType.PARTY,
+                "party ownership transfer type");
+        PartyRecord targetParty = PartyService.getPartyForPlayer(level, newOwner.getUUID()).orElse(null);
+        helper.assertTrue(targetParty != null, "the target player should receive a party");
+        helper.assertTrue(PartyService.getPartyForVillager(level, villager.getUUID())
+                        .filter(candidate -> candidate.id().equals(targetParty.id())).isPresent(),
+                "the villager should move into the target player's party");
+        helper.assertValueEqual(targetParty.villager(villager.getUUID()).recruiterId(), newOwner.getUUID(),
+                "party recruiter ownership should transfer");
+        helper.assertValueEqual(AssignedStorageSavedData.get(level).assignedTo(villager.getUUID())
+                        .getFirst().hirerId(),
+                newOwner.getUUID(),
+                "assigned storage ownership should transfer with the party villager");
+
+        PartyService.deleteParty(level, sourceParty.id());
+        PartyService.deleteParty(level, targetParty.id());
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void debugTransferPreservesHiredWorkAndStorageAssignments(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, uniqueName("hire_transfer_source"));
+        ServerPlayer newOwner = fakePlayer(level, uniqueName("hire_transfer_target"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        helper.assertTrue(HiredVillagerContractService.startHireContract(level, villager, hirer, 2, 64),
+                "hired ownership transfer setup should create a contract");
+        CompoundTag workState = HiredWorkStateStore.state(villager);
+        BlockPos workCenter = helper.absolutePos(new BlockPos(5, 2, 5));
+        workState.putLong("WorkCenterPos", workCenter.asLong());
+        workState.putLong("WorkMinPos", workCenter.offset(-2, -1, -2).asLong());
+        workState.putLong("WorkMaxPos", workCenter.offset(2, 1, 2).asLong());
+        workState.putBoolean("WorkAreaAssigned", true);
+        BlockPos storagePos = helper.absolutePos(new BlockPos(3, 2, 2));
+        AssignedStorageSavedData.get(level).assign(new AssignedContainerRecord(
+                level.dimension(),
+                storagePos,
+                villager.getUUID(),
+                hirer.getUUID(),
+                AssignedStorageService.GENERAL_PURPOSE,
+                0,
+                "valid"));
+
+        VillagerOwnershipTransferService.TransferResult result =
+                VillagerOwnershipTransferService.transfer(level, villager, newOwner.getUUID());
+        helper.assertTrue(result.success(), "hired villager ownership transfer should succeed");
+        helper.assertValueEqual(result.type(), VillagerOwnershipTransferService.OwnershipType.HIRED,
+                "hired ownership transfer type");
+        helper.assertValueEqual(HiredVillagerContractService.currentContractHirer(villager).orElse(null),
+                newOwner.getUUID(),
+                "contract hirer should transfer");
+        helper.assertTrue(VillagerAssignmentStore.snapshot(villager).ownedBy(newOwner.getUUID()),
+                "canonical command ownership should transfer");
+        helper.assertValueEqual(HiredWorkStateStore.state(villager).getLong("WorkCenterPos"),
+                workCenter.asLong(),
+                "assigned job-site center should remain unchanged");
+        helper.assertValueEqual(AssignedStorageSavedData.get(level).assignedTo(villager.getUUID())
+                        .getFirst().hirerId(),
+                newOwner.getUUID(),
+                "assigned storage hirer should transfer");
+
+        AssignedStorageSavedData.get(level).removeAssignedTo(villager.getUUID());
+        villager.discard();
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE)

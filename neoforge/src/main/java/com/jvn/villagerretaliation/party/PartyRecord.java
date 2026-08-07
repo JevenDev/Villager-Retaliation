@@ -35,7 +35,7 @@ public final class PartyRecord {
     private static final String TAG_PARTY = "Party";
 
     private final UUID id;
-    private final UUID leaderId;
+    private UUID leaderId;
     private final long createdGameTime;
     private final List<UUID> playerIds;
     private final Set<UUID> adminPlayerIds;
@@ -124,6 +124,17 @@ public final class PartyRecord {
             return false;
         }
         return enabled ? this.adminPlayerIds.add(playerId) : this.adminPlayerIds.remove(playerId);
+    }
+
+    boolean promoteLeader(UUID playerId) {
+        if (playerId == null || this.leaderId.equals(playerId) || !this.playerIds.contains(playerId)) {
+            return false;
+        }
+        this.leaderId = playerId;
+        this.adminPlayerIds.remove(playerId);
+        this.playerIds.remove(playerId);
+        this.playerIds.addFirst(playerId);
+        return true;
     }
 
     public List<PartyVillagerRecord> villagers() {

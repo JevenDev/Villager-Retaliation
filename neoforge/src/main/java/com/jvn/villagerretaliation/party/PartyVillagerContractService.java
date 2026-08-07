@@ -607,6 +607,32 @@ public final class PartyVillagerContractService {
         }
     }
 
+    static void refreshCommandOwnership(MinecraftServer server, PartyRecord party) {
+        if (server == null || party == null) {
+            return;
+        }
+        for (PartyVillagerRecord record : party.villagers()) {
+            Villager villager = VillagerEntityResolver.loaded(server, record.villagerId());
+            if (villager != null && villager.level() instanceof ServerLevel level) {
+                attachEntityState(level, villager, party.id(), record);
+                applyCommandState(level, villager, party, record);
+            }
+        }
+    }
+
+    public static void refreshTransferredOwnership(ServerLevel level, Villager villager) {
+        if (level == null || villager == null) {
+            return;
+        }
+        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+        if (record != null) {
+            attachEntityState(level, villager, party.id(), record);
+            applyCommandState(level, villager, party, record);
+            closeJobInventories(level.getServer(), villager.getId());
+        }
+    }
+
     private static void cleanupEntity(Villager villager) {
         VillagerRecruitmentService.clearPartyFollowing(villager);
         villager.getPersistentData().remove(PARTY_ID_TAG);
