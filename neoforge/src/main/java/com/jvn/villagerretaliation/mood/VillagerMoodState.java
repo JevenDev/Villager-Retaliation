@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.mood;
 
-import java.util.Objects;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -119,14 +118,5 @@ public record VillagerMoodState(
                 : startedGameTime;
         long decayTicks = tag.contains(TAG_DECAY_TICKS, Tag.TAG_LONG) ? tag.getLong(TAG_DECAY_TICKS) : DEFAULT_DECAY_TICKS;
         return new VillagerMoodState(primaryMood, intensity, cause, sourcePlayerId, sourceEntityId, startedGameTime, lastUpdatedGameTime, decayTicks);
-    }
-
-    public boolean sameVisibleState(VillagerMoodState other) {
-        return other != null
-                && this.primaryMood == other.primaryMood
-                && this.intensity == other.intensity
-                && Objects.equals(this.causeTag, other.causeTag)
-                && Objects.equals(this.sourcePlayerId, other.sourcePlayerId)
-                && Objects.equals(this.sourceEntityId, other.sourceEntityId);
     }
 }

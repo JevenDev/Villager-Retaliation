@@ -93,11 +93,9 @@ public final class HireContract {
     public boolean oneOffBuilderJob() { return tag.getBoolean(ONE_OFF_BUILDER_JOB); }
     public void oneOffBuilderJob(boolean value) { tag.putBoolean(ONE_OFF_BUILDER_JOB, value); }
     public long lastAutoPaymentAttemptGameTime() { return tag.getLong(LAST_AUTO_PAYMENT_ATTEMPT); }
-    public boolean hasLastAutoPaymentAttemptGameTime() { return tag.contains(LAST_AUTO_PAYMENT_ATTEMPT, Tag.TAG_LONG); }
     public void lastAutoPaymentAttemptGameTime(long value) { tag.putLong(LAST_AUTO_PAYMENT_ATTEMPT, value); }
     public long awaitingAutoPaymentStartGameTime() { return tag.getLong(AWAITING_AUTO_PAYMENT_START); }
     public void awaitingAutoPaymentStartGameTime(long value) { tag.putLong(AWAITING_AUTO_PAYMENT_START, value); }
-    public void clearAwaitingAutoPaymentStartGameTime() { tag.remove(AWAITING_AUTO_PAYMENT_START); }
     public HiredVillagerRole role() { return HiredVillagerRole.bySerializedName(tag.getString(ROLE)); }
     public void role(HiredVillagerRole value) { if (value == null) tag.remove(ROLE); else tag.putString(ROLE, value.serializedName()); }
     public Status status() { return Status.fromSerializedName(tag.getString(STATUS)); }

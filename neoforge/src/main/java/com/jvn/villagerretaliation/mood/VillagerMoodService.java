@@ -68,13 +68,6 @@ public final class VillagerMoodService {
         data.put(villager.getUUID(), updated);
     }
 
-    public static void clearMood(ServerLevel level, AbstractVillager villager) {
-        if (level == null || villager == null) {
-            return;
-        }
-        VillagerMoodSavedData.get(level).put(villager.getUUID(), VillagerMoodState.neutral(level.getGameTime()));
-    }
-
     public static void recordGift(
             ServerLevel level,
             Villager villager,

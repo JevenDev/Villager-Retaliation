@@ -26,10 +26,6 @@ public record ItemFilterModeChangePayload(int menuSlotIndex, int modeId) impleme
         };
     }
 
-    public boolean isToggle() {
-        return this.modeId == -1;
-    }
-
     private static void encode(RegistryFriendlyByteBuf buffer, ItemFilterModeChangePayload payload) {
         buffer.writeInt(payload.menuSlotIndex());
         buffer.writeByte(payload.modeId());

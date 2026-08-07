@@ -164,18 +164,6 @@ public final class HiredVillagerContractService {
                 .isPresent();
     }
 
-    public static int getJobInventoryOverflowRemainingDays(ServerLevel level, Villager villager) {
-        return activeOverflowClaim(level, villager)
-                .map(claim -> HireOverflowClaimService.remainingDays(level, claim))
-                .orElse(0);
-    }
-
-    public static int getJobInventoryOverflowItemCount(ServerLevel level, Villager villager) {
-        return activeOverflowClaim(level, villager)
-                .map(claim -> HireOverflowClaimService.itemCount(villager, claim))
-                .orElse(0);
-    }
-
     public static void takeOverJobInventoryOverflow(Villager villager) {
         if (villager != null) {
             clearOverflowClaim(villager);

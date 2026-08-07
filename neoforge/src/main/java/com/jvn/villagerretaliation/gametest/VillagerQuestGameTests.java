@@ -6140,15 +6140,6 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(missing.isEmpty(), label + " missing " + missing + "; loaded " + actual);
     }
 
-    @SafeVarargs
-    private static <K, V> Map<K, V> orderedMap(Map.Entry<K, V>... entries) {
-        Map<K, V> map = new LinkedHashMap<>();
-        for (Map.Entry<K, V> entry : entries) {
-            map.put(entry.getKey(), entry.getValue());
-        }
-        return Map.copyOf(map);
-    }
-
     private static void configureGameTestStructures() {
         String configured = System.getProperty("villagerretaliation.gameteststructures");
         if (configured != null && !configured.isBlank()) {
