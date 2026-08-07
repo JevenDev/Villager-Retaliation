@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -262,10 +263,55 @@ final class VillagerQuestHudRenderer {
                 y = addNotificationLines(lines, font, part, wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
             }
         }
+        String runtime = runtimeJournalLine(entry);
+        if (!runtime.isBlank()) {
+            y = addNotificationLines(lines, font, runtime, wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
+        }
+        String waypoint = waypointLine(entry);
+        if (!waypoint.isBlank()) {
+            y = addNotificationLines(lines, font, waypoint, wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
+        }
         if (!entry.questItems().isEmpty()) {
             addNotificationLines(lines, font, questItemsLine(entry), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, 0);
         }
         return lines;
+    }
+
+    private static String runtimeJournalLine(QuestTrackerSyncPayload.Entry entry) {
+        Minecraft minecraft = Minecraft.getInstance();
+        long now = minecraft.level == null ? 0L : minecraft.level.getGameTime();
+        long expiresAt = entry.journal().expiresAtGameTime();
+        if (expiresAt <= 0L || !"active".equalsIgnoreCase(entry.state())) {
+            return "";
+        }
+        return Component.translatable("villagerretaliation.gui.quest_journal.expires", formatDuration(Math.max(0L, expiresAt - now))).getString();
+    }
+
+    private static String waypointLine(QuestTrackerSyncPayload.Entry entry) {
+        QuestTrackerSyncPayload.Waypoint waypoint = entry.journal().waypoint();
+        if (!waypoint.present()) {
+            return "";
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        String distance = "";
+        if (minecraft.player != null && minecraft.level != null
+                && minecraft.level.dimension().location().toString().equals(waypoint.dimension())) {
+            int dx = waypoint.x() - minecraft.player.blockPosition().getX();
+            int dz = waypoint.z() - minecraft.player.blockPosition().getZ();
+            distance = " • " + Math.round(Math.sqrt((double) dx * dx + (double) dz * dz)) + " blocks";
+        }
+        return Component.translatable("villagerretaliation.gui.quest_journal.waypoint",
+                waypoint.x(), waypoint.y(), waypoint.z(), waypoint.dimension(), distance).getString();
+    }
+
+    private static String formatDuration(long ticks) {
+        long seconds = Math.max(0L, ticks / 20L);
+        long hours = seconds / 3600L;
+        long minutes = (seconds % 3600L) / 60L;
+        long remainder = seconds % 60L;
+        if (hours > 0L) return hours + "h " + minutes + "m";
+        if (minutes > 0L) return minutes + "m " + remainder + "s";
+        return remainder + "s";
     }
 
     private static List<String> visibleMetadataParts(QuestTrackerSyncPayload.Entry entry) {

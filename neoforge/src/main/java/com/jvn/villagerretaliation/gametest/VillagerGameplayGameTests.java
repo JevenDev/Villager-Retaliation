@@ -757,7 +757,11 @@ public final class VillagerGameplayGameTests {
 
         zombie.setTarget(villager);
         zombie.setNoAi(true);
+        // The GameTest harness does not consistently emit NeoForge entity pre-tick events for no-AI fixtures.
+        // Prime the same server hook used in production, then verify its throttled follow-up behavior.
+        VillagerDownedService.onVillagerTickPre(villager);
         helper.runAfterDelay(25, () -> {
+            VillagerDownedService.onVillagerTickPre(villager);
             helper.assertTrue(zombie.getTarget() == null, "periodic fallback should clear hostile retargeting");
             helper.assertTrue(villager.isNoAi(), "downed villager should remain AI-suspended");
             helper.assertFalse(villager.canPickUpLoot(), "downed villager should not pick up items");

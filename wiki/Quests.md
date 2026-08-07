@@ -211,6 +211,24 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 
 `metadata.tags` classifies quests for journal filters, quest-board pools, authoring tools, diagnostics, and content tests. Tags describe a quest; they do not replace authoritative fields such as `availability.repeatable`, `completion_scope`, `ui.hidden`, `ui.priority`, provider filters, or objective definitions.
 
+## Journal Presentation
+
+Root `ui` fields are live journal data, not authoring-only hints:
+
+```json
+"ui": {
+  "icon": "minecraft:filled_map",
+  "color": "#d4a35a",
+  "priority": 25,
+  "hidden": false,
+  "tracker_text": "Survey the old road."
+}
+```
+
+`priority` sorts otherwise equivalent journal entries, `color` tints their titles, and `hidden` suppresses the quest from the journal and HUD. The synchronized journal also carries `metadata.questline` and `metadata.tags`; press `/` in the journal to search titles, descriptions, objectives, questlines, and tags.
+
+Active quests with `availability.expiration.after_ticks` show a live remaining-time countdown. A located structure or location objective publishes its saved dimension and coordinates as a waypoint in both the selected journal entry and tracked HUD, including live distance while the player is in the same dimension. Completed journal-history entries show how long ago that run completed.
+
 ## Quest Pools
 
 Quest pools turn quest tags or explicit quest IDs into bounded rotating offers. Put pool resources under `data/<namespace>/quest_pools/`. A pool only controls quests that match one of its selectors; quests not claimed by any pool keep their normal availability.

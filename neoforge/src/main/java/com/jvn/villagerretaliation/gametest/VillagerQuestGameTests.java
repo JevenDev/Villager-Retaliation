@@ -1105,6 +1105,22 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(
                 QuestTrackerPresenter.syncSignature(List.of(entry), quest.id()).contains(entry.questId()),
                 "presenter signature omitted quest id");
+        QuestTrackerSyncPayload.Journal journal = new QuestTrackerSyncPayload.Journal(
+                "lost_civilization",
+                List.of("story", "exploration"),
+                "minecraft:filled_map",
+                "#d4a35a",
+                25,
+                false,
+                1242L,
+                -1L,
+                new QuestTrackerSyncPayload.Waypoint("minecraft:overworld", 120, 70, -40));
+        QuestTrackerSyncPayload.Entry journalEntry = entry.withJournal(journal);
+        helper.assertValueEqual(journalEntry.journal().priority(), 25, "journal priority");
+        helper.assertTrue(journalEntry.journal().waypoint().present(), "journal waypoint");
+        helper.assertFalse(
+                QuestTrackerPresenter.entrySignature(journalEntry).equals(QuestTrackerPresenter.entrySignature(entry)),
+                "journal data must participate in tracker sync signatures");
         QuestDefinition childQuest = quest(helper, VillagerRetaliation.id("standing_watch"));
         List<QuestTrackerSyncPayload.Prerequisite> unmetPrerequisites = QuestTrackerPresenter.prerequisites(
                 null,
@@ -1139,7 +1155,7 @@ public final class VillagerQuestGameTests {
                 entry.prerequisites(),
                 entry.objectiveSteps(),
                 false,
-                false);
+                false).withJournal(entry.journal());
         helper.assertValueEqual(
                 QuestTrackerPresenter.questProgressSignature(movedIssuerEntry),
                 QuestTrackerPresenter.questProgressSignature(entry),
@@ -2271,6 +2287,11 @@ public final class VillagerQuestGameTests {
         JsonObject rewards = root.getAsJsonObject("rewards");
         rewards.addProperty("memory_event", "villagerretaliation:test_memory");
         rewards.addProperty("memory_scope", "village");
+        JsonObject questUi = root.getAsJsonObject("ui");
+        questUi.addProperty("icon", "minecraft:filled_map");
+        questUi.addProperty("color", "#d4a35a");
+        questUi.addProperty("priority", 25);
+        questUi.addProperty("hidden", true);
 
         ResourceLocation location = VillagerRetaliation.id("quests/v2_parity_fixture.json");
         QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
@@ -2318,6 +2339,10 @@ public final class VillagerQuestGameTests {
                 definition.objectives().getFirst().tracker().completeText(),
                 "Route chosen.",
                 "v2 objective completion tracker text");
+        helper.assertValueEqual(definition.tracker().icon(), ResourceLocation.withDefaultNamespace("filled_map"), "v2 journal icon");
+        helper.assertValueEqual(definition.tracker().color(), "#d4a35a", "v2 journal color");
+        helper.assertValueEqual(definition.tracker().priority(), 25, "v2 journal priority");
+        helper.assertTrue(definition.tracker().hidden(), "v2 journal hidden flag");
         helper.assertValueEqual(
                 definition.rewards().memoryScope(),
                 com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.VILLAGE,
@@ -3583,7 +3608,9 @@ public final class VillagerQuestGameTests {
                     DialogueTreeService.responseOptionId(branch.treeId(), "blocked"));
             progress = data.get(player.getUUID(), branch.quest().id());
             helper.assertValueEqual(progress.currentStage(), "choose", "v2 required failed action allowed transition");
-            helper.assertTrue(progress.choiceHistory().isEmpty(), "v2 blocked transition recorded choice history");
+            helper.assertTrue(
+                    progress.choiceHistory().isEmpty(),
+                    "v2 blocked transition recorded choice history: " + progress.choiceHistory());
 
             started = VillagerQuestService.debugStartQuest(player, villager, branch.quest().id(), true);
             helper.assertTrue(started.started(), "v2 branch transition quest did not restart for beta path");
@@ -4034,9 +4061,8 @@ public final class VillagerQuestGameTests {
                 bounded.progress(playerId).size(),
                 VillagerQuestSavedData.MAX_QUEST_RECORDS_PER_PLAYER,
                 "per-player terminal quest record cap");
-        helper.assertValueEqual(
-                bounded.get(playerId, VillagerRetaliation.id("bounded_terminal_0")),
-                null,
+        helper.assertTrue(
+                bounded.get(playerId, VillagerRetaliation.id("bounded_terminal_0")) == null,
                 "oldest terminal quest record should be evicted first");
         helper.succeed();
     }

@@ -1334,7 +1334,11 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readString(tracker, "title"),
                 DatapackJsonReader.readString(tracker, "title_key"),
                 steps,
-                readStringMap(DatapackJsonReader.readObject(tracker, "metadata"))
+                readStringMap(DatapackJsonReader.readObject(tracker, "metadata")),
+                DatapackJsonReader.readResourceLocation(tracker, "icon").orElse(null),
+                DatapackJsonReader.readString(tracker, "color"),
+                DatapackJsonReader.readInt(tracker, "priority", 0),
+                DatapackJsonReader.readBoolean(tracker, "hidden", false)
         );
     }
 

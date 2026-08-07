@@ -16,6 +16,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
     public static final int MAX_REWARD_PREVIEWS = 8;
     public static final int MAX_PREREQUISITES = 8;
     public static final int MAX_OBJECTIVE_STEPS = 24;
+    public static final int MAX_JOURNAL_TAGS = 16;
     private static final int MAX_QUEST_ID_LENGTH = 128;
     private static final int MAX_TITLE_LENGTH = 128;
     private static final int MAX_TEXT_LENGTH = 256;
@@ -28,6 +29,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
     private static final int MAX_REWARD_KIND_LENGTH = 32;
     private static final int MAX_REWARD_LABEL_LENGTH = 160;
     private static final int MAX_PREREQUISITE_LABEL_LENGTH = 160;
+    private static final int MAX_JOURNAL_VALUE_LENGTH = 128;
     public static final Type<QuestTrackerSyncPayload> TYPE = VillagerPayloads.type("quest_tracker_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, QuestTrackerSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(QuestTrackerSyncPayload::encode, QuestTrackerSyncPayload::decode);
@@ -108,6 +110,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             }
             buffer.writeBoolean(entry.questUpdate());
             buffer.writeBoolean(entry.questAvailable());
+            writeJournal(buffer, entry.journal());
         }
         buffer.writeVarInt(Math.min(MAX_TRACKED_QUESTS, payload.trackedQuestIds().size()));
         for (String questId : payload.trackedQuestIds()) {
@@ -137,7 +140,8 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     readPrerequisites(buffer),
                     readObjectiveSteps(buffer),
                     buffer.readBoolean(),
-                    buffer.readBoolean()
+                    buffer.readBoolean(),
+                    readJournal(buffer)
             );
             entries.add(entry);
         }
@@ -205,6 +209,46 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
         return objectiveSteps;
     }
 
+    private static void writeJournal(RegistryFriendlyByteBuf buffer, Journal journal) {
+        buffer.writeUtf(journal.questline(), MAX_JOURNAL_VALUE_LENGTH);
+        buffer.writeVarInt(Math.min(MAX_JOURNAL_TAGS, journal.tags().size()));
+        for (String tag : journal.tags()) {
+            buffer.writeUtf(tag, MAX_JOURNAL_VALUE_LENGTH);
+        }
+        buffer.writeUtf(journal.icon(), MAX_JOURNAL_VALUE_LENGTH);
+        buffer.writeUtf(journal.color(), MAX_JOURNAL_VALUE_LENGTH);
+        buffer.writeVarInt(journal.priority());
+        buffer.writeBoolean(journal.hidden());
+        buffer.writeLong(journal.expiresAtGameTime());
+        buffer.writeLong(journal.completedGameTime());
+        buffer.writeBoolean(journal.waypoint().present());
+        if (journal.waypoint().present()) {
+            buffer.writeUtf(journal.waypoint().dimension(), MAX_JOURNAL_VALUE_LENGTH);
+            buffer.writeInt(journal.waypoint().x());
+            buffer.writeInt(journal.waypoint().y());
+            buffer.writeInt(journal.waypoint().z());
+        }
+    }
+
+    private static Journal readJournal(RegistryFriendlyByteBuf buffer) {
+        String questline = buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH);
+        int tagCount = VillagerPayloads.readCollectionSize(buffer, MAX_JOURNAL_TAGS, "quest journal tags");
+        List<String> tags = new ArrayList<>(tagCount);
+        for (int i = 0; i < tagCount; i++) {
+            tags.add(buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH));
+        }
+        String icon = buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH);
+        String color = buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH);
+        int priority = buffer.readVarInt();
+        boolean hidden = buffer.readBoolean();
+        long expiresAt = buffer.readLong();
+        long completedAt = buffer.readLong();
+        Waypoint waypoint = buffer.readBoolean()
+                ? new Waypoint(buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH), buffer.readInt(), buffer.readInt(), buffer.readInt())
+                : Waypoint.NONE;
+        return new Journal(questline, tags, icon, color, priority, hidden, expiresAt, completedAt, waypoint);
+    }
+
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
@@ -231,7 +275,29 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             List<Prerequisite> prerequisites,
             List<ObjectiveStep> objectiveSteps,
             boolean questUpdate,
-            boolean questAvailable) {
+            boolean questAvailable,
+            Journal journal) {
+        public Entry(
+                String questId,
+                String title,
+                String objective,
+                String description,
+                String metadata,
+                float progress,
+                boolean showProgress,
+                String state,
+                String status,
+                String issuer,
+                String issuerLocation,
+                List<QuestItem> questItems,
+                List<RewardPreview> rewardPreviews,
+                List<Prerequisite> prerequisites,
+                List<ObjectiveStep> objectiveSteps,
+                boolean questUpdate,
+                boolean questAvailable) {
+            this(questId, title, objective, description, metadata, progress, showProgress, state, status, issuer, issuerLocation,
+                    questItems, rewardPreviews, prerequisites, objectiveSteps, questUpdate, questAvailable, Journal.EMPTY);
+        }
         public Entry(
                 String questId,
                 String title,
@@ -360,6 +426,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             objectiveSteps = objectiveSteps == null
                     ? List.of()
                     : List.copyOf(objectiveSteps.stream().filter(Objects::nonNull).limit(MAX_OBJECTIVE_STEPS).toList());
+            journal = journal == null ? Journal.EMPTY : journal;
         }
 
         public Entry withQuestUpdate(boolean questUpdate) {
@@ -380,7 +447,8 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     this.prerequisites,
                     this.objectiveSteps,
                     questUpdate,
-                    this.questAvailable);
+                    this.questAvailable,
+                    this.journal);
         }
 
         public Entry withQuestId(String questId) {
@@ -401,7 +469,8 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     this.prerequisites,
                     this.objectiveSteps,
                     this.questUpdate,
-                    this.questAvailable);
+                    this.questAvailable,
+                    this.journal);
         }
 
         public Entry withQuestAvailable(boolean questAvailable) {
@@ -422,7 +491,15 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     this.prerequisites,
                     this.objectiveSteps,
                     this.questUpdate,
-                    questAvailable);
+                    questAvailable,
+                    this.journal);
+        }
+
+        public Entry withJournal(Journal journal) {
+            return new Entry(
+                    this.questId, this.title, this.objective, this.description, this.metadata, this.progress,
+                    this.showProgress, this.state, this.status, this.issuer, this.issuerLocation, this.questItems,
+                    this.rewardPreviews, this.prerequisites, this.objectiveSteps, this.questUpdate, this.questAvailable, journal);
         }
 
         public boolean trackable() {
@@ -430,6 +507,51 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 case "active", "abandoned", "expired" -> true;
                 default -> false;
             };
+        }
+    }
+
+    public record Journal(
+            String questline,
+            List<String> tags,
+            String icon,
+            String color,
+            int priority,
+            boolean hidden,
+            long expiresAtGameTime,
+            long completedGameTime,
+            Waypoint waypoint) {
+        public static final Journal EMPTY = new Journal("", List.of(), "", "", 0, false, -1L, -1L, Waypoint.NONE);
+
+        public Journal {
+            questline = boundedUtf(questline, MAX_JOURNAL_VALUE_LENGTH);
+            tags = tags == null ? List.of() : List.copyOf(tags.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(tag -> !tag.isBlank())
+                    .map(tag -> boundedUtf(tag, MAX_JOURNAL_VALUE_LENGTH))
+                    .distinct()
+                    .limit(MAX_JOURNAL_TAGS)
+                    .toList());
+            icon = boundedUtf(icon, MAX_JOURNAL_VALUE_LENGTH);
+            color = boundedUtf(color, MAX_JOURNAL_VALUE_LENGTH);
+            waypoint = waypoint == null ? Waypoint.NONE : waypoint;
+        }
+
+        public Journal withRuntime(long expiresAtGameTime, long completedGameTime, Waypoint waypoint) {
+            return new Journal(this.questline, this.tags, this.icon, this.color, this.priority, this.hidden,
+                    expiresAtGameTime, completedGameTime, waypoint);
+        }
+    }
+
+    public record Waypoint(String dimension, int x, int y, int z) {
+        public static final Waypoint NONE = new Waypoint("", 0, 0, 0);
+
+        public Waypoint {
+            dimension = boundedUtf(dimension, MAX_JOURNAL_VALUE_LENGTH);
+        }
+
+        public boolean present() {
+            return !this.dimension.isBlank();
         }
     }
 

@@ -2292,7 +2292,7 @@ public final class VillagerQuestService {
         PartyStartPlan partyStart = preparePartyStart(context, definition);
         UUID definitiveRunId = partyStart == null ? null : partyStart.shared().instanceId();
         QuestLifecycleService.start(definition.id(), started, providerBinding, target,
-                context.level().getGameTime(), context.player().getUUID(), definitiveRunId);
+                context.level().getGameTime(), context.player().getUUID(), definitiveRunId, forceRestart);
         started.adoptDefinitionRevision(definition.revision().number());
         if (partyStart != null) {
             partyStart.shared().enroll(context.player().getUUID(), false);
@@ -5924,7 +5924,7 @@ public final class VillagerQuestService {
                 ? new QuestDefinition.SelectedText(definition.title(), definition.titleKey())
                 : new QuestDefinition.SelectedText(definition.tracker().title(), definition.tracker().titleKey());
         String status = resolveGlobalText(player, "quest.tracker.status.completed", "Completed", replacements);
-        return QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+        return withRuntimeJournal(QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
                 player,
                 definition,
                 title,
@@ -5940,7 +5940,10 @@ public final class VillagerQuestService {
                 QuestTrackerPresenter.fallbackProgress("completed"),
                 false,
                 VillagerQuestSavedData.QuestState.COMPLETED))
-                .withQuestId(completedHistoryQuestId(definition.id(), history.completionIndex()));
+                .withQuestId(completedHistoryQuestId(definition.id(), history.completionIndex())),
+                definition,
+                null,
+                history.completedGameTime());
     }
 
     private static Map<String, String> completionHistoryReplacements(
@@ -6074,6 +6077,9 @@ public final class VillagerQuestService {
         }
         QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
         if (definition == null) {
+            return false;
+        }
+        if (definition.tracker().hidden()) {
             return false;
         }
         if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
@@ -6400,7 +6406,7 @@ public final class VillagerQuestService {
         String issuer = issuerSummary(player, progress);
         String issuerLocation = issuerLocationSummary(player, progress);
         String status = trackerStatusText(player, definition, progress, activeConditions, replacements, readyToTurnIn);
-        return QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+        return withRuntimeJournal(QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
                 player,
                 definition,
                 title,
@@ -6423,7 +6429,34 @@ public final class VillagerQuestService {
                         : activeObjectiveSteps(player, context, definition, progress),
                 progressValue,
                 showProgress,
-                progress.state()));
+                progress.state())), definition, progress, progress.completedGameTime());
+    }
+
+    private static QuestTrackerSyncPayload.Entry withRuntimeJournal(
+            QuestTrackerSyncPayload.Entry entry,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            long completedGameTime) {
+        if (entry == null || definition == null) {
+            return entry;
+        }
+        long expiresAt = -1L;
+        if (progress != null
+                && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && progress.startedGameTime() >= 0L
+                && definition.rules().expiration().afterTicks() > 0L) {
+            expiresAt = progress.startedGameTime() + definition.rules().expiration().afterTicks();
+        }
+        QuestTrackerSyncPayload.Waypoint waypoint = QuestTrackerSyncPayload.Waypoint.NONE;
+        if (progress != null && progress.targetPos() != null && progress.targetDimension() != null) {
+            BlockPos pos = progress.targetPos();
+            waypoint = new QuestTrackerSyncPayload.Waypoint(
+                    progress.targetDimension().location().toString(),
+                    pos.getX(),
+                    pos.getY(),
+                    pos.getZ());
+        }
+        return entry.withJournal(entry.journal().withRuntime(expiresAt, completedGameTime, waypoint));
     }
 
     private static List<QuestTrackerSyncPayload.Prerequisite> prerequisitePreviews(
