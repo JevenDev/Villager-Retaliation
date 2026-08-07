@@ -16,6 +16,9 @@
       "activity.choice",
       "destination.nether",
       "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition",
       "feature.branching"
     ]
   },

@@ -12,7 +12,9 @@
       "activity.deliver",
       "activity.combat",
       "destination.village",
-      "tier.late"
+      "tier.late",
+      "difficulty.extreme",
+      "commitment.expedition"
     ]
   },
   "provider": {

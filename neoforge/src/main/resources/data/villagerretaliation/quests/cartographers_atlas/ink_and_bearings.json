@@ -11,7 +11,10 @@
       "activity.gather",
       "activity.deliver",
       "activity.choice",
-      "destination.overworld"
+      "destination.overworld",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard"
     ],
     "parent": "villagerretaliation:blank_map_promise",
     "title_key": "quest.cartographers_atlas.ink_and_bearings.title",

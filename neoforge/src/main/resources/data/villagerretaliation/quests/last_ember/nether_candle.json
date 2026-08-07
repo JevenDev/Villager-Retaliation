@@ -13,7 +13,10 @@
       "activity.deliver",
       "activity.combat",
       "destination.nether",
-      "destination.remote"
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition"
     ]
   },
   "provider": {

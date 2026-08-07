@@ -10,7 +10,10 @@
       "group.village_defense",
       "role.side",
       "activity.combat",
-      "destination.village"
+      "destination.village",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard"
     ]
   },
   "provider": {

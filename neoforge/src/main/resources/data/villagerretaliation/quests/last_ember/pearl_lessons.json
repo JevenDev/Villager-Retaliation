@@ -10,7 +10,10 @@
       "role.story",
       "activity.gather",
       "activity.deliver",
-      "destination.overworld"
+      "destination.overworld",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard"
     ]
   },
   "provider": {

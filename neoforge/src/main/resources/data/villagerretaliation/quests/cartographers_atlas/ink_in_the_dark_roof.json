@@ -13,7 +13,10 @@
       "activity.combat",
       "activity.explore",
       "destination.overworld",
-      "destination.remote"
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition"
     ],
     "parent": "villagerretaliation:choose_the_horizon",
     "title_key": "quest.cartographers_atlas.ink_in_the_dark_roof.title",

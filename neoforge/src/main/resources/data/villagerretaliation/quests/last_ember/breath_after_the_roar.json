@@ -13,7 +13,10 @@
       "activity.deliver",
       "activity.combat",
       "destination.end",
-      "destination.remote"
+      "destination.remote",
+      "tier.endgame",
+      "difficulty.extreme",
+      "commitment.expedition"
     ]
   },
   "provider": {

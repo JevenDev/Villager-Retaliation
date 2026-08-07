@@ -13,7 +13,9 @@
       "activity.combat",
       "destination.end",
       "destination.remote",
-      "tier.late"
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition"
     ]
   },
   "provider": {

@@ -16,6 +16,9 @@
       "activity.choice",
       "destination.end",
       "destination.remote",
+      "tier.endgame",
+      "difficulty.hard",
+      "commitment.expedition",
       "feature.branching"
     ]
   },

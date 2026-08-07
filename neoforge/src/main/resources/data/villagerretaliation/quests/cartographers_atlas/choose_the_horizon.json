@@ -13,7 +13,10 @@
       "activity.explore",
       "activity.choice",
       "destination.overworld",
-      "destination.remote"
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition"
     ],
     "parent": "villagerretaliation:the_atlas_test",
     "title_key": "quest.cartographers_atlas.choose_the_horizon.title",

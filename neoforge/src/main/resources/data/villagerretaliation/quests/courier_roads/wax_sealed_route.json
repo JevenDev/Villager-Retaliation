@@ -10,7 +10,10 @@
       "role.side",
       "activity.gather",
       "activity.deliver",
-      "destination.overworld"
+      "destination.overworld",
+      "tier.early",
+      "difficulty.easy",
+      "commitment.standard"
     ]
   },
   "provider": {

@@ -11,7 +11,10 @@
       "role.side",
       "activity.gather",
       "activity.deliver",
-      "destination.village"
+      "destination.village",
+      "tier.early",
+      "difficulty.easy",
+      "commitment.standard"
     ]
   },
   "provider": {

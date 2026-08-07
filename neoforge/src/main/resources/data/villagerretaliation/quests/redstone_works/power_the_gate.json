@@ -13,6 +13,9 @@
       "activity.deliver",
       "activity.choice",
       "destination.village",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard",
       "feature.branching"
     ]
   },

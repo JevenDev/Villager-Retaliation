@@ -13,7 +13,9 @@
       "activity.combat",
       "destination.nether",
       "destination.remote",
-      "tier.late"
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition"
     ]
   },
   "provider": {

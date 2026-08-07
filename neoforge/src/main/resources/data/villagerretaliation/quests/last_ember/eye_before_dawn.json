@@ -12,7 +12,10 @@
       "activity.gather",
       "activity.deliver",
       "activity.combat",
-      "destination.overworld"
+      "destination.overworld",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard"
     ]
   },
   "provider": {

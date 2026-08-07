@@ -13,7 +13,10 @@
       "activity.deliver",
       "activity.combat",
       "activity.build",
-      "destination.village"
+      "destination.village",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard"
     ]
   },
   "provider": {

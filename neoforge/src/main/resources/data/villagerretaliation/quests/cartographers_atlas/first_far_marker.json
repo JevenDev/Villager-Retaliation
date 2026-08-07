@@ -12,7 +12,10 @@
       "activity.deliver",
       "activity.explore",
       "destination.overworld",
-      "destination.remote"
+      "destination.remote",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.expedition"
     ],
     "parent": "villagerretaliation:ink_and_bearings",
     "title_key": "quest.cartographers_atlas.first_far_marker.title",

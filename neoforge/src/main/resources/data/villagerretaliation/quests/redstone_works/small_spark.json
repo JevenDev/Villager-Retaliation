@@ -10,7 +10,10 @@
       "role.story",
       "activity.gather",
       "activity.deliver",
-      "destination.village"
+      "destination.village",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard"
     ]
   },
   "provider": {

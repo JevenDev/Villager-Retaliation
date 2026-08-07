@@ -12,7 +12,10 @@
       "activity.deliver",
       "activity.explore",
       "destination.nether",
-      "destination.remote"
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition"
     ],
     "parent": "villagerretaliation:choose_the_horizon",
     "title_key": "quest.cartographers_atlas.nether_meridian.title",
