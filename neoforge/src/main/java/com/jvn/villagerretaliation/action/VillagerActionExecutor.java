@@ -246,11 +246,14 @@ public final class VillagerActionExecutor {
             Map<String, String> inheritedReplacements) {
         QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
         String value = VillagerDialogueResources.resolveTemplate(action.factValue(), inheritedReplacements);
+        if ("stage".equals(action.factKey()) && action.factScope() == QuestFactScope.QUEST) {
+            return VillagerQuestService.syncQuestStage(context, action.questId(), value)
+                    ? factResult(action, inheritedReplacements, scopeKey.asString(), value, 0)
+                    : VillagerActionResult.EMPTY;
+        }
+
         boolean changed = VillagerQuestFacts.get(context.level()).setVariable(scopeKey, action.factKey(), value);
-        boolean stageChanged = "stage".equals(action.factKey())
-                && action.factScope() == QuestFactScope.QUEST
-                && VillagerQuestService.syncQuestStage(context, action.questId(), value);
-        return changed || stageChanged
+        return changed
                 ? factResult(action, inheritedReplacements, scopeKey.asString(), value, 0)
                 : VillagerActionResult.EMPTY;
     }

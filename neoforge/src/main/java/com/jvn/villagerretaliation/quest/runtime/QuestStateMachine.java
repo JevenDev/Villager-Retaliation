@@ -20,6 +20,12 @@ public final class QuestStateMachine {
             ResourceKey<Level> dimension,
             BlockPos target,
             long gameTime) {
+        if (progress == null) {
+            return blocked(null, "missing_progress");
+        }
+        if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
+            return blocked(progress, "quest_already_active");
+        }
         return mutate(progress, LifecycleEvent.STARTED, "", () -> progress.start(providerId, dimension, target, gameTime),
                 FollowUp.DISPATCH_LIFECYCLE, FollowUp.SYNC_TRACKER);
     }
@@ -102,6 +108,9 @@ public final class QuestStateMachine {
             String reason) {
         if (progress == null) {
             return blocked(null, "missing_progress");
+        }
+        if (progress.state() == VillagerQuestSavedData.QuestState.CONSUMED) {
+            return blocked(progress, "quest_already_consumed");
         }
         String normalized = normalizeCode(reason, "consumed");
         return mutate(progress, LifecycleEvent.CONSUMED, normalized, () -> progress.consume(normalized),

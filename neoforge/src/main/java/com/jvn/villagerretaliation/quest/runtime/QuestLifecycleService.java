@@ -20,12 +20,18 @@ public final class QuestLifecycleService {
             long gameTime,
             UUID playerId,
             UUID sharedRunId) {
-        QuestStateMachine.start(
+        if (progress == null || providerBinding == null) {
+            return event(LifecycleEventType.NONE, questId, progress, gameTime, "missing_start_context");
+        }
+        QuestStateMachine.TransitionResult result = QuestStateMachine.start(
                 progress,
                 providerBinding.providerId(),
                 target == null ? providerBinding.dimension() : target.dimension(),
                 target == null ? null : target.pos(),
                 gameTime);
+        if (!result.dirty()) {
+            return blockedEvent(questId, progress, gameTime, result);
+        }
         progress.beginRun(playerId, questId, sharedRunId);
         progress.setIssuer(
                 providerBinding.providerId(),
@@ -83,7 +89,10 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             String stage) {
         String nextStage = normalizeStage(stage);
-        return progress != null && !nextStage.isBlank() && !progress.currentStage().equals(nextStage);
+        return progress != null
+                && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && !nextStage.isBlank()
+                && !progress.currentStage().equals(nextStage);
     }
 
     public static StageTransition transitionStage(
@@ -104,10 +113,14 @@ public final class QuestLifecycleService {
             String stage,
             long gameTime,
             boolean allowUnchanged) {
+        String nextStage = normalizeStage(stage);
+        if (definition == null || progress == null || !definition.stages().containsKey(nextStage)) {
+            return StageTransition.unchanged(progress == null ? "" : progress.currentStage());
+        }
         String previousStage = progress.currentStage();
         QuestStateMachine.TransitionResult result = allowUnchanged
-                ? QuestStateMachine.initializeStage(progress, stage)
-                : QuestStateMachine.transitionStage(progress, stage);
+                ? QuestStateMachine.initializeStage(progress, nextStage)
+                : QuestStateMachine.transitionStage(progress, nextStage);
         if (!result.dirty() && !allowUnchanged) {
             return StageTransition.unchanged(progress.currentStage());
         }
@@ -123,7 +136,10 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
-        QuestStateMachine.complete(progress, gameTime, consume);
+        QuestStateMachine.TransitionResult result = QuestStateMachine.complete(progress, gameTime, consume);
+        if (!result.dirty()) {
+            return blockedEvent(questId, progress, gameTime, result);
+        }
         return event(LifecycleEventType.COMPLETED, questId, progress, gameTime, consume ? "completion" : "");
     }
 
@@ -132,7 +148,10 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
-        QuestStateMachine.abandon(progress, gameTime, consume);
+        QuestStateMachine.TransitionResult result = QuestStateMachine.abandon(progress, gameTime, consume);
+        if (!result.dirty()) {
+            return blockedEvent(questId, progress, gameTime, result);
+        }
         return event(LifecycleEventType.ABANDONED, questId, progress, gameTime, consume ? "abandonment" : "");
     }
 
@@ -142,6 +161,9 @@ public final class QuestLifecycleService {
             long gameTime,
             String reason) {
         QuestStateMachine.TransitionResult result = QuestStateMachine.fail(progress, gameTime, reason);
+        if (!result.dirty()) {
+            return blockedEvent(questId, progress, gameTime, result);
+        }
         return event(LifecycleEventType.FAILED, questId, progress, gameTime, result.failureCode());
     }
 
@@ -150,7 +172,10 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
-        QuestStateMachine.expire(progress, gameTime, consume);
+        QuestStateMachine.TransitionResult result = QuestStateMachine.expire(progress, gameTime, consume);
+        if (!result.dirty()) {
+            return blockedEvent(questId, progress, gameTime, result);
+        }
         return event(LifecycleEventType.EXPIRED, questId, progress, gameTime, consume ? "expiration" : "");
     }
 
@@ -159,8 +184,19 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             String reason,
             long gameTime) {
-        QuestStateMachine.consume(progress, reason);
+        QuestStateMachine.TransitionResult result = QuestStateMachine.consume(progress, reason);
+        if (!result.dirty()) {
+            return blockedEvent(questId, progress, gameTime, result);
+        }
         return event(LifecycleEventType.CONSUMED, questId, progress, gameTime, reason);
+    }
+
+    private static LifecycleEvent blockedEvent(
+            ResourceLocation questId,
+            VillagerQuestSavedData.QuestProgress progress,
+            long gameTime,
+            QuestStateMachine.TransitionResult result) {
+        return event(LifecycleEventType.NONE, questId, progress, gameTime, result.blockerCode());
     }
 
     private static String normalizeStage(String stage) {
@@ -183,6 +219,7 @@ public final class QuestLifecycleService {
     }
 
     public enum LifecycleEventType {
+        NONE,
         STARTED,
         COMPLETED,
         FAILED,
