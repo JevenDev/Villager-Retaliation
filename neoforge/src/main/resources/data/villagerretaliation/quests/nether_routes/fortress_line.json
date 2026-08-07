@@ -8,7 +8,12 @@
     "parent": "villagerretaliation:choose_a_road",
     "tags": [
       "group.nether_routes",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.combat",
+      "destination.nether",
+      "destination.remote"
     ]
   },
   "provider": {

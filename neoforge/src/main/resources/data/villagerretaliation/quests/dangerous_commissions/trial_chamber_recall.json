@@ -7,7 +7,12 @@
     "questline": "dangerous_commissions",
     "tags": [
       "group.dangerous_commissions",
-      "role.request"
+      "role.request",
+      "activity.gather",
+      "activity.deliver",
+      "activity.explore",
+      "destination.overworld",
+      "destination.remote"
     ]
   },
   "provider": {

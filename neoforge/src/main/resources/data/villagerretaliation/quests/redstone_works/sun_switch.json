@@ -8,7 +8,11 @@
     "parent": "villagerretaliation:power_the_gate",
     "tags": [
       "group.redstone_works",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.build",
+      "destination.village"
     ]
   },
   "provider": {

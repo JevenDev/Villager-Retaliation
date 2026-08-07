@@ -7,7 +7,13 @@
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "activity.explore",
+      "activity.choice",
+      "destination.overworld",
+      "destination.remote"
     ],
     "parent": "villagerretaliation:the_atlas_test",
     "title_key": "quest.cartographers_atlas.choose_the_horizon.title",

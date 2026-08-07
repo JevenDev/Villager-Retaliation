@@ -8,7 +8,9 @@
     "parent": "villagerretaliation:watch_arrows",
     "tags": [
       "group.village_defense",
-      "role.side"
+      "role.side",
+      "activity.combat",
+      "destination.village"
     ]
   },
   "provider": {

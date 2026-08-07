@@ -7,7 +7,10 @@
     "questline": "hearthbound",
     "tags": [
       "group.hearthbound",
-      "role.side"
+      "role.side",
+      "activity.gather",
+      "activity.deliver",
+      "destination.village"
     ]
   },
   "provider": {

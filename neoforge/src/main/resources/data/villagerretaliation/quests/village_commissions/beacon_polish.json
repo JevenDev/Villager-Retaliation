@@ -8,6 +8,10 @@
     "tags": [
       "group.village_commissions",
       "role.request",
+      "activity.gather",
+      "activity.deliver",
+      "activity.combat",
+      "destination.village",
       "tier.late"
     ]
   },

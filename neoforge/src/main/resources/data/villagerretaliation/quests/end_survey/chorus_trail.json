@@ -8,7 +8,11 @@
     "parent": "villagerretaliation:choose_a_star",
     "tags": [
       "group.end_survey",
-      "role.story"
+      "role.story",
+      "activity.gather",
+      "activity.deliver",
+      "destination.end",
+      "destination.remote"
     ]
   },
   "provider": {

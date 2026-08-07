@@ -8,7 +8,10 @@
     "parent": "villagerretaliation:honed_handles",
     "tags": [
       "group.workshop_oaths",
-      "role.side"
+      "role.side",
+      "activity.gather",
+      "activity.deliver",
+      "destination.village"
     ]
   },
   "provider": {

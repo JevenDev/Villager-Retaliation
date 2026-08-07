@@ -7,7 +7,12 @@
     "questline": "old_roads",
     "tags": [
       "group.old_roads",
-      "role.side"
+      "role.side",
+      "activity.gather",
+      "activity.deliver",
+      "activity.explore",
+      "destination.overworld",
+      "destination.remote"
     ]
   },
   "provider": {

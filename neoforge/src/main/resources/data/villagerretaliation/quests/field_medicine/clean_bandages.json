@@ -7,7 +7,10 @@
     "questline": "field_medicine",
     "tags": [
       "group.field_medicine",
-      "role.side"
+      "role.side",
+      "activity.gather",
+      "activity.deliver",
+      "destination.village"
     ]
   },
   "provider": {
