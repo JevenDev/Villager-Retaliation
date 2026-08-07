@@ -914,16 +914,23 @@ final class VillagerInventoryContainer implements Container {
 
     private static void dropEquipmentSlot(Villager villager, LivingDropsEvent event, EquipmentSlot slot) {
         ItemStack stack = villager.getItemBySlot(slot);
+        if (!stack.isEmpty() && VillagerNaturalJobArmor.isNaturalArmor(villager, slot, stack)) {
+            VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
+            return;
+        }
+
+        ItemStack jobStack = HiredJobInventory.jobEquipmentStack(villager, slot);
+        if (!jobStack.isEmpty()) {
+            // Vanilla has commonly moved the equipped copy into LivingDropsEvent and
+            // cleared the entity slot before this callback. Reconcile against the
+            // authoritative job stack instead of relying on the now-empty live slot.
+            removeOneMatchingDrop(event, jobStack);
+            if (!stack.isEmpty()) {
+                VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
+            }
+            return;
+        }
         if (stack.isEmpty()) {
-            return;
-        }
-        if (VillagerNaturalJobArmor.isNaturalArmor(villager, slot, stack)) {
-            VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
-            return;
-        }
-        if (HiredJobInventory.hasJobEquipmentForSlot(villager, slot)) {
-            removeOneMatchingDrop(event, stack);
-            VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
             return;
         }
         if (slot == EquipmentSlot.MAINHAND && !canAccessMainHand(villager)) {

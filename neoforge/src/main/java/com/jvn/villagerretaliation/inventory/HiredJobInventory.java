@@ -161,6 +161,14 @@ public final class HiredJobInventory implements Container {
         return slot >= 0 && hasPersistedJobStack(villager, slot);
     }
 
+    static ItemStack jobEquipmentStack(Villager villager, EquipmentSlot equipmentSlot) {
+        if (villager == null || equipmentSlot == null) {
+            return ItemStack.EMPTY;
+        }
+        int slot = jobSlotForEquipmentSlot(equipmentSlot);
+        return slot >= 0 ? getJobInventory(villager).items.get(slot) : ItemStack.EMPTY;
+    }
+
     static boolean consumeEquippedTotem(Villager villager, EquipmentSlot equipmentSlot, ItemStack usedTotem) {
         if (villager == null || equipmentSlot == null || usedTotem == null
                 || !usedTotem.is(Items.TOTEM_OF_UNDYING)
