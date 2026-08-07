@@ -196,6 +196,12 @@ public final class QuestDebugFormatter {
                 parts.add("memory_tags=" + resourceSet(objective.memoryTags()));
                 addLocation(parts, objective);
             }
+            case CRITERION -> {
+                addCounter(parts, state.counter(), objective.count());
+                parts.add("criterion=" + resource(objective.criterion()));
+                parts.add("match=" + objective.criterionData());
+                addLocation(parts, objective);
+            }
             case TRADE -> {
                 addCounter(parts, state.counter(), objective.count());
                 parts.add("result_item=" + resource(objective.item()));

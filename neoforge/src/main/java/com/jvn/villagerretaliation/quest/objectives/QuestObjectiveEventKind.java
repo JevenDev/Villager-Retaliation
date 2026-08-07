@@ -8,5 +8,6 @@ public enum QuestObjectiveEventKind {
     MEMORY_EVENT,
     GIFT,
     TRADE,
-    REPUTATION
+    REPUTATION,
+    CRITERION
 }

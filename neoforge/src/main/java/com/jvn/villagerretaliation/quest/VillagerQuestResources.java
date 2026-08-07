@@ -227,6 +227,7 @@ public final class VillagerQuestResources {
             case GIFT -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.GIFT, Set.of());
             case MEMORY_EVENT -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.MEMORY_EVENT, Set.of());
             case REPUTATION -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.REPUTATION, Set.of());
+            case CRITERION -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.CRITERION, Set.of());
             case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, CHOICE, CONDITION -> Set.of();
         };
     }
@@ -688,6 +689,8 @@ public final class VillagerQuestResources {
         Set<String> giftReactions = readGiftReactions(location, context, entry);
         ReputationObjective reputationObjective = readReputationObjective(location, context, entry);
         FactObjective factObjective = readFactObjective(location, context, entry, defaultQuestId);
+        ResourceLocation criterion = DatapackJsonReader.readResourceLocation(entry, "criterion").orElse(null);
+        Map<String, String> criterionData = readCriterionData(location, context, entry);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
 
         QuestDefinition.Objective objective = new QuestDefinition.Objective(
@@ -718,6 +721,8 @@ public final class VillagerQuestResources {
                 factObjective.values(),
                 factObjective.min(),
                 factObjective.max(),
+                criterion,
+                criterionData,
                 DatapackJsonReader.readInt(entry, "count", 1),
                 DatapackJsonReader.readBoolean(entry, "consume", true),
                 readObjectiveItemRequirements(entry),
@@ -729,6 +734,32 @@ public final class VillagerQuestResources {
             return Optional.empty();
         }
         return Optional.of(objective);
+    }
+
+    private static Map<String, String> readCriterionData(
+            ResourceLocation location,
+            String context,
+            JsonObject entry) {
+        JsonElement match = entry.get("match");
+        if (match == null || match.isJsonNull()) {
+            return Map.of();
+        }
+        if (!match.isJsonObject()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "match must be an object.");
+            return Map.of();
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> child : match.getAsJsonObject().entrySet()) {
+            if (child.getValue().isJsonPrimitive()) {
+                result.put(child.getKey(), child.getValue().getAsString());
+            } else {
+                DatapackDiagnostics.warnInvalidDialogueCondition(
+                        location,
+                        context,
+                        "match values must be strings, numbers, or booleans; ignored key " + child.getKey() + ".");
+            }
+        }
+        return Map.copyOf(result);
     }
 
     private static BlockPos readLocation(JsonObject entry) {

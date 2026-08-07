@@ -150,6 +150,8 @@ public final class QuestV2Parser {
             "consume",
             "tracker",
             "conditions",
+            "criterion",
+            "match",
             "target",
             "targets",
             "structure",

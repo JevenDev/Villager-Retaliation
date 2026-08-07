@@ -233,6 +233,27 @@ Quest pools turn quest tags or explicit quest IDs into bounded rotating offers. 
 
 Selection is deterministic for the pool, scope key, and refresh epoch. `scope` accepts `player`, `village`, `provider`, or `world`. `quests`, `any_tags`, and `all_tags` select candidates; `exclude_quests` and `exclude_tags` remove candidates. Selection is weighted without replacement, and `anti_repeat_rotations` avoids recent selections when the pool has enough alternatives.
 
+## Generic Criterion Objectives
+
+Use a `criterion` objective when another gameplay system should advance a quest without adding a dedicated objective type. The namespaced criterion identifies the event, `match` contains exact string/number/boolean filters, and the normal `item`, entity selectors, location, dimension, and `count` fields add optional constraints.
+
+```json
+{
+  "id": "forge_blades",
+  "type": "criterion",
+  "criterion": "villagerretaliation:crafted",
+  "item": "minecraft:iron_sword",
+  "match": {
+    "item": "minecraft:iron_sword"
+  },
+  "count": 3
+}
+```
+
+Built-in criteria are `villagerretaliation:crafted`, `villagerretaliation:smelted`, `villagerretaliation:entity_interacted`, `villagerretaliation:damage_dealt`, and `villagerretaliation:dimension_changed`. Their match keys include `item`, `entity`, `damage_type`, `from`, and `to` as appropriate.
+
+Other mods can publish their own namespaced criteria through `QuestCriterionApi.trigger`. Supplying an item or entity lets datapacks reuse the standard item, entity type/tag, dimension, and location matching rules. Match data is an open string map, so integrations can evolve independently of this mod's quest schema.
+
 Built-in quests use these families:
 
 | Family | Values | Use |

@@ -4430,6 +4430,31 @@ public final class VillagerQuestService {
         return VillagerQuestResources.questIdsForObjectiveEvent(level.getServer(), event.kind());
     }
 
+    /**
+     * Publishes a namespaced gameplay criterion to active data-driven quests.
+     * Extra data is matched exactly against an objective's {@code match} object.
+     */
+    public static void onCriterion(
+            ServerLevel level,
+            ServerPlayer player,
+            ResourceLocation criterion,
+            Map<String, String> data,
+            ItemStack item,
+            LivingEntity entity) {
+        if (criterion == null) {
+            return;
+        }
+        onObjectiveEvent(level, player, QuestObjectiveEvent.criterion(criterion, data, item, entity));
+    }
+
+    public static void onCriterion(
+            ServerLevel level,
+            ServerPlayer player,
+            ResourceLocation criterion,
+            Map<String, String> data) {
+        onCriterion(level, player, criterion, data, ItemStack.EMPTY, null);
+    }
+
     private static void onObjectiveEvent(ServerLevel level, ServerPlayer player, QuestObjectiveEvent event) {
         onObjectiveEvent(level, player, event, Set.of());
     }
@@ -6499,7 +6524,8 @@ public final class VillagerQuestService {
             return false;
         }
         return switch (objective.type()) {
-            case ITEM_CHECK, MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> true;
+            case ITEM_CHECK, MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT,
+                    CRITERION -> true;
             default -> false;
         };
     }
@@ -6639,6 +6665,7 @@ public final class VillagerQuestService {
             case REPUTATION -> "Reach {objective_reputation_level} reputation.";
             case CHOICE -> "Make a quest choice.";
             case FACT -> "Resolve {objective_fact}.";
+            case CRITERION -> "Complete {objective_count} quest events.";
             case CONDITION -> "Meet the quest condition.";
         };
     }
