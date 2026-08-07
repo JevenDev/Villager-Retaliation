@@ -853,14 +853,21 @@ const questV2SchemaId = "villagerretaliation:quest/v2";
 const resourceLocationPattern = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
 const questV2IdPattern = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
 const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]);
-const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "author", "version", "revision", "migration"]);
+const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "show_locked_adventure_hint", "author", "version", "revision", "migration"]);
+const questV2MigrationKeys = new Set(["active_policy", "on_active_change", "stage_aliases", "objective_aliases"]);
 const questV2TargetKeys = new Set(["structure", "dimension", "pieces", "search_radius", "discovery_radius", "proof_item"]);
-const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "filters", "data"]);
+const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "death_protection", "filters", "data"]);
+const questV2ActiveStateKeys = new Set(["conditions", "hide_when_unmet", "pause_progress_when_unmet"]);
+const questV2ExpirationKeys = new Set(["after_ticks", "conditions", "consume", "allow_repickup", "notify"]);
+const questV2BranchKeys = new Set(["exclusive_group", "exclusive_on", "blocks_on_start", "blocks_on_completion", "blocks"]);
 const questV2AvailabilityKeys = new Set(["conditions", "active", "expiration", "branch", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "exclusive_on", "blocks_on_start", "blocks_on_completion", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
 const questV2LifecycleKeys = new Set(["on_start", "on_complete", "on_abandon", "on_expire", "on_fail", "on_stage_enter", "on_stage_exit", "dialogue"]);
 const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stage", "scene", "complete", "abandon", "fail"]);
 const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "completion", "completion_mode", "completion_count", "bonuses", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
+const questV2CompletionKeys = new Set(["mode", "count"]);
+const questV2BonusKeys = new Set(["id", "when", "mode", "count", "actions"]);
 const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "criterion", "match", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
+const questV2TrackerKeys = new Set(["text", "text_key", "complete_text", "complete_text_key", "show_progress", "progress", "metadata"]);
 const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
 const questV2SceneKeys = new Set(["id", "slot", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "external", "external_scene", "external_entry", "scene_ref", "metadata"]);
 const questV2ExternalSceneKeys = new Set(["tree", "tree_id", "dialogue_tree", "entry", "entry_id", "metadata"]);
@@ -1538,11 +1545,13 @@ function checkQuestV2Metadata(file, metadata, pointer, location, questId) {
   checkQuestV2OptionalString(file, metadata, pointer, location, "parent");
   checkQuestV2OptionalString(file, metadata, pointer, location, "author");
   checkQuestV2OptionalString(file, metadata, pointer, location, "version");
+  checkQuestV2OptionalBoolean(file, metadata, pointer, location, "show_locked_adventure_hint");
   checkQuestV2OptionalInteger(file, metadata, pointer, location, "revision", { min: 1 });
   if (metadata.migration !== undefined) {
     if (!metadata.migration || typeof metadata.migration !== "object" || Array.isArray(metadata.migration)) {
       questV2Error(file, `${pointer}/migration`, `${location}.migration`, "migration must be an object.", "Use active_policy plus optional stage_aliases and objective_aliases maps.");
     } else {
+      checkQuestV2UnknownKeys(file, metadata.migration, `${pointer}/migration`, `${location}.migration`, questV2MigrationKeys);
       const policy = normalizedString(firstDefined(metadata.migration.active_policy, metadata.migration.on_active_change));
       if (policy && !["keep", "reset", "reset_stage", "stage_reset", "restart", "restart_quest", "fail", "fail_quest"].includes(policy)) {
         questV2Error(file, `${pointer}/migration/active_policy`, `${location}.migration.active_policy`, `unknown active migration policy "${policy}".`, "Use keep, reset_stage, restart, or fail.");
@@ -1596,6 +1605,10 @@ function checkQuestV2Provider(file, provider, pointer, location) {
       }
     }
   }
+  checkQuestV2OptionalString(file, provider, pointer, location, "death_protection");
+  if (provider.death_protection !== undefined && !["none", "while_active", "after_start"].includes(normalizedString(provider.death_protection))) {
+    questV2Error(file, `${pointer}/death_protection`, `${location}.death_protection`, `unknown death protection mode "${provider.death_protection}".`, "Use none, while_active, or after_start.");
+  }
   checkQuestV2OptionalObject(file, provider.filters, `${pointer}/filters`, `${location}.filters`, "provider filters");
   checkQuestV2OptionalObject(file, provider.data, `${pointer}/data`, `${location}.data`, "provider data");
 }
@@ -1635,6 +1648,7 @@ function checkQuestV2Availability(file, availability, pointer, location, questId
     if (!availability.active || typeof availability.active !== "object" || Array.isArray(availability.active)) {
       questV2Error(file, `${pointer}/active`, `${location}.active`, "active must be an object.", "Use active.conditions and active pause/display controls.");
     } else {
+      checkQuestV2UnknownKeys(file, availability.active, `${pointer}/active`, `${location}.active`, questV2ActiveStateKeys);
       checkQuestV2Conditions(file, availability.active.conditions, `${pointer}/active/conditions`, `${location}.active.conditions`, questId, "quest module v2 active state");
       checkQuestV2OptionalBoolean(file, availability.active, `${pointer}/active`, `${location}.active`, "hide_when_unmet");
       checkQuestV2OptionalBoolean(file, availability.active, `${pointer}/active`, `${location}.active`, "pause_progress_when_unmet");
@@ -1644,11 +1658,24 @@ function checkQuestV2Availability(file, availability, pointer, location, questId
     if (!availability.expiration || typeof availability.expiration !== "object" || Array.isArray(availability.expiration)) {
       questV2Error(file, `${pointer}/expiration`, `${location}.expiration`, "expiration must be an object.", "Use expiration.after_ticks, conditions, and outcome controls.");
     } else {
+      checkQuestV2UnknownKeys(file, availability.expiration, `${pointer}/expiration`, `${location}.expiration`, questV2ExpirationKeys);
       checkQuestV2Conditions(file, availability.expiration.conditions, `${pointer}/expiration/conditions`, `${location}.expiration.conditions`, questId, "quest module v2 expiration");
       checkQuestV2OptionalInteger(file, availability.expiration, `${pointer}/expiration`, `${location}.expiration`, "after_ticks", { min: 0 });
       checkQuestV2OptionalBoolean(file, availability.expiration, `${pointer}/expiration`, `${location}.expiration`, "consume");
       checkQuestV2OptionalBoolean(file, availability.expiration, `${pointer}/expiration`, `${location}.expiration`, "allow_repickup");
       checkQuestV2OptionalBoolean(file, availability.expiration, `${pointer}/expiration`, `${location}.expiration`, "notify");
+    }
+  }
+  if (availability.branch !== undefined) {
+    if (!availability.branch || typeof availability.branch !== "object" || Array.isArray(availability.branch)) {
+      questV2Error(file, `${pointer}/branch`, `${location}.branch`, "branch must be an object.", "Use exclusive_group and optional branch lock arrays.");
+    } else {
+      checkQuestV2UnknownKeys(file, availability.branch, `${pointer}/branch`, `${location}.branch`, questV2BranchKeys);
+      checkQuestV2OptionalString(file, availability.branch, `${pointer}/branch`, `${location}.branch`, "exclusive_group");
+      checkQuestV2OptionalString(file, availability.branch, `${pointer}/branch`, `${location}.branch`, "exclusive_on");
+      for (const key of ["blocks_on_start", "blocks_on_completion", "blocks"]) {
+        checkQuestV2StringArray(file, availability.branch[key], `${pointer}/branch/${key}`, `${location}.branch.${key}`, "branch quest id");
+      }
     }
   }
   checkQuestV2OptionalString(file, availability, pointer, location, "cooldown");
@@ -1664,6 +1691,13 @@ function checkQuestV2Availability(file, availability, pointer, location, questId
   checkQuestV2OptionalInteger(file, availability, pointer, location, "prerequisite_cooldown_days", { min: 0 });
   checkQuestV2OptionalInteger(file, availability, pointer, location, "prerequisite_cooldown_seconds", { min: 0 });
   checkQuestV2OptionalString(file, availability, pointer, location, "exclusive_group");
+  checkQuestV2OptionalString(file, availability, pointer, location, "exclusive_on");
+  if (availability.exclusive_on !== undefined && !["started", "completed"].includes(normalizedString(availability.exclusive_on))) {
+    questV2Error(file, `${pointer}/exclusive_on`, `${location}.exclusive_on`, `unknown branch trigger "${availability.exclusive_on}".`, "Use started or completed.");
+  }
+  for (const key of ["blocks_on_start", "blocks_on_completion"]) {
+    checkQuestV2StringArray(file, availability[key], `${pointer}/${key}`, `${location}.${key}`, "branch quest id");
+  }
   checkQuestV2OptionalBoolean(file, availability, pointer, location, "repeatable");
   checkQuestV2OptionalInteger(file, availability, pointer, location, "max_starts", { min: 0 });
   checkQuestV2OptionalInteger(file, availability, pointer, location, "max_completions", { min: 0 });
@@ -1812,6 +1846,9 @@ function checkQuestV2Composition(file, stage, pointer, location) {
     questV2Error(file, `${pointer}/completion`, `${location}.completion`, "completion must be an object.", "Use completion.mode and completion.count.");
     return;
   }
+  if (completion) {
+    checkQuestV2UnknownKeys(file, completion, `${pointer}/completion`, `${location}.completion`, questV2CompletionKeys);
+  }
   const mode = normalizedString(firstDefined(completion?.mode, stage.completion_mode));
   if (mode && !["all", "any", "at_least", "atleast", "count", "k_of_n"].includes(mode)) {
     questV2Error(file, `${pointer}/completion`, `${location}.completion`, `unknown completion mode "${mode}".`, "Use all, any, or at_least.");
@@ -1836,7 +1873,9 @@ function checkQuestV2Bonuses(file, bonuses, pointer, location, questId, objectiv
       questV2Error(file, bonusPointer, bonusLocation, "bonus must be an object.", "Each bonus needs id, when, and actions.");
       continue;
     }
+    checkQuestV2UnknownKeys(file, bonus, bonusPointer, bonusLocation, questV2BonusKeys);
     const id = stringValue(bonus.id) || `bonus_${index}`;
+    checkQuestV2Id(file, id, `${bonusPointer}/id`, `${bonusLocation}.id`, "bonus id");
     if (ids.has(id)) questV2Error(file, `${bonusPointer}/id`, `${bonusLocation}.id`, `duplicate bonus id "${id}".`, "Use unique bonus ids within the stage.");
     ids.add(id);
     const refs = readQuestV2ObjectiveReferences(bonus.when);
@@ -1846,6 +1885,11 @@ function checkQuestV2Bonuses(file, bonuses, pointer, location, questId, objectiv
     for (const ref of refs) {
       if (!objectiveIds.has(ref)) questV2Error(file, `${bonusPointer}/when`, `${bonusLocation}.when`, `bonus references missing objective "${ref}".`, "Reference an objective in the same stage.");
     }
+    const mode = normalizedString(bonus.mode);
+    if (mode && !["all", "any", "at_least", "atleast", "count", "k_of_n"].includes(mode)) {
+      questV2Error(file, `${bonusPointer}/mode`, `${bonusLocation}.mode`, `unknown bonus mode "${mode}".`, "Use all, any, or at_least.");
+    }
+    checkQuestV2OptionalInteger(file, bonus, bonusPointer, bonusLocation, "count", { min: 1 });
     checkQuestV2Actions(file, bonus.actions, `${bonusPointer}/actions`, `${bonusLocation}.actions`, questId, { liveContextWarningUsage: "quest module v2 bonus" });
   }
 }
@@ -1881,7 +1925,7 @@ function checkQuestV2Objectives(file, objectives, pointer, location, questId) {
     checkQuestV2OptionalBoolean(file, objective, objectivePointer, objectiveLocation, "optional");
     checkQuestV2OptionalInteger(file, objective, objectivePointer, objectiveLocation, "count", { min: 1 });
     checkQuestV2OptionalBoolean(file, objective, objectivePointer, objectiveLocation, "consume");
-    checkQuestV2OptionalObject(file, objective.tracker, `${objectivePointer}/tracker`, `${objectiveLocation}.tracker`, "objective tracker");
+    checkQuestV2Tracker(file, objective.tracker, `${objectivePointer}/tracker`, `${objectiveLocation}.tracker`);
     checkQuestV2OptionalObject(file, objective.target, `${objectivePointer}/target`, `${objectiveLocation}.target`, "objective target");
     checkQuestV2OptionalObject(file, objective.location, `${objectivePointer}/location`, `${objectiveLocation}.location`, "objective location");
     checkQuestV2Conditions(file, objective.conditions, `${objectivePointer}/conditions`, `${objectiveLocation}.conditions`, questId, "quest module v2 objective");
@@ -1893,6 +1937,16 @@ function checkQuestV2Objectives(file, objectives, pointer, location, questId) {
 
 function checkQuestV2ObjectiveRuntimeRequirements(file, objective, pointer, location, type) {
   const canonical = questV2RegistryIndex.objectives.canonical.get(type) || type;
+  if (canonical === "criterion") {
+    const criterion = stringValue(objective.criterion);
+    if (!criterion || !isResourceLocation(criterion)) {
+      questV2Error(file, `${pointer}/criterion`, `${location}.criterion`, "criterion objective requires a namespaced criterion id.", "Set criterion to the event id emitted through QuestCriterionApi.");
+    }
+    if (objective.match !== undefined && (!objective.match || typeof objective.match !== "object" || Array.isArray(objective.match)
+        || Object.values(objective.match).some((value) => !["string", "number", "boolean"].includes(typeof value)))) {
+      questV2Error(file, `${pointer}/match`, `${location}.match`, "criterion match must map keys to string, number, or boolean values.", "Use a flat object of exact event-field matches.");
+    }
+  }
   if (canonical === "structure_visit" && !hasStringValues(objective, ["structure"]) && !hasStringValues(objective.target, ["structure"])) {
     questV2Error(file, pointer, location, "structure_visit objective is missing structure.", "Set objective.structure or objective.target.structure.");
   }
@@ -2129,6 +2183,8 @@ function checkQuestV2Ui(file, ui, pointer, location) {
   checkQuestV2OptionalString(file, ui, pointer, location, "description_key");
   checkQuestV2OptionalString(file, ui, pointer, location, "tracker_text");
   checkQuestV2OptionalString(file, ui, pointer, location, "tracker_text_key");
+  checkQuestV2OptionalString(file, ui, pointer, location, "tracker_complete_text");
+  checkQuestV2OptionalString(file, ui, pointer, location, "tracker_complete_text_key");
   checkQuestV2OptionalBoolean(file, ui, pointer, location, "show_progress");
   checkQuestV2OptionalNumber(file, ui, pointer, location, "progress", { min: 0 });
   const placeholders = new Set();
@@ -2148,13 +2204,28 @@ function checkQuestV2Ui(file, ui, pointer, location) {
       }
     }
   }
-  for (const key of ["title", "description", "tracker_text"]) {
+  for (const key of ["title", "description", "tracker_text", "tracker_complete_text"]) {
     for (const token of placeholderTokens(ui[key])) {
       if (!placeholders.has(token)) {
         questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `text references undefined UI placeholder "{${token}}".`, `Add ui.placeholders.${token} or remove the placeholder.`);
       }
     }
   }
+}
+
+function checkQuestV2Tracker(file, tracker, pointer, location) {
+  if (tracker === undefined) return;
+  if (!tracker || typeof tracker !== "object" || Array.isArray(tracker)) {
+    questV2Error(file, pointer, location, "objective tracker must be an object.", "Use text, complete_text, progress, or metadata fields.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, tracker, pointer, location, questV2TrackerKeys);
+  for (const key of ["text", "text_key", "complete_text", "complete_text_key"]) {
+    checkQuestV2OptionalString(file, tracker, pointer, location, key);
+  }
+  checkQuestV2OptionalBoolean(file, tracker, pointer, location, "show_progress");
+  checkQuestV2OptionalNumber(file, tracker, pointer, location, "progress", { min: 0 });
+  checkQuestV2OptionalObject(file, tracker.metadata, `${pointer}/metadata`, `${location}.metadata`, "tracker metadata");
 }
 
 function checkQuestV2ExternalScenes(file, externalScenes, pointer, location) {

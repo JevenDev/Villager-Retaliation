@@ -916,6 +916,11 @@
         return true;
       }
 
+      if (/^data\/[^/]+\/quest_pools\/.+\.json$/.test(path)) {
+        state.extraFiles[path] = stripTextBom(source);
+        return true;
+      }
+
       if (/^data\/[^/]+\/quest_scenes\/.+\.json$/.test(path)) {
         if (!isSceneV1Resource(json)) return false;
         state.extraFiles[path] = stripTextBom(source);

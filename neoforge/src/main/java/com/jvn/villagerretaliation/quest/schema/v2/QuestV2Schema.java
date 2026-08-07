@@ -59,13 +59,21 @@ public final class QuestV2Schema {
 
         JsonObject defs = object();
         defs.add("metadata", metadata());
+        defs.add("migration", migration());
         defs.add("provider", provider());
         defs.add("availability", availability());
+        defs.add("active_state", activeState());
+        defs.add("expiration", expiration());
+        defs.add("branch", branch());
         defs.add("lifecycle", lifecycle());
         defs.add("lifecycle_hook", lifecycleHook());
         defs.add("target", target());
         defs.add("stage", stage());
+        defs.add("completion", completion());
+        defs.add("predicate", predicate());
+        defs.add("bonus", bonus());
         defs.add("objective", objective());
+        defs.add("tracker", tracker());
         defs.add("dialogue_slot", dialogueSlot());
         defs.add("scene", scene());
         defs.add("response", response());
@@ -105,6 +113,19 @@ public final class QuestV2Schema {
         properties.add("show_locked_adventure_hint", booleanSchema());
         properties.add("author", string());
         properties.add("version", string());
+        properties.add("revision", positiveInteger());
+        properties.add("migration", ref("#/$defs/migration"));
+        schema.add("properties", properties);
+        return schema;
+    }
+
+    private static JsonObject migration() {
+        JsonObject schema = typedObject();
+        JsonObject properties = object();
+        properties.add("active_policy", stringEnum(List.of("keep", "reset_stage", "restart", "fail")));
+        properties.add("on_active_change", stringEnum(List.of("keep", "reset_stage", "restart", "fail")));
+        properties.add("stage_aliases", objectMap(idString()));
+        properties.add("objective_aliases", objectMap(idString()));
         schema.add("properties", properties);
         return schema;
     }
@@ -130,35 +151,74 @@ public final class QuestV2Schema {
         JsonObject schema = typedObject();
         JsonObject properties = object();
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
-        properties.add("active", booleanSchema());
+        properties.add("active", ref("#/$defs/active_state"));
+        properties.add("expiration", ref("#/$defs/expiration"));
+        properties.add("branch", ref("#/$defs/branch"));
         properties.add("cooldown", string());
-        properties.add("cooldown_ticks", integer());
-        properties.add("cooldown_days", integer());
-        properties.add("cooldown_seconds", integer());
+        properties.add("cooldown_ticks", nonNegativeInteger());
+        properties.add("cooldown_days", nonNegativeInteger());
+        properties.add("cooldown_seconds", nonNegativeInteger());
         properties.add("completion_cooldown", string());
-        properties.add("completion_cooldown_ticks", integer());
-        properties.add("completion_cooldown_days", integer());
-        properties.add("completion_cooldown_seconds", integer());
+        properties.add("completion_cooldown_ticks", nonNegativeInteger());
+        properties.add("completion_cooldown_days", nonNegativeInteger());
+        properties.add("completion_cooldown_seconds", nonNegativeInteger());
         properties.add("prerequisite_cooldown", string());
-        properties.add("prerequisite_cooldown_ticks", integer());
-        properties.add("prerequisite_cooldown_days", integer());
-        properties.add("prerequisite_cooldown_seconds", integer());
+        properties.add("prerequisite_cooldown_ticks", nonNegativeInteger());
+        properties.add("prerequisite_cooldown_days", nonNegativeInteger());
+        properties.add("prerequisite_cooldown_seconds", nonNegativeInteger());
         properties.add("exclusive_group", resourceLocation());
+        properties.add("exclusive_on", stringEnum(List.of("started", "completed")));
+        properties.add("blocks_on_start", arrayOf(resourceLocation()));
+        properties.add("blocks_on_completion", arrayOf(resourceLocation()));
         properties.add("repeatable", booleanSchema());
-        properties.add("max_starts", integer());
-        properties.add("max_completions", integer());
+        properties.add("max_starts", nonNegativeInteger());
+        properties.add("max_completions", nonNegativeInteger());
         properties.add("completion_scope", string());
         properties.add("scope", string());
         properties.add("abandonment", string());
         properties.add("abandonment_cooldown", string());
-        properties.add("abandonment_cooldown_ticks", integer());
-        properties.add("abandonment_cooldown_days", integer());
-        properties.add("abandonment_cooldown_seconds", integer());
+        properties.add("abandonment_cooldown_ticks", nonNegativeInteger());
+        properties.add("abandonment_cooldown_days", nonNegativeInteger());
+        properties.add("abandonment_cooldown_seconds", nonNegativeInteger());
         properties.add("consume_on_completion", booleanSchema());
         properties.add("consume_on_abandonment", booleanSchema());
         properties.add("locked_to_villager", booleanSchema());
         properties.add("cross_villager_compatible", booleanSchema());
         properties.add("prerequisites", arrayOf(resourceLocation()));
+        schema.add("properties", properties);
+        return schema;
+    }
+
+    private static JsonObject activeState() {
+        JsonObject schema = typedObject();
+        JsonObject properties = object();
+        properties.add("conditions", arrayOf(ref("#/$defs/condition")));
+        properties.add("hide_when_unmet", booleanSchema());
+        properties.add("pause_progress_when_unmet", booleanSchema());
+        schema.add("properties", properties);
+        return schema;
+    }
+
+    private static JsonObject expiration() {
+        JsonObject schema = typedObject();
+        JsonObject properties = object();
+        properties.add("after_ticks", nonNegativeInteger());
+        properties.add("conditions", arrayOf(ref("#/$defs/condition")));
+        properties.add("consume", booleanSchema());
+        properties.add("allow_repickup", booleanSchema());
+        properties.add("notify", booleanSchema());
+        schema.add("properties", properties);
+        return schema;
+    }
+
+    private static JsonObject branch() {
+        JsonObject schema = typedObject();
+        JsonObject properties = object();
+        properties.add("exclusive_group", resourceLocation());
+        properties.add("exclusive_on", stringEnum(List.of("started", "completed")));
+        properties.add("blocks_on_start", arrayOf(resourceLocation()));
+        properties.add("blocks_on_completion", arrayOf(resourceLocation()));
+        properties.add("blocks", arrayOf(resourceLocation()));
         schema.add("properties", properties);
         return schema;
     }
@@ -212,7 +272,11 @@ public final class QuestV2Schema {
         properties.add("description", string());
         properties.add("description_key", string());
         properties.add("objectives", arrayOf(ref("#/$defs/objective")));
-        properties.add("complete_when", arrayOf(idString()));
+        properties.add("complete_when", oneOrArray(ref("#/$defs/predicate")));
+        properties.add("completion", ref("#/$defs/completion"));
+        properties.add("completion_mode", stringEnum(List.of("all", "any", "at_least")));
+        properties.add("completion_count", positiveInteger());
+        properties.add("bonuses", arrayOf(ref("#/$defs/bonus")));
         properties.add("next", transitionStringOrObject());
         properties.add("dialogue", objectMap(ref("#/$defs/dialogue_slot")));
         properties.add("scenes", arrayOf(ref("#/$defs/scene")));
@@ -229,6 +293,32 @@ public final class QuestV2Schema {
         return schema;
     }
 
+    private static JsonObject completion() {
+        JsonObject schema = typedObject();
+        JsonObject properties = object();
+        properties.add("mode", stringEnum(List.of("all", "any", "at_least")));
+        properties.add("count", positiveInteger());
+        schema.add("properties", properties);
+        return schema;
+    }
+
+    private static JsonObject predicate() {
+        return oneOf(idString(), openObject());
+    }
+
+    private static JsonObject bonus() {
+        JsonObject schema = typedObject();
+        schema.add("required", strings("when"));
+        JsonObject properties = object();
+        properties.add("id", idString());
+        properties.add("when", oneOrArray(ref("#/$defs/predicate")));
+        properties.add("mode", stringEnum(List.of("all", "any", "at_least")));
+        properties.add("count", positiveInteger());
+        properties.add("actions", arrayOf(ref("#/$defs/action")));
+        schema.add("properties", properties);
+        return schema;
+    }
+
     private static JsonObject objective() {
         JsonObject schema = typedObject();
         schema.add("required", strings("id", "type"));
@@ -236,14 +326,51 @@ public final class QuestV2Schema {
         properties.add("id", idString());
         properties.add("type", stringEnum(objectiveTypes()));
         properties.add("optional", booleanSchema());
-        properties.add("count", integer());
+        properties.add("count", positiveInteger());
         properties.add("consume", booleanSchema());
-        properties.add("tracker", openObject());
+        properties.add("tracker", ref("#/$defs/tracker"));
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
+        properties.add("criterion", resourceLocation());
+        properties.add("match", objectMap(primitive()));
+        properties.add("target", openObject());
+        properties.add("targets", oneOrArray(string()));
+        properties.add("structure", resourceLocation());
+        properties.add("dimension", resourceLocation());
+        properties.add("location", openObject());
+        properties.add("radius", number());
+        properties.add("search_radius", number());
+        properties.add("discovery_radius", number());
+        for (String key : new String[]{"item", "item_tag", "entity", "entity_tag", "block", "block_tag", "memory", "memory_tag", "quest", "quest_id", "tag"}) {
+            properties.add(key, string());
+        }
+        for (String key : new String[]{"items", "item_tags", "entities", "entity_tags", "blocks", "block_tags", "memory_tags", "gift_reactions", "reputation_levels", "tags", "values", "stages", "choices"}) {
+            properties.add(key, oneOrArray(string()));
+        }
+        properties.add("gift_reaction", string());
+        properties.add("reputation_level", string());
+        properties.add("min", integer());
+        properties.add("max", integer());
+        properties.add("scope", string());
+        properties.add("key", string());
+        properties.add("value", primitive());
+        properties.add("stage", idString());
         properties.add("metadata", openObject());
         properties.add("ui", ref("#/$defs/ui"));
         schema.add("properties", properties);
-        schema.add("additionalProperties", booleanLiteral(true));
+        return schema;
+    }
+
+    private static JsonObject tracker() {
+        JsonObject schema = typedObject();
+        JsonObject properties = object();
+        properties.add("text", string());
+        properties.add("text_key", string());
+        properties.add("complete_text", string());
+        properties.add("complete_text_key", string());
+        properties.add("show_progress", booleanSchema());
+        properties.add("progress", number());
+        properties.add("metadata", openObject());
+        schema.add("properties", properties);
         return schema;
     }
 
@@ -369,6 +496,7 @@ public final class QuestV2Schema {
         properties.add("gossip_reputation", integer());
         properties.add("loot_table", resourceLocation());
         properties.add("memory_event", resourceLocation());
+        properties.add("memory_scope", stringEnum(List.of("villager", "village", "both")));
         schema.add("properties", properties);
         return schema;
     }
@@ -382,9 +510,12 @@ public final class QuestV2Schema {
         properties.add("description_key", string());
         properties.add("tracker_text", string());
         properties.add("tracker_text_key", string());
+        properties.add("tracker_complete_text", string());
+        properties.add("tracker_complete_text_key", string());
         properties.add("show_progress", booleanSchema());
         properties.add("progress", number());
         properties.add("placeholders", objectMap(string()));
+        properties.add("metadata", openObject());
         properties.add("icon", resourceLocation());
         properties.add("color", string());
         properties.add("priority", integer());
@@ -518,6 +649,20 @@ public final class QuestV2Schema {
         return schema;
     }
 
+    private static JsonObject oneOrArray(JsonObject itemSchema) {
+        return oneOf(itemSchema, arrayOf(itemSchema.deepCopy()));
+    }
+
+    private static JsonObject oneOf(JsonObject... schemas) {
+        JsonObject schema = object();
+        JsonArray options = array();
+        for (JsonObject option : schemas) {
+            options.add(option);
+        }
+        schema.add("oneOf", options);
+        return schema;
+    }
+
     private static JsonObject ref(String ref) {
         JsonObject schema = object();
         schema.addProperty("$ref", ref);
@@ -558,6 +703,24 @@ public final class QuestV2Schema {
     private static JsonObject integer() {
         JsonObject schema = object();
         schema.addProperty("type", "integer");
+        return schema;
+    }
+
+    private static JsonObject positiveInteger() {
+        JsonObject schema = integer();
+        schema.addProperty("minimum", 1);
+        return schema;
+    }
+
+    private static JsonObject nonNegativeInteger() {
+        JsonObject schema = integer();
+        schema.addProperty("minimum", 0);
+        return schema;
+    }
+
+    private static JsonObject primitive() {
+        JsonObject schema = object();
+        schema.add("type", strings("string", "number", "boolean"));
         return schema;
     }
 

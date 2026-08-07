@@ -338,6 +338,60 @@ function testSurfaceImportsAndEdits(app) {
   assert(app.state.notifications.notifications[0].trigger === "gift_given", "Notification preview edit did not apply new trigger.");
 }
 
+function testAdvancedQuestRoundTrip(app) {
+  app.state = app.createInitialState();
+  const questPath = "data/storypack/quests/routes/old_road.json";
+  const poolPath = "data/storypack/quest_pools/daily_routes.json";
+  const quest = {
+    schema: "villagerretaliation:quest/v2",
+    id: "storypack:old_road",
+    metadata: {
+      title: "The Old Road",
+      tags: ["storypack:road", "storypack:daily"],
+      revision: 3,
+      migration: { active_policy: "reset_stage", stage_aliases: { travel: "survey" } }
+    },
+    provider: { type: "villagerretaliation:villager", death_protection: "while_active" },
+    availability: {
+      active: { conditions: [{ type: "weather", state: "clear" }], pause_progress_when_unmet: true },
+      expiration: { after_ticks: 24000, consume: true, notify: true },
+      branch: { exclusive_group: "storypack:road_choice", exclusive_on: "started", blocks: ["storypack:river_route"] }
+    },
+    entry_stage: "survey",
+    stages: [{
+      id: "survey",
+      objectives: [{
+        id: "inspect_marker",
+        type: "criterion",
+        criterion: "storypack:marker_inspected",
+        match: { marker: "north", repaired: true },
+        tracker: { text: "Inspect the north marker.", complete_text: "Marker inspected." }
+      }],
+      completion: { mode: "any", count: 1 },
+      bonuses: [{ id: "careful", when: "inspect_marker", actions: [{ type: "experience", amount: 3 }] }],
+      ui: { tracker_text: "Survey the road.", tracker_complete_text: "Road surveyed." }
+    }],
+    rewards: { memory_event: "storypack:road_surveyed", memory_scope: "village" },
+    ui: { icon: "minecraft:filled_map", color: "#d4a35a", priority: 20, hidden: false }
+  };
+  const pool = {
+    id: "storypack:daily_routes",
+    scope: "village",
+    size: 2,
+    refresh_ticks: 24000,
+    avoid_recent: 2,
+    entries: [{ quest: "storypack:old_road", weight: 3 }, { tags: ["storypack:daily"], weight: 1 }]
+  };
+
+  assert(app.ingestKnownJson(questPath, JSON.stringify(quest)), "Advanced quest import failed.");
+  assert(app.ingestKnownJson(poolPath, JSON.stringify(pool)), "Quest pool import failed.");
+  const files = app.generatedFiles();
+  assert(JSON.stringify(canonicalJson(jsonFile(files, questPath))) === JSON.stringify(canonicalJson(quest)), "Advanced quest fields changed during builder round trip.");
+  assert(JSON.stringify(canonicalJson(jsonFile(files, poolPath))) === JSON.stringify(canonicalJson(pool)), "Quest pool fields changed during builder round trip.");
+  assert(app.applyEditedFile(questPath, JSON.stringify({ ...quest, metadata: { ...quest.metadata, revision: 4 } })), "Advanced quest edit failed.");
+  assert(jsonFile(app.generatedFiles(), questPath).metadata.revision === 4, "Edited quest revision was not exported.");
+}
+
 function testBackendPathNormalization(app) {
   const normalized = app.backend.normalizeImportedPaths({
     "Example Pack/pack.mcmeta": "{}",
@@ -511,6 +565,7 @@ testDialogueFolderTemplate(app);
 testCheckedInTemplateMatchesBuilder(app);
 testAllSurfaceGeneration(app);
 testSurfaceImportsAndEdits(app);
+testAdvancedQuestRoundTrip(app);
 testBackendPathNormalization(app);
 testSceneResourceRoundTrip(app);
 testSkillTradeRoundTrip(app);
