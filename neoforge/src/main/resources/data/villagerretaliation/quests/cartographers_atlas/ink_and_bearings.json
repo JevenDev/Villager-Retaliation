@@ -15,7 +15,8 @@
       "tier.mid",
       "difficulty.normal",
       "commitment.standard",
-      "theme.exploration"
+      "theme.exploration",
+      "feature.branching"
     ],
     "parent": "villagerretaliation:blank_map_promise",
     "title_key": "quest.cartographers_atlas.ink_and_bearings.title",

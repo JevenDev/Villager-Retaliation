@@ -18,6 +18,7 @@
       "difficulty.hard",
       "commitment.expedition",
       "theme.exploration",
+      "feature.branching",
       "feature.scene"
     ],
     "parent": "villagerretaliation:the_atlas_test",
