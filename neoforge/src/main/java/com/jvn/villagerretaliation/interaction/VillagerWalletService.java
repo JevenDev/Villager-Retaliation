@@ -52,11 +52,6 @@ public final class VillagerWalletService {
         );
     }
 
-    public static boolean isWalletInitialized(Villager villager) {
-        return villager.getPersistentData().contains(WALLET_TAG, Tag.TAG_COMPOUND)
-                && villager.getPersistentData().getCompound(WALLET_TAG).getBoolean(INITIALIZED_TAG);
-    }
-
     public static void initializeWalletIfNeeded(Villager villager) {
         CompoundTag wallet = walletTag(villager);
         if (wallet.getBoolean(INITIALIZED_TAG)) {
@@ -85,22 +80,6 @@ public final class VillagerWalletService {
         return getWallet(villager).maxEmeralds();
     }
 
-    public static int getLifetimeEarned(Villager villager) {
-        return getWallet(villager).lifetimeEarned();
-    }
-
-    public static int getLifetimeSpent(Villager villager) {
-        return getWallet(villager).lifetimeSpent();
-    }
-
-    public static int getLifetimeDeposited(Villager villager) {
-        return getWallet(villager).lifetimeDeposited();
-    }
-
-    public static int addEmeralds(Villager villager, int amount, WalletSource source) {
-        return addCurrency(villager, amount, source);
-    }
-
     public static int addCurrency(Villager villager, int amount, WalletSource source) {
         if (amount <= 0) {
             return 0;
@@ -116,16 +95,8 @@ public final class VillagerWalletService {
         return safeAmount;
     }
 
-    public static boolean canSpendEmeralds(Villager villager, int amount) {
-        return canSpendCurrency(villager, amount);
-    }
-
     public static boolean canSpendCurrency(Villager villager, int amount) {
         return amount <= 0 || hasUnlimitedCurrency() || getCurrentEmeralds(villager) >= amount;
-    }
-
-    public static boolean spendEmeralds(Villager villager, int amount, WalletSource source) {
-        return spendCurrency(villager, amount, source);
     }
 
     public static boolean spendCurrency(Villager villager, int amount, WalletSource source) {
@@ -149,19 +120,6 @@ public final class VillagerWalletService {
     public static void setMaxEmeraldsFromProfessionAndSkills(Villager villager) {
         initializeWalletIfNeeded(villager);
         walletTag(villager).putInt(MAX_EMERALDS_TAG, calculateMaxEmeralds(villager));
-    }
-
-    public static CompoundTag serializeWallet(Villager villager) {
-        initializeWalletIfNeeded(villager);
-        return walletTag(villager).copy();
-    }
-
-    public static void deserializeWallet(Villager villager, CompoundTag walletData) {
-        if (walletData == null) {
-            return;
-        }
-        villager.getPersistentData().put(WALLET_TAG, walletData.copy());
-        initializeWalletIfNeeded(villager);
     }
 
     public static void tickWallet(Villager villager) {
@@ -205,18 +163,10 @@ public final class VillagerWalletService {
         return Math.max(0, wallet.currentEmeralds() - wallet.maxEmeralds());
     }
 
-    public static boolean canDepositWalletEmeralds(Villager villager) {
-        return canDepositWalletCurrency(villager);
-    }
-
     public static boolean canDepositWalletCurrency(Villager villager) {
         return getDepositAmount(villager) > 0
                 && villager.level() instanceof ServerLevel level
                 && AssignedStorageService.hasAssignedStorage(level, villager);
-    }
-
-    public static DepositResult tryDepositExcessEmeralds(Villager villager) {
-        return tryDepositExcessCurrency(villager);
     }
 
     public static DepositResult tryDepositExcessCurrency(Villager villager) {
@@ -265,21 +215,9 @@ public final class VillagerWalletService {
         return new DepositResult(requested, deposited, requested - deposited, true, false);
     }
 
-    public static ItemStack createProtectedEmeraldStack(Villager villager, int count, String reason) {
-        return createProtectedCurrencyStack(villager, count, reason);
-    }
-
     public static ItemStack createProtectedCurrencyStack(Villager villager, int count, String reason) {
         ItemStack stack = VillagerCurrencyResources.createStack(villager.level().getServer(), count);
         return stack.isEmpty() ? ItemStack.EMPTY : ProtectedVillagerProperty.mark(stack, villager, reason);
-    }
-
-    public static boolean canAffordPurchase(Villager villager, int amount) {
-        return canSpendCurrency(villager, amount);
-    }
-
-    public static boolean payFromWallet(Villager villager, int amount, WalletSource source) {
-        return spendCurrency(villager, amount, source);
     }
 
     public static int getVendorCurrencyAvailable(Villager villager) {
@@ -296,26 +234,8 @@ public final class VillagerWalletService {
         return getMaxEmeralds(villager);
     }
 
-    public static void replenishVendorCurrencyIfNeeded(Villager villager) {
-        tickWallet(villager);
-    }
-
     public static boolean hasUnlimitedCurrency() {
         return VillagerRetaliationConfig.DISABLE_VILLAGER_WALLET_LIMIT.get();
-    }
-
-    public static WealthTier getWealthTier(Villager villager) {
-        int cap = getMaxEmeralds(villager);
-        if (cap >= 120) {
-            return WealthTier.WEALTHY;
-        }
-        if (cap >= 60) {
-            return WealthTier.COMFORTABLE;
-        }
-        if (cap >= 20) {
-            return WealthTier.MODEST;
-        }
-        return WealthTier.POOR;
     }
 
     private static CompoundTag walletTag(Villager villager) {
@@ -479,13 +399,6 @@ public final class VillagerWalletService {
         DEPOSIT_ADJUSTMENT,
         DUEL,
         DEBUG
-    }
-
-    public enum WealthTier {
-        POOR,
-        MODEST,
-        COMFORTABLE,
-        WEALTHY
     }
 
     public record WalletSnapshot(
