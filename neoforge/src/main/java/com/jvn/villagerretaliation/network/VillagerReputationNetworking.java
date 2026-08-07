@@ -276,11 +276,15 @@ public final class VillagerReputationNetworking {
                 QuestTrackerRequestPayload.TYPE,
                 QuestTrackerRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
-                        ToucanNetwork.withServerPlayer(context, player -> com.jvn.villagerretaliation.quest.VillagerQuestService.handleTrackerRequest(
-                                player,
-                                payload.questId(),
-                                payload.action()
-                        )))
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (ServerboundRequestLimiter.tryAcquire(
+                                    player, QuestTrackerRequestPayload.TYPE.id(), 5L)) {
+                                com.jvn.villagerretaliation.quest.VillagerQuestService.handleTrackerRequest(
+                                        player,
+                                        payload.questId(),
+                                        payload.action());
+                            }
+                        }))
         );
         network.playToServer(
                 VillagerReputationRequestPayload.TYPE,
