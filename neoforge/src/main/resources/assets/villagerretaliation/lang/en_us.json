@@ -1991,6 +1991,8 @@
   "villagerretaliation.gui.quest_journal.questline": "Questline: %s",
   "villagerretaliation.gui.quest_journal.search": "Search: %s",
   "villagerretaliation.gui.quest_journal.section.objectives": "Objectives",
+  "villagerretaliation.gui.quest_journal.section.previous_step": "Previous step",
+  "villagerretaliation.gui.quest_journal.section.previous_steps": "Previous steps",
   "villagerretaliation.gui.quest_journal.section.prerequisites": "Prerequisites",
   "villagerretaliation.gui.quest_journal.section.rewards": "Rewards",
   "villagerretaliation.gui.quest_journal.status.not_tracked": "Not tracked",
@@ -2006,6 +2008,7 @@
   "villagerretaliation.gui.quest_journal.tab.completed": "Completed",
   "villagerretaliation.gui.quest_journal.tab.completed.tooltip": "Completed quests",
   "villagerretaliation.gui.quest_journal.title": "Quest Journal",
+  "villagerretaliation.gui.quest_journal.view_previous_step": "Click to view previous step",
   "villagerretaliation.gui.quest_journal.waypoint": "Waypoint: %s, %s, %s in %s%s",
 
   "gui.villagerretaliation.inventory.contract_time_remaining": "Contract time remaining",
