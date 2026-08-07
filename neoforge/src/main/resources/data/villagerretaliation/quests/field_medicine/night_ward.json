@@ -7,7 +7,8 @@
     "questline": "field_medicine",
     "parent": "villagerretaliation:clean_bandages",
     "tags": [
-      "group.field_medicine"
+      "group.field_medicine",
+      "role.side"
     ]
   },
   "provider": {

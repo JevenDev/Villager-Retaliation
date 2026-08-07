@@ -6,7 +6,8 @@
     "description": "Bring arrows so the village watch can answer trouble before it reaches the doors.",
     "questline": "village_defense",
     "tags": [
-      "group.village_defense"
+      "group.village_defense",
+      "role.request"
     ]
   },
   "provider": {

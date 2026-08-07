@@ -6,7 +6,8 @@
     "description": "Bring sweet berries for quick meals and traveling pouches.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

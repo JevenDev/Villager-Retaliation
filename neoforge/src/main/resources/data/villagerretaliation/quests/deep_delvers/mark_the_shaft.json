@@ -8,7 +8,8 @@
     "parent": "villagerretaliation:below_the_bell",
     "tags": [
       "group.deep_delvers",
-      "branching"
+      "role.story",
+      "feature.branching"
     ]
   },
   "provider": {

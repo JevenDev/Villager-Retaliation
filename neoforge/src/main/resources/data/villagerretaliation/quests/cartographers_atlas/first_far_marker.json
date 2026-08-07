@@ -6,7 +6,8 @@
     "description": "Follow the first atlas mark to Trail Ruins and plate the route with copper.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:ink_and_bearings",
     "title_key": "quest.cartographers_atlas.first_far_marker.title",

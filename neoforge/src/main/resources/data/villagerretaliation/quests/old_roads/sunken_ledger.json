@@ -6,7 +6,8 @@
     "description": "Search a shipwreck and return with a compass and paper before the route is forgotten.",
     "questline": "old_roads",
     "tags": [
-      "group.old_roads"
+      "group.old_roads",
+      "role.side"
     ]
   },
   "provider": {

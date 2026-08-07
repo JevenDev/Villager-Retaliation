@@ -6,7 +6,8 @@
     "description": "Prepare the paper, leather, and wax a village courier needs before messages can travel safely.",
     "questline": "courier_roads",
     "tags": [
-      "group.courier_roads"
+      "group.courier_roads",
+      "role.side"
     ]
   },
   "provider": {

@@ -7,7 +7,8 @@
     "questline": "dangerous_commissions",
     "parent": "villagerretaliation:trial_chamber_recall",
     "tags": [
-      "group.dangerous_commissions"
+      "group.dangerous_commissions",
+      "role.side"
     ]
   },
   "provider": {

@@ -6,7 +6,8 @@
     "description": "Prepare the atlas index and choose whether its first principle favors roads or wonders.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:blank_map_promise",
     "title_key": "quest.cartographers_atlas.ink_and_bearings.title",

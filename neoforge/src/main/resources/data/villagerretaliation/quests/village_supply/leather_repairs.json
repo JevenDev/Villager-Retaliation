@@ -6,7 +6,8 @@
     "description": "Bring leather for tool loops, armor straps, and pack repairs.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

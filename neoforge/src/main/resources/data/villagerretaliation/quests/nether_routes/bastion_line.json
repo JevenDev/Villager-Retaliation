@@ -7,7 +7,8 @@
     "questline": "nether_routes",
     "parent": "villagerretaliation:choose_a_road",
     "tags": [
-      "group.nether_routes"
+      "group.nether_routes",
+      "role.story"
     ]
   },
   "provider": {

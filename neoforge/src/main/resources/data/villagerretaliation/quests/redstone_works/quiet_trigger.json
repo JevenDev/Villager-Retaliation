@@ -7,7 +7,8 @@
     "questline": "redstone_works",
     "parent": "villagerretaliation:power_the_gate",
     "tags": [
-      "group.redstone_works"
+      "group.redstone_works",
+      "role.story"
     ]
   },
   "provider": {

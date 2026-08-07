@@ -6,7 +6,8 @@
     "description": "Scout a Pillager Outpost and return with a crossbow as proof of the threat.",
     "questline": "village_defense",
     "tags": [
-      "group.village_defense"
+      "group.village_defense",
+      "role.side"
     ]
   },
   "provider": {

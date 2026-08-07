@@ -6,7 +6,8 @@
     "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

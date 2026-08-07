@@ -8,7 +8,8 @@
     "description_key": "quest.lost_civilization.tales_of_a_lost_civilization.description",
     "questline": "lost_civilization",
     "tags": [
-      "group.lost_civilization"
+      "group.lost_civilization",
+      "role.side"
     ]
   },
   "provider": {

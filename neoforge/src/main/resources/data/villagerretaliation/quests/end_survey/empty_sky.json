@@ -6,7 +6,8 @@
     "description": "Prepare an expedition beyond the central End island.",
     "questline": "end_survey",
     "tags": [
-      "group.end_survey"
+      "group.end_survey",
+      "role.story"
     ]
   },
   "provider": {

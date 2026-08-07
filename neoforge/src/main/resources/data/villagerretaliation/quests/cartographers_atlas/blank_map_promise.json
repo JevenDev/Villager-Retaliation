@@ -6,7 +6,8 @@
     "description": "Bind the first blank atlas folio with paper, ink, and a compass bearing.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "title_key": "quest.cartographers_atlas.blank_map_promise.title",
     "description_key": "quest.cartographers_atlas.blank_map_promise.description"

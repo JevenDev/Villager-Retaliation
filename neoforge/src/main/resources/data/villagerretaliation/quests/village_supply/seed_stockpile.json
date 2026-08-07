@@ -6,7 +6,8 @@
     "description": "Bring seed grain so the village can replant without touching winter stores.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

@@ -6,7 +6,8 @@
     "description": "Carry the atlas beyond the Overworld and chart a Nether Fortress bearing.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:choose_the_horizon",
     "title_key": "quest.cartographers_atlas.nether_meridian.title",

@@ -8,7 +8,8 @@
     "parent": "villagerretaliation:through_fire",
     "tags": [
       "group.nether_routes",
-      "branching"
+      "role.story",
+      "feature.branching"
     ]
   },
   "provider": {

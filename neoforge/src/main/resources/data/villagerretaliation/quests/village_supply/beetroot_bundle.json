@@ -6,7 +6,8 @@
     "description": "Bring beetroot for stews, pickling jars, and simple sickroom meals.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

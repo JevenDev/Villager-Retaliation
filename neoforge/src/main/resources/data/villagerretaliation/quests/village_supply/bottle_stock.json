@@ -6,7 +6,8 @@
     "description": "Bring glass bottles for tonics, inks, and careful measuring.",
     "questline": "village_supply",
     "tags": [
-      "group.village_supply"
+      "group.village_supply",
+      "role.request"
     ]
   },
   "provider": {

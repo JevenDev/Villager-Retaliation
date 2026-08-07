@@ -6,7 +6,8 @@
     "description": "Follow the coast horizon to an Ocean Monument and bring back prismarine proof.",
     "questline": "cartographers_atlas",
     "tags": [
-      "group.exploration"
+      "group.exploration",
+      "role.story"
     ],
     "parent": "villagerretaliation:choose_the_horizon",
     "title_key": "quest.cartographers_atlas.chart_the_drowned_coast.title",

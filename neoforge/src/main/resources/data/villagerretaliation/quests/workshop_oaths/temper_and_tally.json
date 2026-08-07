@@ -7,7 +7,8 @@
     "questline": "workshop_oaths",
     "parent": "villagerretaliation:honed_handles",
     "tags": [
-      "group.workshop_oaths"
+      "group.workshop_oaths",
+      "role.side"
     ]
   },
   "provider": {
