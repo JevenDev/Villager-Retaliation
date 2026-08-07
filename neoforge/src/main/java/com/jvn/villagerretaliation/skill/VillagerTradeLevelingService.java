@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerData;
@@ -40,6 +41,15 @@ public final class VillagerTradeLevelingService {
         }
 
         return result.awardedXp();
+    }
+
+    public static boolean onTradeLevelChanged(
+            ServerLevel level, Villager villager, int previousLevel, int currentLevel) {
+        if (level == null || villager == null) return false;
+        int gainedLevels = Math.clamp(currentLevel, 1, 5) - Math.clamp(previousLevel, 1, 5);
+        if (gainedLevels <= 0) return false;
+        return VillagerProfileManager.adjustAttribute(
+                level, villager, VillagerSocialAttribute.KNOWLEDGE, gainedLevels);
     }
 
     /**

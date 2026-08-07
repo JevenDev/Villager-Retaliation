@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
@@ -306,6 +307,32 @@ public final class VillagerSkillProgressionGameTests {
         }
         helper.succeed();
     }
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void tradeLevelAdvancementAddsKnowledgeOncePerLevel(GameTestHelper helper) {
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+        villager.setVillagerData(
+                villager.getVillagerData().setProfession(VillagerProfession.LIBRARIAN).setLevel(1));
+        VillagerProfileManager.setAttribute(
+                helper.getLevel(), villager, VillagerSocialAttribute.KNOWLEDGE, 50);
+        helper.assertTrue(
+                VillagerTradeLevelingService.onTradeLevelChanged(helper.getLevel(), villager, 1, 2),
+                "reaching a new trade level should change knowledge");
+        helper.assertValueEqual(
+                VillagerProfileManager.getOrCreateProfile(helper.getLevel(), villager)
+                        .socialAttributes().knowledge(),
+                51, "one trade level should add one knowledge");
+        helper.assertFalse(
+                VillagerTradeLevelingService.onTradeLevelChanged(helper.getLevel(), villager, 2, 2),
+                "replaying the same trade level should not add knowledge");
+        VillagerTradeLevelingService.onTradeLevelChanged(helper.getLevel(), villager, 2, 4);
+        helper.assertValueEqual(
+                VillagerProfileManager.getOrCreateProfile(helper.getLevel(), villager)
+                        .socialAttributes().knowledge(),
+                53, "skipped trade levels should award one knowledge apiece");
+        villager.discard();
+        helper.succeed();
+    }
+
 
     @GameTest(template = EMPTY_TEMPLATE)
     public static void tradeProgressMigratesAndOfferKeysAreStable(GameTestHelper helper) {
