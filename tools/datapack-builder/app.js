@@ -447,6 +447,8 @@ const FIELD_TOOLTIPS = {
   "forced-requires_witness_armed": "Requires the witnessing villager to have a usable weapon in either hand.",
   "forced-player_items": "For player_item_proximity, requires the nearby player to carry one matching item or item tag. Prefix tags with #.",
   "forced-player_item_slots": "Where to check player items. Defaults to hands when player_items is set.",
+  "forced-draw_weapon": "Makes a matching villager visibly equip a carried weapon without assigning a target or starting retaliation.",
+  "forced-draw_weapon_duration_seconds": "How long the villager keeps the weapon drawn. Defaults to 10 seconds.",
   "forced-requires_held_trade_item": "For player_item_proximity, matches when the player holds an active trade cost item for this villager.",
   "forced-min_trade_level": "Minimum villager trade level from 1 to 5.",
   "forced-max_trade_level": "Maximum villager trade level from 1 to 5.",
@@ -4255,6 +4257,7 @@ function entryIssueDetail(section, kind, entry) {
     const forcedNumberSpecs = [
       { key: "priority", label: "Priority", expected: "a valid priority number, positive or negative", fieldId: "forced-priority", valid: Number.isFinite },
       { key: "witness_radius", label: "Witness radius", expected: "a number greater than or equal to 1", fieldId: "forced-witness_radius", valid: (value) => value >= 1 },
+      { key: "draw_weapon_duration_seconds", label: "Draw weapon duration", expected: "a number greater than or equal to 1", fieldId: "forced-draw_weapon_duration_seconds", valid: (value) => Number.isFinite(value) && value >= 1 },
       { key: "min_recent_retaliations", label: "Min prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-min_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 },
       { key: "max_recent_retaliations", label: "Max prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-max_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 },
       { key: "min_player_item_enchantment_level", label: "Minimum enchantment level", expected: "a number greater than or equal to 1", fieldId: "forced-min_player_item_enchantment_level", valid: (value) => value >= 1 },
@@ -7316,6 +7319,7 @@ function renderForcedDialogue() {
             ${villagerEquipmentToggles("forced", entry, "witness")}
             ${listField({ id: "forced-player_items", label: "Player items or tags", value: entry.player_items ?? entry.player_item ?? entry.player_item_tags ?? entry.player_item_tag, help: "Required for player_item_proximity. Use minecraft:diamond_sword or #minecraft:swords." })}
             ${listField({ id: "forced-player_item_slots", label: "Player item slots", value: entry.player_item_slots ?? entry.player_item_slot, help: CONSTANTS.itemSlots.join(", ") })}
+            ${field({ id: "forced-draw_weapon_duration_seconds", label: "Draw weapon duration (seconds)", value: entry.draw_weapon_duration_seconds ?? "", type: "number", attrs: 'min="1" step="1"' })}
             ${field({ id: "forced-min_trade_level", label: "Min trade level", value: entry.min_trade_level ?? entry.min_villager_trade_level ?? "", type: "number", attrs: 'min="1" max="5" step="1"' })}
             ${field({ id: "forced-max_trade_level", label: "Max trade level", value: entry.max_trade_level ?? entry.max_villager_trade_level ?? "", type: "number", attrs: 'min="1" max="5" step="1"' })}
             ${playerItemDurabilityFields("forced", entry)}
@@ -7328,6 +7332,7 @@ function renderForcedDialogue() {
               <label>Event Behavior</label>
               <div class="toggle-grid">
                 ${toggle({ id: "forced-requires_line_of_sight", label: "Requires line of sight", checked: entry.requires_line_of_sight !== false })}
+                ${toggle({ id: "forced-draw_weapon", label: "Draw weapon", checked: entry.draw_weapon === true })}
                 ${toggle({ id: "forced-requires_held_trade_item", label: "Held trade item", checked: (entry.requires_held_trade_item ?? entry.requires_trade_item ?? entry.requires_matching_trade_item) === true })}
               </div>
             </div>
@@ -8211,6 +8216,8 @@ function readForcedDialogueEntry(options = {}) {
     ...readVillagerEquipment("forced", "witness"),
     player_items: readList("forced-player_items"),
     player_item_slots: readList("forced-player_item_slots"),
+    draw_weapon: readValue("forced-draw_weapon"),
+    draw_weapon_duration_seconds: parseInteger(readValue("forced-draw_weapon_duration_seconds")),
     requires_held_trade_item: readValue("forced-requires_held_trade_item"),
     min_trade_level: parseInteger(readValue("forced-min_trade_level")),
     max_trade_level: parseInteger(readValue("forced-max_trade_level")),

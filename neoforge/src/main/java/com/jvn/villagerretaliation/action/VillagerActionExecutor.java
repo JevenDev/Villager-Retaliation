@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.action;
 
+import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
@@ -69,6 +70,8 @@ public final class VillagerActionExecutor {
             case CLEAR_TAG -> executeClearFactTag(context, action, replacements);
             case SET_VARIABLE -> executeSetFactVariable(context, action, replacements);
             case COUNTER -> executeCounter(context, action, replacements);
+            case DRAW_WEAPON -> VillagerWeaponDrawService.draw(context.villager(), action.amount())
+                    ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case START_SCENE -> SceneLaunchService.launch(context, action).accepted()
                     ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case NONE -> VillagerActionResult.EMPTY;

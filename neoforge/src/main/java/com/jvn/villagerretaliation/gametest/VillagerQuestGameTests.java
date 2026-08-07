@@ -518,6 +518,17 @@ public final class VillagerQuestGameTests {
                                 && descriptor.aliases().contains("quest_stage")),
                 "set_variable descriptor did not expose quest_stage alias");
 
+        JsonObject drawWrapper = JsonParser.parseString(
+                "{\"actions\":[{\"type\":\"draw_weapon\",\"duration_seconds\":3}]}").getAsJsonObject();
+        List<VillagerActionDefinition> drawActions = VillagerActionDefinition.readList(
+                ResourceLocation.fromNamespaceAndPath("test", "draw_weapon"),
+                "draw weapon test",
+                drawWrapper);
+        helper.assertValueEqual(drawActions.size(), 1, "draw weapon action count");
+        helper.assertValueEqual(
+                drawActions.getFirst().kind(), VillagerActionDefinition.Kind.DRAW_WEAPON, "draw weapon action kind");
+        helper.assertValueEqual(drawActions.getFirst().amount(), 60, "draw weapon duration");
+
         VillagerActionDefinition notification = new VillagerActionDefinition(
                 VillagerActionDefinition.Kind.NOTIFICATION,
                 null,

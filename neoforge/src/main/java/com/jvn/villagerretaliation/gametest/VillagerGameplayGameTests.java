@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.gametest;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
@@ -187,6 +188,28 @@ public final class VillagerGameplayGameTests {
         helper.assertTrue(
                 VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).orElse(null) == fartherSword,
                 "ground-weapon selection should prefer melee quality before proximity");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dataDrivenWeaponDrawArmsWithoutRetaliating(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack remainder = VillagerInventoryAccess.addItem(villager, new ItemStack(Items.IRON_SWORD));
+        helper.assertTrue(remainder.isEmpty(), "test weapon should fit in the villager inventory");
+
+        helper.assertTrue(
+                VillagerWeaponDrawService.draw(villager, 40),
+                "an inventory weapon should be drawn");
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD), "drawn weapon should be visible");
+        helper.assertTrue(VillagerWeaponDrawService.isDrawn(villager), "draw state should remain active");
+        helper.assertTrue(villager.getTarget() == null, "drawing must not assign an attack target");
+
+        VillagerWeaponDrawService.sheathe(villager);
+        helper.assertFalse(VillagerWeaponDrawService.isDrawn(villager), "sheathe should clear draw state");
+        helper.assertTrue(villager.getMainHandItem().isEmpty(), "borrowed weapon should leave the hand");
+        helper.assertTrue(
+                VillagerInventoryAccess.hasCarriedItem(villager, stack -> stack.is(Items.IRON_SWORD)),
+                "sheathed weapon should return to its inventory owner");
         helper.succeed();
     }
 

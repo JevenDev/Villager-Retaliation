@@ -122,6 +122,7 @@ public record VillagerActionDefinition(
                 || entry.has("gossip_reputation")
                 || entry.has("profile_attribute")
                 || entry.has("social_attribute")
+                || entry.has("draw_weapon")
                 || entry.has("memory_event")
                 || entry.has("loot_table")
                 || entry.has("target_stage")
@@ -271,6 +272,9 @@ public record VillagerActionDefinition(
         if (entry.has("profile_attribute") || entry.has("social_attribute")) {
             return Kind.PROFILE_ATTRIBUTE;
         }
+        if (entry.has("draw_weapon")) {
+            return Kind.DRAW_WEAPON;
+        }
         if (entry.has("flash_tracker")) {
             return Kind.TRACKER;
         }
@@ -303,6 +307,9 @@ public record VillagerActionDefinition(
                 }
                 yield by == null ? 1 : by;
             }
+            case DRAW_WEAPON -> (int) Math.min(
+                    Integer.MAX_VALUE,
+                    Math.max(1L, DatapackJsonReader.readDurationTicks(entry, "duration", 20L * 10L)));
             default -> 0;
         };
     }
@@ -347,7 +354,7 @@ public record VillagerActionDefinition(
             case START_SCENE -> sceneId != null && !sceneOperationId.isBlank();
             case PROFILE_ATTRIBUTE ->
                     VillagerSocialAttribute.bySerializedName(factKey) != null;
-            case TRACKER, EXPERIENCE, REPUTATION, GOSSIP -> true;
+            case TRACKER, EXPERIENCE, REPUTATION, GOSSIP, DRAW_WEAPON -> true;
             case NONE -> false;
         };
         if (!valid) {
@@ -544,6 +551,7 @@ public record VillagerActionDefinition(
         CLEAR_TAG("clear_tag"),
         SET_VARIABLE("set_variable"),
         COUNTER("counter"),
+        DRAW_WEAPON("draw_weapon"),
         START_SCENE("start_scene");
 
         private final String serializedName;

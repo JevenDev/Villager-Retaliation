@@ -19,6 +19,7 @@ Beta.13 is primarily additive for pack authors. Existing beta.12 dialogue, notif
 5. Quest providers and scene actors can opt into the downed-state protection contract when the story requires a villager to survive ordinary lethal damage.
 6. New beta.13 examples live in `example-packs/cinematic-gate-ambush/` and `example-packs/repeatable-scene-run-id/`.
 7. Sell-price `item` fields accept item tags such as `#minecraft:logs` as well as exact item IDs.
+8. Shared actions accept `type: "draw_weapon"`, while `player_item_proximity` forced-dialogue rules can set `draw_weapon: true` and a draw duration without starting retaliation.
 
 Start with [Persistent Quest Scenes](Quest-Scenes.md) for the authoring surface. [Quest Scene Runtime](../docs/quest-scene-runtime.md) defines the underlying ownership, continuation, recovery, and cleanup guarantees for developers who need the high-level runtime contract.
 

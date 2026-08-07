@@ -1305,11 +1305,13 @@
           "enum": [
             "add_counter",
             "add_tag",
+            "arm",
             "attribute_reward",
             "branch_transition",
             "clear_tag",
             "counter",
             "dialogue",
+            "draw_weapon",
             "experience",
             "fact",
             "flash_tracker",
@@ -1334,6 +1336,7 @@
             "quest_tag",
             "quest_tracker",
             "quest_transition",
+            "ready_weapon",
             "remove_tag",
             "rep",
             "reputation",
@@ -1359,11 +1362,13 @@
           "enum": [
             "add_counter",
             "add_tag",
+            "arm",
             "attribute_reward",
             "branch_transition",
             "clear_tag",
             "counter",
             "dialogue",
+            "draw_weapon",
             "experience",
             "fact",
             "flash_tracker",
@@ -1388,6 +1393,7 @@
             "quest_tag",
             "quest_tracker",
             "quest_transition",
+            "ready_weapon",
             "remove_tag",
             "rep",
             "reputation",
@@ -1427,6 +1433,15 @@
           ]
         },
         "amount": {
+          "type": "integer"
+        },
+        "duration_ticks": {
+          "type": "integer"
+        },
+        "duration_seconds": {
+          "type": "integer"
+        },
+        "duration_days": {
           "type": "integer"
         }
       }

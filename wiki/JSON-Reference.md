@@ -420,6 +420,7 @@ Common action types:
 | `memory` | `memory_event`, optional `memory_scope`: `villager`, `village`, or `both` |
 | `loot` | `loot_table` |
 | `tracker` | `flash_tracker` |
+| `draw_weapon` | Optional `duration_ticks`, `duration_seconds`, or `duration_days`; defaults to 10 seconds |
 | `set_tag` | `tag` or `set_tag`, optional `scope`, optional `quest` |
 | `clear_tag` | `tag` or `clear_tag`, optional `scope`, optional `quest` |
 | `set_variable` | `key` or `variable`, `value`, optional `scope`, optional `quest` |
@@ -427,6 +428,16 @@ Common action types:
 | `counter` | `key` or `counter`, optional `amount`, `by`, or `delta`, optional `scope`, optional `quest` |
 
 Quest facts default to `quest` scope when the action has a quest id or is inside a quest-owned trigger. Otherwise they default to `player` scope.
+
+`draw_weapon` equips the best usable weapon carried by the acting villager for the configured duration. It does not set an attack target, start retaliation, or change reputation. Dialogue-tree response actions can use it when a particular player response should make the villager visibly arm themselves:
+
+```json
+{
+  "actions": [
+    { "type": "draw_weapon", "duration_seconds": 10 }
+  ]
+}
+```
 
 Memory actions default `memory_scope` to `both`. `villager` remembers the event only for the acting villager, `village` writes only to the tracked village footprint containing the event, and `both` writes each available bucket. Quest reward shorthand using only `memory_event` also defaults to `both`.
 

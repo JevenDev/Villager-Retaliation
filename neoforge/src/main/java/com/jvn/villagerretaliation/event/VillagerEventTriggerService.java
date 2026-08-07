@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionExecutor;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.scene.SceneLaunchService;
+import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
@@ -219,8 +220,13 @@ public final class VillagerEventTriggerService {
                                 level, villager, attribute, action.amount());
                     }
                 }
+                case DRAW_WEAPON -> {
+                    if (villager != null) {
+                        ran |= VillagerWeaponDrawService.draw(villager, action.amount());
+                    }
+                }
                 case FORCED_DIALOGUE, QUEST, QUEST_TRANSITION, REPUTATION, GOSSIP, LOOT,
-                        SET_TAG, CLEAR_TAG, SET_VARIABLE, COUNTER, NONE -> {
+                        SET_TAG, CLEAR_TAG, SET_VARIABLE, COUNTER, START_SCENE, NONE -> {
                 }
             }
         }

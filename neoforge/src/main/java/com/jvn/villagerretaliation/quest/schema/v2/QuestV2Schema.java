@@ -412,6 +412,9 @@ public final class QuestV2Schema {
         properties.add("memory_scope", stringEnum(List.of("villager", "village", "both")));
         properties.add("attribute", stringEnum(List.of("knowledge", "guts", "proficiency", "kindness", "charm")));
         properties.add("amount", integer());
+        properties.add("duration_ticks", integer());
+        properties.add("duration_seconds", integer());
+        properties.add("duration_days", integer());
         schema.add("properties", properties);
         schema.add("additionalProperties", booleanLiteral(true));
         return schema;

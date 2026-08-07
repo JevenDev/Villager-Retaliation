@@ -25,6 +25,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
 import com.jvn.villagerretaliation.config.ContainerForcedDialogueTrigger;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueContext;
@@ -425,6 +426,7 @@ public final class ForcedDialogueService {
                 VillagerEquipmentCondition.empty(),
                 VillagerPlayerItemCondition.empty(),
                 VillagerReputationCondition.empty(),
+                0,
                 SIMPLE_LEAVE_OPTIONS,
                 SIMPLE_LEAVE_OPTION,
                 SIMPLE_LEAVE_OPTIONS);
@@ -463,7 +465,7 @@ public final class ForcedDialogueService {
                 0, 0, 0L, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE,
                 Set.of(), Set.of(), Set.of(), 1, 5, false, false,
                 VillagerEquipmentCondition.empty(), VillagerPlayerItemCondition.empty(),
-                VillagerReputationCondition.empty(), options, SIMPLE_LEAVE_OPTION, options);
+                VillagerReputationCondition.empty(), 0, options, SIMPLE_LEAVE_OPTION, options);
         return openProgrammaticForcedDialogue(player, villager, line, definition);
     }
 
@@ -1421,6 +1423,7 @@ public final class ForcedDialogueService {
                 source.witnessEquipmentCondition(),
                 source.playerItemCondition(),
                 source.reputationCondition(),
+                source.drawWeaponTicks(),
                 List.copyOf(options),
                 leaveOption,
                 List.of(leaveOption));
@@ -1533,6 +1536,7 @@ public final class ForcedDialogueService {
                 optionDefinition.witnessEquipmentCondition(),
                 optionDefinition.playerItemCondition(),
                 optionDefinition.reputationCondition(),
+                optionDefinition.drawWeaponTicks(),
                 options,
                 leaveOption,
                 leaveOptions);
@@ -2627,6 +2631,7 @@ public final class ForcedDialogueService {
                 source.witnessEquipmentCondition(),
                 source.playerItemCondition(),
                 source.reputationCondition(),
+                source.drawWeaponTicks(),
                 options,
                 source.leaveOption(),
                 source.leaveOptions());
@@ -3646,6 +3651,9 @@ public final class ForcedDialogueService {
             return false;
         }
         Map<String, String> replacements = playerItemProximityReplacements(definition, player, tradeItemMatch);
+        if (definition.drawWeaponTicks() > 0) {
+            VillagerWeaponDrawService.draw(villager, definition.drawWeaponTicks());
+        }
         ForcedDialogueContext context = playerItemProximityContext(villager, player, replacements);
         String line = resolvePlayerItemProximityLine(level, villager, definition, context, replacements);
         if (!line.isBlank()) {
@@ -3664,6 +3672,9 @@ public final class ForcedDialogueService {
             return false;
         }
         Map<String, String> replacements = playerItemProximityReplacements(definition, player, tradeItemMatch);
+        if (definition.drawWeaponTicks() > 0) {
+            VillagerWeaponDrawService.draw(villager, definition.drawWeaponTicks());
+        }
         ForcedDialogueContext context = playerItemProximityContext(villager, player, replacements);
         if (definition.reputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             VillagerReputationManager.addWitnessedReputation(level, villager, player.getUUID(), definition.reputationDelta(), villager.blockPosition());

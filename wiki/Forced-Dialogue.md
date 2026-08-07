@@ -196,9 +196,13 @@ Use `trigger: "player_item_proximity"` for lines that fire when a nearby player 
   "chance": 1.0,
   "requires_player_aiming_at_witness": true,
   "player_items": ["minecraft:diamond_sword"],
-  "player_item_slots": ["hands"]
+  "player_item_slots": ["hands"],
+  "draw_weapon": true,
+  "draw_weapon_duration_seconds": 10
 }
 ```
+
+`draw_weapon: true` makes the matching villager visibly equip the best usable weapon they carry for 10 seconds by default. Set `draw_weapon_duration_ticks`, `draw_weapon_duration_seconds`, or `draw_weapon_duration_days` to change that window. Drawing a weapon does not assign a target or start retaliation.
 
 `requires_player_aiming_at_witness: true` requires the player's unobstructed server-side sight ray to hit this villager before another living entity. It can be combined with `player_items` and `player_item_slots` to author weapon-specific warnings.
 
