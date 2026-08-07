@@ -116,6 +116,76 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void openingInventoryDoesNotCountAlreadyMissingGiftAsTaken(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrMissingGiftInventoryOpen");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        var advancement = level.getServer().getAdvancements().get(
+                com.jvn.villagerretaliation.VillagerRetaliation.id("reputation/changed_my_mind"));
+        helper.assertTrue(advancement != null, "the gift return advancement should be loaded");
+        helper.assertFalse(
+                player.getAdvancements().getOrStartProgress(advancement).isDone(),
+                "the test player should not start with the gift return advancement");
+
+        VillagerGiftReturnTracker.recordStoredGift(
+                level, villager, player, new ItemStack(Items.EMERALD), 5);
+
+        VillagerGiftReturnTracker.GiftSnapshot snapshot =
+                VillagerGiftReturnTracker.capture(player, villager);
+
+        helper.assertFalse(
+                player.getAdvancements().getOrStartProgress(advancement).isDone(),
+                "opening inventory must not blame the player for a gift that was already missing");
+        helper.assertTrue(snapshot.counts().isEmpty(),
+                "stale missing-gift ledger entries should be pruned before the inventory snapshot");
+
+        ItemStack consumedGift = VillagerGiftReturnTracker.markStoredGift(
+                new ItemStack(Items.GOLD_INGOT), player, villager);
+        helper.assertTrue(VillagerInventoryAccess.addItem(villager, consumedGift).isEmpty(),
+                "the simulated consumed gift should begin in villager storage");
+        VillagerGiftReturnTracker.recordStoredGift(level, villager, player, consumedGift, 5);
+        snapshot = VillagerGiftReturnTracker.capture(player, villager);
+        helper.assertFalse(
+                VillagerInventoryAccess.takeCarriedItem(
+                        villager, stack -> stack.is(Items.GOLD_INGOT)).isEmpty(),
+                "the simulated villager behavior should consume the stored gift");
+        VillagerGiftReturnTracker.applyTakenGiftPenalties(player, villager, snapshot);
+        helper.assertFalse(
+                player.getAdvancements().getOrStartProgress(advancement).isDone(),
+                "a gift removed by villager behavior must not be attributed to the viewing player");
+
+        ItemStack returnedGift = VillagerGiftReturnTracker.markStoredGift(
+                new ItemStack(Items.DIAMOND), player, villager);
+        helper.assertTrue(VillagerInventoryAccess.addItem(villager, returnedGift).isEmpty(),
+                "the returned gift should begin in villager storage");
+        VillagerGiftReturnTracker.recordStoredGift(level, villager, player, returnedGift, 5);
+        snapshot = VillagerGiftReturnTracker.capture(player, villager);
+        helper.assertValueEqual(snapshot.counts().size(), 1,
+                "the stored returned gift should be present in the opening snapshot");
+        helper.assertValueEqual(snapshot.counts().getFirst().count(), 1,
+                "the opening snapshot should count the stored returned gift");
+        ItemStack takenGift = VillagerInventoryAccess.takeCarriedItem(
+                villager, stack -> stack.is(Items.DIAMOND));
+        helper.assertTrue(VillagerGiftReturnTracker.isStoredGiftFrom(takenGift, player.getUUID()),
+                "the removed gift should retain its giver tracking");
+        player.getInventory().setItem(0, takenGift);
+        helper.assertTrue(VillagerGiftReturnTracker.isStoredGiftFrom(
+                        player.getInventory().getItem(0), player.getUUID()),
+                "the player inventory should contain the tracked returned gift");
+        helper.assertValueEqual(
+                VillagerInventoryContainer.countStoredGiftItem(
+                        villager, player.getUUID(), returnedGift),
+                0,
+                "the returned gift should no longer be in villager storage");
+        VillagerGiftReturnTracker.applyTakenGiftPenalties(player, villager, snapshot);
+        helper.assertTrue(
+                VillagerGiftReturnTracker.giftedBy(player.getInventory().getItem(0)).isEmpty(),
+                "a tracked gift actually received by the player should still be processed as taken back");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void attributeFiltersSupportMultipleMatcherPolicies(GameTestHelper helper) {
         ItemStack filter = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
         VillagerAttributeFilterData.Attribute placeable = new VillagerAttributeFilterData.Attribute(

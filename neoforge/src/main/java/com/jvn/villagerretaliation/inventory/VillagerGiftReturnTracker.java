@@ -68,7 +68,7 @@ public final class VillagerGiftReturnTracker {
     }
 
     static GiftSnapshot capture(ServerPlayer player, Villager villager) {
-        reconcileMissingGifts(player, villager);
+        pruneMissingGifts(player.serverLevel(), villager);
 
         List<TrackedVillagerItemLedger.LedgerEntry> entries = LEDGER.loadEntries(player.serverLevel(), villager);
         List<TrackedVillagerItemLedger.StackCount> counts = new ArrayList<>();
@@ -93,7 +93,9 @@ public final class VillagerGiftReturnTracker {
         List<TrackedVillagerItemLedger.StackDecrease> decreases = new ArrayList<>();
         for (TrackedVillagerItemLedger.StackCount count : snapshot.counts()) {
             int currentCount = VillagerInventoryContainer.countStoredGiftItem(villager, count.playerId(), count.stack());
-            int removedCount = count.count() - currentCount;
+            int playerReceivedCount =
+                    countTrackedGiftInPlayerInventory(player, count.playerId(), count.stack());
+            int removedCount = Math.min(count.count() - currentCount, playerReceivedCount);
             if (removedCount > 0) {
                 decreases.add(new TrackedVillagerItemLedger.StackDecrease(count.playerId(), count.stack(), removedCount));
             }
@@ -101,14 +103,10 @@ public final class VillagerGiftReturnTracker {
         applyDecreases(player, villager, decreases);
     }
 
-    private static void reconcileMissingGifts(ServerPlayer player, Villager villager) {
-        List<TrackedVillagerItemLedger.LedgerEntry> entries = LEDGER.loadEntries(player.serverLevel(), villager);
+    private static void pruneMissingGifts(ServerLevel level, Villager villager) {
+        List<TrackedVillagerItemLedger.LedgerEntry> entries = LEDGER.loadEntries(level, villager);
         List<TrackedVillagerItemLedger.StackCount> ledgerCounts = new ArrayList<>();
         for (TrackedVillagerItemLedger.LedgerEntry entry : entries) {
-            if (!entry.playerId().equals(player.getUUID())) {
-                continue;
-            }
-
             TrackedVillagerItemLedger.StackCount count = LEDGER.findMatchingStackCount(ledgerCounts, entry.playerId(), entry.stack());
             if (count == null) {
                 ledgerCounts.add(new TrackedVillagerItemLedger.StackCount(entry.playerId(), entry.stack().copy(), entry.count()));
@@ -117,15 +115,35 @@ public final class VillagerGiftReturnTracker {
             }
         }
 
-        List<TrackedVillagerItemLedger.StackDecrease> decreases = new ArrayList<>();
+        List<TrackedVillagerItemLedger.StackDecrease> missingGifts = new ArrayList<>();
         for (TrackedVillagerItemLedger.StackCount count : ledgerCounts) {
             int currentCount = VillagerInventoryContainer.countStoredGiftItem(villager, count.playerId(), count.stack());
             int missingCount = count.count() - currentCount;
             if (missingCount > 0) {
-                decreases.add(new TrackedVillagerItemLedger.StackDecrease(count.playerId(), count.stack(), missingCount));
+                missingGifts.add(new TrackedVillagerItemLedger.StackDecrease(count.playerId(), count.stack(), missingCount));
             }
         }
-        applyDecreases(player, villager, decreases);
+        if (missingGifts.isEmpty()) {
+            return;
+        }
+
+        boolean changed = false;
+        for (TrackedVillagerItemLedger.LedgerEntry entry : entries) {
+            TrackedVillagerItemLedger.StackDecrease missing =
+                    LEDGER.findMatchingDecrease(missingGifts, entry.playerId(), entry.stack());
+            if (missing == null || missing.count() <= 0) {
+                continue;
+            }
+
+            int removedCount = Math.min(entry.count(), missing.count());
+            entry.remove(removedCount, revokedReputation(entry, removedCount));
+            missing.remove(removedCount);
+            changed = true;
+        }
+        if (changed) {
+            entries.removeIf(entry -> entry.count() <= 0 || entry.reputation() <= 0 || entry.stack().isEmpty());
+            saveEntries(level, villager, entries);
+        }
     }
 
     private static void applyDecreases(ServerPlayer player, Villager villager, List<TrackedVillagerItemLedger.StackDecrease> decreases) {
@@ -200,6 +218,23 @@ public final class VillagerGiftReturnTracker {
 
     private static void saveEntries(ServerLevel level, Villager villager, List<TrackedVillagerItemLedger.LedgerEntry> entries) {
         LEDGER.saveEntries(level, villager, entries);
+    }
+
+    private static int countTrackedGiftInPlayerInventory(
+            ServerPlayer player, UUID giftGiverId, ItemStack target) {
+        int count = 0;
+        Inventory inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            count += matchingTrackedGiftCount(inventory.getItem(slot), giftGiverId, target);
+        }
+        count += matchingTrackedGiftCount(player.containerMenu.getCarried(), giftGiverId, target);
+        return count;
+    }
+
+    private static int matchingTrackedGiftCount(ItemStack stack, UUID giftGiverId, ItemStack target) {
+        return isStoredGiftFrom(stack, giftGiverId) && isSameTrackedGiftItem(stack, target)
+                ? stack.getCount()
+                : 0;
     }
 
     record GiftSnapshot(List<TrackedVillagerItemLedger.StackCount> counts) {
