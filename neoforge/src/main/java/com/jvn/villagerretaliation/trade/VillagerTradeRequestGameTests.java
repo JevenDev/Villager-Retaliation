@@ -186,7 +186,7 @@ public final class VillagerTradeRequestGameTests {
         Villager villager = villager(helper);
         int available = VillagerWalletService.getCurrentEmeralds(villager);
         VillagerWalletService.spendCurrency(
-                villager, available, VillagerWalletService.WalletSource.DEBUG);
+                villager, available);
         MerchantOffer offer = new MerchantOffer(
                 new ItemCost(Items.COAL, 1),
                 new ItemStack(Items.EMERALD, 5),

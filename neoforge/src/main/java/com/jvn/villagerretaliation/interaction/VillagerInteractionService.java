@@ -1652,7 +1652,7 @@ public final class VillagerInteractionService {
         }
 
         removeCurrency(player, blueprintCost);
-        VillagerWalletService.addCurrency(villager, blueprintCost, VillagerWalletService.WalletSource.TASK_REWARD);
+        VillagerWalletService.addCurrency(villager, blueprintCost);
         BuilderTaskState.clearPendingStructure(state);
         BlockPos origin = defaultBlueprintOrigin(level, player, plan.get());
         giveConstructionBlueprint(

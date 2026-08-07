@@ -700,7 +700,7 @@ public final class DuelGameTests {
         int walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
         if (walletBefore < 8) {
             VillagerWalletService.addCurrency(
-                    villager, 8 - walletBefore, VillagerWalletService.WalletSource.DUEL);
+                    villager, 8 - walletBefore);
             walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
         }
 
@@ -759,7 +759,7 @@ public final class DuelGameTests {
         int wallet = VillagerWalletService.getCurrentEmeralds(villager);
         if (wallet < 8) {
             VillagerWalletService.addCurrency(
-                    villager, 8 - wallet, VillagerWalletService.WalletSource.DUEL);
+                    villager, 8 - wallet);
         }
 
         int configuredResult = dispatcher.execute(
@@ -806,7 +806,7 @@ public final class DuelGameTests {
         int walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
         if (walletBefore < 8) {
             VillagerWalletService.addCurrency(
-                    villager, 8 - walletBefore, VillagerWalletService.WalletSource.DUEL);
+                    villager, 8 - walletBefore);
             walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
         }
 
@@ -922,7 +922,7 @@ public final class DuelGameTests {
         int walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
         if (walletBefore < 8) {
             VillagerWalletService.addCurrency(
-                    villager, 8 - walletBefore, VillagerWalletService.WalletSource.DUEL);
+                    villager, 8 - walletBefore);
             walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
         }
 
@@ -1151,7 +1151,7 @@ public final class DuelGameTests {
         int walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
         if (walletBefore < 8) {
             VillagerWalletService.addCurrency(
-                    villager, 8 - walletBefore, VillagerWalletService.WalletSource.DUEL);
+                    villager, 8 - walletBefore);
             walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
         }
 

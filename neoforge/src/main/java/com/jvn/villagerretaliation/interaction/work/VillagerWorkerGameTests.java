@@ -1892,11 +1892,11 @@ public final class VillagerWorkerGameTests {
         UUID jobId = UUID.randomUUID();
         int beforeCurrency = countCurrency(hirer);
         int walletCurrency = VillagerWalletService.getCurrentEmeralds(villager);
-        VillagerWalletService.spendCurrency(villager, walletCurrency, VillagerWalletService.WalletSource.DEBUG);
+        VillagerWalletService.spendCurrency(villager, walletCurrency);
 
         BuilderPaymentEscrowService.escrow(villager, jobId, 23);
         int refunded = BuilderPaymentEscrowService.refund(hirer, villager, Optional.of(jobId), 23);
-        VillagerWalletService.addCurrency(villager, 50, VillagerWalletService.WalletSource.DEBUG);
+        VillagerWalletService.addCurrency(villager, 50);
         int refundedAgain = BuilderPaymentEscrowService.refund(hirer, villager, Optional.of(jobId), 23);
 
         helper.assertValueEqual(refunded, 23, "escrow should refund the paid builder amount");

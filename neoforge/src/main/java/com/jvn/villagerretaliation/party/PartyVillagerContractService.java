@@ -111,7 +111,7 @@ public final class PartyVillagerContractService {
             return ContractResult.failure("villagerretaliation.party.error.insufficient_emeralds");
         }
 
-        VillagerWalletService.addCurrency(villager, DAILY_EMERALD_COST, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        VillagerWalletService.addCurrency(villager, DAILY_EMERALD_COST);
         attachEntityState(level, villager, membership.partyId(), record);
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         VillagerRecruitmentService.applyPartyFollowing(level, villager, player);
@@ -147,7 +147,7 @@ public final class PartyVillagerContractService {
         if (!VillagerCurrencyPayment.tryRemove(player, cost)) {
             return ContractResult.failure("villagerretaliation.party.error.insufficient_emeralds");
         }
-        VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        VillagerWalletService.addCurrency(villager, cost);
         long newEnd = VillagerContractTime.extendEnd(now, record.contractEndGameTime(), extensionDays);
         record.extend(newEnd, extensionDays, cost);
         PartyService.markChanged(level);
@@ -342,7 +342,7 @@ public final class PartyVillagerContractService {
             PartyService.removeVillager(level, villager.getUUID());
             return ContractResult.failure("villagerretaliation.party.error.insufficient_emeralds");
         }
-        VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        VillagerWalletService.addCurrency(villager, cost);
         attachEntityState(level, villager, party.id(), record);
         HiredVillagerContractService.takeOverJobInventoryOverflow(villager);
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
