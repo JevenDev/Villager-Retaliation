@@ -65,8 +65,8 @@
           "order": -22,
           "show_for_babies": false,
           "lines": [
-            "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-            "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+            "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+            "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
           ],
           "responses": [
             {
@@ -124,8 +124,8 @@
           "order": -22,
           "show_for_babies": false,
           "lines": [
-            "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-            "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+            "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+            "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
           ],
           "responses": [
             {
@@ -193,8 +193,8 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-                  "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+                  "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+                  "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
                 ],
                 "unavailable": [
                   "That choice is not open right now."

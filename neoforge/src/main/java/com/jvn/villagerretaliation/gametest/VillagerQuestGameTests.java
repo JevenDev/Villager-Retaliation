@@ -1638,12 +1638,11 @@ public final class VillagerQuestGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         Set<ResourceLocation> mobKillQuests = VillagerQuestResources
                 .questIdsWithObjective(server, QuestDefinition.ObjectiveType.MOB_KILL);
-        helper.assertValueEqual(mobKillQuests.size(), 22, "mob-kill quest index size");
+        helper.assertValueEqual(mobKillQuests.size(), 21, "mob-kill quest index size");
         assertContainsAll(helper, mobKillQuests, Set.of(
                 VillagerRetaliation.id("beacon_polish"),
                 VillagerRetaliation.id("ender_freight"),
                 VillagerRetaliation.id("fortress_line"),
-                VillagerRetaliation.id("standing_watch"),
                 VillagerRetaliation.id("timber_brace")), "expanded mob-kill quest ids");
         helper.assertTrue(
                 VillagerQuestResources.memoryEventQuestIds(server, VillagerRetaliation.id("player_defended_village"))

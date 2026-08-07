@@ -101,7 +101,7 @@
           "lines": [
             "An old milestone is buried near the trail ruins, broken where the road forgot its own name.",
             "Brush the marker clear and bring smooth stone so we can raise it again.",
-            "Reach the marked Trail Ruins and return with a brush and 12 smooth stone. I will make the reward worth the trouble."
+            "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
           ],
           "responses": [
             {
@@ -158,8 +158,7 @@
               "lines": {
                 "started": [
                   "Brush gently. Old roads leave smaller signs than new travelers expect.",
-                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
                 ],
                 "already_completed": [
                   "The Broken Milestone is already settled for now.",
@@ -200,8 +199,7 @@
         {
           "id": "decline",
           "lines": [
-            "The milestone has spent years underground. One more day will not offend it.",
-            "Another pair of hands may take it, or you may ask again later."
+            "The milestone has spent years underground. One more day will not offend it."
           ]
         },
         {
@@ -298,11 +296,9 @@
               "lines": {
                 "completed": [
                   "The old number is visible again. Someone once measured this road, and now we can too.",
-                  "A broken marker stands again. The road has one memory back.",
-                  "That settles it. The village will make good use of this."
+                  "A broken marker stands again. The road has one memory back."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

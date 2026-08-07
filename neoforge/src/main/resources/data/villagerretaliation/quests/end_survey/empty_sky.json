@@ -93,7 +93,7 @@
           "lines": [
             "The End does not end at the dragon island. It only stops explaining itself.",
             "Prepare eyes for bearings, membranes for slow falling, and a pumpkin for the staring locals.",
-            "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin. I will make the reward worth the trouble."
+            "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin."
           ],
           "responses": [
             {
@@ -150,8 +150,7 @@
               "lines": {
                 "started": [
                   "Pearls fail over the void only once. Aim with patience.",
-                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin."
                 ],
                 "already_completed": [
                   "Beyond the Island is already settled for now.",
@@ -192,8 +191,7 @@
         {
           "id": "decline",
           "lines": [
-            "The outer islands are patient and very far away.",
-            "Another pair of hands may take it, or you may ask again later."
+            "The outer islands are patient and very far away."
           ]
         },
         {
@@ -290,11 +288,9 @@
               "lines": {
                 "completed": [
                   "The expedition packs are ready. Now we choose which light to follow.",
-                  "Everything needed to cross an empty sky, except good sense. Bring your own.",
-                  "That settles it. The village will make good use of this."
+                  "Everything needed to cross an empty sky, except good sense. Bring your own."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

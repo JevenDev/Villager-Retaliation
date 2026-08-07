@@ -70,7 +70,7 @@
           "show_for_babies": false,
           "lines": [
             "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-            "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+            "This choice closes the other design. Daylight stays local and pays modestly; sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
           ],
           "responses": [
             {
@@ -129,7 +129,7 @@
           "show_for_babies": false,
           "lines": [
             "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-            "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+            "This choice closes the other design. Daylight stays local and pays modestly; sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
           ],
           "responses": [
             {
@@ -198,7 +198,7 @@
               "lines": {
                 "reminder": [
                   "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-                  "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+                  "This choice closes the other design. Daylight stays local and pays modestly; sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
                 ],
                 "unavailable": [
                   "That choice is not open right now."

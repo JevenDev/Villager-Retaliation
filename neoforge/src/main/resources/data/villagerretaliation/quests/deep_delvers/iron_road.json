@@ -102,7 +102,7 @@
           "lines": [
             "The first rails work, but the deeper slope sends full carts backward and empty carts nowhere.",
             "Power the steep run and give the mine a cart built for freight.",
-            "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart. I will make the reward worth the trouble."
+            "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
           ],
           "responses": [
             {
@@ -159,8 +159,7 @@
               "lines": {
                 "started": [
                   "Test the brake before the load. Ore is patient; minecarts are not.",
-                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
                 ],
                 "already_completed": [
                   "Iron Road is already settled for now.",
@@ -201,8 +200,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then push carefully. The slope has already chosen a favorite direction.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then push carefully. The slope has already chosen a favorite direction."
           ]
         },
         {
@@ -299,11 +297,9 @@
               "lines": {
                 "completed": [
                   "The iron road climbs under its own power. The mine can reach deeper now.",
-                  "Full carts out, empty carts in. That is a mine beginning to breathe.",
-                  "That settles it. The village will make good use of this."
+                  "Full carts out, empty carts in. That is a mine beginning to breathe."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

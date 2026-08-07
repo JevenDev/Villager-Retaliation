@@ -130,7 +130,7 @@
           "lines": [
             "A Woodland Mansion is sending patrols toward roads that used to be quiet.",
             "Find the house, bring down its evoker, and return with a totem so no one can dismiss the warning.",
-            "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds. I will make the reward worth the trouble."
+            "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
           ],
           "responses": [
             {
@@ -187,8 +187,7 @@
               "lines": {
                 "started": [
                   "Do not mistake carpet for safety. Every quiet room in that house is waiting for a reason.",
-                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
                 ],
                 "already_completed": [
                   "House of Ill Omens is already settled for now.",
@@ -235,8 +234,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then keep clear of dark-oak roads until the patrols thin.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then keep clear of dark-oak roads until the patrols thin."
           ]
         },
         {
@@ -333,11 +331,9 @@
               "lines": {
                 "completed": [
                   "The house still stands, but its omen is broken and its patrol road is known.",
-                  "A totem on the table is proof enough. The village will remember who carried it home.",
-                  "That settles it. The village will make good use of this."
+                  "A totem on the table is proof enough. The village will remember who carried it home."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

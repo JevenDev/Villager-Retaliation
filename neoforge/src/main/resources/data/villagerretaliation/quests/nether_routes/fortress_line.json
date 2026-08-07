@@ -103,7 +103,7 @@
           "lines": [
             "The fortress bearing is true, but Wither Skeletons have found the same bridges.",
             "Clear the patrol and build markers from the fortress's own black brick.",
-            "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart. I will make the reward worth the trouble."
+            "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
           ],
           "responses": [
             {
@@ -160,8 +160,7 @@
               "lines": {
                 "started": [
                   "Mark the safe turns low on the wall. Ghasts enjoy editing tall signs.",
-                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
                 ],
                 "already_completed": [
                   "Black Bridges is already settled for now.",
@@ -202,8 +201,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then the black bridges keep their patrols a little longer.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then the black bridges keep their patrols a little longer."
           ]
         },
         {
@@ -300,11 +298,9 @@
               "lines": {
                 "completed": [
                   "The fortress line is marked, stocked, and quieter than we found it.",
-                  "A road through flame and black bone now leads back to the village.",
-                  "That settles it. The village will make good use of this."
+                  "A road through flame and black bone now leads back to the village."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

@@ -40,6 +40,7 @@ const sceneFiles = await jsonFiles(sceneRoot);
 const encounterFiles = await jsonFiles(encounterRoot);
 const lootIds = new Set(lootFiles.map((file) => `villagerretaliation:quest/${withoutJson(path.relative(lootRoot, file))}`));
 const quests = new Map();
+const lootTables = new Map();
 const scenes = new Map();
 const encounters = new Map();
 const errors = [];
@@ -56,6 +57,15 @@ for (const file of questFiles) {
   assert(typeof data.id === "string" && data.id.length > 0, file, "quest id is missing");
   assert(!quests.has(data.id), file, `duplicate quest id ${data.id}`);
   quests.set(data.id, { file, data });
+}
+
+for (const file of lootFiles) {
+  const data = await readJson(file);
+  if (!data || typeof data !== "object") {
+    continue;
+  }
+  const id = `villagerretaliation:quest/${withoutJson(path.relative(lootRoot, file))}`;
+  lootTables.set(id, { file, data });
 }
 
 for (const file of sceneFiles) {
@@ -105,6 +115,7 @@ validateExpansionRoster();
 validateExpansionBalance();
 validateBranchingQuestlines();
 validateUniqueExpansionMechanics();
+validateAuditContracts();
 validateCinematicResources();
 
 if (errors.length > 0) {
@@ -351,6 +362,77 @@ function validateUniqueExpansionMechanics() {
     assert(!other, quest.file, `${id} duplicates the complete objective signature of ${other ?? "another quest"}`);
     signatures.set(signature, id);
   }
+}
+
+function validateAuditContracts() {
+  const watch = quests.get("villagerretaliation:standing_watch");
+  const watchWork = watch?.data.stages?.find((stage) => stage.id === "work");
+  assert(
+    watchWork?.complete_when?.length === 1 && watchWork.complete_when[0] === "defend_village",
+    watch?.file ?? questRoot,
+    "Standing Watch must complete from the durable defense event instead of fragile individual mob kills"
+  );
+
+  const patrol = encounters.get("villagerretaliation:atlas_risky_patrol");
+  assert(
+    patrol?.data.rewards?.completion?.some((reward) => reward.item === "minecraft:crossbow"),
+    patrol?.file ?? encounterRoot,
+    "the risky Atlas Test patrol must guarantee the crossbow promised by its dialogue"
+  );
+
+  const marker = quests.get("villagerretaliation:first_far_marker");
+  for (const [principle, lootTable] of [
+    ["roads", "villagerretaliation:quest/first_far_marker_roads_bonus"],
+    ["wonders", "villagerretaliation:quest/first_far_marker_wonders_bonus"]
+  ]) {
+    const event = marker?.data.events?.find((candidate) =>
+      questFactConditions(candidate.conditions).some((condition) =>
+        condition.quest === "villagerretaliation:ink_and_bearings"
+          && condition.key === "principle"
+          && condition.value === principle
+      )
+    );
+    assert(Boolean(event), marker?.file ?? questRoot, `First Far Marker is missing its ${principle} principle event`);
+    assert(
+      event?.actions?.some((action) => action.type === "loot" && action.loot_table === lootTable),
+      marker?.file ?? questRoot,
+      `First Far Marker ${principle} principle does not grant its advertised kit`
+    );
+    assert(lootTables.has(lootTable), marker?.file ?? questRoot, `missing principle reward table ${lootTable}`);
+  }
+
+  for (const { file, data } of quests.values()) {
+    for (const stage of data.stages ?? []) {
+      if (!(stage.objectives ?? []).some((objective) => objective.type === "choice")) {
+        continue;
+      }
+      const dialogue = JSON.stringify(stage.dialogue ?? {}).toLowerCase();
+      assert(
+        dialogue.includes("permanent") || dialogue.includes("closes"),
+        file,
+        `choice stage ${stage.id} must disclose that its branch decision is permanent`
+      );
+    }
+  }
+
+  const chorusItems = lootItemNames("villagerretaliation:quest/chorus_trail");
+  const cityItems = lootItemNames("villagerretaliation:quest/city_lantern");
+  assert(!chorusItems.has("minecraft:elytra"), lootTables.get("villagerretaliation:quest/chorus_trail")?.file ?? lootRoot,
+    "the safer chorus branch must not share the city branch's signature Elytra");
+  assert(chorusItems.has("minecraft:ender_chest"), lootTables.get("villagerretaliation:quest/chorus_trail")?.file ?? lootRoot,
+    "the chorus branch must retain its distinct Ender Chest reward");
+  assert(cityItems.has("minecraft:elytra"), lootTables.get("villagerretaliation:quest/city_lantern")?.file ?? lootRoot,
+    "the harder city branch must retain its signature Elytra chance");
+}
+
+function lootItemNames(id) {
+  const names = new Set();
+  walk(lootTables.get(id)?.data, (node) => {
+    if (node.type === "minecraft:item" && typeof node.name === "string") {
+      names.add(node.name);
+    }
+  });
+  return names;
 }
 
 function validateCinematicResources() {

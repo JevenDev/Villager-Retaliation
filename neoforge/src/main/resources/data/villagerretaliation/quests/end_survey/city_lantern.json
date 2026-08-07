@@ -110,7 +110,7 @@
           "lines": [
             "One city light is marked. The last survey must make the road home visible too.",
             "Climb the tower, set End rods along the return, and recover shells for the archive.",
-            "Survey the marked End City, place 12 End rods, and bring 2 shulker shells. I will make the reward worth the trouble."
+            "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
           ],
           "responses": [
             {
@@ -167,8 +167,7 @@
               "lines": {
                 "started": [
                   "Place the first rod where the gateway disappears behind you. Pride is a poor return marker.",
-                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
                 ],
                 "already_completed": [
                   "The Way Home is already settled for now.",
@@ -209,8 +208,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then do not climb a tower you cannot find your way down from.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then do not climb a tower you cannot find your way down from."
           ]
         },
         {
@@ -307,11 +305,9 @@
               "lines": {
                 "completed": [
                   "The pale towers and the road home share one map now. The city branch is complete.",
-                  "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets.",
-                  "That settles it. The village will make good use of this."
+                  "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

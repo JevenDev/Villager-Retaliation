@@ -103,7 +103,7 @@
           "lines": [
             "The first chorus mark is true. Now map how the groves spread from island to island.",
             "Harvest living flowers, cook the fruit, and bring stone that can grow them near the archive.",
-            "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone. I will make the reward worth the trouble."
+            "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone."
           ],
           "responses": [
             {
@@ -160,8 +160,7 @@
               "lines": {
                 "started": [
                   "Cut the flowers first. A chorus plant without its crown is only a purple ladder falling apart.",
-                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone."
                 ],
                 "already_completed": [
                   "Chorus is already settled for now.",
@@ -202,8 +201,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then let the chorus keep growing in every direction at once.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then let the chorus keep growing in every direction at once."
           ]
         },
         {
@@ -300,11 +298,9 @@
               "lines": {
                 "completed": [
                   "The chorus trail is mapped from root to flower. The living branch is complete.",
-                  "We can grow a small piece of the outer End where the archive can watch it.",
-                  "That settles it. The village will make good use of this."
+                  "We can grow a small piece of the outer End where the archive can watch it."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

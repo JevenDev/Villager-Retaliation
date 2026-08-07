@@ -1534,14 +1534,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The mansion informants kept their word. Now the gold promised for their Nether route is due.",
           "Carry one gold block to the bastion road and bring gilded blackstone back as proof the debt reached its mark.",
-          "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block. I will make the reward worth the trouble."
+          "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Wear gold where piglins can see it, and keep the payment where brutes cannot.",
-          "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block.",
-          "Good. I will keep a place clear for what you bring back."
+          "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
         ],
         "reminder": [
           "The bastion mark, one gilded blackstone, and one gold block for the debt.",
@@ -1550,11 +1549,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The debt is settled, the route is proven, and no promise is chasing the village now.",
-          "Gold paid on time buys more than goods. It buys a road that stays open.",
-          "That settles it. The village will make good use of this."
+          "Gold paid on time buys more than goods. It buys a road that stays open."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -1574,7 +1571,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The mansion informants kept their word. Now the gold promised for their Nether route is due.",
                   "Carry one gold block to the bastion road and bring gilded blackstone back as proof the debt reached its mark.",
-                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block. I will make the reward worth the trouble."
+                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
                 ],
                 "responses": [
                   {
@@ -1636,8 +1633,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Wear gold where piglins can see it, and keep the payment where brutes cannot.",
-                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
                 ]
               },
               {
@@ -1727,8 +1723,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the debt waits, but Nether debts grow dangerous when ignored.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the debt waits, but Nether debts grow dangerous when ignored."
                 ]
               },
               {
@@ -1790,8 +1785,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The debt is settled, the route is proven, and no promise is chasing the village now.",
-                  "Gold paid on time buys more than goods. It buys a road that stays open.",
-                  "That settles it. The village will make good use of this."
+                  "Gold paid on time buys more than goods. It buys a road that stays open."
                 ]
               },
               {
@@ -1800,7 +1794,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -1860,7 +1853,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The mansion informants kept their word. Now the gold promised for their Nether route is due.",
                   "Carry one gold block to the bastion road and bring gilded blackstone back as proof the debt reached its mark.",
-                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block. I will make the reward worth the trouble."
+                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
                 ],
                 "responses": [
                   {
@@ -1922,8 +1915,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Wear gold where piglins can see it, and keep the payment where brutes cannot.",
-                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
                 ]
               },
               {
@@ -2013,8 +2005,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the debt waits, but Nether debts grow dangerous when ignored.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the debt waits, but Nether debts grow dangerous when ignored."
                 ]
               },
               {
@@ -2076,8 +2067,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The debt is settled, the route is proven, and no promise is chasing the village now.",
-                  "Gold paid on time buys more than goods. It buys a road that stays open.",
-                  "That settles it. The village will make good use of this."
+                  "Gold paid on time buys more than goods. It buys a road that stays open."
                 ]
               },
               {
@@ -2086,7 +2076,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -2273,14 +2262,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The brewing stand has bottles, powder, and no Nether Wart. That makes it a very tidy shelf.",
           "Find the fortress garden and bring back enough wart to start a village crop, plus one blaze rod to prove the route.",
-          "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod. I will make the reward worth the trouble."
+          "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Take more than one way home. Fortress bridges have a habit of ending under your feet.",
-          "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod.",
-          "Good. I will keep a place clear for what you bring back."
+          "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
         ],
         "reminder": [
           "The fortress mark, eight Nether Wart, and one blaze rod.",
@@ -2289,11 +2277,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The wart is alive, the rod is real, and the brewing stand finally has work.",
-          "One dangerous trip can seed every potion we brew after it.",
-          "That settles it. The village will make good use of this."
+          "One dangerous trip can seed every potion we brew after it."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -2313,7 +2299,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The brewing stand has bottles, powder, and no Nether Wart. That makes it a very tidy shelf.",
                   "Find the fortress garden and bring back enough wart to start a village crop, plus one blaze rod to prove the route.",
-                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod. I will make the reward worth the trouble."
+                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
                 ],
                 "responses": [
                   {
@@ -2375,8 +2361,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Take more than one way home. Fortress bridges have a habit of ending under your feet.",
-                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
                 ]
               },
               {
@@ -2466,8 +2451,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The brewing stand can wait. Fire is a poor reason to hurry.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The brewing stand can wait. Fire is a poor reason to hurry."
                 ]
               },
               {
@@ -2529,8 +2513,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The wart is alive, the rod is real, and the brewing stand finally has work.",
-                  "One dangerous trip can seed every potion we brew after it.",
-                  "That settles it. The village will make good use of this."
+                  "One dangerous trip can seed every potion we brew after it."
                 ]
               },
               {
@@ -2539,7 +2522,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -2599,7 +2581,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The brewing stand has bottles, powder, and no Nether Wart. That makes it a very tidy shelf.",
                   "Find the fortress garden and bring back enough wart to start a village crop, plus one blaze rod to prove the route.",
-                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod. I will make the reward worth the trouble."
+                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
                 ],
                 "responses": [
                   {
@@ -2661,8 +2643,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Take more than one way home. Fortress bridges have a habit of ending under your feet.",
-                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
                 ]
               },
               {
@@ -2752,8 +2733,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The brewing stand can wait. Fire is a poor reason to hurry.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The brewing stand can wait. Fire is a poor reason to hurry."
                 ]
               },
               {
@@ -2815,8 +2795,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The wart is alive, the rod is real, and the brewing stand finally has work.",
-                  "One dangerous trip can seed every potion we brew after it.",
-                  "That settles it. The village will make good use of this."
+                  "One dangerous trip can seed every potion we brew after it."
                 ]
               },
               {
@@ -2825,7 +2804,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -3761,14 +3739,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "A Woodland Mansion is sending patrols toward roads that used to be quiet.",
           "Find the house, bring down its evoker, and return with a totem so no one can dismiss the warning.",
-          "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds. I will make the reward worth the trouble."
+          "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Do not mistake carpet for safety. Every quiet room in that house is waiting for a reason.",
-          "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds.",
-          "Good. I will keep a place clear for what you bring back."
+          "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
         ],
         "reminder": [
           "The mansion mark, one evoker, a totem in hand, and twelve emeralds for the informants.",
@@ -3777,11 +3754,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The house still stands, but its omen is broken and its patrol road is known.",
-          "A totem on the table is proof enough. The village will remember who carried it home.",
-          "That settles it. The village will make good use of this."
+          "A totem on the table is proof enough. The village will remember who carried it home."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -3801,7 +3776,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "A Woodland Mansion is sending patrols toward roads that used to be quiet.",
                   "Find the house, bring down its evoker, and return with a totem so no one can dismiss the warning.",
-                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds. I will make the reward worth the trouble."
+                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
                 ],
                 "responses": [
                   {
@@ -3863,8 +3838,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Do not mistake carpet for safety. Every quiet room in that house is waiting for a reason.",
-                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
                 ]
               },
               {
@@ -3954,8 +3928,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then keep clear of dark-oak roads until the patrols thin.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then keep clear of dark-oak roads until the patrols thin."
                 ]
               },
               {
@@ -4017,8 +3990,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The house still stands, but its omen is broken and its patrol road is known.",
-                  "A totem on the table is proof enough. The village will remember who carried it home.",
-                  "That settles it. The village will make good use of this."
+                  "A totem on the table is proof enough. The village will remember who carried it home."
                 ]
               },
               {
@@ -4027,7 +3999,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -4087,7 +4058,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "A Woodland Mansion is sending patrols toward roads that used to be quiet.",
                   "Find the house, bring down its evoker, and return with a totem so no one can dismiss the warning.",
-                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds. I will make the reward worth the trouble."
+                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
                 ],
                 "responses": [
                   {
@@ -4149,8 +4120,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Do not mistake carpet for safety. Every quiet room in that house is waiting for a reason.",
-                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
                 ]
               },
               {
@@ -4240,8 +4210,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then keep clear of dark-oak roads until the patrols thin.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then keep clear of dark-oak roads until the patrols thin."
                 ]
               },
               {
@@ -4303,8 +4272,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The house still stands, but its omen is broken and its patrol road is known.",
-                  "A totem on the table is proof enough. The village will remember who carried it home.",
-                  "That settles it. The village will make good use of this."
+                  "A totem on the table is proof enough. The village will remember who carried it home."
                 ]
               },
               {
@@ -4313,7 +4281,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -4472,14 +4439,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The village stands on stone we have never asked a useful question.",
           "Open a proper shaft below the bell and bring up the first raw iron.",
-          "Mine 64 stone or deepslate and bring 16 raw iron. I will make the reward worth the trouble."
+          "Mine 64 stone or deepslate and bring 16 raw iron."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Brace the entrance as you go. A mine should not begin with a rescue.",
-          "Mine 64 stone or deepslate and bring 16 raw iron.",
-          "Good. I will keep a place clear for what you bring back."
+          "Mine 64 stone or deepslate and bring 16 raw iron."
         ],
         "reminder": [
           "Sixty-four stone broken, sixteen raw iron brought to the smithy.",
@@ -4488,11 +4454,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The shaft is open and the first iron is honest. We can build on that.",
-          "Stone below the bell has finally paid rent.",
-          "That settles it. The village will make good use of this."
+          "Stone below the bell has finally paid rent."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -4512,7 +4476,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The village stands on stone we have never asked a useful question.",
                   "Open a proper shaft below the bell and bring up the first raw iron.",
-                  "Mine 64 stone or deepslate and bring 16 raw iron. I will make the reward worth the trouble."
+                  "Mine 64 stone or deepslate and bring 16 raw iron."
                 ],
                 "responses": [
                   {
@@ -4574,8 +4538,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Brace the entrance as you go. A mine should not begin with a rescue.",
-                  "Mine 64 stone or deepslate and bring 16 raw iron.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Mine 64 stone or deepslate and bring 16 raw iron."
                 ]
               },
               {
@@ -4665,8 +4628,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The stone has waited longer than we have. It can wait.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The stone has waited longer than we have. It can wait."
                 ]
               },
               {
@@ -4728,8 +4690,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The shaft is open and the first iron is honest. We can build on that.",
-                  "Stone below the bell has finally paid rent.",
-                  "That settles it. The village will make good use of this."
+                  "Stone below the bell has finally paid rent."
                 ]
               },
               {
@@ -4738,7 +4699,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -4798,7 +4758,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The village stands on stone we have never asked a useful question.",
                   "Open a proper shaft below the bell and bring up the first raw iron.",
-                  "Mine 64 stone or deepslate and bring 16 raw iron. I will make the reward worth the trouble."
+                  "Mine 64 stone or deepslate and bring 16 raw iron."
                 ],
                 "responses": [
                   {
@@ -4860,8 +4820,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Brace the entrance as you go. A mine should not begin with a rescue.",
-                  "Mine 64 stone or deepslate and bring 16 raw iron.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Mine 64 stone or deepslate and bring 16 raw iron."
                 ]
               },
               {
@@ -4951,8 +4910,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The stone has waited longer than we have. It can wait.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The stone has waited longer than we have. It can wait."
                 ]
               },
               {
@@ -5014,8 +4972,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The shaft is open and the first iron is honest. We can build on that.",
-                  "Stone below the bell has finally paid rent.",
-                  "That settles it. The village will make good use of this."
+                  "Stone below the bell has finally paid rent."
                 ]
               },
               {
@@ -5024,7 +4981,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -5233,14 +5189,14 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-          "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+          "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware. Timber continues into spider-clearing and returns emergency supplies."
         ],
         "accept": "Lay the rails",
         "decline": "Not yet.",
         "started": [],
         "reminder": [
           "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-          "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first.",
+          "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware. Timber continues into spider-clearing and returns emergency supplies.",
           "Lay twenty-four rails and bring a minecart to test the line.",
           "Rails, then. Give every slope a level thought before you set iron on it.",
           "Set sixteen log braces and hang four lanterns through the first stretch.",
@@ -5270,7 +5226,7 @@ window.VR_WIKI_DATA = {
                 "label": "Mark the Shaft",
                 "lines": [
                   "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-                  "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+                  "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware. Timber continues into spider-clearing and returns emergency supplies."
                 ],
                 "responses": [
                   {
@@ -5306,7 +5262,7 @@ window.VR_WIKI_DATA = {
                 "label": "About Mark the Shaft",
                 "lines": [
                   "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-                  "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+                  "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware. Timber continues into spider-clearing and returns emergency supplies."
                 ],
                 "responses": [
                   {
@@ -5353,7 +5309,7 @@ window.VR_WIKI_DATA = {
                 "label": "Reminder: Reminder",
                 "lines": [
                   "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-                  "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+                  "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware. Timber continues into spider-clearing and returns emergency supplies."
                 ]
               },
               {
@@ -5677,7 +5633,7 @@ window.VR_WIKI_DATA = {
                 "label": "Mark the Shaft",
                 "lines": [
                   "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-                  "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+                  "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware. Timber continues into spider-clearing and returns emergency supplies."
                 ],
                 "responses": [
                   {
@@ -5713,7 +5669,7 @@ window.VR_WIKI_DATA = {
                 "label": "About Mark the Shaft",
                 "lines": [
                   "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-                  "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+                  "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware. Timber continues into spider-clearing and returns emergency supplies."
                 ],
                 "responses": [
                   {
@@ -5760,7 +5716,7 @@ window.VR_WIKI_DATA = {
                 "label": "Reminder: Reminder",
                 "lines": [
                   "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-                  "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+                  "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware. Timber continues into spider-clearing and returns emergency supplies."
                 ]
               },
               {
@@ -6174,8 +6130,8 @@ window.VR_WIKI_DATA = {
         "lootTable": "villagerretaliation:quest/iron_road",
         "loot": [
           {
-            "item": "Emerald",
-            "count": "19-28",
+            "item": "Powered Rail",
+            "count": "8-16",
             "weight": 1,
             "note": ""
           },
@@ -6202,14 +6158,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The first rails work, but the deeper slope sends full carts backward and empty carts nowhere.",
           "Power the steep run and give the mine a cart built for freight.",
-          "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart. I will make the reward worth the trouble."
+          "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Test the brake before the load. Ore is patient. Minecarts are not.",
-          "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
-          "Good. I will keep a place clear for what you bring back."
+          "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
         ],
         "reminder": [
           "Eight powered rails, eight redstone torches, one freight cart.",
@@ -6218,11 +6173,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The iron road climbs under its own power. The mine can reach deeper now.",
-          "Full carts out, empty carts in. That is a mine beginning to breathe.",
-          "That settles it. The village will make good use of this."
+          "Full carts out, empty carts in. That is a mine beginning to breathe."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -6242,7 +6195,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The first rails work, but the deeper slope sends full carts backward and empty carts nowhere.",
                   "Power the steep run and give the mine a cart built for freight.",
-                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart. I will make the reward worth the trouble."
+                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
                 ],
                 "responses": [
                   {
@@ -6304,8 +6257,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Test the brake before the load. Ore is patient. Minecarts are not.",
-                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
                 ]
               },
               {
@@ -6395,8 +6347,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then push carefully. The slope has already chosen a favorite direction.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then push carefully. The slope has already chosen a favorite direction."
                 ]
               },
               {
@@ -6458,8 +6409,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The iron road climbs under its own power. The mine can reach deeper now.",
-                  "Full carts out, empty carts in. That is a mine beginning to breathe.",
-                  "That settles it. The village will make good use of this."
+                  "Full carts out, empty carts in. That is a mine beginning to breathe."
                 ]
               },
               {
@@ -6468,7 +6418,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -6528,7 +6477,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The first rails work, but the deeper slope sends full carts backward and empty carts nowhere.",
                   "Power the steep run and give the mine a cart built for freight.",
-                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart. I will make the reward worth the trouble."
+                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
                 ],
                 "responses": [
                   {
@@ -6590,8 +6539,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Test the brake before the load. Ore is patient. Minecarts are not.",
-                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
                 ]
               },
               {
@@ -6681,8 +6629,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then push carefully. The slope has already chosen a favorite direction.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then push carefully. The slope has already chosen a favorite direction."
                 ]
               },
               {
@@ -6744,8 +6691,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The iron road climbs under its own power. The mine can reach deeper now.",
-                  "Full carts out, empty carts in. That is a mine beginning to breathe.",
-                  "That settles it. The village will make good use of this."
+                  "Full carts out, empty carts in. That is a mine beginning to breathe."
                 ]
               },
               {
@@ -6754,7 +6700,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -6904,8 +6849,8 @@ window.VR_WIKI_DATA = {
         "lootTable": "villagerretaliation:quest/timber_brace",
         "loot": [
           {
-            "item": "Emerald",
-            "count": "19-28",
+            "item": "Oak Log",
+            "count": "16-24",
             "weight": 1,
             "note": ""
           },
@@ -6932,14 +6877,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The braces hold, but webs are pulling at the lower supports and something small is clicking behind them.",
           "Cross-brace the shaft, clear the cave spiders, and bring string as proof the nests are gone.",
-          "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string. I will make the reward worth the trouble."
+          "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Set each brace before you cut the web beside it. Roof first, heroics second.",
-          "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string.",
-          "Good. I will keep a place clear for what you bring back."
+          "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string."
         ],
         "reminder": [
           "Twenty-four cross-braces, four cave spiders, eight string.",
@@ -6948,11 +6892,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The roof is still, the webs are gone, and the timber road can go deeper.",
-          "Strong braces and no clicking in the dark. That is a safe shaft.",
-          "That settles it. The village will make good use of this."
+          "Strong braces and no clicking in the dark. That is a safe shaft."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -6972,7 +6914,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The braces hold, but webs are pulling at the lower supports and something small is clicking behind them.",
                   "Cross-brace the shaft, clear the cave spiders, and bring string as proof the nests are gone.",
-                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string. I will make the reward worth the trouble."
+                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string."
                 ],
                 "responses": [
                   {
@@ -7034,8 +6976,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Set each brace before you cut the web beside it. Roof first, heroics second.",
-                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string."
                 ]
               },
               {
@@ -7125,8 +7066,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then stay above the lower lantern. The spiders have claimed everything past it.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then stay above the lower lantern. The spiders have claimed everything past it."
                 ]
               },
               {
@@ -7188,8 +7128,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The roof is still, the webs are gone, and the timber road can go deeper.",
-                  "Strong braces and no clicking in the dark. That is a safe shaft.",
-                  "That settles it. The village will make good use of this."
+                  "Strong braces and no clicking in the dark. That is a safe shaft."
                 ]
               },
               {
@@ -7198,7 +7137,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -7258,7 +7196,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The braces hold, but webs are pulling at the lower supports and something small is clicking behind them.",
                   "Cross-brace the shaft, clear the cave spiders, and bring string as proof the nests are gone.",
-                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string. I will make the reward worth the trouble."
+                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string."
                 ],
                 "responses": [
                   {
@@ -7320,8 +7258,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Set each brace before you cut the web beside it. Roof first, heroics second.",
-                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string."
                 ]
               },
               {
@@ -7411,8 +7348,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then stay above the lower lantern. The spiders have claimed everything past it.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then stay above the lower lantern. The spiders have claimed everything past it."
                 ]
               },
               {
@@ -7474,8 +7410,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The roof is still, the webs are gone, and the timber road can go deeper.",
-                  "Strong braces and no clicking in the dark. That is a safe shaft.",
-                  "That settles it. The village will make good use of this."
+                  "Strong braces and no clicking in the dark. That is a safe shaft."
                 ]
               },
               {
@@ -7484,7 +7419,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -7651,14 +7585,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The End does not end at the dragon island. It only stops explaining itself.",
           "Prepare eyes for bearings, membranes for slow falling, and a pumpkin for the staring locals.",
-          "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin. I will make the reward worth the trouble."
+          "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Pearls fail over the void only once. Aim with patience.",
-          "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin.",
-          "Good. I will keep a place clear for what you bring back."
+          "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin."
         ],
         "reminder": [
           "Four eyes, four membranes, one carved pumpkin for the outer islands.",
@@ -7667,11 +7600,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The expedition packs are ready. Now we choose which light to follow.",
-          "Everything needed to cross an empty sky, except good sense. Bring your own.",
-          "That settles it. The village will make good use of this."
+          "Everything needed to cross an empty sky, except good sense. Bring your own."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -7691,7 +7622,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The End does not end at the dragon island. It only stops explaining itself.",
                   "Prepare eyes for bearings, membranes for slow falling, and a pumpkin for the staring locals.",
-                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin. I will make the reward worth the trouble."
+                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin."
                 ],
                 "responses": [
                   {
@@ -7753,8 +7684,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Pearls fail over the void only once. Aim with patience.",
-                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin."
                 ]
               },
               {
@@ -7844,8 +7774,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The outer islands are patient and very far away.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The outer islands are patient and very far away."
                 ]
               },
               {
@@ -7907,8 +7836,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The expedition packs are ready. Now we choose which light to follow.",
-                  "Everything needed to cross an empty sky, except good sense. Bring your own.",
-                  "That settles it. The village will make good use of this."
+                  "Everything needed to cross an empty sky, except good sense. Bring your own."
                 ]
               },
               {
@@ -7917,7 +7845,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -7977,7 +7904,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The End does not end at the dragon island. It only stops explaining itself.",
                   "Prepare eyes for bearings, membranes for slow falling, and a pumpkin for the staring locals.",
-                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin. I will make the reward worth the trouble."
+                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin."
                 ],
                 "responses": [
                   {
@@ -8039,8 +7966,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Pearls fail over the void only once. Aim with patience.",
-                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 4 Eyes of Ender, 4 phantom membranes, and 1 carved pumpkin."
                 ]
               },
               {
@@ -8130,8 +8056,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The outer islands are patient and very far away.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The outer islands are patient and very far away."
                 ]
               },
               {
@@ -8193,8 +8118,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The expedition packs are ready. Now we choose which light to follow.",
-                  "Everything needed to cross an empty sky, except good sense. Bring your own.",
-                  "That settles it. The village will make good use of this."
+                  "Everything needed to cross an empty sky, except good sense. Bring your own."
                 ]
               },
               {
@@ -8203,7 +8127,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -8428,14 +8351,14 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-          "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+          "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance. City is harder and offers this route's only, stronger Elytra chance."
         ],
         "accept": "Follow the chorus",
         "decline": "Not yet.",
         "started": [],
         "reminder": [
           "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-          "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them.",
+          "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance. City is harder and offers this route's only, stronger Elytra chance.",
           "Clear five Endermen from the trail and bring thirty-two chorus fruit.",
           "Chorus trail. Keep your feet ready for the fruit to change its mind about where you belong.",
           "Reach the city light, clear three shulkers, and bring one shell.",
@@ -8465,7 +8388,7 @@ window.VR_WIKI_DATA = {
                 "label": "Choose a Star",
                 "lines": [
                   "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-                  "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+                  "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance. City is harder and offers this route's only, stronger Elytra chance."
                 ],
                 "responses": [
                   {
@@ -8501,7 +8424,7 @@ window.VR_WIKI_DATA = {
                 "label": "About Choose a Star",
                 "lines": [
                   "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-                  "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+                  "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance. City is harder and offers this route's only, stronger Elytra chance."
                 ],
                 "responses": [
                   {
@@ -8548,7 +8471,7 @@ window.VR_WIKI_DATA = {
                 "label": "Reminder: Reminder",
                 "lines": [
                   "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-                  "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+                  "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance. City is harder and offers this route's only, stronger Elytra chance."
                 ]
               },
               {
@@ -8872,7 +8795,7 @@ window.VR_WIKI_DATA = {
                 "label": "Choose a Star",
                 "lines": [
                   "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-                  "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+                  "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance. City is harder and offers this route's only, stronger Elytra chance."
                 ],
                 "responses": [
                   {
@@ -8908,7 +8831,7 @@ window.VR_WIKI_DATA = {
                 "label": "About Choose a Star",
                 "lines": [
                   "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-                  "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+                  "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance. City is harder and offers this route's only, stronger Elytra chance."
                 ],
                 "responses": [
                   {
@@ -8955,7 +8878,7 @@ window.VR_WIKI_DATA = {
                 "label": "Reminder: Reminder",
                 "lines": [
                   "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-                  "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+                  "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance. City is harder and offers this route's only, stronger Elytra chance."
                 ]
               },
               {
@@ -9370,8 +9293,8 @@ window.VR_WIKI_DATA = {
         "lootTable": "villagerretaliation:quest/chorus_trail",
         "loot": [
           {
-            "item": "Emerald",
-            "count": "36-50",
+            "item": "Ender Pearl",
+            "count": "12-20",
             "weight": 1,
             "note": ""
           },
@@ -9382,7 +9305,7 @@ window.VR_WIKI_DATA = {
             "note": ""
           },
           {
-            "item": "Elytra",
+            "item": "Ender Chest",
             "count": "1",
             "weight": 1,
             "note": ""
@@ -9398,14 +9321,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The first chorus mark is true. Now map how the groves spread from island to island.",
           "Harvest living flowers, cook the fruit, and bring stone that can grow them near the archive.",
-          "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone. I will make the reward worth the trouble."
+          "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Cut the flowers first. A chorus plant without its crown is only a purple ladder falling apart.",
-          "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone.",
-          "Good. I will keep a place clear for what you bring back."
+          "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone."
         ],
         "reminder": [
           "Eight flowers harvested, sixteen popped fruit, thirty-two End stone.",
@@ -9414,11 +9336,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The chorus trail is mapped from root to flower. The living branch is complete.",
-          "We can grow a small piece of the outer End where the archive can watch it.",
-          "That settles it. The village will make good use of this."
+          "We can grow a small piece of the outer End where the archive can watch it."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -9438,7 +9358,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The first chorus mark is true. Now map how the groves spread from island to island.",
                   "Harvest living flowers, cook the fruit, and bring stone that can grow them near the archive.",
-                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone. I will make the reward worth the trouble."
+                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone."
                 ],
                 "responses": [
                   {
@@ -9500,8 +9420,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Cut the flowers first. A chorus plant without its crown is only a purple ladder falling apart.",
-                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone."
                 ]
               },
               {
@@ -9591,8 +9510,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then let the chorus keep growing in every direction at once.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then let the chorus keep growing in every direction at once."
                 ]
               },
               {
@@ -9654,8 +9572,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The chorus trail is mapped from root to flower. The living branch is complete.",
-                  "We can grow a small piece of the outer End where the archive can watch it.",
-                  "That settles it. The village will make good use of this."
+                  "We can grow a small piece of the outer End where the archive can watch it."
                 ]
               },
               {
@@ -9664,7 +9581,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -9724,7 +9640,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The first chorus mark is true. Now map how the groves spread from island to island.",
                   "Harvest living flowers, cook the fruit, and bring stone that can grow them near the archive.",
-                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone. I will make the reward worth the trouble."
+                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone."
                 ],
                 "responses": [
                   {
@@ -9786,8 +9702,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Cut the flowers first. A chorus plant without its crown is only a purple ladder falling apart.",
-                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Harvest 8 chorus flowers and bring 16 popped chorus fruit and 32 End stone."
                 ]
               },
               {
@@ -9877,8 +9792,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then let the chorus keep growing in every direction at once.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then let the chorus keep growing in every direction at once."
                 ]
               },
               {
@@ -9940,8 +9854,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The chorus trail is mapped from root to flower. The living branch is complete.",
-                  "We can grow a small piece of the outer End where the archive can watch it.",
-                  "That settles it. The village will make good use of this."
+                  "We can grow a small piece of the outer End where the archive can watch it."
                 ]
               },
               {
@@ -9950,7 +9863,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -10116,13 +10028,13 @@ window.VR_WIKI_DATA = {
           {
             "item": "Diamond",
             "count": "3-5",
-            "weight": 2,
+            "weight": 1,
             "note": ""
           },
           {
             "item": "Elytra",
             "count": "1",
-            "weight": 1,
+            "weight": 2,
             "note": ""
           }
         ]
@@ -10136,14 +10048,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "One city light is marked. The last survey must make the road home visible too.",
           "Climb the tower, set End rods along the return, and recover shells for the archive.",
-          "Survey the marked End City, place 12 End rods, and bring 2 shulker shells. I will make the reward worth the trouble."
+          "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Place the first rod where the gateway disappears behind you. Pride is a poor return marker.",
-          "Survey the marked End City, place 12 End rods, and bring 2 shulker shells.",
-          "Good. I will keep a place clear for what you bring back."
+          "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
         ],
         "reminder": [
           "The tower survey, twelve End rods placed, two shells returned.",
@@ -10152,11 +10063,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The pale towers and the road home share one map now. The city branch is complete.",
-          "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets.",
-          "That settles it. The village will make good use of this."
+          "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -10176,7 +10085,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "One city light is marked. The last survey must make the road home visible too.",
                   "Climb the tower, set End rods along the return, and recover shells for the archive.",
-                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells. I will make the reward worth the trouble."
+                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
                 ],
                 "responses": [
                   {
@@ -10238,8 +10147,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Place the first rod where the gateway disappears behind you. Pride is a poor return marker.",
-                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
                 ]
               },
               {
@@ -10329,8 +10237,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then do not climb a tower you cannot find your way down from.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then do not climb a tower you cannot find your way down from."
                 ]
               },
               {
@@ -10392,8 +10299,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The pale towers and the road home share one map now. The city branch is complete.",
-                  "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets.",
-                  "That settles it. The village will make good use of this."
+                  "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets."
                 ]
               },
               {
@@ -10402,7 +10308,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -10462,7 +10367,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "One city light is marked. The last survey must make the road home visible too.",
                   "Climb the tower, set End rods along the return, and recover shells for the archive.",
-                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells. I will make the reward worth the trouble."
+                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
                 ],
                 "responses": [
                   {
@@ -10524,8 +10429,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Place the first rod where the gateway disappears behind you. Pride is a poor return marker.",
-                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
                 ]
               },
               {
@@ -10615,8 +10519,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then do not climb a tower you cannot find your way down from.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then do not climb a tower you cannot find your way down from."
                 ]
               },
               {
@@ -10678,8 +10581,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The pale towers and the road home share one map now. The city branch is complete.",
-                  "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets.",
-                  "That settles it. The village will make good use of this."
+                  "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets."
                 ]
               },
               {
@@ -10688,7 +10590,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -11660,7 +11561,7 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "A blank atlas can become a diary, a warning, or a trophy shelf. We should choose better than that.",
-          "Bring fine pens and glass for the index. Then choose the atlas principle: reliable roads, or strange wonders."
+          "Bring fine pens and glass for the index. Then make a permanent atlas choice: roads prepare a compass-and-iron route kit, while wonders prepare a spyglass-and-amethyst survey kit for the first expedition."
         ],
         "accept": "Prepare the index",
         "decline": "Another time",
@@ -11669,7 +11570,7 @@ window.VR_WIKI_DATA = {
         ],
         "reminder": [
           "Bring 2 feathers and 6 glass panes. Once the index is ready, choose whether the atlas favors roads or wonders.",
-          "Choose roads if the atlas should favor safe returns, or wonders if it should favor rare discoveries."
+          "Choose roads for a compass-and-iron expedition kit, or wonders for a spyglass-and-amethyst kit. The principle is permanent."
         ],
         "completed": [
           "I have inked roads into the index. The atlas will look for ways back before it looks for glory.",
@@ -11691,7 +11592,7 @@ window.VR_WIKI_DATA = {
                 "label": "Ink and Bearings",
                 "lines": [
                   "A blank atlas can become a diary, a warning, or a trophy shelf. We should choose better than that.",
-                  "Bring fine pens and glass for the index. Then choose the atlas principle: reliable roads, or strange wonders."
+                  "Bring fine pens and glass for the index. Then make a permanent atlas choice: roads prepare a compass-and-iron route kit, while wonders prepare a spyglass-and-amethyst survey kit for the first expedition."
                 ],
                 "responses": [
                   {
@@ -11842,7 +11743,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Ink and Bearings",
                 "lines": [
-                  "The index is ready. Choose whether the atlas should privilege safe roads or the rare marks people cross oceans to see."
+                  "The index is ready. This principle is permanent: roads reward practical navigation supplies on the first expedition. Wonders reward rare survey tools."
                 ],
                 "responses": [
                   {
@@ -11889,7 +11790,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Choose roads if the atlas should favor safe returns, or wonders if it should favor rare discoveries."
+                  "Choose roads for a compass-and-iron expedition kit, or wonders for a spyglass-and-amethyst kit. The principle is permanent."
                 ]
               },
               {
@@ -12065,7 +11966,7 @@ window.VR_WIKI_DATA = {
                 "label": "Ink and Bearings",
                 "lines": [
                   "A blank atlas can become a diary, a warning, or a trophy shelf. We should choose better than that.",
-                  "Bring fine pens and glass for the index. Then choose the atlas principle: reliable roads, or strange wonders."
+                  "Bring fine pens and glass for the index. Then make a permanent atlas choice: roads prepare a compass-and-iron route kit, while wonders prepare a spyglass-and-amethyst survey kit for the first expedition."
                 ],
                 "responses": [
                   {
@@ -12216,7 +12117,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Ink and Bearings",
                 "lines": [
-                  "The index is ready. Choose whether the atlas should privilege safe roads or the rare marks people cross oceans to see."
+                  "The index is ready. This principle is permanent: roads reward practical navigation supplies on the first expedition. Wonders reward rare survey tools."
                 ],
                 "responses": [
                   {
@@ -12263,7 +12164,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Choose roads if the atlas should favor safe returns, or wonders if it should favor rare discoveries."
+                  "Choose roads for a compass-and-iron expedition kit, or wonders for a spyglass-and-amethyst kit. The principle is permanent."
                 ]
               },
               {
@@ -14060,13 +13961,13 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The atlas has pages, markers, and memory. Now it needs judgment.",
-          "Choose the test: a safer supply road anyone can repeat, or a riskier road that proves the atlas can survive bad company."
+          "Choose the permanent test route: safe asks for four lanterns and eight bread. Risky begins a three-pillager ambush and guarantees a crossbow proof item with the larger combat bonus."
         ],
         "accept": "Take the safer road",
         "decline": "Another time",
         "started": [],
         "reminder": [
-          "Choose the safer road for lanterns and bread, or the riskier road for a pillager patrol and crossbow proof.",
+          "This choice is permanent: safe needs four lanterns and eight bread. Risky launches three pillagers, guarantees the proof crossbow, and pays the larger bonus.",
           "Bring 4 lanterns and 8 bread for the safer route test.",
           "Defeat 3 pillagers and carry a crossbow as proof of the riskier route test."
         ],
@@ -14090,7 +13991,7 @@ window.VR_WIKI_DATA = {
                 "label": "The Atlas Test",
                 "lines": [
                   "The atlas has pages, markers, and memory. Now it needs judgment.",
-                  "Choose the test: a safer supply road anyone can repeat, or a riskier road that proves the atlas can survive bad company."
+                  "Choose the permanent test route: safe asks for four lanterns and eight bread. Risky begins a three-pillager ambush and guarantees a crossbow proof item with the larger combat bonus."
                 ],
                 "responses": [
                   {
@@ -14125,7 +14026,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About The Atlas Test",
                 "lines": [
-                  "Choose whether the atlas should prove a safer road or a riskier one."
+                  "This test choice is permanent. Safe is a supply hand-in. Risky is an immediate three-pillager ambush with a guaranteed crossbow and larger bonus."
                 ],
                 "responses": [
                   {
@@ -14153,7 +14054,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Choose the safer road for lanterns and bread, or the riskier road for a pillager patrol and crossbow proof."
+                  "This choice is permanent: safe needs four lanterns and eight bread. Risky launches three pillagers, guarantees the proof crossbow, and pays the larger bonus."
                 ]
               },
               {
@@ -14458,7 +14359,7 @@ window.VR_WIKI_DATA = {
                 "label": "The Atlas Test",
                 "lines": [
                   "The atlas has pages, markers, and memory. Now it needs judgment.",
-                  "Choose the test: a safer supply road anyone can repeat, or a riskier road that proves the atlas can survive bad company."
+                  "Choose the permanent test route: safe asks for four lanterns and eight bread. Risky begins a three-pillager ambush and guarantees a crossbow proof item with the larger combat bonus."
                 ],
                 "responses": [
                   {
@@ -14493,7 +14394,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About The Atlas Test",
                 "lines": [
-                  "Choose whether the atlas should prove a safer road or a riskier one."
+                  "This test choice is permanent. Safe is a supply hand-in. Risky is an immediate three-pillager ambush with a guaranteed crossbow and larger bonus."
                 ],
                 "responses": [
                   {
@@ -14521,7 +14422,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Choose the safer road for lanterns and bread, or the riskier road for a pillager patrol and crossbow proof."
+                  "This choice is permanent: safe needs four lanterns and eight bread. Risky launches three pillagers, guarantees the proof crossbow, and pays the larger bonus."
                 ]
               },
               {
@@ -14988,13 +14889,13 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for a horizon.",
-          "Choose the drowned coast if you want the atlas to follow water and ruins. Choose the dark roof road if you want it to follow danger under old timber."
+          "This final choice closes the other horizon. Coast continues through monuments and pays in conduit materials. Dark roof continues through a mansion and pays in mansion treasure."
         ],
         "accept": "Choose the drowned coast",
         "decline": "Another time",
         "started": [],
         "reminder": [
-          "Choose the drowned coast for water, prismarine, and ocean ruins. Choose the dark roof road for books, illagers, and a mansion horizon.",
+          "This choice closes the other horizon. Coast leads to guardian work and conduit materials. Dark roof leads to illagers and rare mansion treasure.",
           "Reach the Ocean Monument near the mark, then bring 4 prismarine crystals and 4 prismarine shards to bind the drowned coast horizon.",
           "Reach the Woodland Mansion near the mark, then bring 6 books and carry a Totem of Undying to bind the dark roof road."
         ],
@@ -15018,7 +14919,7 @@ window.VR_WIKI_DATA = {
                 "label": "Choose the Horizon",
                 "lines": [
                   "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for a horizon.",
-                  "Choose the drowned coast if you want the atlas to follow water and ruins. Choose the dark roof road if you want it to follow danger under old timber."
+                  "This final choice closes the other horizon. Coast continues through monuments and pays in conduit materials. Dark roof continues through a mansion and pays in mansion treasure."
                 ],
                 "responses": [
                   {
@@ -15053,7 +14954,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About the Horizon",
                 "lines": [
-                  "This is the final fork. Coast or dark roof. Water-stone or old timber."
+                  "This final fork closes the other route: coast means monuments and conduit materials. Dark roof means a mansion and rare mansion treasure."
                 ],
                 "responses": [
                   {
@@ -15081,7 +14982,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Choose the drowned coast for water, prismarine, and ocean ruins. Choose the dark roof road for books, illagers, and a mansion horizon."
+                  "This choice closes the other horizon. Coast leads to guardian work and conduit materials. Dark roof leads to illagers and rare mansion treasure."
                 ]
               },
               {
@@ -15386,7 +15287,7 @@ window.VR_WIKI_DATA = {
                 "label": "Choose the Horizon",
                 "lines": [
                   "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for a horizon.",
-                  "Choose the drowned coast if you want the atlas to follow water and ruins. Choose the dark roof road if you want it to follow danger under old timber."
+                  "This final choice closes the other horizon. Coast continues through monuments and pays in conduit materials. Dark roof continues through a mansion and pays in mansion treasure."
                 ],
                 "responses": [
                   {
@@ -15421,7 +15322,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About the Horizon",
                 "lines": [
-                  "This is the final fork. Coast or dark roof. Water-stone or old timber."
+                  "This final fork closes the other route: coast means monuments and conduit materials. Dark roof means a mansion and rare mansion treasure."
                 ],
                 "responses": [
                   {
@@ -15449,7 +15350,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Choose the drowned coast for water, prismarine, and ocean ruins. Choose the dark roof road for books, illagers, and a mansion horizon."
+                  "This choice closes the other horizon. Coast leads to guardian work and conduit materials. Dark roof leads to illagers and rare mansion treasure."
                 ]
               },
               {
@@ -20354,14 +20255,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "There is good ground beyond the last fence, but good ground still needs hands.",
           "Bring seed, water, and a hoe that will survive more than one row.",
-          "Bring 24 wheat seeds, an iron hoe, and a water bucket. I will make the reward worth the trouble."
+          "Bring 24 wheat seeds, an iron hoe, and a water bucket."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Keep the seeds dry. The water can wait until the furrows are open.",
-          "Bring 24 wheat seeds, an iron hoe, and a water bucket.",
-          "Good. I will keep a place clear for what you bring back."
+          "Bring 24 wheat seeds, an iron hoe, and a water bucket."
         ],
         "reminder": [
           "Seeds for the rows, an iron hoe, and one bucket of water.",
@@ -20370,11 +20270,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "That is everything a bare patch needs to become a field.",
-          "The furrows can begin at sunrise. You have given them a fair start.",
-          "That settles it. The village will make good use of this."
+          "The furrows can begin at sunrise. You have given them a fair start."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -20394,7 +20292,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "There is good ground beyond the last fence, but good ground still needs hands.",
                   "Bring seed, water, and a hoe that will survive more than one row.",
-                  "Bring 24 wheat seeds, an iron hoe, and a water bucket. I will make the reward worth the trouble."
+                  "Bring 24 wheat seeds, an iron hoe, and a water bucket."
                 ],
                 "responses": [
                   {
@@ -20456,8 +20354,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Keep the seeds dry. The water can wait until the furrows are open.",
-                  "Bring 24 wheat seeds, an iron hoe, and a water bucket.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 24 wheat seeds, an iron hoe, and a water bucket."
                 ]
               },
               {
@@ -20547,8 +20444,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The ground will keep. We should not open it without a plan.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The ground will keep. We should not open it without a plan."
                 ]
               },
               {
@@ -20610,8 +20506,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "That is everything a bare patch needs to become a field.",
-                  "The furrows can begin at sunrise. You have given them a fair start.",
-                  "That settles it. The village will make good use of this."
+                  "The furrows can begin at sunrise. You have given them a fair start."
                 ]
               },
               {
@@ -20620,7 +20515,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -20680,7 +20574,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "There is good ground beyond the last fence, but good ground still needs hands.",
                   "Bring seed, water, and a hoe that will survive more than one row.",
-                  "Bring 24 wheat seeds, an iron hoe, and a water bucket. I will make the reward worth the trouble."
+                  "Bring 24 wheat seeds, an iron hoe, and a water bucket."
                 ],
                 "responses": [
                   {
@@ -20742,8 +20636,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Keep the seeds dry. The water can wait until the furrows are open.",
-                  "Bring 24 wheat seeds, an iron hoe, and a water bucket.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 24 wheat seeds, an iron hoe, and a water bucket."
                 ]
               },
               {
@@ -20833,8 +20726,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The ground will keep. We should not open it without a plan.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The ground will keep. We should not open it without a plan."
                 ]
               },
               {
@@ -20896,8 +20788,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "That is everything a bare patch needs to become a field.",
-                  "The furrows can begin at sunrise. You have given them a fair start.",
-                  "That settles it. The village will make good use of this."
+                  "The furrows can begin at sunrise. You have given them a fair start."
                 ]
               },
               {
@@ -20906,7 +20797,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -21108,15 +20998,15 @@ window.VR_WIKI_DATA = {
       ],
       "dialogue": {
         "offer": [
-          "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-          "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+          "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+          "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
         ],
         "accept": "Build the canals",
         "decline": "Not yet.",
         "started": [],
         "reminder": [
-          "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-          "Canals are steady but costly. Compost is cheaper, but someone must keep turning it.",
+          "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+          "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan.",
           "Twelve stone bricks laid for the canal, then bring the water bucket back to the field.",
           "Canals, then. Give the water clean stone edges and no place to wander.",
           "Work the composter five times and bring sixteen bone meal for the first rows.",
@@ -21145,8 +21035,8 @@ window.VR_WIKI_DATA = {
                 "title": "Offer",
                 "label": "Choose the Soil",
                 "lines": [
-                  "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-                  "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+                  "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+                  "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
                 ],
                 "responses": [
                   {
@@ -21181,8 +21071,8 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Choose the Soil",
                 "lines": [
-                  "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-                  "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+                  "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+                  "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
                 ],
                 "responses": [
                   {
@@ -21228,8 +21118,8 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-                  "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+                  "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+                  "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
                 ]
               },
               {
@@ -21552,8 +21442,8 @@ window.VR_WIKI_DATA = {
                 "title": "Offer",
                 "label": "Choose the Soil",
                 "lines": [
-                  "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-                  "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+                  "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+                  "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
                 ],
                 "responses": [
                   {
@@ -21588,8 +21478,8 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Choose the Soil",
                 "lines": [
-                  "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-                  "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+                  "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+                  "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
                 ],
                 "responses": [
                   {
@@ -21635,8 +21525,8 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "The field can drink from stone-lined canals, or eat from deep compost. We have enough hands for one plan.",
-                  "Canals are steady but costly. Compost is cheaper, but someone must keep turning it."
+                  "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+                  "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
                 ]
               },
               {
@@ -22071,14 +21961,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The first channel works. Now it needs walls that will survive boots, rain, and curious sheep.",
           "Finish the stone edges and bring lily pads to shade the still corners.",
-          "Place 24 stone bricks and bring 8 lily pads. I will make the reward worth the trouble."
+          "Place 24 stone bricks and bring 8 lily pads."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Keep the corners square. Water finds every lazy gap.",
-          "Place 24 stone bricks and bring 8 lily pads.",
-          "Good. I will keep a place clear for what you bring back."
+          "Place 24 stone bricks and bring 8 lily pads."
         ],
         "reminder": [
           "Twenty-four stone bricks along the channels, eight lily pads for cover.",
@@ -22087,11 +21976,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The water reaches every bed and stays off the road. That is a proper canal.",
-          "Stone below, green shade above. The canal field is finished.",
-          "That settles it. The village will make good use of this."
+          "Stone below, green shade above. The canal field is finished."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -22111,7 +21998,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The first channel works. Now it needs walls that will survive boots, rain, and curious sheep.",
                   "Finish the stone edges and bring lily pads to shade the still corners.",
-                  "Place 24 stone bricks and bring 8 lily pads. I will make the reward worth the trouble."
+                  "Place 24 stone bricks and bring 8 lily pads."
                 ],
                 "responses": [
                   {
@@ -22173,8 +22060,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Keep the corners square. Water finds every lazy gap.",
-                  "Place 24 stone bricks and bring 8 lily pads.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 24 stone bricks and bring 8 lily pads."
                 ]
               },
               {
@@ -22264,8 +22150,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then keep the sheep away from the wet edge.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then keep the sheep away from the wet edge."
                 ]
               },
               {
@@ -22327,8 +22212,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The water reaches every bed and stays off the road. That is a proper canal.",
-                  "Stone below, green shade above. The canal field is finished.",
-                  "That settles it. The village will make good use of this."
+                  "Stone below, green shade above. The canal field is finished."
                 ]
               },
               {
@@ -22337,7 +22221,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -22397,7 +22280,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The first channel works. Now it needs walls that will survive boots, rain, and curious sheep.",
                   "Finish the stone edges and bring lily pads to shade the still corners.",
-                  "Place 24 stone bricks and bring 8 lily pads. I will make the reward worth the trouble."
+                  "Place 24 stone bricks and bring 8 lily pads."
                 ],
                 "responses": [
                   {
@@ -22459,8 +22342,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Keep the corners square. Water finds every lazy gap.",
-                  "Place 24 stone bricks and bring 8 lily pads.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 24 stone bricks and bring 8 lily pads."
                 ]
               },
               {
@@ -22550,8 +22432,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then keep the sheep away from the wet edge.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then keep the sheep away from the wet edge."
                 ]
               },
               {
@@ -22613,8 +22494,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The water reaches every bed and stays off the road. That is a proper canal.",
-                  "Stone below, green shade above. The canal field is finished.",
-                  "That settles it. The village will make good use of this."
+                  "Stone below, green shade above. The canal field is finished."
                 ]
               },
               {
@@ -22623,7 +22503,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -22795,14 +22674,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The first bed is rich. Now the rest of the field needs the same patience.",
           "Turn the heaps, raise the beds, and feed the first planting well.",
-          "Work composters 8 times, then bring 32 dirt and 24 bone meal. I will make the reward worth the trouble."
+          "Work composters 8 times, then bring 32 dirt and 24 bone meal."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "A good field is built twice: once from dirt, once from what we return to it.",
-          "Work composters 8 times, then bring 32 dirt and 24 bone meal.",
-          "Good. I will keep a place clear for what you bring back."
+          "Work composters 8 times, then bring 32 dirt and 24 bone meal."
         ],
         "reminder": [
           "Eight turns of the composters, thirty-two dirt, twenty-four bone meal.",
@@ -22811,11 +22689,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "Every bed is dark and ready. The compost field is finished.",
-          "Nothing wasted, every row fed. That is a field worth keeping.",
-          "That settles it. The village will make good use of this."
+          "Nothing wasted, every row fed. That is a field worth keeping."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -22835,7 +22711,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The first bed is rich. Now the rest of the field needs the same patience.",
                   "Turn the heaps, raise the beds, and feed the first planting well.",
-                  "Work composters 8 times, then bring 32 dirt and 24 bone meal. I will make the reward worth the trouble."
+                  "Work composters 8 times, then bring 32 dirt and 24 bone meal."
                 ],
                 "responses": [
                   {
@@ -22897,8 +22773,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "A good field is built twice: once from dirt, once from what we return to it.",
-                  "Work composters 8 times, then bring 32 dirt and 24 bone meal.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Work composters 8 times, then bring 32 dirt and 24 bone meal."
                 ]
               },
               {
@@ -22988,8 +22863,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The heaps will keep cooking, whether we watch or not.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The heaps will keep cooking, whether we watch or not."
                 ]
               },
               {
@@ -23051,8 +22925,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "Every bed is dark and ready. The compost field is finished.",
-                  "Nothing wasted, every row fed. That is a field worth keeping.",
-                  "That settles it. The village will make good use of this."
+                  "Nothing wasted, every row fed. That is a field worth keeping."
                 ]
               },
               {
@@ -23061,7 +22934,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -23121,7 +22993,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The first bed is rich. Now the rest of the field needs the same patience.",
                   "Turn the heaps, raise the beds, and feed the first planting well.",
-                  "Work composters 8 times, then bring 32 dirt and 24 bone meal. I will make the reward worth the trouble."
+                  "Work composters 8 times, then bring 32 dirt and 24 bone meal."
                 ],
                 "responses": [
                   {
@@ -23183,8 +23055,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "A good field is built twice: once from dirt, once from what we return to it.",
-                  "Work composters 8 times, then bring 32 dirt and 24 bone meal.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Work composters 8 times, then bring 32 dirt and 24 bone meal."
                 ]
               },
               {
@@ -23274,8 +23145,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The heaps will keep cooking, whether we watch or not.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The heaps will keep cooking, whether we watch or not."
                 ]
               },
               {
@@ -23337,8 +23207,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "Every bed is dark and ready. The compost field is finished.",
-                  "Nothing wasted, every row fed. That is a field worth keeping.",
-                  "That settles it. The village will make good use of this."
+                  "Nothing wasted, every row fed. That is a field worth keeping."
                 ]
               },
               {
@@ -23347,7 +23216,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -23443,8 +23311,8 @@ window.VR_WIKI_DATA = {
         {
           "id": "kindle",
           "label": "Kindle",
-          "text": "Bring a campfire and 6 charcoal.",
-          "progress": 0.55,
+          "text": "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod.",
+          "progress": 0.85,
           "hint": ""
         },
         {
@@ -23459,13 +23327,6 @@ window.VR_WIKI_DATA = {
           "label": "Bring Charcoal",
           "text": "Bring 6 charcoal so the first fire burns clean.",
           "progress": 0.55,
-          "hint": ""
-        },
-        {
-          "id": "fill_pots",
-          "label": "Fill Pots",
-          "text": "Bring 6 bowls and 6 cooked cod.",
-          "progress": 0.85,
           "hint": ""
         },
         {
@@ -23524,16 +23385,15 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "A village does not become steady because one person eats well. It becomes steady when there is a warm place people trust.",
-          "Bring a campfire and clean charcoal. After that, we can talk about what goes over the flame."
+          "Bring a campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That will give the first fire both a place and a purpose."
         ],
         "accept": "I will help set the hearth.",
         "decline": "Another time.",
         "started": [
-          "Good. Bring a campfire and 6 charcoal. Nothing grand, just the start of somewhere people can gather."
+          "Good. Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That is the complete list for this hearth."
         ],
         "reminder": [
-          "Bring 1 campfire and 6 charcoal for the shared hearth.",
-          "Bring 6 bowls and 6 cooked cod for the first shared meal."
+          "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod for the shared hearth."
         ],
         "completed": [
           "There. The first fire is not much to look at yet, but people will stand closer to it than they admit."
@@ -23546,7 +23406,7 @@ window.VR_WIKI_DATA = {
           {
             "stageId": "kindle",
             "label": "Kindle",
-            "trackerText": "Bring a campfire and 6 charcoal.",
+            "trackerText": "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod.",
             "slots": [
               {
                 "slot": "offer",
@@ -23554,7 +23414,7 @@ window.VR_WIKI_DATA = {
                 "label": "Kindling",
                 "lines": [
                   "A village does not become steady because one person eats well. It becomes steady when there is a warm place people trust.",
-                  "Bring a campfire and clean charcoal. After that, we can talk about what goes over the flame."
+                  "Bring a campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That will give the first fire both a place and a purpose."
                 ],
                 "responses": [
                   {
@@ -23578,7 +23438,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Kindling",
                 "lines": [
-                  "The first fire still needs its place and its fuel. A cold hearth is only furniture."
+                  "The first fire still needs a campfire, charcoal, bowls, and cooked cod. The list will not change before the hearth is ready."
                 ],
                 "responses": [
                   {
@@ -23615,7 +23475,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Good. Bring a campfire and 6 charcoal. Nothing grand, just the start of somewhere people can gather."
+                  "Good. Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That is the complete list for this hearth."
                 ]
               },
               {
@@ -23633,7 +23493,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Bring 1 campfire and 6 charcoal for the shared hearth."
+                  "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod for the shared hearth."
                 ]
               },
               {
@@ -23659,67 +23519,6 @@ window.VR_WIKI_DATA = {
                 "label": "Scene: Leave",
                 "lines": [
                   "Keep the charcoal dry. Damp fuel makes everyone pretend not to complain."
-                ]
-              }
-            ]
-          },
-          {
-            "stageId": "fill_pots",
-            "label": "Fill Pots",
-            "trackerText": "Bring 6 bowls and 6 cooked cod.",
-            "slots": [
-              {
-                "slot": "reminder",
-                "title": "Reminder",
-                "label": "About Kindling",
-                "lines": [
-                  "The fire is one thing. The point of it is another. Bring bowls and cooked cod so no one has to eat standing alone."
-                ],
-                "responses": [
-                  {
-                    "id": "details",
-                    "label": "Repeat the meal.",
-                    "lines": [],
-                    "targetStageId": "",
-                    "destination": "Scene: Reminder Details"
-                  },
-                  {
-                    "id": "leave",
-                    "label": "I will gather it.",
-                    "lines": [],
-                    "targetStageId": "",
-                    "destination": "Scene: Leave"
-                  }
-                ]
-              }
-            ],
-            "choices": [],
-            "actions": [
-              {
-                "sceneId": "reminder_details",
-                "action": "remind",
-                "key": "reminder",
-                "label": "Reminder: Reminder",
-                "lines": [
-                  "Bring 6 bowls and 6 cooked cod for the first shared meal."
-                ]
-              },
-              {
-                "sceneId": "reminder_details",
-                "action": "remind",
-                "key": "unavailable",
-                "label": "Reminder: Unavailable",
-                "lines": [
-                  "The bowls can wait until the first fire is ready."
-                ]
-              }
-            ],
-            "scenes": [
-              {
-                "sceneId": "leave",
-                "label": "Scene: Leave",
-                "lines": [
-                  "A meal is better when it reaches the quiet people too."
                 ]
               }
             ]
@@ -23808,7 +23607,7 @@ window.VR_WIKI_DATA = {
           {
             "stageId": "kindle",
             "label": "Kindle",
-            "trackerText": "Bring a campfire and 6 charcoal.",
+            "trackerText": "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod.",
             "slots": [
               {
                 "slot": "offer",
@@ -23816,7 +23615,7 @@ window.VR_WIKI_DATA = {
                 "label": "Kindling",
                 "lines": [
                   "A village does not become steady because one person eats well. It becomes steady when there is a warm place people trust.",
-                  "Bring a campfire and clean charcoal. After that, we can talk about what goes over the flame."
+                  "Bring a campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That will give the first fire both a place and a purpose."
                 ],
                 "responses": [
                   {
@@ -23840,7 +23639,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Kindling",
                 "lines": [
-                  "The first fire still needs its place and its fuel. A cold hearth is only furniture."
+                  "The first fire still needs a campfire, charcoal, bowls, and cooked cod. The list will not change before the hearth is ready."
                 ],
                 "responses": [
                   {
@@ -23877,7 +23676,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Good. Bring a campfire and 6 charcoal. Nothing grand, just the start of somewhere people can gather."
+                  "Good. Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That is the complete list for this hearth."
                 ]
               },
               {
@@ -23895,7 +23694,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Bring 1 campfire and 6 charcoal for the shared hearth."
+                  "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod for the shared hearth."
                 ]
               },
               {
@@ -23921,67 +23720,6 @@ window.VR_WIKI_DATA = {
                 "label": "Scene: Leave",
                 "lines": [
                   "Keep the charcoal dry. Damp fuel makes everyone pretend not to complain."
-                ]
-              }
-            ]
-          },
-          {
-            "stageId": "fill_pots",
-            "label": "Fill Pots",
-            "trackerText": "Bring 6 bowls and 6 cooked cod.",
-            "slots": [
-              {
-                "slot": "reminder",
-                "title": "Reminder",
-                "label": "About Kindling",
-                "lines": [
-                  "The fire is one thing. The point of it is another. Bring bowls and cooked cod so no one has to eat standing alone."
-                ],
-                "responses": [
-                  {
-                    "id": "details",
-                    "label": "Repeat the meal.",
-                    "lines": [],
-                    "targetStageId": "",
-                    "destination": "Scene: Reminder Details"
-                  },
-                  {
-                    "id": "leave",
-                    "label": "I will gather it.",
-                    "lines": [],
-                    "targetStageId": "",
-                    "destination": "Scene: Leave"
-                  }
-                ]
-              }
-            ],
-            "choices": [],
-            "actions": [
-              {
-                "sceneId": "reminder_details",
-                "action": "remind",
-                "key": "reminder",
-                "label": "Reminder: Reminder",
-                "lines": [
-                  "Bring 6 bowls and 6 cooked cod for the first shared meal."
-                ]
-              },
-              {
-                "sceneId": "reminder_details",
-                "action": "remind",
-                "key": "unavailable",
-                "label": "Reminder: Unavailable",
-                "lines": [
-                  "The bowls can wait until the first fire is ready."
-                ]
-              }
-            ],
-            "scenes": [
-              {
-                "sceneId": "leave",
-                "label": "Scene: Leave",
-                "lines": [
-                  "A meal is better when it reaches the quiet people too."
                 ]
               }
             ]
@@ -24124,8 +23862,8 @@ window.VR_WIKI_DATA = {
         {
           "id": "stock_table",
           "label": "Stock Table",
-          "text": "Bring 12 bread and 12 baked potatoes.",
-          "progress": 0.65,
+          "text": "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket.",
+          "progress": 0.9,
           "hint": ""
         },
         {
@@ -24140,13 +23878,6 @@ window.VR_WIKI_DATA = {
           "label": "Bring Baked Potatoes",
           "text": "Bring 12 baked potatoes for a meal that keeps well.",
           "progress": 0.65,
-          "hint": ""
-        },
-        {
-          "id": "sweeten",
-          "label": "Sweeten",
-          "text": "Bring 8 cookies and carry 1 milk bucket.",
-          "progress": 0.9,
           "hint": ""
         },
         {
@@ -24205,16 +23936,15 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The hearth worked. Now people are pretending they only stop by for the smoke.",
-          "Help me make it a table instead of a novelty. Bread, potatoes, and something sweet enough to end a hard day without a speech."
+          "Help me make it a table instead of a novelty. Bring 12 bread, 12 baked potatoes, 8 cookies, and a milk bucket. That is the whole supper list."
         ],
         "accept": "I will help stock the table.",
         "decline": "Not today.",
         "started": [
-          "Bring 12 bread and 12 baked potatoes first. We are building a habit, not a feast."
+          "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket. That is the complete list for this supper."
         ],
         "reminder": [
-          "Bring 12 bread and 12 baked potatoes for the shared table.",
-          "Bring 8 cookies and carry 1 milk bucket for the shared table."
+          "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket for the shared table."
         ],
         "completed": [
           "Good. A shared table does not solve every trouble, but it makes fewer people face trouble hungry."
@@ -24227,7 +23957,7 @@ window.VR_WIKI_DATA = {
           {
             "stageId": "stock_table",
             "label": "Stock Table",
-            "trackerText": "Bring 12 bread and 12 baked potatoes.",
+            "trackerText": "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket.",
             "slots": [
               {
                 "slot": "offer",
@@ -24235,7 +23965,7 @@ window.VR_WIKI_DATA = {
                 "label": "Supper for Everyone",
                 "lines": [
                   "The hearth worked. Now people are pretending they only stop by for the smoke.",
-                  "Help me make it a table instead of a novelty. Bread, potatoes, and something sweet enough to end a hard day without a speech."
+                  "Help me make it a table instead of a novelty. Bring 12 bread, 12 baked potatoes, 8 cookies, and a milk bucket. That is the whole supper list."
                 ],
                 "responses": [
                   {
@@ -24259,12 +23989,12 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Supper for Everyone",
                 "lines": [
-                  "A shared table needs food that holds. Bread and baked potatoes first."
+                  "The shared table still needs bread, baked potatoes, cookies, and a milk bucket. The supper list will not change."
                 ],
                 "responses": [
                   {
                     "id": "details",
-                    "label": "Repeat the first list.",
+                    "label": "Repeat the supper list.",
                     "lines": [],
                     "targetStageId": "",
                     "destination": "Scene: Reminder Details"
@@ -24296,7 +24026,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Bring 12 bread and 12 baked potatoes first. We are building a habit, not a feast."
+                  "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket. That is the complete list for this supper."
                 ]
               },
               {
@@ -24314,7 +24044,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Bring 12 bread and 12 baked potatoes for the shared table."
+                  "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket for the shared table."
                 ]
               },
               {
@@ -24340,67 +24070,6 @@ window.VR_WIKI_DATA = {
                 "label": "Scene: Leave",
                 "lines": [
                   "Food that keeps is food that forgives bad timing."
-                ]
-              }
-            ]
-          },
-          {
-            "stageId": "sweeten",
-            "label": "Sweeten",
-            "trackerText": "Bring 8 cookies and carry 1 milk bucket.",
-            "slots": [
-              {
-                "slot": "reminder",
-                "title": "Reminder",
-                "label": "About Supper for Everyone",
-                "lines": [
-                  "The table has weight now. Bring cookies and a milk bucket, and it may start to feel like people are expected back."
-                ],
-                "responses": [
-                  {
-                    "id": "details",
-                    "label": "Repeat the sweet list.",
-                    "lines": [],
-                    "targetStageId": "",
-                    "destination": "Scene: Reminder Details"
-                  },
-                  {
-                    "id": "leave",
-                    "label": "I will bring it.",
-                    "lines": [],
-                    "targetStageId": "",
-                    "destination": "Scene: Leave"
-                  }
-                ]
-              }
-            ],
-            "choices": [],
-            "actions": [
-              {
-                "sceneId": "reminder_details",
-                "action": "remind",
-                "key": "reminder",
-                "label": "Reminder: Reminder",
-                "lines": [
-                  "Bring 8 cookies and carry 1 milk bucket for the shared table."
-                ]
-              },
-              {
-                "sceneId": "reminder_details",
-                "action": "remind",
-                "key": "unavailable",
-                "label": "Reminder: Unavailable",
-                "lines": [
-                  "The sweets can wait until the bread and potatoes are ready."
-                ]
-              }
-            ],
-            "scenes": [
-              {
-                "sceneId": "leave",
-                "label": "Scene: Leave",
-                "lines": [
-                  "Small kindnesses are still supplies."
                 ]
               }
             ]
@@ -24489,7 +24158,7 @@ window.VR_WIKI_DATA = {
           {
             "stageId": "stock_table",
             "label": "Stock Table",
-            "trackerText": "Bring 12 bread and 12 baked potatoes.",
+            "trackerText": "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket.",
             "slots": [
               {
                 "slot": "offer",
@@ -24497,7 +24166,7 @@ window.VR_WIKI_DATA = {
                 "label": "Supper for Everyone",
                 "lines": [
                   "The hearth worked. Now people are pretending they only stop by for the smoke.",
-                  "Help me make it a table instead of a novelty. Bread, potatoes, and something sweet enough to end a hard day without a speech."
+                  "Help me make it a table instead of a novelty. Bring 12 bread, 12 baked potatoes, 8 cookies, and a milk bucket. That is the whole supper list."
                 ],
                 "responses": [
                   {
@@ -24521,12 +24190,12 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Supper for Everyone",
                 "lines": [
-                  "A shared table needs food that holds. Bread and baked potatoes first."
+                  "The shared table still needs bread, baked potatoes, cookies, and a milk bucket. The supper list will not change."
                 ],
                 "responses": [
                   {
                     "id": "details",
-                    "label": "Repeat the first list.",
+                    "label": "Repeat the supper list.",
                     "lines": [],
                     "targetStageId": "",
                     "destination": "Scene: Reminder Details"
@@ -24558,7 +24227,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Bring 12 bread and 12 baked potatoes first. We are building a habit, not a feast."
+                  "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket. That is the complete list for this supper."
                 ]
               },
               {
@@ -24576,7 +24245,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Bring 12 bread and 12 baked potatoes for the shared table."
+                  "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket for the shared table."
                 ]
               },
               {
@@ -24602,67 +24271,6 @@ window.VR_WIKI_DATA = {
                 "label": "Scene: Leave",
                 "lines": [
                   "Food that keeps is food that forgives bad timing."
-                ]
-              }
-            ]
-          },
-          {
-            "stageId": "sweeten",
-            "label": "Sweeten",
-            "trackerText": "Bring 8 cookies and carry 1 milk bucket.",
-            "slots": [
-              {
-                "slot": "reminder",
-                "title": "Reminder",
-                "label": "About Supper for Everyone",
-                "lines": [
-                  "The table has weight now. Bring cookies and a milk bucket, and it may start to feel like people are expected back."
-                ],
-                "responses": [
-                  {
-                    "id": "details",
-                    "label": "Repeat the sweet list.",
-                    "lines": [],
-                    "targetStageId": "",
-                    "destination": "Scene: Reminder Details"
-                  },
-                  {
-                    "id": "leave",
-                    "label": "I will bring it.",
-                    "lines": [],
-                    "targetStageId": "",
-                    "destination": "Scene: Leave"
-                  }
-                ]
-              }
-            ],
-            "choices": [],
-            "actions": [
-              {
-                "sceneId": "reminder_details",
-                "action": "remind",
-                "key": "reminder",
-                "label": "Reminder: Reminder",
-                "lines": [
-                  "Bring 8 cookies and carry 1 milk bucket for the shared table."
-                ]
-              },
-              {
-                "sceneId": "reminder_details",
-                "action": "remind",
-                "key": "unavailable",
-                "label": "Reminder: Unavailable",
-                "lines": [
-                  "The sweets can wait until the bread and potatoes are ready."
-                ]
-              }
-            ],
-            "scenes": [
-              {
-                "sceneId": "leave",
-                "label": "Scene: Leave",
-                "lines": [
-                  "Small kindnesses are still supplies."
                 ]
               }
             ]
@@ -28429,14 +28037,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The Ancient City records point beyond the dragon island, toward towers drawn without a ground line.",
           "Find an End City and bring back both a shulker shell and something still growing there.",
-          "Reach the marked End City and return with a shulker shell and 1 Chorus Flower. I will make the reward worth the trouble."
+          "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Take pearls, slow falling, and one clear memory of where the gateway was.",
-          "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
-          "Good. I will keep a place clear for what you bring back."
+          "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
         ],
         "reminder": [
           "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
@@ -28445,11 +28052,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "A shell from the towers and a flower from the stone. The old record was telling the truth.",
-          "The lost civilization has a second city now, and this one still touches the sky.",
-          "That settles it. The village will make good use of this."
+          "The lost civilization has a second city now, and this one still touches the sky."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -28469,7 +28074,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The Ancient City records point beyond the dragon island, toward towers drawn without a ground line.",
                   "Find an End City and bring back both a shulker shell and something still growing there.",
-                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower. I will make the reward worth the trouble."
+                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
                 ],
                 "responses": [
                   {
@@ -28531,8 +28136,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Take pearls, slow falling, and one clear memory of where the gateway was.",
-                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
                 ]
               },
               {
@@ -28622,8 +28226,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The End is not going anywhere. Its islands barely know how.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The End is not going anywhere. Its islands barely know how."
                 ]
               },
               {
@@ -28685,8 +28288,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "A shell from the towers and a flower from the stone. The old record was telling the truth.",
-                  "The lost civilization has a second city now, and this one still touches the sky.",
-                  "That settles it. The village will make good use of this."
+                  "The lost civilization has a second city now, and this one still touches the sky."
                 ]
               },
               {
@@ -28695,7 +28297,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -28755,7 +28356,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The Ancient City records point beyond the dragon island, toward towers drawn without a ground line.",
                   "Find an End City and bring back both a shulker shell and something still growing there.",
-                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower. I will make the reward worth the trouble."
+                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
                 ],
                 "responses": [
                   {
@@ -28817,8 +28418,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Take pearls, slow falling, and one clear memory of where the gateway was.",
-                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
                 ]
               },
               {
@@ -28908,8 +28508,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The End is not going anywhere. Its islands barely know how.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The End is not going anywhere. Its islands barely know how."
                 ]
               },
               {
@@ -28971,8 +28570,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "A shell from the towers and a flower from the stone. The old record was telling the truth.",
-                  "The lost civilization has a second city now, and this one still touches the sky.",
-                  "That settles it. The village will make good use of this."
+                  "The lost civilization has a second city now, and this one still touches the sky."
                 ]
               },
               {
@@ -28981,7 +28579,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -29148,14 +28745,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "One portal is an escape. A marked portal with supplies can become a road.",
           "Bring the frame, a way to light it, and enough magma cream to survive the first mistake.",
-          "Bring 10 obsidian, 2 fire charges, and 4 magma cream. I will make the reward worth the trouble."
+          "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Count the obsidian twice. A nine-block portal is only a heavy doorway to nowhere.",
-          "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
-          "Good. I will keep a place clear for what you bring back."
+          "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
         ],
         "reminder": [
           "Ten obsidian, two fire charges, four magma cream for the route chest.",
@@ -29164,11 +28760,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The frame is complete and the fire supplies are sealed. The road can cross worlds.",
-          "We have a doorway. Next we decide where the hot road leads.",
-          "That settles it. The village will make good use of this."
+          "We have a doorway. Next we decide where the hot road leads."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -29188,7 +28782,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "One portal is an escape. A marked portal with supplies can become a road.",
                   "Bring the frame, a way to light it, and enough magma cream to survive the first mistake.",
-                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream. I will make the reward worth the trouble."
+                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
                 ],
                 "responses": [
                   {
@@ -29250,8 +28844,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Count the obsidian twice. A nine-block portal is only a heavy doorway to nowhere.",
-                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
                 ]
               },
               {
@@ -29341,8 +28934,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The Nether will not cool while we think.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The Nether will not cool while we think."
                 ]
               },
               {
@@ -29404,8 +28996,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The frame is complete and the fire supplies are sealed. The road can cross worlds.",
-                  "We have a doorway. Next we decide where the hot road leads.",
-                  "That settles it. The village will make good use of this."
+                  "We have a doorway. Next we decide where the hot road leads."
                 ]
               },
               {
@@ -29414,7 +29005,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -29474,7 +29064,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "One portal is an escape. A marked portal with supplies can become a road.",
                   "Bring the frame, a way to light it, and enough magma cream to survive the first mistake.",
-                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream. I will make the reward worth the trouble."
+                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
                 ],
                 "responses": [
                   {
@@ -29536,8 +29126,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Count the obsidian twice. A nine-block portal is only a heavy doorway to nowhere.",
-                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
                 ]
               },
               {
@@ -29627,8 +29216,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The Nether will not cool while we think.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The Nether will not cool while we think."
                 ]
               },
               {
@@ -29690,8 +29278,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The frame is complete and the fire supplies are sealed. The road can cross worlds.",
-                  "We have a doorway. Next we decide where the hot road leads.",
-                  "That settles it. The village will make good use of this."
+                  "We have a doorway. Next we decide where the hot road leads."
                 ]
               },
               {
@@ -29700,7 +29287,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -29934,14 +29520,14 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
-          "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+          "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance. The harder bastion work offers a rare Ancient Debris chance."
         ],
         "accept": "Follow the fortress",
         "decline": "Not yet.",
         "started": [],
         "reminder": [
           "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
-          "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness.",
+          "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance. The harder bastion work offers a rare Ancient Debris chance.",
           "Reach the fortress mark, defeat four blazes, and bring two rods.",
           "Fortress road. Mark every bridge and never stand where a blaze can see both sides of you.",
           "Reach the bastion mark, defeat two brutes, and bring four gilded blackstone.",
@@ -29971,7 +29557,7 @@ window.VR_WIKI_DATA = {
                 "label": "Choose a Road",
                 "lines": [
                   "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
-                  "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+                  "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance. The harder bastion work offers a rare Ancient Debris chance."
                 ],
                 "responses": [
                   {
@@ -30007,7 +29593,7 @@ window.VR_WIKI_DATA = {
                 "label": "About Choose a Road",
                 "lines": [
                   "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
-                  "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+                  "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance. The harder bastion work offers a rare Ancient Debris chance."
                 ],
                 "responses": [
                   {
@@ -30054,7 +29640,7 @@ window.VR_WIKI_DATA = {
                 "label": "Reminder: Reminder",
                 "lines": [
                   "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
-                  "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+                  "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance. The harder bastion work offers a rare Ancient Debris chance."
                 ]
               },
               {
@@ -30378,7 +29964,7 @@ window.VR_WIKI_DATA = {
                 "label": "Choose a Road",
                 "lines": [
                   "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
-                  "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+                  "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance. The harder bastion work offers a rare Ancient Debris chance."
                 ],
                 "responses": [
                   {
@@ -30414,7 +30000,7 @@ window.VR_WIKI_DATA = {
                 "label": "About Choose a Road",
                 "lines": [
                   "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
-                  "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+                  "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance. The harder bastion work offers a rare Ancient Debris chance."
                 ],
                 "responses": [
                   {
@@ -30461,7 +30047,7 @@ window.VR_WIKI_DATA = {
                 "label": "Reminder: Reminder",
                 "lines": [
                   "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
-                  "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+                  "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance. The harder bastion work offers a rare Ancient Debris chance."
                 ]
               },
               {
@@ -30876,8 +30462,8 @@ window.VR_WIKI_DATA = {
         "lootTable": "villagerretaliation:quest/fortress_line",
         "loot": [
           {
-            "item": "Emerald",
-            "count": "31-44",
+            "item": "Blaze Rod",
+            "count": "8-12",
             "weight": 1,
             "note": ""
           },
@@ -30904,14 +30490,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The fortress bearing is true, but Wither Skeletons have found the same bridges.",
           "Clear the patrol and build markers from the fortress's own black brick.",
-          "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart. I will make the reward worth the trouble."
+          "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Mark the safe turns low on the wall. Ghasts enjoy editing tall signs.",
-          "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart.",
-          "Good. I will keep a place clear for what you bring back."
+          "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
         ],
         "reminder": [
           "Five Wither Skeletons, thirty-two bricks, sixteen Nether Wart.",
@@ -30920,11 +30505,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The fortress line is marked, stocked, and quieter than we found it.",
-          "A road through flame and black bone now leads back to the village.",
-          "That settles it. The village will make good use of this."
+          "A road through flame and black bone now leads back to the village."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -30944,7 +30527,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The fortress bearing is true, but Wither Skeletons have found the same bridges.",
                   "Clear the patrol and build markers from the fortress's own black brick.",
-                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart. I will make the reward worth the trouble."
+                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
                 ],
                 "responses": [
                   {
@@ -31006,8 +30589,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Mark the safe turns low on the wall. Ghasts enjoy editing tall signs.",
-                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
                 ]
               },
               {
@@ -31097,8 +30679,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the black bridges keep their patrols a little longer.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the black bridges keep their patrols a little longer."
                 ]
               },
               {
@@ -31160,8 +30741,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The fortress line is marked, stocked, and quieter than we found it.",
-                  "A road through flame and black bone now leads back to the village.",
-                  "That settles it. The village will make good use of this."
+                  "A road through flame and black bone now leads back to the village."
                 ]
               },
               {
@@ -31170,7 +30750,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -31230,7 +30809,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The fortress bearing is true, but Wither Skeletons have found the same bridges.",
                   "Clear the patrol and build markers from the fortress's own black brick.",
-                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart. I will make the reward worth the trouble."
+                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
                 ],
                 "responses": [
                   {
@@ -31292,8 +30871,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Mark the safe turns low on the wall. Ghasts enjoy editing tall signs.",
-                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
                 ]
               },
               {
@@ -31383,8 +30961,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the black bridges keep their patrols a little longer.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the black bridges keep their patrols a little longer."
                 ]
               },
               {
@@ -31446,8 +31023,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The fortress line is marked, stocked, and quieter than we found it.",
-                  "A road through flame and black bone now leads back to the village.",
-                  "That settles it. The village will make good use of this."
+                  "A road through flame and black bone now leads back to the village."
                 ]
               },
               {
@@ -31456,7 +31032,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -31606,8 +31181,8 @@ window.VR_WIKI_DATA = {
         "lootTable": "villagerretaliation:quest/bastion_line",
         "loot": [
           {
-            "item": "Emerald",
-            "count": "33-46",
+            "item": "Gold Block",
+            "count": "2-4",
             "weight": 1,
             "note": ""
           },
@@ -31634,14 +31209,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The bastion bearing is true, but the brutes treat every marker as a challenge.",
           "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter.",
-          "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks. I will make the reward worth the trouble."
+          "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Wear one piece of gold. It will not impress the brutes, but everyone else may pause.",
-          "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
-          "Good. I will keep a place clear for what you bring back."
+          "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
         ],
         "reminder": [
           "Three brutes, thirty-two blackstone, two gold blocks for the caches.",
@@ -31650,11 +31224,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The bastion line is marked, stocked, and expensive enough to be respected.",
-          "A road through broken gold now leads back to the village.",
-          "That settles it. The village will make good use of this."
+          "A road through broken gold now leads back to the village."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -31674,7 +31246,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The bastion bearing is true, but the brutes treat every marker as a challenge.",
                   "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter.",
-                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks. I will make the reward worth the trouble."
+                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
                 ],
                 "responses": [
                   {
@@ -31736,8 +31308,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Wear one piece of gold. It will not impress the brutes, but everyone else may pause.",
-                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
                 ]
               },
               {
@@ -31827,8 +31398,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the bastion keeps its walls and its opinions.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the bastion keeps its walls and its opinions."
                 ]
               },
               {
@@ -31890,8 +31460,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The bastion line is marked, stocked, and expensive enough to be respected.",
-                  "A road through broken gold now leads back to the village.",
-                  "That settles it. The village will make good use of this."
+                  "A road through broken gold now leads back to the village."
                 ]
               },
               {
@@ -31900,7 +31469,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -31960,7 +31528,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The bastion bearing is true, but the brutes treat every marker as a challenge.",
                   "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter.",
-                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks. I will make the reward worth the trouble."
+                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
                 ],
                 "responses": [
                   {
@@ -32022,8 +31590,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Wear one piece of gold. It will not impress the brutes, but everyone else may pause.",
-                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
                 ]
               },
               {
@@ -32113,8 +31680,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the bastion keeps its walls and its opinions.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the bastion keeps its walls and its opinions."
                 ]
               },
               {
@@ -32176,8 +31742,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The bastion line is marked, stocked, and expensive enough to be respected.",
-                  "A road through broken gold now leads back to the village.",
-                  "That settles it. The village will make good use of this."
+                  "A road through broken gold now leads back to the village."
                 ]
               },
               {
@@ -32186,7 +31751,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -32368,14 +31932,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "A fisher pulled a waterlogged ledger from a wreck, but half its route has washed away.",
           "Find the wreck's true bearing and bring dry paper so the surviving marks can be copied.",
-          "Reach the marked shipwreck and return with a compass and 8 paper. I will make the reward worth the trouble."
+          "Reach the marked shipwreck and return with a compass and 8 paper."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Keep the paper above the waterline. We already have one drowned ledger.",
-          "Reach the marked shipwreck and return with a compass and 8 paper.",
-          "Good. I will keep a place clear for what you bring back."
+          "Reach the marked shipwreck and return with a compass and 8 paper."
         ],
         "reminder": [
           "The shipwreck bearing, one compass, and eight dry sheets for the copy.",
@@ -32384,11 +31947,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The ink wandered, but the route did not. This ledger can guide boats again.",
-          "A road under water is still a road once someone remembers it.",
-          "That settles it. The village will make good use of this."
+          "A road under water is still a road once someone remembers it."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -32408,7 +31969,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "A fisher pulled a waterlogged ledger from a wreck, but half its route has washed away.",
                   "Find the wreck's true bearing and bring dry paper so the surviving marks can be copied.",
-                  "Reach the marked shipwreck and return with a compass and 8 paper. I will make the reward worth the trouble."
+                  "Reach the marked shipwreck and return with a compass and 8 paper."
                 ],
                 "responses": [
                   {
@@ -32470,8 +32031,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Keep the paper above the waterline. We already have one drowned ledger.",
-                  "Reach the marked shipwreck and return with a compass and 8 paper.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked shipwreck and return with a compass and 8 paper."
                 ]
               },
               {
@@ -32561,8 +32121,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the tide keeps the ledger's missing half.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the tide keeps the ledger's missing half."
                 ]
               },
               {
@@ -32624,8 +32183,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The ink wandered, but the route did not. This ledger can guide boats again.",
-                  "A road under water is still a road once someone remembers it.",
-                  "That settles it. The village will make good use of this."
+                  "A road under water is still a road once someone remembers it."
                 ]
               },
               {
@@ -32634,7 +32192,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -32694,7 +32251,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "A fisher pulled a waterlogged ledger from a wreck, but half its route has washed away.",
                   "Find the wreck's true bearing and bring dry paper so the surviving marks can be copied.",
-                  "Reach the marked shipwreck and return with a compass and 8 paper. I will make the reward worth the trouble."
+                  "Reach the marked shipwreck and return with a compass and 8 paper."
                 ],
                 "responses": [
                   {
@@ -32756,8 +32313,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Keep the paper above the waterline. We already have one drowned ledger.",
-                  "Reach the marked shipwreck and return with a compass and 8 paper.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked shipwreck and return with a compass and 8 paper."
                 ]
               },
               {
@@ -32847,8 +32403,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the tide keeps the ledger's missing half.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the tide keeps the ledger's missing half."
                 ]
               },
               {
@@ -32910,8 +32465,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The ink wandered, but the route did not. This ledger can guide boats again.",
-                  "A road under water is still a road once someone remembers it.",
-                  "That settles it. The village will make good use of this."
+                  "A road under water is still a road once someone remembers it."
                 ]
               },
               {
@@ -32920,7 +32474,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -33101,14 +32654,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "An old milestone is buried near the trail ruins, broken where the road forgot its own name.",
           "Brush the marker clear and bring smooth stone so we can raise it again.",
-          "Reach the marked Trail Ruins and return with a brush and 12 smooth stone. I will make the reward worth the trouble."
+          "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Brush gently. Old roads leave smaller signs than new travelers expect.",
-          "Reach the marked Trail Ruins and return with a brush and 12 smooth stone.",
-          "Good. I will keep a place clear for what you bring back."
+          "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
         ],
         "reminder": [
           "The trail-ruin mark, one brush, and twelve smooth stone for the milestone.",
@@ -33117,11 +32669,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The old number is visible again. Someone once measured this road, and now we can too.",
-          "A broken marker stands again. The road has one memory back.",
-          "That settles it. The village will make good use of this."
+          "A broken marker stands again. The road has one memory back."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -33141,7 +32691,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "An old milestone is buried near the trail ruins, broken where the road forgot its own name.",
                   "Brush the marker clear and bring smooth stone so we can raise it again.",
-                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone. I will make the reward worth the trouble."
+                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
                 ],
                 "responses": [
                   {
@@ -33203,8 +32753,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Brush gently. Old roads leave smaller signs than new travelers expect.",
-                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
                 ]
               },
               {
@@ -33294,8 +32843,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The milestone has spent years underground. One more day will not offend it.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The milestone has spent years underground. One more day will not offend it."
                 ]
               },
               {
@@ -33357,8 +32905,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The old number is visible again. Someone once measured this road, and now we can too.",
-                  "A broken marker stands again. The road has one memory back.",
-                  "That settles it. The village will make good use of this."
+                  "A broken marker stands again. The road has one memory back."
                 ]
               },
               {
@@ -33367,7 +32914,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -33427,7 +32973,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "An old milestone is buried near the trail ruins, broken where the road forgot its own name.",
                   "Brush the marker clear and bring smooth stone so we can raise it again.",
-                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone. I will make the reward worth the trouble."
+                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
                 ],
                 "responses": [
                   {
@@ -33489,8 +33035,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Brush gently. Old roads leave smaller signs than new travelers expect.",
-                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
                 ]
               },
               {
@@ -33580,8 +33125,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "The milestone has spent years underground. One more day will not offend it.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "The milestone has spent years underground. One more day will not offend it."
                 ]
               },
               {
@@ -33643,8 +33187,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The old number is visible again. Someone once measured this road, and now we can too.",
-                  "A broken marker stands again. The road has one memory back.",
-                  "That settles it. The village will make good use of this."
+                  "A broken marker stands again. The road has one memory back."
                 ]
               },
               {
@@ -33653,7 +33196,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -33820,14 +33362,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "We have doors, lamps, and a great many villagers tired of opening both by hand.",
           "Bring enough redstone to build one careful circuit before anyone builds ten foolish ones.",
-          "Bring 16 redstone dust, 2 repeaters, and 2 levers. I will make the reward worth the trouble."
+          "Bring 16 redstone dust, 2 repeaters, and 2 levers."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Keep the dust dry and the levers apart. We are testing one idea at a time.",
-          "Bring 16 redstone dust, 2 repeaters, and 2 levers.",
-          "Good. I will keep a place clear for what you bring back."
+          "Bring 16 redstone dust, 2 repeaters, and 2 levers."
         ],
         "reminder": [
           "Sixteen redstone, two repeaters, two levers for the workshop bench.",
@@ -33836,11 +33377,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "A small spark, properly measured. That is how useful machines begin.",
-          "The circuit bench is stocked. Now we can make mistakes in a straight line.",
-          "That settles it. The village will make good use of this."
+          "The circuit bench is stocked. Now we can make mistakes in a straight line."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -33860,7 +33399,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "We have doors, lamps, and a great many villagers tired of opening both by hand.",
                   "Bring enough redstone to build one careful circuit before anyone builds ten foolish ones.",
-                  "Bring 16 redstone dust, 2 repeaters, and 2 levers. I will make the reward worth the trouble."
+                  "Bring 16 redstone dust, 2 repeaters, and 2 levers."
                 ],
                 "responses": [
                   {
@@ -33922,8 +33461,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Keep the dust dry and the levers apart. We are testing one idea at a time.",
-                  "Bring 16 redstone dust, 2 repeaters, and 2 levers.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 16 redstone dust, 2 repeaters, and 2 levers."
                 ]
               },
               {
@@ -34013,8 +33551,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then every door remains proudly manual.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then every door remains proudly manual."
                 ]
               },
               {
@@ -34076,8 +33613,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "A small spark, properly measured. That is how useful machines begin.",
-                  "The circuit bench is stocked. Now we can make mistakes in a straight line.",
-                  "That settles it. The village will make good use of this."
+                  "The circuit bench is stocked. Now we can make mistakes in a straight line."
                 ]
               },
               {
@@ -34086,7 +33622,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -34146,7 +33681,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "We have doors, lamps, and a great many villagers tired of opening both by hand.",
                   "Bring enough redstone to build one careful circuit before anyone builds ten foolish ones.",
-                  "Bring 16 redstone dust, 2 repeaters, and 2 levers. I will make the reward worth the trouble."
+                  "Bring 16 redstone dust, 2 repeaters, and 2 levers."
                 ],
                 "responses": [
                   {
@@ -34208,8 +33743,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Keep the dust dry and the levers apart. We are testing one idea at a time.",
-                  "Bring 16 redstone dust, 2 repeaters, and 2 levers.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 16 redstone dust, 2 repeaters, and 2 levers."
                 ]
               },
               {
@@ -34299,8 +33833,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then every door remains proudly manual.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then every door remains proudly manual."
                 ]
               },
               {
@@ -34362,8 +33895,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "A small spark, properly measured. That is how useful machines begin.",
-                  "The circuit bench is stocked. Now we can make mistakes in a straight line.",
-                  "That settles it. The village will make good use of this."
+                  "The circuit bench is stocked. Now we can make mistakes in a straight line."
                 ]
               },
               {
@@ -34372,7 +33904,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -34581,14 +34112,14 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-          "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+          "This choice closes the other design. Daylight stays local and pays modestly. Sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
         ],
         "accept": "Follow the sun",
         "decline": "Not yet.",
         "started": [],
         "reminder": [
           "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-          "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn.",
+          "This choice closes the other design. Daylight stays local and pays modestly. Sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards.",
           "Two daylight detectors and four redstone lamps for the gate circuit.",
           "Sunlight, then. The gate will keep honest hours and make its workings plain.",
           "Two sculk sensors and sixteen white wool to quiet the wrong footsteps.",
@@ -34618,7 +34149,7 @@ window.VR_WIKI_DATA = {
                 "label": "Power the Gate",
                 "lines": [
                   "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-                  "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+                  "This choice closes the other design. Daylight stays local and pays modestly. Sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
                 ],
                 "responses": [
                   {
@@ -34654,7 +34185,7 @@ window.VR_WIKI_DATA = {
                 "label": "About Power the Gate",
                 "lines": [
                   "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-                  "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+                  "This choice closes the other design. Daylight stays local and pays modestly. Sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
                 ],
                 "responses": [
                   {
@@ -34701,7 +34232,7 @@ window.VR_WIKI_DATA = {
                 "label": "Reminder: Reminder",
                 "lines": [
                   "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-                  "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+                  "This choice closes the other design. Daylight stays local and pays modestly. Sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
                 ]
               },
               {
@@ -35025,7 +34556,7 @@ window.VR_WIKI_DATA = {
                 "label": "Power the Gate",
                 "lines": [
                   "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-                  "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+                  "This choice closes the other design. Daylight stays local and pays modestly. Sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
                 ],
                 "responses": [
                   {
@@ -35061,7 +34592,7 @@ window.VR_WIKI_DATA = {
                 "label": "About Power the Gate",
                 "lines": [
                   "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-                  "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+                  "This choice closes the other design. Daylight stays local and pays modestly. Sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
                 ],
                 "responses": [
                   {
@@ -35108,7 +34639,7 @@ window.VR_WIKI_DATA = {
                 "label": "Reminder: Reminder",
                 "lines": [
                   "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
-                  "A sun switch is simple and visible. A sculk trigger is quiet and clever. Choose which lesson the gate should learn."
+                  "This choice closes the other design. Daylight stays local and pays modestly. Sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
                 ]
               },
               {
@@ -35522,8 +35053,8 @@ window.VR_WIKI_DATA = {
         "lootTable": "villagerretaliation:quest/sun_switch",
         "loot": [
           {
-            "item": "Emerald",
-            "count": "20-30",
+            "item": "Redstone Lamp",
+            "count": "4-8",
             "weight": 1,
             "note": ""
           },
@@ -35550,14 +35081,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The gate follows daylight. Now the road lamps should follow it too.",
           "Set the lamps where the path bends and give the control box a way to compare weak light with strong.",
-          "Place 8 redstone lamps and bring 2 comparators and 12 quartz. I will make the reward worth the trouble."
+          "Place 8 redstone lamps and bring 2 comparators and 12 quartz."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Face every lamp toward the road. Lighting the roof helps only bats.",
-          "Place 8 redstone lamps and bring 2 comparators and 12 quartz.",
-          "Good. I will keep a place clear for what you bring back."
+          "Place 8 redstone lamps and bring 2 comparators and 12 quartz."
         ],
         "reminder": [
           "Eight lamps placed, two comparators and twelve quartz returned.",
@@ -35566,11 +35096,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The road wakes at dusk and sleeps after dawn. No villager needs to remember the lever.",
-          "The sun now keeps the village lamps better than any watch schedule.",
-          "That settles it. The village will make good use of this."
+          "The sun now keeps the village lamps better than any watch schedule."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -35590,7 +35118,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The gate follows daylight. Now the road lamps should follow it too.",
                   "Set the lamps where the path bends and give the control box a way to compare weak light with strong.",
-                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz. I will make the reward worth the trouble."
+                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz."
                 ],
                 "responses": [
                   {
@@ -35652,8 +35180,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Face every lamp toward the road. Lighting the roof helps only bats.",
-                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz."
                 ]
               },
               {
@@ -35743,8 +35270,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the gate can keep the light to itself for now.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the gate can keep the light to itself for now."
                 ]
               },
               {
@@ -35806,8 +35332,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The road wakes at dusk and sleeps after dawn. No villager needs to remember the lever.",
-                  "The sun now keeps the village lamps better than any watch schedule.",
-                  "That settles it. The village will make good use of this."
+                  "The sun now keeps the village lamps better than any watch schedule."
                 ]
               },
               {
@@ -35816,7 +35341,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -35876,7 +35400,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The gate follows daylight. Now the road lamps should follow it too.",
                   "Set the lamps where the path bends and give the control box a way to compare weak light with strong.",
-                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz. I will make the reward worth the trouble."
+                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz."
                 ],
                 "responses": [
                   {
@@ -35938,8 +35462,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Face every lamp toward the road. Lighting the roof helps only bats.",
-                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz."
                 ]
               },
               {
@@ -36029,8 +35552,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then the gate can keep the light to itself for now.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then the gate can keep the light to itself for now."
                 ]
               },
               {
@@ -36092,8 +35614,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The road wakes at dusk and sleeps after dawn. No villager needs to remember the lever.",
-                  "The sun now keeps the village lamps better than any watch schedule.",
-                  "That settles it. The village will make good use of this."
+                  "The sun now keeps the village lamps better than any watch schedule."
                 ]
               },
               {
@@ -36102,7 +35623,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -36288,14 +35808,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "The village sensor works, but the Ancient City knew how to shape sound long before we did.",
           "Study its silence, lay wool around the loud paths, and recover one calibrated sensor.",
-          "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor. I will make the reward worth the trouble."
+          "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Every block of wool is cheaper than one shrieker. Place them before curiosity.",
-          "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor.",
-          "Good. I will keep a place clear for what you bring back."
+          "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor."
         ],
         "reminder": [
           "The city signal, thirty-two wool placed, one calibrated sensor returned.",
@@ -36304,11 +35823,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The gate now hears what matters and ignores what does not. Let us hope it keeps that wisdom.",
-          "A machine taught by silence. The sculk branch is complete.",
-          "That settles it. The village will make good use of this."
+          "A machine taught by silence. The sculk branch is complete."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -36328,7 +35845,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The village sensor works, but the Ancient City knew how to shape sound long before we did.",
                   "Study its silence, lay wool around the loud paths, and recover one calibrated sensor.",
-                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor. I will make the reward worth the trouble."
+                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor."
                 ],
                 "responses": [
                   {
@@ -36390,8 +35907,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Every block of wool is cheaper than one shrieker. Place them before curiosity.",
-                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor."
                 ]
               },
               {
@@ -36481,8 +35997,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Good. Ancient Cities punish noisy lessons.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Good. Ancient Cities punish noisy lessons."
                 ]
               },
               {
@@ -36544,8 +36059,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The gate now hears what matters and ignores what does not. Let us hope it keeps that wisdom.",
-                  "A machine taught by silence. The sculk branch is complete.",
-                  "That settles it. The village will make good use of this."
+                  "A machine taught by silence. The sculk branch is complete."
                 ]
               },
               {
@@ -36554,7 +36068,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -36614,7 +36127,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "The village sensor works, but the Ancient City knew how to shape sound long before we did.",
                   "Study its silence, lay wool around the loud paths, and recover one calibrated sensor.",
-                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor. I will make the reward worth the trouble."
+                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor."
                 ],
                 "responses": [
                   {
@@ -36676,8 +36189,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Every block of wool is cheaper than one shrieker. Place them before curiosity.",
-                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor."
                 ]
               },
               {
@@ -36767,8 +36279,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Good. Ancient Cities punish noisy lessons.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Good. Ancient Cities punish noisy lessons."
                 ]
               },
               {
@@ -36830,8 +36341,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The gate now hears what matters and ignores what does not. Let us hope it keeps that wisdom.",
-                  "A machine taught by silence. The sculk branch is complete.",
-                  "That settles it. The village will make good use of this."
+                  "A machine taught by silence. The sculk branch is complete."
                 ]
               },
               {
@@ -36840,7 +36350,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -47798,14 +47307,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "Pillager arrows carry a cut on the shaft that tells one patrol from another.",
           "Scout the outpost, bring back a marked crossbow, and restock the watch before its owners follow.",
-          "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows. I will make the reward worth the trouble."
+          "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Look before you shoot. A scout who clears the tower may still miss the patrol behind it.",
-          "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows.",
-          "Good. I will keep a place clear for what you bring back."
+          "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows."
         ],
         "reminder": [
           "The outpost mark, one pillager crossbow in hand, and twenty-four arrows for the watch.",
@@ -47814,11 +47322,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The countermark matches the patrol, and the watch has arrows ready for it.",
-          "Now we know which banner is moving toward us and how to answer it.",
-          "That settles it. The village will make good use of this."
+          "Now we know which banner is moving toward us and how to answer it."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -47838,7 +47344,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "Pillager arrows carry a cut on the shaft that tells one patrol from another.",
                   "Scout the outpost, bring back a marked crossbow, and restock the watch before its owners follow.",
-                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows. I will make the reward worth the trouble."
+                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows."
                 ],
                 "responses": [
                   {
@@ -47900,8 +47406,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Look before you shoot. A scout who clears the tower may still miss the patrol behind it.",
-                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows."
                 ]
               },
               {
@@ -47991,8 +47496,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then do not wear a bright shield near the outpost road.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then do not wear a bright shield near the outpost road."
                 ]
               },
               {
@@ -48054,8 +47558,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The countermark matches the patrol, and the watch has arrows ready for it.",
-                  "Now we know which banner is moving toward us and how to answer it.",
-                  "That settles it. The village will make good use of this."
+                  "Now we know which banner is moving toward us and how to answer it."
                 ]
               },
               {
@@ -48064,7 +47567,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -48124,7 +47626,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "Pillager arrows carry a cut on the shaft that tells one patrol from another.",
                   "Scout the outpost, bring back a marked crossbow, and restock the watch before its owners follow.",
-                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows. I will make the reward worth the trouble."
+                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows."
                 ],
                 "responses": [
                   {
@@ -48186,8 +47688,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Look before you shoot. A scout who clears the tower may still miss the patrol behind it.",
-                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows."
                 ]
               },
               {
@@ -48277,8 +47778,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then do not wear a bright shield near the outpost road.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then do not wear a bright shield near the outpost road."
                 ]
               },
               {
@@ -48340,8 +47840,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The countermark matches the patrol, and the watch has arrows ready for it.",
-                  "Now we know which banner is moving toward us and how to answer it.",
-                  "That settles it. The village will make good use of this."
+                  "Now we know which banner is moving toward us and how to answer it."
                 ]
               },
               {
@@ -48350,7 +47849,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -49152,15 +48650,13 @@ window.VR_WIKI_DATA = {
       },
       "target": null,
       "objectives": [
-        "Record memory: Player Defended Village",
-        "Defeat 3 Zombie",
-        "Defeat 1 Pillager"
+        "Record memory: Player Defended Village"
       ],
       "steps": [
         {
           "id": "work",
           "label": "Work",
-          "text": "Defeat the watch attackers and defend the village.",
+          "text": "Hold the village line and defeat the watch attack.",
           "progress": 0.75,
           "hint": ""
         },
@@ -49169,20 +48665,6 @@ window.VR_WIKI_DATA = {
           "label": "Defend Village",
           "text": "Defend the village from a real threat.",
           "progress": 0.85,
-          "hint": ""
-        },
-        {
-          "id": "defeat_zombies",
-          "label": "Defeat Zombies",
-          "text": "Defeat 3 zombies in the watch attack.",
-          "progress": 0.65,
-          "hint": ""
-        },
-        {
-          "id": "defeat_pillager",
-          "label": "Defeat Pillager",
-          "text": "Defeat the pillager leading the attack.",
-          "progress": 0.8,
           "hint": ""
         },
         {
@@ -49234,14 +48716,13 @@ window.VR_WIKI_DATA = {
         "offer": [
           "Arrows help, but a village also needs someone who stands when the bell begins.",
           "Defend this village from a real threat. The villagers will know whether you did.",
-          "Defend the village from a real threat. I will make the reward worth the trouble."
+          "Defend the village from a real threat."
         ],
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
           "Stay near the bell when danger comes. A scattered defense is only several lonely fights.",
-          "Defend the village from a real threat.",
-          "Good. I will keep a place clear for what you bring back."
+          "Defend the village from a real threat."
         ],
         "reminder": [
           "Stand with the village when a real threat reaches its homes.",
@@ -49250,11 +48731,9 @@ window.VR_WIKI_DATA = {
         ],
         "completed": [
           "The village saw where you stood. No token could prove it better.",
-          "You held the line while doors were closing behind you. That earns trust.",
-          "That settles it. The village will make good use of this."
+          "You held the line while doors were closing behind you. That earns trust."
         ],
         "missing": [
-          "Something is still missing. Check the journal before I close the note.",
           "The full work is not ready to count yet.",
           "The supplies need a true destination behind them.",
           "Reach the marked place before we call this finished.",
@@ -49265,7 +48744,7 @@ window.VR_WIKI_DATA = {
           {
             "stageId": "work",
             "label": "Work",
-            "trackerText": "Defeat the watch attackers and defend the village.",
+            "trackerText": "Hold the village line and defeat the watch attack.",
             "slots": [
               {
                 "slot": "offer",
@@ -49274,7 +48753,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "Arrows help, but a village also needs someone who stands when the bell begins.",
                   "Defend this village from a real threat. The villagers will know whether you did.",
-                  "Defend the village from a real threat. I will make the reward worth the trouble."
+                  "Defend the village from a real threat."
                 ],
                 "responses": [
                   {
@@ -49336,8 +48815,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Stay near the bell when danger comes. A scattered defense is only several lonely fights.",
-                  "Defend the village from a real threat.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Defend the village from a real threat."
                 ]
               },
               {
@@ -49427,8 +48905,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then keep your shield close. Trouble rarely sends an appointment.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then keep your shield close. Trouble rarely sends an appointment."
                 ]
               },
               {
@@ -49490,8 +48967,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The village saw where you stood. No token could prove it better.",
-                  "You held the line while doors were closing behind you. That earns trust.",
-                  "That settles it. The village will make good use of this."
+                  "You held the line while doors were closing behind you. That earns trust."
                 ]
               },
               {
@@ -49500,7 +48976,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -49551,7 +49026,7 @@ window.VR_WIKI_DATA = {
           {
             "stageId": "work",
             "label": "Work",
-            "trackerText": "Defeat the watch attackers and defend the village.",
+            "trackerText": "Hold the village line and defeat the watch attack.",
             "slots": [
               {
                 "slot": "offer",
@@ -49560,7 +49035,7 @@ window.VR_WIKI_DATA = {
                 "lines": [
                   "Arrows help, but a village also needs someone who stands when the bell begins.",
                   "Defend this village from a real threat. The villagers will know whether you did.",
-                  "Defend the village from a real threat. I will make the reward worth the trouble."
+                  "Defend the village from a real threat."
                 ],
                 "responses": [
                   {
@@ -49622,8 +49097,7 @@ window.VR_WIKI_DATA = {
                 "label": "Start: Started",
                 "lines": [
                   "Stay near the bell when danger comes. A scattered defense is only several lonely fights.",
-                  "Defend the village from a real threat.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Defend the village from a real threat."
                 ]
               },
               {
@@ -49713,8 +49187,7 @@ window.VR_WIKI_DATA = {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then keep your shield close. Trouble rarely sends an appointment.",
-                  "Another pair of hands may take it, or you may ask again later."
+                  "Then keep your shield close. Trouble rarely sends an appointment."
                 ]
               },
               {
@@ -49776,8 +49249,7 @@ window.VR_WIKI_DATA = {
                 "label": "Turn-in: Completed",
                 "lines": [
                   "The village saw where you stood. No token could prove it better.",
-                  "You held the line while doors were closing behind you. That earns trust.",
-                  "That settles it. The village will make good use of this."
+                  "You held the line while doors were closing behind you. That earns trust."
                 ]
               },
               {
@@ -49786,7 +49258,6 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ]
               },
@@ -68096,12 +67567,12 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 82448,
+    "dialogueLinesEstimate": 82757,
     "dialogueLineBreakdown": {
-      "dialogue": 80749,
-      "forcedDialogue": 375,
+      "dialogue": 80909,
+      "forcedDialogue": 551,
       "dialogueTrees": 0,
-      "questModules": 1324
+      "questModules": 1297
     }
   }
 };

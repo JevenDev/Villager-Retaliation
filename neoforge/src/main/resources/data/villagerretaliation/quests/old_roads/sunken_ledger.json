@@ -102,7 +102,7 @@
           "lines": [
             "A fisher pulled a waterlogged ledger from a wreck, but half its route has washed away.",
             "Find the wreck's true bearing and bring dry paper so the surviving marks can be copied.",
-            "Reach the marked shipwreck and return with a compass and 8 paper. I will make the reward worth the trouble."
+            "Reach the marked shipwreck and return with a compass and 8 paper."
           ],
           "responses": [
             {
@@ -159,8 +159,7 @@
               "lines": {
                 "started": [
                   "Keep the paper above the waterline. We already have one drowned ledger.",
-                  "Reach the marked shipwreck and return with a compass and 8 paper.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked shipwreck and return with a compass and 8 paper."
                 ],
                 "already_completed": [
                   "Sunken Ledger is already settled for now.",
@@ -201,8 +200,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then the tide keeps the ledger's missing half.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then the tide keeps the ledger's missing half."
           ]
         },
         {
@@ -299,11 +297,9 @@
               "lines": {
                 "completed": [
                   "The ink wandered, but the route did not. This ledger can guide boats again.",
-                  "A road under water is still a road once someone remembers it.",
-                  "That settles it. The village will make good use of this."
+                  "A road under water is still a road once someone remembers it."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

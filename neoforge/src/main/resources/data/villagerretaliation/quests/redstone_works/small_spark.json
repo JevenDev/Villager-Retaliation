@@ -93,7 +93,7 @@
           "lines": [
             "We have doors, lamps, and a great many villagers tired of opening both by hand.",
             "Bring enough redstone to build one careful circuit before anyone builds ten foolish ones.",
-            "Bring 16 redstone dust, 2 repeaters, and 2 levers. I will make the reward worth the trouble."
+            "Bring 16 redstone dust, 2 repeaters, and 2 levers."
           ],
           "responses": [
             {
@@ -150,8 +150,7 @@
               "lines": {
                 "started": [
                   "Keep the dust dry and the levers apart. We are testing one idea at a time.",
-                  "Bring 16 redstone dust, 2 repeaters, and 2 levers.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 16 redstone dust, 2 repeaters, and 2 levers."
                 ],
                 "already_completed": [
                   "Redstone is already settled for now.",
@@ -192,8 +191,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then every door remains proudly manual.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then every door remains proudly manual."
           ]
         },
         {
@@ -290,11 +288,9 @@
               "lines": {
                 "completed": [
                   "A small spark, properly measured. That is how useful machines begin.",
-                  "The circuit bench is stocked. Now we can make mistakes in a straight line.",
-                  "That settles it. The village will make good use of this."
+                  "The circuit bench is stocked. Now we can make mistakes in a straight line."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

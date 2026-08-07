@@ -101,7 +101,7 @@
           "lines": [
             "Pillager arrows carry a cut on the shaft that tells one patrol from another.",
             "Scout the outpost, bring back a marked crossbow, and restock the watch before its owners follow.",
-            "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows. I will make the reward worth the trouble."
+            "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows."
           ],
           "responses": [
             {
@@ -158,8 +158,7 @@
               "lines": {
                 "started": [
                   "Look before you shoot. A scout who clears the tower may still miss the patrol behind it.",
-                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows."
                 ],
                 "already_completed": [
                   "Fletcher's Countermark is already settled for now.",
@@ -200,8 +199,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then do not wear a bright shield near the outpost road.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then do not wear a bright shield near the outpost road."
           ]
         },
         {
@@ -298,11 +296,9 @@
               "lines": {
                 "completed": [
                   "The countermark matches the patrol, and the watch has arrows ready for it.",
-                  "Now we know which banner is moving toward us and how to answer it.",
-                  "That settles it. The village will make good use of this."
+                  "Now we know which banner is moving toward us and how to answer it."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [
