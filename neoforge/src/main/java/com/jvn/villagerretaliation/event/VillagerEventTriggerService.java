@@ -12,6 +12,8 @@ import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -209,7 +211,16 @@ public final class VillagerEventTriggerService {
                                 action.memoryScope()).changed();
                     }
                 }
-                case FORCED_DIALOGUE, QUEST, QUEST_TRANSITION, REPUTATION, GOSSIP, LOOT, SET_TAG, CLEAR_TAG, SET_VARIABLE, COUNTER, NONE -> {
+                case PROFILE_ATTRIBUTE -> {
+                    VillagerSocialAttribute attribute =
+                            VillagerSocialAttribute.bySerializedName(action.factKey());
+                    if (villager != null && attribute != null && action.amount() != 0) {
+                        ran |= VillagerProfileManager.adjustAttribute(
+                                level, villager, attribute, action.amount());
+                    }
+                }
+                case FORCED_DIALOGUE, QUEST, QUEST_TRANSITION, REPUTATION, GOSSIP, LOOT,
+                        SET_TAG, CLEAR_TAG, SET_VARIABLE, COUNTER, NONE -> {
                 }
             }
         }

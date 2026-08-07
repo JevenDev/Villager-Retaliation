@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.action;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
@@ -119,6 +120,8 @@ public record VillagerActionDefinition(
                 || entry.has("reputation")
                 || entry.has("gossip")
                 || entry.has("gossip_reputation")
+                || entry.has("profile_attribute")
+                || entry.has("social_attribute")
                 || entry.has("memory_event")
                 || entry.has("loot_table")
                 || entry.has("target_stage")
@@ -265,6 +268,9 @@ public record VillagerActionDefinition(
         if (entry.has("gossip") || entry.has("gossip_reputation")) {
             return Kind.GOSSIP;
         }
+        if (entry.has("profile_attribute") || entry.has("social_attribute")) {
+            return Kind.PROFILE_ATTRIBUTE;
+        }
         if (entry.has("flash_tracker")) {
             return Kind.TRACKER;
         }
@@ -339,6 +345,8 @@ public record VillagerActionDefinition(
             case SET_VARIABLE -> !factKey.isBlank() && !factValue.isBlank();
             case COUNTER -> !factKey.isBlank();
             case START_SCENE -> sceneId != null && !sceneOperationId.isBlank();
+            case PROFILE_ATTRIBUTE ->
+                    VillagerSocialAttribute.bySerializedName(factKey) != null;
             case TRACKER, EXPERIENCE, REPUTATION, GOSSIP -> true;
             case NONE -> false;
         };
@@ -435,6 +443,12 @@ public record VillagerActionDefinition(
                                 DatapackJsonReader.readString(entry, "fact")));
                 yield key.isBlank() && entry.has("stage") ? "stage" : key;
             }
+            case PROFILE_ATTRIBUTE -> firstNonBlank(
+                    DatapackJsonReader.readString(entry, "attribute"),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(entry, "profile_attribute"),
+                            firstNonBlank(DatapackJsonReader.readString(entry, "social_attribute"),
+                                    DatapackJsonReader.readString(entry, "stat"))));
             case COUNTER -> firstNonBlank(
                     DatapackJsonReader.readString(entry, "counter"),
                     firstNonBlank(
@@ -526,6 +540,7 @@ public record VillagerActionDefinition(
         MEMORY("memory"),
         LOOT("loot"),
         SET_TAG("set_tag"),
+        PROFILE_ATTRIBUTE("profile_attribute"),
         CLEAR_TAG("clear_tag"),
         SET_VARIABLE("set_variable"),
         COUNTER("counter"),

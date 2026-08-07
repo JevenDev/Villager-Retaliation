@@ -52,6 +52,11 @@ public final class VillagerActionRegistry {
                     aliases("gossip_reputation"),
                     capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
             register(
+                    "profile_attribute",
+                    VillagerActionDefinition.Kind.PROFILE_ATTRIBUTE,
+                    aliases("social_attribute", "attribute_reward"),
+                    capabilities(ActionCapability.PROVIDER_LIVE)),
+            register(
                     "memory",
                     VillagerActionDefinition.Kind.MEMORY,
                     aliases("memory_event"),

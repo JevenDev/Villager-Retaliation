@@ -7,6 +7,8 @@ import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
@@ -58,6 +60,8 @@ public final class VillagerActionExecutor {
             case EXPERIENCE -> awardExperience(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case REPUTATION -> changeReputation(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case GOSSIP -> spreadGossip(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
+            case PROFILE_ATTRIBUTE -> changeProfileAttribute(context, action.factKey(), action.amount())
+                    ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case MEMORY -> rememberMemory(context, action.memoryTag(), action.memoryScope())
                     ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case LOOT -> giveLoot(context, action.lootTable()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
@@ -93,6 +97,18 @@ public final class VillagerActionExecutor {
         }
         VillagerGossipHooks.spreadReputation(context.level(), context.villager(), context.player().getUUID(), amount);
         return true;
+    }
+
+    public static boolean changeProfileAttribute(DialogueContext context, String attributeName, int amount) {
+        if (context == null || amount == 0) {
+            return false;
+        }
+        VillagerSocialAttribute attribute = VillagerSocialAttribute.bySerializedName(attributeName);
+        if (attribute == null) {
+            return false;
+        }
+        return VillagerProfileManager.adjustAttribute(
+                context.level(), context.villager(), attribute, amount);
     }
 
     public static boolean rememberMemory(DialogueContext context, ResourceLocation memoryTag) {

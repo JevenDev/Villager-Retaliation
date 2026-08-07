@@ -855,7 +855,11 @@ public final class QuestV2Compiler {
                 object.addProperty("fact_tag", action.factTag().toString());
             }
             if (!action.factKey().isBlank()) {
-                object.addProperty("key", action.factKey());
+                if (action.kind() == VillagerActionDefinition.Kind.PROFILE_ATTRIBUTE) {
+                    object.addProperty("attribute", action.factKey());
+                } else {
+                    object.addProperty("key", action.factKey());
+                }
             }
             if (!action.factValue().isBlank()) {
                 object.addProperty("value", action.factValue());
