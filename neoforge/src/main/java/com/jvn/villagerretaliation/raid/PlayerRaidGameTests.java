@@ -14,6 +14,8 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.item.BannerHelmetData;
 import com.jvn.villagerretaliation.item.OminousBannerRecognition;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.village.VillagerRaidMemorySavedData;
@@ -532,6 +534,53 @@ public final class PlayerRaidGameTests {
                 "defender victory persisted village cooldown");
         data.remove(won.id());
         data.remove(lost.id());
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void raidOutcomesAdjustParticipatingVillagerGuts(GameTestHelper helper) {
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
+        BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
+        Villager raider = EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(raider != null, "raider villager should be creatable");
+        raider.moveTo(
+                center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(raider), "raider villager should spawn");
+        VillagerProfileManager.setAttribute(
+                helper.getLevel(), raider, VillagerSocialAttribute.GUTS, 50);
+
+        UUID winningPlayer = UUID.randomUUID();
+        PlayerRaidSavedData.RaidRecord won = data.create(
+                VillageAllegianceId.random(), helper.getLevel().dimension().location(), center,
+                Set.of(SectionPos.asLong(center)), "Guts Win Village", winningPlayer, null,
+                Set.of(winningPlayer), Set.of(raider.getUUID()),
+                Set.of(UUID.randomUUID()), Set.of(), 42L);
+        won.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 43L);
+        helper.assertValueEqual(
+                PlayerRaidService.debugFinishRaid(helper.getLevel(), center, winningPlayer, true), won,
+                "participating villager raid should resolve as a win");
+        helper.assertValueEqual(
+                VillagerProfileManager.getOrCreateProfile(
+                        helper.getLevel(), raider).socialAttributes().guts(),
+                60, "winning a raid should increase a participating villager's guts by ten");
+
+        UUID losingPlayer = UUID.randomUUID();
+        PlayerRaidSavedData.RaidRecord lost = data.create(
+                VillageAllegianceId.random(), helper.getLevel().dimension().location(), center,
+                Set.of(SectionPos.asLong(center)), "Guts Loss Village", losingPlayer, null,
+                Set.of(losingPlayer), Set.of(raider.getUUID()),
+                Set.of(UUID.randomUUID()), Set.of(), 44L);
+        lost.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 45L);
+        helper.assertValueEqual(
+                PlayerRaidService.debugFinishRaid(helper.getLevel(), center, losingPlayer, false), lost,
+                "participating villager raid should resolve as a loss");
+        helper.assertValueEqual(
+                VillagerProfileManager.getOrCreateProfile(
+                        helper.getLevel(), raider).socialAttributes().guts(),
+                55, "losing a raid should decrease a participating villager's guts by five");
+        data.remove(won.id());
+        data.remove(lost.id());
+        raider.discard();
         helper.succeed();
     }
 

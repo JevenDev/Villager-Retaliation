@@ -12,6 +12,10 @@ import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
+import com.jvn.villagerretaliation.profile.VillagerProfile;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
@@ -71,6 +75,8 @@ public final class PlayerRaidService {
     private static final float RAID_VICTORY_HORN_PITCH = 0.85F;
     private static final float RAID_VICTORY_FANFARE_VOLUME = 0.8F;
     private static final float RAID_VICTORY_FANFARE_PITCH = 1.0F;
+    private static final int RAID_WIN_GUTS_CHANGE = 10;
+    private static final int RAID_LOSS_GUTS_CHANGE = -5;
     private static final Map<UUID, ServerBossEvent> BOSS_BARS = new HashMap<>();
     private static final PlayerRaidConfirmationTracker RAID_CONFIRMATIONS = new PlayerRaidConfirmationTracker();
 
@@ -590,6 +596,7 @@ public final class PlayerRaidService {
             MinecraftServer server, PlayerRaidSavedData data, PlayerRaidSavedData.RaidRecord raid,
             boolean raidersWon, long now) {
         releaseRaidCombatState(server, raid);
+        adjustRaiderVillagerGuts(server, raid, raidersWon ? RAID_WIN_GUTS_CHANGE : RAID_LOSS_GUTS_CHANGE);
         PlayerRaidDialogueService.endSessionsForRaid(server, raid.id());
         PlayerRaidMercyService.onRaidFinished(server, raid.id());
         raid.setPhase(raidersWon ? PlayerRaidSavedData.Phase.RAIDER_VICTORY : PlayerRaidSavedData.Phase.DEFENDER_VICTORY, now);
@@ -611,6 +618,29 @@ public final class PlayerRaidService {
             playRaiderVictorySound(server, raid);
         }
         PlayerRaidDialogueService.announceOutcome(server, raid, raidersWon);
+    }
+
+    private static void adjustRaiderVillagerGuts(
+            MinecraftServer server, PlayerRaidSavedData.RaidRecord raid, int change) {
+        ServerLevel raidLevel = level(server, raid);
+        if (raidLevel == null) return;
+        VillagerProfileSavedData profiles = VillagerProfileSavedData.get(raidLevel);
+        boolean changed = false;
+        for (UUID villagerId : raid.raiderVillagers()) {
+            VillagerProfile profile = VillagerProfileManager.getProfile(raidLevel, villagerId).orElse(null);
+            if (profile == null) {
+                Entity entity = find(server, villagerId);
+                if (entity instanceof Villager villager && villager.level() instanceof ServerLevel villagerLevel) {
+                    profile = VillagerProfileManager.getOrCreateProfile(villagerLevel, villager);
+                }
+            }
+            if (profile != null) {
+                changed |= profile.setSocialAttribute(
+                        VillagerSocialAttribute.GUTS,
+                        profile.socialAttributes().guts() + change, raidLevel.getGameTime());
+            }
+        }
+        if (changed) profiles.setDirty();
     }
 
     private static void playRaiderVictorySound(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {

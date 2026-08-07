@@ -77,6 +77,7 @@ public final class DuelService {
     private static final double VILLAGER_CLEARANCE = 3.0D;
     private static final int LOSS_PENALTY_TICKS = 100;
     private static final int LOSS_SLOWNESS_AMPLIFIER = 1;
+    private static final int DUEL_GUTS_REWARD = 2;
     private static final String DUEL_PROJECTILE_TAG = "VillagerRetaliationDuelProjectile";
     private static final Map<UUID, ActiveDuel> BY_ID = new HashMap<>();
     private static final Map<UUID, UUID> BY_ENTITY = new HashMap<>();
@@ -799,6 +800,9 @@ public final class DuelService {
         VillagerSkill combat = duel.kit().rangedCombat() || duel.kit().bringYourOwn()
                 && isUsingRangedWeapon(villager) ? VillagerSkill.ARCHERY : VillagerSkill.GUARDING;
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        profile.setSocialAttribute(
+                VillagerSocialAttribute.GUTS,
+                profile.socialAttributes().guts() + DUEL_GUTS_REWARD, level.getGameTime());
         VillagerSkillProgressionService.apply(profile, List.of(
                 new VillagerSkillPractice(combat, 1.0D, "duel:combat", duel.playerId().hashCode()),
                 new VillagerSkillPractice(VillagerSkill.SURVIVAL, 0.5D, "duel:survival", duel.playerId().hashCode())),
