@@ -9,14 +9,18 @@
     "tags": [
       "group.last_ember",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
       "activity.combat",
+      "activity.deliver",
+      "activity.gather",
       "destination.end",
       "destination.remote",
       "tier.endgame",
       "difficulty.extreme",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.exploration",
+      "theme.mystery",
+      "feature.scene",
+      "party.challenge"
     ]
   },
   "provider": {

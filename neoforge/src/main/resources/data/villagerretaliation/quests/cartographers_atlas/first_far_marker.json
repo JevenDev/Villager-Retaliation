@@ -8,14 +8,15 @@
     "tags": [
       "group.exploration",
       "role.story",
-      "activity.gather",
       "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.mid",
       "difficulty.normal",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.exploration"
     ],
     "parent": "villagerretaliation:ink_and_bearings",
     "title_key": "quest.cartographers_atlas.first_far_marker.title",

@@ -8,15 +8,17 @@
     "tags": [
       "group.exploration",
       "role.story",
-      "activity.gather",
+      "activity.choice",
       "activity.deliver",
       "activity.explore",
-      "activity.choice",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.late",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.exploration",
+      "feature.scene"
     ],
     "parent": "villagerretaliation:the_atlas_test",
     "title_key": "quest.cartographers_atlas.choose_the_horizon.title",

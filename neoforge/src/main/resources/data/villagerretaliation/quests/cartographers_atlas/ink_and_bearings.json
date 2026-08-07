@@ -8,13 +8,14 @@
     "tags": [
       "group.exploration",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
       "activity.choice",
+      "activity.deliver",
+      "activity.gather",
       "destination.overworld",
       "tier.mid",
       "difficulty.normal",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.exploration"
     ],
     "parent": "villagerretaliation:blank_map_promise",
     "title_key": "quest.cartographers_atlas.ink_and_bearings.title",

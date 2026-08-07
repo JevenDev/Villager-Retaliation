@@ -8,12 +8,14 @@
     "tags": [
       "group.field_medicine",
       "role.side",
-      "activity.gather",
       "activity.deliver",
+      "activity.gather",
       "destination.village",
       "tier.early",
       "difficulty.easy",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.community",
+      "theme.defense"
     ]
   },
   "provider": {

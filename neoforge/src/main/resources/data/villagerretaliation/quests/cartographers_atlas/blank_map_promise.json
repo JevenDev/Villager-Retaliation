@@ -8,12 +8,13 @@
     "tags": [
       "group.exploration",
       "role.story",
-      "activity.gather",
       "activity.deliver",
+      "activity.gather",
       "destination.overworld",
       "tier.early",
       "difficulty.easy",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.exploration"
     ],
     "title_key": "quest.cartographers_atlas.blank_map_promise.title",
     "description_key": "quest.cartographers_atlas.blank_map_promise.description"

@@ -9,14 +9,19 @@
     "tags": [
       "group.courier_roads",
       "role.side",
-      "activity.gather",
-      "activity.deliver",
       "activity.combat",
+      "activity.deliver",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.mid",
       "difficulty.normal",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.community",
+      "theme.exploration",
+      "feature.encounter",
+      "feature.scene",
+      "party.challenge"
     ]
   },
   "provider": {

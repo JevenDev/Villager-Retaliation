@@ -9,14 +9,15 @@
     "tags": [
       "group.green_thumb",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
       "activity.build",
       "activity.choice",
+      "activity.deliver",
+      "activity.gather",
       "destination.village",
       "tier.mid",
       "difficulty.normal",
       "commitment.standard",
+      "theme.community",
       "feature.branching"
     ]
   },

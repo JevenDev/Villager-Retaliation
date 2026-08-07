@@ -9,15 +9,16 @@
     "tags": [
       "group.redstone_works",
       "role.story",
-      "activity.gather",
+      "activity.build",
       "activity.deliver",
       "activity.explore",
-      "activity.build",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.late",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.craftsmanship"
     ]
   },
   "provider": {

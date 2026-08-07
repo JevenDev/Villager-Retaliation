@@ -9,15 +9,19 @@
     "tags": [
       "group.dangerous_commissions",
       "role.side",
-      "activity.gather",
-      "activity.deliver",
       "activity.combat",
+      "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.late",
       "difficulty.hard",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.defense",
+      "theme.exploration",
+      "feature.scene",
+      "party.recommended"
     ]
   },
   "provider": {

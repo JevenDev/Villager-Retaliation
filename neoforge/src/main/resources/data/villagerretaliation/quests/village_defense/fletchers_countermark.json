@@ -8,14 +8,16 @@
     "tags": [
       "group.village_defense",
       "role.side",
-      "activity.gather",
       "activity.deliver",
       "activity.explore",
+      "activity.gather",
       "destination.overworld",
       "destination.remote",
       "tier.mid",
       "difficulty.normal",
-      "commitment.expedition"
+      "commitment.expedition",
+      "theme.community",
+      "theme.defense"
     ]
   },
   "provider": {

@@ -8,12 +8,13 @@
     "tags": [
       "group.hearthbound",
       "role.side",
-      "activity.gather",
       "activity.deliver",
+      "activity.gather",
       "destination.village",
       "tier.early",
       "difficulty.easy",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.community"
     ]
   },
   "provider": {

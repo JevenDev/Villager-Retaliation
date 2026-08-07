@@ -8,12 +8,13 @@
     "tags": [
       "group.redstone_works",
       "role.story",
-      "activity.gather",
       "activity.deliver",
+      "activity.gather",
       "destination.village",
       "tier.mid",
       "difficulty.normal",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.craftsmanship"
     ]
   },
   "provider": {

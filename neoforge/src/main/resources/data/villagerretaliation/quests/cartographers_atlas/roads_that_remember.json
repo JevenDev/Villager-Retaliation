@@ -8,13 +8,14 @@
     "tags": [
       "group.exploration",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
       "activity.combat",
+      "activity.deliver",
+      "activity.gather",
       "destination.overworld",
       "tier.mid",
       "difficulty.normal",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.exploration"
     ],
     "parent": "villagerretaliation:first_far_marker",
     "title_key": "quest.cartographers_atlas.roads_that_remember.title",

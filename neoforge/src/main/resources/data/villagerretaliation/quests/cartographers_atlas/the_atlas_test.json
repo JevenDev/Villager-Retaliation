@@ -8,14 +8,18 @@
     "tags": [
       "group.exploration",
       "role.story",
-      "activity.gather",
-      "activity.deliver",
-      "activity.combat",
       "activity.choice",
+      "activity.combat",
+      "activity.deliver",
+      "activity.gather",
       "destination.overworld",
       "tier.mid",
       "difficulty.normal",
-      "commitment.standard"
+      "commitment.standard",
+      "theme.exploration",
+      "feature.encounter",
+      "feature.scene",
+      "party.challenge"
     ],
     "parent": "villagerretaliation:roads_that_remember",
     "title_key": "quest.cartographers_atlas.the_atlas_test.title",

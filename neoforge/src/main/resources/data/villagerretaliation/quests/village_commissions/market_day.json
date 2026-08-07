@@ -12,7 +12,11 @@
       "destination.village",
       "tier.early",
       "difficulty.easy",
-      "commitment.quick"
+      "commitment.quick",
+      "theme.community",
+      "theme.craftsmanship",
+      "pool.commission",
+      "pool.quest_board"
     ]
   },
   "provider": {
