@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.duel;
 
+import com.jvn.villagerretaliation.combat.VillagerCombatSkillBehavior;
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
 import com.jvn.villagerretaliation.compat.AccessoryInventoryCompat;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
@@ -13,6 +14,7 @@ import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import com.mojang.authlib.GameProfile;
@@ -1232,6 +1234,8 @@ public final class DuelGameTests {
         player.moveTo(playerPos.getX() + 0.5D, playerPos.getY(), playerPos.getZ() + 0.5D, 0.0F, 0.0F);
         Villager villager = helper.spawn(EntityType.VILLAGER, 3, 2, 2);
         VillagerProfileManager.setAttribute(level, villager, VillagerSocialAttribute.GUTS, 100);
+        VillagerProfileManager.setSkill(
+                level, villager, VillagerSkill.GUARDING, VillagerCombatSkillBehavior.AXE_BREAKER_GUARDING_REQUIRED);
         return new Participant(level, player, villager);
     }
 

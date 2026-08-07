@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -284,6 +286,11 @@ public final class VillagerRangedCombatGameTests {
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(attacker);
         inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.CROSSBOW));
         VillagerInventoryAccess.addItem(attacker, new ItemStack(Items.IRON_AXE));
+        VillagerProfileManager.setSkill(
+                helper.getLevel(),
+                attacker,
+                VillagerSkill.GUARDING,
+                VillagerCombatSkillBehavior.AXE_BREAKER_GUARDING_REQUIRED);
         target.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
         target.startUsingItem(InteractionHand.OFF_HAND);
         helper.assertValueEqual(
@@ -304,6 +311,11 @@ public final class VillagerRangedCombatGameTests {
         Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
         Villager target = spawnVillager(helper, new BlockPos(4, 2, 2));
         VillagerInventoryAccess.addItem(attacker, new ItemStack(Items.IRON_AXE));
+        VillagerProfileManager.setSkill(
+                helper.getLevel(),
+                attacker,
+                VillagerSkill.GUARDING,
+                VillagerCombatSkillBehavior.AXE_BREAKER_GUARDING_REQUIRED);
         target.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
         target.startUsingItem(InteractionHand.OFF_HAND);
         target.moveTo(attacker.getX() + 1.5D, attacker.getY(), attacker.getZ(), 0.0F, 0.0F);
