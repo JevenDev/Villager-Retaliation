@@ -77,12 +77,12 @@ public final class VillagerTradeWalletService {
 
         int paidToVillager = currencyCount(level, offer.getCostA()) + currencyCount(level, offer.getCostB());
         if (paidToVillager > 0) {
-            VillagerWalletService.addCurrency(villager, paidToVillager, VillagerWalletService.WalletSource.TRADE_PAYMENT);
+            VillagerWalletService.addCurrency(villager, paidToVillager);
         }
 
         int paidByVillager = currencyCount(level, offer.getResult());
         if (paidByVillager > 0 && !VillagerWalletService.spendCurrency(
-                villager, paidByVillager, VillagerWalletService.WalletSource.TRADE_PAYOUT)) {
+                villager, paidByVillager)) {
             throw new IllegalStateException(
                     "A wallet-gated villager trade completed without enough currency for its payout");
         }

@@ -68,7 +68,7 @@ public final class BuilderPaymentEscrowService {
         if (amount <= 0) {
             return 0;
         }
-        VillagerWalletService.addCurrency(villager, amount, VillagerWalletService.WalletSource.TASK_REWARD);
+        VillagerWalletService.addCurrency(villager, amount);
         return amount;
     }
 
@@ -120,7 +120,7 @@ public final class BuilderPaymentEscrowService {
     private static int refundLegacyWalletPayment(Villager villager, int amount) {
         if (villager == null
                 || amount <= 0
-                || !VillagerWalletService.spendCurrency(villager, amount, VillagerWalletService.WalletSource.DEPOSIT_ADJUSTMENT)) {
+                || !VillagerWalletService.spendCurrency(villager, amount)) {
             return 0;
         }
         return amount;

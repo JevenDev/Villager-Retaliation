@@ -80,7 +80,7 @@ public final class VillagerWalletService {
         return getWallet(villager).maxEmeralds();
     }
 
-    public static int addCurrency(Villager villager, int amount, WalletSource source) {
+    public static int addCurrency(Villager villager, int amount) {
         if (amount <= 0) {
             return 0;
         }
@@ -99,7 +99,7 @@ public final class VillagerWalletService {
         return amount <= 0 || hasUnlimitedCurrency() || getCurrentEmeralds(villager) >= amount;
     }
 
-    public static boolean spendCurrency(Villager villager, int amount, WalletSource source) {
+    public static boolean spendCurrency(Villager villager, int amount) {
         if (amount <= 0) {
             return true;
         }
@@ -163,18 +163,8 @@ public final class VillagerWalletService {
         return Math.max(0, wallet.currentEmeralds() - wallet.maxEmeralds());
     }
 
-    public static boolean canDepositWalletCurrency(Villager villager) {
-        return getDepositAmount(villager) > 0
-                && villager.level() instanceof ServerLevel level
-                && AssignedStorageService.hasAssignedStorage(level, villager);
-    }
-
     public static DepositResult tryDepositExcessCurrency(Villager villager) {
-        return tryDepositEmeralds(villager, getDepositAmount(villager));
-    }
-
-    public static DepositResult tryDepositEmeralds(Villager villager, int amount) {
-        return tryDepositCurrency(villager, amount);
+        return tryDepositCurrency(villager, getDepositAmount(villager));
     }
 
     public static DepositResult tryDepositCurrency(Villager villager, int amount) {
@@ -387,18 +377,6 @@ public final class VillagerWalletService {
 
     private static long currentDay(ServerLevel level) {
         return level.getDayTime() / DAY_TICKS;
-    }
-
-    public enum WalletSource {
-        STARTING_FUNDS,
-        DAILY_WORK,
-        HIRE_PAYMENT,
-        TRADE_PAYMENT,
-        TRADE_PAYOUT,
-        TASK_REWARD,
-        DEPOSIT_ADJUSTMENT,
-        DUEL,
-        DEBUG
     }
 
     public record WalletSnapshot(

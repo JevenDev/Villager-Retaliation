@@ -59,7 +59,7 @@ public final class HirePaymentEscrow {
 
     private static void release(Villager villager, HireContract contract, int amount) {
         if (amount <= 0) return;
-        VillagerWalletService.addCurrency(villager, amount, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        VillagerWalletService.addCurrency(villager, amount);
         contract.emeraldsReleased(released(contract) + amount);
         HireContractStore.save(villager, contract);
     }

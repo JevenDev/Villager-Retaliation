@@ -173,7 +173,7 @@ public final class DuelService {
         int stake = requestedStake == Integer.MAX_VALUE ? maximumStake : requestedStake;
         if (!validStake(stake, maximumStake)) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
         if (!VillagerCurrencyPayment.tryRemove(player, stake)) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
-        if (!VillagerWalletService.spendCurrency(villager, stake, VillagerWalletService.WalletSource.DUEL)) {
+        if (!VillagerWalletService.spendCurrency(villager, stake)) {
             giveCurrency(player, stake);
             return new StartResult(false, DuelAvailabilityReason.INVALID, null);
         }
@@ -585,7 +585,7 @@ public final class DuelService {
         VillagerCombatBehavior.reset(villager);
         recovery.snapshot().restore(villager);
         VillagerWalletService.addCurrency(
-                villager, recovery.stake(), VillagerWalletService.WalletSource.DUEL);
+                villager, recovery.stake());
         DuelEquipment.clearRecovery(villager, recovery.duelId());
         villager.setTarget(null);
         villager.setAggressive(false);
@@ -740,9 +740,26 @@ public final class DuelService {
     private static void settle(ServerPlayer player, Villager villager, int stake, DuelResult result) {
         int pot = stake * 2;
         switch (result) {
-            case PLAYER_WIN -> { if (player != null) giveCurrency(player, pot); else if (villager != null) VillagerWalletService.addCurrency(villager, pot, VillagerWalletService.WalletSource.DUEL); }
-            case VILLAGER_WIN -> { if (villager != null) VillagerWalletService.addCurrency(villager, pot, VillagerWalletService.WalletSource.DUEL); }
-            case DRAW, CANCELLED -> { if (player != null) giveCurrency(player, stake); if (villager != null) VillagerWalletService.addCurrency(villager, stake, VillagerWalletService.WalletSource.DUEL); }
+            case PLAYER_WIN -> {
+                if (player != null) {
+                    giveCurrency(player, pot);
+                } else if (villager != null) {
+                    VillagerWalletService.addCurrency(villager, pot);
+                }
+            }
+            case VILLAGER_WIN -> {
+                if (villager != null) {
+                    VillagerWalletService.addCurrency(villager, pot);
+                }
+            }
+            case DRAW, CANCELLED -> {
+                if (player != null) {
+                    giveCurrency(player, stake);
+                }
+                if (villager != null) {
+                    VillagerWalletService.addCurrency(villager, stake);
+                }
+            }
         }
     }
 
