@@ -510,6 +510,11 @@ public final class PartyGameTests {
         helper.assertFalse(shared.markDeathProcessed("kills", death), "same death must not be recorded twice");
         party.addSharedQuest(shared);
         party.setTrackedQuest(shared.questId());
+        UUID convertedVillager = UUID.randomUUID();
+        helper.assertValueEqual(data.transferSharedQuestProvider(villagers.getFirst(), convertedVillager), 1,
+                "conversion should migrate the shared quest provider");
+        helper.assertValueEqual(shared.sourceVillagerId(), convertedVillager,
+                "live shared quest provider should use the converted villager UUID");
 
         PartyInvitation invitation = new PartyInvitation(
                 UUID.randomUUID(), leader, rejectedPlayer, party.id(), now, now + 200L);
@@ -576,6 +581,8 @@ public final class PartyGameTests {
                 "stable shared quest instance persistence");
         helper.assertValueEqual(restored.sharedQuests().getFirst().objectiveCounter("kills"), 2,
                 "shared objective progress persistence");
+        helper.assertValueEqual(restored.sharedQuests().getFirst().sourceVillagerId(), convertedVillager,
+                "converted shared quest provider persistence");
         helper.assertValueEqual(restored.trackedQuests(), List.of(shared.questId()),
                 "party tracked quests should persist independently of player tracker choices");
 

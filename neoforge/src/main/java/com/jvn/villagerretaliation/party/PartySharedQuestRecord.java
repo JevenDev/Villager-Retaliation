@@ -34,7 +34,7 @@ public final class PartySharedQuestRecord {
 
     private final UUID instanceId;
     private final ResourceLocation questId;
-    private final UUID sourceVillagerId;
+    private UUID sourceVillagerId;
     private final long createdGameTime;
     private final Map<UUID, Enrollment> enrollments;
     private final Map<UUID, Enrollment> enrollmentsView;
@@ -80,6 +80,17 @@ public final class PartySharedQuestRecord {
 
     public UUID sourceVillagerId() {
         return this.sourceVillagerId;
+    }
+
+    public boolean replaceSourceVillagerId(UUID sourceVillagerId, UUID targetVillagerId) {
+        if (sourceVillagerId == null
+                || targetVillagerId == null
+                || sourceVillagerId.equals(targetVillagerId)
+                || !sourceVillagerId.equals(this.sourceVillagerId)) {
+            return false;
+        }
+        this.sourceVillagerId = targetVillagerId;
+        return true;
     }
 
     public Map<UUID, Enrollment> enrollments() {
