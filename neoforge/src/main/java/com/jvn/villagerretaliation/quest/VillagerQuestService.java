@@ -1975,14 +1975,15 @@ public final class VillagerQuestService {
         }
         VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
         VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), questId);
-        if (progress == null) {
+        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
             return false;
         }
         QuestDefinition definition = VillagerQuestResources.quest(context.level().getServer(), questId).orElse(null);
-        if (definition == null) {
+        String normalizedStage = stage.trim();
+        if (definition == null || !definition.stages().containsKey(normalizedStage)) {
             return false;
         }
-        boolean changed = changeQuestStage(context, definition, progress, stage, true, true);
+        boolean changed = changeQuestStage(context, definition, progress, normalizedStage, true, true);
         if (changed) {
             data.setDirty();
             advanceStageIfComplete(context, definition, progress);
@@ -2045,7 +2046,8 @@ public final class VillagerQuestService {
         if (context == null
                 || definition == null
                 || progress == null
-                || !QuestLifecycleService.canTransitionStage(progress, stage)) {
+                || !QuestLifecycleService.canTransitionStage(progress, stage)
+                || !definition.stages().containsKey(stage.trim())) {
             return false;
         }
 
