@@ -56,6 +56,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
@@ -127,6 +128,8 @@ public final class VillagerQuestService {
     private static final int MAX_STAGE_ADVANCES_PER_CHECK = 8;
     private static final int APPROXIMATE_COORDINATE_STEP = 50;
     private static final long QUEST_STORY_HINT_TICKS = 20L * 60L * 60L * 6L;
+    private static final int REPEATABLE_QUEST_PROVIDER_KNOWLEDGE_REWARD = 1;
+    private static final int ONE_SHOT_QUEST_PROVIDER_KNOWLEDGE_REWARD = 2;
     private static final ResourceLocation QUEST_STARTED_FACT =
             ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_started");
     private static final ResourceLocation QUEST_COMPLETED_FACT =
@@ -2610,6 +2613,7 @@ public final class VillagerQuestService {
         recordScopedCompletion(context, definition);
         lockBranchQuests(context, definition, QuestDefinition.BranchLockEvent.COMPLETED);
         data.setDirty();
+        rewardQuestProviderKnowledge(context, definition, progress);
         clearTrackedQuestIf(data, context.player(), definition.id());
         awardRewards(context, definition);
         completeSharedQuest(context, definition, progress);
@@ -2627,6 +2631,23 @@ public final class VillagerQuestService {
                         definition.dialogue().selectTurnInText(context.random()),
                         replacements(context, definition, progress)),
                 replacements(context, definition, progress));
+    }
+
+    private static void rewardQuestProviderKnowledge(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        UUID providerId = progress.startedVillagerId();
+        if (providerId == null) return;
+        int reward = definition.rules().repeatable()
+                ? REPEATABLE_QUEST_PROVIDER_KNOWLEDGE_REWARD
+                : ONE_SHOT_QUEST_PROVIDER_KNOWLEDGE_REWARD;
+        Villager provider = VillagerEntityResolver.loaded(context.level().getServer(), providerId);
+        if (provider != null) {
+            VillagerProfileManager.adjustAttribute(context.level(), provider, VillagerSocialAttribute.KNOWLEDGE, reward);
+        } else {
+            VillagerProfileManager.adjustAttribute(context.level(), providerId, VillagerSocialAttribute.KNOWLEDGE, reward);
+        }
     }
 
     private static void completeSharedQuest(

@@ -79,6 +79,30 @@ public final class VillagerProfileManager {
         return changed;
     }
 
+    public static boolean adjustAttribute(
+            ServerLevel level,
+            AbstractVillager villager,
+            VillagerSocialAttribute attribute,
+            int change) {
+        return adjustAttribute(level, getOrCreateProfile(level, villager), attribute, change);
+    }
+
+    public static boolean adjustAttribute(
+            ServerLevel level,
+            UUID villagerUuid,
+            VillagerSocialAttribute attribute,
+            int change) {
+        return adjustAttribute(level, VillagerProfileSavedData.get(level).get(villagerUuid), attribute, change);
+    }
+
+    private static boolean adjustAttribute(
+            ServerLevel level, VillagerProfile profile, VillagerSocialAttribute attribute, int change) {
+        if (profile == null || change == 0) return false;
+        boolean changed = profile.setSocialAttribute(attribute, profile.socialAttributes().get(attribute) + change, level.getGameTime());
+        if (changed) VillagerProfileSavedData.get(level).setDirty();
+        return changed;
+    }
+
     public static int getSkill(ServerLevel level, AbstractVillager villager, VillagerSkill skill) {
         return getOrCreateProfile(level, villager).skills().get(skill);
     }

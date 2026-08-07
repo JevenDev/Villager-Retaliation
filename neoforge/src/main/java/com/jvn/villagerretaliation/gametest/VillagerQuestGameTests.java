@@ -75,6 +75,7 @@ import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Resource;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
@@ -2171,6 +2172,8 @@ public final class VillagerQuestGameTests {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         movePlayer(helper, player, new BlockPos(1, 2, 2));
+        VillagerProfileManager.setAttribute(
+                level, villager, VillagerSocialAttribute.KNOWLEDGE, 50);
 
         try {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
@@ -2232,6 +2235,10 @@ public final class VillagerQuestGameTests {
                     .orElseThrow(() -> new GameTestAssertException("v2 turn-in produced no outcome"));
             helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.COMPLETED, "v2 completed state");
             helper.assertValueEqual(player.totalExperience, experienceBefore + 7, "v2 reward XP");
+            helper.assertValueEqual(
+                    VillagerProfileManager.getOrCreateProfile(level, villager)
+                            .socialAttributes().knowledge(),
+                    52, "one-shot quest completion should add two provider knowledge");
 
             CompoundTag saved = data.save(new CompoundTag(), level.registryAccess());
             VillagerQuestSavedData loaded = VillagerQuestSavedData.load(saved, level.registryAccess());
