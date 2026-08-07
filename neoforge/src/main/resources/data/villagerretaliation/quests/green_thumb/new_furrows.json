@@ -91,7 +91,7 @@
           "lines": [
             "There is good ground beyond the last fence, but good ground still needs hands.",
             "Bring seed, water, and a hoe that will survive more than one row.",
-            "Bring 24 wheat seeds, an iron hoe, and a water bucket. I will make the reward worth the trouble."
+            "Bring 24 wheat seeds, an iron hoe, and a water bucket."
           ],
           "responses": [
             {
@@ -148,8 +148,7 @@
               "lines": {
                 "started": [
                   "Keep the seeds dry. The water can wait until the furrows are open.",
-                  "Bring 24 wheat seeds, an iron hoe, and a water bucket.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 24 wheat seeds, an iron hoe, and a water bucket."
                 ],
                 "already_completed": [
                   "Furrows is already settled for now.",
@@ -190,8 +189,7 @@
         {
           "id": "decline",
           "lines": [
-            "The ground will keep. We should not open it without a plan.",
-            "Another pair of hands may take it, or you may ask again later."
+            "The ground will keep. We should not open it without a plan."
           ]
         },
         {
@@ -288,11 +286,9 @@
               "lines": {
                 "completed": [
                   "That is everything a bare patch needs to become a field.",
-                  "The furrows can begin at sunrise. You have given them a fair start.",
-                  "That settles it. The village will make good use of this."
+                  "The furrows can begin at sunrise. You have given them a fair start."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

@@ -102,7 +102,7 @@
           "lines": [
             "The gate follows daylight. Now the road lamps should follow it too.",
             "Set the lamps where the path bends and give the control box a way to compare weak light with strong.",
-            "Place 8 redstone lamps and bring 2 comparators and 12 quartz. I will make the reward worth the trouble."
+            "Place 8 redstone lamps and bring 2 comparators and 12 quartz."
           ],
           "responses": [
             {
@@ -159,8 +159,7 @@
               "lines": {
                 "started": [
                   "Face every lamp toward the road. Lighting the roof helps only bats.",
-                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 8 redstone lamps and bring 2 comparators and 12 quartz."
                 ],
                 "already_completed": [
                   "Daylight is already settled for now.",
@@ -201,8 +200,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then the gate can keep the light to itself for now.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then the gate can keep the light to itself for now."
           ]
         },
         {
@@ -299,11 +297,9 @@
               "lines": {
                 "completed": [
                   "The road wakes at dusk and sleeps after dawn. No villager needs to remember the lever.",
-                  "The sun now keeps the village lamps better than any watch schedule.",
-                  "That settles it. The village will make good use of this."
+                  "The sun now keeps the village lamps better than any watch schedule."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

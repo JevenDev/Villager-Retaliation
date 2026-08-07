@@ -101,7 +101,7 @@
           "lines": [
             "The brewing stand has bottles, powder, and no Nether Wart. That makes it a very tidy shelf.",
             "Find the fortress garden and bring back enough wart to start a village crop, plus one blaze rod to prove the route.",
-            "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod. I will make the reward worth the trouble."
+            "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
           ],
           "responses": [
             {
@@ -158,8 +158,7 @@
               "lines": {
                 "started": [
                   "Take more than one way home. Fortress bridges have a habit of ending under your feet.",
-                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
                 ],
                 "already_completed": [
                   "Nether Wart Warranty is already settled for now.",
@@ -200,8 +199,7 @@
         {
           "id": "decline",
           "lines": [
-            "The brewing stand can wait. Fire is a poor reason to hurry.",
-            "Another pair of hands may take it, or you may ask again later."
+            "The brewing stand can wait. Fire is a poor reason to hurry."
           ]
         },
         {
@@ -298,11 +296,9 @@
               "lines": {
                 "completed": [
                   "The wart is alive, the rod is real, and the brewing stand finally has work.",
-                  "One dangerous trip can seed every potion we brew after it.",
-                  "That settles it. The village will make good use of this."
+                  "One dangerous trip can seed every potion we brew after it."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

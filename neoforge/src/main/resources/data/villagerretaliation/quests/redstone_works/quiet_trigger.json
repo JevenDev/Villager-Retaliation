@@ -114,7 +114,7 @@
           "lines": [
             "The village sensor works, but the Ancient City knew how to shape sound long before we did.",
             "Study its silence, lay wool around the loud paths, and recover one calibrated sensor.",
-            "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor. I will make the reward worth the trouble."
+            "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor."
           ],
           "responses": [
             {
@@ -171,8 +171,7 @@
               "lines": {
                 "started": [
                   "Every block of wool is cheaper than one shrieker. Place them before curiosity.",
-                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Study the marked Ancient City, place 32 wool, and bring 1 calibrated sculk sensor."
                 ],
                 "already_completed": [
                   "The Listening Gate is already settled for now.",
@@ -213,8 +212,7 @@
         {
           "id": "decline",
           "lines": [
-            "Good. Ancient Cities punish noisy lessons.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Good. Ancient Cities punish noisy lessons."
           ]
         },
         {
@@ -311,11 +309,9 @@
               "lines": {
                 "completed": [
                   "The gate now hears what matters and ignores what does not. Let us hope it keeps that wisdom.",
-                  "A machine taught by silence. The sculk branch is complete.",
-                  "That settles it. The village will make good use of this."
+                  "A machine taught by silence. The sculk branch is complete."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

@@ -68,36 +68,10 @@
             "complete_text_key": "quest.village_defense.standing_watch.objective.defend_village.complete_text"
           },
           "type": "memory_event"
-        },
-        {
-          "id": "defeat_zombies",
-          "type": "mob_kill",
-          "entity": "minecraft:zombie",
-          "count": 3,
-          "tracker": {
-            "text": "Defeat 3 zombies in the watch attack.",
-            "complete_text": "The dead have been driven back.",
-            "show_progress": true,
-            "progress": 0.65
-          }
-        },
-        {
-          "id": "defeat_pillager",
-          "type": "mob_kill",
-          "entity": "minecraft:pillager",
-          "count": 1,
-          "tracker": {
-            "text": "Defeat the pillager leading the attack.",
-            "complete_text": "The raid leader is down.",
-            "show_progress": true,
-            "progress": 0.8
-          }
         }
       ],
       "complete_when": [
-        "defend_village",
-        "defeat_zombies",
-        "defeat_pillager"
+        "defend_village"
       ],
       "next": "return",
       "dialogue": {
@@ -109,7 +83,7 @@
           "lines": [
             "Arrows help, but a village also needs someone who stands when the bell begins.",
             "Defend this village from a real threat. The villagers will know whether you did.",
-            "Defend the village from a real threat. I will make the reward worth the trouble."
+            "Defend the village from a real threat."
           ],
           "responses": [
             {
@@ -166,8 +140,7 @@
               "lines": {
                 "started": [
                   "Stay near the bell when danger comes. A scattered defense is only several lonely fights.",
-                  "Defend the village from a real threat.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Defend the village from a real threat."
                 ],
                 "already_completed": [
                   "Standing Watch is already settled for now.",
@@ -214,8 +187,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then keep your shield close. Trouble rarely sends an appointment.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then keep your shield close. Trouble rarely sends an appointment."
           ]
         },
         {
@@ -269,7 +241,7 @@
         }
       ],
       "ui": {
-        "tracker_text": "Defeat the watch attackers and defend the village.",
+        "tracker_text": "Hold the village line and defeat the watch attack.",
         "show_progress": true,
         "progress": 0.75
       }
@@ -312,11 +284,9 @@
               "lines": {
                 "completed": [
                   "The village saw where you stood. No token could prove it better.",
-                  "You held the line while doors were closing behind you. That earns trust.",
-                  "That settles it. The village will make good use of this."
+                  "You held the line while doors were closing behind you. That earns trust."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

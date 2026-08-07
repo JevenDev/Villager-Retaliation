@@ -47,6 +47,56 @@
           "tag": "villagerretaliation:cartographers_atlas_fieldwork"
         }
       ]
+    },
+    {
+      "id": "roads_principle_kit",
+      "event": "completed",
+      "repeatable": false,
+      "conditions": [
+        {
+          "type": "quest_fact",
+          "scope": "quest",
+          "quest": "villagerretaliation:ink_and_bearings",
+          "key": "principle",
+          "value": "roads"
+        }
+      ],
+      "actions": [
+        {
+          "type": "notification",
+          "trigger": "quest.completed",
+          "text": "Road principle: the first expedition adds a compass and iron route kit."
+        },
+        {
+          "type": "loot",
+          "loot_table": "villagerretaliation:quest/first_far_marker_roads_bonus"
+        }
+      ]
+    },
+    {
+      "id": "wonders_principle_kit",
+      "event": "completed",
+      "repeatable": false,
+      "conditions": [
+        {
+          "type": "quest_fact",
+          "scope": "quest",
+          "quest": "villagerretaliation:ink_and_bearings",
+          "key": "principle",
+          "value": "wonders"
+        }
+      ],
+      "actions": [
+        {
+          "type": "notification",
+          "trigger": "quest.completed",
+          "text": "Wonder principle: the first expedition adds a spyglass and amethyst survey kit."
+        },
+        {
+          "type": "loot",
+          "loot_table": "villagerretaliation:quest/first_far_marker_wonders_bonus"
+        }
+      ]
     }
   ],
   "entry_stage": "survey",

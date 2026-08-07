@@ -70,7 +70,7 @@
           "show_for_babies": false,
           "lines": [
             "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
-            "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+            "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance; the harder bastion work offers a rare Ancient Debris chance."
           ],
           "responses": [
             {
@@ -141,7 +141,7 @@
           "show_for_babies": false,
           "lines": [
             "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
-            "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+            "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance; the harder bastion work offers a rare Ancient Debris chance."
           ],
           "responses": [
             {
@@ -222,7 +222,7 @@
               "lines": {
                 "reminder": [
                   "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
-                  "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
+                  "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance; the harder bastion work offers a rare Ancient Debris chance."
                 ],
                 "unavailable": [
                   "That choice is not open right now."

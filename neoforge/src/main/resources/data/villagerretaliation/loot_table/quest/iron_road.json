@@ -7,14 +7,14 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:emerald",
+          "name": "minecraft:powered_rail",
           "functions": [
             {
               "function": "minecraft:set_count",
               "count": {
                 "type": "minecraft:uniform",
-                "min": 19,
-                "max": 28
+                "min": 8,
+                "max": 16
               }
             }
           ]

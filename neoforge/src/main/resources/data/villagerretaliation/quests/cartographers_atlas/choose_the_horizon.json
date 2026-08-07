@@ -81,7 +81,7 @@
           "show_for_babies": false,
           "lines": [
             "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for a horizon.",
-            "Choose the drowned coast if you want the atlas to follow water and ruins. Choose the dark roof road if you want it to follow danger under old timber."
+            "This final choice closes the other horizon. Coast continues through monuments and pays in conduit materials; dark roof continues through a mansion and pays in mansion treasure."
           ],
           "responses": [
             {
@@ -161,7 +161,7 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "This is the final fork. Coast or dark roof; water-stone or old timber."
+            "This final fork closes the other route: coast means monuments and conduit materials; dark roof means a mansion and rare mansion treasure."
           ],
           "responses": [
             {
@@ -188,7 +188,7 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Choose the drowned coast for water, prismarine, and ocean ruins. Choose the dark roof road for books, illagers, and a mansion horizon."
+                  "This choice closes the other horizon. Coast leads to guardian work and conduit materials; dark roof leads to illagers and rare mansion treasure."
                 ],
                 "unavailable": [
                   "I do not have your horizon page open right now."

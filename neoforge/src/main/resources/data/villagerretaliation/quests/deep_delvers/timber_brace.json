@@ -106,7 +106,7 @@
           "lines": [
             "The braces hold, but webs are pulling at the lower supports and something small is clicking behind them.",
             "Cross-brace the shaft, clear the cave spiders, and bring string as proof the nests are gone.",
-            "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string. I will make the reward worth the trouble."
+            "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string."
           ],
           "responses": [
             {
@@ -163,8 +163,7 @@
               "lines": {
                 "started": [
                   "Set each brace before you cut the web beside it. Roof first, heroics second.",
-                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 24 fence braces, defeat 4 cave spiders, and bring 8 string."
                 ],
                 "already_completed": [
                   "Timber Brace is already settled for now.",
@@ -205,8 +204,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then stay above the lower lantern. The spiders have claimed everything past it.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then stay above the lower lantern. The spiders have claimed everything past it."
           ]
         },
         {
@@ -303,11 +301,9 @@
               "lines": {
                 "completed": [
                   "The roof is still, the webs are gone, and the timber road can go deeper.",
-                  "Strong braces and no clicking in the dark. That is a safe shaft.",
-                  "That settles it. The village will make good use of this."
+                  "Strong braces and no clicking in the dark. That is a safe shaft."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

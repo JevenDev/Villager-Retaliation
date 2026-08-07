@@ -90,7 +90,7 @@
           "lines": [
             "The first channel works. Now it needs walls that will survive boots, rain, and curious sheep.",
             "Finish the stone edges and bring lily pads to shade the still corners.",
-            "Place 24 stone bricks and bring 8 lily pads. I will make the reward worth the trouble."
+            "Place 24 stone bricks and bring 8 lily pads."
           ],
           "responses": [
             {
@@ -147,8 +147,7 @@
               "lines": {
                 "started": [
                   "Keep the corners square. Water finds every lazy gap.",
-                  "Place 24 stone bricks and bring 8 lily pads.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Place 24 stone bricks and bring 8 lily pads."
                 ],
                 "already_completed": [
                   "Irrigation is already settled for now.",
@@ -189,8 +188,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then keep the sheep away from the wet edge.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then keep the sheep away from the wet edge."
           ]
         },
         {
@@ -287,11 +285,9 @@
               "lines": {
                 "completed": [
                   "The water reaches every bed and stays off the road. That is a proper canal.",
-                  "Stone below, green shade above. The canal field is finished.",
-                  "That settles it. The village will make good use of this."
+                  "Stone below, green shade above. The canal field is finished."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

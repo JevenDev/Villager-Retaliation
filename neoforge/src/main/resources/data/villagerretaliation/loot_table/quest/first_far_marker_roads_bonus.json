@@ -7,17 +7,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:emerald",
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": {
-                "type": "minecraft:uniform",
-                "min": 40,
-                "max": 54
-              }
-            }
-          ]
+          "name": "minecraft:compass"
         }
       ]
     },
@@ -27,23 +17,17 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:diamond",
-          "weight": 1,
+          "name": "minecraft:iron_ingot",
           "functions": [
             {
               "function": "minecraft:set_count",
               "count": {
                 "type": "minecraft:uniform",
-                "min": 3,
-                "max": 5
+                "min": 4,
+                "max": 8
               }
             }
           ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:elytra",
-          "weight": 2
         }
       ]
     }

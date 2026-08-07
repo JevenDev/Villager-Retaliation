@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "villagerretaliation:atlas_risky_patrol",
-  "version": 1,
+  "version": 2,
   "controller": "villagerretaliation:controlled",
   "members": [
     {
@@ -16,5 +16,15 @@
   "spawn_radius": 12,
   "respawn_policy": "missing_if_loaded",
   "cleanup_policy": "remove_survivors",
-  "completion_condition": "all_defeated"
+  "completion_condition": "all_defeated",
+  "rewards": {
+    "completion": [
+      {
+        "id": "patrol_crossbow",
+        "item": "minecraft:crossbow",
+        "count": 1
+      }
+    ],
+    "drop_policy": "normal"
+  }
 }

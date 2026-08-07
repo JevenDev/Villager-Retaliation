@@ -93,7 +93,7 @@
           "lines": [
             "One portal is an escape. A marked portal with supplies can become a road.",
             "Bring the frame, a way to light it, and enough magma cream to survive the first mistake.",
-            "Bring 10 obsidian, 2 fire charges, and 4 magma cream. I will make the reward worth the trouble."
+            "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
           ],
           "responses": [
             {
@@ -150,8 +150,7 @@
               "lines": {
                 "started": [
                   "Count the obsidian twice. A nine-block portal is only a heavy doorway to nowhere.",
-                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
                 ],
                 "already_completed": [
                   "Through Fire is already settled for now.",
@@ -192,8 +191,7 @@
         {
           "id": "decline",
           "lines": [
-            "The Nether will not cool while we think.",
-            "Another pair of hands may take it, or you may ask again later."
+            "The Nether will not cool while we think."
           ]
         },
         {
@@ -290,11 +288,9 @@
               "lines": {
                 "completed": [
                   "The frame is complete and the fire supplies are sealed. The road can cross worlds.",
-                  "We have a doorway. Next we decide where the hot road leads.",
-                  "That settles it. The village will make good use of this."
+                  "We have a doorway. Next we decide where the hot road leads."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

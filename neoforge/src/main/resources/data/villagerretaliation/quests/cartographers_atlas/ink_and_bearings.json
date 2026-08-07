@@ -78,7 +78,7 @@
           "show_for_babies": false,
           "lines": [
             "A blank atlas can become a diary, a warning, or a trophy shelf. We should choose better than that.",
-            "Bring fine pens and glass for the index. Then choose the atlas principle: reliable roads, or strange wonders."
+            "Bring fine pens and glass for the index. Then make a permanent atlas choice: roads prepare a compass-and-iron route kit, while wonders prepare a spyglass-and-amethyst survey kit for the first expedition."
           ],
           "responses": [
             {
@@ -298,7 +298,7 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The index is ready. Choose whether the atlas should privilege safe roads or the rare marks people cross oceans to see."
+            "The index is ready. This principle is permanent: roads reward practical navigation supplies on the first expedition; wonders reward rare survey tools."
           ],
           "responses": [
             {
@@ -325,7 +325,7 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Choose roads if the atlas should favor safe returns, or wonders if it should favor rare discoveries."
+                  "Choose roads for a compass-and-iron expedition kit, or wonders for a spyglass-and-amethyst kit. The principle is permanent."
                 ],
                 "unavailable": [
                   "We are not carrying that atlas principle right now."

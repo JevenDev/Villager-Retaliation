@@ -108,7 +108,7 @@
           "lines": [
             "The mansion informants kept their word. Now the gold promised for their Nether route is due.",
             "Carry one gold block to the bastion road and bring gilded blackstone back as proof the debt reached its mark.",
-            "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block. I will make the reward worth the trouble."
+            "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
           ],
           "responses": [
             {
@@ -165,8 +165,7 @@
               "lines": {
                 "started": [
                   "Wear gold where piglins can see it, and keep the payment where brutes cannot.",
-                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
                 ],
                 "already_completed": [
                   "Gilded Debt is already settled for now.",
@@ -207,8 +206,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then the debt waits, but Nether debts grow dangerous when ignored.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then the debt waits, but Nether debts grow dangerous when ignored."
           ]
         },
         {
@@ -305,11 +303,9 @@
               "lines": {
                 "completed": [
                   "The debt is settled, the route is proven, and no promise is chasing the village now.",
-                  "Gold paid on time buys more than goods. It buys a road that stays open.",
-                  "That settles it. The village will make good use of this."
+                  "Gold paid on time buys more than goods. It buys a road that stays open."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

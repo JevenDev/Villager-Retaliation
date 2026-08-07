@@ -70,7 +70,7 @@
           "show_for_babies": false,
           "lines": [
             "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-            "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+            "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance; city is harder and offers this route's only, stronger Elytra chance."
           ],
           "responses": [
             {
@@ -141,7 +141,7 @@
           "show_for_babies": false,
           "lines": [
             "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-            "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+            "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance; city is harder and offers this route's only, stronger Elytra chance."
           ],
           "responses": [
             {
@@ -222,7 +222,7 @@
               "lines": {
                 "reminder": [
                   "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
-                  "Follow the chorus and map how the islands grow, or follow the city lights and map who built above them."
+                  "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance; city is harder and offers this route's only, stronger Elytra chance."
                 ],
                 "unavailable": [
                   "That choice is not open right now."

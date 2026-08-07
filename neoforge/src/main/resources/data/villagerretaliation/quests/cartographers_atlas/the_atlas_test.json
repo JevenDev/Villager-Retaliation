@@ -67,7 +67,7 @@
           "show_for_babies": false,
           "lines": [
             "The atlas has pages, markers, and memory. Now it needs judgment.",
-            "Choose the test: a safer supply road anyone can repeat, or a riskier road that proves the atlas can survive bad company."
+            "Choose the permanent test route: safe asks for four lanterns and eight bread; risky begins a three-pillager ambush and guarantees a crossbow proof item with the larger combat bonus."
           ],
           "responses": [
             {
@@ -141,7 +141,7 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "Choose whether the atlas should prove a safer road or a riskier one."
+            "This test choice is permanent. Safe is a supply hand-in; risky is an immediate three-pillager ambush with a guaranteed crossbow and larger bonus."
           ],
           "responses": [
             {
@@ -168,7 +168,7 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Choose the safer road for lanterns and bread, or the riskier road for a pillager patrol and crossbow proof."
+                  "This choice is permanent: safe needs four lanterns and eight bread; risky launches three pillagers, guarantees the proof crossbow, and pays the larger bonus."
                 ],
                 "unavailable": [
                   "We are not carrying that test right now."

@@ -83,7 +83,7 @@
           "lines": [
             "The village stands on stone we have never asked a useful question.",
             "Open a proper shaft below the bell and bring up the first raw iron.",
-            "Mine 64 stone or deepslate and bring 16 raw iron. I will make the reward worth the trouble."
+            "Mine 64 stone or deepslate and bring 16 raw iron."
           ],
           "responses": [
             {
@@ -140,8 +140,7 @@
               "lines": {
                 "started": [
                   "Brace the entrance as you go. A mine should not begin with a rescue.",
-                  "Mine 64 stone or deepslate and bring 16 raw iron.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Mine 64 stone or deepslate and bring 16 raw iron."
                 ],
                 "already_completed": [
                   "Below the Bell is already settled for now.",
@@ -182,8 +181,7 @@
         {
           "id": "decline",
           "lines": [
-            "The stone has waited longer than we have. It can wait.",
-            "Another pair of hands may take it, or you may ask again later."
+            "The stone has waited longer than we have. It can wait."
           ]
         },
         {
@@ -280,11 +278,9 @@
               "lines": {
                 "completed": [
                   "The shaft is open and the first iron is honest. We can build on that.",
-                  "Stone below the bell has finally paid rent.",
-                  "That settles it. The village will make good use of this."
+                  "Stone below the bell has finally paid rent."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

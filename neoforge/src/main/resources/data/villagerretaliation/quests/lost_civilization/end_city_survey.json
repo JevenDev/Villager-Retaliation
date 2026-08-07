@@ -104,7 +104,7 @@
           "lines": [
             "The Ancient City records point beyond the dragon island, toward towers drawn without a ground line.",
             "Find an End City and bring back both a shulker shell and something still growing there.",
-            "Reach the marked End City and return with a shulker shell and 1 Chorus Flower. I will make the reward worth the trouble."
+            "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
           ],
           "responses": [
             {
@@ -161,8 +161,7 @@
               "lines": {
                 "started": [
                   "Take pearls, slow falling, and one clear memory of where the gateway was.",
-                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
                 ],
                 "already_completed": [
                   "End City Survey is already settled for now.",
@@ -203,8 +202,7 @@
         {
           "id": "decline",
           "lines": [
-            "The End is not going anywhere. Its islands barely know how.",
-            "Another pair of hands may take it, or you may ask again later."
+            "The End is not going anywhere. Its islands barely know how."
           ]
         },
         {
@@ -301,11 +299,9 @@
               "lines": {
                 "completed": [
                   "A shell from the towers and a flower from the stone. The old record was telling the truth.",
-                  "The lost civilization has a second city now, and this one still touches the sky.",
-                  "That settles it. The village will make good use of this."
+                  "The lost civilization has a second city now, and this one still touches the sky."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

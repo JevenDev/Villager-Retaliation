@@ -7,14 +7,14 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:emerald",
+          "name": "minecraft:ender_pearl",
           "functions": [
             {
               "function": "minecraft:set_count",
               "count": {
                 "type": "minecraft:uniform",
-                "min": 36,
-                "max": 50
+                "min": 12,
+                "max": 20
               }
             }
           ]
@@ -42,7 +42,7 @@
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:elytra",
+          "name": "minecraft:ender_chest",
           "weight": 1
         }
       ]

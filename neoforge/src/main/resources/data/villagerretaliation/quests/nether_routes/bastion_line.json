@@ -103,7 +103,7 @@
           "lines": [
             "The bastion bearing is true, but the brutes treat every marker as a challenge.",
             "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter.",
-            "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks. I will make the reward worth the trouble."
+            "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
           ],
           "responses": [
             {
@@ -160,8 +160,7 @@
               "lines": {
                 "started": [
                   "Wear one piece of gold. It will not impress the brutes, but everyone else may pause.",
-                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
                 ],
                 "already_completed": [
                   "Broken Gold is already settled for now.",
@@ -202,8 +201,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then the bastion keeps its walls and its opinions.",
-            "Another pair of hands may take it, or you may ask again later."
+            "Then the bastion keeps its walls and its opinions."
           ]
         },
         {
@@ -300,11 +298,9 @@
               "lines": {
                 "completed": [
                   "The bastion line is marked, stocked, and expensive enough to be respected.",
-                  "A road through broken gold now leads back to the village.",
-                  "That settles it. The village will make good use of this."
+                  "A road through broken gold now leads back to the village."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [

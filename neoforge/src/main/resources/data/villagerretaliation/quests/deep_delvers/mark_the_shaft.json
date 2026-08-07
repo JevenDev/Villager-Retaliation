@@ -70,7 +70,7 @@
           "show_for_babies": false,
           "lines": [
             "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-            "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+            "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware; timber continues into spider-clearing and returns emergency supplies."
           ],
           "responses": [
             {
@@ -129,7 +129,7 @@
           "show_for_babies": false,
           "lines": [
             "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-            "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+            "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware; timber continues into spider-clearing and returns emergency supplies."
           ],
           "responses": [
             {
@@ -198,7 +198,7 @@
               "lines": {
                 "reminder": [
                   "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
-                  "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+                  "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware; timber continues into spider-clearing and returns emergency supplies."
                 ],
                 "unavailable": [
                   "That choice is not open right now."

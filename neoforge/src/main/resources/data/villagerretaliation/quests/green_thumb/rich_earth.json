@@ -99,7 +99,7 @@
           "lines": [
             "The first bed is rich. Now the rest of the field needs the same patience.",
             "Turn the heaps, raise the beds, and feed the first planting well.",
-            "Work composters 8 times, then bring 32 dirt and 24 bone meal. I will make the reward worth the trouble."
+            "Work composters 8 times, then bring 32 dirt and 24 bone meal."
           ],
           "responses": [
             {
@@ -156,8 +156,7 @@
               "lines": {
                 "started": [
                   "A good field is built twice: once from dirt, once from what we return to it.",
-                  "Work composters 8 times, then bring 32 dirt and 24 bone meal.",
-                  "Good. I will keep a place clear for what you bring back."
+                  "Work composters 8 times, then bring 32 dirt and 24 bone meal."
                 ],
                 "already_completed": [
                   "Rich Earth is already settled for now.",
@@ -198,8 +197,7 @@
         {
           "id": "decline",
           "lines": [
-            "The heaps will keep cooking, whether we watch or not.",
-            "Another pair of hands may take it, or you may ask again later."
+            "The heaps will keep cooking, whether we watch or not."
           ]
         },
         {
@@ -296,11 +294,9 @@
               "lines": {
                 "completed": [
                   "Every bed is dark and ready. The compost field is finished.",
-                  "Nothing wasted, every row fed. That is a field worth keeping.",
-                  "That settles it. The village will make good use of this."
+                  "Nothing wasted, every row fed. That is a field worth keeping."
                 ],
                 "missing_objectives": [
-                  "Something is still missing. Check the journal before I close the note.",
                   "The full work is not ready to count yet."
                 ],
                 "missing_target": [
