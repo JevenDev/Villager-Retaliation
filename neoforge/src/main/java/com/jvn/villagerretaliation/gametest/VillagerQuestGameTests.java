@@ -4364,7 +4364,21 @@ public final class VillagerQuestGameTests {
                 "Bring eggs so the kitchens can stretch breakfast and broth.",
                 "egg baskets description");
         helper.assertValueEqual(quest.questline(), "village_supply", "egg baskets questline");
-        helper.assertValueEqual(quest.tags(), Set.of("group.village_supply"), "egg baskets tags");
+        helper.assertValueEqual(
+                quest.tags(),
+                Set.of(
+                        "group.village_supply",
+                        "role.request",
+                        "activity.deliver",
+                        "activity.gather",
+                        "destination.village",
+                        "tier.early",
+                        "difficulty.easy",
+                        "commitment.quick",
+                        "theme.community",
+                        "pool.daily",
+                        "pool.quest_board"),
+                "egg baskets tags");
 
         helper.assertValueEqual(
                 quest.offer().professions(),

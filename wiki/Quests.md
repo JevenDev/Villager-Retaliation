@@ -207,6 +207,54 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 | `ui` | Tracker text, icon, progress, placeholders, color, and priority |
 | `external_scenes` | Optional external dialogue scene resources used by this module |
 
+## Quest Tag Taxonomy
+
+`metadata.tags` classifies quests for journal filters, quest-board pools, authoring tools, diagnostics, and content tests. Tags describe a quest; they do not replace authoritative fields such as `availability.repeatable`, `completion_scope`, `ui.hidden`, `ui.priority`, provider filters, or objective definitions.
+
+Built-in quests use these families:
+
+| Family | Values | Use |
+| --- | --- | --- |
+| `group.*` | Questline or umbrella grouping | Catalog organization and related-content searches |
+| `role.*` | `story`, `side`, `request`, `tutorial` | Journal sections, offer priority, and onboarding |
+| `activity.*` | `gather`, `deliver`, `combat`, `explore`, `build`, `trade`, `social`, `choice` | Multi-select gameplay filters and player preferences |
+| `destination.*` | `village`, `overworld`, `nether`, `end`, plus optional `remote` | Travel planning and dimension filters |
+| `tier.*` | `early`, `mid`, `late`, `endgame` | World-progression recommendations |
+| `difficulty.*` | `easy`, `normal`, `hard`, `extreme` | Danger and complexity guidance |
+| `commitment.*` | `quick`, `standard`, `expedition` | Expected time and travel commitment |
+| `theme.*` | `community`, `defense`, `mystery`, `craftsmanship`, `exploration` | Curated collections and thematic search |
+| `feature.*` | `branching`, `scene`, `encounter`, `recoverable` | Special presentation, tooling, and regression-test coverage |
+| `party.*` | `recommended`, `challenge` | Advisory group-play guidance without changing completion scope |
+| `pool.*` | `commission`, `daily`, `quest_board` | Eligibility for rotating or curated offer pools |
+
+Use the full prefix in JSON:
+
+```json
+"tags": [
+  "group.village_supply",
+  "role.request",
+  "activity.deliver",
+  "activity.gather",
+  "destination.village",
+  "tier.early",
+  "difficulty.easy",
+  "commitment.quick",
+  "theme.community",
+  "pool.daily",
+  "pool.quest_board"
+]
+```
+
+For built-in content:
+
+- use exactly one `group.*`, `role.*`, `tier.*`, `difficulty.*`, and `commitment.*` tag
+- use exactly one primary destination; add `destination.remote` when travel is a material part of the quest
+- use one or more `activity.*` and `theme.*` tags when multiple descriptions apply
+- use `feature.*`, `party.*`, and `pool.*` only when the corresponding capability or curation rule applies
+- keep `role.tutorial`, `activity.social`, and `feature.recoverable` available for future content instead of applying them to unrelated quests
+
+Datapacks may add their own tags. Avoid redefining the documented built-in prefixes with different meanings, and keep mechanics in their dedicated fields so metadata cannot drift from runtime behavior.
+
 ## Dialogue And Scenes
 
 Stage `dialogue` slots normally use these names:

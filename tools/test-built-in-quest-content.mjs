@@ -117,6 +117,7 @@ validateBranchingQuestlines();
 validateUniqueExpansionMechanics();
 validateAuditContracts();
 validateCinematicResources();
+validateQuestTaxonomy();
 
 if (errors.length > 0) {
   for (const error of errors) {
@@ -544,6 +545,82 @@ function validateCinematicResources() {
     if(data.rewards!==undefined){const rewards=data.rewards;assert(rewards&&typeof rewards==="object"&&!Array.isArray(rewards)&&Object.keys(rewards).length>0,file,"encounter rewards must be a non-empty object");const ids=new Set(),waveIds=new Set(explicitWaves?data.waves.map((wave)=>wave.id):Array.from({length:data.wave_count||1},(_,index)=>`repeat_${index+1}`)),phaseIds=new Set((data.phases??[]).map((phase)=>phase.id)),memberIds=new Set((explicitWaves?data.waves.flatMap((wave)=>wave.members??[]):data.members??[]).map((member)=>member.id).filter(Boolean));let total=0;for(const [key,target,known] of [["waves","wave",waveIds],["phases","phase",phaseIds],["completion","",null]]){const list=rewards[key]??[];assert(Array.isArray(list)&&list.length<=32,file,`encounter ${key} rewards exceed limits`);total+=list.length;for(const reward of list){assert(typeof reward.id==="string"&&!ids.has(reward.id),file,`encounter repeats reward ${reward.id}`);ids.add(reward.id);assert(!target||known.has(reward[target]),file,`encounter reward ${reward.id} references unknown ${target}`);assert((typeof reward.item==="string")!==(typeof reward.loot_table==="string"),file,`encounter reward ${reward.id} needs one item or loot table`);assert(reward.count===undefined||(Number.isInteger(reward.count)&&reward.count>=1&&reward.count<=64),file,`encounter reward ${reward.id} has unsafe count`);}}assert(total<=64,file,"encounter has more than 64 triggered rewards");const trophies=rewards.trophies??[];assert(Array.isArray(trophies)&&trophies.length<=32,file,"encounter trophies exceed limits");for(const trophy of trophies){assert(typeof trophy.id==="string"&&!ids.has(trophy.id),file,`encounter repeats trophy ${trophy.id}`);ids.add(trophy.id);assert(memberIds.has(trophy.member),file,`encounter trophy ${trophy.id} references unknown member`);}assert(rewards.drop_policy===undefined||["normal","suppress","authored_only","trophy_only"].includes(rewards.drop_policy),file,"encounter drop policy is unknown");assert(rewards.drop_policy!=="trophy_only"||trophies.length>0,file,"trophy_only encounter needs trophies");}
   }
   const visitVariant=(id,path=[])=>{const entry=encounters.get(id);if(!entry||!Array.isArray(entry.data.variants))return;assert(!path.includes(id),entry.file,`recursive encounter variant reference ${[...path,id].join(" -> ")}`);assert(path.length<32,entry.file,"encounter variant chain exceeds 32 selectors");for(const variant of entry.data.variants)visitVariant(variant.template,[...path,id]);};for(const id of encounters.keys())visitVariant(id);
+}
+
+function validateQuestTaxonomy() {
+  const allowed = new Map([
+    ["role.", new Set(["role.story", "role.side", "role.request", "role.tutorial"])],
+    ["activity.", new Set(["activity.gather", "activity.deliver", "activity.combat", "activity.explore", "activity.build", "activity.trade", "activity.social", "activity.choice"])],
+    ["destination.", new Set(["destination.village", "destination.overworld", "destination.nether", "destination.end", "destination.remote"])],
+    ["tier.", new Set(["tier.early", "tier.mid", "tier.late", "tier.endgame"])],
+    ["difficulty.", new Set(["difficulty.easy", "difficulty.normal", "difficulty.hard", "difficulty.extreme"])],
+    ["commitment.", new Set(["commitment.quick", "commitment.standard", "commitment.expedition"])],
+    ["theme.", new Set(["theme.community", "theme.defense", "theme.mystery", "theme.craftsmanship", "theme.exploration"])],
+    ["feature.", new Set(["feature.branching", "feature.scene", "feature.encounter", "feature.recoverable"])],
+    ["party.", new Set(["party.recommended", "party.challenge"])],
+    ["pool.", new Set(["pool.commission", "pool.daily", "pool.quest_board"])]
+  ]);
+  const primaryDestinations = new Set([
+    "destination.village", "destination.overworld", "destination.nether", "destination.end"
+  ]);
+  const encounterQuestIds = new Set([...scenes.values()]
+    .filter(({ data }) => (data.steps ?? []).some((step) => step.type === "villagerretaliation:start_encounter"))
+    .map(({ data }) => data.metadata?.quest));
+
+  for (const { file, data } of quests.values()) {
+    const tags = Array.isArray(data.metadata?.tags) ? data.metadata.tags : [];
+    const tagSet = new Set(tags);
+    assert(tags.length === tagSet.size, file, "quest taxonomy contains duplicate tags");
+    assert(tags.filter((tag) => tag.startsWith("group.")).length === 1, file,
+      "quest taxonomy requires exactly one group tag");
+    for (const prefix of ["role.", "tier.", "difficulty.", "commitment."]) {
+      assert(tags.filter((tag) => tag.startsWith(prefix)).length === 1, file,
+        `quest taxonomy requires exactly one ${prefix} tag`);
+    }
+    assert(tags.some((tag) => tag.startsWith("activity.")), file,
+      "quest taxonomy requires at least one activity tag");
+    assert(tags.some((tag) => tag.startsWith("theme.")), file,
+      "quest taxonomy requires at least one theme tag");
+    assert(tags.filter((tag) => primaryDestinations.has(tag)).length === 1, file,
+      "quest taxonomy requires exactly one primary destination tag");
+    assert(!tagSet.has("branching"), file, "legacy branching tag must use feature.branching");
+
+    for (const tag of tags) {
+      if (tag.startsWith("group.")) continue;
+      const family = [...allowed.entries()].find(([prefix]) => tag.startsWith(prefix));
+      assert(Boolean(family), file, `built-in quest uses unknown taxonomy tag ${tag}`);
+      if (family) assert(family[1].has(tag), file, `built-in quest uses unknown ${family[0]} value ${tag}`);
+    }
+
+    const objectives = (data.stages ?? []).flatMap((stage) => stage.objectives ?? []);
+    const repeatable = data.availability?.repeatable === true;
+    const hasChoice = objectives.some((objective) => objective.type === "choice");
+    const hasScene = sceneQuestIds.has(data.id);
+    const hasEncounter = encounterQuestIds.has(data.id);
+    const completionDays = Number(data.availability?.completion_cooldown_days ?? data.availability?.cooldown_days ?? 0);
+    assert(tagSet.has("role.request") === repeatable, file,
+      "role.request must match repeatable availability");
+    assert(tagSet.has("pool.quest_board") === repeatable, file,
+      "pool.quest_board must match repeatable availability");
+    assert(tagSet.has("feature.branching") === hasChoice, file,
+      "feature.branching must match choice objectives");
+    assert(tagSet.has("feature.scene") === hasScene, file,
+      "feature.scene must match persistent scene references");
+    assert(tagSet.has("feature.encounter") === hasEncounter, file,
+      "feature.encounter must match controlled scene encounters");
+    assert(tagSet.has("pool.daily") === (repeatable && completionDays > 0 && completionDays <= 1), file,
+      "pool.daily must match a repeatable cooldown of one day or less");
+    assert(tagSet.has("pool.commission") === (repeatable && data.metadata.questline.includes("commissions")), file,
+      "pool.commission must match repeatable commission questlines");
+
+    const expectsChallenge = hasEncounter || tagSet.has("difficulty.extreme");
+    const expectsRecommended = !expectsChallenge
+      && tagSet.has("difficulty.hard") && tagSet.has("activity.combat");
+    assert(tagSet.has("party.challenge") === expectsChallenge, file,
+      "party.challenge must match encounter or extreme-difficulty quests");
+    assert(tagSet.has("party.recommended") === expectsRecommended, file,
+      "party.recommended must match hard combat quests without a challenge tag");
+  }
 }
 
 function objectiveSignature(objective) {

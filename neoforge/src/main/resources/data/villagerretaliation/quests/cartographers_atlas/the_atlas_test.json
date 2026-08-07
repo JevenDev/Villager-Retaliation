@@ -17,6 +17,7 @@
       "difficulty.normal",
       "commitment.standard",
       "theme.exploration",
+      "feature.branching",
       "feature.encounter",
       "feature.scene",
       "party.challenge"
