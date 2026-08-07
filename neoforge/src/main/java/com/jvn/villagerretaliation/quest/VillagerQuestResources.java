@@ -1379,16 +1379,72 @@ public final class VillagerQuestResources {
             JsonObject stage,
             ResourceLocation defaultQuestId) {
         String context = "quest stage \"" + stageId + "\"";
+        JsonObject completion = DatapackJsonReader.readObject(stage, "completion");
         return new QuestDefinition.Stage(
                 stageId,
                 DatapackJsonReader.readStringList(stage, "objective", "objectives"),
                 readStagePredicates(location, context + ".complete_when", stage.get("complete_when"), defaultQuestId),
+                QuestDefinition.CompletionMode.bySerializedName(firstNonBlank(
+                        completion == null ? "" : DatapackJsonReader.readString(completion, "mode"),
+                        DatapackJsonReader.readString(stage, "completion_mode"))),
+                completion == null
+                        ? DatapackJsonReader.readInt(stage, "completion_count", 1)
+                        : DatapackJsonReader.readInt(completion, "count", 1),
                 firstNonBlank(
                         DatapackJsonReader.readString(stage, "next"),
                         DatapackJsonReader.readString(stage, "next_stage")),
                 readActionsFromKey(location, context + ".entry_actions", stage, "entry_actions", defaultQuestId),
                 readActionsFromKey(location, context + ".exit_actions", stage, "exit_actions", defaultQuestId),
-                readStageBranches(location, context, stage.get("branches"), defaultQuestId));
+                readStageBranches(location, context, stage.get("branches"), defaultQuestId),
+                readBonusOutcomes(location, context, stage.get("bonuses"), defaultQuestId));
+    }
+
+    private static List<QuestDefinition.BonusOutcome> readBonusOutcomes(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".bonuses", "bonuses must be an array.");
+            return List.of();
+        }
+        List<QuestDefinition.BonusOutcome> bonuses = new ArrayList<>();
+        Set<String> ids = new LinkedHashSet<>();
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (!child.isJsonObject()) {
+                index++;
+                continue;
+            }
+            JsonObject bonus = child.getAsJsonObject();
+            String id = firstNonBlank(DatapackJsonReader.readString(bonus, "id"), "bonus_" + index);
+            if (!ids.add(id)) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".bonuses", "duplicate bonus id " + id + ".");
+                index++;
+                continue;
+            }
+            List<QuestDefinition.StagePredicate> when = readStagePredicates(
+                    location,
+                    context + ".bonuses[" + id + "].when",
+                    bonus.get("when"),
+                    defaultQuestId);
+            if (when.isEmpty()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".bonuses[" + id + "]", "bonus requires when predicates.");
+                index++;
+                continue;
+            }
+            bonuses.add(new QuestDefinition.BonusOutcome(
+                    id,
+                    when,
+                    QuestDefinition.CompletionMode.bySerializedName(DatapackJsonReader.readString(bonus, "mode")),
+                    DatapackJsonReader.readInt(bonus, "count", 1),
+                    readActionsFromKey(location, context + ".bonuses[" + id + "].actions", bonus, "actions", defaultQuestId)));
+            index++;
+        }
+        return List.copyOf(bonuses);
     }
 
     private static List<VillagerActionDefinition> readActionsFromKey(

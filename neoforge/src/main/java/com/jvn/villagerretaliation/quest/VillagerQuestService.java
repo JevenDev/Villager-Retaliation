@@ -2091,6 +2091,7 @@ public final class VillagerQuestService {
         }
         boolean changed = false;
         for (int i = 0; i < MAX_STAGE_ADVANCES_PER_CHECK; i++) {
+            changed |= runEligibleStageBonuses(context, definition, progress);
             QuestStageReadiness readiness = QuestStageReadiness.forCurrentStage(
                     context,
                     definition,
@@ -2104,6 +2105,35 @@ public final class VillagerQuestService {
                 break;
             }
             changed = true;
+        }
+        return changed;
+    }
+
+    private static boolean runEligibleStageBonuses(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
+        if (stage == null || stage.bonuses().isEmpty()) {
+            return false;
+        }
+        boolean changed = false;
+        for (QuestDefinition.BonusOutcome bonus : stage.bonuses()) {
+            if (progress.bonusClaimed(stage.id(), bonus.id())
+                    || !QuestStageReadiness.compositionMet(
+                            context,
+                            definition,
+                            bonus.when(),
+                            bonus.mode(),
+                            bonus.count(),
+                            objective -> objectiveComplete(
+                                    context.player(), context, context.level(), definition, progress, objective))) {
+                continue;
+            }
+            if (progress.claimBonus(stage.id(), bonus.id())) {
+                changed = true;
+                runStageActions(context, definition, progress, bonus.actions());
+            }
         }
         return changed;
     }

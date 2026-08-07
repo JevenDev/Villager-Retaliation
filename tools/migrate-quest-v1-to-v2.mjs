@@ -271,6 +271,10 @@ function buildStages(quest, questId, dialogueTree, report) {
     if (completeWhen.length > 0) {
       migratedStage.complete_when = completeWhen;
     }
+    copyValue(rawStage, migratedStage, "completion");
+    copyValue(rawStage, migratedStage, "completion_mode");
+    copyValue(rawStage, migratedStage, "completion_count");
+    copyValue(rawStage, migratedStage, "bonuses");
     const next = stringValue(rawStage.next) || stringValue(rawStage.next_stage);
     if (next) {
       migratedStage.next = next;

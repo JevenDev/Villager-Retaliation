@@ -747,6 +747,37 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(ready.ready(), "stage readiness did not accept complete objective");
         helper.assertValueEqual(ready.nextStage(), "done", "stage readiness next stage");
 
+        List<QuestDefinition.StagePredicate> composed = List.of(
+                new QuestDefinition.StagePredicate(choiceObjective.id(), List.of()),
+                new QuestDefinition.StagePredicate("missing", List.of()));
+        helper.assertTrue(
+                QuestStageReadiness.compositionMet(
+                        null, stagedQuest, composed, QuestDefinition.CompletionMode.ANY, 1,
+                        objective -> objective.id().equals(choiceObjective.id())),
+                "any composition did not accept one completed predicate");
+        helper.assertFalse(
+                QuestStageReadiness.compositionMet(
+                        null, stagedQuest, composed, QuestDefinition.CompletionMode.ALL, 1,
+                        objective -> objective.id().equals(choiceObjective.id())),
+                "all composition accepted an incomplete predicate");
+        helper.assertFalse(
+                QuestStageReadiness.compositionMet(
+                        null, stagedQuest, composed, QuestDefinition.CompletionMode.AT_LEAST, 2,
+                        objective -> objective.id().equals(choiceObjective.id())),
+                "at_least composition ignored its count");
+
+        UUID bonusPlayer = UUID.randomUUID();
+        ResourceLocation bonusQuest = VillagerRetaliation.id("bonus_persistence");
+        VillagerQuestSavedData bonusData = new VillagerQuestSavedData();
+        VillagerQuestSavedData.QuestProgress bonusProgress = bonusData.getOrCreate(bonusPlayer, bonusQuest);
+        helper.assertTrue(bonusProgress.claimBonus("started", "optional_route"), "first bonus claim");
+        helper.assertFalse(bonusProgress.claimBonus("started", "optional_route"), "duplicate bonus claim");
+        CompoundTag savedBonuses = bonusData.save(new CompoundTag(), helper.getLevel().registryAccess());
+        VillagerQuestSavedData loadedBonuses = VillagerQuestSavedData.load(savedBonuses, helper.getLevel().registryAccess());
+        helper.assertTrue(
+                loadedBonuses.get(bonusPlayer, bonusQuest).bonusClaimed("started", "optional_route"),
+                "claimed bonus did not survive save/load");
+
         helper.succeed();
     }
 
@@ -2188,8 +2219,16 @@ public final class VillagerQuestGameTests {
                 }
                 """));
         JsonObject firstStage = root.getAsJsonArray("stages").get(0).getAsJsonObject();
+        firstStage.add("completion", JsonParser.parseString("{\"mode\": \"any\", \"count\": 1}"));
         firstStage.add("complete_when", JsonParser.parseString("""
                 [{"type": "quest_fact", "scope": "quest", "key": "route_ready", "value": "yes"}]
+                """));
+        firstStage.add("bonuses", JsonParser.parseString("""
+                [{
+                  "id": "swift_choice",
+                  "when": ["talk"],
+                  "actions": [{"type": "experience", "amount": 3}]
+                }]
                 """));
         JsonObject objectiveUi = new JsonObject();
         objectiveUi.addProperty("tracker_text", "Choose a route.");
@@ -2220,6 +2259,18 @@ public final class VillagerQuestGameTests {
         helper.assertFalse(
                 definition.stages().get("offer").completeWhen().getFirst().conditions().isEmpty(),
                 "v2 conditional complete_when lost its condition");
+        helper.assertValueEqual(
+                definition.stages().get("offer").completionMode(),
+                QuestDefinition.CompletionMode.ANY,
+                "v2 stage completion mode");
+        helper.assertValueEqual(
+                definition.stages().get("offer").bonuses().getFirst().when().getFirst().objective(),
+                "offer.talk",
+                "v2 bonus objective canonicalization");
+        helper.assertValueEqual(
+                definition.stages().get("offer").bonuses().getFirst().actions().getFirst().amount(),
+                3,
+                "v2 bonus action");
         helper.assertValueEqual(
                 definition.objectives().getFirst().tracker().completeText(),
                 "Route chosen.",

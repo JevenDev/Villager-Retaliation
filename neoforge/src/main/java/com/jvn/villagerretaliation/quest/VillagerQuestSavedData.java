@@ -70,6 +70,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_CURRENT_STAGE = "CurrentStage";
     private static final String TAG_COMPLETED_OBJECTIVES = "CompletedObjectives";
     private static final String TAG_OBJECTIVE_COUNTERS = "ObjectiveCounters";
+    private static final String TAG_CLAIMED_BONUSES = "ClaimedBonuses";
     private static final String TAG_OBJECTIVE = "Objective";
     private static final String TAG_COUNT = "Count";
     private static final String TAG_START_COUNT = "StartCount";
@@ -593,6 +594,7 @@ public class VillagerQuestSavedData extends SavedData {
         private String currentStage = "";
         private final java.util.Set<String> completedObjectives = new java.util.HashSet<>();
         private final Map<String, Integer> objectiveCounters = new HashMap<>();
+        private final Set<String> claimedBonuses = new LinkedHashSet<>();
         private int startCount;
         private int completionCount;
         private int abandonCount;
@@ -641,6 +643,7 @@ public class VillagerQuestSavedData extends SavedData {
             progress.targetObjectiveId = tag.getString(TAG_TARGET_OBJECTIVE);
             progress.currentStage = tag.getString(TAG_CURRENT_STAGE);
             progress.completedObjectives.addAll(NbtDataUtil.readStringSet(tag, TAG_COMPLETED_OBJECTIVES));
+            progress.claimedBonuses.addAll(NbtDataUtil.readStringSet(tag, TAG_CLAIMED_BONUSES));
             if (tag.contains(TAG_OBJECTIVE_COUNTERS, Tag.TAG_LIST)) {
                 ListTag countersTag = tag.getList(TAG_OBJECTIVE_COUNTERS, Tag.TAG_COMPOUND);
                 for (Tag rawCounter : countersTag) {
@@ -777,6 +780,9 @@ public class VillagerQuestSavedData extends SavedData {
                     countersTag.add(counterTag);
                 }
                 tag.put(TAG_OBJECTIVE_COUNTERS, countersTag);
+            }
+            if (!this.claimedBonuses.isEmpty()) {
+                tag.put(TAG_CLAIMED_BONUSES, NbtDataUtil.stringList(this.claimedBonuses));
             }
             if (!this.triggerTimes.isEmpty()) {
                 CompoundTag triggerTimesTag = new CompoundTag();
@@ -1059,6 +1065,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.triggerTimes.clear();
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
+            this.claimedBonuses.clear();
             this.choiceHistory.clear();
             this.pendingLifecycleEvents.clear();
             this.startCount = saturatingIncrement(this.startCount);
@@ -1264,6 +1271,23 @@ public class VillagerQuestSavedData extends SavedData {
                 return 0;
             }
             return this.objectiveCounters.getOrDefault(objectiveId, 0);
+        }
+
+        public boolean claimBonus(String stageId, String bonusId) {
+            if (stageId == null || stageId.isBlank() || bonusId == null || bonusId.isBlank()) {
+                return false;
+            }
+            return this.claimedBonuses.add(stageId.trim() + "/" + bonusId.trim());
+        }
+
+        public boolean bonusClaimed(String stageId, String bonusId) {
+            return stageId != null
+                    && bonusId != null
+                    && this.claimedBonuses.contains(stageId.trim() + "/" + bonusId.trim());
+        }
+
+        public Set<String> claimedBonuses() {
+            return Set.copyOf(this.claimedBonuses);
         }
 
         public int addObjectiveCounter(String objectiveId, int amount) {

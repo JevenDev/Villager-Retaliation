@@ -859,7 +859,7 @@ const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilit
 const questV2AvailabilityKeys = new Set(["conditions", "active", "expiration", "branch", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "exclusive_on", "blocks_on_start", "blocks_on_completion", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
 const questV2LifecycleKeys = new Set(["on_start", "on_complete", "on_abandon", "on_expire", "on_fail", "on_stage_enter", "on_stage_exit", "dialogue"]);
 const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stage", "scene", "complete", "abandon", "fail"]);
-const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
+const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "completion", "completion_mode", "completion_count", "bonuses", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
 const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "criterion", "match", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
 const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
 const questV2SceneKeys = new Set(["id", "slot", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "external", "external_scene", "external_entry", "scene_ref", "metadata"]);
@@ -1763,6 +1763,8 @@ function checkQuestV2Stages(file, stages, pointer, location, questId) {
         questV2Error(file, `${stagePointer}/complete_when`, `${stageLocation}.complete_when`, `complete_when references missing objective "${ref}".`, "Reference an objective id defined in the same stage.");
       }
     }
+    checkQuestV2Composition(file, stage, stagePointer, stageLocation);
+    checkQuestV2Bonuses(file, stage.bonuses, `${stagePointer}/bonuses`, `${stageLocation}.bonuses`, questId, objectiveIds);
     const next = readQuestV2Transition(file, stage.next, `${stagePointer}/next`, `${stageLocation}.next`);
     if (!next.empty) {
       model.transitions.push({ pointer: `${stagePointer}/next`, location: `${stageLocation}.next`, transition: next, stageId });
@@ -1783,6 +1785,50 @@ function checkQuestV2Stages(file, stages, pointer, location, questId) {
     checkQuestV2Ui(file, stage.ui, `${stagePointer}/ui`, `${stageLocation}.ui`);
   }
   return model;
+}
+
+function checkQuestV2Composition(file, stage, pointer, location) {
+  const completion = stage.completion;
+  if (completion !== undefined && (!completion || typeof completion !== "object" || Array.isArray(completion))) {
+    questV2Error(file, `${pointer}/completion`, `${location}.completion`, "completion must be an object.", "Use completion.mode and completion.count.");
+    return;
+  }
+  const mode = normalizedString(firstDefined(completion?.mode, stage.completion_mode));
+  if (mode && !["all", "any", "at_least", "atleast", "count", "k_of_n"].includes(mode)) {
+    questV2Error(file, `${pointer}/completion`, `${location}.completion`, `unknown completion mode "${mode}".`, "Use all, any, or at_least.");
+  }
+  const count = firstDefined(completion?.count, stage.completion_count);
+  if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
+    questV2Error(file, `${pointer}/completion`, `${location}.completion`, "completion count must be a positive integer.", "Use a count of at least 1.");
+  }
+}
+
+function checkQuestV2Bonuses(file, bonuses, pointer, location, questId, objectiveIds) {
+  if (bonuses === undefined) return;
+  if (!Array.isArray(bonuses)) {
+    questV2Error(file, pointer, location, "bonuses must be an array.", "Add one or more one-shot bonus outcome objects.");
+    return;
+  }
+  const ids = new Set();
+  for (const [index, bonus] of bonuses.entries()) {
+    const bonusPointer = `${pointer}/${index}`;
+    const bonusLocation = `${location}[${index}]`;
+    if (!bonus || typeof bonus !== "object" || Array.isArray(bonus)) {
+      questV2Error(file, bonusPointer, bonusLocation, "bonus must be an object.", "Each bonus needs id, when, and actions.");
+      continue;
+    }
+    const id = stringValue(bonus.id) || `bonus_${index}`;
+    if (ids.has(id)) questV2Error(file, `${bonusPointer}/id`, `${bonusLocation}.id`, `duplicate bonus id "${id}".`, "Use unique bonus ids within the stage.");
+    ids.add(id);
+    const refs = readQuestV2ObjectiveReferences(bonus.when);
+    if (bonus.when === undefined || bonus.when === null || (Array.isArray(bonus.when) && bonus.when.length === 0)) {
+      questV2Error(file, `${bonusPointer}/when`, `${bonusLocation}.when`, "bonus when predicates are required.", "Reference objectives or add condition predicates.");
+    }
+    for (const ref of refs) {
+      if (!objectiveIds.has(ref)) questV2Error(file, `${bonusPointer}/when`, `${bonusLocation}.when`, `bonus references missing objective "${ref}".`, "Reference an objective in the same stage.");
+    }
+    checkQuestV2Actions(file, bonus.actions, `${bonusPointer}/actions`, `${bonusLocation}.actions`, questId, { liveContextWarningUsage: "quest module v2 bonus" });
+  }
 }
 
 function checkQuestV2Objectives(file, objectives, pointer, location, questId) {

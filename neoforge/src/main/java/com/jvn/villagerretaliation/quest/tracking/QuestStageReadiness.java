@@ -39,7 +39,13 @@ public record QuestStageReadiness(
         if (!definition.stages().containsKey(stage.next())) {
             return notReady(stage.id(), stage.next(), "next stage missing");
         }
-        if (!predicatesMet(context, definition, stage, objectiveComplete)) {
+        if (!compositionMet(
+                context,
+                definition,
+                stage.completeWhen(),
+                stage.completionMode(),
+                stage.completionCount(),
+                objectiveComplete)) {
             return notReady(stage.id(), stage.next(), "stage predicates unmet");
         }
         return new QuestStageReadiness(true, stage.id(), stage.next(), "stage ready");
@@ -49,17 +55,28 @@ public record QuestStageReadiness(
         return new QuestStageReadiness(false, currentStage, nextStage, reason);
     }
 
-    private static boolean predicatesMet(
+    public static boolean compositionMet(
             DialogueContext context,
             QuestDefinition definition,
-            QuestDefinition.Stage stage,
+            java.util.List<QuestDefinition.StagePredicate> predicates,
+            QuestDefinition.CompletionMode mode,
+            int requiredCount,
             Predicate<QuestDefinition.Objective> objectiveComplete) {
-        for (QuestDefinition.StagePredicate predicate : stage.completeWhen()) {
-            if (!predicateMet(context, definition, predicate, objectiveComplete)) {
-                return false;
+        if (predicates == null || predicates.isEmpty()) {
+            return false;
+        }
+        int matched = 0;
+        for (QuestDefinition.StagePredicate predicate : predicates) {
+            if (predicateMet(context, definition, predicate, objectiveComplete)) {
+                matched++;
             }
         }
-        return true;
+        QuestDefinition.CompletionMode normalized = mode == null ? QuestDefinition.CompletionMode.ALL : mode;
+        return switch (normalized) {
+            case ALL -> matched == predicates.size();
+            case ANY -> matched > 0;
+            case AT_LEAST -> matched >= Math.min(Math.max(1, requiredCount), predicates.size());
+        };
     }
 
     private static boolean predicateMet(
