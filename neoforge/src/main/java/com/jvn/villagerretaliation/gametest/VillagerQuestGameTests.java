@@ -651,10 +651,17 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(unrelated.evaluatedObjectives(), 0, "unrelated event evaluated objective count");
         helper.assertValueEqual(unrelated.matchedObjectives(), 0, "unrelated event matched objective count");
 
+        Villager giftVillager = spawnVillager(helper, new BlockPos(1, 1, 1));
+        QuestObjectiveEvent giftEvent = QuestObjectiveEvent.gift(
+                giftVillager,
+                new ItemStack(Items.EMERALD),
+                VillagerGiftPreferences.GiftReaction.LOVED);
+        helper.assertValueEqual(giftEvent.villager(), giftVillager,
+                "gift objective event must retain its target villager");
         QuestObjectiveEventTrace related = QuestObjectiveRegistry.traceEventMatches(
                 context,
                 List.of(giftObjective),
-                QuestObjectiveEvent.gift(new ItemStack(Items.EMERALD), VillagerGiftPreferences.GiftReaction.LOVED));
+                giftEvent);
         helper.assertValueEqual(related.evaluatedObjectives(), 1, "related event evaluated objective count");
         helper.assertValueEqual(related.matchedObjectives(), 1, "related event matched objective count");
 
@@ -3613,6 +3620,13 @@ public final class VillagerQuestGameTests {
         VillagerQuestSavedData data = new VillagerQuestSavedData();
         VillagerQuestSavedData.QuestProgress progress = data.getOrCreate(playerId, questId);
         progress.start(villagerId, Level.OVERWORLD, null, 10L);
+        QuestStateMachine.TransitionResult repeatedStart =
+                QuestStateMachine.start(progress, villagerId, Level.OVERWORLD, null, 11L);
+        helper.assertFalse(repeatedStart.dirty(), "active quest must reject a repeated start");
+        helper.assertValueEqual(repeatedStart.blockerCode(), "quest_already_active",
+                "repeated-start blocker");
+        helper.assertValueEqual(progress.startedGameTime(), 10L,
+                "repeated start must not reset active progress");
 
         QuestStateMachine.TransitionResult result = QuestStateMachine.fail(progress, 80L, " Provider Lost! ");
         helper.assertValueEqual(result.previousState(), VillagerQuestSavedData.QuestState.ACTIVE, "failure previous state");
@@ -3623,6 +3637,13 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(progress.failureReason(), "provider_lost", "normalized failure reason");
         helper.assertValueEqual(progress.completionCount(), 0, "failure granted a completion");
         helper.assertValueEqual(progress.abandonCount(), 0, "failure counted as abandonment");
+        QuestLifecycleService.LifecycleEvent blockedCompletion =
+                QuestLifecycleService.complete(questId, progress, 81L, false);
+        helper.assertValueEqual(
+                blockedCompletion.type(),
+                QuestLifecycleService.LifecycleEventType.NONE,
+                "blocked completion must not report a terminal lifecycle event");
+        helper.assertValueEqual(blockedCompletion.reason(), "quest_not_active", "blocked completion reason");
 
         CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
         helper.assertValueEqual(
@@ -3686,6 +3707,19 @@ public final class VillagerQuestGameTests {
                 VillagerQuestSavedData.CURRENT_DATA_VERSION);
         helper.assertTrue(preserved.futureVersion(), "future version was not reported");
         helper.assertValueEqual(preserved.data().getString("Marker"), "future", "future readable data was reset");
+        VillagerQuestSavedData futureQuestData =
+                VillagerQuestSavedData.load(future, helper.getLevel().registryAccess());
+        futureQuestData.getOrCreate(UUID.randomUUID(), VillagerRetaliation.id("future_mutation"));
+        CompoundTag futureQuestRoundTrip =
+                futureQuestData.save(new CompoundTag(), helper.getLevel().registryAccess());
+        helper.assertValueEqual(
+                futureQuestRoundTrip.getInt("DataVersion"),
+                VillagerQuestSavedData.CURRENT_DATA_VERSION + 10,
+                "future quest save version must not be downgraded");
+        helper.assertValueEqual(
+                futureQuestRoundTrip.getString("Marker"),
+                "future",
+                "future quest save fields must survive a downgrade load");
 
         VillagerQuestFacts facts = new VillagerQuestFacts();
         CompoundTag savedFacts = facts.save(new CompoundTag(), helper.getLevel().registryAccess());
@@ -3695,6 +3729,20 @@ public final class VillagerQuestGameTests {
         malformed.putInt("DataVersion", VillagerQuestFacts.CURRENT_DATA_VERSION);
         malformed.putString("Entries", "not-a-list");
         VillagerQuestFacts.load(malformed, helper.getLevel().registryAccess());
+        CompoundTag futureFacts = new CompoundTag();
+        futureFacts.putInt("DataVersion", VillagerQuestFacts.CURRENT_DATA_VERSION + 10);
+        futureFacts.putString("Marker", "future_facts");
+        VillagerQuestFacts loadedFutureFacts =
+                VillagerQuestFacts.load(futureFacts, helper.getLevel().registryAccess());
+        loadedFutureFacts.setVariable("world", "runtime_change", "ignored_on_downgrade");
+        CompoundTag futureFactsRoundTrip =
+                loadedFutureFacts.save(new CompoundTag(), helper.getLevel().registryAccess());
+        helper.assertValueEqual(
+                futureFactsRoundTrip.getInt("DataVersion"),
+                VillagerQuestFacts.CURRENT_DATA_VERSION + 10,
+                "future quest facts version must not be downgraded");
+        helper.assertValueEqual(futureFactsRoundTrip.getString("Marker"), "future_facts",
+                "future quest facts fields must survive a downgrade load");
         helper.succeed();
     }
 
@@ -3741,6 +3789,73 @@ public final class VillagerQuestGameTests {
                 "contract_failure", "failed terminal reason");
         helper.assertValueEqual(loaded.get(playerId, VillagerRetaliation.id("terminal_abandoned")).abandonCount(), 1,
                 "abandoned terminal count");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questPersistenceHistoriesAndRecordsAreBounded(GameTestHelper helper) {
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000901");
+        UUID providerId = UUID.fromString("00000000-0000-0000-0000-000000000902");
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        for (int index = 0; index < VillagerQuestSavedData.MAX_COMPLETION_HISTORY + 3; index++) {
+            progress.start(providerId, Level.OVERWORLD, null, index);
+            progress.complete(index + 1L, false);
+        }
+        helper.assertValueEqual(
+                progress.completionHistory().size(),
+                VillagerQuestSavedData.MAX_COMPLETION_HISTORY,
+                "completion history cap");
+
+        progress.start(providerId, Level.OVERWORLD, null, 1000L);
+        for (int index = 0; index < VillagerQuestSavedData.MAX_CHOICE_HISTORY + 3; index++) {
+            progress.recordChoice("scene", "response_" + index, "before", "after", index);
+        }
+        helper.assertValueEqual(
+                progress.choiceHistory().size(),
+                VillagerQuestSavedData.MAX_CHOICE_HISTORY,
+                "choice history cap");
+
+        for (int index = 0; index < VillagerQuestSavedData.MAX_PROVIDER_REBIND_HISTORY + 3; index++) {
+            progress.rebindProvider(
+                    new QuestProviderBinding(
+                            VillagerRetaliation.id("villager"),
+                            UUID.randomUUID(),
+                            "Provider",
+                            null,
+                            1,
+                            Level.OVERWORLD,
+                            null,
+                            "",
+                            Map.of(),
+                            false),
+                    index,
+                    "test_rebind");
+        }
+        helper.assertValueEqual(
+                progress.providerRebindHistory().size(),
+                VillagerQuestSavedData.MAX_PROVIDER_REBIND_HISTORY,
+                "provider rebind history cap");
+        progress.addObjectiveCounter("overflow", Integer.MAX_VALUE);
+        helper.assertValueEqual(
+                progress.addObjectiveCounter("overflow", 1),
+                Integer.MAX_VALUE,
+                "objective counter positive saturation");
+
+        VillagerQuestSavedData bounded = new VillagerQuestSavedData();
+        for (int index = 0; index < VillagerQuestSavedData.MAX_QUEST_RECORDS_PER_PLAYER + 3; index++) {
+            ResourceLocation questId = VillagerRetaliation.id("bounded_terminal_" + index);
+            VillagerQuestSavedData.QuestProgress terminal = bounded.getOrCreate(playerId, questId);
+            terminal.start(providerId, Level.OVERWORLD, null, index);
+            terminal.complete(index + 1L, false);
+        }
+        helper.assertValueEqual(
+                bounded.progress(playerId).size(),
+                VillagerQuestSavedData.MAX_QUEST_RECORDS_PER_PLAYER,
+                "per-player terminal quest record cap");
+        helper.assertValueEqual(
+                bounded.get(playerId, VillagerRetaliation.id("bounded_terminal_0")),
+                null,
+                "oldest terminal quest record should be evicted first");
         helper.succeed();
     }
 
@@ -3829,6 +3944,23 @@ public final class VillagerQuestGameTests {
         facts.setTag(playerKey, tag);
         facts.setVariable(questKey, "stage", "started");
         facts.addCounter(QuestScopeKey.WORLD, "completion:" + questId, 2);
+        facts.addCounter(QuestScopeKey.WORLD, "positive_saturation", Integer.MAX_VALUE);
+        helper.assertValueEqual(
+                facts.addCounter(QuestScopeKey.WORLD, "positive_saturation", 1),
+                Integer.MAX_VALUE,
+                "fact counter positive saturation");
+        facts.addCounter(QuestScopeKey.WORLD, "negative_saturation", Integer.MIN_VALUE);
+        helper.assertValueEqual(
+                facts.addCounter(QuestScopeKey.WORLD, "negative_saturation", -1),
+                Integer.MIN_VALUE,
+                "fact counter negative saturation");
+        facts.addCounter("merge_source", "saturation", 1);
+        facts.addCounter("merge_target", "saturation", Integer.MAX_VALUE);
+        facts.mergeScope("merge_source", "merge_target");
+        helper.assertValueEqual(
+                facts.counter("merge_target", "saturation"),
+                Integer.MAX_VALUE,
+                "merged fact counter saturation");
 
         CompoundTag saved = facts.save(new CompoundTag(), helper.getLevel().registryAccess());
         ListTag entries = saved.getList("Entries", Tag.TAG_COMPOUND);

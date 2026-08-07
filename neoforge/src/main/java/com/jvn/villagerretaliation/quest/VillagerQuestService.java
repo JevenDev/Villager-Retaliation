@@ -7361,6 +7361,8 @@ public final class VillagerQuestService {
             int reputationValue) {
         if (level == null
                 || player == null
+                || villager == null
+                || villager.level() != level
                 || giftedStack == null
                 || giftedStack.isEmpty()
                 || reaction == null
@@ -7368,7 +7370,7 @@ public final class VillagerQuestService {
             return;
         }
 
-        onObjectiveEvent(level, player, QuestObjectiveEvent.gift(giftedStack, reaction));
+        onObjectiveEvent(level, player, QuestObjectiveEvent.gift(villager, giftedStack, reaction));
     }
 
     public static void onTradeCompleted(
