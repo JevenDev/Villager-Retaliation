@@ -179,6 +179,27 @@ public final class PartyService {
         data.changed();
         return PartyResult.success("villagerretaliation.party.settings_updated", party.id(), null);
     }
+
+    public static PartyResult promoteLeader(ServerPlayer leader, UUID playerId) {
+        if (leader == null || playerId == null) {
+            return PartyResult.failure("villagerretaliation.party.error.not_in_party");
+        }
+        PartySavedData data = partyData(leader.serverLevel());
+        PartyRecord party = data.partyForPlayer(leader.getUUID()).orElse(null);
+        if (party == null || !party.leaderId().equals(leader.getUUID())) {
+            return PartyResult.failure("villagerretaliation.party.error.leader_only");
+        }
+        if (!party.playerIds().contains(playerId) || party.leaderId().equals(playerId)) {
+            return PartyResult.failure("villagerretaliation.party.error.player_not_in_party");
+        }
+        if (!party.promoteLeader(playerId)) {
+            return PartyResult.failure("villagerretaliation.party.error.player_not_in_party");
+        }
+        data.changed();
+        PartyVillagerContractService.refreshCommandOwnership(leader.getServer(), party);
+        return PartyResult.success("villagerretaliation.party.leader_promoted", party.id(), null);
+    }
+
     public static PartyResult createParty(ServerPlayer leader) {
         if (leader == null) {
             return PartyResult.failure("villagerretaliation.party.error.not_in_party");
@@ -436,6 +457,53 @@ public final class PartyService {
                 : PartyResult.failure("villagerretaliation.party.error.player_not_in_party");
     }
 
+    public static OwnershipTransferResult transferVillagerOwnership(
+            ServerLevel level,
+            UUID villagerId,
+            UUID targetPlayerId) {
+        if (level == null || villagerId == null || targetPlayerId == null) {
+            return OwnershipTransferResult.failure("Invalid villager ownership transfer.");
+        }
+        PartySavedData data = partyData(level);
+        PartyRecord sourceParty = data.partyForVillager(villagerId).orElse(null);
+        PartyVillagerRecord record = sourceParty == null ? null : sourceParty.villager(villagerId);
+        if (record == null) {
+            return OwnershipTransferResult.failure("The villager is not recruited by a party.");
+        }
+        UUID currentOwnerId = record.recruiterId();
+        PartyRecord targetParty = data.partyForPlayer(targetPlayerId).orElse(null);
+        boolean createdTargetParty = false;
+        if (targetParty == null) {
+            targetParty = data.createParty(targetPlayerId, serverGameTime(level.getServer()));
+            createdTargetParty = true;
+        }
+        if (!sourceParty.id().equals(targetParty.id())
+                && targetParty.villagers().size() >= MAX_VILLAGERS) {
+            if (createdTargetParty) data.removeParty(targetParty.id());
+            return OwnershipTransferResult.failure("The target player's party already has 4 recruited villagers.");
+        }
+        UUID sourcePartyId = sourceParty.id();
+        UUID targetPartyId = targetParty.id();
+        if (sourcePartyId.equals(targetPartyId)) {
+            record.transferRecruiter(targetPlayerId);
+            data.changed();
+            return OwnershipTransferResult.success(currentOwnerId, sourcePartyId, targetPartyId);
+        }
+        PartyVillagerRecord removed = data.removeVillager(sourceParty, villagerId);
+        if (removed == null) {
+            if (createdTargetParty) data.removeParty(targetPartyId);
+            return OwnershipTransferResult.failure("The villager's party record could not be transferred.");
+        }
+        removed.transferRecruiter(targetPlayerId);
+        if (!data.addVillager(targetParty, removed)) {
+            removed.transferRecruiter(currentOwnerId);
+            data.addVillager(sourceParty, removed);
+            if (createdTargetParty) data.removeParty(targetPartyId);
+            return OwnershipTransferResult.failure("The villager's party record could not be transferred.");
+        }
+        return OwnershipTransferResult.success(currentOwnerId, sourcePartyId, targetPartyId);
+    }
+
     static PartyResult addVillager(
             ServerLevel level,
             UUID leaderId,
@@ -518,6 +586,20 @@ public final class PartyService {
 
         static PartyResult failure(String messageKey) {
             return new PartyResult(false, messageKey, null, null);
+        }
+    }
+
+    public record OwnershipTransferResult(
+            boolean success,
+            String error,
+            UUID previousOwnerId,
+            UUID sourcePartyId,
+            UUID targetPartyId) {
+        static OwnershipTransferResult success(UUID previousOwnerId, UUID sourcePartyId, UUID targetPartyId) {
+            return new OwnershipTransferResult(true, "", previousOwnerId, sourcePartyId, targetPartyId);
+        }
+        static OwnershipTransferResult failure(String error) {
+            return new OwnershipTransferResult(false, error, null, null, null);
         }
     }
 

@@ -217,6 +217,36 @@ public final class AssignedStorageSavedData extends SavedData {
         return records.size();
     }
 
+    public int transferAssignmentOwnership(UUID villagerId, UUID newHirerId) {
+        if (villagerId == null || newHirerId == null) {
+            return 0;
+        }
+        List<AssignedContainerRecord> records =
+                new ArrayList<>(this.byVillager.getOrDefault(villagerId, List.of()));
+        int changed = 0;
+        for (AssignedContainerRecord record : records) {
+            if (newHirerId.equals(record.hirerId())) {
+                continue;
+            }
+            put(new AssignedContainerRecord(
+                    record.dimension(),
+                    record.pos(),
+                    record.villagerId(),
+                    newHirerId,
+                    record.purpose(),
+                    record.priority(),
+                    record.validationStatus(),
+                    record.outputFilters(),
+                    record.outputFilterSnapshotKnown()
+            ));
+            changed++;
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public int removeAssignedTo(UUID villagerId, String purpose) {
         String normalizedPurpose = normalizePurpose(purpose);
         List<AssignedContainerRecord> records = new ArrayList<>(this.byVillager.getOrDefault(villagerId, List.of()).stream()

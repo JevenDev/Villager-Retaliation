@@ -146,6 +146,24 @@ public final class VillagerAssignmentStore {
         return snapshot(villager);
     }
 
+    public static VillagerAssignmentSnapshot transferOwner(Villager villager, UUID currentOwner, UUID newOwner) {
+        VillagerAssignmentSnapshot before = snapshot(villager);
+        if (villager == null || currentOwner == null || newOwner == null
+                || !before.ownedBy(currentOwner) || currentOwner.equals(newOwner)) {
+            return before;
+        }
+        CompoundTag tag = villager.getPersistentData().getCompound(ASSIGNMENT_TAG);
+        tag.putUUID(OWNER_TAG, newOwner);
+        tag.putLong(REVISION_TAG, before.revision() + 1L);
+        tag.putInt(SCHEMA_VERSION_TAG, VillagerAssignmentSnapshot.CURRENT_SCHEMA_VERSION);
+        if (villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
+                && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(currentOwner)) {
+            villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, newOwner);
+        }
+        villager.setPersistenceRequired();
+        return snapshot(villager);
+    }
+
     public static VillagerAssignmentSnapshot unassign(Villager villager) {
         VillagerAssignmentSnapshot before = snapshot(villager);
         if (villager == null || before.state() == VillagerAssignmentState.UNASSIGNED) return before;

@@ -50,6 +50,19 @@ public final class HireOverflowClaimService {
         return Optional.of(claim);
     }
 
+    public static boolean transferOwner(ServerLevel level, Villager villager, UUID newOwnerId) {
+        if (newOwnerId == null) {
+            return false;
+        }
+        Claim claim = active(level, villager).orElse(null);
+        if (claim == null || claim.ownerId().equals(newOwnerId)) {
+            return false;
+        }
+        save(villager, new Claim(claim.contractId(), newOwnerId, claim.createdGameTime(),
+                claim.expiresGameTime(), claim.lastReminderDay()));
+        return true;
+    }
+
     public static void markReminded(Villager villager, Claim claim, long day) {
         save(villager, new Claim(claim.contractId(), claim.ownerId(), claim.createdGameTime(),
                 claim.expiresGameTime(), day));

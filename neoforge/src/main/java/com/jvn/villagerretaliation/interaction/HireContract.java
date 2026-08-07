@@ -71,6 +71,7 @@ public final class HireContract {
         return tag.getUUID(CONTRACT_ID);
     }
     public Optional<UUID> owner() { return tag.hasUUID(HIRER) ? Optional.of(tag.getUUID(HIRER)) : Optional.empty(); }
+    public void owner(UUID value) { if (value == null) tag.remove(HIRER); else tag.putUUID(HIRER, value); }
     public long startGameTime() { return tag.getLong(START_GAME_TIME); }
     public void startGameTime(long value) { tag.putLong(START_GAME_TIME, value); }
     public long endGameTime() { return tag.getLong(END_GAME_TIME); }

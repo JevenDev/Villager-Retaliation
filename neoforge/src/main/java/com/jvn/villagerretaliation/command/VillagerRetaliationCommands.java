@@ -22,6 +22,7 @@ import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.duel.PlayerDuelService;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.debug.HiredStressGridService;
+import com.jvn.villagerretaliation.debug.VillagerOwnershipTransferService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
@@ -336,6 +337,14 @@ public final class VillagerRetaliationCommands {
                         .then(argument("player", GameProfileArgument.gameProfile())
                                 .executes(context -> {
                                     PartyActionHandler.removePlayerCommand(
+                                            context.getSource().getPlayerOrException(),
+                                            singleGameProfileId(context, "player"));
+                                    return 1;
+                                })))
+                .then(literal("promote")
+                        .then(argument("player", GameProfileArgument.gameProfile())
+                                .executes(context -> {
+                                    PartyActionHandler.promoteLeaderCommand(
                                             context.getSource().getPlayerOrException(),
                                             singleGameProfileId(context, "player"));
                                     return 1;
@@ -787,6 +796,10 @@ public final class VillagerRetaliationCommands {
     private static LiteralArgumentBuilder<CommandSourceStack> debugCommands() {
         return literal("debug")
                 .then(debugDuelCommand())
+                .then(literal("transfer_villager_ownership")
+                        .then(targetArgument()
+                                .then(argument("player", GameProfileArgument.gameProfile())
+                                        .executes(VillagerRetaliationCommands::debugTransferVillagerOwnership))))
                 .then(literal("raid")
                         .then(literal("win")
                                 .executes(context -> debugFinishRaid(context, true)))
@@ -799,6 +812,34 @@ public final class VillagerRetaliationCommands {
                                                 builderStructureIdSuggestions(context.getSource()),
                                                 builder))
                                         .executes(VillagerRetaliationCommands::placeBuilderMaterialsChests))));
+    }
+
+    private static int debugTransferVillagerOwnership(CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager target = profileTarget(context);
+        if (!(target instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) {
+            source.sendFailure(Component.literal("Target must be a loaded villager."));
+            return 0;
+        }
+        UUID newOwnerId = singleGameProfileId(context, "player");
+        VillagerOwnershipTransferService.TransferResult result =
+                VillagerOwnershipTransferService.transfer(level, villager, newOwnerId);
+        if (!result.success()) {
+            source.sendFailure(Component.literal(result.error()));
+            return 0;
+        }
+        String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        String ownerName = source.getServer().getProfileCache() == null
+                ? newOwnerId.toString()
+                : source.getServer().getProfileCache().get(newOwnerId)
+                        .map(com.mojang.authlib.GameProfile::getName)
+                        .orElse(newOwnerId.toString());
+        source.sendSuccess(() -> Component.literal("Transferred " + result.type().name().toLowerCase(Locale.ROOT)
+                + " ownership of " + villagerName + " to " + ownerName + ", including "
+                + result.transferredStorages() + " assigned storage record(s)"
+                + (result.transferredOverflowClaim() ? " and the active overflow claim." : ".")), true);
+        return 1;
     }
 
     private static int debugFinishRaid(CommandContext<CommandSourceStack> context, boolean raidersWon) {

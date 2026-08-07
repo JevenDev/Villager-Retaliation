@@ -43,7 +43,7 @@ public final class PartyVillagerRecord {
     private static final String TAG_MOVE_TO_HOLDING = "MoveToHolding";
 
     private final UUID villagerId;
-    private final UUID recruiterId;
+    private UUID recruiterId;
     private final UUID contractId;
     private final int recruitmentOrder;
     private PartyCommandMode commandMode;
@@ -108,6 +108,10 @@ public final class PartyVillagerRecord {
 
     public UUID recruiterId() {
         return this.recruiterId;
+    }
+
+    void transferRecruiter(UUID recruiterId) {
+        if (recruiterId != null) this.recruiterId = recruiterId;
     }
 
     public UUID contractId() {
