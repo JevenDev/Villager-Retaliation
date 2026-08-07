@@ -332,6 +332,31 @@ Use `prerequisite_cooldown` (or its `_ticks`, `_seconds`, and `_days` forms) whe
 
 Put every required quest in `availability.prerequisites`. The list is ordered for journal/debug presentation and every entry must be completed. `metadata.parent` remains a singular compatibility and organization field for older content.
 
+Quest module v2 also carries the full runtime rule set used by v1. Put active-state gates, expiration policy, and branch exclusion under `availability`:
+
+```json
+"availability": {
+  "active": {
+    "conditions": [{ "type": "quest_fact", "tag": "my_pack:road_open" }],
+    "hide_when_unmet": false,
+    "pause_progress_when_unmet": true
+  },
+  "expiration": {
+    "after_days": 3,
+    "consume": false,
+    "allow_repickup": true,
+    "notify": true
+  },
+  "branch": {
+    "exclusive_group": "my_pack:route_choice",
+    "exclusive_on": "completed",
+    "blocks_on_completion": ["my_pack:other_route"]
+  }
+}
+```
+
+`complete_when` may mix objective references with condition predicates. Objective UI also accepts `tracker_complete_text` and `tracker_complete_text_key`, and reward memory events retain `memory_scope`. The v1-to-v2 migration tool preserves these rules, stage tracker steps, and objective completion copy.
+
 ```json
 {
 "availability": {

@@ -101,11 +101,26 @@ try {
         id: "bring_book",
         type: "item_check",
         item: "minecraft:book",
-        count: 1
+        count: 1,
+        complete_text: "Book delivered."
       }
     ],
     rules: {
-      repeatable: false
+      repeatable: false,
+      completion_cooldown_ticks: 40,
+      active: {
+        conditions: [],
+        hide_when_unmet: true,
+        pause_progress_when_unmet: false
+      },
+      expiration: {
+        after_ticks: 2400,
+        consume: true
+      },
+      branch: {
+        exclusive_group: "villagerretaliation:tool_route",
+        exclusive_on: "completed"
+      }
     },
     rewards: {
       experience: 5
@@ -114,6 +129,15 @@ try {
       start: ["Bring a book."],
       reminder: ["Still looking for the book."],
       turn_in: ["That book will help."]
+    },
+    tracker: {
+      title: "Tool Migration",
+      steps: {
+        started: {
+          text: "Bring the book.",
+          show_progress: false
+        }
+      }
     }
   });
 
@@ -127,6 +151,13 @@ try {
   const first = run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree"]);
   const second = run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree"]);
   assert(first.stdout === second.stdout, "Migration output is not deterministic.");
+  const migrated = JSON.parse(first.stdout);
+  assert(migrated.availability.completion_cooldown_ticks === 40, "Migration dropped completion cooldown rules.");
+  assert(migrated.availability.active.hide_when_unmet === true, "Migration dropped active-state rules.");
+  assert(migrated.availability.expiration.after_ticks === 2400, "Migration dropped expiration rules.");
+  assert(migrated.availability.branch.exclusive_on === "completed", "Migration dropped branch lock rules.");
+  assert(migrated.stages[0].objectives[0].tracker.complete_text === "Book delivered.", "Migration dropped objective completion text.");
+  assert(migrated.stages[0].ui.tracker_text === "Bring the book.", "Migration dropped stage tracker text.");
 
   const migratedQuest = path.join(workspace, "migrated-quest-v2.json");
   await writeFile(migratedQuest, first.stdout, "utf8");

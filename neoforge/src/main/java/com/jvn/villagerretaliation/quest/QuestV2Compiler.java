@@ -221,9 +221,15 @@ public final class QuestV2Compiler {
         copyIfPresent(availability, rules, "consume_on_abandonment");
         copyIfPresent(availability, rules, "locked_to_villager");
         copyIfPresent(availability, rules, "cross_villager_compatible");
-        if (availability.has("exclusive_group")) {
-            JsonObject branch = new JsonObject();
-            copyIfPresent(availability, branch, "exclusive_group");
+        copyIfPresent(availability, rules, "active");
+        copyIfPresent(availability, rules, "expiration");
+        JsonObject branch = optionalObject(availability.get("branch"));
+        branch = branch == null ? new JsonObject() : branch.deepCopy();
+        copyIfPresent(availability, branch, "exclusive_group");
+        copyIfPresent(availability, branch, "exclusive_on");
+        copyIfPresent(availability, branch, "blocks_on_start");
+        copyIfPresent(availability, branch, "blocks_on_completion");
+        if (branch.size() > 0) {
             rules.add("branch", branch);
         }
         if (rules.size() > 0) {
@@ -281,19 +287,7 @@ public final class QuestV2Compiler {
         }
         canonical.add("objectives", objectiveIds);
 
-        JsonArray completeWhen = new JsonArray();
-        List<String> predicates = stage.completeWhenObjectives().isEmpty()
-                ? stage.objectives().stream()
-                        .filter(objective -> !objective.optional())
-                        .map(QuestV2Resource.Objective::id)
-                        .toList()
-                : stage.completeWhenObjectives();
-        for (String localObjectiveId : predicates) {
-            String canonicalId = canonicalIds.get(localObjectiveId);
-            if (canonicalId != null && !canonicalId.isBlank()) {
-                completeWhen.add(canonicalId);
-            }
-        }
+        JsonArray completeWhen = canonicalCompleteWhen(stage, canonicalIds);
         if (completeWhen.size() > 0) {
             canonical.add("complete_when", completeWhen);
         }
@@ -339,6 +333,73 @@ public final class QuestV2Compiler {
         return canonical;
     }
 
+    private static JsonArray canonicalCompleteWhen(
+            QuestV2Resource.Stage stage,
+            Map<String, String> canonicalIds) {
+        JsonElement authored = stage.data().get("complete_when");
+        JsonArray result = new JsonArray();
+        if (authored == null || authored.isJsonNull()) {
+            stage.objectives().stream()
+                    .filter(objective -> !objective.optional())
+                    .map(QuestV2Resource.Objective::id)
+                    .map(canonicalIds::get)
+                    .filter(Objects::nonNull)
+                    .filter(id -> !id.isBlank())
+                    .forEach(result::add);
+            return result;
+        }
+        if (authored.isJsonArray()) {
+            for (JsonElement predicate : authored.getAsJsonArray()) {
+                result.add(canonicalPredicate(predicate, canonicalIds));
+            }
+        } else {
+            result.add(canonicalPredicate(authored, canonicalIds));
+        }
+        return result;
+    }
+
+    private static JsonElement canonicalPredicate(
+            JsonElement predicate,
+            Map<String, String> canonicalIds) {
+        if (predicate == null || predicate.isJsonNull()) {
+            return com.google.gson.JsonNull.INSTANCE;
+        }
+        if (predicate.isJsonPrimitive()) {
+            String id = predicate.getAsString().trim();
+            return new com.google.gson.JsonPrimitive(canonicalIds.getOrDefault(id, id));
+        }
+        if (!predicate.isJsonObject()) {
+            return predicate.deepCopy();
+        }
+        JsonObject object = predicate.getAsJsonObject().deepCopy();
+        rewriteObjectiveReference(object, "objective", canonicalIds);
+        rewriteObjectiveReference(object, "objective_id", canonicalIds);
+        String type = DatapackJsonReader.readString(object, "type");
+        if ("objective".equals(type) || "objectives".equals(type)) {
+            rewriteObjectiveReference(object, "id", canonicalIds);
+        }
+        JsonElement objectives = object.get("objectives");
+        if (objectives != null) {
+            JsonArray rewritten = new JsonArray();
+            for (JsonElement child : stringArray(objectives)) {
+                String id = child.getAsString();
+                rewritten.add(canonicalIds.getOrDefault(id, id));
+            }
+            object.add("objectives", rewritten);
+        }
+        return object;
+    }
+
+    private static void rewriteObjectiveReference(
+            JsonObject object,
+            String key,
+            Map<String, String> canonicalIds) {
+        String id = DatapackJsonReader.readString(object, key);
+        if (!id.isBlank()) {
+            object.addProperty(key, canonicalIds.getOrDefault(id, id));
+        }
+    }
+
     private static void addChoiceRuntimeDefault(JsonObject canonical, QuestV2Resource.Objective objective) {
         if (!"choice".equals(objective.type()) || hasFactDefinition(canonical)) {
             return;
@@ -377,6 +438,11 @@ public final class QuestV2Compiler {
         JsonObject objectiveUi = optionalObject(canonical.get("ui"));
         putStringIfBlank(tracker, "text", uiString(objectiveUi, "tracker_text"));
         putStringIfBlank(tracker, "text_key", uiString(objectiveUi, "tracker_text_key"));
+        putStringIfBlank(tracker, "complete_text", uiString(objectiveUi, "tracker_complete_text"));
+        putStringIfBlank(tracker, "complete_text_key", uiString(objectiveUi, "tracker_complete_text_key"));
+        copyIfMissing(objectiveUi, tracker, "show_progress");
+        copyIfMissing(objectiveUi, tracker, "progress");
+        copyIfMissing(objectiveUi, tracker, "metadata");
         if (tracker.size() > 0) {
             canonical.add("tracker", tracker);
         }
@@ -601,6 +667,7 @@ public final class QuestV2Compiler {
         putInt(canonical, "gossip_reputation", DatapackJsonReader.readInt(data, "gossip_reputation", 0));
         copyIfPresent(data, canonical, "loot_table");
         copyIfPresent(data, canonical, "memory_event");
+        copyIfPresent(data, canonical, "memory_scope");
 
         JsonObject wrapper = new JsonObject();
         wrapper.add("actions", jsonObjectArray(rewards.actions()));
@@ -947,6 +1014,12 @@ public final class QuestV2Compiler {
     private static void copyIfPresent(JsonObject source, JsonObject target, String sourceKey, String targetKey) {
         if (source != null && source.has(sourceKey)) {
             target.add(targetKey, source.get(sourceKey).deepCopy());
+        }
+    }
+
+    private static void copyIfMissing(JsonObject source, JsonObject target, String key) {
+        if (source != null && source.has(key) && !target.has(key)) {
+            target.add(key, source.get(key).deepCopy());
         }
     }
 
