@@ -18,6 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -464,6 +465,7 @@ public final class QuestObjectiveRegistry {
                 QuestDefinition.Objective objective,
                 QuestObjectiveEvent event) {
             if (event.villager() == null
+                    || !matchesQuestProvider(context, event.villager())
                     || event.offer() == null
                     || !matchesDimensionAndLocation(context, event.villager().blockPosition(), objective)) {
                 return false;
@@ -489,7 +491,9 @@ public final class QuestObjectiveRegistry {
                 QuestDefinition.Objective objective,
                 QuestObjectiveEvent event) {
             ItemStack stack = event.itemStack();
-            if (stack.isEmpty() || event.giftReaction() == null) {
+            if (stack.isEmpty()
+                    || event.giftReaction() == null
+                    || !matchesQuestProvider(context, event.villager())) {
                 return false;
             }
             if (!objective.giftReactions().isEmpty()
@@ -498,6 +502,21 @@ public final class QuestObjectiveRegistry {
             }
             return objective.item() == null || context.matchesItem(objective, stack);
         }
+    }
+
+    private static boolean matchesQuestProvider(
+            QuestObjectiveEvaluationContext context,
+            AbstractVillager villager) {
+        if (context == null
+                || context.definition() == null
+                || !context.definition().rules().lockedToVillager()
+                || context.definition().rules().crossVillagerCompatible()) {
+            return true;
+        }
+        return villager != null
+                && context.progress() != null
+                && (context.progress().startedVillagerId() == null
+                        || villager.getUUID().equals(context.progress().startedVillagerId()));
     }
 
     private static final class ReputationObjectiveType implements QuestObjectiveType<Void> {

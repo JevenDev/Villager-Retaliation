@@ -45,8 +45,15 @@ public record QuestObjectiveEvent(
     public static QuestObjectiveEvent gift(
             ItemStack stack,
             VillagerGiftPreferences.GiftReaction reaction) {
+        return gift(null, stack, reaction);
+    }
+
+    public static QuestObjectiveEvent gift(
+            AbstractVillager villager,
+            ItemStack stack,
+            VillagerGiftPreferences.GiftReaction reaction) {
         return new QuestObjectiveEvent(QuestObjectiveEventKind.GIFT, null, null, null, null,
-                stack, reaction, null, null, null);
+                stack, reaction, villager, null, null);
     }
 
     public static QuestObjectiveEvent trade(AbstractVillager villager, MerchantOffer offer) {

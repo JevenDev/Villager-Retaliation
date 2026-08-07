@@ -31,6 +31,7 @@ public class VillagerQuestFacts extends SavedData {
     private static final String TAG_VALUE = "Value";
 
     private final Map<String, FactBucket> factsByScope = new HashMap<>();
+    private CompoundTag futureVersionData;
 
     public static VillagerQuestFacts get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -43,10 +44,13 @@ public class VillagerQuestFacts extends SavedData {
         QuestSaveMigrations.MigrationResult migration = QuestSaveMigrations.migrate(tag, CURRENT_DATA_VERSION);
         tag = migration.data();
         if (migration.futureVersion()) {
-            LOGGER.warn("Quest facts DataVersion {} is newer than supported version {}; preserving readable fields",
+            LOGGER.warn("Quest facts DataVersion {} is newer than supported version {}; preserving the raw save unchanged, so runtime mutations will not be persisted",
                     migration.sourceVersion(), CURRENT_DATA_VERSION);
         }
         VillagerQuestFacts data = new VillagerQuestFacts();
+        if (migration.futureVersion()) {
+            data.futureVersionData = tag.copy();
+        }
         ListTag entriesTag = tag.getList(TAG_ENTRIES, Tag.TAG_COMPOUND);
         for (Tag rawEntry : entriesTag) {
             if (!(rawEntry instanceof CompoundTag entryTag) || !entryTag.contains(TAG_SCOPE, Tag.TAG_STRING)) {
@@ -66,6 +70,9 @@ public class VillagerQuestFacts extends SavedData {
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+        if (this.futureVersionData != null) {
+            return this.futureVersionData.copy();
+        }
         tag.putInt(QuestSaveMigrations.DATA_VERSION_TAG, CURRENT_DATA_VERSION);
         ListTag entriesTag = new ListTag();
         for (Map.Entry<String, FactBucket> entry : this.factsByScope.entrySet()) {
@@ -164,7 +171,7 @@ public class VillagerQuestFacts extends SavedData {
             return counter(scopeKey, key);
         }
         FactBucket bucket = bucket(scopeKey);
-        int next = bucket.counters.getOrDefault(key, 0) + amount;
+        int next = saturatingAdd(bucket.counters.getOrDefault(key, 0), amount);
         bucket.counters.put(key, next);
         setDirty();
         return next;
@@ -233,7 +240,7 @@ public class VillagerQuestFacts extends SavedData {
 
         int countersMerged = 0;
         for (Map.Entry<String, Integer> entry : source.counters.entrySet()) {
-            target.counters.merge(entry.getKey(), entry.getValue(), Integer::sum);
+            target.counters.merge(entry.getKey(), entry.getValue(), VillagerQuestFacts::saturatingAdd);
             countersMerged++;
         }
 
@@ -254,6 +261,14 @@ public class VillagerQuestFacts extends SavedData {
 
     public static String normalizeKey(String key) {
         return key == null ? "" : key.trim();
+    }
+
+    private static int saturatingAdd(int left, int right) {
+        long sum = (long) left + right;
+        if (sum > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return sum < Integer.MIN_VALUE ? Integer.MIN_VALUE : (int) sum;
     }
 
     public record ScopeMergeResult(

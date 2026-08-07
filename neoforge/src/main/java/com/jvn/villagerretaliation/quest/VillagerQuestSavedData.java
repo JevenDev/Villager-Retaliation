@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.jvn.villagerretaliation.util.NbtDataUtil;
 import com.jvn.villagerretaliation.util.WorldLocation;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,6 +32,10 @@ import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
     public static final int CURRENT_DATA_VERSION = 3;
+    public static final int MAX_QUEST_RECORDS_PER_PLAYER = 1024;
+    public static final int MAX_CHOICE_HISTORY = 256;
+    public static final int MAX_COMPLETION_HISTORY = 128;
+    public static final int MAX_PROVIDER_REBIND_HISTORY = 64;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "villagerretaliation_quests";
     private static final String TAG_ENTRIES = "Entries";
@@ -86,6 +91,7 @@ public class VillagerQuestSavedData extends SavedData {
 
     private final Map<UUID, Map<ResourceLocation, QuestProgress>> entries = new HashMap<>();
     private final Map<UUID, List<ResourceLocation>> trackedQuests = new HashMap<>();
+    private CompoundTag futureVersionData;
 
     public static VillagerQuestSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -98,10 +104,13 @@ public class VillagerQuestSavedData extends SavedData {
         QuestSaveMigrations.MigrationResult migration = QuestSaveMigrations.migrate(tag, CURRENT_DATA_VERSION);
         tag = migration.data();
         if (migration.futureVersion()) {
-            LOGGER.warn("Quest save DataVersion {} is newer than supported version {}; preserving readable fields",
+            LOGGER.warn("Quest save DataVersion {} is newer than supported version {}; preserving the raw save unchanged, so runtime mutations will not be persisted",
                     migration.sourceVersion(), CURRENT_DATA_VERSION);
         }
         VillagerQuestSavedData data = new VillagerQuestSavedData();
+        if (migration.futureVersion()) {
+            data.futureVersionData = tag.copy();
+        }
         ListTag entriesTag = tag.getList(TAG_ENTRIES, Tag.TAG_COMPOUND);
         for (Tag rawEntry : entriesTag) {
             if (!(rawEntry instanceof CompoundTag entryTag)
@@ -132,11 +141,21 @@ public class VillagerQuestSavedData extends SavedData {
                 data.trackQuest(entryTag.getUUID(TAG_PLAYER), questId, false, false);
             }
         }
+        int pruned = 0;
+        for (Map<ResourceLocation, QuestProgress> playerEntries : data.entries.values()) {
+            pruned += pruneTerminalQuestRecords(playerEntries, MAX_QUEST_RECORDS_PER_PLAYER);
+        }
+        if (pruned > 0 && data.futureVersionData == null) {
+            data.setDirty();
+        }
         return data;
     }
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+        if (this.futureVersionData != null) {
+            return this.futureVersionData.copy();
+        }
         tag.putInt(QuestSaveMigrations.DATA_VERSION_TAG, CURRENT_DATA_VERSION);
         ListTag entriesTag = new ListTag();
         for (Map.Entry<UUID, Map<ResourceLocation, QuestProgress>> playerEntry : this.entries.entrySet()) {
@@ -167,8 +186,40 @@ public class VillagerQuestSavedData extends SavedData {
     }
 
     public QuestProgress getOrCreate(UUID playerId, ResourceLocation questId) {
-        return this.entries.computeIfAbsent(playerId, ignored -> new HashMap<>())
-                .computeIfAbsent(questId, ignored -> new QuestProgress());
+        Map<ResourceLocation, QuestProgress> playerEntries =
+                this.entries.computeIfAbsent(playerId, ignored -> new HashMap<>());
+        if (!playerEntries.containsKey(questId) && playerEntries.size() >= MAX_QUEST_RECORDS_PER_PLAYER) {
+            if (pruneTerminalQuestRecords(playerEntries, MAX_QUEST_RECORDS_PER_PLAYER - 1) > 0) {
+                setDirty();
+            }
+        }
+        return playerEntries.computeIfAbsent(questId, ignored -> new QuestProgress());
+    }
+
+    private static int pruneTerminalQuestRecords(
+            Map<ResourceLocation, QuestProgress> playerEntries,
+            int targetSize) {
+        if (playerEntries == null || playerEntries.size() <= targetSize) {
+            return 0;
+        }
+        List<Map.Entry<ResourceLocation, QuestProgress>> terminalEntries = playerEntries.entrySet().stream()
+                .filter(entry -> entry.getValue() != null && entry.getValue().terminal())
+                .sorted(Comparator
+                        .comparingLong((Map.Entry<ResourceLocation, QuestProgress> entry) ->
+                                entry.getValue().lastActivityGameTime())
+                        .thenComparing(entry -> entry.getKey().toString()))
+                .toList();
+        int requested = playerEntries.size() - Math.max(0, targetSize);
+        int removed = 0;
+        for (Map.Entry<ResourceLocation, QuestProgress> entry : terminalEntries) {
+            if (removed >= requested) {
+                break;
+            }
+            if (playerEntries.remove(entry.getKey(), entry.getValue())) {
+                removed++;
+            }
+        }
+        return removed;
     }
 
     public QuestProgress remove(UUID playerId, ResourceLocation questId) {
@@ -583,9 +634,9 @@ public class VillagerQuestSavedData extends SavedData {
             progress.issuerProfession = tag.getString(TAG_ISSUER_PROFESSION);
             progress.issuerLevel = tag.getInt(TAG_ISSUER_LEVEL);
             progress.issuerVillageKey = tag.getString(TAG_ISSUER_VILLAGE_KEY);
-            progress.startCount = tag.getInt(TAG_START_COUNT);
-            progress.completionCount = tag.getInt(TAG_COMPLETION_COUNT);
-            progress.abandonCount = tag.getInt(TAG_ABANDON_COUNT);
+            progress.startCount = Math.max(0, tag.getInt(TAG_START_COUNT));
+            progress.completionCount = Math.max(0, tag.getInt(TAG_COMPLETION_COUNT));
+            progress.abandonCount = Math.max(0, tag.getInt(TAG_ABANDON_COUNT));
             progress.consumedReason = tag.getString(TAG_CONSUMED_REASON);
             progress.targetObjectiveId = tag.getString(TAG_TARGET_OBJECTIVE);
             progress.currentStage = tag.getString(TAG_CURRENT_STAGE);
@@ -600,7 +651,7 @@ public class VillagerQuestSavedData extends SavedData {
                     }
                     String objectiveId = counterTag.getString(TAG_OBJECTIVE);
                     if (!objectiveId.isBlank()) {
-                        progress.objectiveCounters.put(objectiveId, counterTag.getInt(TAG_COUNT));
+                        progress.objectiveCounters.put(objectiveId, Math.max(0, counterTag.getInt(TAG_COUNT)));
                     }
                 }
             }
@@ -614,7 +665,8 @@ public class VillagerQuestSavedData extends SavedData {
                 ListTag historyTag = tag.getList(TAG_CHOICE_HISTORY, Tag.TAG_COMPOUND);
                 for (Tag rawChoice : historyTag) {
                     if (rawChoice instanceof CompoundTag choiceTag) {
-                        progress.choiceHistory.add(ChoiceHistoryEntry.load(choiceTag));
+                        addBounded(progress.choiceHistory, ChoiceHistoryEntry.load(choiceTag),
+                                MAX_CHOICE_HISTORY);
                     }
                 }
             }
@@ -622,14 +674,16 @@ public class VillagerQuestSavedData extends SavedData {
                 ListTag historyTag = tag.getList(TAG_COMPLETION_HISTORY, Tag.TAG_COMPOUND);
                 for (Tag rawCompletion : historyTag) {
                     if (rawCompletion instanceof CompoundTag completionTag) {
-                        progress.completionHistory.add(CompletionHistoryEntry.load(completionTag));
+                        addBounded(progress.completionHistory, CompletionHistoryEntry.load(completionTag),
+                                MAX_COMPLETION_HISTORY);
                     }
                 }
             }
             if (tag.contains(TAG_PROVIDER_REBIND_HISTORY, Tag.TAG_LIST)) {
                 for (Tag rawRebind : tag.getList(TAG_PROVIDER_REBIND_HISTORY, Tag.TAG_COMPOUND)) {
                     if (rawRebind instanceof CompoundTag rebindTag) {
-                        progress.providerRebindHistory.add(ProviderRebindHistoryEntry.load(rebindTag));
+                        addBounded(progress.providerRebindHistory, ProviderRebindHistoryEntry.load(rebindTag),
+                                MAX_PROVIDER_REBIND_HISTORY);
                     }
                 }
             }
@@ -646,6 +700,16 @@ public class VillagerQuestSavedData extends SavedData {
                     .ifPresent(id -> progress.targetDimension = ResourceKey.create(Registries.DIMENSION, id));
             progress.targetPos = NbtDataUtil.readBlockPos(tag, TAG_TARGET_POS).orElse(null);
             return progress;
+        }
+
+        private static <T> void addBounded(List<T> history, T entry, int maximum) {
+            if (entry == null || maximum <= 0) {
+                return;
+            }
+            history.add(entry);
+            while (history.size() > maximum) {
+                history.removeFirst();
+            }
         }
 
         private CompoundTag save() {
@@ -753,6 +817,21 @@ public class VillagerQuestSavedData extends SavedData {
 
         public QuestState state() {
             return this.state;
+        }
+
+        private boolean terminal() {
+            return switch (this.state) {
+                case COMPLETED, FAILED, ABANDONED, EXPIRED, CONSUMED -> true;
+                case NOT_STARTED, ACTIVE -> false;
+            };
+        }
+
+        private long lastActivityGameTime() {
+            return Math.max(
+                    Math.max(this.startedGameTime, this.completedGameTime),
+                    Math.max(
+                            Math.max(this.abandonedGameTime, this.expiredGameTime),
+                            this.failedGameTime));
         }
 
         public UUID startedVillagerId() {
@@ -982,7 +1061,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.objectiveCounters.clear();
             this.choiceHistory.clear();
             this.pendingLifecycleEvents.clear();
-            this.startCount++;
+            this.startCount = saturatingIncrement(this.startCount);
         }
 
         private static boolean isDeferredLifecycleEvent(QuestDefinition.TriggerEvent event) {
@@ -1015,7 +1094,7 @@ public class VillagerQuestSavedData extends SavedData {
             if (binding == null || binding.providerId() == null) {
                 throw new IllegalArgumentException("provider binding must have an id");
             }
-            this.providerRebindHistory.add(new ProviderRebindHistoryEntry(
+            addBounded(this.providerRebindHistory, new ProviderRebindHistoryEntry(
                     this.startedVillagerId,
                     binding.providerId(),
                     this.issuerName,
@@ -1025,7 +1104,7 @@ public class VillagerQuestSavedData extends SavedData {
                     this.issuerPos,
                     this.issuerVillageKey,
                     gameTime,
-                    reason));
+                    reason), MAX_PROVIDER_REBIND_HISTORY);
             setIssuer(
                     binding.providerId(),
                     binding.displayName(),
@@ -1071,8 +1150,8 @@ public class VillagerQuestSavedData extends SavedData {
         public void complete(long gameTime, boolean consume) {
             this.state = consume ? QuestState.CONSUMED : QuestState.COMPLETED;
             this.completedGameTime = gameTime;
-            this.completionCount++;
-            this.completionHistory.add(new CompletionHistoryEntry(
+            this.completionCount = saturatingIncrement(this.completionCount);
+            addBounded(this.completionHistory, new CompletionHistoryEntry(
                     this.completionCount,
                     this.startedVillagerId,
                     this.startedGameTime,
@@ -1082,7 +1161,7 @@ public class VillagerQuestSavedData extends SavedData {
                     this.issuerLevel,
                     this.issuerDimension,
                     this.issuerPos,
-                    this.issuerVillageKey));
+                    this.issuerVillageKey), MAX_COMPLETION_HISTORY);
             this.consumedReason = consume ? "completion" : "";
             this.currentStage = "completed";
         }
@@ -1090,7 +1169,7 @@ public class VillagerQuestSavedData extends SavedData {
         public void abandon(long gameTime, boolean consume) {
             this.state = consume ? QuestState.CONSUMED : QuestState.ABANDONED;
             this.abandonedGameTime = gameTime;
-            this.abandonCount++;
+            this.abandonCount = saturatingIncrement(this.abandonCount);
             this.visitedTarget = false;
             this.hasProof = false;
             this.targetDimension = null;
@@ -1191,7 +1270,8 @@ public class VillagerQuestSavedData extends SavedData {
             if (objectiveId == null || objectiveId.isBlank() || amount == 0) {
                 return objectiveCounter(objectiveId);
             }
-            int next = Math.max(0, this.objectiveCounters.getOrDefault(objectiveId, 0) + amount);
+            long sum = (long) this.objectiveCounters.getOrDefault(objectiveId, 0) + amount;
+            int next = (int) Math.max(0L, Math.min(Integer.MAX_VALUE, sum));
             this.objectiveCounters.put(objectiveId, next);
             return next;
         }
@@ -1240,8 +1320,12 @@ public class VillagerQuestSavedData extends SavedData {
                     priorStage,
                     nextStage,
                     gameTime);
-            this.choiceHistory.add(entry);
+            addBounded(this.choiceHistory, entry, MAX_CHOICE_HISTORY);
             return entry;
+        }
+
+        private static int saturatingIncrement(int value) {
+            return value == Integer.MAX_VALUE ? Integer.MAX_VALUE : value + 1;
         }
     }
 
