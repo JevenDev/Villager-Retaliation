@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveDebugState;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEvaluationContext;
@@ -152,7 +153,33 @@ public final class BuiltInQuestContentGameTests {
         assertStagesWork(helper, definition, compiled);
         assertDialogueWorks(helper, server, definition);
         assertRepeatabilityContract(helper, definition);
+        assertPacingContracts(helper, definition);
         helper.succeed();
+    }
+
+    private static void assertPacingContracts(GameTestHelper helper, QuestDefinition definition) {
+        if (definition.id().equals(VillagerRetaliation.id("first_fire"))) {
+            QuestDefinition.Stage entry = definition.stages().get(definition.entryStage());
+            helper.assertValueEqual(entry.objectives().size(), 4, "Kindling discloses its full supply list");
+            helper.assertValueEqual(entry.next(), "return", "Kindling has no second supply-list stage");
+            VillagerQuestSavedData.QuestProgress oldProgress = new VillagerQuestSavedData.QuestProgress();
+            oldProgress.setCurrentStage("fill_pots");
+            helper.assertTrue(VillagerQuestService.migrateRetiredHearthboundStage(definition, oldProgress),
+                    "Kindling migrates the retired fill_pots stage");
+        }
+        if (definition.id().equals(VillagerRetaliation.id("shared_table"))) {
+            QuestDefinition.Stage entry = definition.stages().get(definition.entryStage());
+            helper.assertValueEqual(entry.objectives().size(), 4, "Supper discloses its full ingredient list");
+            helper.assertValueEqual(entry.next(), "return", "Supper has no second ingredient-list stage");
+            helper.assertValueEqual(
+                    definition.rules().prerequisiteCooldownTicks(),
+                    24_000L,
+                    "Supper waits one Minecraft day after Kindling");
+            VillagerQuestSavedData.QuestProgress oldProgress = new VillagerQuestSavedData.QuestProgress();
+            oldProgress.setCurrentStage("sweeten");
+            helper.assertTrue(VillagerQuestService.migrateRetiredHearthboundStage(definition, oldProgress),
+                    "Supper migrates the retired sweeten stage");
+        }
     }
 
     private static void assertParentResolves(GameTestHelper helper, QuestDefinition definition) {

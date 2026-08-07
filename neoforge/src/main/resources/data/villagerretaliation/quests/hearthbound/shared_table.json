@@ -33,6 +33,7 @@
     "consume_on_completion": true,
     "cross_villager_compatible": false,
     "locked_to_villager": true,
+    "prerequisite_cooldown_days": 1,
     "max_completions": 1,
     "max_starts": 0,
     "repeatable": false
@@ -65,118 +66,7 @@
             "show_progress": true,
             "progress": 0.65
           }
-        }
-      ],
-      "complete_when": [
-        "bring_bread",
-        "bring_baked_potatoes"
-      ],
-      "next": "sweeten",
-      "dialogue": {
-        "offer": {
-          "label": "Supper for Everyone",
-          "request": "question",
-          "order": -23,
-          "show_for_babies": false,
-          "lines": [
-            "The hearth worked. Now people are pretending they only stop by for the smoke.",
-            "Help me make it a table instead of a novelty. Bread, potatoes, and something sweet enough to end a hard day without a speech."
-          ],
-          "responses": [
-            {
-              "id": "accept",
-              "label": "I will help stock the table.",
-              "scene": "start_quest"
-            },
-            {
-              "id": "decline",
-              "label": "Not today.",
-              "scene": "decline"
-            }
-          ]
         },
-        "reminder": {
-          "label": "About Supper for Everyone",
-          "request": "question",
-          "order": -23,
-          "show_for_babies": false,
-          "lines": [
-            "A shared table needs food that holds. Bread and baked potatoes first."
-          ],
-          "responses": [
-            {
-              "id": "details",
-              "label": "Repeat the first list.",
-              "scene": "reminder_details"
-            },
-            {
-              "id": "leave",
-              "label": "I will bring it.",
-              "scene": "leave"
-            }
-          ]
-        }
-      },
-      "scenes": [
-        {
-          "id": "start_quest",
-          "actions": [
-            {
-              "type": "quest",
-              "action": "start",
-              "lines": {
-                "already_completed": [
-                  "The shared table is already set."
-                ],
-                "started": [
-                  "Bring 12 bread and 12 baked potatoes first. We are building a habit, not a feast."
-                ],
-                "unavailable": [
-                  "The table is not ready to ask for more help right now."
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "id": "reminder_details",
-          "actions": [
-            {
-              "type": "quest",
-              "action": "remind",
-              "lines": {
-                "reminder": [
-                  "Bring 12 bread and 12 baked potatoes for the shared table."
-                ],
-                "unavailable": [
-                  "The supper table is not ready for that work right now."
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "id": "decline",
-          "lines": [
-            "Another day, then. Good habits are patient until they are ignored too long."
-          ]
-        },
-        {
-          "id": "leave",
-          "lines": [
-            "Food that keeps is food that forgives bad timing."
-          ]
-        }
-      ],
-      "ui": {
-        "tracker_text": "Bring 12 bread and 12 baked potatoes.",
-        "show_progress": true,
-        "progress": 0.65
-      }
-    },
-    {
-      "id": "sweeten",
-      "objectives": [
         {
           "id": "bring_cookies",
           "type": "item_check",
@@ -204,23 +94,47 @@
         }
       ],
       "complete_when": [
+        "bring_bread",
+        "bring_baked_potatoes",
         "bring_cookies",
         "bring_milk"
       ],
       "next": "return",
       "dialogue": {
+        "offer": {
+          "label": "Supper for Everyone",
+          "request": "question",
+          "order": -23,
+          "show_for_babies": false,
+          "lines": [
+            "The hearth worked. Now people are pretending they only stop by for the smoke.",
+            "Help me make it a table instead of a novelty. Bring 12 bread, 12 baked potatoes, 8 cookies, and a milk bucket. That is the whole supper list."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I will help stock the table.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not today.",
+              "scene": "decline"
+            }
+          ]
+        },
         "reminder": {
           "label": "About Supper for Everyone",
           "request": "question",
           "order": -23,
           "show_for_babies": false,
           "lines": [
-            "The table has weight now. Bring cookies and a milk bucket, and it may start to feel like people are expected back."
+            "The shared table still needs bread, baked potatoes, cookies, and a milk bucket. The supper list will not change."
           ],
           "responses": [
             {
               "id": "details",
-              "label": "Repeat the sweet list.",
+              "label": "Repeat the supper list.",
               "scene": "reminder_details"
             },
             {
@@ -233,6 +147,26 @@
       },
       "scenes": [
         {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "already_completed": [
+                  "The shared table is already set."
+                ],
+                "started": [
+                  "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket. That is the complete list for this supper."
+                ],
+                "unavailable": [
+                  "The table is not ready to ask for more help right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
           "id": "reminder_details",
           "actions": [
             {
@@ -240,24 +174,30 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Bring 8 cookies and carry 1 milk bucket for the shared table."
+                  "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket for the shared table."
                 ],
                 "unavailable": [
-                  "The sweets can wait until the bread and potatoes are ready."
+                  "The supper table is not ready for that work right now."
                 ]
               }
             }
           ]
         },
         {
+          "id": "decline",
+          "lines": [
+            "Another day, then. Good habits are patient until they are ignored too long."
+          ]
+        },
+        {
           "id": "leave",
           "lines": [
-            "Small kindnesses are still supplies."
+            "Food that keeps is food that forgives bad timing."
           ]
         }
       ],
       "ui": {
-        "tracker_text": "Bring 8 cookies and carry 1 milk bucket.",
+        "tracker_text": "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket.",
         "show_progress": true,
         "progress": 0.9
       }

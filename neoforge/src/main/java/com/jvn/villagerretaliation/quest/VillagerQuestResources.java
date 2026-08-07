@@ -1169,6 +1169,7 @@ public final class VillagerQuestResources {
                 QuestDefinition.CompletionScope.bySerializedName(
                         DatapackJsonReader.readString(rules, "completion_scope", "scope")),
                 DatapackJsonReader.readDurationTicks(rules, "completion_cooldown", 0L),
+                DatapackJsonReader.readDurationTicks(rules, "prerequisite_cooldown", 0L),
                 QuestDefinition.AbandonmentMode.bySerializedName(
                         DatapackJsonReader.readString(rules, "abandonment")),
                 DatapackJsonReader.readDurationTicks(rules, "abandonment_cooldown", 0L),

@@ -127,6 +127,7 @@ Beta.13 is the Hired Help and Village Life update. It adds complete worker logis
 
 ### Fixed
 
+- Fixed the Hearthbound feast request changing ingredient lists in quick succession; each quest now shows its full supply list up front, and follow-up quests can use a prerequisite cooldown before appearing.
 - Fixed beta.12 skill-trade registration adding duplicate villager or wandering-trader offers when registration ran more than once.
 - Fixed beta.12 skill-adjusted merchant XP losing or desynchronizing fractional carry after trades and offer refreshes, and fixed the merchant-screen preview drifting from the server award.
 - Fixed the beta.12 interaction and gift screens double-firing into vanilla interaction or trading paths and sizing the gift inventory incorrectly at GUI scale 4.
