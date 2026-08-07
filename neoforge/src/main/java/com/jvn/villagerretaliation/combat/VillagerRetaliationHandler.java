@@ -111,6 +111,7 @@ public final class VillagerRetaliationHandler {
     }
 
     public static void releaseTemporaryWeaponForInventory(Villager villager) {
+        VillagerWeaponDrawService.sheathe(villager);
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
         VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
@@ -316,6 +317,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
         ServerLevel serverLevel = (ServerLevel) villager.level();
+        VillagerWeaponDrawService.tick(villager);
         if (villager.getTarget() instanceof LivingEntity target
                 && VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)) {
             clearAnger(villager);
@@ -1523,6 +1525,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void suspendCombatForOpenInventory(Villager villager) {
+        VillagerWeaponDrawService.sheathe(villager);
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         VillagerArmorerCombatTactics.resetState(villager);
         VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
@@ -1613,7 +1616,8 @@ public final class VillagerRetaliationHandler {
 
     private static void returnBorrowedCombatWeaponIfActive(Villager villager) {
         if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
-                && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
+                && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)
+                && !VillagerWeaponDrawService.isDrawn(villager)) {
             VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         }
     }

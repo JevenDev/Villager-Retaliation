@@ -59,6 +59,7 @@ public final class ForcedDialogueResources {
             "reputation", "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
             "loot_table", "loot_tables", "target_entity_type", "target_entity_types", "target_entities",
             "cooldown_ticks", "cooldown_seconds", "cooldown_days",
+            "draw_weapon", "draw_weapon_duration_ticks", "draw_weapon_duration_seconds", "draw_weapon_duration_days",
             "min_recent_container_thefts", "max_recent_container_thefts", "min_recent_retaliations", "max_recent_retaliations",
             "options", "leave_option", "leave_options");
     private static final Set<String> ENTRY_KEYS = ROOT_KEYS;
@@ -311,6 +312,7 @@ public final class ForcedDialogueResources {
                 VillagerEquipmentCondition.read(entry, "witness"),
                 VillagerPlayerItemCondition.read(entry),
                 VillagerReputationCondition.read(entry),
+                readDrawWeaponTicks(entry),
                 options,
                 leaveOption,
                 leaveOptions
@@ -319,6 +321,17 @@ public final class ForcedDialogueResources {
 
     private static long defaultCooldownTicks(ForcedDialogueTrigger trigger) {
         return trigger == ForcedDialogueTrigger.CONTAINER_THEFT ? 20L * 30L : 0L;
+    }
+
+    private static int readDrawWeaponTicks(JsonObject entry) {
+        if (!readBoolean(entry, "draw_weapon")) {
+            return 0;
+        }
+        long duration = DatapackJsonReader.readDurationTicks(
+                entry,
+                "draw_weapon_duration",
+                com.jvn.villagerretaliation.combat.VillagerWeaponDrawService.DEFAULT_DRAW_TICKS);
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(1L, duration));
     }
 
     private static ForcedDialogueOutput readOutput(JsonObject entry) {
@@ -1059,6 +1072,7 @@ public final class ForcedDialogueResources {
             VillagerEquipmentCondition witnessEquipmentCondition,
             VillagerPlayerItemCondition playerItemCondition,
             VillagerReputationCondition reputationCondition,
+            int drawWeaponTicks,
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
             List<ForcedDialogueOption> leaveOptions) {

@@ -91,6 +91,11 @@ public final class VillagerActionRegistry {
                     capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN,
                             ActionCapability.PROVIDER_LIVE, ActionCapability.PROVIDER_SNAPSHOT)),
             register(
+                    "draw_weapon",
+                    VillagerActionDefinition.Kind.DRAW_WEAPON,
+                    aliases("arm", "ready_weapon"),
+                    capabilities(ActionCapability.PROVIDER_LIVE)),
+            register(
                     "start_scene",
                     VillagerActionDefinition.Kind.START_SCENE,
                     aliases("scene", "scene_start"),
