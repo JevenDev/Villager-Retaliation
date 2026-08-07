@@ -11,8 +11,19 @@ public record QuestTrackerRequestPayload(String questId, Action action) implemen
             VillagerPayloads.codec(QuestTrackerRequestPayload::encode, QuestTrackerRequestPayload::decode);
 
     public QuestTrackerRequestPayload {
-        questId = questId == null ? "" : questId;
+        questId = boundedQuestId(questId);
         action = action == null ? Action.TOGGLE : action;
+    }
+
+    private static String boundedQuestId(String value) {
+        if (value == null || value.length() <= 128) {
+            return value == null ? "" : value;
+        }
+        int end = 128;
+        if (Character.isHighSurrogate(value.charAt(end - 1)) && Character.isLowSurrogate(value.charAt(end))) {
+            end--;
+        }
+        return value.substring(0, end);
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, QuestTrackerRequestPayload payload) {

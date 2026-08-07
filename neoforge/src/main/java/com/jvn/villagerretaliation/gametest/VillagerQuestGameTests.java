@@ -1189,6 +1189,46 @@ public final class VillagerQuestGameTests {
                 QuestTrackerSyncPayload.MAX_SYNC_ENTRIES,
                 "tracker sync payload did not cap entries");
 
+        String oversized = "x".repeat(400);
+        QuestTrackerSyncPayload.Entry boundedEntry = new QuestTrackerSyncPayload.Entry(
+                oversized,
+                oversized,
+                oversized,
+                oversized,
+                oversized,
+                Float.NaN,
+                true,
+                oversized,
+                oversized,
+                oversized,
+                oversized,
+                List.of(new QuestTrackerSyncPayload.QuestItem(oversized, oversized, 1)),
+                List.of(new QuestTrackerSyncPayload.RewardPreview(oversized, oversized, 1)),
+                List.of(new QuestTrackerSyncPayload.Prerequisite(oversized, oversized, false)),
+                List.of(new QuestTrackerSyncPayload.ObjectiveStep(oversized, false)),
+                false,
+                false);
+        helper.assertTrue(
+                boundedEntry.questId().length() <= 128
+                        && boundedEntry.title().length() <= 128
+                        && boundedEntry.objective().length() <= 256
+                        && boundedEntry.description().length() <= 256
+                        && boundedEntry.metadata().length() <= 256
+                        && boundedEntry.state().length() <= 32
+                        && boundedEntry.status().length() <= 96
+                        && boundedEntry.issuer().length() <= 160
+                        && boundedEntry.issuerLocation().length() <= 192
+                        && boundedEntry.questItems().getFirst().label().length() <= 128
+                        && boundedEntry.rewardPreviews().getFirst().label().length() <= 160
+                        && boundedEntry.prerequisites().getFirst().label().length() <= 160
+                        && boundedEntry.objectiveSteps().getFirst().label().length() <= 256,
+                "tracker strings must fit their wire codec bounds");
+        helper.assertValueEqual(boundedEntry.progress(), 0.0F, "non-finite tracker progress must normalize");
+        helper.assertValueEqual(
+                new QuestTrackerRequestPayload(oversized, QuestTrackerRequestPayload.Action.TRACK).questId().length(),
+                128,
+                "tracker request quest id must fit its wire codec bound");
+
         helper.succeed();
     }
 

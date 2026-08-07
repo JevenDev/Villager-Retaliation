@@ -16,6 +16,18 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
     public static final int MAX_REWARD_PREVIEWS = 8;
     public static final int MAX_PREREQUISITES = 8;
     public static final int MAX_OBJECTIVE_STEPS = 24;
+    private static final int MAX_QUEST_ID_LENGTH = 128;
+    private static final int MAX_TITLE_LENGTH = 128;
+    private static final int MAX_TEXT_LENGTH = 256;
+    private static final int MAX_STATE_LENGTH = 32;
+    private static final int MAX_STATUS_LENGTH = 96;
+    private static final int MAX_ISSUER_LENGTH = 160;
+    private static final int MAX_LOCATION_LENGTH = 192;
+    private static final int MAX_ITEM_ID_LENGTH = 128;
+    private static final int MAX_ITEM_LABEL_LENGTH = 128;
+    private static final int MAX_REWARD_KIND_LENGTH = 32;
+    private static final int MAX_REWARD_LABEL_LENGTH = 160;
+    private static final int MAX_PREREQUISITE_LABEL_LENGTH = 160;
     public static final Type<QuestTrackerSyncPayload> TYPE = VillagerPayloads.type("quest_tracker_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, QuestTrackerSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(QuestTrackerSyncPayload::encode, QuestTrackerSyncPayload::decode);
@@ -34,9 +46,26 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                         .filter(Objects::nonNull)
                         .map(String::trim)
                         .filter(questId -> !questId.isBlank())
+                        .map(questId -> boundedUtf(questId, MAX_QUEST_ID_LENGTH))
                         .distinct()
                         .limit(MAX_TRACKED_QUESTS)
                         .toList());
+    }
+
+    private static String boundedUtf(String value, int maxLength) {
+        if (value == null || maxLength <= 0) {
+            return "";
+        }
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        int end = maxLength;
+        if (Character.isHighSurrogate(value.charAt(end - 1))
+                && end < value.length()
+                && Character.isLowSurrogate(value.charAt(end))) {
+            end--;
+        }
+        return value.substring(0, end);
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, QuestTrackerSyncPayload payload) {
@@ -309,16 +338,16 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
         }
 
         public Entry {
-            questId = questId == null ? "" : questId;
-            title = title == null ? "" : title;
-            objective = objective == null ? "" : objective;
-            description = description == null ? "" : description;
-            metadata = metadata == null ? "" : metadata;
-            progress = Math.max(0.0F, Math.min(1.0F, progress));
-            state = state == null ? "" : state;
-            status = status == null ? "" : status;
-            issuer = issuer == null ? "" : issuer;
-            issuerLocation = issuerLocation == null ? "" : issuerLocation;
+            questId = boundedUtf(questId, MAX_QUEST_ID_LENGTH);
+            title = boundedUtf(title, MAX_TITLE_LENGTH);
+            objective = boundedUtf(objective, MAX_TEXT_LENGTH);
+            description = boundedUtf(description, MAX_TEXT_LENGTH);
+            metadata = boundedUtf(metadata, MAX_TEXT_LENGTH);
+            progress = Float.isFinite(progress) ? Math.max(0.0F, Math.min(1.0F, progress)) : 0.0F;
+            state = boundedUtf(state, MAX_STATE_LENGTH);
+            status = boundedUtf(status, MAX_STATUS_LENGTH);
+            issuer = boundedUtf(issuer, MAX_ISSUER_LENGTH);
+            issuerLocation = boundedUtf(issuerLocation, MAX_LOCATION_LENGTH);
             questItems = questItems == null
                     ? List.of()
                     : List.copyOf(questItems.stream().filter(Objects::nonNull).limit(MAX_QUEST_ITEMS).toList());
@@ -406,21 +435,21 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
 
     public record RewardPreview(String kind, String label, int amount) {
         public RewardPreview {
-            kind = kind == null ? "" : kind;
-            label = label == null ? "" : label;
+            kind = boundedUtf(kind, MAX_REWARD_KIND_LENGTH);
+            label = boundedUtf(label, MAX_REWARD_LABEL_LENGTH);
         }
     }
 
     public record Prerequisite(String questId, String label, boolean met) {
         public Prerequisite {
-            questId = questId == null ? "" : questId;
-            label = label == null ? "" : label;
+            questId = boundedUtf(questId, MAX_QUEST_ID_LENGTH);
+            label = boundedUtf(label, MAX_PREREQUISITE_LABEL_LENGTH);
         }
     }
 
     public record ObjectiveStep(String label, boolean completed) {
         public ObjectiveStep {
-            label = label == null ? "" : label;
+            label = boundedUtf(label, MAX_TEXT_LENGTH);
         }
     }
 
@@ -430,8 +459,8 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
         }
 
         public QuestItem {
-            itemId = itemId == null ? "" : itemId;
-            label = label == null ? "" : label;
+            itemId = boundedUtf(itemId, MAX_ITEM_ID_LENGTH);
+            label = boundedUtf(label, MAX_ITEM_LABEL_LENGTH);
             count = Math.max(1, count);
             currentCount = Math.max(0, currentCount);
         }
