@@ -381,6 +381,34 @@ Quest module v2 also carries the full runtime rule set used by v1. Put active-st
 
 `complete_when` may mix objective references with condition predicates. Objective UI also accepts `tracker_complete_text` and `tracker_complete_text_key`, and reward memory events retain `memory_scope`. The v1-to-v2 migration tool preserves these rules, stage tracker steps, and objective completion copy.
 
+## Definition Revisions And Live-Save Migration
+
+Increment `metadata.revision` whenever an update changes stage or objective identity for a quest that players may already have active. The migration policy is applied once when a save first sees the newer revision and the result is persisted for audit/debug output.
+
+```json
+"metadata": {
+  "revision": 3,
+  "migration": {
+    "active_policy": "keep",
+    "stage_aliases": {
+      "find_ruins": "survey_ruins"
+    },
+    "objective_aliases": {
+      "find_ruins.old_map": "survey_ruins.map_fragment"
+    }
+  }
+}
+```
+
+Policies are:
+
+- `keep`: remap aliases, retain progress, and safely move to the entry stage only if the saved stage no longer exists
+- `reset_stage`: remap aliases, then clear objective and bonus progress owned by the current stage
+- `restart`: keep the quest run and provider binding but clear objective, target, and bonus progress and return to the entry stage
+- `fail`: terminate the active quest with a revision-specific failure code and run the normal failure integrations
+
+Legacy saves without a stored revision adopt the current revision without destructive migration. A datapack rollback never re-applies an older revision over a newer persisted one. For v1 files, put `revision` and `migration` at the quest root; the v1-to-v2 migration tool moves them into `metadata`.
+
 ```json
 {
 "availability": {

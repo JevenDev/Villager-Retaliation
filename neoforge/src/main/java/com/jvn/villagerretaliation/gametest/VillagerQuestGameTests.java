@@ -69,6 +69,7 @@ import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStateMachine;
 import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
+import com.jvn.villagerretaliation.quest.persistence.QuestDefinitionMigration;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
@@ -766,17 +767,41 @@ public final class VillagerQuestGameTests {
                         objective -> objective.id().equals(choiceObjective.id())),
                 "at_least composition ignored its count");
 
+        VillagerQuestSavedData.QuestProgress revisionProgress = new VillagerQuestSavedData.QuestProgress();
+        revisionProgress.start(UUID.randomUUID(), Level.OVERWORLD, BlockPos.ZERO, 1L);
+        revisionProgress.adoptDefinitionRevision(1);
+        revisionProgress.setCurrentStage("retired_stage");
+        revisionProgress.markObjectiveComplete("retired_choice");
+        QuestDefinition revisedQuest = withRevision(
+                stagedQuest,
+                new QuestDefinition.Revision(
+                        2,
+                        QuestDefinition.RevisionPolicy.KEEP,
+                        Map.of("retired_stage", "started"),
+                        Map.of("retired_choice", choiceObjective.id())));
+        QuestDefinitionMigration.Result revisionResult = QuestDefinitionMigration.apply(revisedQuest, revisionProgress, 80L);
+        helper.assertTrue(revisionResult.changed(), "definition revision did not migrate");
+        helper.assertValueEqual(revisionProgress.currentStage(), "started", "definition stage alias");
+        helper.assertTrue(revisionProgress.objectiveComplete(choiceObjective.id()), "definition objective alias");
+        helper.assertValueEqual(revisionProgress.definitionRevision(), 2, "persisted definition revision");
+        helper.assertValueEqual(revisionProgress.lastRevisionPolicy(), "keep", "definition revision audit policy");
+
         UUID bonusPlayer = UUID.randomUUID();
         ResourceLocation bonusQuest = VillagerRetaliation.id("bonus_persistence");
         VillagerQuestSavedData bonusData = new VillagerQuestSavedData();
         VillagerQuestSavedData.QuestProgress bonusProgress = bonusData.getOrCreate(bonusPlayer, bonusQuest);
         helper.assertTrue(bonusProgress.claimBonus("started", "optional_route"), "first bonus claim");
         helper.assertFalse(bonusProgress.claimBonus("started", "optional_route"), "duplicate bonus claim");
+        bonusProgress.recordDefinitionMigration(3, QuestDefinition.RevisionPolicy.RESTART, 42L);
         CompoundTag savedBonuses = bonusData.save(new CompoundTag(), helper.getLevel().registryAccess());
         VillagerQuestSavedData loadedBonuses = VillagerQuestSavedData.load(savedBonuses, helper.getLevel().registryAccess());
         helper.assertTrue(
                 loadedBonuses.get(bonusPlayer, bonusQuest).bonusClaimed("started", "optional_route"),
                 "claimed bonus did not survive save/load");
+        helper.assertValueEqual(
+                loadedBonuses.get(bonusPlayer, bonusQuest).definitionRevision(),
+                3,
+                "definition revision did not survive save/load");
 
         helper.succeed();
     }
@@ -2193,6 +2218,15 @@ public final class VillagerQuestGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2CompilerPreservesAdvancedRuntimeRules(GameTestHelper helper) {
         JsonObject root = validQuestV2Fixture();
+        JsonObject metadata = root.getAsJsonObject("metadata");
+        metadata.addProperty("revision", 4);
+        metadata.add("migration", JsonParser.parseString("""
+                {
+                  "active_policy": "reset_stage",
+                  "stage_aliases": {"old_offer": "offer"},
+                  "objective_aliases": {"old_talk": "offer.talk"}
+                }
+                """));
         JsonObject availability = root.getAsJsonObject("availability");
         availability.add("active", JsonParser.parseString("""
                 {
@@ -2242,6 +2276,15 @@ public final class VillagerQuestGameTests {
         QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
         CompiledQuest compiled = QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow();
         QuestDefinition definition = compiled.asQuestDefinition();
+        helper.assertValueEqual(definition.revision().number(), 4, "v2 definition revision");
+        helper.assertValueEqual(
+                definition.revision().activePolicy(),
+                QuestDefinition.RevisionPolicy.RESET_STAGE,
+                "v2 revision policy");
+        helper.assertValueEqual(
+                definition.revision().stageAliases().get("old_offer"),
+                "offer",
+                "v2 stage migration alias");
         helper.assertTrue(definition.rules().activeState().hideWhenUnmet(), "v2 active hide rule");
         helper.assertFalse(definition.rules().activeState().pauseProgressWhenUnmet(), "v2 active pause rule");
         helper.assertValueEqual(definition.rules().expiration().afterTicks(), 2400L, "v2 expiration ticks");
@@ -4807,6 +4850,35 @@ public final class VillagerQuestGameTests {
             CompiledQuest quest,
             QuestDialogueCatalog dialogueCatalog,
             ResourceLocation treeId) {
+    }
+
+    private static QuestDefinition withRevision(
+            QuestDefinition definition,
+            QuestDefinition.Revision revision) {
+        return new QuestDefinition(
+                definition.id(),
+                definition.title(),
+                definition.description(),
+                definition.titleKey(),
+                definition.descriptionKey(),
+                definition.questline(),
+                definition.tags(),
+                definition.parent(),
+                definition.prerequisites(),
+                definition.showLockedAdventureHint(),
+                definition.offer(),
+                definition.target(),
+                definition.objectives(),
+                definition.rules(),
+                definition.tracker(),
+                definition.entryStage(),
+                definition.stages(),
+                definition.triggers(),
+                definition.rewards(),
+                definition.dialogue(),
+                definition.metadata(),
+                definition.links(),
+                revision);
     }
 
     private static QuestDefinition.Objective registryObjective(

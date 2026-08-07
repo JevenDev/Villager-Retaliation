@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.quest.conditions.QuestAvailabilityService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageBranchOptionIds;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.quest.runtime.QuestActionSequenceRunner;
+import com.jvn.villagerretaliation.quest.persistence.QuestDefinitionMigration;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.scene.SceneJournalPresenter;
 import com.jvn.villagerretaliation.VillagerRetaliation;
@@ -1186,12 +1187,19 @@ public final class VillagerQuestService {
                 continue;
             }
             VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            DialogueContext questContext = contextForStartedVillager(level, player, progress).orElse(null);
+            if (reconcileDefinitionRevision(level, player, definition, progress, questContext)) {
+                changed = true;
+                progressNotice = true;
+            }
+            if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
+                continue;
+            }
             boolean migratedStage = migrateRetiredHearthboundStage(definition, progress);
             if (migratedStage) {
                 changed = true;
                 progressNotice = true;
             }
-            DialogueContext questContext = contextForStartedVillager(level, player, progress).orElse(null);
             if (migratedStage && questContext != null) {
                 syncQuestStageFact(questContext, definition, progress.currentStage());
             }
@@ -1268,6 +1276,38 @@ public final class VillagerQuestService {
         } else if (player.tickCount % (QUEST_PROGRESS_SCAN_INTERVAL_TICKS * 2) == 0) {
             sendTrackerSync(player, false);
         }
+    }
+
+    private static boolean reconcileDefinitionRevision(
+            ServerLevel level,
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueContext context) {
+        QuestDefinitionMigration.Result migration = QuestDefinitionMigration.apply(
+                definition, progress, level.getGameTime());
+        if (!migration.changed()) {
+            return false;
+        }
+        if (migration.failed()) {
+            SceneLifecycleIntegration.onQuestTerminal(level, player.getUUID(), definition.id(), "failed");
+            if (context != null) {
+                markQuestLifecycleFact(level, player, definition, QUEST_FAILED_FACT, "failed");
+                sendQuestNotification(context, "quest.failed", definition, progress, "Quest failed: {quest}");
+                dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.FAILED);
+            }
+        }
+        if (context != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
+            syncQuestStageFact(context, definition, progress.currentStage());
+        }
+        QuestDebugTraceService.recordIfEnabled(
+                player,
+                QuestDebugTraceService.EventType.OBJECTIVE_PROGRESS,
+                definition.id(),
+                "definition_revision from=" + migration.previousRevision()
+                        + " to=" + migration.currentRevision()
+                        + " policy=" + migration.policy().name().toLowerCase(Locale.ROOT));
+        return true;
     }
 
     public static boolean migrateRetiredHearthboundStage(
@@ -2253,6 +2293,7 @@ public final class VillagerQuestService {
         UUID definitiveRunId = partyStart == null ? null : partyStart.shared().instanceId();
         QuestLifecycleService.start(definition.id(), started, providerBinding, target,
                 context.level().getGameTime(), context.player().getUUID(), definitiveRunId);
+        started.adoptDefinitionRevision(definition.revision().number());
         if (partyStart != null) {
             partyStart.shared().enroll(context.player().getUUID(), false);
             started.linkPartyQuest(definitiveRunId);
@@ -2460,6 +2501,7 @@ public final class VillagerQuestService {
                         sourceProgress.targetObjectiveId());
         QuestLifecycleService.start(definition.id(), linked, providerBinding, target,
                 level.getGameTime(), member.getUUID(), shared.instanceId());
+        linked.adoptDefinitionRevision(definition.revision().number());
         shared.enroll(member.getUUID(), false);
         linked.linkPartyQuest(shared.instanceId());
         data.setDirty();

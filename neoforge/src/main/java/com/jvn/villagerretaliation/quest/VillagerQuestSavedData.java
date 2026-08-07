@@ -71,6 +71,9 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_COMPLETED_OBJECTIVES = "CompletedObjectives";
     private static final String TAG_OBJECTIVE_COUNTERS = "ObjectiveCounters";
     private static final String TAG_CLAIMED_BONUSES = "ClaimedBonuses";
+    private static final String TAG_DEFINITION_REVISION = "DefinitionRevision";
+    private static final String TAG_LAST_REVISION_POLICY = "LastRevisionPolicy";
+    private static final String TAG_LAST_REVISION_TIME = "LastRevisionGameTime";
     private static final String TAG_OBJECTIVE = "Objective";
     private static final String TAG_COUNT = "Count";
     private static final String TAG_START_COUNT = "StartCount";
@@ -595,6 +598,9 @@ public class VillagerQuestSavedData extends SavedData {
         private final java.util.Set<String> completedObjectives = new java.util.HashSet<>();
         private final Map<String, Integer> objectiveCounters = new HashMap<>();
         private final Set<String> claimedBonuses = new LinkedHashSet<>();
+        private int definitionRevision;
+        private String lastRevisionPolicy = "";
+        private long lastRevisionGameTime = -1L;
         private int startCount;
         private int completionCount;
         private int abandonCount;
@@ -644,6 +650,10 @@ public class VillagerQuestSavedData extends SavedData {
             progress.currentStage = tag.getString(TAG_CURRENT_STAGE);
             progress.completedObjectives.addAll(NbtDataUtil.readStringSet(tag, TAG_COMPLETED_OBJECTIVES));
             progress.claimedBonuses.addAll(NbtDataUtil.readStringSet(tag, TAG_CLAIMED_BONUSES));
+            progress.definitionRevision = Math.max(0, tag.getInt(TAG_DEFINITION_REVISION));
+            progress.lastRevisionPolicy = tag.getString(TAG_LAST_REVISION_POLICY);
+            progress.lastRevisionGameTime = tag.contains(TAG_LAST_REVISION_TIME, Tag.TAG_LONG)
+                    ? tag.getLong(TAG_LAST_REVISION_TIME) : -1L;
             if (tag.contains(TAG_OBJECTIVE_COUNTERS, Tag.TAG_LIST)) {
                 ListTag countersTag = tag.getList(TAG_OBJECTIVE_COUNTERS, Tag.TAG_COMPOUND);
                 for (Tag rawCounter : countersTag) {
@@ -783,6 +793,15 @@ public class VillagerQuestSavedData extends SavedData {
             }
             if (!this.claimedBonuses.isEmpty()) {
                 tag.put(TAG_CLAIMED_BONUSES, NbtDataUtil.stringList(this.claimedBonuses));
+            }
+            if (this.definitionRevision > 0) {
+                tag.putInt(TAG_DEFINITION_REVISION, this.definitionRevision);
+            }
+            if (!this.lastRevisionPolicy.isBlank()) {
+                tag.putString(TAG_LAST_REVISION_POLICY, this.lastRevisionPolicy);
+            }
+            if (this.lastRevisionGameTime >= 0L) {
+                tag.putLong(TAG_LAST_REVISION_TIME, this.lastRevisionGameTime);
             }
             if (!this.triggerTimes.isEmpty()) {
                 CompoundTag triggerTimesTag = new CompoundTag();
@@ -1066,6 +1085,8 @@ public class VillagerQuestSavedData extends SavedData {
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
             this.claimedBonuses.clear();
+            this.lastRevisionPolicy = "";
+            this.lastRevisionGameTime = -1L;
             this.choiceHistory.clear();
             this.pendingLifecycleEvents.clear();
             this.startCount = saturatingIncrement(this.startCount);
@@ -1288,6 +1309,68 @@ public class VillagerQuestSavedData extends SavedData {
 
         public Set<String> claimedBonuses() {
             return Set.copyOf(this.claimedBonuses);
+        }
+
+        public int definitionRevision() {
+            return this.definitionRevision;
+        }
+
+        public String lastRevisionPolicy() {
+            return this.lastRevisionPolicy;
+        }
+
+        public long lastRevisionGameTime() {
+            return this.lastRevisionGameTime;
+        }
+
+        public void adoptDefinitionRevision(int revision) {
+            this.definitionRevision = Math.max(1, revision);
+        }
+
+        public void recordDefinitionMigration(int revision, QuestDefinition.RevisionPolicy policy, long gameTime) {
+            this.definitionRevision = Math.max(1, revision);
+            this.lastRevisionPolicy = policy == null ? "keep" : policy.name().toLowerCase(java.util.Locale.ROOT);
+            this.lastRevisionGameTime = gameTime;
+        }
+
+        public void remapObjective(String previousId, String nextId) {
+            if (previousId == null || previousId.isBlank() || nextId == null || nextId.isBlank()
+                    || previousId.equals(nextId)) {
+                return;
+            }
+            if (this.completedObjectives.remove(previousId)) {
+                this.completedObjectives.add(nextId);
+            }
+            Integer counter = this.objectiveCounters.remove(previousId);
+            if (counter != null) {
+                this.objectiveCounters.merge(nextId, counter, Math::max);
+            }
+        }
+
+        public void resetObjectiveProgress(Set<String> objectiveIds) {
+            if (objectiveIds == null || objectiveIds.isEmpty()) {
+                return;
+            }
+            this.completedObjectives.removeAll(objectiveIds);
+            objectiveIds.forEach(this.objectiveCounters::remove);
+        }
+
+        public void resetBonusesForStage(String stageId) {
+            if (stageId == null || stageId.isBlank()) {
+                return;
+            }
+            String prefix = stageId.trim() + "/";
+            this.claimedBonuses.removeIf(id -> id.startsWith(prefix));
+        }
+
+        public void restartForDefinitionRevision(String entryStage) {
+            this.currentStage = entryStage == null ? "" : entryStage.trim();
+            this.completedObjectives.clear();
+            this.objectiveCounters.clear();
+            this.claimedBonuses.clear();
+            this.visitedTarget = false;
+            this.hasProof = false;
+            this.targetObjectiveId = "";
         }
 
         public int addObjectiveCounter(String objectiveId, int amount) {

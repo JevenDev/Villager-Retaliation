@@ -853,7 +853,7 @@ const questV2SchemaId = "villagerretaliation:quest/v2";
 const resourceLocationPattern = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
 const questV2IdPattern = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
 const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]);
-const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "author", "version"]);
+const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "author", "version", "revision", "migration"]);
 const questV2TargetKeys = new Set(["structure", "dimension", "pieces", "search_radius", "discovery_radius", "proof_item"]);
 const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "filters", "data"]);
 const questV2AvailabilityKeys = new Set(["conditions", "active", "expiration", "branch", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "exclusive_on", "blocks_on_start", "blocks_on_completion", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
@@ -1538,6 +1538,25 @@ function checkQuestV2Metadata(file, metadata, pointer, location, questId) {
   checkQuestV2OptionalString(file, metadata, pointer, location, "parent");
   checkQuestV2OptionalString(file, metadata, pointer, location, "author");
   checkQuestV2OptionalString(file, metadata, pointer, location, "version");
+  checkQuestV2OptionalInteger(file, metadata, pointer, location, "revision", { min: 1 });
+  if (metadata.migration !== undefined) {
+    if (!metadata.migration || typeof metadata.migration !== "object" || Array.isArray(metadata.migration)) {
+      questV2Error(file, `${pointer}/migration`, `${location}.migration`, "migration must be an object.", "Use active_policy plus optional stage_aliases and objective_aliases maps.");
+    } else {
+      const policy = normalizedString(firstDefined(metadata.migration.active_policy, metadata.migration.on_active_change));
+      if (policy && !["keep", "reset", "reset_stage", "stage_reset", "restart", "restart_quest", "fail", "fail_quest"].includes(policy)) {
+        questV2Error(file, `${pointer}/migration/active_policy`, `${location}.migration.active_policy`, `unknown active migration policy "${policy}".`, "Use keep, reset_stage, restart, or fail.");
+      }
+      for (const key of ["stage_aliases", "objective_aliases"]) {
+        const aliases = metadata.migration[key];
+        if (aliases === undefined) continue;
+        if (!aliases || typeof aliases !== "object" || Array.isArray(aliases)
+            || Object.values(aliases).some((value) => typeof value !== "string" || !value.trim())) {
+          questV2Error(file, `${pointer}/migration/${key}`, `${location}.migration.${key}`, `${key} must map old ids to new id strings.`, "Use an object whose values are non-empty strings.");
+        }
+      }
+    }
+  }
   checkStringList(file, metadata, location, ["tags"], "quest metadata tag");
   checkResourceIdValues(file, metadata, location, ["parent"], "quest parent id");
   const parent = stringValue(metadata.parent);
