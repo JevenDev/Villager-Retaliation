@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
+import com.jvn.villagerretaliation.quest.pool.QuestPoolResources;
 
 public final class QuestAvailabilityService {
     private QuestAvailabilityService() {
@@ -21,6 +22,9 @@ public final class QuestAvailabilityService {
         // QuestExecutionContext here also rebuilds the provider binding and village
         // scope once per quest candidate, which made tracker scans multiplicative.
         if (!bypassOfferRequirements && !definition.offer().matches(context)) {
+            return false;
+        }
+        if (!bypassOfferRequirements && !QuestPoolResources.allows(context, definition)) {
             return false;
         }
         if (!parentCompletionLookup.parentCompleted(context, definition)) {

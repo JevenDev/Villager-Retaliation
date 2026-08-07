@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.loot.ProfessionLootResources;
 import com.jvn.villagerretaliation.notification.VillagerNotificationResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.pool.QuestPoolResources;
 import com.jvn.villagerretaliation.raid.PlayerRaidLoadoutResources;
 import com.jvn.villagerretaliation.raid.PlayerRaidSavedData;
 import com.jvn.villagerretaliation.scene.SceneResources;
@@ -61,6 +62,7 @@ public final class VillagerDataWarmup {
         BiomeStoryResources.warm(server);
         DangerousStructureStoryResources.warm(server);
         VillagerQuestResources.warm(server);
+        QuestPoolResources.warm(server);
         SceneResources.warm(server);
         EncounterResources.warm(server);
         VillagerEventTriggerService.warm(server);
@@ -107,6 +109,7 @@ public final class VillagerDataWarmup {
         DangerousStructureStoryResources.clearCache();
         VillagerWorldTargetCache.clearCache();
         VillagerQuestResources.clearCache();
+        QuestPoolResources.clearCache();
         SceneResources.clearCache();
         EncounterResources.clearCache();
         VillagerEventTriggerService.clearCache();

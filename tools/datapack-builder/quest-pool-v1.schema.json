@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/quest-pool-v1.schema.json",
+  "title": "Villager Retaliation Quest Pool v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema"],
+  "properties": {
+    "schema": {"const": "villagerretaliation:quest_pool/v1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"},
+    "enabled": {"type": "boolean"},
+    "scope": {"enum": ["player", "village", "provider", "world"]},
+    "refresh": {"type": "string"},
+    "refresh_ticks": {"type": "integer", "minimum": 1},
+    "refresh_seconds": {"type": "integer", "minimum": 1},
+    "refresh_days": {"type": "integer", "minimum": 1},
+    "max_offers": {"type": "integer", "minimum": 1, "maximum": 64},
+    "anti_repeat_rotations": {"type": "integer", "minimum": 0, "maximum": 16},
+    "default_weight": {"type": "integer", "minimum": 1, "maximum": 10000},
+    "seed_salt": {"type": "integer"},
+    "quests": {"$ref": "#/$defs/resource_list"},
+    "exclude_quests": {"$ref": "#/$defs/resource_list"},
+    "any_tags": {"$ref": "#/$defs/string_list"},
+    "all_tags": {"$ref": "#/$defs/string_list"},
+    "exclude_tags": {"$ref": "#/$defs/string_list"},
+    "weights": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 10000}}
+  },
+  "$defs": {
+    "resource_list": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"}, "uniqueItems": true},
+    "string_list": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+  }
+}
