@@ -10,37 +10,66 @@ import net.minecraft.world.item.Item;
 public record SellPriceDefinition(
         ResourceLocation id,
         Item item,
-        IntRange itemCount,
-        IntRange currencyCount,
+        List<SellRateDefinition> rates,
         ResourceLocation marketGroup) {
 
     public static final int MAX_ITEM_COUNT = 256;
+    public static final int MAX_RATES = 256;
+    public static final long MAX_CANDIDATE_COMBINATIONS = 65_536L;
 
     public SellPriceDefinition(ResourceLocation id, Item item, IntRange itemCount, IntRange currencyCount) {
-        this(id, item, itemCount, currencyCount, item == null ? null : BuiltInRegistries.ITEM.getKey(item));
+        this(id, item, List.of(new SellRateDefinition(itemCount, currencyCount)));
+    }
+
+    public SellPriceDefinition(
+            ResourceLocation id,
+            Item item,
+            IntRange itemCount,
+            IntRange currencyCount,
+            ResourceLocation marketGroup) {
+        this(id, item, List.of(new SellRateDefinition(itemCount, currencyCount)), marketGroup);
+    }
+
+    public SellPriceDefinition(ResourceLocation id, Item item, List<SellRateDefinition> rates) {
+        this(id, item, rates, item == null ? null : BuiltInRegistries.ITEM.getKey(item));
     }
 
     public SellPriceDefinition {
-        if (id == null || item == null || itemCount == null || currencyCount == null || marketGroup == null) {
+        rates = rates == null ? List.of() : List.copyOf(rates);
+        if (id == null || item == null || rates.isEmpty() || marketGroup == null) {
             throw new IllegalArgumentException(
-                    "Sell price definitions require an id, item, both ranges, and a market group");
+                    "Sell price definitions require an id, item, at least one rate, and a market group");
         }
-        if (itemCount.max() > MAX_ITEM_COUNT) {
+        if (rates.size() > MAX_RATES) {
             throw new IllegalArgumentException(
-                    "item_count must not exceed " + MAX_ITEM_COUNT);
+                    "rates must contain at most " + MAX_RATES + " entries");
+        }
+        long combinations = 0L;
+        for (SellRateDefinition rate : rates) {
+            combinations += rate.combinationCount();
+            if (combinations > MAX_CANDIDATE_COMBINATIONS) {
+                throw new IllegalArgumentException(
+                        "rates generate more than " + MAX_CANDIDATE_COMBINATIONS + " candidate combinations");
+            }
         }
     }
 
     public List<CurrencyAmount> candidatePrices() {
         LinkedHashSet<CurrencyAmount> unique = new LinkedHashSet<>();
-        for (long items = this.itemCount.min(); items <= this.itemCount.max(); items++) {
-            for (long currency = this.currencyCount.min(); currency <= this.currencyCount.max(); currency++) {
-                unique.add(CurrencyAmount.of(currency, items));
-            }
+        for (SellRateDefinition rate : rates) {
+            unique.addAll(rate.candidatePrices());
         }
         ArrayList<CurrencyAmount> sorted = new ArrayList<>(unique);
         sorted.sort(CurrencyAmount::compareTo);
         return List.copyOf(sorted);
+    }
+
+    public IntRange itemCount() {
+        return rates.getFirst().itemCount();
+    }
+
+    public IntRange currencyCount() {
+        return rates.getFirst().currencyCount();
     }
 
     public record IntRange(int min, int max) {
@@ -55,6 +84,10 @@ public record SellPriceDefinition(
 
         public static IntRange fixed(int value) {
             return new IntRange(value, value);
+        }
+
+        public int size() {
+            return max - min + 1;
         }
     }
 }

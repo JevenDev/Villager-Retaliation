@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.sell;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
@@ -7,6 +8,7 @@ import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.ServerResourceCache;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +27,8 @@ import net.minecraft.world.item.Items;
 public final class SellPriceResources {
     public static final String RESOURCE_ROOT = "sell_prices";
     private static final Set<String> ALLOWED_KEYS =
-            Set.of("enabled", "item", "item_count", "currency_count", "market_group");
+            Set.of("enabled", "item", "item_count", "currency_count", "rates", "market_group");
+    private static final Set<String> ALLOWED_RATE_KEYS = Set.of("item_count", "currency_count");
     private static final ServerResourceCache<Catalog> CACHE =
             ServerResourceCache.create(Catalog::empty, SellPriceResources::read);
     private static final java.util.concurrent.atomic.AtomicLong GENERATION = new java.util.concurrent.atomic.AtomicLong();
@@ -105,18 +108,60 @@ public final class SellPriceResources {
         }
 
         try {
-            SellPriceDefinition.IntRange itemCount = readRange(root.get("item_count"), "item_count");
-            SellPriceDefinition.IntRange currencyCount = readRange(root.get("currency_count"), "currency_count");
+            List<SellRateDefinition> rates = readRates(location, root);
             ResourceLocation marketGroup = readMarketGroup(root, selection.defaultMarketGroup());
             ResourceLocation definitionId = resourceId(location);
             return selection.items().stream()
                     .map(item -> new SellPriceDefinition(
-                            definitionId, item, itemCount, currencyCount, marketGroup))
+                            definitionId, item, rates, marketGroup))
                     .toList();
         } catch (IllegalArgumentException exception) {
             DatapackDiagnostics.warnSkippedEntry(location, "sell price", "definition", exception.getMessage());
             return List.of();
         }
+    }
+
+    private static List<SellRateDefinition> readRates(ResourceLocation location, JsonObject root) {
+        boolean hasRates = root.has("rates");
+        boolean hasLegacyItemCount = root.has("item_count");
+        boolean hasLegacyCurrencyCount = root.has("currency_count");
+        if (hasRates && (hasLegacyItemCount || hasLegacyCurrencyCount)) {
+            throw new IllegalArgumentException(
+                    "rates cannot be combined with legacy top-level item_count or currency_count.");
+        }
+        if (!hasRates) {
+            return List.of(new SellRateDefinition(
+                    readRange(root.get("item_count"), "item_count"),
+                    readRange(root.get("currency_count"), "currency_count")));
+        }
+
+        JsonElement element = root.get("rates");
+        if (element == null || !element.isJsonArray()) {
+            throw new IllegalArgumentException("rates must be a non-empty array.");
+        }
+        JsonArray array = element.getAsJsonArray();
+        if (array.isEmpty()) {
+            throw new IllegalArgumentException("rates must be a non-empty array.");
+        }
+        if (array.size() > SellPriceDefinition.MAX_RATES) {
+            throw new IllegalArgumentException(
+                    "rates must contain at most " + SellPriceDefinition.MAX_RATES + " entries.");
+        }
+
+        ArrayList<SellRateDefinition> rates = new ArrayList<>(array.size());
+        for (int index = 0; index < array.size(); index++) {
+            JsonElement rateElement = array.get(index);
+            if (rateElement == null || !rateElement.isJsonObject()) {
+                throw new IllegalArgumentException("rates[" + index + "] must be an object.");
+            }
+            JsonObject rate = rateElement.getAsJsonObject();
+            DatapackDiagnostics.warnUnknownKeys(
+                    location, "sell price rate", "rates[" + index + "]", rate, ALLOWED_RATE_KEYS);
+            rates.add(new SellRateDefinition(
+                    readRange(rate.get("item_count"), "rates[" + index + "].item_count"),
+                    readRange(rate.get("currency_count"), "rates[" + index + "].currency_count")));
+        }
+        return List.copyOf(rates);
     }
 
     private static ItemSelection readItemSelection(JsonObject root) {
