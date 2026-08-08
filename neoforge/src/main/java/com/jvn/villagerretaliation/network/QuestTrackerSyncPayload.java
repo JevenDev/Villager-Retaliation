@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -12,7 +13,8 @@ public record QuestTrackerSyncPayload(
         List<Entry> entries,
         List<String> trackedQuestIds,
         boolean flash,
-        List<QuestlineNode> questlineNodes) implements CustomPacketPayload {
+        List<QuestlineNode> questlineNodes,
+        List<QuestMarker> questMarkers) implements CustomPacketPayload {
     public static final int MAX_TRACKER_ENTRIES = 3;
     public static final int MAX_TRACKED_QUESTS = QuestTrackerLimits.MAX_TRACKED_QUESTS;
     public static final int MAX_SYNC_ENTRIES = 32;
@@ -22,6 +24,7 @@ public record QuestTrackerSyncPayload(
     public static final int MAX_OBJECTIVE_STEPS = 24;
     public static final int MAX_JOURNAL_TAGS = 16;
     public static final int MAX_QUESTLINE_NODES = 128;
+    public static final int MAX_QUEST_MARKERS = 64;
     private static final int MAX_QUEST_ID_LENGTH = 128;
     private static final int MAX_TITLE_LENGTH = 128;
     private static final int MAX_TEXT_LENGTH = 256;
@@ -41,11 +44,19 @@ public record QuestTrackerSyncPayload(
             VillagerPayloads.codec(QuestTrackerSyncPayload::encode, QuestTrackerSyncPayload::decode);
 
     public QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId, boolean flash) {
-        this(entries, trackedQuestId == null || trackedQuestId.isBlank() ? List.of() : List.of(trackedQuestId), flash, List.of());
+        this(entries, trackedQuestId == null || trackedQuestId.isBlank() ? List.of() : List.of(trackedQuestId), flash, List.of(), List.of());
     }
 
     public QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQuestIds, boolean flash) {
-        this(entries, trackedQuestIds, flash, List.of());
+        this(entries, trackedQuestIds, flash, List.of(), List.of());
+    }
+
+    public QuestTrackerSyncPayload(
+            List<Entry> entries,
+            List<String> trackedQuestIds,
+            boolean flash,
+            List<QuestlineNode> questlineNodes) {
+        this(entries, trackedQuestIds, flash, questlineNodes, List.of());
     }
 
     public QuestTrackerSyncPayload {
@@ -68,6 +79,11 @@ public record QuestTrackerSyncPayload(
                         .filter(Objects::nonNull)
                         .limit(MAX_QUESTLINE_NODES)
                         .toList());
+        questMarkers = questMarkers == null
+                ? List.of()
+                : List.copyOf(questMarkers.stream()
+                        .filter(Objects::nonNull)
+                        .limit(MAX_QUEST_MARKERS).toList());
     }
 
     private static String boundedUtf(String value, int maxLength) {
@@ -148,6 +164,12 @@ public record QuestTrackerSyncPayload(
             buffer.writeUtf(node.color(), MAX_JOURNAL_VALUE_LENGTH);
             buffer.writeUtf(node.state(), MAX_STATE_LENGTH);
         }
+
+        buffer.writeVarInt(Math.min(MAX_QUEST_MARKERS, payload.questMarkers().size()));
+        for (QuestMarker marker : payload.questMarkers()) {
+            buffer.writeUUID(marker.villagerId());
+            buffer.writeUtf(marker.questId(), MAX_QUEST_ID_LENGTH);
+        }
     }
 
     private static QuestTrackerSyncPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -205,7 +227,14 @@ public record QuestTrackerSyncPayload(
                     buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH),
                     buffer.readUtf(MAX_STATE_LENGTH)));
         }
-        return new QuestTrackerSyncPayload(entries, trackedQuestIds, flash, questlineNodes);
+        int markerCount = VillagerPayloads.readCollectionSize(buffer, MAX_QUEST_MARKERS, "quest markers");
+        List<QuestMarker> questMarkers = new ArrayList<>(markerCount);
+        for (int index = 0; index < markerCount; index++) {
+            questMarkers.add(new QuestMarker(
+                    buffer.readUUID(),
+                    buffer.readUtf(MAX_QUEST_ID_LENGTH)));
+        }
+        return new QuestTrackerSyncPayload(entries, trackedQuestIds, flash, questlineNodes, questMarkers);
     }
 
     private static List<QuestItem> readQuestItems(RegistryFriendlyByteBuf buffer) {
@@ -643,6 +672,17 @@ public record QuestTrackerSyncPayload(
         public Journal withQuestlineProgress(int completed, int total) {
             return new Journal(this.questline, this.tags, this.icon, this.color, this.priority, this.hidden,
                     this.expiresAtGameTime, this.completedGameTime, this.waypoint, this.blocker, completed, total);
+        }
+    }
+
+    public record QuestMarker(UUID villagerId, String questId) {
+        public QuestMarker {
+            villagerId = villagerId == null ? new UUID(0L, 0L) : villagerId;
+            questId = boundedUtf(questId, MAX_QUEST_ID_LENGTH);
+        }
+
+        public boolean valid() {
+            return villagerId.getMostSignificantBits() != 0L || villagerId.getLeastSignificantBits() != 0L;
         }
     }
 

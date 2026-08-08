@@ -22,10 +22,15 @@ public final class VillagerNameTagOverlay {
             event.setCanRender(TriState.FALSE);
             return;
         }
+        if (!VillagerPresetNameRegistry.isVillagerForm(event.getEntity())) {
+            return;
+        }
         if (!VillagerRetaliationServerConfigClient.showVillagerNameTags()
-                || !VillagerRetaliationClientPreferences.showVillagerNameTags()
-                || !VillagerPresetNameRegistry.isVillagerForm(event.getEntity())
-                || event.getEntity().hasCustomName()) {
+                || !VillagerRetaliationClientPreferences.showVillagerNameTags()) {
+            event.setCanRender(TriState.FALSE);
+            return;
+        }
+        if (event.getEntity().hasCustomName()) {
             return;
         }
 

@@ -61,6 +61,12 @@ public final class VillagerStatNameTagOverlay {
         if (!(event.getEntity() instanceof Villager villager)) {
             return;
         }
+        if (!VillagerRetaliationServerConfigClient.showVillagerNameTags()
+                || !VillagerRetaliationClientPreferences.showVillagerNameTags()) {
+            event.setCanRender(TriState.FALSE);
+            return;
+        }
+
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null
                 || minecraft.options.hideGui

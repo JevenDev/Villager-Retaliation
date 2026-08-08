@@ -2,8 +2,10 @@ package com.jvn.villagerretaliation.config;
 
 import com.mojang.logging.LogUtils;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import io.wispforest.owo.config.ConfigWrapper;
 import io.wispforest.owo.config.Option;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -13,6 +15,7 @@ import java.nio.file.Path;
 
 public final class VillagerRetaliationConfig {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static boolean clientSyncObserversRegistered;
 
     public static final ConfigWrapper<?> CONFIG = loadConfig();
 
@@ -303,6 +306,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> WANDERER_DROP_RANDOM_CURRENT_TRADE = bind("wanderer.dropRandomCurrentTrade", Boolean.class);
     public static final ConfigValue<Double> WANDERER_RANDOM_TRADE_DROP_CHANCE = bind("wanderer.randomTradeDropChance", Double.class);
     public static final ConfigValue<Boolean> DISABLE_DIALOGUE_TEXT_EFFECTS = bind("dialogue.disableDialogueTextEffects", Boolean.class);
+    public static final ConfigValue<Boolean> SHOW_QUEST_INDICATORS = bind("quest.showQuestIndicators", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_QUEST_ITEM_SHADER_HIGHLIGHTS = bind("quest.enableQuestItemShaderHighlights", Boolean.class);
     public static final ConfigValue<QuestItemHighlightMode> QUEST_ITEM_HIGHLIGHT_MODE = bind("quest.questItemHighlightMode", QuestItemHighlightMode.class);
 
@@ -316,6 +320,20 @@ public final class VillagerRetaliationConfig {
             FEARED_THRESHOLD.set(-1000);
             CONFIG.save();
         }
+        if (!clientSyncObserversRegistered) {
+            clientSyncObserversRegistered = true;
+            SHOW_VILLAGER_NAME_TAGS.option().observe(ignored -> syncServerConfigToConnectedPlayers());
+        }
+    }
+
+    private static void syncServerConfigToConnectedPlayers() {
+        var server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) {
+            return;
+        }
+        server.execute(() -> server.getPlayerList()
+                .getPlayers()
+                .forEach(VillagerReputationNetworking::sendServerConfig));
     }
 
     private static ConfigWrapper<?> loadConfig() {
