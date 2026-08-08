@@ -263,13 +263,13 @@ public final class VillagerQuestTrackerOverlay {
         }
         int width = VillagerQuestHudRenderer.trackerWidth(screenWidth);
         int count = VillagerQuestHudRenderer.visibleTrackerEntryCount(showRecentQuests, trackerEntries.size());
-        int totalHeight = VillagerQuestHudRenderer.trackerHeight(count);
+        int totalHeight = VillagerQuestHudRenderer.trackerHeight(font, trackerEntries, count, width);
         int x = hudMargin();
         int y = Math.max(VillagerAdaptiveGuiScale.unit(10), (screenHeight - totalHeight) / 2);
         for (int index = 0; index < count; index++) {
             QuestTrackerSyncPayload.Entry entry = trackerEntries.get(index);
             boolean primary = index == 0;
-            int height = primary ? VillagerQuestHudRenderer.primaryHeight() : VillagerQuestHudRenderer.secondaryHeight();
+            int height = primary ? VillagerQuestHudRenderer.primaryHeight() : VillagerQuestHudRenderer.secondaryHeight(font, entry, width);
             float entryAlpha = alpha * (primary ? 1.0F : 0.76F);
             int slide = Math.round((1.0F - entryAlpha) * VillagerQuestHudRenderer.slideDistance());
             VillagerQuestHudRenderer.renderEntry(graphics, font, entry, x - slide, y, width, height, entryAlpha, primary, renderAge + index * 13);
