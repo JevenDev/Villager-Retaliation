@@ -1094,6 +1094,9 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(entry.showProgress(), "presenter show progress");
         helper.assertValueEqual(entry.state(), "active", "presenter state");
         helper.assertTrue(
+                entry.journal().blocker().contains("Collect 1 more minecraft:echo_shard"),
+                "presenter did not explain the remaining item requirement");
+        helper.assertTrue(
                 entry.rewardPreviews().stream().anyMatch(reward -> reward.kind().equals("experience") && reward.label().contains("430")),
                 "presenter did not include XP reward preview");
         helper.assertTrue(
@@ -1116,10 +1119,15 @@ public final class VillagerQuestGameTests {
                 false,
                 1242L,
                 -1L,
-                new QuestTrackerSyncPayload.Waypoint("minecraft:overworld", 120, 70, -40));
+                new QuestTrackerSyncPayload.Waypoint("minecraft:overworld", 120, 70, -40))
+                .withBlocker("Return to Lore Keeper.")
+                .withQuestlineProgress(3, 7);
         QuestTrackerSyncPayload.Entry journalEntry = entry.withJournal(journal);
         helper.assertValueEqual(journalEntry.journal().priority(), 25, "journal priority");
         helper.assertTrue(journalEntry.journal().waypoint().present(), "journal waypoint");
+        helper.assertValueEqual(journalEntry.journal().blocker(), "Return to Lore Keeper.", "journal blocker");
+        helper.assertValueEqual(journalEntry.journal().questlineCompleted(), 3, "journal questline completed");
+        helper.assertValueEqual(journalEntry.journal().questlineTotal(), 7, "journal questline total");
         helper.assertFalse(
                 QuestTrackerPresenter.entrySignature(journalEntry).equals(QuestTrackerPresenter.entrySignature(entry)),
                 "journal data must participate in tracker sync signatures");
@@ -1140,6 +1148,25 @@ public final class VillagerQuestGameTests {
                 parentId -> "Watch Arrows",
                 parentId -> true);
         helper.assertTrue(metPrerequisites.getFirst().met(), "presenter did not mark completed parent prerequisite");
+        QuestDefinition endCitySurvey = quest(helper, VillagerRetaliation.id("end_city_survey"));
+        VillagerQuestSavedData.QuestProgress completedLineQuest = new VillagerQuestSavedData.QuestProgress();
+        completedLineQuest.start(UUID.randomUUID(), Level.OVERWORLD, BlockPos.ZERO, 1L);
+        completedLineQuest.complete(2L, false);
+        QuestTrackerPresenter.QuestlineProgress lineProgress = QuestTrackerPresenter.questlineProgress(
+                        List.of(quest, endCitySurvey),
+                        questId -> questId.equals(endCitySurvey.id()) ? completedLineQuest : progress)
+                .get("lost_civilization");
+        helper.assertValueEqual(lineProgress.completed(), 1, "questline completed count");
+        helper.assertValueEqual(lineProgress.total(), 2, "questline total count");
+        QuestDefinition bastionLine = quest(helper, VillagerRetaliation.id("bastion_line"));
+        QuestDefinition fortressLine = quest(helper, VillagerRetaliation.id("fortress_line"));
+        VillagerQuestSavedData.QuestProgress closedBranch = new VillagerQuestSavedData.QuestProgress();
+        closedBranch.consume("branch_lock");
+        QuestTrackerPresenter.QuestlineProgress branchProgress = QuestTrackerPresenter.questlineProgress(
+                        List.of(bastionLine, fortressLine),
+                        questId -> questId.equals(fortressLine.id()) ? closedBranch : null)
+                .get("nether_routes");
+        helper.assertValueEqual(branchProgress.total(), 1, "closed branch must not count toward questline total");
         QuestTrackerSyncPayload.Entry movedIssuerEntry = new QuestTrackerSyncPayload.Entry(
                 entry.questId(),
                 entry.title(),
@@ -1322,6 +1349,11 @@ public final class VillagerQuestGameTests {
                         && boundedEntry.objectiveSteps().getFirst().label().length() <= 256,
                 "tracker strings must fit their wire codec bounds");
         helper.assertValueEqual(boundedEntry.progress(), 0.0F, "non-finite tracker progress must normalize");
+        QuestTrackerSyncPayload.Journal boundedJournal = QuestTrackerSyncPayload.Journal.EMPTY
+                .withBlocker(oversized)
+                .withQuestlineProgress(12, 5);
+        helper.assertTrue(boundedJournal.blocker().length() <= 256, "journal blocker must fit its wire codec bound");
+        helper.assertValueEqual(boundedJournal.questlineCompleted(), 5, "questline progress must clamp to total");
         helper.assertValueEqual(
                 new QuestTrackerRequestPayload(oversized, QuestTrackerRequestPayload.Action.TRACK).questId().length(),
                 128,

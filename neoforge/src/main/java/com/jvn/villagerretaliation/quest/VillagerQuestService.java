@@ -5647,6 +5647,7 @@ public final class VillagerQuestService {
         }
         appendEntries(entries, completionEntries);
         appendNearbyAvailableQuestEntries(level, player, data, entries);
+        applyQuestlineProgress(level, player, data, entries);
         String signature = QuestTrackerPresenter.syncSignature(entries, trackedQuestIds);
         Map<String, String> entrySignatures = QuestTrackerPresenter.entrySignatures(entries);
         long gameTime = level.getGameTime();
@@ -5731,6 +5732,29 @@ public final class VillagerQuestService {
             }
             if (!activeQuestIds.contains(entry.questId()) && availableQuestIds.add(entry.questId())) {
                 entries.add(entry);
+            }
+        }
+    }
+
+    private static void applyQuestlineProgress(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerQuestSavedData data,
+            List<QuestTrackerSyncPayload.Entry> entries) {
+        if (level == null || player == null || data == null || entries == null || entries.isEmpty()) {
+            return;
+        }
+        Map<String, QuestTrackerPresenter.QuestlineProgress> progressByQuestline =
+                QuestTrackerPresenter.questlineProgress(
+                        VillagerQuestResources.quests(level.getServer()),
+                        questId -> data.get(player.getUUID(), questId));
+        for (int index = 0; index < entries.size(); index++) {
+            QuestTrackerSyncPayload.Entry entry = entries.get(index);
+            QuestTrackerPresenter.QuestlineProgress progress =
+                    progressByQuestline.get(entry.journal().questline());
+            if (progress != null) {
+                entries.set(index, entry.withJournal(entry.journal().withQuestlineProgress(
+                        progress.completed(), progress.total())));
             }
         }
     }
@@ -6406,7 +6430,7 @@ public final class VillagerQuestService {
         String issuer = issuerSummary(player, progress);
         String issuerLocation = issuerLocationSummary(player, progress);
         String status = trackerStatusText(player, definition, progress, activeConditions, replacements, readyToTurnIn);
-        return withRuntimeJournal(QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+        QuestTrackerSyncPayload.Entry presented = QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
                 player,
                 definition,
                 title,
@@ -6429,7 +6453,11 @@ public final class VillagerQuestService {
                         : activeObjectiveSteps(player, context, definition, progress),
                 progressValue,
                 showProgress,
-                progress.state())), definition, progress, progress.completedGameTime());
+                progress.state()));
+        if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE && !activeConditionsMet) {
+            presented = presented.withJournal(presented.journal().withBlocker(presented.objective()));
+        }
+        return withRuntimeJournal(presented, definition, progress, progress.completedGameTime());
     }
 
     private static QuestTrackerSyncPayload.Entry withRuntimeJournal(
