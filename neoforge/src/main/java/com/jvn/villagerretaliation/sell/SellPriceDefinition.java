@@ -11,7 +11,8 @@ public record SellPriceDefinition(
         ResourceLocation id,
         Item item,
         List<SellRateDefinition> rates,
-        ResourceLocation marketGroup) {
+        ResourceLocation marketGroup,
+        SellStackPredicate stackPredicate) {
 
     public static final int MAX_ITEM_COUNT = 256;
     public static final int MAX_RATES = 256;
@@ -27,18 +28,26 @@ public record SellPriceDefinition(
             IntRange itemCount,
             IntRange currencyCount,
             ResourceLocation marketGroup) {
-        this(id, item, List.of(new SellRateDefinition(itemCount, currencyCount)), marketGroup);
+        this(id, item, List.of(new SellRateDefinition(itemCount, currencyCount)), marketGroup, SellStackPredicate.ANY);
     }
 
     public SellPriceDefinition(ResourceLocation id, Item item, List<SellRateDefinition> rates) {
-        this(id, item, rates, item == null ? null : BuiltInRegistries.ITEM.getKey(item));
+        this(id, item, rates, item == null ? null : BuiltInRegistries.ITEM.getKey(item), SellStackPredicate.ANY);
+    }
+
+    public SellPriceDefinition(
+            ResourceLocation id,
+            Item item,
+            List<SellRateDefinition> rates,
+            ResourceLocation marketGroup) {
+        this(id, item, rates, marketGroup, SellStackPredicate.ANY);
     }
 
     public SellPriceDefinition {
         rates = rates == null ? List.of() : List.copyOf(rates);
-        if (id == null || item == null || rates.isEmpty() || marketGroup == null) {
+        if (id == null || item == null || rates.isEmpty() || marketGroup == null || stackPredicate == null) {
             throw new IllegalArgumentException(
-                    "Sell price definitions require an id, item, at least one rate, and a market group");
+                    "Sell price definitions require an id, item, at least one rate, a market group, and a stack predicate");
         }
         if (rates.size() > MAX_RATES) {
             throw new IllegalArgumentException(
