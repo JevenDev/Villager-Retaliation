@@ -26,7 +26,8 @@ public final class VillagerBreedingPolicy {
             VillagerBreedingPolicy::evaluateDownedState,
             VillagerBreedingPolicy::evaluateWorkState,
             VillagerBreedingPolicy::evaluateCombatState,
-            VillagerBreedingPolicy::evaluateSceneState);
+            VillagerBreedingPolicy::evaluateSceneState,
+            VillagerBreedingPolicy::evaluateVanillaBreedingSetting);
 
     private VillagerBreedingPolicy() {
     }
@@ -157,6 +158,11 @@ public final class VillagerBreedingPolicy {
     private static BreedingBlockReason evaluateSceneState(ServerLevel level, Villager villager) {
         return SceneSavedData.get(level).hasActiveActor(villager.getUUID())
                 ? BreedingBlockReason.SCENE_CONTROLLED : BreedingBlockReason.NONE;
+    }
+
+    private static BreedingBlockReason evaluateVanillaBreedingSetting(ServerLevel level, Villager villager) {
+        return VillagerRetaliationConfig.ENABLE_VANILLA_VILLAGER_BREEDING.get()
+                ? BreedingBlockReason.NONE : BreedingBlockReason.BREEDING_DISABLED;
     }
 
     @FunctionalInterface

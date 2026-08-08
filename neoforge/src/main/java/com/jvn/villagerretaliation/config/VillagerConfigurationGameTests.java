@@ -16,6 +16,22 @@ public final class VillagerConfigurationGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void vanillaVillagerBreedingIsEnabledByDefault(GameTestHelper helper) {
+        VillagerRetaliationConfigModel.Social defaults = new VillagerRetaliationConfigModel.Social();
+        helper.assertTrue(defaults.enableVanillaVillagerBreeding,
+                "Ordinary villagers should retain vanilla breeding by default");
+        helper.assertFalse(defaults.enableFamilyBreedingRules,
+                "Experimental family-aware breeding must remain opt-in");
+        helper.assertFalse(defaults.enableOppositeGenderBreedingRules,
+                "Experimental gender-aware breeding must remain opt-in");
+        helper.assertTrue(
+                VillagerRetaliationConfig.ENABLE_VANILLA_VILLAGER_BREEDING.option()
+                        != VillagerRetaliationConfig.ENABLE_FAMILY_BREEDING_RULES.option(),
+                "Vanilla breeding and experimental family rules need independent config bindings");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void experimentalTradeFeaturesAreDisabledByDefault(GameTestHelper helper) {
         VillagerRetaliationConfigModel.Trade defaults = new VillagerRetaliationConfigModel.Trade();
         helper.assertFalse(defaults.enableSkillTradeOverhaul,
@@ -93,6 +109,20 @@ public final class VillagerConfigurationGameTests {
                         "{\n  trade: {\n    enableSkillTradeOverhaul: true,\n"
                                 + "    experimentalTradeFeaturesMigrationVersion: 1\n  }\n}"),
                 "A migrated config must preserve a later explicit opt-in");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void vanillaBreedingCompatibilityDetectsPendingMigration(GameTestHelper helper) {
+        helper.assertTrue(
+                VillagerRetaliationConfigCompatibility.configTextRequiresVanillaBreedingMigration(
+                        "{\n  social: {\n    enableFamilyBreedingRules: true\n  }\n}"),
+                "A legacy config without the vanilla breeding setting must disable experimental rules once");
+        helper.assertFalse(
+                VillagerRetaliationConfigCompatibility.configTextRequiresVanillaBreedingMigration(
+                        "{\n  social: {\n    enableVanillaVillagerBreeding: true,\n"
+                                + "    enableFamilyBreedingRules: false\n  }\n}"),
+                "A migrated config must preserve later explicit breeding settings");
         helper.succeed();
     }
 

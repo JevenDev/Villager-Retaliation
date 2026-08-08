@@ -13,6 +13,8 @@ final class VillagerRetaliationConfigCompatibility {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String EXPERIMENTAL_TRADE_MIGRATION_PROPERTY =
             "experimentalTradeFeaturesMigrationVersion";
+    private static final String VANILLA_BREEDING_MIGRATION_PROPERTY =
+            "enableVanillaVillagerBreeding";
 
     private VillagerRetaliationConfigCompatibility() {
     }
@@ -44,8 +46,27 @@ final class VillagerRetaliationConfigCompatibility {
         }
     }
 
+    static boolean shouldDisableLegacyExperimentalBreedingRules(Path configPath) {
+        if (!Files.exists(configPath)) {
+            Path configDirectory = configPath.getParent();
+            return configDirectory != null
+                    && (Files.exists(configDirectory.resolve("villagerretaliation-common.toml"))
+                    || Files.exists(configDirectory.resolve("villagerretaliation-client.toml")));
+        }
+        try {
+            return configTextRequiresVanillaBreedingMigration(Files.readString(configPath));
+        } catch (IOException exception) {
+            LOGGER.warn("Failed to inspect existing config for the vanilla breeding migration", exception);
+            return false;
+        }
+    }
+
     static boolean configTextRequiresExperimentalTradeMigration(String configText) {
         return !configTextHasProperty(configText, EXPERIMENTAL_TRADE_MIGRATION_PROPERTY);
+    }
+
+    static boolean configTextRequiresVanillaBreedingMigration(String configText) {
+        return !configTextHasProperty(configText, VANILLA_BREEDING_MIGRATION_PROPERTY);
     }
 
     static boolean configTextHasProperty(String configText, String propertyName) {
@@ -91,6 +112,28 @@ final class VillagerRetaliationConfigCompatibility {
             return true;
         } catch (Exception exception) {
             LOGGER.warn("Failed to disable legacy experimental trade features", exception);
+            return false;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    static boolean disableLegacyExperimentalBreedingRules(ConfigWrapper<?> config) {
+        Option vanillaBreeding = config.optionForKey(
+                new Option.Key("social." + VANILLA_BREEDING_MIGRATION_PROPERTY));
+        Option familyRules = config.optionForKey(new Option.Key("social.enableFamilyBreedingRules"));
+        Option genderRules = config.optionForKey(new Option.Key("social.enableOppositeGenderBreedingRules"));
+        if (vanillaBreeding == null || familyRules == null || genderRules == null) {
+            return false;
+        }
+        try {
+            vanillaBreeding.set(true);
+            familyRules.set(false);
+            genderRules.set(false);
+            LOGGER.info(
+                    "Enabled vanilla villager breeding and disabled experimental family and gender rules for the one-time config migration");
+            return true;
+        } catch (Exception exception) {
+            LOGGER.warn("Failed to migrate legacy villager breeding settings", exception);
             return false;
         }
     }
