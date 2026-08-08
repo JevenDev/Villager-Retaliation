@@ -29,6 +29,7 @@ public final class VillagerQuestTrackerOverlay {
     private static final int HUD_MARGIN = 5;
 
     private static List<QuestTrackerSyncPayload.Entry> entries = List.of();
+    private static List<QuestTrackerSyncPayload.QuestlineNode> questlineNodes = List.of();
     private static final Set<String> questUpdateQuestIds = new HashSet<>();
     private static final Map<String, QuestTrackerSyncPayload.Entry> completedEntryCache = new LinkedHashMap<>();
     private static int flashTicks;
@@ -61,6 +62,7 @@ public final class VillagerQuestTrackerOverlay {
         }
         questUpdateQuestIds.removeIf(questId -> !acceptedQuestIds.contains(questId));
         entries = applyQuestUpdateCache(mergeCompletedEntries(visiblePayloadEntries));
+        questlineNodes = payload.questlineNodes();
         trackedQuestIds = payload.trackedQuestIds();
         if (payload.flash() && trackedEntry().isPresent()) {
             flashTicks = FLASH_LIFETIME_TICKS;
@@ -148,6 +150,7 @@ public final class VillagerQuestTrackerOverlay {
 
     public static void reset() {
         entries = List.of();
+        questlineNodes = List.of();
         flashTicks = 0;
         notificationAge = 0;
         age = 0;
@@ -163,6 +166,10 @@ public final class VillagerQuestTrackerOverlay {
 
     public static List<QuestTrackerSyncPayload.Entry> entries() {
         return entries;
+    }
+
+    public static List<QuestTrackerSyncPayload.QuestlineNode> questlineNodes() {
+        return questlineNodes;
     }
 
     public static void acknowledgeQuestUpdate(QuestTrackerSyncPayload.Entry entry) {

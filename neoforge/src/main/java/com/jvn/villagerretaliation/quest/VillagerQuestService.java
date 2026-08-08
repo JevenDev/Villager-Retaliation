@@ -5669,11 +5669,14 @@ public final class VillagerQuestService {
                 "result=sent reason=" + syncReason + " entries=" + entries.size());
         List<QuestTrackerSyncPayload.Entry> syncEntries =
                 markQuestUpdateEntries(entries, entrySignatures, previous, flash, trackedQuestIds);
+        List<QuestTrackerSyncPayload.QuestlineNode> questlineNodes =
+                questlineNodes(level, player, data, syncEntries);
         try {
             PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(
                     syncEntries,
                     trackedQuestIds.stream().map(ResourceLocation::toString).toList(),
-                    flash));
+                    flash,
+                    questlineNodes));
         } catch (UnsupportedOperationException ignored) {
             QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
                     "result=skipped reason=unsupported_connection entries=" + entries.size());
@@ -5757,6 +5760,83 @@ public final class VillagerQuestService {
                         progress.completed(), progress.total())));
             }
         }
+    }
+
+    private static List<QuestTrackerSyncPayload.QuestlineNode> questlineNodes(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerQuestSavedData data,
+            List<QuestTrackerSyncPayload.Entry> entries) {
+        if (level == null || player == null || data == null || entries == null || entries.isEmpty()) {
+            return List.of();
+        }
+        Set<String> visibleQuestlines = entries.stream()
+                .map(entry -> entry.journal().questline())
+                .filter(questline -> questline != null && !questline.isBlank())
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        if (visibleQuestlines.isEmpty()) {
+            return List.of();
+        }
+        Set<String> availableQuestIds = entries.stream()
+                .filter(QuestTrackerSyncPayload.Entry::questAvailable)
+                .map(QuestTrackerSyncPayload.Entry::questId)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        List<QuestTrackerSyncPayload.QuestlineNode> nodes = new ArrayList<>();
+        for (QuestDefinition definition : VillagerQuestResources.quests(level.getServer())) {
+            if (definition == null
+                    || definition.tracker().hidden()
+                    || !visibleQuestlines.contains(definition.questline())) {
+                continue;
+            }
+            VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), definition.id());
+            Map<String, String> replacements = Map.of(
+                    "quest", definition.title(),
+                    "quest_id", definition.id().toString());
+            String title = QuestTrackerPresenter.resolveText(
+                    player,
+                    new QuestDefinition.SelectedText(definition.title(), definition.titleKey()),
+                    replacements);
+            String description = QuestTrackerPresenter.resolveText(
+                    player,
+                    new QuestDefinition.SelectedText(definition.description(), definition.descriptionKey()),
+                    replacements);
+            nodes.add(new QuestTrackerSyncPayload.QuestlineNode(
+                    definition.id().toString(),
+                    title,
+                    description,
+                    definition.questline(),
+                    definition.prerequisites().stream().map(ResourceLocation::toString).toList(),
+                    definition.tracker().icon() == null ? "" : definition.tracker().icon().toString(),
+                    definition.tracker().color(),
+                    questlineNodeState(progress, availableQuestIds.contains(definition.id().toString()))));
+            if (nodes.size() >= QuestTrackerSyncPayload.MAX_QUESTLINE_NODES) {
+                break;
+            }
+        }
+        nodes.sort(Comparator.comparing(QuestTrackerSyncPayload.QuestlineNode::questline)
+                .thenComparing(QuestTrackerSyncPayload.QuestlineNode::title)
+                .thenComparing(QuestTrackerSyncPayload.QuestlineNode::questId));
+        return List.copyOf(nodes);
+    }
+
+    private static String questlineNodeState(
+            VillagerQuestSavedData.QuestProgress progress,
+            boolean available) {
+        if (branchLocked(progress)) {
+            return "closed";
+        }
+        if (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED) {
+            return available ? "available" : "locked";
+        }
+        if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
+            return "active";
+        }
+        if (progress.completionCount() > 0
+                || progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
+                || progress.completedGameTime() >= 0L) {
+            return "completed";
+        }
+        return progress.state().name().toLowerCase(Locale.ROOT);
     }
 
     private static void appendEntries(

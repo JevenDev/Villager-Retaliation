@@ -8,7 +8,11 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQuestIds, boolean flash) implements CustomPacketPayload {
+public record QuestTrackerSyncPayload(
+        List<Entry> entries,
+        List<String> trackedQuestIds,
+        boolean flash,
+        List<QuestlineNode> questlineNodes) implements CustomPacketPayload {
     public static final int MAX_TRACKER_ENTRIES = 3;
     public static final int MAX_TRACKED_QUESTS = QuestTrackerLimits.MAX_TRACKED_QUESTS;
     public static final int MAX_SYNC_ENTRIES = 32;
@@ -17,6 +21,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
     public static final int MAX_PREREQUISITES = 8;
     public static final int MAX_OBJECTIVE_STEPS = 24;
     public static final int MAX_JOURNAL_TAGS = 16;
+    public static final int MAX_QUESTLINE_NODES = 128;
     private static final int MAX_QUEST_ID_LENGTH = 128;
     private static final int MAX_TITLE_LENGTH = 128;
     private static final int MAX_TEXT_LENGTH = 256;
@@ -36,7 +41,11 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             VillagerPayloads.codec(QuestTrackerSyncPayload::encode, QuestTrackerSyncPayload::decode);
 
     public QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId, boolean flash) {
-        this(entries, trackedQuestId == null || trackedQuestId.isBlank() ? List.of() : List.of(trackedQuestId), flash);
+        this(entries, trackedQuestId == null || trackedQuestId.isBlank() ? List.of() : List.of(trackedQuestId), flash, List.of());
+    }
+
+    public QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQuestIds, boolean flash) {
+        this(entries, trackedQuestIds, flash, List.of());
     }
 
     public QuestTrackerSyncPayload {
@@ -52,6 +61,12 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                         .map(questId -> boundedUtf(questId, MAX_QUEST_ID_LENGTH))
                         .distinct()
                         .limit(MAX_TRACKED_QUESTS)
+                        .toList());
+        questlineNodes = questlineNodes == null
+                ? List.of()
+                : List.copyOf(questlineNodes.stream()
+                        .filter(Objects::nonNull)
+                        .limit(MAX_QUESTLINE_NODES)
                         .toList());
     }
 
@@ -119,6 +134,20 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             buffer.writeUtf(questId, 128);
         }
         buffer.writeBoolean(payload.flash());
+        buffer.writeVarInt(Math.min(MAX_QUESTLINE_NODES, payload.questlineNodes().size()));
+        for (QuestlineNode node : payload.questlineNodes()) {
+            buffer.writeUtf(node.questId(), MAX_QUEST_ID_LENGTH);
+            buffer.writeUtf(node.title(), MAX_TITLE_LENGTH);
+            buffer.writeUtf(node.description(), MAX_TEXT_LENGTH);
+            buffer.writeUtf(node.questline(), MAX_JOURNAL_VALUE_LENGTH);
+            buffer.writeVarInt(Math.min(MAX_PREREQUISITES, node.parentQuestIds().size()));
+            for (String parentQuestId : node.parentQuestIds()) {
+                buffer.writeUtf(parentQuestId, MAX_QUEST_ID_LENGTH);
+            }
+            buffer.writeUtf(node.icon(), MAX_JOURNAL_VALUE_LENGTH);
+            buffer.writeUtf(node.color(), MAX_JOURNAL_VALUE_LENGTH);
+            buffer.writeUtf(node.state(), MAX_STATE_LENGTH);
+        }
     }
 
     private static QuestTrackerSyncPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -152,7 +181,31 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
         for (int i = 0; i < trackedSize; i++) {
             trackedQuestIds.add(buffer.readUtf(128));
         }
-        return new QuestTrackerSyncPayload(entries, trackedQuestIds, buffer.readBoolean());
+        boolean flash = buffer.readBoolean();
+        int nodeCount = VillagerPayloads.readCollectionSize(buffer, MAX_QUESTLINE_NODES, "questline nodes");
+        List<QuestlineNode> questlineNodes = new ArrayList<>(nodeCount);
+        for (int i = 0; i < nodeCount; i++) {
+            String questId = buffer.readUtf(MAX_QUEST_ID_LENGTH);
+            String title = buffer.readUtf(MAX_TITLE_LENGTH);
+            String description = buffer.readUtf(MAX_TEXT_LENGTH);
+            String questline = buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH);
+            int parentCount = VillagerPayloads.readCollectionSize(
+                    buffer, MAX_PREREQUISITES, "questline node parents");
+            List<String> parentQuestIds = new ArrayList<>(parentCount);
+            for (int parentIndex = 0; parentIndex < parentCount; parentIndex++) {
+                parentQuestIds.add(buffer.readUtf(MAX_QUEST_ID_LENGTH));
+            }
+            questlineNodes.add(new QuestlineNode(
+                    questId,
+                    title,
+                    description,
+                    questline,
+                    parentQuestIds,
+                    buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH),
+                    buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH),
+                    buffer.readUtf(MAX_STATE_LENGTH)));
+        }
+        return new QuestTrackerSyncPayload(entries, trackedQuestIds, flash, questlineNodes);
     }
 
     private static List<QuestItem> readQuestItems(RegistryFriendlyByteBuf buffer) {
@@ -602,6 +655,35 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
 
         public boolean present() {
             return !this.dimension.isBlank();
+        }
+    }
+
+    public record QuestlineNode(
+            String questId,
+            String title,
+            String description,
+            String questline,
+            List<String> parentQuestIds,
+            String icon,
+            String color,
+            String state) {
+        public QuestlineNode {
+            questId = boundedUtf(questId, MAX_QUEST_ID_LENGTH);
+            title = boundedUtf(title, MAX_TITLE_LENGTH);
+            description = boundedUtf(description, MAX_TEXT_LENGTH);
+            questline = boundedUtf(questline, MAX_JOURNAL_VALUE_LENGTH);
+            parentQuestIds = parentQuestIds == null
+                    ? List.of()
+                    : List.copyOf(parentQuestIds.stream()
+                            .filter(Objects::nonNull)
+                            .map(parent -> boundedUtf(parent, MAX_QUEST_ID_LENGTH))
+                            .filter(parent -> !parent.isBlank())
+                            .distinct()
+                            .limit(MAX_PREREQUISITES)
+                            .toList());
+            icon = boundedUtf(icon, MAX_JOURNAL_VALUE_LENGTH);
+            color = boundedUtf(color, MAX_JOURNAL_VALUE_LENGTH);
+            state = boundedUtf(state, MAX_STATE_LENGTH);
         }
     }
 
