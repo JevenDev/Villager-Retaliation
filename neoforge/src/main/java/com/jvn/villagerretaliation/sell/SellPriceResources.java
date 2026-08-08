@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -93,6 +94,15 @@ public final class SellPriceResources {
         return CACHE.get(server).byItem();
     }
 
+    static Set<ResourceLocation> marketGroups(MinecraftServer server) {
+        return CACHE.get(server).marketGroups();
+    }
+
+    static List<CurrencyAmount> candidatePrices(MinecraftServer server, SellPriceDefinition definition) {
+        List<CurrencyAmount> cached = CACHE.get(server).candidatePrices().get(definition);
+        return cached == null ? definition.candidatePrices() : cached;
+    }
+
     private static Catalog read(MinecraftServer server) {
         Map<Item, List<SellPriceDefinition>> definitions = new LinkedHashMap<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
@@ -111,8 +121,14 @@ public final class SellPriceResources {
         });
         Map<Item, List<SellPriceDefinition>> immutable =
                 Collections.unmodifiableMap(ordered);
+        LinkedHashMap<SellPriceDefinition, List<CurrencyAmount>> candidatePrices = new LinkedHashMap<>();
+        LinkedHashSet<ResourceLocation> marketGroups = new LinkedHashSet<>();
+        immutable.values().forEach(itemDefinitions -> itemDefinitions.forEach(definition -> {
+            candidatePrices.put(definition, definition.candidatePrices());
+            marketGroups.add(definition.marketGroup());
+        }));
         diagnoseAmbiguities(immutable, sources);
-        return new Catalog(immutable);
+        return new Catalog(immutable, Map.copyOf(candidatePrices), Set.copyOf(marketGroups));
     }
 
     private static void diagnoseAmbiguities(
@@ -372,9 +388,12 @@ public final class SellPriceResources {
             List<ComponentPredicate> shorthandComponents) {
     }
 
-    private record Catalog(Map<Item, List<SellPriceDefinition>> byItem) {
+    private record Catalog(
+            Map<Item, List<SellPriceDefinition>> byItem,
+            Map<SellPriceDefinition, List<CurrencyAmount>> candidatePrices,
+            Set<ResourceLocation> marketGroups) {
         private static Catalog empty() {
-            return new Catalog(Map.of());
+            return new Catalog(Map.of(), Map.of(), Set.of());
         }
     }
 }

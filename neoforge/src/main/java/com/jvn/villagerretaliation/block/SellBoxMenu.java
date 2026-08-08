@@ -5,6 +5,12 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
 import com.jvn.villagerretaliation.sell.SellBoxMarketSyncService;
 import com.jvn.villagerretaliation.sell.VillageSellMarket;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.WeakHashMap;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,7 +21,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
-import java.util.Optional;
 import net.minecraft.world.item.ItemStack;
 
 public final class SellBoxMenu extends AbstractContainerMenu {
@@ -23,6 +28,7 @@ public final class SellBoxMenu extends AbstractContainerMenu {
     public static final int COLLECT_BUTTON = 1;
     private static final int PLAYER_INVENTORY_START = 1;
     private static final int TOTAL_SLOT_COUNT = 37;
+    private static final Map<SellBoxBlockEntity, Set<ServerPlayer>> VIEWERS = new WeakHashMap<>();
 
     private final Container container;
 
@@ -35,6 +41,13 @@ public final class SellBoxMenu extends AbstractContainerMenu {
         checkContainerSize(container, SellBoxBlockEntity.SLOT_COUNT);
         this.container = container;
         container.startOpen(playerInventory.player);
+        if (container instanceof SellBoxBlockEntity sellBox
+                && playerInventory.player instanceof ServerPlayer serverPlayer) {
+            VIEWERS.computeIfAbsent(
+                    sellBox,
+                    ignored -> Collections.newSetFromMap(new WeakHashMap<>()))
+                    .add(serverPlayer);
+        }
         addSlot(new SellSlot(container, 0, 80, 22, playerInventory.player));
         addPlayerInventory(playerInventory);
         addPlayerHotbar(playerInventory);
@@ -150,6 +163,15 @@ public final class SellBoxMenu extends AbstractContainerMenu {
     public void removed(Player player) {
         super.removed(player);
         container.stopOpen(player);
+        if (container instanceof SellBoxBlockEntity sellBox && player instanceof ServerPlayer serverPlayer) {
+            Set<ServerPlayer> viewers = VIEWERS.get(sellBox);
+            if (viewers != null) {
+                viewers.remove(serverPlayer);
+                if (viewers.isEmpty()) {
+                    VIEWERS.remove(sellBox);
+                }
+            }
+        }
     }
 
     public SellBoxBlockEntity sellBox() {
@@ -164,13 +186,19 @@ public final class SellBoxMenu extends AbstractContainerMenu {
         if (sellBox.getLevel() == null || sellBox.getLevel().isClientSide) {
             return;
         }
-        for (Player player : sellBox.getLevel().players()) {
-            if (player instanceof ServerPlayer serverPlayer
-                    && serverPlayer.containerMenu instanceof SellBoxMenu menu
-                    && menu.isContainer(sellBox)) {
-                menu.broadcastFullState();
-                menu.sync(serverPlayer);
-            }
+        Set<ServerPlayer> viewers = VIEWERS.get(sellBox);
+        if (viewers == null) {
+            return;
+        }
+        viewers.removeIf(player -> !(player.containerMenu instanceof SellBoxMenu menu)
+                || !menu.isContainer(sellBox));
+        for (ServerPlayer viewer : List.copyOf(viewers)) {
+            SellBoxMenu menu = (SellBoxMenu) viewer.containerMenu;
+            menu.broadcastFullState();
+            menu.sync(viewer);
+        }
+        if (viewers.isEmpty()) {
+            VIEWERS.remove(sellBox);
         }
     }
 
@@ -201,7 +229,7 @@ public final class SellBoxMenu extends AbstractContainerMenu {
                 player,
                 this.containerId,
                 (SellBoxBlockEntity) container);
-        SellBoxMarketSyncService.markSynced(player, (SellBoxBlockEntity) container);
+        SellBoxMarketSyncService.markSynced(player, (SellBoxBlockEntity) container, this.containerId);
     }
 
     private void addPlayerInventory(Inventory inventory) {

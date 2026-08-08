@@ -430,6 +430,22 @@ public final class SellBoxGameTests {
         helper.assertTrue(
                 SellBoxMarketSyncService.isSynced(player, sellBox),
                 "a successful payload send must suppress the duplicate next-tick snapshot");
+        int containerId = player.containerMenu.containerId;
+        helper.assertFalse(
+                SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId),
+                "an unchanged box must reuse its quoted inventory entries");
+        sellBox.restoreCurrency(new ItemStack(Items.EMERALD, 1));
+        helper.assertFalse(
+                SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId),
+                "a balance-only update must reuse its quoted inventory entries");
+        sellBox.setItem(0, new ItemStack(Items.COAL, 2));
+        helper.assertFalse(
+                SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId),
+                "a pending-only update must reuse its quoted inventory entries");
+        player.getInventory().setItem(0, new ItemStack(Items.STRING, 1));
+        helper.assertTrue(
+                SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId),
+                "a changed inventory variant must rebuild quoted inventory entries");
 
         SellBoxMarketSyncService.clear(player.getServer());
         helper.succeed();
@@ -613,6 +629,13 @@ public final class SellBoxGameTests {
         var server = helper.getLevel().getServer();
         SellPriceDefinition logs = SellPriceResources.definition(server, new ItemStack(Items.OAK_LOG))
                 .orElseThrow();
+        helper.assertTrue(
+                SellPriceResources.candidatePrices(server, logs)
+                        == SellPriceResources.candidatePrices(server, logs),
+                "loaded sell-price candidates must be precomputed and reused");
+        helper.assertTrue(
+                SellPriceResources.marketGroups(server).contains(logs.marketGroup()),
+                "the loaded market-group index must contain bundled definitions");
         SellPriceDefinition planks = SellPriceResources.definition(server, new ItemStack(Items.OAK_PLANKS))
                 .orElseThrow();
         helper.assertValueEqual(logs.itemCount(), SellPriceDefinition.IntRange.fixed(5), "logs anchor");

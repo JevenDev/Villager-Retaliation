@@ -119,13 +119,14 @@ public final class VillageSellMarket {
                         server,
                         canonical.get(),
                         day,
-                        SellPriceResources.definitions(server).values().stream()
-                                .flatMap(List::stream)
-                                .map(SellPriceDefinition::marketGroup)
-                                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)))
+                        SellPriceResources.marketGroups(server))
                 .getOrDefault(priceDefinition.marketGroup(), DailyDemandBand.NORMAL);
         CurrencyAmount baseUnitPrice = selectBasePrice(
-                level.getSeed(), day, canonical.get(), priceDefinition);
+                level.getSeed(),
+                day,
+                canonical.get(),
+                priceDefinition,
+                SellPriceResources.candidatePrices(server, priceDefinition));
         CurrencyAmount pressure = markets.pressure(
                 registry, canonical.get(), priceDefinition.marketGroup(), day);
         String villageName = registry.canonicalRecord(canonical.get())
@@ -170,7 +171,15 @@ public final class VillageSellMarket {
             long day,
             VillageAllegianceId village,
             SellPriceDefinition definition) {
-        List<CurrencyAmount> candidates = definition.candidatePrices();
+        return selectBasePrice(worldSeed, day, village, definition, definition.candidatePrices());
+    }
+
+    private static CurrencyAmount selectBasePrice(
+            long worldSeed,
+            long day,
+            VillageAllegianceId village,
+            SellPriceDefinition definition,
+            List<CurrencyAmount> candidates) {
         if (candidates.size() == 1) {
             return candidates.getFirst();
         }
@@ -263,7 +272,7 @@ public final class VillageSellMarket {
             Set<ResourceLocation> groups) {
         long generation = SellPriceResources.generation();
         DemandCacheKey key = new DemandCacheKey(
-                server.overworld().getSeed(), village, day, generation, Set.copyOf(groups));
+                server.overworld().getSeed(), village, day, generation);
         synchronized (DEMAND_CACHE) {
             Map<DemandCacheKey, Map<ResourceLocation, DailyDemandBand>> cache =
                     DEMAND_CACHE.computeIfAbsent(server, ignored -> new LinkedHashMap<>());
@@ -336,7 +345,6 @@ public final class VillageSellMarket {
             long worldSeed,
             VillageAllegianceId village,
             long day,
-            long generation,
-            Set<ResourceLocation> groups) {
+            long generation) {
     }
 }

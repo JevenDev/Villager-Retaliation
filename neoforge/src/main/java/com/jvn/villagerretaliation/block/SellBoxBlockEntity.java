@@ -138,7 +138,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         }
         this.balance = this.balance.add(sale.get().payout());
         this.items.set(0, ItemStack.EMPTY);
-        changedAndSync(false);
+        changedAndSync(false, true);
         SellBoxMenu.syncVillage(serverLevel, sale.get().quote().villageId());
         return true;
     }
@@ -178,7 +178,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
                 soldInVillage = sale.get().quote().villageId();
             }
             this.items.set(0, incoming.copyWithCount(accepted));
-            changedAndSync(soldInVillage == null);
+            changedAndSync(soldInVillage == null, true);
             if (soldInVillage != null) {
                 SellBoxMenu.syncVillage(serverLevel, soldInVillage);
             }
@@ -214,7 +214,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
                 : new ItemStack(VillagerCurrencyResources.primaryItem(level.getServer()), count);
         if (!simulate && !extracted.isEmpty()) {
             this.balance = this.balance.withoutWholeUnits(BigInteger.valueOf(extracted.getCount()));
-            changedAndSync();
+            changedAndSync(true, false);
         }
         return extracted;
     }
@@ -225,7 +225,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
             return stack == null ? ItemStack.EMPTY : stack;
         }
         this.balance = this.balance.add(CurrencyAmount.of(stack.getCount(), 1));
-        changedAndSync();
+        changedAndSync(true, false);
         return ItemStack.EMPTY;
     }
 
@@ -250,7 +250,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         }
         if (collected > 0) {
             player.getInventory().setChanged();
-            changedAndSync();
+            changedAndSync(true, false);
         }
         return collected;
     }
@@ -316,7 +316,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         ItemStack before = getItem(slot).copy();
         super.setItem(slot, stack);
         if (!sameStack(before, getItem(slot))) {
-            changedAndSync();
+            changedAndSync(true, true);
         }
     }
 
@@ -324,7 +324,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
     public ItemStack removeItem(int slot, int amount) {
         ItemStack removed = super.removeItem(slot, amount);
         if (!removed.isEmpty()) {
-            changedAndSync();
+            changedAndSync(true, true);
         }
         return removed;
     }
@@ -333,7 +333,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
     public ItemStack removeItemNoUpdate(int slot) {
         ItemStack removed = super.removeItemNoUpdate(slot);
         if (!removed.isEmpty()) {
-            changedAndSync();
+            changedAndSync(true, true);
         }
         return removed;
     }
@@ -343,7 +343,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         boolean changed = !this.items.getFirst().isEmpty();
         super.clearContent();
         if (changed) {
-            changedAndSync();
+            changedAndSync(true, true);
         }
     }
 
@@ -399,15 +399,13 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    private void changedAndSync() {
-        changedAndSync(true);
-    }
-
-    private void changedAndSync(boolean syncViewers) {
+    private void changedAndSync(boolean syncViewers, boolean pendingChanged) {
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+            if (pendingChanged) {
+                level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+            }
         }
         if (syncViewers) {
             SellBoxMenu.syncViewers(this);
@@ -456,7 +454,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         @Override
         public int getSlotLimit(int slot) {
             checkSlot(slot);
-            return Integer.MAX_VALUE;
+            return SellBoxBlockEntity.this.getMaxStackSize();
         }
 
         @Override

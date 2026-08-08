@@ -1,15 +1,18 @@
 package com.jvn.villagerretaliation.network;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.block.SellBoxBlockEntity;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.sell.DailyDemandBand;
 import com.jvn.villagerretaliation.sell.MarketQuote;
+import com.jvn.villagerretaliation.sell.SellBoxMarketSyncService;
 import com.jvn.villagerretaliation.sell.SupplyBand;
 import com.jvn.villagerretaliation.sell.VillageSellMarket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -29,8 +32,9 @@ public record SellBoxSyncPayload(
         ResourceLocation currencyIconSprite,
         boolean validMarket,
         String villageName,
+        boolean replaceEntries,
         List<QuotedStack> entries) implements CustomPacketPayload {
-    private static final int MAX_ENTRIES = 4096;
+    private static final int MAX_ENTRIES = 64;
     private static final ResourceLocation DEFAULT_CURRENCY_ICON =
             ResourceLocation.withDefaultNamespace("item/emerald");
     public static final Type<SellBoxSyncPayload> TYPE = VillagerPayloads.type("sell_box_sync");
@@ -49,24 +53,24 @@ public record SellBoxSyncPayload(
     public static void send(ServerPlayer player, int containerId, SellBoxBlockEntity sellBox) {
         VillagerCurrencyResources.Text text = VillagerCurrencyResources.text(player.getServer());
         ServerLevel level = player.serverLevel();
-        boolean valid = VillageSellMarket.resolveVillage(
-                        VillageAllegianceRegistrySavedData.get(level), level, sellBox.getBlockPos())
-                .isPresent();
-        String villageName = VillageSellMarket.resolveVillage(
-                        VillageAllegianceRegistrySavedData.get(level), level, sellBox.getBlockPos())
-                .flatMap(VillageAllegianceRegistrySavedData.get(level)::canonicalRecord)
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> village =
+                VillageSellMarket.resolveVillage(registry, level, sellBox.getBlockPos());
+        boolean valid = village.isPresent();
+        String villageName = village
+                .flatMap(registry::canonicalRecord)
                 .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
                 .orElse("");
         MarketEntry pendingEntry = VillageSellMarket.quote(
                         level, sellBox.getBlockPos(), sellBox.getItem(0))
                 .map(quote -> marketEntry(quote, sellBox.getItem(0).getCount()))
                 .orElse(null);
+        boolean replaceEntries = SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId);
         ArrayList<QuotedStack> entries = new ArrayList<>();
-        if (valid) {
+        if (valid && replaceEntries) {
             for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
                 addQuotedStack(entries, level, sellBox, player.getInventory().getItem(slot));
             }
-            addQuotedStack(entries, level, sellBox, sellBox.getItem(0));
         }
         PacketDistributor.sendToPlayer(player, new SellBoxSyncPayload(
                 containerId,
@@ -78,6 +82,7 @@ public record SellBoxSyncPayload(
                 text.iconSprite(),
                 valid,
                 villageName,
+                replaceEntries,
                 entries));
     }
 
@@ -128,6 +133,7 @@ public record SellBoxSyncPayload(
         buffer.writeResourceLocation(payload.currencyIconSprite());
         buffer.writeBoolean(payload.validMarket());
         buffer.writeUtf(payload.villageName(), 128);
+        buffer.writeBoolean(payload.replaceEntries());
         int size = Math.min(payload.entries().size(), MAX_ENTRIES);
         buffer.writeVarInt(size);
         for (int index = 0; index < size; index++) {
@@ -145,6 +151,7 @@ public record SellBoxSyncPayload(
         ResourceLocation currencyIconSprite = buffer.readResourceLocation();
         boolean validMarket = buffer.readBoolean();
         String villageName = buffer.readUtf(128);
+        boolean replaceEntries = buffer.readBoolean();
         int size = VillagerPayloads.readCollectionSize(buffer, MAX_ENTRIES, "sell-box market entries");
         List<QuotedStack> entries = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
@@ -152,7 +159,7 @@ public record SellBoxSyncPayload(
         }
         return new SellBoxSyncPayload(
                 containerId, day, balance, pendingEntry, name, pluralName, currencyIconSprite,
-                validMarket, villageName, entries);
+                validMarket, villageName, replaceEntries, entries);
     }
 
     @Override
