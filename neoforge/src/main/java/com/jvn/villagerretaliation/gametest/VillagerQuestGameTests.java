@@ -1314,6 +1314,54 @@ public final class VillagerQuestGameTests {
                 "tracker sync payload did not cap entries");
 
         String oversized = "x".repeat(400);
+        List<String> manyParents = new ArrayList<>();
+        for (int i = 0; i < QuestTrackerSyncPayload.MAX_PREREQUISITES + 4; i++) {
+            manyParents.add("villagerretaliation:parent_" + i);
+        }
+        QuestTrackerSyncPayload.QuestlineNode boundedNode = new QuestTrackerSyncPayload.QuestlineNode(
+                oversized,
+                oversized,
+                oversized,
+                oversized,
+                manyParents,
+                oversized,
+                oversized,
+                oversized);
+        List<QuestTrackerSyncPayload.QuestlineNode> manyQuestlineNodes = new ArrayList<>();
+        for (int i = 0; i < QuestTrackerSyncPayload.MAX_QUESTLINE_NODES + 4; i++) {
+            manyQuestlineNodes.add(i == 0
+                    ? boundedNode
+                    : new QuestTrackerSyncPayload.QuestlineNode(
+                            "villagerretaliation:node_" + i,
+                            "Node " + i,
+                            "Description",
+                            "test_line",
+                            List.of(),
+                            "minecraft:emerald",
+                            "#70834a",
+                            "locked"));
+        }
+        QuestTrackerSyncPayload graphPayload = new QuestTrackerSyncPayload(
+                List.of(),
+                List.of(),
+                false,
+                manyQuestlineNodes);
+        helper.assertValueEqual(
+                graphPayload.questlineNodes().size(),
+                QuestTrackerSyncPayload.MAX_QUESTLINE_NODES,
+                "tracker sync payload did not cap questline nodes");
+        helper.assertTrue(
+                boundedNode.questId().length() <= 128
+                        && boundedNode.title().length() <= 128
+                        && boundedNode.description().length() <= 256
+                        && boundedNode.questline().length() <= 128
+                        && boundedNode.parentQuestIds().size() == QuestTrackerSyncPayload.MAX_PREREQUISITES
+                        && boundedNode.parentQuestIds().stream().allMatch(parent -> parent.length() <= 128)
+                        && boundedNode.icon().length() <= 128
+                        && boundedNode.color().length() <= 128
+                        && boundedNode.state().length() <= 32,
+                "questline node fields must fit their wire codec bounds");
+
         QuestTrackerSyncPayload.Entry boundedEntry = new QuestTrackerSyncPayload.Entry(
                 oversized,
                 oversized,
