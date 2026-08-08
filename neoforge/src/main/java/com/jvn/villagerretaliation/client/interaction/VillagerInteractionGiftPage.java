@@ -4,7 +4,7 @@ import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
-import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
+import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService;
 import com.jvn.toucanlib.client.interaction.ToucanInputModifiers;
 import com.jvn.toucanlib.client.interaction.ToucanSlotAmounts;
 import com.jvn.toucanlib.client.interaction.ToucanSlotBounds;
@@ -13,7 +13,6 @@ import com.jvn.toucanlib.client.interaction.ToucanSlotRenderer;
 import com.jvn.toucanlib.client.tooltip.ToucanTooltips;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
@@ -100,18 +99,32 @@ final class VillagerInteractionGiftPage {
     }
 
     private static Component giftReactionTooltip(GiftPreferenceView preference) {
-        VillagerGiftPreferences.GiftReaction reaction = VillagerGiftPreferences.GiftReaction.fromRating(preference.rating());
-        ChatFormatting color = switch (reaction) {
-            case LOVED -> ChatFormatting.GREEN;
-            case LIKED -> ChatFormatting.DARK_GREEN;
-            case NEUTRAL -> ChatFormatting.GRAY;
-            case DISLIKED -> ChatFormatting.RED;
-            case HATED -> ChatFormatting.DARK_RED;
-        };
-        String reactionKey = GUI_KEY_PREFIX + "gift.reaction." + reaction.name().toLowerCase(Locale.ROOT);
+        if (!preference.known()) {
+            return Component.translatable(GUI_KEY_PREFIX + "gift.preference_unknown")
+                    .withStyle(ChatFormatting.GRAY);
+        }
+        ChatFormatting color = ratingColor(preference.rating());
         return Component.translatable(
-                GUI_KEY_PREFIX + "gift.reaction",
-                Component.translatable(reactionKey).withStyle(color)).withStyle(color);
+                GUI_KEY_PREFIX + "gift.preference",
+                preference.displayName().copy().withStyle(color),
+                Component.literal(VillagerGiftKnowledgeService.ratingLabel(preference.rating())).withStyle(color))
+                .withStyle(color);
+    }
+
+    private static ChatFormatting ratingColor(int rating) {
+        if (rating >= 3) {
+            return ChatFormatting.GREEN;
+        }
+        if (rating > 0) {
+            return ChatFormatting.DARK_GREEN;
+        }
+        if (rating <= -3) {
+            return ChatFormatting.DARK_RED;
+        }
+        if (rating < 0) {
+            return ChatFormatting.RED;
+        }
+        return ChatFormatting.GRAY;
     }
 
     static boolean tryClick(
@@ -358,24 +371,21 @@ final class VillagerInteractionGiftPage {
         tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.known_gifts").withStyle(ChatFormatting.AQUA));
         tooltip.add(Component.literal(context.professionName()).withStyle(ChatFormatting.AQUA));
         tooltip.add(Component.empty());
-        if (context.knownLikedGiftNames().isEmpty() && context.knownDislikedGiftNames().isEmpty()) {
+        if (context.knownGiftPreferences().isEmpty()) {
             tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.learn_more").withStyle(ChatFormatting.GRAY));
         } else {
-            addGiftTooltipSection(tooltip, "gift.likes", context.knownLikedGiftNames(), ChatFormatting.GREEN);
-            addGiftTooltipSection(tooltip, "gift.dislikes", context.knownDislikedGiftNames(), ChatFormatting.RED);
+            tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.categories_header")
+                    .withStyle(ChatFormatting.GRAY));
+            for (GiftPreferenceView preference : context.knownGiftPreferences()) {
+                ChatFormatting color = ratingColor(preference.rating());
+                tooltip.add(Component.literal("  ")
+                        .append(preference.displayName().copy())
+                        .append(" ")
+                        .append(VillagerGiftKnowledgeService.ratingLabel(preference.rating()))
+                        .withStyle(color));
+            }
         }
         ToucanTooltips.renderBounded(graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
-    }
-
-    private static void addGiftTooltipSection(List<Component> tooltip, String labelKey, List<String> giftNames, ChatFormatting color) {
-        tooltip.add(Component.translatable(GUI_KEY_PREFIX + labelKey + "_header").withStyle(color));
-        if (giftNames.isEmpty()) {
-            tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.unknown_indented").withStyle(ChatFormatting.GRAY));
-            return;
-        }
-        for (String giftName : giftNames) {
-            tooltip.add(Component.literal("  " + giftName).withStyle(color));
-        }
     }
 
     private static ToucanSlotRegistry<Integer> createGiftSlots() {
@@ -443,9 +453,7 @@ final class VillagerInteractionGiftPage {
 
         String professionName();
 
-        List<String> knownLikedGiftNames();
-
-        List<String> knownDislikedGiftNames();
+        List<GiftPreferenceView> knownGiftPreferences();
 
         Optional<GiftPreferenceView> giftPreference(ItemStack stack);
 

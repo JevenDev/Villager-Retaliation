@@ -5850,20 +5850,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
-        public List<String> knownLikedGiftNames() {
+        public List<GiftPreferenceView> knownGiftPreferences() {
             return VillagerInteractionScreen.this.giftPreferences.stream()
                     .filter(GiftPreferenceView::known)
-                    .filter(preference -> preference.rating() > 0)
-                    .map(preference -> preference.displayName().getString())
-                    .toList();
-        }
-
-        @Override
-        public List<String> knownDislikedGiftNames() {
-            return VillagerInteractionScreen.this.giftPreferences.stream()
-                    .filter(GiftPreferenceView::known)
-                    .filter(preference -> preference.rating() < 0)
-                    .map(preference -> preference.displayName().getString())
                     .toList();
         }
 
