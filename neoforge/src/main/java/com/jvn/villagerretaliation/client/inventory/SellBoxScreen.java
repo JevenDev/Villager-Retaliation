@@ -11,7 +11,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -161,9 +160,7 @@ public final class SellBoxScreen extends AbstractContainerScreen<SellBoxMenu> {
         lines.add(Component.translatable(detailKey).withStyle(ChatFormatting.GRAY));
         if (isValueRowHovered(localMouseX, localMouseY, PENDING_ROW_Y)) {
             ItemStack pending = menu.getSlot(0).getItem();
-            var entry = pending.isEmpty()
-                    ? null
-                    : state.entries().get(BuiltInRegistries.ITEM.getKey(pending.getItem()));
+            var entry = pending.isEmpty() ? null : state.pendingEntry();
             if (entry != null) {
                 lines.add(Component.translatable(
                         "villagerretaliation.sell_box.current_rate",
@@ -201,12 +198,9 @@ public final class SellBoxScreen extends AbstractContainerScreen<SellBoxMenu> {
     }
 
     private CurrencyAmount pendingValue(SellBoxClientState.Snapshot state) {
-        ItemStack pending = menu.getSlot(0).getItem();
-        if (pending.isEmpty()) {
-            return CurrencyAmount.ZERO;
-        }
-        var entry = state.entries().get(BuiltInRegistries.ITEM.getKey(pending.getItem()));
-        return SellBoxClientState.payout(entry, pending.getCount());
+        return state.pendingEntry() == null
+                ? CurrencyAmount.ZERO
+                : state.pendingEntry().effectiveStackPrice();
     }
 
     private Component rateText(
