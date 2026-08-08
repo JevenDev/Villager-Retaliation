@@ -77,7 +77,6 @@ public record GiftPreferenceDefinition(
             }
             return stack.is(TagKey.create(Registries.ITEM, this.value));
         }
-
     }
 
     public enum MatchSource {

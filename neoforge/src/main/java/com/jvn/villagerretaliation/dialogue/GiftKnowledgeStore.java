@@ -100,14 +100,6 @@ final class GiftKnowledgeStore {
         return giftKnowledgeEntry(playerId, professionKey, true).discoveredCategories.add(categoryId);
     }
 
-    boolean knowsGift(UUID playerId, String professionKey, String itemId, boolean liked) {
-        GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, false);
-        if (entry == null) {
-            return false;
-        }
-        return liked ? entry.legacyLikedGifts.contains(itemId) : entry.legacyDislikedGifts.contains(itemId);
-    }
-
     Set<String> legacyGiftIds(UUID playerId, String professionKey, boolean liked) {
         GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, false);
         if (entry == null) {
@@ -122,31 +114,6 @@ final class GiftKnowledgeStore {
             return false;
         }
         return (liked ? entry.legacyLikedGifts : entry.legacyDislikedGifts).remove(itemId);
-    }
-
-    boolean hasGiftKnowledge(UUID playerId, String... professionKeys) {
-        GiftKnowledgeBook book = this.booksByPlayer.get(playerId);
-        if (book == null) {
-            return false;
-        }
-        if (professionKeys == null || professionKeys.length == 0) {
-            return book.byProfession.values().stream().anyMatch(GiftKnowledgeEntry::hasKnownGifts);
-        }
-        for (String professionKey : professionKeys) {
-            if (book.hasKnownGifts(professionKey)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    boolean rememberGiftKnowledge(UUID playerId, String professionKey, String itemId, boolean liked) {
-        GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, true);
-        Set<String> target = liked ? entry.legacyLikedGifts : entry.legacyDislikedGifts;
-        Set<String> opposite = liked ? entry.legacyDislikedGifts : entry.legacyLikedGifts;
-        boolean changed = target.add(itemId);
-        changed |= opposite.remove(itemId);
-        return changed;
     }
 
     private GiftKnowledgeEntry giftKnowledgeEntry(UUID playerId, String professionKey, boolean create) {
@@ -180,22 +147,11 @@ final class GiftKnowledgeStore {
 
     private static class GiftKnowledgeBook {
         private final Map<String, GiftKnowledgeEntry> byProfession = new HashMap<>();
-
-        private boolean hasKnownGifts(String professionKey) {
-            GiftKnowledgeEntry entry = this.byProfession.get(professionKey);
-            return entry != null && entry.hasKnownGifts();
-        }
     }
 
     private static class GiftKnowledgeEntry {
         private final Set<String> discoveredCategories = new LinkedHashSet<>();
         private final Set<String> legacyLikedGifts = new LinkedHashSet<>();
         private final Set<String> legacyDislikedGifts = new LinkedHashSet<>();
-
-        private boolean hasKnownGifts() {
-            return !this.discoveredCategories.isEmpty()
-                    || !this.legacyLikedGifts.isEmpty()
-                    || !this.legacyDislikedGifts.isEmpty();
-        }
     }
 }
