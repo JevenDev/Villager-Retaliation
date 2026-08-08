@@ -3,7 +3,7 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
-import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
@@ -20,9 +20,7 @@ interface VillagerInteractionSessionScreen {
             VillagerMood primaryMood,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
-            List<String> knownLikedGiftNames,
-            List<String> knownDislikedGiftNames,
-            List<GiftTooltipReaction> giftTooltipReactions);
+            List<GiftPreferenceView> giftPreferences);
 
     void updateDuelStatus(OpenVillagerDuelPayload payload);
 

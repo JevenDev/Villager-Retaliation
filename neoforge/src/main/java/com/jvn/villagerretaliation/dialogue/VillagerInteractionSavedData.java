@@ -783,6 +783,18 @@ public class VillagerInteractionSavedData extends SavedData {
         return playerEntries == null ? null : playerEntries.get(playerId);
     }
 
+    public boolean knowsGiftCategory(UUID playerId, String professionKey, String categoryId) {
+        return this.giftKnowledge.knowsCategory(playerId, professionKey, categoryId);
+    }
+
+    public Set<String> discoveredGiftCategories(UUID playerId, String... professionKeys) {
+        return this.giftKnowledge.discoveredCategories(playerId, professionKeys);
+    }
+
+    public boolean rememberGiftCategory(UUID playerId, String professionKey, String categoryId) {
+        return this.giftKnowledge.rememberCategory(playerId, professionKey, categoryId);
+    }
+
     public boolean knowsGift(UUID playerId, String professionKey, String itemId, boolean liked) {
         return this.giftKnowledge.knowsGift(playerId, professionKey, itemId, liked);
     }

@@ -3,7 +3,8 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
+import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.toucanlib.client.interaction.ToucanInputModifiers;
 import com.jvn.toucanlib.client.interaction.ToucanSlotAmounts;
 import com.jvn.toucanlib.client.interaction.ToucanSlotBounds;
@@ -90,7 +91,7 @@ final class VillagerInteractionGiftPage {
             int mouseX, int mouseY, float scale, int originX, int originY) {
         List<Component> tooltip = new ArrayList<>(ToucanTooltips.itemTooltipLines(stack));
         if (VillagerRetaliationConfig.SHOW_GIFT_REACTION_TOOLTIP.get()) {
-            context.giftTooltipReaction(stack)
+            context.giftPreference(stack)
                     .filter(reaction -> !VillagerRetaliationConfig.GIFT_REACTION_TOOLTIP_REQUIRES_KNOWN_GIFT.get() || reaction.known())
                     .ifPresent(reaction -> tooltip.add(giftReactionTooltip(reaction)));
         }
@@ -98,15 +99,16 @@ final class VillagerInteractionGiftPage {
                 graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
     }
 
-    private static Component giftReactionTooltip(GiftTooltipReaction reaction) {
-        ChatFormatting color = switch (reaction.reaction()) {
+    private static Component giftReactionTooltip(GiftPreferenceView preference) {
+        VillagerGiftPreferences.GiftReaction reaction = VillagerGiftPreferences.GiftReaction.fromRating(preference.rating());
+        ChatFormatting color = switch (reaction) {
             case LOVED -> ChatFormatting.GREEN;
             case LIKED -> ChatFormatting.DARK_GREEN;
             case NEUTRAL -> ChatFormatting.GRAY;
             case DISLIKED -> ChatFormatting.RED;
             case HATED -> ChatFormatting.DARK_RED;
         };
-        String reactionKey = GUI_KEY_PREFIX + "gift.reaction." + reaction.reaction().name().toLowerCase(Locale.ROOT);
+        String reactionKey = GUI_KEY_PREFIX + "gift.reaction." + reaction.name().toLowerCase(Locale.ROOT);
         return Component.translatable(
                 GUI_KEY_PREFIX + "gift.reaction",
                 Component.translatable(reactionKey).withStyle(color)).withStyle(color);
@@ -445,7 +447,7 @@ final class VillagerInteractionGiftPage {
 
         List<String> knownDislikedGiftNames();
 
-        Optional<GiftTooltipReaction> giftTooltipReaction(ItemStack stack);
+        Optional<GiftPreferenceView> giftPreference(ItemStack stack);
 
     }
 
