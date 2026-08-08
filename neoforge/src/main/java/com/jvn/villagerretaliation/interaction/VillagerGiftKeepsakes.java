@@ -22,7 +22,7 @@ public final class VillagerGiftKeepsakes {
             Villager villager,
             ServerPlayer player,
             ItemStack giftedStack,
-            VillagerGiftPreferences.GiftPreference giftPreference) {
+            ResolvedGiftPreference giftPreference) {
         if (giftedStack.isEmpty()) {
             return;
         }
@@ -57,7 +57,7 @@ public final class VillagerGiftKeepsakes {
             Villager villager,
             ServerPlayer player,
             ItemStack giftedStack,
-            VillagerGiftPreferences.GiftPreference giftPreference) {
+            ResolvedGiftPreference giftPreference) {
         if (giftedStack.isEmpty()
                 || giftPreference.reputationValue() <= 0
                 || !isKeepsakeReaction(giftPreference.reaction())

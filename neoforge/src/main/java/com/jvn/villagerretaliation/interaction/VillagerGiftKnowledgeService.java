@@ -137,7 +137,7 @@ public final class VillagerGiftKnowledgeService {
             ServerPlayer player,
             VillagerProfession profession,
             ItemStack giftedStack,
-            VillagerGiftPreferences.GiftPreference giftPreference) {
+            ResolvedGiftPreference giftPreference) {
         Boolean liked = knowledgePolarity(giftPreference.reaction());
         if (liked == null || giftedStack.isEmpty()) {
             return;

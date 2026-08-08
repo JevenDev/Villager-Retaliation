@@ -20,12 +20,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Item;
@@ -52,45 +50,34 @@ public final class VillagerGiftResources {
         }
     }
 
-    public static Optional<VillagerGiftPreferences.GiftPreference> preference(
+    public static Optional<ResolvedGiftPreference> preference(
             ServerLevel level,
             VillagerProfession profession,
             ItemStack stack) {
         return preference(level, null, profession, stack);
     }
 
-    public static Optional<VillagerGiftPreferences.GiftPreference> preference(
+    public static Optional<ResolvedGiftPreference> preference(
             ServerLevel level,
             Villager villager,
             ItemStack stack) {
         return preference(level, villager, villager.getVillagerData().getProfession(), stack);
     }
 
-    private static Optional<VillagerGiftPreferences.GiftPreference> preference(
+    private static Optional<ResolvedGiftPreference> preference(
             ServerLevel level,
             Villager villager,
             VillagerProfession profession,
             ItemStack stack) {
-        List<GiftPreferenceRule> matches = load(level.getServer()).preferenceRules().stream()
-                .filter(rule -> rule.matches(villager, profession, stack))
-                .sorted(GiftPreferenceRule::compareTo)
-                .toList();
-        if (matches.isEmpty()) {
-            return Optional.empty();
-        }
+        return GiftPreferenceResolver.resolve(load(level.getServer()).preferenceDefinitions(), villager, profession, stack);
+    }
 
-        boolean hasProfessionSpecificMatch = matches.stream().anyMatch(GiftPreferenceRule::professionSpecific);
-        GiftPreferenceRule selected = matches.stream()
-                .filter(rule -> !hasProfessionSpecificMatch || rule.professionSpecific())
-                .findFirst()
-                .orElse(matches.getFirst());
-        return Optional.of(new VillagerGiftPreferences.GiftPreference(
-                selected.reaction(),
-                selected.professionSpecific(),
-                0,
-                selected.perItemReputation(),
-                selected.responseKey()
-        ));
+    public static List<GiftPreferenceDefinition> definitions(ServerLevel level, VillagerProfession profession) {
+        return load(level.getServer()).preferenceDefinitions().stream()
+                .filter(definition -> definition.appliesToProfession(profession))
+                .filter(definition -> definition.equipmentCondition() == null || definition.equipmentCondition().isEmpty())
+                .sorted(java.util.Comparator.comparing(definition -> definition.id().toString()))
+                .toList();
     }
 
     public static List<VillagerGiftPreferences.GiftCandidate> giftCandidates(ServerLevel level, VillagerProfession profession) {
@@ -115,14 +102,20 @@ public final class VillagerGiftResources {
     private static List<VillagerGiftPreferences.GiftCandidate> buildGiftCandidates(GiftPool pool, VillagerProfession profession) {
         List<VillagerGiftPreferences.GiftCandidate> candidates = new ArrayList<>();
         Set<String> seen = new HashSet<>();
-        for (GiftPreferenceRule rule : pool.preferenceRules()) {
-            if (!rule.appliesToProfession(profession) || !rule.equipmentCondition().isEmpty()) {
+        for (GiftPreferenceDefinition definition : pool.preferenceDefinitions()) {
+            if (!definition.appliesToProfession(profession)
+                    || definition.equipmentCondition() != null && !definition.equipmentCondition().isEmpty()) {
                 continue;
             }
-            for (Item item : rule.items()) {
-                String key = BuiltInRegistries.ITEM.getKey(item) + ":" + rule.reaction() + ":" + rule.professionSpecific();
-                if (seen.add(key)) {
-                    candidates.add(new VillagerGiftPreferences.GiftCandidate(item, rule.reaction(), rule.professionSpecific()));
+            for (GiftPreferenceDefinition.ItemMatcher matcher : definition.matchers()) {
+                for (Item item : matcher.items()) {
+                    String key = BuiltInRegistries.ITEM.getKey(item) + ":" + definition.id();
+                    if (seen.add(key)) {
+                        candidates.add(new VillagerGiftPreferences.GiftCandidate(
+                                item,
+                                VillagerGiftPreferences.GiftReaction.fromRating(definition.rating()),
+                                definition.professionSpecific()));
+                    }
                 }
             }
         }
@@ -172,40 +165,44 @@ public final class VillagerGiftResources {
     }
 
     private static GiftPool read(MinecraftServer server) {
-        Map<String, GiftPreferenceRule> preferenceRules = new LinkedHashMap<>();
+        Map<ResourceLocation, GiftPreferenceDefinition> preferenceDefinitions = new LinkedHashMap<>();
         Map<String, GiftRewardRule> rewardRules = new LinkedHashMap<>();
         DatapackResourceLoader.forEachJsonResource(
                 server,
                 GIFT_ROOT,
                 location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
-                (location, resource) -> readFile(location, resource, preferenceRules, rewardRules));
-        return new GiftPool(List.copyOf(preferenceRules.values()), List.copyOf(rewardRules.values()));
+                (location, resource) -> readFile(location, resource, preferenceDefinitions, rewardRules));
+        List<GiftPreferenceDefinition> orderedDefinitions = preferenceDefinitions.values().stream()
+                .sorted(java.util.Comparator.comparing(definition -> definition.id().toString()))
+                .toList();
+        return new GiftPool(orderedDefinitions, List.copyOf(rewardRules.values()));
     }
 
     private static void readFile(
             ResourceLocation location,
             Resource resource,
-            Map<String, GiftPreferenceRule> preferenceRules,
+            Map<ResourceLocation, GiftPreferenceDefinition> preferenceDefinitions,
             Map<String, GiftRewardRule> rewardRules) {
         DatapackResourceLoader.readObject(location, "gift", resource).ifPresent(root -> {
             if (readBoolean(root, "replace", false)) {
-                preferenceRules.clear();
+                preferenceDefinitions.clear();
                 rewardRules.clear();
             }
-            readPreferenceRules(location, root, preferenceRules);
+            readPreferenceDefinitions(location, root, preferenceDefinitions);
             readRewardRules(location, root, rewardRules);
         });
     }
 
-    private static void readPreferenceRules(
+    private static void readPreferenceDefinitions(
             ResourceLocation location,
             JsonObject root,
-            Map<String, GiftPreferenceRule> preferenceRules) {
+            Map<ResourceLocation, GiftPreferenceDefinition> definitions) {
         JsonArray entries = root.getAsJsonArray("preferences");
         if (entries == null) {
             return;
         }
 
+        Set<VillagerProfession> inheritedProfessions = readProfessions(root);
         int index = 0;
         for (JsonElement element : entries) {
             if (!element.isJsonObject()) {
@@ -214,42 +211,39 @@ public final class VillagerGiftResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
-            String id = readString(entry, "id");
+            ResourceLocation id = preferenceId(location, readString(entry, "id"), index);
             if (readBoolean(entry, "remove", false)) {
-                if (!id.isBlank()) {
-                    preferenceRules.remove(id);
-                }
+                definitions.remove(id);
                 index++;
                 continue;
             }
 
-            Optional<VillagerGiftPreferences.GiftReaction> reaction = readEnum(
+            Optional<VillagerGiftPreferences.GiftReaction> legacyReaction = readEnum(
                     entry,
                     "reaction",
-                    VillagerGiftPreferences.GiftReaction.class
-            );
-            List<ItemSelector> selectors = readItemSelectors(entry);
-            if (reaction.isEmpty() || selectors.isEmpty()) {
+                    VillagerGiftPreferences.GiftReaction.class);
+            Integer rating = readOptionalInt(entry, "rating").orElseGet(
+                    () -> legacyReaction.map(VillagerGiftPreferences.GiftReaction::legacyRating).orElse(null));
+            List<GiftPreferenceDefinition.ItemMatcher> matchers = readItemMatchers(entry);
+            if (rating == null || rating < -3 || rating > 3 || matchers.isEmpty()) {
                 index++;
                 continue;
             }
 
-            Set<VillagerProfession> professions = readProfessions(entry);
-            int perItemReputation = readInt(entry, "reputation_per_item", reaction.get().defaultPerItemReputation());
-            int priority = readInt(entry, "priority", 0);
-            String responseKey = readGiftResponseKey(entry);
-            String resolvedId = id.isBlank() ? fallbackId(location, "preference", index) : id;
-            preferenceRules.put(resolvedId, new GiftPreferenceRule(
-                    resolvedId,
+            VillagerGiftPreferences.GiftReaction reaction = VillagerGiftPreferences.GiftReaction.fromRating(rating);
+            Set<VillagerProfession> professions = hasProfessionField(entry)
+                    ? readProfessions(entry)
+                    : inheritedProfessions;
+            definitions.put(id, new GiftPreferenceDefinition(
+                    id,
                     professions,
-                    reaction.get(),
-                    perItemReputation,
-                    responseKey,
-                    priority,
-                    index,
+                    rating,
+                    readInt(entry, "reputation_per_item", reaction.defaultPerItemReputation()),
+                    readGiftResponseKey(entry),
+                    readInt(entry, "priority", 0),
                     VillagerEquipmentCondition.read(entry),
-                    selectors
-            ));
+                    readCategoryName(entry),
+                    matchers));
             index++;
         }
     }
@@ -285,7 +279,7 @@ public final class VillagerGiftResources {
 
             int minCount = Math.max(1, readInt(entry, "min_count", 1));
             int maxCount = Math.max(minCount, readInt(entry, "max_count", minCount));
-            String resolvedId = id.isBlank() ? fallbackId(location, "reward", index) : id;
+            String resolvedId = id.isBlank() ? fallbackLegacyId(location, "reward", index) : id;
             rewardRules.put(resolvedId, new GiftRewardRule(
                     resolvedId,
                     readProfessions(entry),
@@ -294,63 +288,96 @@ public final class VillagerGiftResources {
                     minCount,
                     maxCount,
                     Math.max(1, readInt(entry, "weight", 10)),
-                    VillagerEquipmentCondition.read(entry),
-                    index
-            ));
+                    VillagerEquipmentCondition.read(entry)));
             index++;
         }
     }
 
-    private static List<ItemSelector> readItemSelectors(JsonObject entry) {
-        List<ItemSelector> selectors = new ArrayList<>();
+    private static List<GiftPreferenceDefinition.ItemMatcher> readItemMatchers(JsonObject entry) {
+        List<GiftPreferenceDefinition.ItemMatcher> matchers = new ArrayList<>();
         for (String value : readStringList(entry, "item")) {
-            parseItemSelector(value).ifPresent(selectors::add);
+            parseItemMatcher(value).ifPresent(matchers::add);
         }
         for (String value : readStringList(entry, "items")) {
-            parseItemSelector(value).ifPresent(selectors::add);
+            parseItemMatcher(value).ifPresent(matchers::add);
         }
         for (String value : readStringList(entry, "tag")) {
-            parseTagSelector(value).ifPresent(selectors::add);
+            parseTagMatcher(value).ifPresent(matchers::add);
         }
         for (String value : readStringList(entry, "tags")) {
-            parseTagSelector(value).ifPresent(selectors::add);
+            parseTagMatcher(value).ifPresent(matchers::add);
         }
-        return List.copyOf(selectors);
+        return matchers.stream().distinct().toList();
     }
 
-    private static Optional<ItemSelector> parseItemSelector(String value) {
+    private static Optional<GiftPreferenceDefinition.ItemMatcher> parseItemMatcher(String value) {
         if (value.startsWith("#")) {
-            return parseTagSelector(value.substring(1));
+            return parseTagMatcher(value.substring(1));
         }
-        return readItem(value).map(ItemSelector::item);
+        return parseResourceLocation(value, "minecraft").map(GiftPreferenceDefinition.ItemMatcher::item);
     }
 
-    private static Optional<ItemSelector> parseTagSelector(String value) {
+    private static Optional<GiftPreferenceDefinition.ItemMatcher> parseTagMatcher(String value) {
         String normalized = value.startsWith("#") ? value.substring(1) : value;
-        return parseResourceLocation(normalized)
-                .map(location -> ItemSelector.tag(TagKey.create(Registries.ITEM, location)));
+        return parseResourceLocation(normalized, "minecraft").map(GiftPreferenceDefinition.ItemMatcher::tag);
     }
 
     private static Optional<Item> readItem(JsonObject entry, String key) {
-        return readItem(readString(entry, key));
-    }
-
-    private static Optional<Item> readItem(String value) {
-        return parseResourceLocation(value)
+        return parseResourceLocation(readString(entry, key), "minecraft")
                 .flatMap(location -> BuiltInRegistries.ITEM.getOptional(location))
                 .filter(item -> item != Items.AIR);
     }
 
-    private static Optional<ResourceLocation> parseResourceLocation(String value) {
+    private static Optional<ResourceLocation> parseResourceLocation(String value, String defaultNamespace) {
         if (value == null || value.isBlank()) {
             return Optional.empty();
         }
-        String normalized = value.contains(":") ? value : "minecraft:" + value;
+        String normalized = value.contains(":") ? value : defaultNamespace + ":" + value;
         return Optional.ofNullable(ResourceLocation.tryParse(normalized));
+    }
+
+    private static ResourceLocation preferenceId(ResourceLocation source, String value, int index) {
+        if (!value.isBlank()) {
+            ResourceLocation parsed = ResourceLocation.tryParse(
+                    value.contains(":") ? value : source.getNamespace() + ":" + value);
+            if (parsed != null) {
+                return parsed;
+            }
+        }
+        String path = source.getPath();
+        if (path.startsWith(GIFT_ROOT + "/")) {
+            path = path.substring(GIFT_ROOT.length() + 1);
+        }
+        if (path.endsWith(".json")) {
+            path = path.substring(0, path.length() - 5);
+        }
+        return ResourceLocation.fromNamespaceAndPath(source.getNamespace(), path + "/preference_" + index);
+    }
+
+    private static GiftCategoryName readCategoryName(JsonObject entry) {
+        JsonElement element = entry.get("name");
+        if (element == null) {
+            return GiftCategoryName.EMPTY;
+        }
+        if (element.isJsonPrimitive()) {
+            return new GiftCategoryName("", element.getAsString());
+        }
+        if (!element.isJsonObject()) {
+            return GiftCategoryName.EMPTY;
+        }
+        JsonObject name = element.getAsJsonObject();
+        return new GiftCategoryName(readString(name, "translate"), readString(name, "text"));
+    }
+
+    private static boolean hasProfessionField(JsonObject entry) {
+        return entry.has("profession") || entry.has("professions");
     }
 
     private static Set<VillagerProfession> readProfessions(JsonObject entry) {
         Set<VillagerProfession> professions = new HashSet<>();
+        for (String value : readStringList(entry, "profession")) {
+            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
+        }
         for (String value : readStringList(entry, "professions")) {
             VillagerProfessionUtil.parse(value).ifPresent(professions::add);
         }
@@ -423,9 +450,20 @@ public final class VillagerGiftResources {
         return readString(entry, "gift_response_key");
     }
 
-    private static int readInt(JsonObject entry, String key, int fallback) {
+    private static Optional<Integer> readOptionalInt(JsonObject entry, String key) {
         JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? fallback : element.getAsInt();
+        if (element == null || !element.isJsonPrimitive()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(element.getAsInt());
+        } catch (RuntimeException exception) {
+            return Optional.empty();
+        }
+    }
+
+    private static int readInt(JsonObject entry, String key, int fallback) {
+        return readOptionalInt(entry, key).orElse(fallback);
     }
 
     private static boolean readBoolean(JsonObject entry, String key, boolean fallback) {
@@ -433,11 +471,11 @@ public final class VillagerGiftResources {
         return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
     }
 
-    private static String fallbackId(ResourceLocation location, String group, int index) {
+    private static String fallbackLegacyId(ResourceLocation location, String group, int index) {
         return location.getPath().replace('/', '_').replace(".json", "") + "_" + group + "_" + index;
     }
 
-    private record GiftPool(List<GiftPreferenceRule> preferenceRules, List<GiftRewardRule> rewardRules) {
+    private record GiftPool(List<GiftPreferenceDefinition> preferenceDefinitions, List<GiftRewardRule> rewardRules) {
         private static GiftPool empty() {
             return new GiftPool(List.of(), List.of());
         }
@@ -452,41 +490,6 @@ public final class VillagerGiftResources {
         }
     }
 
-    private record GiftPreferenceRule(
-            String id,
-            Set<VillagerProfession> professions,
-            VillagerGiftPreferences.GiftReaction reaction,
-            int perItemReputation,
-            String responseKey,
-            int priority,
-            int order,
-            VillagerEquipmentCondition equipmentCondition,
-            List<ItemSelector> selectors) implements Comparable<GiftPreferenceRule> {
-        private boolean matches(Villager villager, VillagerProfession profession, ItemStack stack) {
-            return appliesToProfession(profession)
-                    && this.equipmentCondition.matches(villager)
-                    && this.selectors.stream().anyMatch(selector -> selector.matches(stack));
-        }
-
-        private boolean appliesToProfession(VillagerProfession profession) {
-            return this.professions.isEmpty() || this.professions.contains(profession);
-        }
-
-        private boolean professionSpecific() {
-            return !this.professions.isEmpty();
-        }
-
-        private List<Item> items() {
-            return this.selectors.stream().flatMap(selector -> selector.items().stream()).toList();
-        }
-
-        @Override
-        public int compareTo(GiftPreferenceRule other) {
-            int priorityCompare = Integer.compare(other.priority, this.priority);
-            return priorityCompare != 0 ? priorityCompare : Integer.compare(this.order, other.order);
-        }
-    }
-
     private record GiftRewardRule(
             String id,
             Set<VillagerProfession> professions,
@@ -495,8 +498,7 @@ public final class VillagerGiftResources {
             int minCount,
             int maxCount,
             int weight,
-            VillagerEquipmentCondition equipmentCondition,
-            int order) {
+            VillagerEquipmentCondition equipmentCondition) {
         private boolean matches(Villager villager, VillagerReputationLevel reputationLevel) {
             VillagerProfession profession = villager.getVillagerData().getProfession();
             if (!this.professions.isEmpty() && !this.professions.contains(profession)) {
@@ -514,39 +516,6 @@ public final class VillagerGiftResources {
 
         private ItemStack createStack(Villager villager) {
             return new ItemStack(this.item, ToucanRandom.betweenInclusive(villager.getRandom(), this.minCount, this.maxCount));
-        }
-    }
-
-    private record ItemSelector(Item item, TagKey<Item> tag) {
-        private static ItemSelector item(Item item) {
-            return new ItemSelector(item, null);
-        }
-
-        private static ItemSelector tag(TagKey<Item> tag) {
-            return new ItemSelector(null, tag);
-        }
-
-        private boolean matches(ItemStack stack) {
-            if (this.item != null) {
-                return stack.is(this.item);
-            }
-            return this.tag != null && stack.is(this.tag);
-        }
-
-        private List<Item> items() {
-            if (this.item != null) {
-                return List.of(this.item);
-            }
-            if (this.tag == null) {
-                return List.of();
-            }
-            List<Item> items = new ArrayList<>();
-            for (Item candidate : BuiltInRegistries.ITEM) {
-                if (candidate != Items.AIR && new ItemStack(candidate).is(this.tag)) {
-                    items.add(candidate);
-                }
-            }
-            return items;
         }
     }
 }

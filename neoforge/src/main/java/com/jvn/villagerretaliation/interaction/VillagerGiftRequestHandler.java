@@ -83,7 +83,7 @@ public final class VillagerGiftRequestHandler {
         String locale = VillagerLocale.locale(player);
         VillagerProfession profession = villager.getVillagerData().getProfession();
         ItemStack offeredStack = selectedStack.copyWithCount(resolvedAmount);
-        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, offeredStack);
+        ResolvedGiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, offeredStack);
         boolean rejected = rejectsGift(giftPreference.reaction());
         if (!rejected && !VillagerInventoryAccess.canAddItems(villager, List.of(offeredStack))) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_inventory_full");
@@ -193,7 +193,7 @@ public final class VillagerGiftRequestHandler {
         VillagerInteractionTracker.reduceRepeatedDialogueUseCounts(level, villager, player, reduction);
     }
 
-    private static String giftResponseKey(VillagerGiftPreferences.GiftPreference giftPreference) {
+    private static String giftResponseKey(ResolvedGiftPreference giftPreference) {
         String scope = giftPreference.professionSpecific() ? "profession" : "global";
         String reaction = giftPreference.reaction().name().toLowerCase(java.util.Locale.ROOT);
         return "gift_response." + scope + "." + reaction;
@@ -201,7 +201,7 @@ public final class VillagerGiftRequestHandler {
 
     private static String giftResponseText(
             DialogueContext context,
-            VillagerGiftPreferences.GiftPreference giftPreference,
+            ResolvedGiftPreference giftPreference,
             ItemStack giftedStack,
             Optional<VillagerTakenItemTracker.TakenItemOwner> takenItemOwner,
             Villager villager) {
@@ -243,7 +243,7 @@ public final class VillagerGiftRequestHandler {
     private static int adjustedGiftReputation(
             ServerLevel level,
             Villager villager,
-            VillagerGiftPreferences.GiftPreference giftPreference) {
+            ResolvedGiftPreference giftPreference) {
         int reputationValue = giftPreference.reputationValue();
         if (!VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS)) {
             return reputationValue;
