@@ -11,7 +11,6 @@ import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.toucanlib.util.ToucanRandom;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,7 +33,6 @@ public final class VillagerGiftResources {
     private static final String GIFT_ROOT = "gifts";
 
     private static volatile CachedGiftPool cachedGiftPool = CachedGiftPool.empty();
-    private static final Map<GiftCandidateCacheKey, List<VillagerGiftPreferences.GiftCandidate>> GIFT_CANDIDATE_CACHE = new HashMap<>();
 
     private VillagerGiftResources() {
     }
@@ -45,9 +43,6 @@ public final class VillagerGiftResources {
 
     public static void clearCache() {
         cachedGiftPool = CachedGiftPool.empty();
-        synchronized (VillagerGiftResources.class) {
-            GIFT_CANDIDATE_CACHE.clear();
-        }
     }
 
     public static Optional<ResolvedGiftPreference> preference(
@@ -78,48 +73,6 @@ public final class VillagerGiftResources {
                 .filter(definition -> definition.equipmentCondition() == null || definition.equipmentCondition().isEmpty())
                 .sorted(java.util.Comparator.comparing(definition -> definition.id().toString()))
                 .toList();
-    }
-
-    public static List<VillagerGiftPreferences.GiftCandidate> giftCandidates(ServerLevel level, VillagerProfession profession) {
-        return giftCandidates(level.getServer(), profession);
-    }
-
-    private static List<VillagerGiftPreferences.GiftCandidate> giftCandidates(MinecraftServer server, VillagerProfession profession) {
-        GiftPool pool = load(server);
-        GiftCandidateCacheKey cacheKey = new GiftCandidateCacheKey(profession);
-        synchronized (VillagerGiftResources.class) {
-            List<VillagerGiftPreferences.GiftCandidate> cached = GIFT_CANDIDATE_CACHE.get(cacheKey);
-            if (cached != null) {
-                return cached;
-            }
-
-            List<VillagerGiftPreferences.GiftCandidate> candidates = buildGiftCandidates(pool, profession);
-            GIFT_CANDIDATE_CACHE.put(cacheKey, candidates);
-            return candidates;
-        }
-    }
-
-    private static List<VillagerGiftPreferences.GiftCandidate> buildGiftCandidates(GiftPool pool, VillagerProfession profession) {
-        List<VillagerGiftPreferences.GiftCandidate> candidates = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
-        for (GiftPreferenceDefinition definition : pool.preferenceDefinitions()) {
-            if (!definition.appliesToProfession(profession)
-                    || definition.equipmentCondition() != null && !definition.equipmentCondition().isEmpty()) {
-                continue;
-            }
-            for (GiftPreferenceDefinition.ItemMatcher matcher : definition.matchers()) {
-                for (Item item : matcher.items()) {
-                    String key = BuiltInRegistries.ITEM.getKey(item) + ":" + definition.id();
-                    if (seen.add(key)) {
-                        candidates.add(new VillagerGiftPreferences.GiftCandidate(
-                                item,
-                                VillagerGiftPreferences.GiftReaction.fromRating(definition.rating()),
-                                definition.professionSpecific()));
-                    }
-                }
-            }
-        }
-        return List.copyOf(candidates);
     }
 
     public static ItemStack highReputationReward(ServerLevel level, Villager villager, VillagerReputationLevel reputationLevel) {
@@ -158,7 +111,6 @@ public final class VillagerGiftResources {
             }
 
             GiftPool loadedPool = read(server);
-            GIFT_CANDIDATE_CACHE.clear();
             cachedGiftPool = new CachedGiftPool(server, loadedPool);
             return loadedPool;
         }
@@ -231,9 +183,14 @@ public final class VillagerGiftResources {
             }
 
             VillagerGiftPreferences.GiftReaction reaction = VillagerGiftPreferences.GiftReaction.fromRating(rating);
+            boolean professionDeclared = hasProfessionField(entry) || hasProfessionField(root);
             Set<VillagerProfession> professions = hasProfessionField(entry)
                     ? readProfessions(entry)
                     : inheritedProfessions;
+            if (professionDeclared && professions.isEmpty()) {
+                index++;
+                continue;
+            }
             definitions.put(id, new GiftPreferenceDefinition(
                     id,
                     professions,
@@ -479,9 +436,6 @@ public final class VillagerGiftResources {
         private static GiftPool empty() {
             return new GiftPool(List.of(), List.of());
         }
-    }
-
-    private record GiftCandidateCacheKey(VillagerProfession profession) {
     }
 
     private record CachedGiftPool(MinecraftServer server, GiftPool pool) {

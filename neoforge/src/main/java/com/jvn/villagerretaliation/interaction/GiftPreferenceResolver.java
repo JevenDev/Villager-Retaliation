@@ -11,6 +11,7 @@ public final class GiftPreferenceResolver {
     private static final Comparator<Match> ORDER = Comparator
             .comparingInt((Match match) -> match.definition().priority()).reversed()
             .thenComparing(match -> match.matcher().exact(), Comparator.reverseOrder())
+            .thenComparing(match -> match.definition().professionSpecific(), Comparator.reverseOrder())
             .thenComparing(match -> match.definition().id().toString())
             .thenComparing(match -> match.matcher().value().toString());
 
@@ -33,9 +34,7 @@ public final class GiftPreferenceResolver {
                         .orElse(null))
                 .filter(java.util.Objects::nonNull)
                 .toList();
-        boolean professionSpecific = matches.stream().anyMatch(match -> match.definition().professionSpecific());
         return matches.stream()
-                .filter(match -> !professionSpecific || match.definition().professionSpecific())
                 .sorted(ORDER)
                 .findFirst()
                 .map(GiftPreferenceResolver::resolved);
@@ -52,12 +51,11 @@ public final class GiftPreferenceResolver {
                         .filter(matcher -> matches(matcher, stack))
                         .map(matcher -> new ViewMatch(view, matcher)))
                 .toList();
-        boolean professionSpecific = matches.stream().anyMatch(match -> match.view().professionSpecific());
         return matches.stream()
-                .filter(match -> !professionSpecific || match.view().professionSpecific())
                 .sorted(Comparator
                         .comparingInt((ViewMatch match) -> match.view().priority()).reversed()
                         .thenComparing(match -> match.matcher().exact(), Comparator.reverseOrder())
+                        .thenComparing(match -> match.view().professionSpecific(), Comparator.reverseOrder())
                         .thenComparing(match -> match.view().categoryId().toString())
                         .thenComparing(match -> match.matcher().value().toString()))
                 .map(ViewMatch::view)

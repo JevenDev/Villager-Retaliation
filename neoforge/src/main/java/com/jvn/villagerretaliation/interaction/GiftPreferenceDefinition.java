@@ -10,7 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public record GiftPreferenceDefinition(
@@ -79,18 +78,6 @@ public record GiftPreferenceDefinition(
             return stack.is(TagKey.create(Registries.ITEM, this.value));
         }
 
-        public List<Item> items() {
-            if (this.value == null) {
-                return List.of();
-            }
-            if (this.source == MatchSource.ITEM) {
-                return BuiltInRegistries.ITEM.getOptional(this.value).map(List::of).orElse(List.of());
-            }
-            TagKey<Item> tag = TagKey.create(Registries.ITEM, this.value);
-            return BuiltInRegistries.ITEM.stream()
-                    .filter(item -> new ItemStack(item).is(tag))
-                    .toList();
-        }
     }
 
     public enum MatchSource {

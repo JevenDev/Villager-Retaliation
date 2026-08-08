@@ -799,6 +799,14 @@ public class VillagerInteractionSavedData extends SavedData {
         return this.giftKnowledge.knowsGift(playerId, professionKey, itemId, liked);
     }
 
+    public Set<String> legacyGiftIds(UUID playerId, String professionKey, boolean liked) {
+        return this.giftKnowledge.legacyGiftIds(playerId, professionKey, liked);
+    }
+
+    public boolean removeLegacyGift(UUID playerId, String professionKey, String itemId, boolean liked) {
+        return this.giftKnowledge.removeLegacyGift(playerId, professionKey, itemId, liked);
+    }
+
     public boolean hasGiftKnowledge(UUID playerId, String... professionKeys) {
         return this.giftKnowledge.hasGiftKnowledge(playerId, professionKeys);
     }

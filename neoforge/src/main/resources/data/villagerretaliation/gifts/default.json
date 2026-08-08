@@ -1,6 +1,46 @@
 {
   "preferences": [
     {
+      "id": "builtin.fisherman.cooked_fish",
+      "profession": "minecraft:fisherman",
+      "item": "#c:foods/cooked_fish",
+      "rating": 3,
+      "priority": 20,
+      "name": {
+        "translate": "gift_category.villagerretaliation.cooked_fish"
+      }
+    },
+    {
+      "id": "builtin.fisherman.raw_fish",
+      "profession": "minecraft:fisherman",
+      "item": "#c:foods/raw_fish",
+      "rating": 2,
+      "priority": 20,
+      "name": {
+        "translate": "gift_category.villagerretaliation.raw_fish"
+      }
+    },
+    {
+      "id": "builtin.fisherman.boats",
+      "profession": "minecraft:fisherman",
+      "item": "#minecraft:boats",
+      "rating": 1,
+      "priority": 20,
+      "name": {
+        "translate": "gift_category.villagerretaliation.boats"
+      }
+    },
+    {
+      "id": "builtin.fisherman.pufferfish",
+      "profession": "minecraft:fisherman",
+      "item": "minecraft:pufferfish",
+      "rating": -1,
+      "priority": 100,
+      "name": {
+        "translate": "gift_category.villagerretaliation.pufferfish"
+      }
+    },
+    {
       "id": "builtin.global.hated_hazards",
       "reaction": "hated",
       "items": [

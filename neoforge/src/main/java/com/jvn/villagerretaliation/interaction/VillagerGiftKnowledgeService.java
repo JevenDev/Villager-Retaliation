@@ -9,6 +9,8 @@ import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -25,6 +27,7 @@ public final class VillagerGiftKnowledgeService {
     public static GiftKnowledgeSnapshot knownGifts(ServerLevel level, ServerPlayer player, VillagerProfession profession) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         String professionKey = professionKey(profession);
+        migrateLegacyKnowledge(level, data, player, profession, professionKey);
         List<GiftPreferenceView> preferences = VillagerGiftResources.definitions(level, profession).stream()
                 .map(definition -> view(
                         definition,
@@ -39,6 +42,7 @@ public final class VillagerGiftKnowledgeService {
         VillagerProfession profession = context.profession();
         String professionKey = professionKey(profession);
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        migrateLegacyKnowledge(level, data, player, profession, professionKey);
         List<GiftPreferenceDefinition> unknown = new java.util.ArrayList<>(
                 unknownDefinitions(level, data, player, professionKey, profession));
         List<GiftKnowledgeDiscovery> discoveries = new java.util.ArrayList<>();
@@ -98,6 +102,39 @@ public final class VillagerGiftKnowledgeService {
         }
         GiftPreferenceDefinition selected = candidates.get(random.nextInt(candidates.size()));
         return Optional.of(selected.name().component(selected.id()).getString());
+    }
+
+    private static void migrateLegacyKnowledge(
+            ServerLevel level,
+            VillagerInteractionSavedData data,
+            ServerPlayer player,
+            VillagerProfession profession,
+            String professionKey) {
+        for (String sourceProfession : List.of(GLOBAL_PROFESSION_KEY, professionKey)) {
+            for (boolean liked : List.of(false, true)) {
+                for (String itemId : data.legacyGiftIds(player.getUUID(), sourceProfession, liked)) {
+                    ResourceLocation id = ResourceLocation.tryParse(itemId);
+                    if (id == null) {
+                        continue;
+                    }
+                    ItemStack stack = BuiltInRegistries.ITEM.getOptional(id)
+                            .map(ItemStack::new)
+                            .orElse(ItemStack.EMPTY);
+                    ResolvedGiftPreference resolved = VillagerGiftPreferences.evaluate(level, profession, stack);
+                    if (!resolved.matched()) {
+                        continue;
+                    }
+                    String targetProfession = resolved.professionSpecific()
+                            ? professionKey
+                            : GLOBAL_PROFESSION_KEY;
+                    discoverCategory(data, player, targetProfession, resolved.categoryId().toString());
+                    if (!GLOBAL_PROFESSION_KEY.equals(sourceProfession)
+                            && data.removeLegacyGift(player.getUUID(), sourceProfession, itemId, liked)) {
+                        data.setDirty();
+                    }
+                }
+            }
+        }
     }
 
     private static boolean discoverCategory(
