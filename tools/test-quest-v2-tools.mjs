@@ -60,6 +60,8 @@ try {
     ],
     ui: {
       tracker_text: "Bring {item}.",
+      color: "#ffffff",
+      outline_color: "#000000",
       placeholders: {
         item: "objective.item"
       }

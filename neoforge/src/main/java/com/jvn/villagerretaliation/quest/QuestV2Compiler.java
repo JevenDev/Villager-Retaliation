@@ -255,6 +255,7 @@ public final class QuestV2Compiler {
                 metadataString(resource, "title_key")));
         copyIfPresent(resource.ui().data(), tracker, "icon");
         copyIfPresent(resource.ui().data(), tracker, "color");
+        copyIfPresent(resource.ui().data(), tracker, "outline_color");
         copyIfPresent(resource.ui().data(), tracker, "priority");
         copyIfPresent(resource.ui().data(), tracker, "hidden");
         copyIfPresent(resource.ui().data(), tracker, "metadata");

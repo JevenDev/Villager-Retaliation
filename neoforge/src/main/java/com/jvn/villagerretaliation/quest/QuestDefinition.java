@@ -639,17 +639,18 @@ public record QuestDefinition(
             java.util.Map<String, String> metadata,
             ResourceLocation icon,
             String color,
+            String outlineColor,
             int priority,
             boolean hidden
     ) {
-        public static final Tracker EMPTY = new Tracker("", "", java.util.Map.of(), java.util.Map.of(), null, "", 0, false);
+        public static final Tracker EMPTY = new Tracker("", "", java.util.Map.of(), java.util.Map.of(), null, "", "", 0, false);
 
         public Tracker(
                 String title,
                 String titleKey,
                 java.util.Map<String, Step> steps,
                 java.util.Map<String, String> metadata) {
-            this(title, titleKey, steps, metadata, null, "", 0, false);
+            this(title, titleKey, steps, metadata, null, "", "", 0, false);
         }
 
         public Tracker {
@@ -658,6 +659,7 @@ public record QuestDefinition(
             steps = steps == null ? java.util.Map.of() : java.util.Map.copyOf(steps);
             metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
             color = color == null ? "" : color.trim();
+            outlineColor = outlineColor == null ? "" : outlineColor.trim();
         }
 
         public Step step(String key, Step fallback) {

@@ -875,7 +875,7 @@ const questV2ResponseKeys = new Set(["id", "label", "label_key", "text", "text_k
 const questV2TransitionKeys = new Set(["stage", "scene", "response", "complete", "abandon", "fail"]);
 const questV2EventKeys = new Set(["id", "event", "type", "trigger", "stage", "stages", "conditions", "actions", "transition", "next", "cooldown", "cooldown_ticks", "cooldown_seconds", "cooldown_days", "radius", "repeatable", "metadata"]);
 const questV2RewardsKeys = new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event", "memory_scope"]);
-const questV2UiKeys = new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "tracker_complete_text", "tracker_complete_text_key", "show_progress", "progress", "placeholders", "metadata", "icon", "color", "priority", "hidden"]);
+const questV2UiKeys = new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "tracker_complete_text", "tracker_complete_text_key", "show_progress", "progress", "placeholders", "metadata", "icon", "color", "outline_color", "priority", "hidden"]);
 const questV2LifecycleCoverageSlots = new Set(["offer", "reminder", "turn_in"]);
 
 const cli = parseValidatorArgs(process.argv.slice(2));

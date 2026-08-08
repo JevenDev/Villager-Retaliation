@@ -160,5 +160,15 @@ final class QuestlineGraphLayout {
             int maxX,
             int maxY) {
         private static final Layout EMPTY = new Layout(Map.of(), List.of(), 0, 0, 0, 0);
+
+        boolean branchesFrom(String questId) {
+            int childCount = 0;
+            for (Edge edge : this.edges) {
+                if (edge.parentQuestId().equals(questId) && ++childCount > 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

@@ -372,7 +372,7 @@ function testAdvancedQuestRoundTrip(app) {
       ui: { tracker_text: "Survey the road.", tracker_complete_text: "Road surveyed." }
     }],
     rewards: { memory_event: "storypack:road_surveyed", memory_scope: "village" },
-    ui: { icon: "minecraft:filled_map", color: "#d4a35a", priority: 20, hidden: false }
+    ui: { icon: "minecraft:filled_map", color: "#d4a35a", outline_color: "#201408", priority: 20, hidden: false }
   };
   const pool = {
     schema: "villagerretaliation:quest_pool/v1",

@@ -518,6 +518,7 @@ public final class QuestV2Schema {
         properties.add("metadata", openObject());
         properties.add("icon", resourceLocation());
         properties.add("color", string());
+        properties.add("outline_color", string());
         properties.add("priority", integer());
         properties.add("hidden", booleanSchema());
         schema.add("properties", properties);

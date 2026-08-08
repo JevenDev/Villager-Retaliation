@@ -1337,6 +1337,7 @@ public final class VillagerQuestResources {
                 readStringMap(DatapackJsonReader.readObject(tracker, "metadata")),
                 DatapackJsonReader.readResourceLocation(tracker, "icon").orElse(null),
                 DatapackJsonReader.readString(tracker, "color"),
+                DatapackJsonReader.readString(tracker, "outline_color"),
                 DatapackJsonReader.readInt(tracker, "priority", 0),
                 DatapackJsonReader.readBoolean(tracker, "hidden", false)
         );

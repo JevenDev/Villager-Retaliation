@@ -202,7 +202,7 @@ What this file does:
 | `stages[].dialogue` | Offer, reminder, and turn-in Talk menu scenes |
 | `stages[].scenes` | Action scenes reached from response buttons |
 | `rewards` | What the player receives on turn-in |
-| `ui` | Tracker text, icon, and color |
+| `ui` | Tracker text, icon, and optional title/outline colors |
 
 ## Validation And Diagnostics
 

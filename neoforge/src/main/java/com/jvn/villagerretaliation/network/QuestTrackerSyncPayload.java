@@ -302,6 +302,7 @@ public record QuestTrackerSyncPayload(
         }
         buffer.writeUtf(journal.icon(), MAX_JOURNAL_VALUE_LENGTH);
         buffer.writeUtf(journal.color(), MAX_JOURNAL_VALUE_LENGTH);
+        buffer.writeUtf(journal.outlineColor(), MAX_JOURNAL_VALUE_LENGTH);
         buffer.writeVarInt(journal.priority());
         buffer.writeBoolean(journal.hidden());
         buffer.writeLong(journal.expiresAtGameTime());
@@ -327,6 +328,7 @@ public record QuestTrackerSyncPayload(
         }
         String icon = buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH);
         String color = buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH);
+        String outlineColor = buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH);
         int priority = buffer.readVarInt();
         boolean hidden = buffer.readBoolean();
         long expiresAt = buffer.readLong();
@@ -339,6 +341,7 @@ public record QuestTrackerSyncPayload(
                 tags,
                 icon,
                 color,
+                outlineColor,
                 priority,
                 hidden,
                 expiresAt,
@@ -615,6 +618,7 @@ public record QuestTrackerSyncPayload(
             List<String> tags,
             String icon,
             String color,
+            String outlineColor,
             int priority,
             boolean hidden,
             long expiresAtGameTime,
@@ -624,19 +628,20 @@ public record QuestTrackerSyncPayload(
             int questlineCompleted,
             int questlineTotal) {
         public static final Journal EMPTY = new Journal(
-                "", List.of(), "", "", 0, false, -1L, -1L, Waypoint.NONE, "", 0, 0);
+                "", List.of(), "", "", "", 0, false, -1L, -1L, Waypoint.NONE, "", 0, 0);
 
         public Journal(
                 String questline,
                 List<String> tags,
                 String icon,
                 String color,
+                String outlineColor,
                 int priority,
                 boolean hidden,
                 long expiresAtGameTime,
                 long completedGameTime,
                 Waypoint waypoint) {
-            this(questline, tags, icon, color, priority, hidden, expiresAtGameTime, completedGameTime, waypoint, "", 0, 0);
+            this(questline, tags, icon, color, outlineColor, priority, hidden, expiresAtGameTime, completedGameTime, waypoint, "", 0, 0);
         }
 
         public Journal {
@@ -651,6 +656,7 @@ public record QuestTrackerSyncPayload(
                     .toList());
             icon = boundedUtf(icon, MAX_JOURNAL_VALUE_LENGTH);
             color = boundedUtf(color, MAX_JOURNAL_VALUE_LENGTH);
+            outlineColor = boundedUtf(outlineColor, MAX_JOURNAL_VALUE_LENGTH);
             waypoint = waypoint == null ? Waypoint.NONE : waypoint;
             blocker = boundedUtf(blocker, MAX_TEXT_LENGTH);
             questlineTotal = Math.max(0, questlineTotal);
@@ -658,19 +664,19 @@ public record QuestTrackerSyncPayload(
         }
 
         public Journal withRuntime(long expiresAtGameTime, long completedGameTime, Waypoint waypoint) {
-            return new Journal(this.questline, this.tags, this.icon, this.color, this.priority, this.hidden,
+            return new Journal(this.questline, this.tags, this.icon, this.color, this.outlineColor, this.priority, this.hidden,
                     expiresAtGameTime, completedGameTime, waypoint, this.blocker,
                     this.questlineCompleted, this.questlineTotal);
         }
 
         public Journal withBlocker(String blocker) {
-            return new Journal(this.questline, this.tags, this.icon, this.color, this.priority, this.hidden,
+            return new Journal(this.questline, this.tags, this.icon, this.color, this.outlineColor, this.priority, this.hidden,
                     this.expiresAtGameTime, this.completedGameTime, this.waypoint, blocker,
                     this.questlineCompleted, this.questlineTotal);
         }
 
         public Journal withQuestlineProgress(int completed, int total) {
-            return new Journal(this.questline, this.tags, this.icon, this.color, this.priority, this.hidden,
+            return new Journal(this.questline, this.tags, this.icon, this.color, this.outlineColor, this.priority, this.hidden,
                     this.expiresAtGameTime, this.completedGameTime, this.waypoint, this.blocker, completed, total);
         }
     }
