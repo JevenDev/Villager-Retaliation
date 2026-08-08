@@ -1,8 +1,14 @@
 package com.jvn.villagerretaliation.sell;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.NumericTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 
@@ -35,7 +41,7 @@ public sealed interface ComponentPredicate
                 if (type == DataComponents.CUSTOM_DATA
                         && actual instanceof CustomData actualData
                         && expected instanceof CustomData expectedData) {
-                    return actualData.matchedBy(expectedData.copyTag());
+                    return matchesCustomData(actualData, expectedData);
                 }
                 return Objects.equals(actual, expected);
             } catch (RuntimeException ignored) {
@@ -58,6 +64,60 @@ public sealed interface ComponentPredicate
                 return range.contains(number.doubleValue());
             }
             return true;
+        }
+    }
+
+    private static boolean matchesCustomData(CustomData actual, CustomData expected) {
+        return matchesNbtSubset(expected.copyTag(), actual.copyTag());
+    }
+
+    private static boolean matchesNbtSubset(Tag expected, Tag actual) {
+        if (NbtUtils.compareNbt(expected, actual, true)) {
+            return true;
+        }
+        if (expected instanceof NumericTag expectedNumber && actual instanceof NumericTag actualNumber) {
+            return numericValuesEqual(expectedNumber, actualNumber);
+        }
+        if (expected instanceof CompoundTag expectedCompound
+                && actual instanceof CompoundTag actualCompound) {
+            for (String key : expectedCompound.getAllKeys()) {
+                if (!matchesNbtSubset(expectedCompound.get(key), actualCompound.get(key))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        if (expected instanceof ListTag expectedList && actual instanceof ListTag actualList) {
+            if (expectedList.isEmpty()) {
+                return actualList.isEmpty();
+            }
+            if (actualList.size() < expectedList.size()) {
+                return false;
+            }
+            for (Tag expectedEntry : expectedList) {
+                boolean found = false;
+                for (Tag actualEntry : actualList) {
+                    if (matchesNbtSubset(expectedEntry, actualEntry)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean numericValuesEqual(NumericTag first, NumericTag second) {
+        try {
+            return new BigDecimal(first.getAsNumber().toString())
+                            .compareTo(new BigDecimal(second.getAsNumber().toString()))
+                    == 0;
+        } catch (NumberFormatException ignored) {
+            return false;
         }
     }
 
