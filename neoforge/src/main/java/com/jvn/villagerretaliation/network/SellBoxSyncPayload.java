@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.sell.DailyDemandBand;
 import com.jvn.villagerretaliation.sell.MarketQuote;
-import com.jvn.villagerretaliation.sell.SellPriceDefinition;
 import com.jvn.villagerretaliation.sell.SellPriceResources;
 import com.jvn.villagerretaliation.sell.SupplyBand;
 import com.jvn.villagerretaliation.sell.VillageSellMarket;
@@ -62,9 +61,7 @@ public record SellBoxSyncPayload(
                 .orElse("");
         LinkedHashMap<ResourceLocation, MarketEntry> entries = new LinkedHashMap<>();
         if (valid) {
-            for (Map.Entry<Item, SellPriceDefinition> definitionEntry
-                    : SellPriceResources.definitions(player.getServer()).entrySet()) {
-                Item item = definitionEntry.getKey();
+            for (Item item : SellPriceResources.definitions(player.getServer()).keySet()) {
                 ItemStack unitStack = new ItemStack(item, 1);
                 MarketQuote unit = VillageSellMarket.quote(level, sellBox.getBlockPos(), unitStack).orElse(null);
                 if (unit == null) {

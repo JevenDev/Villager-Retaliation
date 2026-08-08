@@ -12,7 +12,8 @@ public record SellPriceDefinition(
         Item item,
         List<SellRateDefinition> rates,
         ResourceLocation marketGroup,
-        SellStackPredicate stackPredicate) {
+        SellStackPredicate stackPredicate,
+        int priority) {
 
     public static final int MAX_ITEM_COUNT = 256;
     public static final int MAX_RATES = 256;
@@ -28,7 +29,7 @@ public record SellPriceDefinition(
             IntRange itemCount,
             IntRange currencyCount,
             ResourceLocation marketGroup) {
-        this(id, item, List.of(new SellRateDefinition(itemCount, currencyCount)), marketGroup, SellStackPredicate.ANY);
+        this(id, item, List.of(new SellRateDefinition(itemCount, currencyCount)), marketGroup, SellStackPredicate.ANY, 0);
     }
 
     public SellPriceDefinition(ResourceLocation id, Item item, List<SellRateDefinition> rates) {
@@ -40,7 +41,16 @@ public record SellPriceDefinition(
             Item item,
             List<SellRateDefinition> rates,
             ResourceLocation marketGroup) {
-        this(id, item, rates, marketGroup, SellStackPredicate.ANY);
+        this(id, item, rates, marketGroup, SellStackPredicate.ANY, 0);
+    }
+
+    public SellPriceDefinition(
+            ResourceLocation id,
+            Item item,
+            List<SellRateDefinition> rates,
+            ResourceLocation marketGroup,
+            SellStackPredicate stackPredicate) {
+        this(id, item, rates, marketGroup, stackPredicate, 0);
     }
 
     public SellPriceDefinition {

@@ -201,11 +201,48 @@ public final class SellBoxGameTests {
                 "exact_component",
                 "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_model_data\":6},"
                         + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        SellPriceDefinition broad = parseDefinition(
+                helper,
+                "broad_stone",
+                "{\"item\":\"minecraft:stone\","
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":5}]}");
+        SellPriceDefinition specific = parseDefinition(
+                helper,
+                "specific_stone",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_model_data\":6},"
+                        + "\"priority\":10,\"rates\":[{\"item_count\":1,\"currency_count\":15}]}");
         ItemStack modeled = new ItemStack(Items.STONE);
         modeled.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(6));
         helper.assertTrue(
                 exactComponent.stackPredicate().matches(modeled),
                 "codec-backed exact component values must match");
+        helper.assertValueEqual(
+                SellPriceResources.selectDefinition(modeled, java.util.List.of(broad, specific))
+                        .orElseThrow()
+                        .id(),
+                specific.id(),
+                "higher-priority component-specific definitions must override broad definitions");
+
+        SellPriceDefinition equalFirst = parseDefinition(
+                helper,
+                "a_equal",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_model_data\":6},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":7}]}");
+        SellPriceDefinition equalLast = parseDefinition(
+                helper,
+                "z_equal",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_model_data\":6},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":9}]}");
+        helper.assertValueEqual(
+                SellPriceResources.selectDefinition(modeled, java.util.List.of(equalFirst, equalLast))
+                        .orElseThrow()
+                        .id(),
+                equalLast.id(),
+                "equal-priority definitions must use deterministic definition-id tie behavior");
+        helper.assertTrue(
+                equalFirst.stackPredicate().overlaps(equalLast.stackPredicate()),
+                "equal exact predicates must be recognized as an ambiguous overlap");
+
         modeled.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(5));
         helper.assertFalse(
                 exactComponent.stackPredicate().matches(modeled),

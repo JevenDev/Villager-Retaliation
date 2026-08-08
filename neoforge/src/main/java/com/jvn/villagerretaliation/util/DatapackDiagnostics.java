@@ -320,6 +320,31 @@ public final class DatapackDiagnostics {
                 context);
     }
 
+    public static void warnAmbiguousSellPrice(
+            ResourceLocation location,
+            ResourceLocation item,
+            ResourceLocation firstDefinition,
+            ResourceLocation secondDefinition,
+            int priority) {
+        warnStructured(
+                "datapack.ambiguous_sell_price",
+                location,
+                "",
+                "Give the intentional override a higher priority, or make the predicates mutually exclusive.",
+                Set.of(
+                        item == null ? "" : item.toString(),
+                        firstDefinition == null ? "" : firstDefinition.toString(),
+                        secondDefinition == null ? "" : secondDefinition.toString()),
+                "Villager Retaliation datapack {} has overlapping sell-price definitions {} and {} "
+                        + "for item {} at equal priority {}. Definition ids break the tie deterministically; "
+                        + "set priority to make the intended winner explicit.",
+                location,
+                firstDefinition,
+                secondDefinition,
+                item,
+                priority);
+    }
+
     private static void warnStructured(
             String code,
             ResourceLocation location,
