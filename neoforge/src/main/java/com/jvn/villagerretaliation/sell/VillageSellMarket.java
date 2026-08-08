@@ -120,6 +120,7 @@ public final class VillageSellMarket {
                         canonical.get(),
                         day,
                         SellPriceResources.definitions(server).values().stream()
+                                .flatMap(List::stream)
                                 .map(SellPriceDefinition::marketGroup)
                                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)))
                 .getOrDefault(priceDefinition.marketGroup(), DailyDemandBand.NORMAL);

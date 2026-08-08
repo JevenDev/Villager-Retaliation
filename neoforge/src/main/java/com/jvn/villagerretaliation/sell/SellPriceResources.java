@@ -9,6 +9,8 @@ import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.ServerResourceCache;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +39,13 @@ public final class SellPriceResources {
                     "rates",
                     "market_group",
                     "components",
-                    "durability");
+                    "durability",
+                    "priority");
     private static final Set<String> ALLOWED_RATE_KEYS = Set.of("item_count", "currency_count");
+    private static final Comparator<SellPriceDefinition> MATCH_ORDER = Comparator
+            .comparingInt(SellPriceDefinition::priority)
+            .reversed()
+            .thenComparing(definition -> definition.id().toString(), Comparator.reverseOrder());
     private static final HolderLookup.Provider DEFAULT_REGISTRIES =
             RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
     private static final ServerResourceCache<Catalog> CACHE =
@@ -68,30 +75,75 @@ public final class SellPriceResources {
                 || VillagerCurrencyResources.isCurrency(server, stack)) {
             return Optional.empty();
         }
-        return Optional.ofNullable(CACHE.get(server).byItem().get(stack.getItem()))
-                .filter(definition -> definition.stackPredicate().matches(stack));
+        return selectDefinition(stack, CACHE.get(server).byItem().getOrDefault(stack.getItem(), List.of()));
     }
 
-    public static Map<Item, SellPriceDefinition> definitions(MinecraftServer server) {
+    static Optional<SellPriceDefinition> selectDefinition(
+            ItemStack stack,
+            List<SellPriceDefinition> definitions) {
+        if (stack == null || stack.isEmpty() || definitions == null || definitions.isEmpty()) {
+            return Optional.empty();
+        }
+        return definitions.stream()
+                .filter(definition -> definition.stackPredicate().matches(stack))
+                .min(MATCH_ORDER);
+    }
+
+    public static Map<Item, List<SellPriceDefinition>> definitions(MinecraftServer server) {
         return CACHE.get(server).byItem();
     }
 
     private static Catalog read(MinecraftServer server) {
-        Map<Item, SellPriceDefinition> definitions = new LinkedHashMap<>();
-        Map<Item, ResourceLocation> sources = new LinkedHashMap<>();
+        Map<Item, List<SellPriceDefinition>> definitions = new LinkedHashMap<>();
+        Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
         DatapackResourceLoader.forEachJsonResource(server, RESOURCE_ROOT, (location, resource) ->
                 readFile(server.registryAccess(), location, resource).forEach(definition -> {
-                    ResourceLocation previous = sources.put(definition.item(), location);
-                    if (previous != null) {
-                        DatapackDiagnostics.warnDuplicateId(
-                                location,
-                                "sell-price item",
-                                BuiltInRegistries.ITEM.getKey(definition.item()).toString(),
-                                previous);
-                    }
-                    definitions.put(definition.item(), definition);
+                    sources.put(definition.id(), location);
+                    definitions.computeIfAbsent(definition.item(), ignored -> new ArrayList<>())
+                            .add(definition);
                 }));
-        return new Catalog(Map.copyOf(definitions));
+
+        LinkedHashMap<Item, List<SellPriceDefinition>> ordered = new LinkedHashMap<>();
+        definitions.forEach((item, itemDefinitions) -> {
+            ArrayList<SellPriceDefinition> sorted = new ArrayList<>(itemDefinitions);
+            sorted.sort(MATCH_ORDER);
+            ordered.put(item, List.copyOf(sorted));
+        });
+        Map<Item, List<SellPriceDefinition>> immutable =
+                Collections.unmodifiableMap(ordered);
+        diagnoseAmbiguities(immutable, sources);
+        return new Catalog(immutable);
+    }
+
+    private static void diagnoseAmbiguities(
+            Map<Item, List<SellPriceDefinition>> definitions,
+            Map<ResourceLocation, ResourceLocation> sources) {
+        Set<String> warnedPairs = new java.util.HashSet<>();
+        definitions.forEach((item, candidates) -> {
+            for (int firstIndex = 0; firstIndex < candidates.size(); firstIndex++) {
+                SellPriceDefinition first = candidates.get(firstIndex);
+                for (int secondIndex = firstIndex + 1; secondIndex < candidates.size(); secondIndex++) {
+                    SellPriceDefinition second = candidates.get(secondIndex);
+                    if (first.priority() != second.priority()
+                            || !first.stackPredicate().overlaps(second.stackPredicate())) {
+                        continue;
+                    }
+                    String firstId = first.id().toString();
+                    String secondId = second.id().toString();
+                    String pair = firstId.compareTo(secondId) <= 0
+                            ? firstId + "|" + secondId + "|" + first.priority()
+                            : secondId + "|" + firstId + "|" + first.priority();
+                    if (warnedPairs.add(pair)) {
+                        DatapackDiagnostics.warnAmbiguousSellPrice(
+                                sources.getOrDefault(first.id(), first.id()),
+                                BuiltInRegistries.ITEM.getKey(item),
+                                first.id(),
+                                second.id(),
+                                first.priority());
+                    }
+                }
+            }
+        });
     }
 
     private static List<SellPriceDefinition> readFile(
@@ -142,10 +194,11 @@ public final class SellPriceResources {
             ResourceLocation marketGroup = readMarketGroup(root, selection.defaultMarketGroup());
             SellStackPredicate stackPredicate = SellStackPredicateParser.parse(
                     registries, root, selection.shorthandComponents(), selection.items());
+            int priority = readPriority(root);
             ResourceLocation definitionId = resourceId(location);
             return selection.items().stream()
                     .map(item -> new SellPriceDefinition(
-                            definitionId, item, rates, marketGroup, stackPredicate))
+                            definitionId, item, rates, marketGroup, stackPredicate, priority))
                     .toList();
         } catch (IllegalArgumentException exception) {
             DatapackDiagnostics.warnSkippedEntry(location, "sell price", "definition", exception.getMessage());
@@ -286,6 +339,23 @@ public final class SellPriceResources {
         }
     }
 
+    private static int readPriority(JsonObject root) {
+        JsonElement element = root.get("priority");
+        if (element == null || element.isJsonNull()) {
+            return 0;
+        }
+        if (!element.isJsonPrimitive()
+                || !element.getAsJsonPrimitive().isNumber()
+                || !element.getAsString().matches("-?[0-9]+")) {
+            throw new IllegalArgumentException("priority must be an integer.");
+        }
+        try {
+            return Integer.parseInt(element.getAsString());
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("priority is outside the supported integer range.");
+        }
+    }
+
     private static ResourceLocation resourceId(ResourceLocation location) {
         String path = location.getPath();
         String prefix = RESOURCE_ROOT + "/";
@@ -302,7 +372,7 @@ public final class SellPriceResources {
             List<ComponentPredicate> shorthandComponents) {
     }
 
-    private record Catalog(Map<Item, SellPriceDefinition> byItem) {
+    private record Catalog(Map<Item, List<SellPriceDefinition>> byItem) {
         private static Catalog empty() {
             return new Catalog(Map.of());
         }
