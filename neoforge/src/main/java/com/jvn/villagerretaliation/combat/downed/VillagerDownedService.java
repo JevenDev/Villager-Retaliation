@@ -191,6 +191,7 @@ public final class VillagerDownedService {
             return;
         }
         enforceIncapacitatedState(villager);
+        clearNearbyTargets(level, villager);
         villager.setHealth(Math.max(1.0F, villager.getHealth()));
 
         long now = level.getGameTime();
@@ -201,7 +202,6 @@ public final class VillagerDownedService {
 
         if (hasNearbyThreat(level, villager)) {
             state.putLong(QUIET_SINCE_KEY, -1L);
-            clearNearbyTargets(level, villager);
             return;
         }
 
