@@ -103,7 +103,7 @@ public final class VillagerGiftKnowledgeService {
         };
     }
 
-    public static boolean rememberGiftResult(
+    public static boolean discoverFromGift(
             ServerLevel level,
             ServerPlayer player,
             VillagerProfession profession,
