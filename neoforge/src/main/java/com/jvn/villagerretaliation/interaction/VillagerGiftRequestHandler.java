@@ -113,15 +113,17 @@ public final class VillagerGiftRequestHandler {
                 VillagerRetaliationConfig.REPEATED_GIFT_REPUTATION_MULTIPLIER.get(),
                 VillagerRetaliationConfig.DAILY_GIFT_REPUTATION_CAP.get()
         );
-        VillagerGiftKnowledgeService.rememberGiftResult(level, player, profession, giftedStack, giftPreference);
+        VillagerGiftKnowledgeService.discoverFromGift(level, player, profession, giftedStack, giftPreference);
         Boolean giftAdviceLikedResult = giftAdviceLikedResult(giftPreference.reaction());
         if (giftAdviceLikedResult != null) {
             VillagerInteractionTracker.markGiftAdviceResult(
                     level,
                     villager,
                     player,
-                    itemId(giftedStack),
-                    VillagerItemText.dialogueName(level.getServer(), locale, giftedStack),
+                    giftPreference.matched() ? giftPreference.categoryId().toString() : itemId(giftedStack),
+                    giftPreference.matched()
+                            ? giftPreference.name().component(giftPreference.categoryId()).getString()
+                            : VillagerItemText.dialogueName(level.getServer(), locale, giftedStack),
                     VillagerGiftKnowledgeService.professionKey(profession),
                     VillagerInteractionTextUtil.professionName(profession, "villager").toLowerCase(java.util.Locale.ROOT),
                     VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
