@@ -28,6 +28,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
     private static final int MAX_ITEM_LABEL_LENGTH = 128;
     private static final int MAX_REWARD_KIND_LENGTH = 32;
     private static final int MAX_REWARD_LABEL_LENGTH = 160;
+    private static final int MAX_REWARD_ITEM_ID_LENGTH = 128;
     private static final int MAX_PREREQUISITE_LABEL_LENGTH = 160;
     private static final int MAX_JOURNAL_VALUE_LENGTH = 128;
     public static final Type<QuestTrackerSyncPayload> TYPE = VillagerPayloads.type("quest_tracker_sync");
@@ -96,6 +97,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 buffer.writeUtf(reward.kind(), 32);
                 buffer.writeUtf(reward.label(), 160);
                 buffer.writeVarInt(reward.amount());
+                buffer.writeUtf(reward.itemId(), MAX_REWARD_ITEM_ID_LENGTH);
             }
             buffer.writeVarInt(Math.min(MAX_PREREQUISITES, entry.prerequisites().size()));
             for (Prerequisite prerequisite : entry.prerequisites()) {
@@ -175,7 +177,8 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             RewardPreview reward = new RewardPreview(
                     buffer.readUtf(32),
                     buffer.readUtf(160),
-                    buffer.readVarInt()
+                    buffer.readVarInt(),
+                    buffer.readUtf(MAX_REWARD_ITEM_ID_LENGTH)
             );
             rewards.add(reward);
         }
@@ -555,10 +558,15 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
         }
     }
 
-    public record RewardPreview(String kind, String label, int amount) {
+    public record RewardPreview(String kind, String label, int amount, String itemId) {
+        public RewardPreview(String kind, String label, int amount) {
+            this(kind, label, amount, "");
+        }
+
         public RewardPreview {
             kind = boundedUtf(kind, MAX_REWARD_KIND_LENGTH);
             label = boundedUtf(label, MAX_REWARD_LABEL_LENGTH);
+            itemId = boundedUtf(itemId, MAX_REWARD_ITEM_ID_LENGTH);
         }
     }
 

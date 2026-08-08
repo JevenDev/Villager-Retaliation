@@ -168,7 +168,8 @@ public final class QuestTrackerPresenter {
         for (QuestTrackerSyncPayload.RewardPreview reward : rewardPreviews) {
             builder.append(reward.kind()).append(',')
                     .append(reward.label()).append(',')
-                    .append(reward.amount()).append(';');
+                    .append(reward.amount()).append(',')
+                    .append(reward.itemId()).append(';');
         }
     }
 
@@ -391,6 +392,16 @@ public final class QuestTrackerPresenter {
         }
         QuestDefinition.Rewards rewards = definition.rewards();
         List<QuestTrackerSyncPayload.RewardPreview> previews = new ArrayList<>();
+        if (player != null && player.getServer() != null && rewards.lootTable() != null) {
+            for (QuestRewardPreviewResources.ItemPreview item : QuestRewardPreviewResources.itemPreviews(
+                    player.getServer(), rewards.lootTable())) {
+                previews.add(new QuestTrackerSyncPayload.RewardPreview(
+                        "item",
+                        item.countText(),
+                        item.minimumCount(),
+                        item.itemId()));
+            }
+        }
         addAmountRewardPreview(
                 previews,
                 player,

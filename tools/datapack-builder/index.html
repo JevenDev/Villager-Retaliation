@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
-    <div class="app-shell">
+    <div class="app-shell" inert aria-hidden="true">
       <header class="app-header">
         <div class="brand">
           <img src="./assets/villager_retaliation_logo.png" alt="Villager Retaliation logo">
@@ -222,6 +222,16 @@
     <input id="directory-input" class="visually-hidden" type="file" webkitdirectory directory multiple>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div class="construction-gate">
+      <section class="construction-dialog" role="alertdialog" aria-modal="true" aria-labelledby="construction-title" aria-describedby="construction-copy" tabindex="0" autofocus>
+        <img src="./assets/villager_retaliation_logo.png" alt="">
+        <div>
+          <h1 id="construction-title">Under construction</h1>
+          <p id="construction-copy">The Datapack Generator is temporarily unavailable. Its functionality is being kept in place, but active maintenance is paused until there is time to support it properly.</p>
+        </div>
+      </section>
+    </div>
 
     <div id="settings-dialog" class="modal-overlay" aria-hidden="true">
       <section class="modal-window settings-window" role="dialog" aria-modal="true" aria-labelledby="settings-title">

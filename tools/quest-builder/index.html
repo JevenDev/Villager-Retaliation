@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
-    <div class="app-shell">
+    <div class="app-shell" inert aria-hidden="true">
       <header class="app-header">
         <a class="brand" href="./index.html" aria-label="Quest Builder home">
           <img src="../datapack-builder/assets/villager_retaliation_logo.png" alt="Villager Retaliation logo">
@@ -101,6 +101,16 @@
           <div class="checks-list" id="checks-list" aria-live="polite"></div>
         </aside>
       </div>
+    </div>
+
+    <div class="construction-gate">
+      <section class="construction-dialog" role="alertdialog" aria-modal="true" aria-labelledby="construction-title" aria-describedby="construction-copy" tabindex="0" autofocus>
+        <img src="../datapack-builder/assets/villager_retaliation_logo.png" alt="">
+        <div>
+          <h1 id="construction-title">Under construction</h1>
+          <p id="construction-copy">The Quest Builder is temporarily unavailable. Its functionality is being kept in place, but active maintenance is paused until there is time to support it properly.</p>
+        </div>
+      </section>
     </div>
 
     <input id="import-input" type="file" accept=".json,.zip,application/json,application/zip" multiple hidden>

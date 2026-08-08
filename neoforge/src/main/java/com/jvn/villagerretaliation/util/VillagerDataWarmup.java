@@ -21,6 +21,7 @@ import com.jvn.villagerretaliation.notification.VillagerNotificationResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.pool.QuestPoolResources;
+import com.jvn.villagerretaliation.quest.tracking.QuestRewardPreviewResources;
 import com.jvn.villagerretaliation.raid.PlayerRaidLoadoutResources;
 import com.jvn.villagerretaliation.raid.PlayerRaidSavedData;
 import com.jvn.villagerretaliation.scene.SceneResources;
@@ -109,6 +110,7 @@ public final class VillagerDataWarmup {
         DangerousStructureStoryResources.clearCache();
         VillagerWorldTargetCache.clearCache();
         VillagerQuestResources.clearCache();
+        QuestRewardPreviewResources.clearCache();
         QuestPoolResources.clearCache();
         SceneResources.clearCache();
         EncounterResources.clearCache();
