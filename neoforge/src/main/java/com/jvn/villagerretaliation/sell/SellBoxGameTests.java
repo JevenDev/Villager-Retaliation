@@ -80,6 +80,58 @@ public final class SellBoxGameTests {
                 ResourceLocation.fromNamespaceAndPath("villagerretaliation", "fuel"),
                 "explicit market groups must parse");
 
+        SellPriceDefinition oneRate = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":{\"min\":12,\"max\":14},\"currency_count\":1}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(oneRate.rates().size(), 1, "one explicit rate must parse");
+        helper.assertValueEqual(
+                oneRate.candidatePrices().size(),
+                3,
+                "ranges inside one rate must generate associated candidate prices");
+
+        SellPriceDefinition discrete = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":1,\"currency_count\":10},"
+                                                + "{\"item_count\":1,\"currency_count\":15},"
+                                                + "{\"item_count\":1,\"currency_count\":25}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                discrete.candidatePrices(),
+                java.util.List.of(
+                        CurrencyAmount.of(10, 1),
+                        CurrencyAmount.of(15, 1),
+                        CurrencyAmount.of(25, 1)),
+                "separate rates must stay discrete instead of filling the values between them");
+
+        SellPriceDefinition deduplicated = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":1,\"currency_count\":1},"
+                                                + "{\"item_count\":2,\"currency_count\":2}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                deduplicated.candidatePrices().size(),
+                1,
+                "equivalent ratios from separate rates must be deduplicated");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:coal\",\"item_count\":12,"
+                                                        + "\"currency_count\":1,\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "legacy pricing fields and rates must not be accepted together");
+
         var tagged = SellPriceResources.definitionsFromJson(
                 ResourceLocation.fromNamespaceAndPath("test", "sell_prices/logs.json"),
                 JsonParser.parseString(
