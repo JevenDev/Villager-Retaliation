@@ -231,6 +231,7 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
     private final Option<java.lang.Integer> trade_skillGrowthPrimaryMin = this.optionForKey(this.keys.trade_skillGrowthPrimaryMin);
     private final Option<java.lang.Integer> trade_skillGrowthPrimaryMax = this.optionForKey(this.keys.trade_skillGrowthPrimaryMax);
     private final Option<java.lang.Boolean> debugOverlay_showVillageBounds = this.optionForKey(this.keys.debugOverlay_showVillageBounds);
+    private final Option<java.lang.Boolean> debugOverlay_showQuestJournalTags = this.optionForKey(this.keys.debugOverlay_showQuestJournalTags);
     private final Option<java.lang.Boolean> debugOverlay_highlightRaidDefenders = this.optionForKey(this.keys.debugOverlay_highlightRaidDefenders);
     private final Option<java.lang.Integer> debugOverlay_debugPreviewMaxVisibleNodes = this.optionForKey(this.keys.debugOverlay_debugPreviewMaxVisibleNodes);
     private final Option<java.lang.Integer> debugOverlay_debugPreviewMaxVisibleLabels = this.optionForKey(this.keys.debugOverlay_debugPreviewMaxVisibleLabels);
@@ -2101,6 +2102,14 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
             debugOverlay_showVillageBounds.set(value);
         }
 
+        public boolean showQuestJournalTags() {
+            return debugOverlay_showQuestJournalTags.value();
+        }
+
+        public void showQuestJournalTags(boolean value) {
+            debugOverlay_showQuestJournalTags.set(value);
+        }
+
         public boolean highlightRaidDefenders() {
             return debugOverlay_highlightRaidDefenders.value();
         }
@@ -3133,6 +3142,8 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
     public interface DebugOverlay {
         boolean showVillageBounds();
         void showVillageBounds(boolean value);
+        boolean showQuestJournalTags();
+        void showQuestJournalTags(boolean value);
         boolean highlightRaidDefenders();
         void highlightRaidDefenders(boolean value);
         int debugPreviewMaxVisibleNodes();
@@ -3501,6 +3512,7 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
         public final Option.Key trade_skillGrowthPrimaryMin = new Option.Key("trade.skillGrowthPrimaryMin");
         public final Option.Key trade_skillGrowthPrimaryMax = new Option.Key("trade.skillGrowthPrimaryMax");
         public final Option.Key debugOverlay_showVillageBounds = new Option.Key("debugOverlay.showVillageBounds");
+        public final Option.Key debugOverlay_showQuestJournalTags = new Option.Key("debugOverlay.showQuestJournalTags");
         public final Option.Key debugOverlay_highlightRaidDefenders = new Option.Key("debugOverlay.highlightRaidDefenders");
         public final Option.Key debugOverlay_debugPreviewMaxVisibleNodes = new Option.Key("debugOverlay.debugPreviewMaxVisibleNodes");
         public final Option.Key debugOverlay_debugPreviewMaxVisibleLabels = new Option.Key("debugOverlay.debugPreviewMaxVisibleLabels");

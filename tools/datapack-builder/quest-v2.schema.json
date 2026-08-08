@@ -1832,6 +1832,9 @@
         "color": {
           "type": "string"
         },
+        "outline_color": {
+          "type": "string"
+        },
         "priority": {
           "type": "integer"
         },

@@ -250,6 +250,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> SKILL_GROWTH_PRIMARY_MIN = bind("trade.skillGrowthPrimaryMin", Integer.class);
     public static final ConfigValue<Integer> SKILL_GROWTH_PRIMARY_MAX = bind("trade.skillGrowthPrimaryMax", Integer.class);
     public static final ConfigValue<Boolean> SHOW_VILLAGE_BOUNDS = bind("debugOverlay.showVillageBounds", Boolean.class);
+    public static final ConfigValue<Boolean> SHOW_QUEST_JOURNAL_TAGS = bind("debugOverlay.showQuestJournalTags", Boolean.class);
     public static final ConfigValue<Boolean> HIGHLIGHT_RAID_DEFENDERS = bind("debugOverlay.highlightRaidDefenders", Boolean.class);
     public static final ConfigValue<Integer> DEBUG_PREVIEW_MAX_VISIBLE_NODES = bind("debugOverlay.debugPreviewMaxVisibleNodes", Integer.class);
     public static final ConfigValue<Integer> DEBUG_PREVIEW_MAX_VISIBLE_LABELS = bind("debugOverlay.debugPreviewMaxVisibleLabels", Integer.class);

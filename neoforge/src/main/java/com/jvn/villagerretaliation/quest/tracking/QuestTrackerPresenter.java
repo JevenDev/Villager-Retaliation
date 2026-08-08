@@ -55,6 +55,7 @@ public final class QuestTrackerPresenter {
                 definition.tags().stream().sorted().toList(),
                 tracker.icon() == null ? "" : tracker.icon().toString(),
                 tracker.color(),
+                tracker.outlineColor(),
                 tracker.priority(),
                 tracker.hidden(),
                 -1L,
@@ -201,7 +202,7 @@ public final class QuestTrackerPresenter {
     private static void appendJournalSignature(StringBuilder builder, QuestTrackerSyncPayload.Journal journal) {
         builder.append('|').append(journal.questline()).append('|')
                 .append(journal.icon()).append('|').append(journal.color()).append('|')
-                .append(journal.priority()).append('|').append(journal.hidden()).append('|')
+                .append(journal.outlineColor()).append('|').append(journal.priority()).append('|').append(journal.hidden()).append('|')
                 .append(journal.expiresAtGameTime()).append('|').append(journal.completedGameTime()).append('|')
                 .append(journal.blocker()).append('|').append(journal.questlineCompleted()).append('|')
                 .append(journal.questlineTotal()).append('|');

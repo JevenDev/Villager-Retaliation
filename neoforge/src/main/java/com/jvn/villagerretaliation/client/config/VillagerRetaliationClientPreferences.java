@@ -13,10 +13,12 @@ import org.slf4j.Logger;
 public final class VillagerRetaliationClientPreferences {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String SHOW_VILLAGER_NAME_TAGS = "showVillagerNameTags";
+    private static final String CONFIRM_QUEST_ABANDONMENT = "confirmQuestAbandonment";
     private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("villagerretaliation-client.properties");
 
     private static boolean loaded;
     private static boolean showVillagerNameTags = true;
+    private static boolean confirmQuestAbandonment = true;
 
     private VillagerRetaliationClientPreferences() {
     }
@@ -33,6 +35,19 @@ public final class VillagerRetaliationClientPreferences {
         return showVillagerNameTags;
     }
 
+    public static boolean confirmQuestAbandonment() {
+        ensureLoaded();
+        return confirmQuestAbandonment;
+    }
+
+    public static void confirmQuestAbandonment(boolean value) {
+        ensureLoaded();
+        if (confirmQuestAbandonment != value) {
+            confirmQuestAbandonment = value;
+            save();
+        }
+    }
+
     private static void ensureLoaded() {
         if (loaded) {
             return;
@@ -47,6 +62,8 @@ public final class VillagerRetaliationClientPreferences {
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             properties.load(reader);
             showVillagerNameTags = Boolean.parseBoolean(properties.getProperty(SHOW_VILLAGER_NAME_TAGS, "true"));
+            confirmQuestAbandonment = Boolean.parseBoolean(
+                    properties.getProperty(CONFIRM_QUEST_ABANDONMENT, "true"));
         } catch (IOException exception) {
             LOGGER.warn("Failed to read Villager Retaliation client preferences from {}", CONFIG_PATH, exception);
         }
@@ -55,6 +72,7 @@ public final class VillagerRetaliationClientPreferences {
     private static void save() {
         Properties properties = new Properties();
         properties.setProperty(SHOW_VILLAGER_NAME_TAGS, Boolean.toString(showVillagerNameTags));
+        properties.setProperty(CONFIRM_QUEST_ABANDONMENT, Boolean.toString(confirmQuestAbandonment));
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
             try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {

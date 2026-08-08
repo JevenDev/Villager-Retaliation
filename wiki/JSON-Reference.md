@@ -334,7 +334,7 @@ Common optional fields:
 | `target` | Structure target, dimension, search radius, discovery radius, and proof item |
 | `events` | Quest-level trigger actions |
 | `rewards` | XP, reputation, gossip, loot, memory event, or reward actions |
-| `ui` | Tracker text, icon, color, progress, placeholders, priority, and hidden flag |
+| `ui` | Tracker text, icon, `color`, `outline_color`, progress, placeholders, priority, and hidden flag |
 | `external_scenes` | Resource ids for extracted dialogue tree scenes |
 
 Set `metadata.show_locked_adventure_hint` to `false` when a quest should not appear as a locked preview in the villager `Adventures` menu before its offer requirements are met.

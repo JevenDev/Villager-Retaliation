@@ -317,6 +317,7 @@ public final class QuestV2Parser {
             "metadata",
             "icon",
             "color",
+            "outline_color",
             "priority",
             "hidden");
 

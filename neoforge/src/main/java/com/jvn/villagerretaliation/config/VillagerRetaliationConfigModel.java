@@ -662,6 +662,8 @@ public final class VillagerRetaliationConfigModel {
     public static final class DebugOverlay {
         public boolean showVillageBounds = false;
 
+        public boolean showQuestJournalTags = false;
+
         public boolean highlightRaidDefenders = false;
 
         @RangeConstraint(min = 0, max = 2048)

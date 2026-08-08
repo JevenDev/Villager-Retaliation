@@ -204,7 +204,7 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 | `stages` | Objectives, stage-local dialogue, responses, scenes, events, and UI |
 | `events` | Quest-level triggers that run while the quest exists |
 | `rewards` | XP, reputation, gossip, loot, memory events, or reward actions |
-| `ui` | Tracker text, icon, progress, placeholders, color, and priority |
+| `ui` | Tracker text, icon, progress, placeholders, title and outline colors, and priority |
 | `external_scenes` | Optional external dialogue scene resources used by this module |
 
 ## Quest Tag Taxonomy
@@ -219,13 +219,14 @@ Root `ui` fields are live journal data, not authoring-only hints:
 "ui": {
   "icon": "minecraft:filled_map",
   "color": "#d4a35a",
+  "outline_color": "#201408",
   "priority": 25,
   "hidden": false,
   "tracker_text": "Survey the old road."
 }
 ```
 
-`priority` sorts otherwise equivalent journal entries, `color` tints their titles, and `hidden` suppresses the quest from the journal and HUD. The synchronized journal also carries `metadata.questline` and `metadata.tags`; press `/` in the journal to search titles, descriptions, objectives, questlines, and tags.
+`priority` sorts otherwise equivalent journal entries, `color` tints their titles, `outline_color` opts into a ToucanLib 1px title outline, and `hidden` suppresses the quest from the journal and HUD. When omitted, title text defaults to unoutlined black. Both authored colors accept `#RRGGBB` or named Minecraft chat colors. The synchronized journal also carries `metadata.questline` and `metadata.tags`; press `/` in the journal to search titles, descriptions, objectives, questlines, and tags.
 
 Active quests with `availability.expiration.after_ticks` show a live remaining-time countdown. A located structure or location objective publishes its saved dimension and coordinates as a waypoint in both the selected journal entry and tracked HUD, including live distance while the player is in the same dimension. Completed journal-history entries show how long ago that run completed.
 

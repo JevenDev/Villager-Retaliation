@@ -1115,6 +1115,7 @@ public final class VillagerQuestGameTests {
                 List.of("story", "exploration"),
                 "minecraft:filled_map",
                 "#d4a35a",
+                "#111111",
                 25,
                 false,
                 1242L,
@@ -1123,6 +1124,7 @@ public final class VillagerQuestGameTests {
                 .withBlocker("Return to Lore Keeper.")
                 .withQuestlineProgress(3, 7);
         QuestTrackerSyncPayload.Entry journalEntry = entry.withJournal(journal);
+        helper.assertValueEqual(journalEntry.journal().outlineColor(), "#111111", "journal outline color");
         helper.assertValueEqual(journalEntry.journal().priority(), 25, "journal priority");
         helper.assertTrue(journalEntry.journal().waypoint().present(), "journal waypoint");
         helper.assertValueEqual(journalEntry.journal().blocker(), "Return to Lore Keeper.", "journal blocker");
@@ -2373,6 +2375,7 @@ public final class VillagerQuestGameTests {
         JsonObject questUi = root.getAsJsonObject("ui");
         questUi.addProperty("icon", "minecraft:filled_map");
         questUi.addProperty("color", "#d4a35a");
+        questUi.addProperty("outline_color", "#201408");
         questUi.addProperty("priority", 25);
         questUi.addProperty("hidden", true);
 
@@ -2424,6 +2427,7 @@ public final class VillagerQuestGameTests {
                 "v2 objective completion tracker text");
         helper.assertValueEqual(definition.tracker().icon(), ResourceLocation.withDefaultNamespace("filled_map"), "v2 journal icon");
         helper.assertValueEqual(definition.tracker().color(), "#d4a35a", "v2 journal color");
+        helper.assertValueEqual(definition.tracker().outlineColor(), "#201408", "v2 journal outline color");
         helper.assertValueEqual(definition.tracker().priority(), 25, "v2 journal priority");
         helper.assertTrue(definition.tracker().hidden(), "v2 journal hidden flag");
         helper.assertValueEqual(
