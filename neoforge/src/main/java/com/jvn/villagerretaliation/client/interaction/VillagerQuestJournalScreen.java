@@ -98,8 +98,8 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int DETAILS_REWARD_ITEM_SIZE = 12;
     private static final int DETAILS_QUEST_STEP_ICON_LEFT_PADDING = 0;
     private static final int DETAILS_QUEST_STEP_TEXT_GAP = 5;
-    private static final int DETAILS_PAGE_LABEL_GAP = 2;
-    private static final int DETAILS_PAGE_LABEL_HEIGHT = 11;
+    private static final int DETAILS_PAGE_LABEL_GAP = 3;
+    private static final int DETAILS_PAGE_LABEL_HEIGHT = 12;
     private static final int DETAILS_ABANDON_HEIGHT = 12;
     private static final int DETAILS_SECTION_GAP = DETAILS_LINE_STEP + 2;
     private static final int QUESTLINE_GRAPH_HEADER_HEIGHT = 23;
@@ -134,6 +134,8 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final Style QUEST_COUNT_COMPLETED_STYLE = Style.EMPTY.withColor(0xB5F45B);
     private static final Style QUEST_COUNT_NEARBY_STYLE = Style.EMPTY.withColor(0x5C96EF);
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.quest_journal.";
+    private static final int LIGHTEST_JOURNAL_ENTRY_COLOR = 0xFFF6F0DF;
+    private static final double MIN_JOURNAL_TEXT_CONTRAST = 4.5D;
 
     private static final JournalNineSlice QUEST_JOURNAL_SCROLLBAR_NINE_SLICE =
             new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLBAR_TEXTURE, 4, 6, 1, 1, 2, 2);
@@ -150,7 +152,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final JournalNineSlice QUEST_JOURNAL_ENTRY_HIGHLIGHT_NINE_SLICE =
             new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_HIGHLIGHT_TEXTURE, 3, 3, 1, 1, 1, 1);
     private static final JournalNineSlice QUEST_JOURNAL_SELECTED_QUEST_NINE_SLICE =
-            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SELECTED_QUEST_TEXTURE, 134, 23, 3, 3, 2, 2);
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SELECTED_QUEST_TEXTURE, 134, 23, 3, 3, 11, 11);
 
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
     private final EnumMap<QuestJournalTab, VillagerInteractionScreenState.OptionListPosition> tabPositions =
@@ -256,6 +258,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         graphics.pose().popPose();
         renderQuestlineGraphTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
         renderQuestlineTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
+        renderQuestStateTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
         renderPreviousStepTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
         renderQuestCountTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
         renderBookmarkTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
@@ -572,6 +575,36 @@ public final class VillagerQuestJournalScreen extends Screen {
             return;
         }
         graphics.renderComponentTooltip(this.font, List.of(hoveredTab.tooltip()), mouseX, mouseY);
+    }
+
+    private void renderQuestStateTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        Component tooltip = questStateTooltipAt(mouseX, mouseY - slideOffset);
+        if (tooltip != null) {
+            graphics.renderComponentTooltip(this.font, List.of(tooltip), mouseX, mouseY);
+        }
+    }
+
+    private Component questStateTooltipAt(double mouseX, double journalMouseY) {
+        int index = questOptionAt(mouseX, journalMouseY);
+        if (index < 0) {
+            return null;
+        }
+        int optionTop = Mth.floor(optionsTop() + optionOffset(index) - optionRenderScroll());
+        int iconLeft = optionsLeft() + QUEST_OPTION_STATE_ICON_LEFT_PADDING;
+        int iconTop = optionTop + QUEST_OPTION_STATE_ICON_TOP_PADDING;
+        if (!isPointInside(
+                mouseX,
+                journalMouseY,
+                iconLeft,
+                iconTop,
+                iconLeft + QUEST_OPTION_STATE_ICON_SIZE,
+                iconTop + QUEST_OPTION_STATE_ICON_SIZE)) {
+            return null;
+        }
+        if (index == this.state.selectedOption()) {
+            return Component.translatable(GUI_KEY_PREFIX + "state.selected").withStyle(QUEST_COUNT_ACTIVE_STYLE);
+        }
+        return QuestJournalEntryState.iconFor(visibleEntries().get(index)).tooltip();
     }
 
     private static QuestCountSummary questCountSummary() {
@@ -2027,16 +2060,18 @@ public final class VillagerQuestJournalScreen extends Screen {
         int titleColor = parseJournalColor(node.color(), QUESTLINE_TOOLTIP_NAME_COLOR);
         lines.add(Component.literal(node.title())
                 .withStyle(Style.EMPTY.withColor(titleColor).withBold(true)));
-        lines.add(Component.translatable(
-                        GUI_KEY_PREFIX + "questline_node.state." + questlineNodeStateKey(node.state()))
+        String stateKey = questlineNodeStateKey(node.state());
+        lines.add(Component.translatable(GUI_KEY_PREFIX + "questline_node.state." + stateKey)
                 .withStyle(Style.EMPTY.withColor(questlineNodeStateColor(node.state()))));
-        if (!node.description().isBlank()) {
-            lines.add(Component.literal(node.description())
-                    .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_DESCRIPTION_COLOR)));
-        }
-        if (journalEntryForQuestId(node.questId()) != null) {
-            lines.add(Component.translatable(GUI_KEY_PREFIX + "questline_node.open")
-                    .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_ACTION_COLOR)));
+        if (!"locked".equals(stateKey)) {
+            if (!node.description().isBlank()) {
+                lines.add(Component.literal(node.description())
+                        .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_DESCRIPTION_COLOR)));
+            }
+            if (journalEntryForQuestId(node.questId()) != null) {
+                lines.add(Component.translatable(GUI_KEY_PREFIX + "questline_node.open")
+                        .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_ACTION_COLOR)));
+            }
         }
         graphics.renderComponentTooltip(this.font, lines, mouseX, mouseY);
     }
@@ -2400,11 +2435,58 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private static int journalColor(QuestTrackerSyncPayload.Entry entry, int fallback) {
-        return parseJournalColor(entry == null ? "" : entry.journal().color(), fallback);
+        return readableJournalTextColor(parseJournalColor(entry == null ? "" : entry.journal().color(), fallback));
     }
 
     private static int journalOutlineColor(QuestTrackerSyncPayload.Entry entry, int fallback) {
         return parseJournalColor(entry == null ? "" : entry.journal().outlineColor(), fallback);
+    }
+
+    private static int readableJournalTextColor(int color) {
+        double backgroundLuminance = relativeLuminance(LIGHTEST_JOURNAL_ENTRY_COLOR);
+        if (contrastRatio(relativeLuminance(color), backgroundLuminance) >= MIN_JOURNAL_TEXT_CONTRAST) {
+            return color;
+        }
+
+        double readableScale = 0.0D;
+        double unreadableScale = 1.0D;
+        for (int iteration = 0; iteration < 12; iteration++) {
+            double candidateScale = (readableScale + unreadableScale) / 2.0D;
+            int candidate = scaleRgb(color, candidateScale);
+            if (contrastRatio(relativeLuminance(candidate), backgroundLuminance) >= MIN_JOURNAL_TEXT_CONTRAST) {
+                readableScale = candidateScale;
+            } else {
+                unreadableScale = candidateScale;
+            }
+        }
+        return scaleRgb(color, readableScale);
+    }
+
+    private static int scaleRgb(int color, double scale) {
+        int red = (int) Math.round((color >> 16 & 0xFF) * scale);
+        int green = (int) Math.round((color >> 8 & 0xFF) * scale);
+        int blue = (int) Math.round((color & 0xFF) * scale);
+        return color & 0xFF000000 | red << 16 | green << 8 | blue;
+    }
+
+    private static double contrastRatio(double firstLuminance, double secondLuminance) {
+        double lighter = Math.max(firstLuminance, secondLuminance);
+        double darker = Math.min(firstLuminance, secondLuminance);
+        return (lighter + 0.05D) / (darker + 0.05D);
+    }
+
+    private static double relativeLuminance(int color) {
+        double red = linearColorChannel(color >> 16 & 0xFF);
+        double green = linearColorChannel(color >> 8 & 0xFF);
+        double blue = linearColorChannel(color & 0xFF);
+        return 0.2126D * red + 0.7152D * green + 0.0722D * blue;
+    }
+
+    private static double linearColorChannel(int channel) {
+        double value = channel / 255.0D;
+        return value <= 0.04045D
+                ? value / 12.92D
+                : Math.pow((value + 0.055D) / 1.055D, 2.4D);
     }
 
     private static int parseJournalColor(String authoredValue, int fallback) {
@@ -2618,6 +2700,22 @@ public final class VillagerQuestJournalScreen extends Screen {
             return this == COMPLETED
                     ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_SELECTED_QUEST_COMPLETED_TEXTURE
                     : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_SELECTED_QUEST_TEXTURE;
+        }
+
+        Component tooltip() {
+            String key = switch (this) {
+                case AVAILABLE -> "available";
+                case ACTIVE -> "active";
+                case INACTIVE -> "accepted";
+                case COMPLETED -> "completed";
+            };
+            Style style = switch (this) {
+                case AVAILABLE -> QUEST_COUNT_NEARBY_STYLE;
+                case ACTIVE -> QUEST_COUNT_ACTIVE_STYLE;
+                case INACTIVE -> QUEST_COUNT_ACCEPTED_STYLE;
+                case COMPLETED -> QUEST_COUNT_COMPLETED_STYLE;
+            };
+            return Component.translatable(GUI_KEY_PREFIX + "state." + key).withStyle(style);
         }
     }
 

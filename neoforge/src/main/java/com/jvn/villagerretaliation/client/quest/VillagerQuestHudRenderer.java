@@ -53,8 +53,12 @@ final class VillagerQuestHudRenderer {
         return showRecentQuests ? Math.min(QuestTrackerSyncPayload.MAX_TRACKER_ENTRIES, entryCount) : 1;
     }
 
-    static int trackerHeight(int entryCount) {
-        return primaryHeight() + Math.max(0, entryCount - 1) * (secondaryHeight() + panelGap());
+    static int trackerHeight(Font font, List<QuestTrackerSyncPayload.Entry> entries, int entryCount, int width) {
+        int height = primaryHeight();
+        for (int index = 1; index < entryCount; index++) {
+            height += secondaryHeight(font, entries.get(index), width) + panelGap();
+        }
+        return height;
     }
 
     static int notificationWidth(Font font, QuestTrackerSyncPayload.Entry entry, int screenWidth) {
@@ -73,8 +77,17 @@ final class VillagerQuestHudRenderer {
         return VillagerAdaptiveGuiScale.unit(PRIMARY_HEIGHT);
     }
 
-    static int secondaryHeight() {
-        return VillagerAdaptiveGuiScale.unit(SECONDARY_HEIGHT);
+    static int secondaryHeight(Font font, QuestTrackerSyncPayload.Entry entry, int width) {
+        int height = VillagerAdaptiveGuiScale.unit(SECONDARY_HEIGHT);
+        if (!entry.showProgress() || entry.objective().isBlank()) {
+            return height;
+        }
+        int contentWidth = width - paddingX() * 2;
+        int wrapWidth = VillagerClientUiUtil.scaledWrapWidth(contentWidth, textScale());
+        int objectiveLines = Math.min(
+                2,
+                font.split(Component.literal(entry.objective()), wrapWidth).size());
+        return height + Math.max(0, objectiveLines - 1) * lineStep(font);
     }
 
     static int slideDistance() {
