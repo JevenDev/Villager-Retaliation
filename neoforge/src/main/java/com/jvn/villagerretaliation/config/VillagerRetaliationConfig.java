@@ -123,6 +123,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS = bind("social.enableSocialAttributeRetaliationEffects", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS = bind("social.enableSocialAttributeGossipEffects", Boolean.class);
     public static final ConfigValue<Double> SOCIAL_ATTRIBUTE_EFFECT_SCALE = bind("social.socialAttributeEffectScale", Double.class);
+    public static final ConfigValue<Boolean> ENABLE_VANILLA_VILLAGER_BREEDING = bind("social.enableVanillaVillagerBreeding", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_FAMILY_BREEDING_RULES = bind("social.enableFamilyBreedingRules", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_OPPOSITE_GENDER_BREEDING_RULES = bind("social.enableOppositeGenderBreedingRules", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_PARENT_REPUTATION_INHERITANCE = bind("social.enableParentReputationInheritance", Boolean.class);
@@ -343,6 +344,8 @@ public final class VillagerRetaliationConfig {
                 VillagerRetaliationConfigCompatibility.shouldMigrateCraftsmanSkillGrowth(config.fileLocation());
         boolean disableLegacyExperimentalTradeFeatures =
                 VillagerRetaliationConfigCompatibility.shouldDisableLegacyExperimentalTradeFeatures(config.fileLocation());
+        boolean disableLegacyExperimentalBreedingRules =
+                VillagerRetaliationConfigCompatibility.shouldDisableLegacyExperimentalBreedingRules(config.fileLocation());
         if (!migrateLegacyTomlIfNeeded(config)) {
             config.load();
         }
@@ -352,6 +355,10 @@ public final class VillagerRetaliationConfig {
         }
         if (disableLegacyExperimentalTradeFeatures
                 && VillagerRetaliationConfigCompatibility.disableLegacyExperimentalTradeFeatures(config)) {
+            configChanged = true;
+        }
+        if (disableLegacyExperimentalBreedingRules
+                && VillagerRetaliationConfigCompatibility.disableLegacyExperimentalBreedingRules(config)) {
             configChanged = true;
         }
         if (configChanged) {

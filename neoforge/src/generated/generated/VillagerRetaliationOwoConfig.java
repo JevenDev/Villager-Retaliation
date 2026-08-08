@@ -105,6 +105,7 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
     private final Option<java.lang.Boolean> social_enableSocialAttributeRetaliationEffects = this.optionForKey(this.keys.social_enableSocialAttributeRetaliationEffects);
     private final Option<java.lang.Boolean> social_enableSocialAttributeGossipEffects = this.optionForKey(this.keys.social_enableSocialAttributeGossipEffects);
     private final Option<java.lang.Double> social_socialAttributeEffectScale = this.optionForKey(this.keys.social_socialAttributeEffectScale);
+    private final Option<java.lang.Boolean> social_enableVanillaVillagerBreeding = this.optionForKey(this.keys.social_enableVanillaVillagerBreeding);
     private final Option<java.lang.Boolean> social_enableFamilyBreedingRules = this.optionForKey(this.keys.social_enableFamilyBreedingRules);
     private final Option<java.lang.Boolean> social_enableOppositeGenderBreedingRules = this.optionForKey(this.keys.social_enableOppositeGenderBreedingRules);
     private final Option<java.lang.Boolean> social_enableParentReputationInheritance = this.optionForKey(this.keys.social_enableParentReputationInheritance);
@@ -1071,6 +1072,14 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
 
         public void socialAttributeEffectScale(double value) {
             social_socialAttributeEffectScale.set(value);
+        }
+
+        public boolean enableVanillaVillagerBreeding() {
+            return social_enableVanillaVillagerBreeding.value();
+        }
+
+        public void enableVanillaVillagerBreeding(boolean value) {
+            social_enableVanillaVillagerBreeding.set(value);
         }
 
         public boolean enableFamilyBreedingRules() {
@@ -2876,6 +2885,8 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
         void enableSocialAttributeGossipEffects(boolean value);
         double socialAttributeEffectScale();
         void socialAttributeEffectScale(double value);
+        boolean enableVanillaVillagerBreeding();
+        void enableVanillaVillagerBreeding(boolean value);
         boolean enableFamilyBreedingRules();
         void enableFamilyBreedingRules(boolean value);
         boolean enableOppositeGenderBreedingRules();
@@ -3386,6 +3397,7 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
         public final Option.Key social_enableSocialAttributeRetaliationEffects = new Option.Key("social.enableSocialAttributeRetaliationEffects");
         public final Option.Key social_enableSocialAttributeGossipEffects = new Option.Key("social.enableSocialAttributeGossipEffects");
         public final Option.Key social_socialAttributeEffectScale = new Option.Key("social.socialAttributeEffectScale");
+        public final Option.Key social_enableVanillaVillagerBreeding = new Option.Key("social.enableVanillaVillagerBreeding");
         public final Option.Key social_enableFamilyBreedingRules = new Option.Key("social.enableFamilyBreedingRules");
         public final Option.Key social_enableOppositeGenderBreedingRules = new Option.Key("social.enableOppositeGenderBreedingRules");
         public final Option.Key social_enableParentReputationInheritance = new Option.Key("social.enableParentReputationInheritance");

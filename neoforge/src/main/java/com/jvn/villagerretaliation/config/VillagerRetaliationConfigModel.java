@@ -293,9 +293,11 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 0.0D, max = 2.0D, decimalPlaces = 1)
         public double socialAttributeEffectScale = 1.0D;
 
-        public boolean enableFamilyBreedingRules = true;
+        public boolean enableVanillaVillagerBreeding = true;
 
-        public boolean enableOppositeGenderBreedingRules = true;
+        public boolean enableFamilyBreedingRules = false;
+
+        public boolean enableOppositeGenderBreedingRules = false;
 
         public boolean enableParentReputationInheritance = true;
     }
