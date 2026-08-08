@@ -15,7 +15,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public final class VillagerGiftKnowledgeService {
@@ -203,10 +202,6 @@ public final class VillagerGiftKnowledgeService {
         return VillagerProfessionUtil.serializedKey(profession);
     }
 
-    static String displayItemName(Item item) {
-        return new ItemStack(item).getHoverName().getString();
-    }
-
     public record GiftKnowledgeSnapshot(List<GiftPreferenceView> preferences) {
         public GiftKnowledgeSnapshot {
             preferences = preferences == null ? List.of() : List.copyOf(preferences);
@@ -221,9 +216,4 @@ public final class VillagerGiftKnowledgeService {
             String targetProfessionKey) {
     }
 
-    private record GiftAdviceSelection(
-            GiftPreferenceDefinition definition,
-            boolean claimedLiked,
-            boolean truthful) {
-    }
 }

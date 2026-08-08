@@ -174,12 +174,4 @@ public final class VillagerInteractionRoutingGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE)
-    public static void giftKnowledgeTooltipUsesItemDisplayCapitalization(GameTestHelper helper) {
-        helper.assertValueEqual(
-                VillagerGiftKnowledgeService.displayItemName(Items.EMERALD),
-                "Emerald",
-                "gift knowledge should use the item display name instead of lowercase currency dialogue text");
-        helper.succeed();
-    }
 }

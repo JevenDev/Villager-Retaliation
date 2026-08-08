@@ -79,6 +79,7 @@ final class DialogueOptionPayloadCodec {
         }
         return List.copyOf(values);
     }
+
     static void writeGiftPreferenceViews(RegistryFriendlyByteBuf buffer, List<GiftPreferenceView> preferences) {
         List<GiftPreferenceView> safePreferences = preferences == null ? List.of() : preferences;
         int size = Math.min(safePreferences.size(), 256);
@@ -132,5 +133,4 @@ final class DialogueOptionPayloadCodec {
         }
         return List.copyOf(preferences);
     }
-
 }
