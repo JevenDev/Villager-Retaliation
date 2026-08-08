@@ -8,11 +8,10 @@ import com.jvn.villagerretaliation.sell.VillageMarketPolicy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -57,8 +56,11 @@ public final class SellBoxClientState {
                 || event.getItemStack().isEmpty()) {
             return;
         }
-        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem());
-        SellBoxSyncPayload.MarketEntry entry = snapshot.entries().get(itemId);
+        SellBoxSyncPayload.MarketEntry entry = snapshot.entries().stream()
+                .filter(quoted -> ItemStack.isSameItemSameComponents(quoted.stack(), event.getItemStack()))
+                .map(SellBoxSyncPayload.QuotedStack::entry)
+                .findFirst()
+                .orElse(null);
         if (entry == null || entry.effectiveUnitPrice().isZero()) {
             return;
         }
@@ -153,7 +155,7 @@ public final class SellBoxClientState {
             ResourceLocation currencyIconSprite,
             boolean validMarket,
             String villageName,
-            Map<ResourceLocation, SellBoxSyncPayload.MarketEntry> entries) {
+            List<SellBoxSyncPayload.QuotedStack> entries) {
         public Snapshot {
             balance = balance == null ? CurrencyAmount.ZERO : balance;
             currencyName = currencyName == null ? "emerald" : currencyName;
@@ -162,7 +164,7 @@ public final class SellBoxClientState {
                     ? DEFAULT_CURRENCY_ICON
                     : currencyIconSprite;
             villageName = villageName == null ? "" : villageName;
-            entries = entries == null ? Map.of() : Map.copyOf(entries);
+            entries = entries == null ? List.of() : List.copyOf(entries);
         }
 
         public static Snapshot empty() {
@@ -176,7 +178,7 @@ public final class SellBoxClientState {
                     DEFAULT_CURRENCY_ICON,
                     false,
                     "",
-                    Map.of());
+                    List.of());
         }
     }
 

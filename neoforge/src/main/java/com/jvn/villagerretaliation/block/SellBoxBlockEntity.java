@@ -100,7 +100,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
     public boolean canPlaceItem(int slot, ItemStack stack) {
         return slot == 0
                 && level instanceof ServerLevel serverLevel
-                && VillageSellMarket.quote(serverLevel, worldPosition, stack).isPresent();
+                && VillageSellMarket.canAcceptSale(serverLevel, worldPosition, stack);
     }
 
     public CurrencyAmount balance() {
@@ -147,15 +147,19 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         if (incoming == null || incoming.isEmpty() || !(level instanceof ServerLevel serverLevel)) {
             return incoming == null ? ItemStack.EMPTY : incoming;
         }
-        Optional<MarketQuote> incomingQuote = simulate
-                ? VillageSellMarket.quote(serverLevel, worldPosition, incoming)
-                : VillageSellMarket.quoteDiscovering(serverLevel, worldPosition, incoming);
-        if (incomingQuote.isEmpty()) {
+        boolean incomingAccepted = simulate
+                ? VillageSellMarket.canAcceptSale(serverLevel, worldPosition, incoming)
+                : VillageSellMarket.quoteDiscovering(serverLevel, worldPosition, incoming).isPresent();
+        if (!incomingAccepted) {
             return incoming;
         }
 
         ItemStack pending = getItem(0);
-        if (!pending.isEmpty() && VillageSellMarket.quote(serverLevel, worldPosition, pending).isEmpty()) {
+        boolean pendingAccepted = pending.isEmpty()
+                || (simulate
+                        ? VillageSellMarket.canAcceptSale(serverLevel, worldPosition, pending)
+                        : VillageSellMarket.quote(serverLevel, worldPosition, pending).isPresent());
+        if (!pendingAccepted) {
             return incoming;
         }
 
@@ -308,6 +312,42 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
     }
 
     @Override
+    public void setItem(int slot, ItemStack stack) {
+        ItemStack before = getItem(slot).copy();
+        super.setItem(slot, stack);
+        if (!sameStack(before, getItem(slot))) {
+            changedAndSync();
+        }
+    }
+
+    @Override
+    public ItemStack removeItem(int slot, int amount) {
+        ItemStack removed = super.removeItem(slot, amount);
+        if (!removed.isEmpty()) {
+            changedAndSync();
+        }
+        return removed;
+    }
+
+    @Override
+    public ItemStack removeItemNoUpdate(int slot) {
+        ItemStack removed = super.removeItemNoUpdate(slot);
+        if (!removed.isEmpty()) {
+            changedAndSync();
+        }
+        return removed;
+    }
+
+    @Override
+    public void clearContent() {
+        boolean changed = !this.items.getFirst().isEmpty();
+        super.clearContent();
+        if (changed) {
+            changedAndSync();
+        }
+    }
+
+    @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         this.items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
@@ -423,7 +463,7 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         public boolean isItemValid(int slot, ItemStack stack) {
             checkSlot(slot);
             return level instanceof ServerLevel serverLevel
-                    && VillageSellMarket.quote(serverLevel, worldPosition, stack).isPresent();
+                    && VillageSellMarket.canAcceptSale(serverLevel, worldPosition, stack);
         }
     }
 
@@ -468,5 +508,10 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity i
         if (slot != 0) {
             throw new IllegalArgumentException("Sell box handler has no slot " + slot);
         }
+    }
+
+    private static boolean sameStack(ItemStack first, ItemStack second) {
+        return first.getCount() == second.getCount()
+                && ItemStack.isSameItemSameComponents(first, second);
     }
 }

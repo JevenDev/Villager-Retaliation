@@ -15,6 +15,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -85,8 +86,23 @@ public final class SellBoxMarketSyncService {
                 sellBox.getBlockPos(),
                 village.orElse(null),
                 revision,
+                inventorySignature(player),
+                pendingSignature(sellBox),
                 day,
                 generation);
+    }
+
+    private static int inventorySignature(ServerPlayer player) {
+        int signature = 1;
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            signature = 31 * signature + ItemStack.hashItemAndComponents(player.getInventory().getItem(slot));
+        }
+        return signature;
+    }
+
+    private static int pendingSignature(SellBoxBlockEntity sellBox) {
+        ItemStack pending = sellBox.getItem(0);
+        return 31 * ItemStack.hashItemAndComponents(pending) + pending.getCount();
     }
 
     public static void clear(MinecraftServer server) {
@@ -98,6 +114,8 @@ public final class SellBoxMarketSyncService {
             BlockPos position,
             VillageAllegianceId village,
             long revision,
+            int inventorySignature,
+            int pendingSignature,
             long day,
             long generation) {
         private SyncKey {

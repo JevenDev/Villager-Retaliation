@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.block;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.sell.VillageMarketSavedData;
 import com.mojang.serialization.MapCodec;
+import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
@@ -135,11 +136,15 @@ public final class SellBoxBlock extends BaseEntityBlock {
 
     @Override
     protected List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
-        ItemStack drop = new ItemStack(VillagerRetaliationItems.SELL_BOX.get());
+        ArrayList<ItemStack> drops = new ArrayList<>(super.getDrops(state, params));
         BlockEntity blockEntity = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (blockEntity instanceof SellBoxBlockEntity sellBox) {
-            sellBox.saveToItem(drop, params.getLevel().registryAccess());
+            for (ItemStack drop : drops) {
+                if (drop.is(VillagerRetaliationItems.SELL_BOX.get())) {
+                    sellBox.saveToItem(drop, params.getLevel().registryAccess());
+                }
+            }
         }
-        return List.of(drop);
+        return List.copyOf(drops);
     }
 }

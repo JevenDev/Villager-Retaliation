@@ -83,7 +83,32 @@ public final class SellBoxMenu extends AbstractContainerMenu {
             }
             return;
         }
+        if (slotId == 0
+                && clickType == ClickType.SWAP
+                && container instanceof SellBoxBlockEntity sellBox
+                && !sellBox.getItem(0).isEmpty()) {
+            ItemStack hotbarStack = player.getInventory().getItem(button);
+            if (hotbarStack.isEmpty()) {
+                super.clicked(slotId, button, clickType, player);
+                return;
+            }
+            if (player.level().isClientSide) {
+                return;
+            }
+            ItemStack remainder = sellBox.insertForSale(hotbarStack.copy(), false);
+            int accepted = hotbarStack.getCount() - remainder.getCount();
+            if (accepted > 0) {
+                player.getInventory().setItem(button, remainder);
+                broadcastFullState();
+            }
+            return;
+        }
         super.clicked(slotId, button, clickType, player);
+    }
+
+    @Override
+    public boolean canDragTo(Slot slot) {
+        return slot.index != 0 && super.canDragTo(slot);
     }
 
     @Override
@@ -205,7 +230,7 @@ public final class SellBoxMenu extends AbstractContainerMenu {
         public boolean mayPlace(ItemStack stack) {
             return !(container instanceof SellBoxBlockEntity sellBox)
                     || !(player.level() instanceof ServerLevel serverLevel)
-                    || VillageSellMarket.quote(serverLevel, sellBox.getBlockPos(), stack).isPresent();
+                    || VillageSellMarket.canAcceptSale(serverLevel, sellBox.getBlockPos(), stack);
         }
     }
 }

@@ -235,7 +235,9 @@ public final class SellBoxScreen extends AbstractContainerScreen<SellBoxMenu> {
             return;
         }
         SellBoxClientState.Snapshot state = SellBoxClientState.snapshot(menu.containerId);
-        sellButton.active = state.validMarket() && menu.getSlot(0).hasItem();
+        sellButton.active = state.validMarket()
+                && menu.getSlot(0).hasItem()
+                && state.pendingEntry() != null;
         withdrawButton.active = state.balance().wholeUnits().signum() > 0;
     }
 }

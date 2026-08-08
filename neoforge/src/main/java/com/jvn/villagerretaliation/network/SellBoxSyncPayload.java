@@ -6,19 +6,16 @@ import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.sell.DailyDemandBand;
 import com.jvn.villagerretaliation.sell.MarketQuote;
-import com.jvn.villagerretaliation.sell.SellPriceResources;
 import com.jvn.villagerretaliation.sell.SupplyBand;
 import com.jvn.villagerretaliation.sell.VillageSellMarket;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import net.minecraft.core.registries.BuiltInRegistries;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -32,7 +29,7 @@ public record SellBoxSyncPayload(
         ResourceLocation currencyIconSprite,
         boolean validMarket,
         String villageName,
-        Map<ResourceLocation, MarketEntry> entries) implements CustomPacketPayload {
+        List<QuotedStack> entries) implements CustomPacketPayload {
     private static final int MAX_ENTRIES = 4096;
     private static final ResourceLocation DEFAULT_CURRENCY_ICON =
             ResourceLocation.withDefaultNamespace("item/emerald");
@@ -46,7 +43,7 @@ public record SellBoxSyncPayload(
         currencyPluralName = currencyPluralName == null || currencyPluralName.isBlank() ? "emeralds" : currencyPluralName;
         currencyIconSprite = currencyIconSprite == null ? DEFAULT_CURRENCY_ICON : currencyIconSprite;
         villageName = villageName == null ? "" : villageName;
-        entries = entries == null ? Map.of() : Map.copyOf(entries);
+        entries = entries == null ? List.of() : List.copyOf(entries);
     }
 
     public static void send(ServerPlayer player, int containerId, SellBoxBlockEntity sellBox) {
@@ -64,22 +61,12 @@ public record SellBoxSyncPayload(
                         level, sellBox.getBlockPos(), sellBox.getItem(0))
                 .map(quote -> marketEntry(quote, sellBox.getItem(0).getCount()))
                 .orElse(null);
-        LinkedHashMap<ResourceLocation, MarketEntry> entries = new LinkedHashMap<>();
+        ArrayList<QuotedStack> entries = new ArrayList<>();
         if (valid) {
-            for (Item item : SellPriceResources.definitions(player.getServer()).keySet()) {
-                ItemStack unitStack = new ItemStack(item, 1);
-                MarketQuote unit = VillageSellMarket.quote(level, sellBox.getBlockPos(), unitStack).orElse(null);
-                if (unit == null) {
-                    continue;
-                }
-                int stackSize = Math.max(1, item.getDefaultMaxStackSize());
-                MarketQuote stack = VillageSellMarket.quote(
-                                level, sellBox.getBlockPos(), new ItemStack(item, stackSize))
-                        .orElse(unit);
-                entries.put(
-                        BuiltInRegistries.ITEM.getKey(item),
-                        marketEntry(unit, stack.stackPayout(), stackSize));
+            for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+                addQuotedStack(entries, level, sellBox, player.getInventory().getItem(slot));
             }
+            addQuotedStack(entries, level, sellBox, sellBox.getItem(0));
         }
         PacketDistributor.sendToPlayer(player, new SellBoxSyncPayload(
                 containerId,
@@ -92,6 +79,21 @@ public record SellBoxSyncPayload(
                 valid,
                 villageName,
                 entries));
+    }
+
+    private static void addQuotedStack(
+            List<QuotedStack> entries,
+            ServerLevel level,
+            SellBoxBlockEntity sellBox,
+            ItemStack stack) {
+        if (stack.isEmpty() || entries.stream()
+                .anyMatch(entry -> ItemStack.isSameItemSameComponents(entry.stack(), stack))) {
+            return;
+        }
+        ItemStack unitStack = stack.copyWithCount(1);
+        VillageSellMarket.quote(level, sellBox.getBlockPos(), unitStack)
+                .map(quote -> new QuotedStack(unitStack, marketEntry(quote, 1)))
+                .ifPresent(entries::add);
     }
 
     private static MarketEntry marketEntry(MarketQuote quote, int stackSize) {
@@ -128,13 +130,8 @@ public record SellBoxSyncPayload(
         buffer.writeUtf(payload.villageName(), 128);
         int size = Math.min(payload.entries().size(), MAX_ENTRIES);
         buffer.writeVarInt(size);
-        int written = 0;
-        for (Map.Entry<ResourceLocation, MarketEntry> entry : payload.entries().entrySet()) {
-            if (written++ >= size) {
-                break;
-            }
-            buffer.writeResourceLocation(entry.getKey());
-            entry.getValue().write(buffer);
+        for (int index = 0; index < size; index++) {
+            payload.entries().get(index).write(buffer);
         }
     }
 
@@ -149,9 +146,9 @@ public record SellBoxSyncPayload(
         boolean validMarket = buffer.readBoolean();
         String villageName = buffer.readUtf(128);
         int size = VillagerPayloads.readCollectionSize(buffer, MAX_ENTRIES, "sell-box market entries");
-        Map<ResourceLocation, MarketEntry> entries = new LinkedHashMap<>();
+        List<QuotedStack> entries = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
-            entries.put(buffer.readResourceLocation(), MarketEntry.read(buffer));
+            entries.add(QuotedStack.read(buffer));
         }
         return new SellBoxSyncPayload(
                 containerId, day, balance, pendingEntry, name, pluralName, currencyIconSprite,
@@ -161,6 +158,24 @@ public record SellBoxSyncPayload(
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
+    }
+
+    public record QuotedStack(ItemStack stack, MarketEntry entry) {
+        public QuotedStack {
+            if (stack == null || stack.isEmpty() || entry == null) {
+                throw new IllegalArgumentException("Quoted sell-box stacks require an item and market entry");
+            }
+            stack = stack.copyWithCount(1);
+        }
+
+        private void write(RegistryFriendlyByteBuf buffer) {
+            ItemStack.STREAM_CODEC.encode(buffer, this.stack);
+            this.entry.write(buffer);
+        }
+
+        private static QuotedStack read(RegistryFriendlyByteBuf buffer) {
+            return new QuotedStack(ItemStack.STREAM_CODEC.decode(buffer), MarketEntry.read(buffer));
+        }
     }
 
     public record MarketEntry(
