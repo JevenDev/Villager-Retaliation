@@ -32,13 +32,13 @@ public enum SupplyBand {
 
     public static SupplyBand forPressure(CurrencyAmount pressure) {
         CurrencyAmount safe = pressure == null ? CurrencyAmount.ZERO : pressure;
-        if (safe.compareTo(CurrencyAmount.of(16, 1)) < 0) {
+        if (safe.compareTo(ACTIVE.lowerBound) < 0) {
             return FRESH;
         }
-        if (safe.compareTo(CurrencyAmount.of(32, 1)) < 0) {
+        if (safe.compareTo(SATURATED.lowerBound) < 0) {
             return ACTIVE;
         }
-        if (safe.compareTo(CurrencyAmount.of(64, 1)) < 0) {
+        if (safe.compareTo(GLUTTED.lowerBound) < 0) {
             return SATURATED;
         }
         return GLUTTED;

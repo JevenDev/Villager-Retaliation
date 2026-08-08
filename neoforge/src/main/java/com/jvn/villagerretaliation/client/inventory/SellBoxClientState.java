@@ -31,6 +31,9 @@ public final class SellBoxClientState {
     }
 
     public static void accept(SellBoxSyncPayload payload) {
+        List<SellBoxSyncPayload.QuotedStack> entries = payload.replaceEntries()
+                ? payload.entries()
+                : snapshot.containerId() == payload.containerId() ? snapshot.entries() : List.of();
         snapshot = new Snapshot(
                 payload.containerId(),
                 payload.day(),
@@ -41,7 +44,7 @@ public final class SellBoxClientState {
                 payload.currencyIconSprite(),
                 payload.validMarket(),
                 payload.villageName(),
-                payload.entries());
+                entries);
     }
 
     public static Snapshot snapshot(int containerId) {
@@ -56,11 +59,15 @@ public final class SellBoxClientState {
                 || event.getItemStack().isEmpty()) {
             return;
         }
-        SellBoxSyncPayload.MarketEntry entry = snapshot.entries().stream()
-                .filter(quoted -> ItemStack.isSameItemSameComponents(quoted.stack(), event.getItemStack()))
-                .map(SellBoxSyncPayload.QuotedStack::entry)
-                .findFirst()
-                .orElse(null);
+        ItemStack pending = menu.getSlot(0).getItem();
+        SellBoxSyncPayload.MarketEntry entry = !pending.isEmpty()
+                        && ItemStack.isSameItemSameComponents(pending, event.getItemStack())
+                ? snapshot.pendingEntry()
+                : snapshot.entries().stream()
+                        .filter(quoted -> ItemStack.isSameItemSameComponents(quoted.stack(), event.getItemStack()))
+                        .map(SellBoxSyncPayload.QuotedStack::entry)
+                        .findFirst()
+                        .orElse(null);
         if (entry == null || entry.effectiveUnitPrice().isZero()) {
             return;
         }

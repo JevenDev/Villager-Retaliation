@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -21,6 +22,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 public final class SellBoxMarketSyncService {
     private static final Map<UUID, SyncKey> SYNCED = new LinkedHashMap<>();
+    private static final Map<UUID, Integer> SYNCED_CONTAINERS = new LinkedHashMap<>();
 
     private SellBoxMarketSyncService() {
     }
@@ -45,15 +47,40 @@ public final class SellBoxMarketSyncService {
             }
         }
         SYNCED.keySet().removeIf(playerId -> !openPlayers.contains(playerId));
+        SYNCED_CONTAINERS.keySet().removeIf(playerId -> !openPlayers.contains(playerId));
+    }
+
+    public static boolean shouldSyncEntries(
+            ServerPlayer player,
+            SellBoxBlockEntity sellBox,
+            int containerId) {
+        if (player == null || sellBox == null) {
+            return true;
+        }
+        SyncKey previous = SYNCED.get(player.getUUID());
+        return previous == null
+                || !Integer.valueOf(containerId).equals(SYNCED_CONTAINERS.get(player.getUUID()))
+                || !syncKey(
+                        player,
+                        sellBox,
+                        VillageSellMarket.currentDay(player.getServer()),
+                        SellPriceResources.generation())
+                        .sameQuoteCatalog(previous);
     }
 
     public static void markSynced(ServerPlayer player, SellBoxBlockEntity sellBox) {
+        int containerId = player == null ? -1 : player.containerMenu.containerId;
+        markSynced(player, sellBox, containerId);
+    }
+
+    public static void markSynced(ServerPlayer player, SellBoxBlockEntity sellBox, int containerId) {
         if (player != null && sellBox != null) {
             SYNCED.put(player.getUUID(), syncKey(
                     player,
                     sellBox,
                     VillageSellMarket.currentDay(player.getServer()),
                     SellPriceResources.generation()));
+            SYNCED_CONTAINERS.put(player.getUUID(), containerId);
         }
     }
 
@@ -93,9 +120,16 @@ public final class SellBoxMarketSyncService {
     }
 
     private static int inventorySignature(ServerPlayer player) {
-        int signature = 1;
+        TreeSet<Integer> variants = new TreeSet<>();
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
-            signature = 31 * signature + ItemStack.hashItemAndComponents(player.getInventory().getItem(slot));
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (!stack.isEmpty()) {
+                variants.add(ItemStack.hashItemAndComponents(stack));
+            }
+        }
+        int signature = 1;
+        for (int variant : variants) {
+            signature = 31 * signature + variant;
         }
         return signature;
     }
@@ -107,6 +141,7 @@ public final class SellBoxMarketSyncService {
 
     public static void clear(MinecraftServer server) {
         SYNCED.clear();
+        SYNCED_CONTAINERS.clear();
     }
 
     private record SyncKey(
@@ -120,6 +155,17 @@ public final class SellBoxMarketSyncService {
             long generation) {
         private SyncKey {
             position = position.immutable();
+        }
+
+        private boolean sameQuoteCatalog(SyncKey other) {
+            return other != null
+                    && this.dimension.equals(other.dimension)
+                    && this.position.equals(other.position)
+                    && java.util.Objects.equals(this.village, other.village)
+                    && this.revision == other.revision
+                    && this.inventorySignature == other.inventorySignature
+                    && this.day == other.day
+                    && this.generation == other.generation;
         }
     }
 }
