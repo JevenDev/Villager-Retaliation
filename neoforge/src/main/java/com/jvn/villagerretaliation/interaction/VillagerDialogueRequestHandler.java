@@ -176,16 +176,22 @@ public final class VillagerDialogueRequestHandler {
             return treeResult.get();
         }
         if (requestType == DialogueRequestType.GIFT_PREFERENCES) {
-            return VillagerGiftKnowledgeService
-                    .discoverFromGiftQuestion(context)
-                    .map(discovery -> new VillagerDialogueService.DialogueResult(
-                            "gift_preference_discovery",
-                            giftAdviceLine(context, discovery.adviceKind(), discovery.itemName(), discovery.subject())
-                    ))
-                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
-                            "gift_preference_known",
-                            giftAdviceLine(context, GiftAdviceKind.ALREADY_KNOWN, "", "")
-                    ));
+            List<VillagerGiftKnowledgeService.GiftKnowledgeDiscovery> discoveries =
+                    VillagerGiftKnowledgeService.discoverFromGiftQuestion(context);
+            if (discoveries.isEmpty()) {
+                return new VillagerDialogueService.DialogueResult(
+                        "gift_preference_known",
+                        giftAdviceLine(context, GiftAdviceKind.ALREADY_KNOWN, "", ""));
+            }
+            String response = discoveries.stream()
+                    .map(discovery -> giftAdviceLine(
+                            context,
+                            discovery.adviceKind(),
+                            discovery.itemName(),
+                            discovery.subject()))
+                    .filter(line -> !line.isBlank())
+                    .collect(java.util.stream.Collectors.joining("\n"));
+            return new VillagerDialogueService.DialogueResult("gift_preference_discovery", response);
         }
         if (requestType == DialogueRequestType.GIFT_ADVICE_FOLLOWUP) {
             return VillagerInteractionTracker
