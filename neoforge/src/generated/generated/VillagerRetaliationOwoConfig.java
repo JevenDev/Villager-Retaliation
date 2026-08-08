@@ -298,6 +298,7 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
     private final Option<java.lang.Boolean> wanderer_dropInvisibilityPotion = this.optionForKey(this.keys.wanderer_dropInvisibilityPotion);
     private final Option<java.lang.Boolean> wanderer_dropRandomCurrentTrade = this.optionForKey(this.keys.wanderer_dropRandomCurrentTrade);
     private final Option<java.lang.Double> wanderer_randomTradeDropChance = this.optionForKey(this.keys.wanderer_randomTradeDropChance);
+    private final Option<java.lang.Boolean> quest_showQuestIndicators = this.optionForKey(this.keys.quest_showQuestIndicators);
     private final Option<java.lang.Boolean> quest_enableQuestItemShaderHighlights = this.optionForKey(this.keys.quest_enableQuestItemShaderHighlights);
     private final Option<com.jvn.villagerretaliation.config.QuestItemHighlightMode> quest_questItemHighlightMode = this.optionForKey(this.keys.quest_questItemHighlightMode);
 
@@ -2648,6 +2649,14 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
     }
     public final Quest_ quest = new Quest_();
     public class Quest_ implements Quest {
+        public boolean showQuestIndicators() {
+            return quest_showQuestIndicators.value();
+        }
+
+        public void showQuestIndicators(boolean value) {
+            quest_showQuestIndicators.set(value);
+        }
+
         public boolean enableQuestItemShaderHighlights() {
             return quest_enableQuestItemShaderHighlights.value();
         }
@@ -3266,6 +3275,8 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
         void randomTradeDropChance(double value);
     }
     public interface Quest {
+        boolean showQuestIndicators();
+        void showQuestIndicators(boolean value);
         boolean enableQuestItemShaderHighlights();
         void enableQuestItemShaderHighlights(boolean value);
         com.jvn.villagerretaliation.config.QuestItemHighlightMode questItemHighlightMode();
@@ -3557,6 +3568,7 @@ public class VillagerRetaliationOwoConfig extends ConfigWrapper<com.jvn.villager
         public final Option.Key wanderer_dropInvisibilityPotion = new Option.Key("wanderer.dropInvisibilityPotion");
         public final Option.Key wanderer_dropRandomCurrentTrade = new Option.Key("wanderer.dropRandomCurrentTrade");
         public final Option.Key wanderer_randomTradeDropChance = new Option.Key("wanderer.randomTradeDropChance");
+        public final Option.Key quest_showQuestIndicators = new Option.Key("quest.showQuestIndicators");
         public final Option.Key quest_enableQuestItemShaderHighlights = new Option.Key("quest.enableQuestItemShaderHighlights");
         public final Option.Key quest_questItemHighlightMode = new Option.Key("quest.questItemHighlightMode");
     }

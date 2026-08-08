@@ -5671,12 +5671,15 @@ public final class VillagerQuestService {
                 markQuestUpdateEntries(entries, entrySignatures, previous, flash, trackedQuestIds);
         List<QuestTrackerSyncPayload.QuestlineNode> questlineNodes =
                 questlineNodes(level, player, data, syncEntries);
+        List<QuestTrackerSyncPayload.QuestMarker> questMarkers =
+                questMarkers(player, data, syncEntries);
         try {
             PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(
                     syncEntries,
                     trackedQuestIds.stream().map(ResourceLocation::toString).toList(),
                     flash,
-                    questlineNodes));
+                    questlineNodes,
+                    questMarkers));
         } catch (UnsupportedOperationException ignored) {
             QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
                     "result=skipped reason=unsupported_connection entries=" + entries.size());
@@ -5708,6 +5711,29 @@ public final class VillagerQuestService {
             updated.add(entry.withQuestUpdate(questUpdate));
         }
         return List.copyOf(updated);
+    }
+
+    private static List<QuestTrackerSyncPayload.QuestMarker> questMarkers(
+            ServerPlayer player,
+            VillagerQuestSavedData data,
+            List<QuestTrackerSyncPayload.Entry> entries) {
+        Map<String, QuestTrackerSyncPayload.QuestMarker> markers = new LinkedHashMap<>();
+        for (QuestTrackerSyncPayload.Entry entry : entries) {
+            if (!entry.questUpdate() || entry.journal().hidden()) {
+                continue;
+            }
+            ResourceLocation questId = ResourceLocation.tryParse(entry.questId());
+            VillagerQuestSavedData.QuestProgress progress =
+                    questId == null ? null : data.get(player.getUUID(), questId);
+            UUID villagerId = progress == null ? null : progress.startedVillagerId();
+            if (villagerId != null) {
+                markers.put("update:" + villagerId + ":" + entry.questId(), new QuestTrackerSyncPayload.QuestMarker(
+                        villagerId, entry.questId()));
+            }
+        }
+        return markers.values().stream()
+                .limit(QuestTrackerSyncPayload.MAX_QUEST_MARKERS)
+                .toList();
     }
 
     private static void appendNearbyAvailableQuestEntries(

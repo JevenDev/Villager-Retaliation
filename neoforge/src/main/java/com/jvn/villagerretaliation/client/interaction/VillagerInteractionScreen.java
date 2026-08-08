@@ -6,6 +6,7 @@ import com.jvn.toucanlib.client.ToucanScrollbars;
 import com.jvn.toucanlib.client.interaction.ToucanLimitFeedback;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay;
 import com.jvn.villagerretaliation.client.party.PartyRosterClient;
 import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
@@ -218,6 +219,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_PORTRAIT_SCISSOR_RIGHT_EXTENSION = 1;
     private static final int INTERACTION_PORTRAIT_SCALE = 54;
     private static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 1;
+    private static final int QUEST_INDICATOR_WIDTH = 6;
+    private static final int QUEST_INDICATOR_HEIGHT = 13;
+    private static final int INTERACTION_QUEST_INDICATOR_SCALE = 2;
+    private static final int INTERACTION_QUEST_INDICATOR_NAMEPLATE_GAP = 3;
     private static final long MOUSE_STARE_REQUIRED_MILLIS = 10_000L;
     private static final double VILLAGER_PORTRAIT_EYE_BRIDGE_RADIUS_X = 3.5D;
     private static final double VILLAGER_PORTRAIT_EYE_BRIDGE_RADIUS_Y = 4.5D;
@@ -3884,6 +3889,47 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             livingEntity.yHeadRot = previousHeadRot;
             livingEntity.setSprinting(previousSprinting);
         }
+        renderInteractionQuestIndicator(graphics, left, top, livingEntity);
+    }
+
+    private void renderInteractionQuestIndicator(
+            GuiGraphics graphics,
+            int containerLeft,
+            int containerTop,
+            LivingEntity livingEntity) {
+        if (!VillagerRetaliationServerConfigClient.showQuestIndicators()
+                || !VillagerQuestTrackerOverlay.hasQuestIndicator(livingEntity.getUUID())) {
+            return;
+        }
+
+        int bounce = ((Util.getMillis() / 180L) & 1L) == 0L ? 0 : 2;
+        int indicatorWidth = QUEST_INDICATOR_WIDTH * INTERACTION_QUEST_INDICATOR_SCALE;
+        int indicatorHeight = QUEST_INDICATOR_HEIGHT * INTERACTION_QUEST_INDICATOR_SCALE;
+        VillagerInteractionTextLayout.Nameplate nameplate = interactionNameplate();
+        int nameplateCenterX = containerLeft + INTERACTION_NAMEPLATE_X + nameplate.width() / 2;
+        int indicatorLeft = nameplateCenterX - indicatorWidth / 2;
+        int indicatorTop = containerTop
+                + INTERACTION_NAMEPLATE_Y
+                - indicatorHeight
+                - INTERACTION_QUEST_INDICATOR_NAMEPLATE_GAP
+                + bounce;
+        graphics.pose().pushPose();
+        graphics.pose().translate(indicatorLeft, indicatorTop, 0.0F);
+        graphics.pose().scale(
+                INTERACTION_QUEST_INDICATOR_SCALE,
+                INTERACTION_QUEST_INDICATOR_SCALE,
+                1.0F);
+        graphics.blit(
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_UPDATE_TEXTURE,
+                0,
+                0,
+                0,
+                0,
+                QUEST_INDICATOR_WIDTH,
+                QUEST_INDICATOR_HEIGHT,
+                QUEST_INDICATOR_WIDTH,
+                QUEST_INDICATOR_HEIGHT);
+        graphics.pose().popPose();
     }
 
     private boolean shouldRenderInteractionContainer() {

@@ -14,6 +14,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -32,6 +33,7 @@ public final class VillagerQuestTrackerOverlay {
     private static List<QuestTrackerSyncPayload.QuestlineNode> questlineNodes = List.of();
     private static final Set<String> questUpdateQuestIds = new HashSet<>();
     private static final Map<String, QuestTrackerSyncPayload.Entry> completedEntryCache = new LinkedHashMap<>();
+    private static final Map<String, UUID> questUpdateVillagerIds = new LinkedHashMap<>();
     private static int flashTicks;
     private static int notificationAge;
     private static int age;
@@ -49,6 +51,11 @@ public final class VillagerQuestTrackerOverlay {
         List<QuestTrackerSyncPayload.Entry> visiblePayloadEntries = payload.entries().stream()
                 .filter(entry -> !entry.journal().hidden())
                 .toList();
+        for (QuestTrackerSyncPayload.QuestMarker marker : payload.questMarkers()) {
+            if (marker.valid() && !marker.questId().isBlank()) {
+                questUpdateVillagerIds.put(marker.questId(), marker.villagerId());
+            }
+        }
         for (QuestTrackerSyncPayload.Entry entry : visiblePayloadEntries) {
             if (entry.questUpdate() && !entry.questAvailable() && !entry.questId().isBlank()) {
                 questUpdateQuestIds.add(entry.questId());
@@ -62,6 +69,7 @@ public final class VillagerQuestTrackerOverlay {
         }
         questUpdateQuestIds.removeIf(questId -> !acceptedQuestIds.contains(questId));
         entries = applyQuestUpdateCache(mergeCompletedEntries(visiblePayloadEntries));
+        questUpdateVillagerIds.keySet().removeIf(questId -> !acceptedQuestIds.contains(questId));
         questlineNodes = payload.questlineNodes();
         trackedQuestIds = payload.trackedQuestIds();
         if (payload.flash() && trackedEntry().isPresent()) {
@@ -162,6 +170,7 @@ public final class VillagerQuestTrackerOverlay {
         trackedQuestIds = List.of();
         questUpdateQuestIds.clear();
         completedEntryCache.clear();
+        questUpdateVillagerIds.clear();
     }
 
     public static List<QuestTrackerSyncPayload.Entry> entries() {
@@ -179,10 +188,15 @@ public final class VillagerQuestTrackerOverlay {
         if (questUpdateQuestIds.remove(entry.questId())) {
             entries = applyQuestUpdateCache(entries);
         }
+        questUpdateVillagerIds.remove(entry.questId());
     }
 
     public static Optional<QuestTrackerSyncPayload.Entry> trackedEntry() {
         return trackedEntries().stream().findFirst();
+    }
+
+    public static boolean hasQuestIndicator(UUID villagerId) {
+        return villagerId != null && questUpdateVillagerIds.containsValue(villagerId);
     }
 
     public static List<QuestTrackerSyncPayload.Entry> trackedEntries() {

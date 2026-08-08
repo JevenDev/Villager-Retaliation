@@ -344,6 +344,8 @@
   "text.config.villagerretaliation.option.duels.watcherReputation.tooltip": "Reputation gained with each villager that watches a completed duel.",
   "text.config.villagerretaliation.option.quest.questItemHighlightMode": "Highlight Scope",
   "text.config.villagerretaliation.option.quest.questItemHighlightMode.tooltip": "Chooses whether item highlights use every active quest or only the quest currently tracked in the HUD.",
+  "text.config.villagerretaliation.option.quest.showQuestIndicators": "Villager Quest Indicators",
+  "text.config.villagerretaliation.option.quest.showQuestIndicators.tooltip": "Shows an animated exclamation mark above villagers when one of their existing quests has an unacknowledged update, including in the interaction screen.",
   "text.config.villagerretaliation.option.playerRaids.defendersPerGolem.tooltip": "Number of village defenders needed for each naturally allocated iron golem.",
   "text.config.villagerretaliation.option.playerRaids.maximumGolems.tooltip": "Maximum number of village iron golems assigned to defend against a Player Raid.",
   "text.config.villagerretaliation.option.playerRaids.minimumGolems.tooltip": "Minimum number of village iron golems assigned to defend against a Player Raid.",

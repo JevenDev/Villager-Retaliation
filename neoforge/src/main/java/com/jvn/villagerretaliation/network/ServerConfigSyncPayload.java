@@ -8,6 +8,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record ServerConfigSyncPayload(
         boolean showVillagerNameTags,
+        boolean showQuestIndicators,
         boolean villagerGiftsEnabled,
         boolean skillTradeFeaturesEnabled,
         VillagerStatDisplayMode villagerStatDisplayMode) implements CustomPacketPayload {
@@ -17,6 +18,7 @@ public record ServerConfigSyncPayload(
 
     private static void encode(RegistryFriendlyByteBuf buffer, ServerConfigSyncPayload payload) {
         buffer.writeBoolean(payload.showVillagerNameTags());
+        buffer.writeBoolean(payload.showQuestIndicators());
         buffer.writeBoolean(payload.villagerGiftsEnabled());
         buffer.writeBoolean(payload.skillTradeFeaturesEnabled());
         buffer.writeEnum(payload.villagerStatDisplayMode());
@@ -24,6 +26,7 @@ public record ServerConfigSyncPayload(
 
     private static ServerConfigSyncPayload decode(RegistryFriendlyByteBuf buffer) {
         return new ServerConfigSyncPayload(
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),

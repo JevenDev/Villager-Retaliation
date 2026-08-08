@@ -834,6 +834,8 @@ public final class VillagerRetaliationConfigModel {
     }
 
     public static final class Quest {
+        public boolean showQuestIndicators = true;
+
         public boolean enableQuestItemShaderHighlights = true;
 
         public QuestItemHighlightMode questItemHighlightMode = QuestItemHighlightMode.ALL_ACTIVE_QUESTS;
