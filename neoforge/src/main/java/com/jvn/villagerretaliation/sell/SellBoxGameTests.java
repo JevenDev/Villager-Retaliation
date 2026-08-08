@@ -837,6 +837,24 @@ public final class SellBoxGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void directContainerMutationInvalidatesMarketSync(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        SellBoxMarketSyncService.clear(player.getServer());
+        SellBoxMarketSyncService.markSynced(player, sellBox);
+
+        sellBox.setItem(0, new ItemStack(Items.COAL, 3));
+
+        helper.assertFalse(
+                SellBoxMarketSyncService.isSynced(player, sellBox),
+                "changing the pending slot through Container must invalidate the market snapshot");
+        helper.assertTrue(
+                sellBox.pendingValue().compareTo(CurrencyAmount.ZERO) > 0,
+                "a direct slot mutation must expose the current pending quote");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void loadedBlockItemPreservesPendingStackAndExactBalance(GameTestHelper helper) {
         SellBoxBlockEntity original = placeBox(helper);
         ItemStack sold = new ItemStack(Items.COAL, 3);
