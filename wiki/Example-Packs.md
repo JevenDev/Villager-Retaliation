@@ -4,7 +4,7 @@ These folders are working test packs, not just JSON fragments. Copy the smallest
 
 ## Sell Prices
 
-`example-packs/sell-prices-example/` shows all three market operations: adding a new item under your own namespace, overriding the built-in coal definition at the same resource ID, and disabling the built-in rotten-flesh definition.
+`example-packs/sell-prices-example/` keeps a legacy beta.13 price beside explicit rates, tag pricing, discrete prices, component matching, durability, a built-in override, and a disabled definition. Its README calls out the fictitious mod and tag IDs used for illustration.
 
 ## Custom Duel Kits
 

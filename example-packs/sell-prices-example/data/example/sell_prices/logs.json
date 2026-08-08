@@ -1,0 +1,13 @@
+{
+  "item": "#minecraft:logs",
+  "rates": [
+    {
+      "item_count": {
+        "min": 5,
+        "max": 8
+      },
+      "currency_count": 1
+    }
+  ],
+  "market_group": "villagerretaliation:logs"
+}

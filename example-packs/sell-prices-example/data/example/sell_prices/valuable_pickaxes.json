@@ -1,0 +1,26 @@
+{
+  "item": "#example:valuable_pickaxes",
+  "components": {
+    "example:quality": {
+      "min": 3
+    }
+  },
+  "durability": {
+    "min": 250
+  },
+  "rates": [
+    {
+      "item_count": 1,
+      "currency_count": 5
+    },
+    {
+      "item_count": 1,
+      "currency_count": 8
+    },
+    {
+      "item_count": 1,
+      "currency_count": 12
+    }
+  ],
+  "market_group": "example:tools"
+}
