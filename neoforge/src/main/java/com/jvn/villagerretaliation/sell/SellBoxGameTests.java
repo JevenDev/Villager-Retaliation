@@ -421,7 +421,7 @@ public final class SellBoxGameTests {
     public static void successfulMarketSyncRecordsCurrentSnapshot(GameTestHelper helper) {
         SellBoxBlockEntity sellBox = placeBox(helper);
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
-        SellBoxMarketSyncService.clear(player.getServer());
+        SellBoxMarketSyncService.clear();
 
         helper.assertFalse(
                 SellBoxMarketSyncService.isSynced(player, sellBox),
@@ -447,7 +447,7 @@ public final class SellBoxGameTests {
                 SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId),
                 "a changed inventory variant must rebuild quoted inventory entries");
 
-        SellBoxMarketSyncService.clear(player.getServer());
+        SellBoxMarketSyncService.clear();
         helper.succeed();
     }
 
@@ -519,21 +519,17 @@ public final class SellBoxGameTests {
             groups.add(ResourceLocation.fromNamespaceAndPath("villagerretaliation", path));
         }
         Map<ResourceLocation, DailyDemandBand> firstDay =
-                VillageSellMarket.demandBands(3733L, first, 5L, 2L, groups);
+                VillageSellMarket.demandBands(3733L, first, 5L, groups);
         helper.assertValueEqual(
-                VillageSellMarket.demandBands(3733L, first, 5L, 2L, groups),
+                VillageSellMarket.demandBands(3733L, first, 5L, groups),
                 firstDay,
                 "demand must be restart-stable for the same inputs");
         helper.assertTrue(
-                !firstDay.equals(VillageSellMarket.demandBands(3733L, second, 5L, 2L, groups)),
+                !firstDay.equals(VillageSellMarket.demandBands(3733L, second, 5L, groups)),
                 "different villages must rank commodity groups independently");
         helper.assertTrue(
-                !firstDay.equals(VillageSellMarket.demandBands(3733L, first, 6L, 2L, groups)),
+                !firstDay.equals(VillageSellMarket.demandBands(3733L, first, 6L, groups)),
                 "demand must shift on a new overworld day");
-        helper.assertValueEqual(
-                VillageSellMarket.demandBands(3733L, first, 5L, 3L, groups),
-                firstDay,
-                "resource generations must invalidate caches without changing deterministic demand");
         helper.succeed();
     }
 
@@ -863,7 +859,7 @@ public final class SellBoxGameTests {
     public static void directContainerMutationInvalidatesMarketSync(GameTestHelper helper) {
         SellBoxBlockEntity sellBox = placeBox(helper);
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
-        SellBoxMarketSyncService.clear(player.getServer());
+        SellBoxMarketSyncService.clear();
         SellBoxMarketSyncService.markSynced(player, sellBox);
 
         sellBox.setItem(0, new ItemStack(Items.COAL, 3));
