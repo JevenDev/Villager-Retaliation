@@ -87,6 +87,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int DETAILS_DIVIDER_HEIGHT = 5;
     private static final int DETAILS_TITLE_ICON_SIZE = 9;
     private static final int DETAILS_QUEST_STEP_ICON_SIZE = 7;
+    private static final int DETAILS_REWARD_ITEM_SIZE = 12;
     private static final int DETAILS_QUEST_STEP_ICON_LEFT_PADDING = 0;
     private static final int DETAILS_QUEST_STEP_TEXT_GAP = 5;
     private static final int DETAILS_PAGE_LABEL_GAP = 2;
@@ -887,7 +888,16 @@ public final class VillagerQuestJournalScreen extends Screen {
             return;
         }
         int textLeft = left;
-        if (line.icon() != null) {
+        ItemStack rewardItem = rewardItemStack(line.itemId());
+        if (!rewardItem.isEmpty()) {
+            float scale = DETAILS_REWARD_ITEM_SIZE / 16.0F;
+            graphics.pose().pushPose();
+            graphics.pose().translate(left + DETAILS_QUEST_STEP_ICON_LEFT_PADDING, top - 2, 0.0F);
+            graphics.pose().scale(scale, scale, 1.0F);
+            graphics.renderItem(rewardItem, 0, 0);
+            graphics.pose().popPose();
+            textLeft += rewardItemTextIndent();
+        } else if (line.icon() != null) {
             int iconSize = line.titleIcon() ? DETAILS_TITLE_ICON_SIZE : DETAILS_QUEST_STEP_ICON_SIZE;
             int iconTop = top + (line.titleIcon() ? -1 : 0);
             graphics.blit(
@@ -1000,7 +1010,11 @@ public final class VillagerQuestJournalScreen extends Screen {
             y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.rewards"), TITLE_COLOR, y, lineStep, 0);
             y = addDividerLine(lines, y + 3, 3);
             for (QuestTrackerSyncPayload.RewardPreview reward : selected.rewardPreviews()) {
-                y = addQuestStepLines(lines, rewardPreviewLine(reward), completed, y, lineStep, 2);
+                if (rewardItemStack(reward.itemId()).isEmpty()) {
+                    y = addQuestStepLines(lines, rewardPreviewLine(reward), completed, y, lineStep, 2);
+                } else {
+                    y = addItemRewardLines(lines, reward, y, lineStep, 2);
+                }
             }
         }
         return lines;
@@ -1191,6 +1205,38 @@ public final class VillagerQuestJournalScreen extends Screen {
         return y - lineStep + this.font.lineHeight + gapAfter;
     }
 
+    private int addItemRewardLines(
+            List<QuestDetailLine> lines,
+            QuestTrackerSyncPayload.RewardPreview reward,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        ItemStack stack = rewardItemStack(reward.itemId());
+        if (stack.isEmpty()) {
+            return addQuestStepLines(lines, rewardPreviewLine(reward), false, top, lineStep, gapAfter);
+        }
+        Component text = Component.literal("x" + reward.label() + " ").append(stack.getHoverName());
+        int y = top;
+        boolean first = true;
+        int rowStep = Math.max(lineStep, DETAILS_REWARD_ITEM_SIZE);
+        for (FormattedCharSequence line : this.font.split(text, Math.max(1, DETAILS_WIDTH - rewardItemTextIndent()))) {
+            lines.add(new QuestDetailLine(
+                    line,
+                    TEXT_COLOR,
+                    y,
+                    Math.max(this.font.lineHeight, first ? DETAILS_REWARD_ITEM_SIZE : this.font.lineHeight),
+                    null,
+                    false,
+                    false,
+                    false,
+                    "",
+                    first ? reward.itemId() : ""));
+            y += rowStep;
+            first = false;
+        }
+        return y - rowStep + Math.max(this.font.lineHeight, DETAILS_REWARD_ITEM_SIZE) + gapAfter;
+    }
+
     private static int detailContentHeight(List<QuestDetailLine> detailLines) {
         if (detailLines.isEmpty()) {
             return 0;
@@ -1229,12 +1275,23 @@ public final class VillagerQuestJournalScreen extends Screen {
         return reward.label();
     }
 
+    private static ItemStack rewardItemStack(String itemId) {
+        ResourceLocation id = itemId == null ? null : ResourceLocation.tryParse(itemId);
+        return id == null
+                ? ItemStack.EMPTY
+                : BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new).orElse(ItemStack.EMPTY);
+    }
+
     private static String prerequisiteLine(QuestTrackerSyncPayload.Prerequisite prerequisite) {
         return prerequisite.label();
     }
 
     private static int questStepTextIndent() {
         return DETAILS_QUEST_STEP_ICON_LEFT_PADDING + DETAILS_QUEST_STEP_ICON_SIZE + DETAILS_QUEST_STEP_TEXT_GAP;
+    }
+
+    private static int rewardItemTextIndent() {
+        return DETAILS_QUEST_STEP_ICON_LEFT_PADDING + DETAILS_REWARD_ITEM_SIZE + DETAILS_QUEST_STEP_TEXT_GAP;
     }
 
     private static int titleIconTextIndent() {
@@ -2010,7 +2067,8 @@ public final class VillagerQuestJournalScreen extends Screen {
             boolean centered,
             boolean divider,
             boolean titleIcon,
-            String targetQuestId) {
+            String targetQuestId,
+            String itemId) {
         private QuestDetailLine(
                 FormattedCharSequence text,
                 int color,
@@ -2020,7 +2078,20 @@ public final class VillagerQuestJournalScreen extends Screen {
                 boolean centered,
                 boolean divider,
                 boolean titleIcon) {
-            this(text, color, top, height, icon, centered, divider, titleIcon, "");
+            this(text, color, top, height, icon, centered, divider, titleIcon, "", "");
+        }
+
+        private QuestDetailLine(
+                FormattedCharSequence text,
+                int color,
+                int top,
+                int height,
+                ResourceLocation icon,
+                boolean centered,
+                boolean divider,
+                boolean titleIcon,
+                String targetQuestId) {
+            this(text, color, top, height, icon, centered, divider, titleIcon, targetQuestId, "");
         }
 
         private boolean link() {

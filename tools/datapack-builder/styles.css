@@ -2772,3 +2772,30 @@ body.is-wiki-moving {
     display: none;
   }
 }
+
+.construction-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(12, 12, 12, .88);
+}
+
+.construction-dialog {
+  width: min(440px, 100%);
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+}
+
+.construction-dialog:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
+.construction-dialog img { width: 42px; height: 42px; object-fit: contain; image-rendering: pixelated; }
+.construction-dialog h1 { margin: 0 0 8px; font-size: 22px; }
+.construction-dialog p { margin: 0; color: var(--muted); }

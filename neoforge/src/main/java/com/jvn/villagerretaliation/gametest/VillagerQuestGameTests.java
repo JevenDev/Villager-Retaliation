@@ -1068,7 +1068,7 @@ public final class VillagerQuestGameTests {
                 "proof_item", "Echo Shard",
                 "issuer", "Lore Keeper");
         List<QuestTrackerSyncPayload.RewardPreview> rewards = QuestTrackerPresenter.rewardPreviews(
-                null,
+                helper.makeMockServerPlayerInLevel(),
                 quest,
                 replacements);
         QuestTrackerSyncPayload.Entry entry = QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
@@ -1100,8 +1100,10 @@ public final class VillagerQuestGameTests {
                 entry.rewardPreviews().stream().anyMatch(reward -> reward.kind().equals("reputation") && reward.label().contains("+22")),
                 "presenter did not include reputation reward preview");
         helper.assertTrue(
-                entry.rewardPreviews().stream().noneMatch(reward -> reward.kind().equals("loot")),
-                "presenter included loot table reward preview");
+                entry.rewardPreviews().stream().anyMatch(reward -> reward.kind().equals("item")
+                        && reward.itemId().equals("minecraft:emerald")
+                        && reward.label().equals("30-44")),
+                "presenter did not include item reward preview");
         helper.assertTrue(
                 QuestTrackerPresenter.syncSignature(List.of(entry), quest.id()).contains(entry.questId()),
                 "presenter signature omitted quest id");
@@ -1298,7 +1300,7 @@ public final class VillagerQuestGameTests {
                 oversized,
                 oversized,
                 List.of(new QuestTrackerSyncPayload.QuestItem(oversized, oversized, 1)),
-                List.of(new QuestTrackerSyncPayload.RewardPreview(oversized, oversized, 1)),
+                List.of(new QuestTrackerSyncPayload.RewardPreview(oversized, oversized, 1, oversized)),
                 List.of(new QuestTrackerSyncPayload.Prerequisite(oversized, oversized, false)),
                 List.of(new QuestTrackerSyncPayload.ObjectiveStep(oversized, false)),
                 false,
@@ -1315,6 +1317,7 @@ public final class VillagerQuestGameTests {
                         && boundedEntry.issuerLocation().length() <= 192
                         && boundedEntry.questItems().getFirst().label().length() <= 128
                         && boundedEntry.rewardPreviews().getFirst().label().length() <= 160
+                        && boundedEntry.rewardPreviews().getFirst().itemId().length() <= 128
                         && boundedEntry.prerequisites().getFirst().label().length() <= 160
                         && boundedEntry.objectiveSteps().getFirst().label().length() <= 256,
                 "tracker strings must fit their wire codec bounds");
