@@ -231,6 +231,9 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             buffer.writeInt(journal.waypoint().y());
             buffer.writeInt(journal.waypoint().z());
         }
+        buffer.writeUtf(journal.blocker(), MAX_TEXT_LENGTH);
+        buffer.writeVarInt(journal.questlineCompleted());
+        buffer.writeVarInt(journal.questlineTotal());
     }
 
     private static Journal readJournal(RegistryFriendlyByteBuf buffer) {
@@ -249,7 +252,19 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
         Waypoint waypoint = buffer.readBoolean()
                 ? new Waypoint(buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH), buffer.readInt(), buffer.readInt(), buffer.readInt())
                 : Waypoint.NONE;
-        return new Journal(questline, tags, icon, color, priority, hidden, expiresAt, completedAt, waypoint);
+        return new Journal(
+                questline,
+                tags,
+                icon,
+                color,
+                priority,
+                hidden,
+                expiresAt,
+                completedAt,
+                waypoint,
+                buffer.readUtf(MAX_TEXT_LENGTH),
+                buffer.readVarInt(),
+                buffer.readVarInt());
     }
 
     @Override
@@ -522,8 +537,25 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             boolean hidden,
             long expiresAtGameTime,
             long completedGameTime,
-            Waypoint waypoint) {
-        public static final Journal EMPTY = new Journal("", List.of(), "", "", 0, false, -1L, -1L, Waypoint.NONE);
+            Waypoint waypoint,
+            String blocker,
+            int questlineCompleted,
+            int questlineTotal) {
+        public static final Journal EMPTY = new Journal(
+                "", List.of(), "", "", 0, false, -1L, -1L, Waypoint.NONE, "", 0, 0);
+
+        public Journal(
+                String questline,
+                List<String> tags,
+                String icon,
+                String color,
+                int priority,
+                boolean hidden,
+                long expiresAtGameTime,
+                long completedGameTime,
+                Waypoint waypoint) {
+            this(questline, tags, icon, color, priority, hidden, expiresAtGameTime, completedGameTime, waypoint, "", 0, 0);
+        }
 
         public Journal {
             questline = boundedUtf(questline, MAX_JOURNAL_VALUE_LENGTH);
@@ -538,11 +570,26 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             icon = boundedUtf(icon, MAX_JOURNAL_VALUE_LENGTH);
             color = boundedUtf(color, MAX_JOURNAL_VALUE_LENGTH);
             waypoint = waypoint == null ? Waypoint.NONE : waypoint;
+            blocker = boundedUtf(blocker, MAX_TEXT_LENGTH);
+            questlineTotal = Math.max(0, questlineTotal);
+            questlineCompleted = Math.max(0, Math.min(questlineCompleted, questlineTotal));
         }
 
         public Journal withRuntime(long expiresAtGameTime, long completedGameTime, Waypoint waypoint) {
             return new Journal(this.questline, this.tags, this.icon, this.color, this.priority, this.hidden,
-                    expiresAtGameTime, completedGameTime, waypoint);
+                    expiresAtGameTime, completedGameTime, waypoint, this.blocker,
+                    this.questlineCompleted, this.questlineTotal);
+        }
+
+        public Journal withBlocker(String blocker) {
+            return new Journal(this.questline, this.tags, this.icon, this.color, this.priority, this.hidden,
+                    this.expiresAtGameTime, this.completedGameTime, this.waypoint, blocker,
+                    this.questlineCompleted, this.questlineTotal);
+        }
+
+        public Journal withQuestlineProgress(int completed, int total) {
+            return new Journal(this.questline, this.tags, this.icon, this.color, this.priority, this.hidden,
+                    this.expiresAtGameTime, this.completedGameTime, this.waypoint, this.blocker, completed, total);
         }
     }
 

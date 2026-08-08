@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.scene.SceneJournalPresenter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -25,10 +26,14 @@ public final class QuestTrackerPresenter {
     public static QuestTrackerSyncPayload.Entry entry(EntryInput input) {
         QuestDefinition definition = input.definition();
         QuestDefinition.Step step = input.step();
+        String objective = resolveText(
+                input.player(),
+                new QuestDefinition.SelectedText(step.text(), step.textKey()),
+                input.replacements());
         QuestTrackerSyncPayload.Entry entry = new QuestTrackerSyncPayload.Entry(
                 definition.id().toString(),
                 resolveText(input.player(), input.title(), input.replacements()),
-                resolveText(input.player(), new QuestDefinition.SelectedText(step.text(), step.textKey()), input.replacements()),
+                objective,
                 resolveText(input.player(), new QuestDefinition.SelectedText(definition.description(), definition.descriptionKey()), input.replacements()),
                 appendSceneStatus(metadataText(input.player(), step.metadata(), input.replacements(), input.status(), input.issuer()),
                         SceneJournalPresenter.status(input.player(), definition.id())),
@@ -54,7 +59,8 @@ public final class QuestTrackerPresenter {
                 tracker.hidden(),
                 -1L,
                 -1L,
-                QuestTrackerSyncPayload.Waypoint.NONE));
+                QuestTrackerSyncPayload.Waypoint.NONE)
+                .withBlocker(blockerText(input, objective)));
     }
 
     private static String appendSceneStatus(String metadata,String sceneStatus){
@@ -196,7 +202,9 @@ public final class QuestTrackerPresenter {
         builder.append('|').append(journal.questline()).append('|')
                 .append(journal.icon()).append('|').append(journal.color()).append('|')
                 .append(journal.priority()).append('|').append(journal.hidden()).append('|')
-                .append(journal.expiresAtGameTime()).append('|').append(journal.completedGameTime()).append('|');
+                .append(journal.expiresAtGameTime()).append('|').append(journal.completedGameTime()).append('|')
+                .append(journal.blocker()).append('|').append(journal.questlineCompleted()).append('|')
+                .append(journal.questlineTotal()).append('|');
         for (String tag : journal.tags()) {
             builder.append(tag).append(';');
         }
@@ -381,6 +389,76 @@ public final class QuestTrackerPresenter {
         }
         Integer count = itemCounter.apply(itemId);
         return count == null ? 0 : Math.max(0, count);
+    }
+
+    private static String blockerText(EntryInput input, String objective) {
+        VillagerQuestSavedData.QuestState state = input.state();
+        if (state == VillagerQuestSavedData.QuestState.NOT_STARTED) {
+            return input.prerequisites().stream()
+                    .filter(prerequisite -> !prerequisite.met())
+                    .map(QuestTrackerSyncPayload.Prerequisite::label)
+                    .filter(label -> label != null && !label.isBlank())
+                    .findFirst()
+                    .orElse("");
+        }
+        if (state == VillagerQuestSavedData.QuestState.COMPLETED
+                || state == VillagerQuestSavedData.QuestState.CONSUMED) {
+            return "";
+        }
+        if (state == VillagerQuestSavedData.QuestState.ACTIVE) {
+            for (QuestTrackerSyncPayload.QuestItem item : input.questItems()) {
+                int remaining = Math.max(0, item.count() - item.currentCount());
+                if (remaining <= 0) {
+                    continue;
+                }
+                Map<String, String> values = previewReplacements(input.replacements());
+                values.put("remaining", Integer.toString(remaining));
+                values.put("item", item.label());
+                return resolveGlobalText(
+                        input.player(),
+                        "quest.tracker.blocker.items",
+                        "Collect {remaining} more {item}.",
+                        values);
+            }
+            for (QuestTrackerSyncPayload.ObjectiveStep step : input.objectiveSteps()) {
+                if (!step.completed() && !step.label().isBlank()) {
+                    return step.label();
+                }
+            }
+        }
+        return objective == null ? "" : objective;
+    }
+
+    public static Map<String, QuestlineProgress> questlineProgress(
+            Collection<QuestDefinition> definitions,
+            Function<ResourceLocation, VillagerQuestSavedData.QuestProgress> progressLookup) {
+        if (definitions == null || definitions.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, QuestlineProgress> progressByQuestline = new LinkedHashMap<>();
+        for (QuestDefinition definition : definitions) {
+            if (definition == null || definition.questline().isBlank() || definition.tracker().hidden()) {
+                continue;
+            }
+            VillagerQuestSavedData.QuestProgress progress = progressLookup == null
+                    ? null
+                    : progressLookup.apply(definition.id());
+            if (progress != null
+                    && progress.state() == VillagerQuestSavedData.QuestState.CONSUMED
+                    && "branch_lock".equals(progress.consumedReason())) {
+                continue;
+            }
+            QuestlineProgress current = progressByQuestline.getOrDefault(
+                    definition.questline(), QuestlineProgress.EMPTY);
+            boolean completed = progress != null
+                    && (progress.completionCount() > 0
+                    || progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
+                    || progress.completedGameTime() >= 0L);
+            progressByQuestline.put(
+                    definition.questline(),
+                    new QuestlineProgress(current.completed() + (completed ? 1 : 0), current.total() + 1));
+        }
+        return Map.copyOf(progressByQuestline);
     }
 
     public static List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews(
@@ -607,6 +685,15 @@ public final class QuestTrackerPresenter {
             prerequisites = prerequisites == null ? List.of() : List.copyOf(prerequisites);
             objectiveSteps = objectiveSteps == null ? List.of() : List.copyOf(objectiveSteps);
             state = state == null ? VillagerQuestSavedData.QuestState.NOT_STARTED : state;
+        }
+    }
+
+    public record QuestlineProgress(int completed, int total) {
+        private static final QuestlineProgress EMPTY = new QuestlineProgress(0, 0);
+
+        public QuestlineProgress {
+            total = Math.max(0, total);
+            completed = Math.max(0, Math.min(completed, total));
         }
     }
 }

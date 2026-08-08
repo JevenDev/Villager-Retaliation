@@ -938,8 +938,18 @@ public final class VillagerQuestJournalScreen extends Screen {
         y = addDividerLine(lines, y + 3, 3);
         y = addWrappedDetailLines(lines, statusLine(selected), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 2);
         QuestTrackerSyncPayload.Journal journal = selected.journal();
+        if (!journal.blocker().isBlank()) {
+            y = addWrappedDetailLines(
+                    lines,
+                    Component.translatable(GUI_KEY_PREFIX + "waiting_for", journal.blocker()),
+                    wrapWidth,
+                    TEXT_COLOR,
+                    y,
+                    lineStep,
+                    1);
+        }
         if (!journal.questline().isBlank()) {
-            y = addWrappedDetailLines(lines, Component.translatable(GUI_KEY_PREFIX + "questline", journal.questline()), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
+            y = addWrappedDetailLines(lines, questlineLine(journal), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
         }
         if (!journal.tags().isEmpty()) {
             y = addWrappedDetailLines(lines, Component.translatable(GUI_KEY_PREFIX + "tags", String.join(", ", journal.tags())), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
@@ -1578,9 +1588,20 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
         graphics.renderComponentTooltip(
                 this.font,
-                List.of(Component.translatable(GUI_KEY_PREFIX + "questline", entry.journal().questline())),
+                List.of(questlineLine(entry.journal())),
                 mouseX,
                 mouseY);
+    }
+
+    private static Component questlineLine(QuestTrackerSyncPayload.Journal journal) {
+        if (journal.questlineTotal() > 0) {
+            return Component.translatable(
+                    GUI_KEY_PREFIX + "questline_progress",
+                    journal.questline(),
+                    journal.questlineCompleted(),
+                    journal.questlineTotal());
+        }
+        return Component.translatable(GUI_KEY_PREFIX + "questline", journal.questline());
     }
 
     private QuestTrackerSyncPayload.Entry questTitleAt(double mouseX, double journalMouseY) {
