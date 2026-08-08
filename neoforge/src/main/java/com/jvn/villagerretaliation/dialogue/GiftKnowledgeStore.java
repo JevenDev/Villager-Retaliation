@@ -108,6 +108,22 @@ final class GiftKnowledgeStore {
         return liked ? entry.legacyLikedGifts.contains(itemId) : entry.legacyDislikedGifts.contains(itemId);
     }
 
+    Set<String> legacyGiftIds(UUID playerId, String professionKey, boolean liked) {
+        GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, false);
+        if (entry == null) {
+            return Set.of();
+        }
+        return Set.copyOf(liked ? entry.legacyLikedGifts : entry.legacyDislikedGifts);
+    }
+
+    boolean removeLegacyGift(UUID playerId, String professionKey, String itemId, boolean liked) {
+        GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, false);
+        if (entry == null) {
+            return false;
+        }
+        return (liked ? entry.legacyLikedGifts : entry.legacyDislikedGifts).remove(itemId);
+    }
+
     boolean hasGiftKnowledge(UUID playerId, String... professionKeys) {
         GiftKnowledgeBook book = this.booksByPlayer.get(playerId);
         if (book == null) {

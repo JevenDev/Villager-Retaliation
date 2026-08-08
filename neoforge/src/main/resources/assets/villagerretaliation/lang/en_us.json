@@ -2150,5 +2150,9 @@
   "screen.villagerretaliation.beta_warning.line2": "BACK UP your saves before creating a world or joining multiplayer.",
   "screen.villagerretaliation.beta_warning.line3": "Please acknowledge this warning before continuing.",
   "screen.villagerretaliation.beta_warning.timer": "I Understand (%s)",
+  "gift_category.villagerretaliation.boats": "Boats",
+  "gift_category.villagerretaliation.cooked_fish": "Cooked Fish",
+  "gift_category.villagerretaliation.pufferfish": "Pufferfish",
+  "gift_category.villagerretaliation.raw_fish": "Raw Fish",
   "screen.villagerretaliation.beta_warning.title": "Villager Retaliation Beta Warning"
 }

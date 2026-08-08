@@ -1,11 +1,9 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
-import java.util.List;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public final class VillagerGiftPreferences {
@@ -31,10 +29,6 @@ public final class VillagerGiftPreferences {
         return VillagerGiftResources.preference(level, villager, stack)
                 .map(preference -> preference.withReputationValue(reputationValue(preference.reaction(), preference.perItemReputation(), stack)))
                 .orElseGet(ResolvedGiftPreference::neutral);
-    }
-
-    public static List<GiftCandidate> giftCandidates(ServerLevel level, VillagerProfession profession) {
-        return VillagerGiftResources.giftCandidates(level, profession);
     }
 
     public static ItemStack highReputationReward(ServerLevel level, Villager villager, VillagerReputationLevel reputationLevel) {
@@ -89,14 +83,6 @@ public final class VillagerGiftPreferences {
             return NEUTRAL;
         }
 
-        private boolean isPositive() {
-            return this.defaultPerItemReputation > 0;
-        }
     }
 
-    public record GiftCandidate(Item item, GiftReaction reaction, boolean professionSpecific) {
-        public boolean positive() {
-            return this.reaction.isPositive();
-        }
-    }
 }
