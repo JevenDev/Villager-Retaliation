@@ -19,6 +19,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class VillageBoundsDebugService {
     public static final double RADIUS = 256.0D;
     private static final int REFRESH_TICKS = 80;
+    static final int REQUIRED_PERMISSION_LEVEL = 2;
     private static final int VISIBLE_TICKS = REFRESH_TICKS + 40;
     private static final Map<UUID, Subscription> SUBSCRIPTIONS = new HashMap<>();
 
@@ -34,14 +35,14 @@ public final class VillageBoundsDebugService {
             PacketDistributor.sendToPlayer(player, VillageBoundsSyncPayload.disabled(player.level().dimension().location()));
             return;
         }
-        Subscription current = SUBSCRIPTIONS.get(player.getUUID());
-        ResourceLocation dimension = player.level().dimension().location();
-        if (current != null
-                && dimension.equals(current.dimension())
-                && !ServerboundRequestLimiter.tryAcquire(
-                        player, VillageBoundsSubscriptionPayload.TYPE.id(), REFRESH_TICKS)) {
+        if (!canUseVillageBoundsDebug(player)) {
+            revokeUnauthorizedSubscription(player);
             return;
         }
+        if (!tryAcquireSubscriptionPermit(player)) {
+            return;
+        }
+
         SUBSCRIPTIONS.put(player.getUUID(), new Subscription(0L, null));
         refresh(player);
     }
@@ -52,6 +53,10 @@ public final class VillageBoundsDebugService {
         }
         Subscription subscription = SUBSCRIPTIONS.get(player.getUUID());
         if (subscription == null) {
+            return;
+        }
+        if (!canUseVillageBoundsDebug(player)) {
+            revokeUnauthorizedSubscription(player);
             return;
         }
         ServerLevel level = player.serverLevel();
@@ -107,6 +112,24 @@ public final class VillageBoundsDebugService {
         PacketDistributor.sendToPlayer(player, new VillageBoundsSyncPayload(true, dimension, entries, VISIBLE_TICKS));
         long now = level.getServer().overworld().getGameTime();
         SUBSCRIPTIONS.put(player.getUUID(), new Subscription(now + REFRESH_TICKS, dimension));
+    }
+
+    static boolean canUseVillageBoundsDebug(ServerPlayer player) {
+        return player != null && player.hasPermissions(REQUIRED_PERMISSION_LEVEL);
+    }
+
+    static boolean tryAcquireSubscriptionPermit(ServerPlayer player) {
+        return ServerboundRequestLimiter.tryAcquire(
+                player, VillageBoundsSubscriptionPayload.TYPE.id(), REFRESH_TICKS);
+    }
+
+    private static void revokeUnauthorizedSubscription(ServerPlayer player) {
+        if (SUBSCRIPTIONS.remove(player.getUUID()) == null) {
+            return;
+        }
+        PacketDistributor.sendToPlayer(
+                player,
+                VillageBoundsSyncPayload.disabled(player.level().dimension().location()));
     }
 
     private record Subscription(long nextRefreshGameTime, ResourceLocation dimension) {
