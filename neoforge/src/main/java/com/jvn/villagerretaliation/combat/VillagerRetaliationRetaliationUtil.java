@@ -322,7 +322,8 @@ public final class VillagerRetaliationRetaliationUtil {
             clearAnger.run();
             return null;
         }
-        if (!villager.canAttack(target)) {
+        if (!villager.canAttack(target)
+                && !PlayerRaidService.areOpposingParticipants(villager, target)) {
             clearAnger.run();
             return null;
         }

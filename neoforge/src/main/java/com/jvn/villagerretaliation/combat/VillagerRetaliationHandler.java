@@ -372,7 +372,7 @@ public final class VillagerRetaliationHandler {
         ActiveRetaliationTarget retaliationTarget = VillagerRetaliationRetaliationUtil.resolveActiveRetaliationTarget(
                 villager,
                 RETALIATION,
-                ACTOR_POLICY::canFightBack,
+                VillagerRetaliationHandler::canContinueRetaliation,
                 () -> clearAnger(villager),
                 target -> ForcedDialogueService.triggerRetaliationDisengagementChat(
                         serverLevel,
@@ -693,6 +693,20 @@ public final class VillagerRetaliationHandler {
         }
         AngerTarget angerTarget = RETALIATION.angerTarget(villager);
         return angerTarget != null && angerTarget.targetId().equals(target.getUUID());
+    }
+
+    private static boolean canContinueRetaliation(Villager villager) {
+        if (ACTOR_POLICY.canFightBack(villager)) {
+            return true;
+        }
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        AngerTarget angerTarget = RETALIATION.angerTarget(villager);
+        if (angerTarget == null || !(level.getEntity(angerTarget.targetId()) instanceof LivingEntity target)) {
+            return false;
+        }
+        return PlayerRaidService.areOpposingParticipants(villager, target);
     }
 
     public static boolean hasActiveRetaliationTarget(Villager villager) {

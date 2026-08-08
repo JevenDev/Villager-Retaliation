@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -27,6 +28,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
@@ -148,9 +150,13 @@ public final class VillagerBehaviorSuppressionGameTests {
         ServerPlayer hirer = fakePlayer(level, "suppression_hired");
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         Villager partner = spawnVillager(helper, new BlockPos(3, 2, 1));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
         seedIncompatibleMemories(level, villager, partner);
 
-        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertTrue(
+                HiredVillagerContractService.startHireContract(
+                        level, villager, hirer, 1, 0, HiredVillagerRole.FARMING),
+                "suppression fixture should start a non-guard hire");
         assertState(helper, villager, VillagerBehaviorSuppressionPolicy.ControlState.HIRED, "hired");
         assertControlledMemoriesCleared(helper, villager, "hire transition");
         helper.assertTrue(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.BREEDING),
