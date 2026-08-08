@@ -239,6 +239,7 @@
   "key.villagerretaliation.toggle_villager_name_tags": "Toggle Villager Name Tags",
   "message.villagerretaliation.villager_name_tags.disabled": "Villager name tags hidden",
   "message.villagerretaliation.villager_name_tags.enabled": "Villager name tags shown",
+  "villagerretaliation.filter.message.cleared": "%s cleared",
   "tooltip.villagerretaliation.attached_banner": "Banner: %s",
   "villagerretaliation.mod_name": "VillagerRetaliation",
   "villagerretaliation.tooltip.belongs_to": "Belongs to %s",

@@ -28,8 +28,18 @@ public final class VillagerAttributeFilterItem extends Item implements MenuProvi
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack heldItem = player.getItemInHand(hand);
-        if (hand != InteractionHand.MAIN_HAND || player.isShiftKeyDown()) {
+        if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResultHolder.pass(heldItem);
+        }
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+                VillagerRetaliationItems.clearFilter(heldItem);
+                serverPlayer.getInventory().setChanged();
+                serverPlayer.inventoryMenu.broadcastChanges();
+                serverPlayer.displayClientMessage(Component.translatable(
+                        "villagerretaliation.filter.message.cleared", heldItem.getHoverName()), true);
+            }
+            return InteractionResultHolder.sidedSuccess(heldItem, level.isClientSide);
         }
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             serverPlayer.openMenu(this, buffer -> ItemStack.STREAM_CODEC.encode(buffer, heldItem));

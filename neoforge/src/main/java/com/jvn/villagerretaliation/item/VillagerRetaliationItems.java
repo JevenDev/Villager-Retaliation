@@ -63,4 +63,18 @@ public final class VillagerRetaliationItems {
     public static boolean isFilter(ItemStack stack) {
         return isItemFilter(stack) || isAttributeFilter(stack) || isRecipeFilter(stack);
     }
+
+    public static void clearFilter(ItemStack stack) {
+        if (isItemFilter(stack)) {
+            VillagerItemFilterData.clear(stack);
+        } else if (isAttributeFilter(stack)) {
+            VillagerAttributeFilterData.clear(stack);
+        } else if (isRecipeFilter(stack)) {
+            VillagerRecipeFilterData.clear(stack);
+        } else {
+            return;
+        }
+
+        VillagerFilterPolicy.clear(stack);
+    }
 }
