@@ -26,6 +26,7 @@ public record SellBoxSyncPayload(
         int containerId,
         long day,
         CurrencyAmount balance,
+        MarketEntry pendingEntry,
         String currencyName,
         String currencyPluralName,
         ResourceLocation currencyIconSprite,
@@ -59,6 +60,10 @@ public record SellBoxSyncPayload(
                 .flatMap(VillageAllegianceRegistrySavedData.get(level)::canonicalRecord)
                 .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
                 .orElse("");
+        MarketEntry pendingEntry = VillageSellMarket.quote(
+                        level, sellBox.getBlockPos(), sellBox.getItem(0))
+                .map(quote -> marketEntry(quote, sellBox.getItem(0).getCount()))
+                .orElse(null);
         LinkedHashMap<ResourceLocation, MarketEntry> entries = new LinkedHashMap<>();
         if (valid) {
             for (Item item : SellPriceResources.definitions(player.getServer()).keySet()) {
@@ -71,21 +76,16 @@ public record SellBoxSyncPayload(
                 MarketQuote stack = VillageSellMarket.quote(
                                 level, sellBox.getBlockPos(), new ItemStack(item, stackSize))
                         .orElse(unit);
-                entries.put(BuiltInRegistries.ITEM.getKey(item), new MarketEntry(
-                        unit.baseUnitPrice(),
-                        unit.marketGroup(),
-                        unit.dailyDemandBand(),
-                        SupplyBand.forPressure(unit.recoveredPressure()),
-                        unit.recoveredPressure(),
-                        unit.effectiveUnitPrice(),
-                        stack.stackPayout(),
-                        stackSize));
+                entries.put(
+                        BuiltInRegistries.ITEM.getKey(item),
+                        marketEntry(unit, stack.stackPayout(), stackSize));
             }
         }
         PacketDistributor.sendToPlayer(player, new SellBoxSyncPayload(
                 containerId,
                 VillageSellMarket.currentDay(player.getServer()),
                 sellBox.balance(),
+                pendingEntry,
                 text.name(),
                 text.pluralName(),
                 text.iconSprite(),
@@ -94,10 +94,33 @@ public record SellBoxSyncPayload(
                 entries));
     }
 
+    private static MarketEntry marketEntry(MarketQuote quote, int stackSize) {
+        return marketEntry(quote, quote.stackPayout(), stackSize);
+    }
+
+    private static MarketEntry marketEntry(
+            MarketQuote quote,
+            CurrencyAmount stackPayout,
+            int stackSize) {
+        return new MarketEntry(
+                quote.baseUnitPrice(),
+                quote.marketGroup(),
+                quote.dailyDemandBand(),
+                SupplyBand.forPressure(quote.recoveredPressure()),
+                quote.recoveredPressure(),
+                quote.effectiveUnitPrice(),
+                stackPayout,
+                stackSize);
+    }
+
     private static void encode(RegistryFriendlyByteBuf buffer, SellBoxSyncPayload payload) {
         buffer.writeVarInt(payload.containerId());
         buffer.writeVarLong(payload.day());
         payload.balance().write(buffer);
+        buffer.writeBoolean(payload.pendingEntry() != null);
+        if (payload.pendingEntry() != null) {
+            payload.pendingEntry().write(buffer);
+        }
         buffer.writeUtf(payload.currencyName(), 128);
         buffer.writeUtf(payload.currencyPluralName(), 128);
         buffer.writeResourceLocation(payload.currencyIconSprite());
@@ -119,6 +142,7 @@ public record SellBoxSyncPayload(
         int containerId = buffer.readVarInt();
         long day = buffer.readVarLong();
         CurrencyAmount balance = CurrencyAmount.read(buffer);
+        MarketEntry pendingEntry = buffer.readBoolean() ? MarketEntry.read(buffer) : null;
         String name = buffer.readUtf(128);
         String pluralName = buffer.readUtf(128);
         ResourceLocation currencyIconSprite = buffer.readResourceLocation();
@@ -130,7 +154,7 @@ public record SellBoxSyncPayload(
             entries.put(buffer.readResourceLocation(), MarketEntry.read(buffer));
         }
         return new SellBoxSyncPayload(
-                containerId, day, balance, name, pluralName, currencyIconSprite,
+                containerId, day, balance, pendingEntry, name, pluralName, currencyIconSprite,
                 validMarket, villageName, entries);
     }
 
