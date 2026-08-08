@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -27,8 +29,18 @@ import net.minecraft.world.item.Items;
 public final class SellPriceResources {
     public static final String RESOURCE_ROOT = "sell_prices";
     private static final Set<String> ALLOWED_KEYS =
-            Set.of("enabled", "item", "item_count", "currency_count", "rates", "market_group");
+            Set.of(
+                    "enabled",
+                    "item",
+                    "item_count",
+                    "currency_count",
+                    "rates",
+                    "market_group",
+                    "components",
+                    "durability");
     private static final Set<String> ALLOWED_RATE_KEYS = Set.of("item_count", "currency_count");
+    private static final HolderLookup.Provider DEFAULT_REGISTRIES =
+            RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
     private static final ServerResourceCache<Catalog> CACHE =
             ServerResourceCache.create(Catalog::empty, SellPriceResources::read);
     private static final java.util.concurrent.atomic.AtomicLong GENERATION = new java.util.concurrent.atomic.AtomicLong();
@@ -56,7 +68,8 @@ public final class SellPriceResources {
                 || VillagerCurrencyResources.isCurrency(server, stack)) {
             return Optional.empty();
         }
-        return Optional.ofNullable(CACHE.get(server).byItem().get(stack.getItem()));
+        return Optional.ofNullable(CACHE.get(server).byItem().get(stack.getItem()))
+                .filter(definition -> definition.stackPredicate().matches(stack));
     }
 
     public static Map<Item, SellPriceDefinition> definitions(MinecraftServer server) {
@@ -67,7 +80,7 @@ public final class SellPriceResources {
         Map<Item, SellPriceDefinition> definitions = new LinkedHashMap<>();
         Map<Item, ResourceLocation> sources = new LinkedHashMap<>();
         DatapackResourceLoader.forEachJsonResource(server, RESOURCE_ROOT, (location, resource) ->
-                readFile(location, resource).forEach(definition -> {
+                readFile(server.registryAccess(), location, resource).forEach(definition -> {
                     ResourceLocation previous = sources.put(definition.item(), location);
                     if (previous != null) {
                         DatapackDiagnostics.warnDuplicateId(
@@ -81,16 +94,33 @@ public final class SellPriceResources {
         return new Catalog(Map.copyOf(definitions));
     }
 
-    private static List<SellPriceDefinition> readFile(ResourceLocation location, Resource resource) {
+    private static List<SellPriceDefinition> readFile(
+            HolderLookup.Provider registries,
+            ResourceLocation location,
+            Resource resource) {
         Optional<JsonObject> loaded = DatapackResourceLoader.readObject(location, "sell price", resource);
-        return loaded.map(root -> definitionsFromJson(location, root)).orElseGet(List::of);
+        return loaded.map(root -> definitionsFromJson(registries, location, root)).orElseGet(List::of);
     }
 
     static Optional<SellPriceDefinition> definitionFromJson(ResourceLocation location, JsonObject root) {
-        return definitionsFromJson(location, root).stream().findFirst();
+        return definitionFromJson(DEFAULT_REGISTRIES, location, root);
+    }
+
+    static Optional<SellPriceDefinition> definitionFromJson(
+            HolderLookup.Provider registries,
+            ResourceLocation location,
+            JsonObject root) {
+        return definitionsFromJson(registries, location, root).stream().findFirst();
     }
 
     static List<SellPriceDefinition> definitionsFromJson(ResourceLocation location, JsonObject root) {
+        return definitionsFromJson(DEFAULT_REGISTRIES, location, root);
+    }
+
+    static List<SellPriceDefinition> definitionsFromJson(
+            HolderLookup.Provider registries,
+            ResourceLocation location,
+            JsonObject root) {
         if (location == null || root == null) {
             return List.of();
         }
@@ -101,7 +131,7 @@ public final class SellPriceResources {
 
         ItemSelection selection;
         try {
-            selection = readItemSelection(root);
+            selection = readItemSelection(registries, root);
         } catch (IllegalArgumentException exception) {
             DatapackDiagnostics.warnSkippedEntry(location, "sell price", "item", exception.getMessage());
             return List.of();
@@ -110,10 +140,12 @@ public final class SellPriceResources {
         try {
             List<SellRateDefinition> rates = readRates(location, root);
             ResourceLocation marketGroup = readMarketGroup(root, selection.defaultMarketGroup());
+            SellStackPredicate stackPredicate = SellStackPredicateParser.parse(
+                    registries, root, selection.shorthandComponents(), selection.items());
             ResourceLocation definitionId = resourceId(location);
             return selection.items().stream()
                     .map(item -> new SellPriceDefinition(
-                            definitionId, item, rates, marketGroup))
+                            definitionId, item, rates, marketGroup, stackPredicate))
                     .toList();
         } catch (IllegalArgumentException exception) {
             DatapackDiagnostics.warnSkippedEntry(location, "sell price", "definition", exception.getMessage());
@@ -164,9 +196,21 @@ public final class SellPriceResources {
         return List.copyOf(rates);
     }
 
-    private static ItemSelection readItemSelection(JsonObject root) {
+    private static ItemSelection readItemSelection(HolderLookup.Provider registries, JsonObject root) {
         String selector = DatapackJsonReader.readString(root, "item").trim();
         boolean isTag = selector.startsWith("#");
+        boolean hasShorthand = selector.indexOf('[') >= 0;
+        if (!isTag && hasShorthand) {
+            SellStackPredicateParser.ParsedItem parsed =
+                    SellStackPredicateParser.parseItemShorthand(registries, selector);
+            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(parsed.item());
+            return new ItemSelection(List.of(parsed.item()), itemId, parsed.components());
+        }
+        if (isTag && hasShorthand) {
+            throw new IllegalArgumentException(
+                    "component shorthand is only supported for exact item ids; use components with tags.");
+        }
+
         String rawId = isTag ? selector.substring(1) : selector;
         ResourceLocation selectorId = ResourceLocation.tryParse(rawId);
         if (selectorId == null) {
@@ -177,9 +221,8 @@ public final class SellPriceResources {
             if (item == Items.AIR) {
                 throw new IllegalArgumentException("references an unknown item id.");
             }
-            return new ItemSelection(List.of(item), selectorId);
+            return new ItemSelection(List.of(item), selectorId, List.of());
         }
-
         TagKey<Item> tag = TagKey.create(Registries.ITEM, selectorId);
         List<Item> items = BuiltInRegistries.ITEM.getTag(tag)
                 .map(holders -> holders.stream()
@@ -192,7 +235,7 @@ public final class SellPriceResources {
         if (items.isEmpty()) {
             throw new IllegalArgumentException("references an unknown or empty item tag.");
         }
-        return new ItemSelection(items, selectorId);
+        return new ItemSelection(items, selectorId, List.of());
     }
 
     private static ResourceLocation readMarketGroup(JsonObject root, ResourceLocation defaultGroup) {
@@ -253,7 +296,10 @@ public final class SellPriceResources {
         return ResourceLocation.fromNamespaceAndPath(location.getNamespace(), idPath);
     }
 
-    private record ItemSelection(List<Item> items, ResourceLocation defaultMarketGroup) {
+    private record ItemSelection(
+            List<Item> items,
+            ResourceLocation defaultMarketGroup,
+            List<ComponentPredicate> shorthandComponents) {
     }
 
     private record Catalog(Map<Item, SellPriceDefinition> byItem) {

@@ -21,6 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.CustomModelData;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -190,6 +191,159 @@ public final class SellBoxGameTests {
                                         .getAsJsonObject())
                         .isPresent(),
                 "the bound applies to denominators without unnecessarily limiting currency numerators");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void stackPredicatesUseComponentCodecsCustomDataAndRemainingDurability(GameTestHelper helper) {
+        SellPriceDefinition exactComponent = parseDefinition(
+                helper,
+                "exact_component",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_model_data\":6},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        ItemStack modeled = new ItemStack(Items.STONE);
+        modeled.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(6));
+        helper.assertTrue(
+                exactComponent.stackPredicate().matches(modeled),
+                "codec-backed exact component values must match");
+        modeled.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(5));
+        helper.assertFalse(
+                exactComponent.stackPredicate().matches(modeled),
+                "different exact component values must not match");
+
+        SellPriceDefinition numericRange = parseDefinition(
+                helper,
+                "numeric_range",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"components\":{\"minecraft:damage\":"
+                        + "{\"min\":4,\"max\":6}},\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        ItemStack rangedTool = new ItemStack(Items.DIAMOND_PICKAXE);
+        rangedTool.setDamageValue(5);
+        helper.assertTrue(
+                numericRange.stackPredicate().matches(rangedTool),
+                "numeric component values inside min and max must match");
+        rangedTool.setDamageValue(7);
+        helper.assertFalse(
+                numericRange.stackPredicate().matches(rangedTool),
+                "numeric component values outside the range must not match");
+
+        SellPriceDefinition minOnly = parseDefinition(
+                helper,
+                "numeric_min",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"components\":{\"minecraft:damage\":"
+                        + "{\"min\":3}},\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        helper.assertTrue(
+                minOnly.stackPredicate().matches(rangedTool),
+                "min-only numeric component ranges must match");
+
+        SellPriceDefinition customData = parseDefinition(
+                helper,
+                "custom_data",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_data\":"
+                        + "{\"quality\":3,\"nested\":{\"kind\":\"polished\"}}},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        CompoundTag data = new CompoundTag();
+        data.putInt("quality", 3);
+        CompoundTag nested = new CompoundTag();
+        nested.putString("kind", "polished");
+        nested.putBoolean("unrelated", true);
+        data.put("nested", nested);
+        data.putString("also_unrelated", "kept");
+        ItemStack customStack = new ItemStack(Items.STONE);
+        customStack.set(DataComponents.CUSTOM_DATA, CustomData.of(data));
+        helper.assertTrue(
+                customData.stackPredicate().matches(customStack),
+                "custom_data must use useful nested subset matching");
+
+        SellPriceDefinition shorthand = parseDefinition(
+                helper,
+                "shorthand",
+                "{\"item\":\"minecraft:diamond_pickaxe[minecraft:damage=5]\","
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        ItemStack shorthandStack = new ItemStack(Items.DIAMOND_PICKAXE);
+        shorthandStack.setDamageValue(5);
+        helper.assertTrue(
+                shorthand.stackPredicate().matches(shorthandStack),
+                "vanilla item component shorthand must create exact predicates");
+
+        ItemStack wornTool = new ItemStack(Items.DIAMOND_PICKAXE);
+        wornTool.setDamageValue(wornTool.getMaxDamage() - 60);
+        SellPriceDefinition durabilityMin = parseDefinition(
+                helper,
+                "durability_min",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"durability\":{\"min\":50},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        SellPriceDefinition durabilityMax = parseDefinition(
+                helper,
+                "durability_max",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"durability\":{\"max\":70},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        SellPriceDefinition durabilityBoth = parseDefinition(
+                helper,
+                "durability_both",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"durability\":{\"min\":50,\"max\":70},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        helper.assertTrue(durabilityMin.stackPredicate().matches(wornTool), "remaining durability min must match");
+        helper.assertTrue(durabilityMax.stackPredicate().matches(wornTool), "remaining durability max must match");
+        helper.assertTrue(durabilityBoth.stackPredicate().matches(wornTool), "remaining durability interval must match");
+        helper.assertFalse(
+                durabilityMin.stackPredicate().matches(new ItemStack(Items.STONE)),
+                "durability predicates must reject non-damageable items");
+
+        var registries = helper.getLevel().registryAccess();
+        ResourceLocation invalid = ResourceLocation.fromNamespaceAndPath("test", "sell_prices/invalid.json");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:stone\",\"components\":{\"missing:nope\":1},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "invalid component ids must skip the definition");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:diamond_pickaxe\","
+                                                        + "\"components\":{\"minecraft:damage\":\"bad\"},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "invalid component codec payloads must skip the definition");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:stone\","
+                                                        + "\"components\":{\"minecraft:custom_model_data\":{\"min\":3}},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "numeric ranges on nonnumeric codec values must skip the definition");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:stone\",\"durability\":{\"min\":1},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "impossible durability definitions must be rejected cleanly");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:diamond_pickaxe\","
+                                                        + "\"durability\":{\"min\":70,\"max\":50},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "malformed durability ranges must be rejected cleanly");
         helper.succeed();
     }
 
@@ -640,6 +794,17 @@ public final class SellBoxGameTests {
     private static boolean sameStack(ItemStack first, ItemStack second) {
         return first.getCount() == second.getCount()
                 && ItemStack.isSameItemSameComponents(first, second);
+    }
+
+    private static SellPriceDefinition parseDefinition(
+            GameTestHelper helper,
+            String path,
+            String json) {
+        return SellPriceResources.definitionFromJson(
+                        helper.getLevel().registryAccess(),
+                        ResourceLocation.fromNamespaceAndPath("test", "sell_prices/" + path + ".json"),
+                        JsonParser.parseString(json).getAsJsonObject())
+                .orElseThrow();
     }
 
     private static SellBoxBlockEntity placeBox(GameTestHelper helper) {
