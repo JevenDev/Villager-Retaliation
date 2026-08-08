@@ -10,7 +10,6 @@ public record MarketQuote(
         ResourceLocation marketGroup,
         CurrencyAmount baseUnitPrice,
         DailyDemandBand dailyDemandBand,
-        CurrencyAmount dailyDemandMultiplier,
         CurrencyAmount recoveredPressure,
         List<SupplySegment> supplySegments,
         CurrencyAmount effectiveUnitPrice,
@@ -24,7 +23,6 @@ public record MarketQuote(
                 || marketGroup == null
                 || baseUnitPrice == null
                 || dailyDemandBand == null
-                || dailyDemandMultiplier == null
                 || recoveredPressure == null
                 || supplySegments == null
                 || effectiveUnitPrice == null

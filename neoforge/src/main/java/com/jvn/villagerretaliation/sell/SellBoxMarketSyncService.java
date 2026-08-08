@@ -139,7 +139,7 @@ public final class SellBoxMarketSyncService {
         return 31 * ItemStack.hashItemAndComponents(pending) + pending.getCount();
     }
 
-    public static void clear(MinecraftServer server) {
+    public static void clear() {
         SYNCED.clear();
         SYNCED_CONTAINERS.clear();
     }

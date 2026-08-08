@@ -2,9 +2,7 @@ package com.jvn.villagerretaliation.sell;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -89,14 +87,6 @@ public final class VillageMarketSavedData extends SavedData {
         });
         tag.put("Markets", marketTags);
         return tag;
-    }
-
-    public static Optional<VillageAllegianceId> peekVillage(ServerLevel level, BlockPos position) {
-        if (level == null || position == null) {
-            return Optional.empty();
-        }
-        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        return registry.peekAt(level, position).flatMap(registry::canonical);
     }
 
     public static Optional<VillageAllegianceId> discoverVillage(ServerLevel level, BlockPos position) {
@@ -196,9 +186,5 @@ public final class VillageMarketSavedData extends SavedData {
 
     public int marketCount() {
         return this.markets.size();
-    }
-
-    public List<VillageAllegianceId> villageIds() {
-        return List.copyOf(new ArrayList<>(this.markets.keySet()));
     }
 }

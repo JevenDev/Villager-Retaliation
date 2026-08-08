@@ -18,10 +18,6 @@ public enum SupplyBand {
         this.multiplier = CurrencyAmount.of(multiplierNumerator, multiplierDenominator);
     }
 
-    public CurrencyAmount lowerBound() {
-        return this.lowerBound;
-    }
-
     public Optional<CurrencyAmount> upperBound() {
         return Optional.ofNullable(this.upperBound);
     }

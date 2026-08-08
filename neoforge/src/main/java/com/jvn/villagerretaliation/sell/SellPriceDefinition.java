@@ -87,10 +87,6 @@ public record SellPriceDefinition(
         return rates.getFirst().itemCount();
     }
 
-    public IntRange currencyCount() {
-        return rates.getFirst().currencyCount();
-    }
-
     public record IntRange(int min, int max) {
         public static final int MAX_SPAN = 256;
 

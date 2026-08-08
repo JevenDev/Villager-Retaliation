@@ -5,7 +5,6 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -91,7 +90,6 @@ public final class VillageSellMarket {
                 calculated.marketGroup(),
                 calculated.baseUnitPrice(),
                 calculated.dailyDemandBand(),
-                calculated.dailyDemandMultiplier(),
                 calculated.recoveredPressure(),
                 calculated.supplySegments(),
                 calculated.effectiveUnitPrice(),
@@ -198,7 +196,6 @@ public final class VillageSellMarket {
             long worldSeed,
             VillageAllegianceId village,
             long day,
-            long generation,
             Set<ResourceLocation> groups) {
         if (village == null || groups == null || groups.isEmpty()) {
             return Map.of();
@@ -256,7 +253,6 @@ public final class VillageSellMarket {
                 group,
                 baseUnitPrice,
                 demand,
-                demand.multiplier(),
                 safePressure,
                 List.copyOf(segments),
                 payout.divide(itemCount),
@@ -284,7 +280,7 @@ public final class VillageSellMarket {
                 cache.clear();
             }
             Map<ResourceLocation, DailyDemandBand> created =
-                    demandBands(key.worldSeed, village, day, generation, groups);
+                    demandBands(key.worldSeed, village, day, groups);
             cache.put(key, created);
             return created;
         }
