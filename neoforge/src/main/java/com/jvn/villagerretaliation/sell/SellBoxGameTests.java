@@ -94,6 +94,39 @@ public final class SellBoxGameTests {
                 3,
                 "ranges inside one rate must generate associated candidate prices");
 
+        SellPriceDefinition currencyRange = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":1,\"currency_count\":{\"min\":10,\"max\":12}}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                currencyRange.candidatePrices(),
+                java.util.List.of(
+                        CurrencyAmount.of(10, 1),
+                        CurrencyAmount.of(11, 1),
+                        CurrencyAmount.of(12, 1)),
+                "a currency-count range must remain associated with its item count");
+
+        SellPriceDefinition bothRanges = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":{\"min\":1,\"max\":2},"
+                                                + "\"currency_count\":{\"min\":2,\"max\":4}}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                bothRanges.candidatePrices(),
+                java.util.List.of(
+                        CurrencyAmount.of(1, 1),
+                        CurrencyAmount.of(3, 2),
+                        CurrencyAmount.of(2, 1),
+                        CurrencyAmount.of(3, 1),
+                        CurrencyAmount.of(4, 1)),
+                "both ranges in one rate must generate and deduplicate that family's combinations");
+
         SellPriceDefinition discrete = SellPriceResources.definitionFromJson(
                         location,
                         JsonParser.parseString(
