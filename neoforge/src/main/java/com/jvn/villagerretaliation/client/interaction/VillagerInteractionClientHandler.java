@@ -164,9 +164,7 @@ public final class VillagerInteractionClientHandler {
                 payload.animalCullCap(),
                 payload.animalShearing(),
                 payload.dialogueOptions(),
-                payload.knownLikedGiftNames(),
-                payload.knownDislikedGiftNames(),
-                payload.giftTooltipReactions(),
+                payload.giftPreferences(),
                 payload.allegiance(),
                 payload.familyTree(),
                 payload.relationships()
@@ -204,9 +202,7 @@ public final class VillagerInteractionClientHandler {
                 payload.primaryMood(),
                 payload.forceCameraTowardsVillager(),
                 payload.dialogueOptions(),
-                payload.knownLikedGiftNames(),
-                payload.knownDislikedGiftNames(),
-                payload.giftTooltipReactions()
+                payload.giftPreferences()
             );
         }
     }

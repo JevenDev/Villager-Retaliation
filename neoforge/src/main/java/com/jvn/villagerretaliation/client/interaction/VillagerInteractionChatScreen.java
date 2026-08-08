@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
-import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -85,9 +85,7 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
             VillagerMood primaryMood,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
-            List<String> knownLikedGiftNames,
-            List<String> knownDislikedGiftNames,
-            List<GiftTooltipReaction> giftTooltipReactions) {
+            List<GiftPreferenceView> giftPreferences) {
         this.interactionScreen.updateReputation(
                 reputation,
                 reputationLevel,
@@ -95,9 +93,7 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
                 primaryMood,
                 forceCameraTowardsVillager,
                 dialogueOptions,
-                knownLikedGiftNames,
-                knownDislikedGiftNames,
-                giftTooltipReactions
+                giftPreferences
         );
     }
 

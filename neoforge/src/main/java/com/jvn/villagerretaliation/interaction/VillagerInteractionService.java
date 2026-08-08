@@ -2634,9 +2634,7 @@ public final class VillagerInteractionService {
                 context.primaryMood(),
                 forceCameraTowardsVillager,
                 dialogueOptions,
-                giftKnowledge.likedGiftNames(),
-                giftKnowledge.dislikedGiftNames(),
-                giftKnowledge.tooltipReactions()
+                giftKnowledge.preferences()
         ));
     }
 
@@ -2674,9 +2672,7 @@ public final class VillagerInteractionService {
                 context.primaryMood(),
                 forceCameraTowardsVillager,
                 dialogueOptions,
-                giftKnowledge.likedGiftNames(),
-                giftKnowledge.dislikedGiftNames(),
-                giftKnowledge.tooltipReactions()
+                giftKnowledge.preferences()
         ));
     }
 

@@ -63,7 +63,8 @@ import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
-import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceResolver;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -84,7 +85,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Random;
-import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.ChatFormatting;
@@ -334,9 +334,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean duelStartPending;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
-    private final List<String> knownLikedGiftNames = new ArrayList<>();
-    private final List<String> knownDislikedGiftNames = new ArrayList<>();
-    private final List<GiftTooltipReaction> giftTooltipReactions = new ArrayList<>();
+    private final List<GiftPreferenceView> giftPreferences = new ArrayList<>();
     private final VillagerFamilyTreeSnapshot familyTree;
     private final VillagerRelationshipSnapshot relationships;
     private final VillageAllegianceView allegiance;
@@ -475,9 +473,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             int animalCullCap,
             boolean animalShearing,
             List<DialogueOptionDefinition> dialogueOptions,
-            List<String> knownLikedGiftNames,
-            List<String> knownDislikedGiftNames,
-            List<GiftTooltipReaction> giftTooltipReactions,
+            List<GiftPreferenceView> giftPreferences,
             VillageAllegianceView allegiance,
             VillagerFamilyTreeSnapshot familyTree,
             VillagerRelationshipSnapshot relationships) {
@@ -550,9 +546,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.animalShearing = animalShearing;
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
-        this.knownLikedGiftNames.addAll(knownLikedGiftNames);
-        this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
-        this.giftTooltipReactions.addAll(giftTooltipReactions);
+        this.giftPreferences.addAll(giftPreferences);
         this.familyTree = familyTree == null ? VillagerFamilyTreeSnapshot.EMPTY : familyTree;
         this.relationships = relationships == null ? VillagerRelationshipSnapshot.EMPTY : relationships;
         this.allegiance = allegiance == null ? VillageAllegianceView.EMPTY : allegiance;
@@ -604,9 +598,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             VillagerMood primaryMood,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
-            List<String> knownLikedGiftNames,
-            List<String> knownDislikedGiftNames,
-            List<GiftTooltipReaction> giftTooltipReactions) {
+            List<GiftPreferenceView> giftPreferences) {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
@@ -615,12 +607,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         syncCameraFocusState();
         this.dialogueOptions.clear();
         this.dialogueOptions.addAll(dialogueOptions);
-        this.knownLikedGiftNames.clear();
-        this.knownLikedGiftNames.addAll(knownLikedGiftNames);
-        this.knownDislikedGiftNames.clear();
-        this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
-        this.giftTooltipReactions.clear();
-        this.giftTooltipReactions.addAll(giftTooltipReactions);
+        this.giftPreferences.clear();
+        this.giftPreferences.addAll(giftPreferences);
         this.awaitingForcedDialogueResponse = false;
         if (this.page == DialoguePage.TALK || this.page == DialoguePage.ADVENTURES) {
             rebuildOptionsKeepingListPosition();
@@ -5863,19 +5851,25 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public List<String> knownLikedGiftNames() {
-            return VillagerInteractionScreen.this.knownLikedGiftNames;
+            return VillagerInteractionScreen.this.giftPreferences.stream()
+                    .filter(GiftPreferenceView::known)
+                    .filter(preference -> preference.rating() > 0)
+                    .map(preference -> preference.displayName().getString())
+                    .toList();
         }
 
         @Override
         public List<String> knownDislikedGiftNames() {
-            return VillagerInteractionScreen.this.knownDislikedGiftNames;
+            return VillagerInteractionScreen.this.giftPreferences.stream()
+                    .filter(GiftPreferenceView::known)
+                    .filter(preference -> preference.rating() < 0)
+                    .map(preference -> preference.displayName().getString())
+                    .toList();
         }
 
         @Override
-        public Optional<GiftTooltipReaction> giftTooltipReaction(ItemStack stack) {
-            String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
-            return VillagerInteractionScreen.this.giftTooltipReactions.stream()
-                    .filter(reaction -> reaction.itemId().equals(itemId)).findFirst();
+        public Optional<GiftPreferenceView> giftPreference(ItemStack stack) {
+            return GiftPreferenceResolver.resolveView(VillagerInteractionScreen.this.giftPreferences, stack);
         }
     }
 

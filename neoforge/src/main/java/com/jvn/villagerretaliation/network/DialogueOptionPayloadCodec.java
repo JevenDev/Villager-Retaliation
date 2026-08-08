@@ -1,8 +1,9 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
-import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
-import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences.GiftReaction;
+import com.jvn.villagerretaliation.interaction.GiftCategoryName;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceDefinition;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import java.util.ArrayList;
@@ -78,26 +79,58 @@ final class DialogueOptionPayloadCodec {
         }
         return List.copyOf(values);
     }
-    static void writeGiftTooltipReactions(RegistryFriendlyByteBuf buffer, List<GiftTooltipReaction> reactions) {
-        List<GiftTooltipReaction> safeReactions = reactions == null ? List.of() : reactions;
-        buffer.writeVarInt(Math.min(safeReactions.size(), MAX_STRING_LIST_VALUES));
-        for (int index = 0; index < Math.min(safeReactions.size(), MAX_STRING_LIST_VALUES); index++) {
-            GiftTooltipReaction reaction = safeReactions.get(index);
-            buffer.writeUtf(reaction.itemId(), STRING_VALUE_LENGTH);
-            buffer.writeEnum(reaction.reaction());
-            buffer.writeBoolean(reaction.known());
+    static void writeGiftPreferenceViews(RegistryFriendlyByteBuf buffer, List<GiftPreferenceView> preferences) {
+        List<GiftPreferenceView> safePreferences = preferences == null ? List.of() : preferences;
+        int size = Math.min(safePreferences.size(), 256);
+        buffer.writeVarInt(size);
+        for (int index = 0; index < size; index++) {
+            GiftPreferenceView preference = safePreferences.get(index);
+            buffer.writeResourceLocation(preference.categoryId());
+            buffer.writeBoolean(preference.known());
+            if (preference.known()) {
+                buffer.writeByte(preference.rating());
+            }
+            buffer.writeVarInt(preference.priority());
+            buffer.writeBoolean(preference.professionSpecific());
+            buffer.writeUtf(preference.name().translationKey(), 256);
+            buffer.writeUtf(preference.name().text(), 256);
+            int matcherCount = Math.min(preference.matchers().size(), 512);
+            buffer.writeVarInt(matcherCount);
+            for (int matcherIndex = 0; matcherIndex < matcherCount; matcherIndex++) {
+                GiftPreferenceView.Matcher matcher = preference.matchers().get(matcherIndex);
+                buffer.writeEnum(matcher.source());
+                buffer.writeResourceLocation(matcher.value());
+            }
         }
     }
 
-    static List<GiftTooltipReaction> readGiftTooltipReactions(RegistryFriendlyByteBuf buffer) {
-        int size = VillagerPayloads.readCollectionSize(buffer, MAX_STRING_LIST_VALUES, "gift tooltip reactions");
-        List<GiftTooltipReaction> reactions = new ArrayList<>(size);
+    static List<GiftPreferenceView> readGiftPreferenceViews(RegistryFriendlyByteBuf buffer) {
+        int size = VillagerPayloads.readCollectionSize(buffer, 256, "gift preferences");
+        List<GiftPreferenceView> preferences = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
-            String itemId = buffer.readUtf(STRING_VALUE_LENGTH);
-            GiftReaction reaction = buffer.readEnum(GiftReaction.class);
+            var categoryId = buffer.readResourceLocation();
             boolean known = buffer.readBoolean();
-            reactions.add(new GiftTooltipReaction(itemId, reaction, known));
+            int rating = known ? buffer.readByte() : 0;
+            int priority = buffer.readVarInt();
+            boolean professionSpecific = buffer.readBoolean();
+            GiftCategoryName name = new GiftCategoryName(buffer.readUtf(256), buffer.readUtf(256));
+            int matcherCount = VillagerPayloads.readCollectionSize(buffer, 512, "gift preference matchers");
+            List<GiftPreferenceView.Matcher> matchers = new ArrayList<>(matcherCount);
+            for (int matcherIndex = 0; matcherIndex < matcherCount; matcherIndex++) {
+                matchers.add(new GiftPreferenceView.Matcher(
+                        buffer.readEnum(GiftPreferenceDefinition.MatchSource.class),
+                        buffer.readResourceLocation()));
+            }
+            preferences.add(new GiftPreferenceView(
+                    categoryId,
+                    rating,
+                    known,
+                    priority,
+                    professionSpecific,
+                    name,
+                    matchers));
         }
-        return List.copyOf(reactions);
+        return List.copyOf(preferences);
     }
+
 }

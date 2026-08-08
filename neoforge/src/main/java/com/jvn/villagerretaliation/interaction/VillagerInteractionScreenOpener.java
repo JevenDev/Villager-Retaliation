@@ -266,9 +266,7 @@ public final class VillagerInteractionScreenOpener {
                 HiredAnimalCullSettings.cap(workState),
                 HiredAnimalHandlingOptions.shearSheep(workState),
                 dialogueOptions,
-                giftKnowledge.likedGiftNames(),
-                giftKnowledge.dislikedGiftNames(),
-                giftKnowledge.tooltipReactions(),
+                giftKnowledge.preferences(),
                 allegianceView(dialogueContext, level, villager, partyVillager != null),
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager)

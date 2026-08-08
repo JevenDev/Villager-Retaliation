@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
-import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -18,9 +18,7 @@ public record VillagerDialogueResponsePayload(
         VillagerMood primaryMood,
         boolean forceCameraTowardsVillager,
         List<DialogueOptionDefinition> dialogueOptions,
-        List<String> knownLikedGiftNames,
-        List<String> knownDislikedGiftNames,
-        List<GiftTooltipReaction> giftTooltipReactions)
+        List<GiftPreferenceView> giftPreferences)
         implements CustomPacketPayload {
     public static final Type<VillagerDialogueResponsePayload> TYPE = VillagerPayloads.type("villager_dialogue_response");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerDialogueResponsePayload> STREAM_CODEC =
@@ -34,9 +32,7 @@ public record VillagerDialogueResponsePayload(
         buffer.writeEnum(payload.primaryMood());
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
         DialogueOptionPayloadCodec.writeDialogueOptions(buffer, payload.dialogueOptions());
-        DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownLikedGiftNames());
-        DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownDislikedGiftNames());
-        DialogueOptionPayloadCodec.writeGiftTooltipReactions(buffer, payload.giftTooltipReactions());
+        DialogueOptionPayloadCodec.writeGiftPreferenceViews(buffer, payload.giftPreferences());
     }
 
     private static VillagerDialogueResponsePayload decode(RegistryFriendlyByteBuf buffer) {
@@ -48,9 +44,7 @@ public record VillagerDialogueResponsePayload(
                 buffer.readEnum(VillagerMood.class),
                 buffer.readBoolean(),
                 DialogueOptionPayloadCodec.readDialogueOptions(buffer),
-                DialogueOptionPayloadCodec.readStringList(buffer),
-                DialogueOptionPayloadCodec.readStringList(buffer),
-                DialogueOptionPayloadCodec.readGiftTooltipReactions(buffer)
+                DialogueOptionPayloadCodec.readGiftPreferenceViews(buffer)
         );
     }
 
