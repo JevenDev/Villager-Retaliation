@@ -826,14 +826,14 @@ public final class VillagerReputationNetworking {
     }
 
     public static void sendHunger(ServerPlayer player, Villager villager, int hunger) {
-        trySendToPlayer(player, new VillagerHungerSyncPayload(villager.getId(), hunger));
+        trySendToPlayer(player, new VillagerHungerSyncPayload(villager.getId(), villager.getUUID(), hunger));
     }
 
     public static void syncHungerToTracking(Villager villager, int hunger) {
         try {
             PacketDistributor.sendToPlayersTrackingEntity(
                     villager,
-                    new VillagerHungerSyncPayload(villager.getId(), hunger));
+                    new VillagerHungerSyncPayload(villager.getId(), villager.getUUID(), hunger));
         } catch (UnsupportedOperationException ignored) {
             // Some server-side harnesses track entities through mock connections without payload support.
         }
