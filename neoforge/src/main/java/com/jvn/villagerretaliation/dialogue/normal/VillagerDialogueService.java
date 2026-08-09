@@ -499,7 +499,9 @@ public final class VillagerDialogueService {
             }
         }
         if (!line.socialAttributeCondition().isEmpty()
-                && !line.socialAttributeCondition().matches(context)) {
+                && (!com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior.enabled(
+                        VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_DIALOGUE_EFFECTS)
+                || !line.socialAttributeCondition().matches(context))) {
             return "social attributes";
         }
         if (!line.reputationCondition().matches(context.reputation(), context.reputationLevel())) {
@@ -541,6 +543,10 @@ public final class VillagerDialogueService {
                 && context.shareableStory().map(report -> !line.storyTargetIds().contains(report.targetId())).orElse(true)) {
             return "story target";
         }
+        String legacyRejection = legacyRejectionReason(line, context);
+        if (!legacyRejection.isBlank()) {
+            return legacyRejection;
+        }
         if (!line.conditions().isEmpty() && !DialogueCondition.matchesAll(context, line.conditions())) {
             return "conditions";
         }
@@ -548,6 +554,58 @@ public final class VillagerDialogueService {
             return "weight";
         }
         return "other";
+    }
+
+    private static String legacyRejectionReason(DialogueLine line, DialogueContext context) {
+        if (!line.retaliationTargetEntityTypes().isEmpty()
+                && context.recentRetaliation()
+                .map(event -> event.retaliation() != null
+                        && line.retaliationTargetEntityTypes().contains(ResourceLocation.tryParse(event.retaliation().targetTypeId())))
+                .orElse(false) == false) {
+            return "retaliation target";
+        }
+        if (line.requiresRecentBrokenBedMemory() && !context.hasRecentBrokenBedMemory()) return "broken bed memory";
+        if (line.requiresRecentDirectHitMemory() && !context.hasRecentDirectHitMemory()) return "direct hit memory";
+        if ((line.requiresGearReportUsedInCombat() && !context.hasUnreportedGearReportUsedInCombat())
+                || (line.requiresGearReportUnusedInCombat() && !context.hasUnreportedGearReportUnusedInCombat())) {
+            return "gear report";
+        }
+        if (!line.recruitmentFollowupScenarios().isEmpty()
+                && !line.recruitmentFollowupScenarios().contains(context.recruitmentFollowupScenario())) return "recruitment follow-up";
+        if (line.requiresRecruitmentMemory() && !context.hasRecruitmentMemory()) return "recruitment memory";
+        if (!line.recruitmentMemoryScenarios().isEmpty()
+                && line.recruitmentMemoryScenarios().stream().noneMatch(context::hasRecruitmentMemoryScenario)) return "recruitment scenario";
+        if (!line.recruitmentMemoryBiomeKeys().isEmpty()
+                && !line.recruitmentMemoryBiomeKeys().contains(context.recruitmentMemoryBiomeKey())) return "recruitment biome";
+        if (line.minRecruitmentFollowDistance() > 0
+                && context.recruitmentMemoryDistanceBlocks() < line.minRecruitmentFollowDistance()) return "recruitment distance";
+        if ((line.requiresRecruitmentBoatTrip() && !context.hasRecruitmentMemoryBoatTrip())
+                || (line.requiresRecruitmentOceanCrossing() && !context.hasRecruitmentMemoryOceanCrossing())
+                || (line.requiresRecruitmentSwimTrip() && !context.hasRecruitmentMemorySwimTrip())
+                || (line.excludesRecruitmentOceanCrossing() && context.hasRecruitmentMemoryOceanCrossing())) return "recruitment travel";
+        if ((line.requiresKnownFamily() && !context.hasKnownFamily())
+                || (line.requiresKnownParent() && !context.hasKnownParent())
+                || (line.requiresKnownSibling() && !context.hasKnownSibling())
+                || (line.requiresKnownSpouse() && !context.hasKnownSpouse())
+                || (line.requiresKnownChild() && !context.hasKnownChild())
+                || (line.requiresKnownGrandparent() && !context.hasKnownGrandparent())
+                || (line.requiresKnownGrandchild() && !context.hasKnownGrandchild())
+                || (line.requiresKnownDescendant() && !context.hasKnownDescendant())
+                || (line.requiresKnownAuntUncle() && !context.hasKnownAuntUncle())
+                || (line.requiresKnownCousin() && !context.hasKnownCousin())
+                || (line.requiresKnownNieceNephew() && !context.hasKnownNieceNephew())
+                || (line.requiresKnownExtendedFamily() && !context.hasKnownExtendedFamily())
+                || (line.requiresKnownDeceasedFamily() && !context.hasKnownDeceasedFamily())) return "family";
+        if ((line.requiresKnownRelationship() && !context.hasKnownRelationship())
+                || (line.requiresKnownCurrentRelationship() && !context.hasKnownCurrentRelationship())
+                || (line.requiresKnownPastRelationship() && !context.hasKnownPastRelationship())
+                || (line.requiresKnownCrush() && !context.hasKnownCrush())
+                || (line.requiresKnownDatingPartner() && !context.hasKnownDatingPartner())
+                || (line.requiresKnownFiance() && !context.hasKnownFiance())
+                || (line.requiresKnownRomanticSpouse() && !context.hasKnownRomanticSpouse())
+                || (line.requiresKnownSeparatedPartner() && !context.hasKnownSeparatedPartner())
+                || (line.requiresKnownWidowedPartner() && !context.hasKnownWidowedPartner())) return "relationship";
+        return "";
     }
 
     private static Optional<DialogueResult> selectGiftMemoryLine(

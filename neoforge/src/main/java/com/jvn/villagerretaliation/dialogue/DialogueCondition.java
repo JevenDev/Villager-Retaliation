@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 
-public sealed interface DialogueCondition permits DialogueCondition.AllOf, DialogueCondition.AnyOf,
+public sealed interface DialogueCondition permits DialogueCondition.Invalid, DialogueCondition.AllOf, DialogueCondition.AnyOf,
         DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
@@ -116,7 +116,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         }
         if (!element.isJsonArray()) {
             warnInvalid(location, context, "conditions must be an array of condition objects.");
-            return List.of();
+            return List.of(new Invalid("conditions must be an array"));
         }
 
         List<DialogueCondition> conditions = new ArrayList<>();
@@ -135,11 +135,12 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             ResourceLocation defaultQuestId) {
         if (element == null || !element.isJsonObject()) {
             warnInvalid(location, context, "condition must be an object.");
-            return Optional.empty();
+            return Optional.of(new Invalid("condition must be an object"));
         }
 
         JsonObject condition = element.getAsJsonObject();
-        return ConditionRegistry.read(location, context, condition, defaultQuestId);
+        return ConditionRegistry.read(location, context, condition, defaultQuestId)
+                .or(() -> Optional.of(new Invalid("condition could not be parsed")));
     }
 
     private static Optional<List<DialogueCondition>> readChildren(
@@ -921,6 +922,9 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             if (condition == null) {
                 return new ConditionEvaluationTrace("unknown", ConditionOutcome.UNKNOWN, "condition is missing", List.of());
             }
+            if (condition instanceof Invalid invalid) {
+                return new ConditionEvaluationTrace("invalid", ConditionOutcome.UNMET, invalid.reason(), List.of());
+            }
             if (condition instanceof AllOf allOf) {
                 List<ConditionEvaluationTrace> children = traceAll(context, allOf.conditions());
                 return new ConditionEvaluationTrace("all", allOutcome(children), allMessage(children), children);
@@ -1110,6 +1114,22 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         return type == null ? "" : type.trim().toLowerCase(Locale.ROOT);
     }
 
+    record Invalid(String reason) implements DialogueCondition {
+        public Invalid {
+            reason = reason == null ? "invalid condition" : reason;
+        }
+
+        @Override
+        public boolean matches(DialogueContext context) {
+            return false;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 0;
+        }
+    }
+
     record AllOf(List<DialogueCondition> conditions) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
@@ -1148,7 +1168,10 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     record Not(DialogueCondition condition) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            return context != null && this.condition != null && !this.condition.matches(context);
+            return context != null
+                    && this.condition != null
+                    && !(this.condition instanceof Invalid)
+                    && !this.condition.matches(context);
         }
 
         @Override
