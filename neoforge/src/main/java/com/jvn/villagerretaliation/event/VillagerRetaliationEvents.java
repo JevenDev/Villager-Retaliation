@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.event;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.allegiance.UnlawfulOrderService;
@@ -344,11 +346,6 @@ public final class VillagerRetaliationEvents {
             return;
         }
         if (EncounterService.shouldCancelFriendlyDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
-            event.setCanceled(true);
-            event.setAmount(0.0F);
-            return;
-        }
-        if (shouldCancelVillagerGolemDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
             return;
@@ -1127,21 +1124,20 @@ public final class VillagerRetaliationEvents {
         return VillagerDeathMessageFactory.create(villager, source);
     }
 
-    private static boolean shouldCancelVillagerGolemDamage(Entity victim, Entity attacker, Entity directAttacker) {
-        return (VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, attacker)
-                    && !com.jvn.villagerretaliation.raid.PlayerRaidService.allowsVillagerGolemCombat(victim, attacker))
-                || (VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, directAttacker)
-                    && !com.jvn.villagerretaliation.raid.PlayerRaidService.allowsVillagerGolemCombat(victim, directAttacker));
-    }
-
     private static void clearIronGolemTargetingVillagers(Entity entity) {
-        if (!(entity instanceof IronGolem ironGolem)) {
+        if (!(entity instanceof IronGolem ironGolem)
+                || !(ironGolem.level() instanceof ServerLevel level)) {
             return;
         }
 
         LivingEntity target = ironGolem.getTarget();
         if (target == null || !VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(ironGolem, target)
-                || com.jvn.villagerretaliation.raid.PlayerRaidService.allowsVillagerGolemCombat(ironGolem, target)) {
+                || !VillageAllegianceCombatPolicy.evaluate(
+                        level,
+                        ironGolem,
+                        target,
+                        AllegianceCombatContext.TARGET_CONTINUATION,
+                        VillageCombatAuthorizationService.isAuthorized(ironGolem, target)).denied()) {
             return;
         }
 
