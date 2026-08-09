@@ -32,6 +32,43 @@ public final class VillagerConfigurationGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void interactionChatPositionsProduceDistinctAnchors(GameTestHelper helper) {
+        int screenWidth = 320;
+        int screenHeight = 240;
+        int groupWidth = 120;
+        int groupHeight = 80;
+        int vanillaTop = 122;
+        int edgeMargin = 4;
+        int topMargin = 12;
+
+        helper.assertValueEqual(
+                InteractionChatPosition.BOTTOM_LEFT.anchoredLeft(screenWidth, groupWidth, edgeMargin),
+                0,
+                "bottom-left chat must retain the vanilla horizontal anchor");
+        helper.assertValueEqual(
+                InteractionChatPosition.BOTTOM_LEFT.anchoredTop(screenHeight, groupHeight, vanillaTop, topMargin),
+                vanillaTop,
+                "bottom-left chat must retain the vanilla vertical anchor");
+        helper.assertValueEqual(
+                InteractionChatPosition.MID_LEFT.anchoredTop(screenHeight, groupHeight, vanillaTop, topMargin),
+                80,
+                "mid-left chat must be vertically centered");
+        helper.assertValueEqual(
+                InteractionChatPosition.TOP_MID.anchoredLeft(screenWidth, groupWidth, edgeMargin),
+                100,
+                "top-mid chat must be horizontally centered");
+        helper.assertValueEqual(
+                InteractionChatPosition.TOP_RIGHT.anchoredLeft(screenWidth, groupWidth, edgeMargin),
+                196,
+                "right-side chat must honor the configured edge margin");
+        helper.assertValueEqual(
+                InteractionChatPosition.TOP_RIGHT.anchoredTop(screenHeight, groupHeight, vanillaTop, topMargin),
+                topMargin,
+                "top chat must honor the configured top margin");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void experimentalTradeFeaturesAreDisabledByDefault(GameTestHelper helper) {
         VillagerRetaliationConfigModel.Trade defaults = new VillagerRetaliationConfigModel.Trade();
         helper.assertFalse(defaults.enableSkillTradeOverhaul,

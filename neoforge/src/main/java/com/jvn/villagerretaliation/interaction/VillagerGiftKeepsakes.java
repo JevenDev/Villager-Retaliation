@@ -22,13 +22,14 @@ public final class VillagerGiftKeepsakes {
             Villager villager,
             ServerPlayer player,
             ItemStack giftedStack,
-            ResolvedGiftPreference giftPreference) {
+            ResolvedGiftPreference giftPreference,
+            int awardedReputation) {
         if (giftedStack.isEmpty()) {
             return;
         }
         if (VillagerRetaliationConfig.ENABLE_GIFT_KEEPSAKES.get()
                 && maybeKeepGift(level, villager, player, giftedStack, giftPreference)) {
-            VillagerGiftReturnTracker.recordStoredGift(level, villager, player, giftedStack, giftPreference.reputationValue());
+            VillagerGiftReturnTracker.recordStoredGift(level, villager, player, giftedStack, awardedReputation);
             return;
         }
 
@@ -43,7 +44,7 @@ public final class VillagerGiftKeepsakes {
                     villager,
                     player,
                     giftedStack.copyWithCount(storedCount),
-                    storedReputationValue(giftedStack, storedCount, giftPreference.reputationValue())
+                    storedReputationValue(giftedStack, storedCount, awardedReputation)
             );
         }
         if (!remainder.isEmpty()) {
