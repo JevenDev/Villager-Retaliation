@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,7 +72,10 @@ final class VillagerSmithGolemRepairSupport {
         AABB area = villager.getBoundingBox().inflate(SEARCH_RADIUS);
         IronGolem bestTarget = null;
         float mostMissingHealth = 0.0F;
-        for (IronGolem candidate : level.getEntitiesOfClass(IronGolem.class, area, ironGolem -> ironGolem.isAlive() && ironGolem.getHealth() < ironGolem.getMaxHealth())) {
+        for (IronGolem candidate : level.getEntitiesOfClass(
+                IronGolem.class,
+                area,
+                ironGolem -> isRepairTarget(villager, level, ironGolem))) {
             float missingHealth = candidate.getMaxHealth() - candidate.getHealth();
             if (missingHealth > mostMissingHealth
                     || (missingHealth == mostMissingHealth
@@ -82,6 +86,18 @@ final class VillagerSmithGolemRepairSupport {
             }
         }
         return bestTarget;
+    }
+
+    static boolean isRepairTarget(Villager villager, ServerLevel level, IronGolem ironGolem) {
+        return villager != null
+                && level != null
+                && ironGolem != null
+                && villager.level() == level
+                && ironGolem.level() == level
+                && ironGolem.isAlive()
+                && !ironGolem.isPlayerCreated()
+                && ironGolem.getHealth() < ironGolem.getMaxHealth()
+                && VillageAllegianceRelations.sameCanonical(level, villager, ironGolem);
     }
 
     private static boolean canProfessionRepairIronGolems(Villager villager) {
