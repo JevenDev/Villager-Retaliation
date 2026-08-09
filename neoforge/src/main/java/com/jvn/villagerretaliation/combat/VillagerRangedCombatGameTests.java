@@ -494,6 +494,50 @@ public final class VillagerRangedCombatGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void clericSplashSafetyUsesAllegianceForGolems(GameTestHelper helper) {
+        Villager cleric = spawnVillager(helper, new BlockPos(2, 2, 2));
+        cleric.setVillagerData(cleric.getVillagerData().setProfession(VillagerProfession.CLERIC));
+        IronGolem foreign = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(4, 2, 2));
+        IronGolem allied = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(10, 2, 2));
+
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
+        VillageAllegianceId clericHome = registry.create(
+                helper.getLevel().getGameTime(),
+                helper.getLevel().dimension().location(),
+                cleric.blockPosition(),
+                "Cleric Splash Home");
+        VillageAllegianceId foreignHome = registry.create(
+                helper.getLevel().getGameTime(),
+                helper.getLevel().dimension().location(),
+                foreign.blockPosition(),
+                "Foreign Splash Target");
+        VillageAllegianceApi.assignKnown(
+                helper.getLevel(), cleric, clericHome, AllegianceAssignmentSource.ADMIN);
+        VillageAllegianceApi.assignKnown(
+                helper.getLevel(), allied, clericHome, AllegianceAssignmentSource.ADMIN);
+        VillageAllegianceApi.assignKnown(
+                helper.getLevel(), foreign, foreignHome, AllegianceAssignmentSource.ADMIN);
+
+        helper.assertTrue(
+                VillagerClericPotionHelper.isFriendlyCivilian(cleric, allied),
+                "an allied village golem should be protected from offensive splash");
+        helper.assertFalse(
+                VillagerClericPotionHelper.isFriendlyCivilian(cleric, foreign),
+                "a foreign village golem should not be treated as a friendly civilian");
+        helper.assertTrue(
+                VillagerClericPotionHelper.isSafeOffensiveThrow(
+                        cleric,
+                        foreign,
+                        PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING)),
+                "a foreign golem target should not block the cleric''s offensive potion");
+
+        allied.discard();
+        foreign.discard();
+        cleric.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void firedBowLosesDurability(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         Zombie target = spawnZombie(helper, new BlockPos(5, 2, 2));

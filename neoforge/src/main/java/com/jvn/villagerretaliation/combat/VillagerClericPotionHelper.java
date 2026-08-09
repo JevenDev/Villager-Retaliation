@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.TickThrottle;
@@ -619,13 +620,20 @@ final class VillagerClericPotionHelper {
         return supportTarget.distanceToSqr(hostileTarget) > maxDistance * maxDistance;
     }
 
-    private static boolean isFriendlyCivilian(Villager villager, LivingEntity entity) {
-        return entity != villager
-                && entity.isAlive()
-                && (entity instanceof Villager
-                || entity instanceof IronGolem
-                || entity instanceof WanderingTrader
-                || entity instanceof Player player && canSupportPlayer(villager, player));
+    static boolean isFriendlyCivilian(Villager villager, LivingEntity entity) {
+        if (entity == villager || !entity.isAlive() || PlayerRaidService.areOpposingParticipants(villager, entity)) {
+            return false;
+        }
+        if (PartyService.areInSameOrAlliedParty(villager, entity)) {
+            return true;
+        }
+        if (entity instanceof Villager || entity instanceof IronGolem) {
+            return villager.level() instanceof ServerLevel level
+                    && entity.level() == level
+                    && VillageAllegianceRelations.sameCanonical(level, villager, entity);
+        }
+        return entity instanceof WanderingTrader
+                || entity instanceof Player player && canSupportPlayer(villager, player);
     }
 
     private static boolean isFriendlySafePotion(ItemStack potionStack) {
