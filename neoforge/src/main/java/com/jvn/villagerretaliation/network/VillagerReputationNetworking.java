@@ -412,8 +412,12 @@ public final class VillagerReputationNetworking {
                 VillagerDuelRequestPayload.TYPE,
                 VillagerDuelRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
-                        ToucanNetwork.withServerPlayer(context, player ->
-                                com.jvn.villagerretaliation.duel.DuelRequestHandler.handle(player, payload)))
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (ServerboundRequestLimiter.tryAcquire(
+                                    player, VillagerDuelRequestPayload.TYPE.id(), 5L)) {
+                                com.jvn.villagerretaliation.duel.DuelRequestHandler.handle(player, payload);
+                            }
+                        }))
         );
         network.playToServer(
                 VillagerRecruitRequestPayload.TYPE,
