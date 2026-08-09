@@ -23,7 +23,7 @@ The initiating player's current party is snapshotted. Later party changes do not
 - At either outcome, each surviving recruited raider villager delivers one of 15 victory or 15 loss reactions to online raider players.
 - During the active siege, a raider player wearing a banner helmet can use a goat horn to make tracked defenders within 48 blocks glow for 3 seconds. During mercy, the same signal reveals unresolved mercy candidates.
 
-Operators can settle the Player Raid involving them or containing their current position with `/villagerretaliation debug raid win` or `/villagerretaliation debug raid lose`.
+Operators can settle the Player Raid involving them or containing their current position with `/vr admin debug raid win` or `/vr admin debug raid lose`.
 
 ## Configuration
 

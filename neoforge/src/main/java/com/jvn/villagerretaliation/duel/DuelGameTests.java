@@ -745,9 +745,9 @@ public final class DuelGameTests {
         var source = player.createCommandSourceStack().withPermission(2);
 
         int defaultResult = dispatcher.execute(
-                "villagerretaliation debug duel \"Debug Duelist\"", source);
+                "vr admin debug duel " + villager.getUUID(), source);
         helper.assertValueEqual(defaultResult, 1,
-                "debug duel command should resolve a quoted villager name");
+                "canonical debug duel command should resolve an explicit villager entity");
         helper.assertTrue(DuelService.isParticipant(player),
                 "default debug command should start a live duel");
         helper.assertTrue(DuelService.allowsInventoryClick(
@@ -765,7 +765,7 @@ public final class DuelGameTests {
         }
 
         int configuredResult = dispatcher.execute(
-                "villagerretaliation debug duel \"Debug Duelist\" kit armored wager 8", source);
+                "vr admin debug duel " + villager.getUUID() + " armored 8", source);
         helper.assertValueEqual(configuredResult, 1,
                 "debug command should accept optional kit and wager entries");
         helper.assertTrue(!DuelService.allowsInventoryClick(

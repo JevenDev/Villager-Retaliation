@@ -215,10 +215,10 @@ node tools/validate-dialogue-data.mjs --quest path/to/data/my_pack/quests/villag
 Runtime diagnostics are available through:
 
 ```text
-/villagerretaliation datapack diagnostics
-/villagerretaliation quest debug providers
-/villagerretaliation quest debug why_available my_pack:bread_delivery <provider_name>
-/villagerretaliation quest debug inspect my_pack:bread_delivery
+/vr admin datapack diagnostics
+/vr admin quest providers
+/vr admin quest whyAvailable my_pack:bread_delivery <provider>
+/vr admin quest inspect my_pack:bread_delivery
 ```
 
 The debug inspector reports saved state, availability, active conditions, issuer data, objective counters, cooldowns, current stage, and branch locks.
