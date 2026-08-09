@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.recipe.VillagerAttributeFilterCopyRecipe;
 import com.jvn.villagerretaliation.recipe.VillagerFilterResetRecipe;
 import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.VillagerEquipmentDurability;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.party.PartyVillagerDropCollection;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -1436,6 +1437,27 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void brokenJobArmorIsConsumedInsteadOfRestored(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack helmet = new ItemStack(Items.IRON_HELMET);
+        helmet.setDamageValue(helmet.getMaxDamage() - 1);
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(0, helmet);
+
+        VillagerEquipmentDurability.hurtArmor(villager, villager.damageSources().generic(), 4.0F);
+
+        helper.assertTrue(villager.getItemBySlot(EquipmentSlot.HEAD).isEmpty(),
+                "the live job helmet should break");
+        helper.assertTrue(inventory.getItem(0).isEmpty(),
+                "breaking the live mirror must consume the authoritative job helmet");
+        HiredJobInventory.maintainEquipmentSlots(villager);
+        helper.assertTrue(villager.getItemBySlot(EquipmentSlot.HEAD).isEmpty(),
+                "equipment maintenance must not restore broken job armor");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void regularInventoryBorrowedCombatWeaponReturnsToInventory(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
@@ -2238,6 +2260,38 @@ public final class VillagerInventoryGameTests {
         helper.assertValueEqual(dropped, 4,
                 "farm overflow should drop exactly the portion that did not fit");
 
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void deathReconcilesDamagedJobArmorWithoutDuplicatingIt(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(1, new ItemStack(Items.IRON_CHESTPLATE));
+        villager.getItemBySlot(EquipmentSlot.CHEST).setDamageValue(7);
+
+        List<ItemEntity> drops = new ArrayList<>();
+        drops.add(new ItemEntity(
+                level,
+                villager.getX(),
+                villager.getY(),
+                villager.getZ(),
+                villager.getItemBySlot(EquipmentSlot.CHEST).copy()));
+        villager.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+        LivingDropsEvent event = new LivingDropsEvent(villager, villager.damageSources().generic(), drops, false);
+        VillagerInventoryAccess.dropAllInventoryAndEquipment(villager, event);
+
+        helper.assertValueEqual(countEventDrops(drops, Items.IRON_CHESTPLATE), 1,
+                "damaged job armor should be present in death drops exactly once");
+        ItemStack droppedArmor = drops.stream()
+                .map(ItemEntity::getItem)
+                .filter(stack -> stack.is(Items.IRON_CHESTPLATE))
+                .findFirst()
+                .orElse(ItemStack.EMPTY);
+        helper.assertValueEqual(droppedArmor.getDamageValue(), 7,
+                "the single job armor drop should preserve live durability");
         villager.discard();
         helper.succeed();
     }
