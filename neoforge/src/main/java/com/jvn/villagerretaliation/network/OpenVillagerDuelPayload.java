@@ -36,9 +36,22 @@ public record OpenVillagerDuelPayload(
     private static final int MAX_DIALOGUE_TEXT = 1024;
     private static final int MAX_KITS = 128;
     public OpenVillagerDuelPayload {
+        villagerName = boundedUtf(villagerName, MAX_TEXT);
+        currencyName = boundedUtf(currencyName, MAX_TEXT);
         duelKits = duelKits == null
                 ? List.of()
-                : List.copyOf(duelKits.stream().filter(Objects::nonNull).limit(MAX_KITS).toList());
+                : List.copyOf(duelKits.stream()
+                        .filter(Objects::nonNull)
+                        .limit(MAX_KITS)
+                        .map(kit -> new DuelKit.Summary(kit.id(),
+                                boundedUtf(kit.name(), MAX_TEXT),
+                                boundedUtf(kit.description(), MAX_DESCRIPTION)))
+                        .toList());
+        openingDialogue = boundedUtf(openingDialogue, MAX_DIALOGUE_TEXT);
+        loadoutDialogue = boundedUtf(loadoutDialogue, MAX_DIALOGUE_TEXT);
+        wagerDialogue = boundedUtf(wagerDialogue, MAX_DIALOGUE_TEXT);
+        confirmationDialogue = boundedUtf(confirmationDialogue, MAX_DIALOGUE_TEXT);
+        startingDialogue = boundedUtf(startingDialogue, MAX_DIALOGUE_TEXT);
     }
 
     public static final Type<OpenVillagerDuelPayload> TYPE = VillagerPayloads.type("open_villager_duel");
@@ -96,6 +109,22 @@ public record OpenVillagerDuelPayload(
                     buffer.readUtf(MAX_DESCRIPTION)));
         }
         return List.copyOf(kits);
+    }
+
+    private static String boundedUtf(String value, int maxLength) {
+        if (value == null || maxLength <= 0) {
+            return "";
+        }
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        int end = maxLength;
+        if (Character.isHighSurrogate(value.charAt(end - 1))
+                && end < value.length()
+                && Character.isLowSurrogate(value.charAt(end))) {
+            end--;
+        }
+        return value.substring(0, end);
     }
 
     public int maximumStake() {
