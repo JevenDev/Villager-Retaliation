@@ -697,67 +697,222 @@ function buildQuests() {
     ));
 }
 
+const GIFT_RATING_SCALE = [
+  { rating: 3, label: "+++", reaction: "Loved", description: "Exceptional favorite" },
+  { rating: 2, label: "++", reaction: "Loved", description: "Strong favorite" },
+  { rating: 1, label: "+", reaction: "Liked", description: "Positive preference" },
+  { rating: 0, label: "0", reaction: "Neutral", description: "No preference" },
+  { rating: -1, label: "-", reaction: "Disliked", description: "Mild dislike" },
+  { rating: -2, label: "--", reaction: "Hated", description: "Strong dislike" },
+  { rating: -3, label: "---", reaction: "Hated", description: "Severe rejection" }
+];
+
+function legacyGiftRating(reaction) {
+  switch (String(reaction || "").toLowerCase()) {
+    case "loved": return 2;
+    case "liked": return 1;
+    case "neutral": return 0;
+    case "disliked": return -1;
+    case "hated": return -3;
+    default: return null;
+  }
+}
+
+function giftRating(entry) {
+  if (entry.rating != null && Number.isInteger(Number(entry.rating))) {
+    const rating = Number(entry.rating);
+    return rating >= -3 && rating <= 3 ? rating : null;
+  }
+  return legacyGiftRating(entry.reaction);
+}
+
+function giftReaction(rating) {
+  if (rating >= 2) return "Loved";
+  if (rating === 1) return "Liked";
+  if (rating === -1) return "Disliked";
+  if (rating <= -2) return "Hated";
+  return "Neutral";
+}
+
+function giftProfessions(entry, root = {}) {
+  const source = Object.hasOwn(entry, "profession") || Object.hasOwn(entry, "professions") ? entry : root;
+  return uniqueStrings([
+    ...firstArray(source.profession),
+    ...firstArray(source.professions)
+  ]);
+}
+
+function giftSelectors(entry) {
+  return uniqueStrings([
+    ...firstArray(entry.item),
+    ...firstArray(entry.items),
+    ...firstArray(entry.tag),
+    ...firstArray(entry.tags)
+  ]);
+}
+
+function giftItemLabel(selector) {
+  const value = String(selector);
+  const label = value.startsWith("#") ? titleCase(value.split("/").pop()) : itemName(value);
+  return `${label}${value.startsWith("#") ? " (tag)" : ""}`;
+}
+
+function giftCategoryName(entry, lang) {
+  if (typeof entry.name === "string" && entry.name.trim()) return entry.name.trim();
+  if (entry.name && typeof entry.name === "object") {
+    if (typeof entry.name.text === "string" && entry.name.text.trim()) return entry.name.text.trim();
+    if (typeof entry.name.translate === "string" && lang[entry.name.translate]) return lang[entry.name.translate];
+  }
+  const segments = idTail(entry.id || "gift").split(/[./]/).filter(Boolean);
+  const value = segments.at(-1) || "gift";
+  const qualifier = segments.at(-2) || "";
+  const legacyCategory = {
+    exceptional: "Exceptional Favorites",
+    loved: "Favorites",
+    liked: "Useful Items",
+    neutral: "Everyday Items",
+    disliked: "Unwanted Items",
+    dangerous: "Serious Hazards",
+    hated: "Severe Hazards"
+  }[value.toLowerCase()];
+  return legacyCategory && qualifier && qualifier.toLowerCase() !== "global"
+    ? `${titleCase(qualifier)} ${legacyCategory}`
+    : titleCase(value);
+}
+
+function normalizeGiftPreference(entry, root, lang) {
+  const rating = giftRating(entry);
+  const selectors = giftSelectors(entry);
+  if (rating == null || !selectors.length) return null;
+  return {
+    id: String(entry.id || ""),
+    professions: giftProfessions(entry, root),
+    rating,
+    ratingLabel: GIFT_RATING_SCALE.find((stage) => stage.rating === rating)?.label || "0",
+    reaction: giftReaction(rating),
+    category: giftCategoryName(entry, lang),
+    selectors,
+    items: selectors.map(giftItemLabel)
+  };
+}
+
+function documentedGiftPreference(entry) {
+  return {
+    id: entry.id,
+    rating: entry.rating,
+    ratingLabel: entry.ratingLabel,
+    reaction: entry.reaction,
+    category: entry.category,
+    items: entry.items
+  };
+}
+
+function canonicalGiftSelector(selector) {
+  const value = String(selector);
+  return value.includes(":") ? value : `minecraft:${value}`;
+}
+
+function exactGiftSelectors(entry) {
+  return entry.selectors
+    .filter((selector) => !selector.startsWith("#"))
+    .map(canonicalGiftSelector);
+}
+
+function duplicateExactGiftSelectors(entries) {
+  const owners = new Map();
+  for (const entry of entries) {
+    for (const selector of exactGiftSelectors(entry)) {
+      if (!owners.has(selector)) owners.set(selector, []);
+      owners.get(selector).push(entry.id);
+    }
+  }
+  return [...owners.entries()].filter(([, ids]) => ids.length > 1);
+}
+
+function effectiveGiftPreferences(globalEntries, professionEntries) {
+  const overriddenSelectors = new Set(professionEntries.flatMap(exactGiftSelectors));
+  const inheritedEntries = globalEntries.map((entry) => {
+    const keptIndexes = entry.selectors
+      .map((selector, index) => ({ selector, index }))
+      .filter(({ selector }) => !overriddenSelectors.has(canonicalGiftSelector(selector)));
+    return {
+      ...entry,
+      selectors: keptIndexes.map(({ selector }) => selector),
+      items: keptIndexes.map(({ index }) => entry.items[index])
+    };
+  }).filter((entry) => entry.selectors.length);
+  return [...inheritedEntries, ...professionEntries];
+}
+
 function buildGifts() {
   const gifts = walkJson(path.join(dataDir, "gifts")).map(readJson);
-  const preferences = gifts.flatMap((file) => firstArray(file.preferences));
-  const rewards = gifts.flatMap((file) => firstArray(file.rewards));
+  const lang = readJson(path.join(assetsDir, "lang", "en_us.json"));
+  const rawPreferences = gifts.flatMap((file) => firstArray(file.preferences)
+    .map((entry) => ({ entry, root: file })));
+  const preferences = rawPreferences
+    .map(({ entry, root }) => normalizeGiftPreference(entry, root, lang))
+    .filter(Boolean);
+  if (preferences.length !== rawPreferences.length) {
+    throw new Error(`Player wiki could not document ${rawPreferences.length - preferences.length} gift preference(s).`);
+  }
+  const rewards = gifts.flatMap((file) => firstArray(file.rewards).map((entry) => ({
+    ...entry,
+    professions: giftProfessions(entry, file)
+  })));
   const professionGroups = new Map();
   for (const entry of preferences) {
     const professions = firstArray(entry.professions);
     if (!professions.length) continue;
     for (const profession of professions) {
-      if (!professionGroups.has(profession)) professionGroups.set(profession, []);
-      professionGroups.get(profession).push(entry);
+      const professionLabel = titleCase(profession);
+      if (!professionGroups.has(professionLabel)) professionGroups.set(professionLabel, []);
+      professionGroups.get(professionLabel).push(entry);
     }
   }
 
   const globalEntries = preferences.filter((entry) => !firstArray(entry.professions).length);
-  const globalPreferredItems = [...new Set(
-    globalEntries
-      .filter((entry) => entry.reaction === "liked" || entry.reaction === "loved")
-      .flatMap((entry) => firstArray(entry.items || entry.item || entry.tags || entry.tag).map(itemName))
-  )].sort((a, b) => a.localeCompare(b));
-  const globalDislikedItems = [...new Set(
-    globalEntries
-      .filter((entry) => entry.reaction === "disliked" || entry.reaction === "hated")
-      .flatMap((entry) => firstArray(entry.items || entry.item || entry.tags || entry.tag).map(itemName))
-  )].sort((a, b) => a.localeCompare(b));
-  const globalNeutralItems = [...new Set(
-    globalEntries
-      .filter((entry) => entry.reaction === "neutral")
-      .flatMap((entry) => firstArray(entry.items || entry.item || entry.tags || entry.tag).map(itemName))
-  )].sort((a, b) => a.localeCompare(b));
+  const globalDuplicates = duplicateExactGiftSelectors(globalEntries);
+  if (globalDuplicates.length) {
+    throw new Error(`Global gift selectors appear in multiple categories: ${globalDuplicates.map(([selector]) => selector).join(", ")}.`);
+  }
+  const globalRatingsBySelector = new Map(globalEntries
+    .flatMap((entry) => exactGiftSelectors(entry).map((selector) => [selector, entry.rating])));
+  const missingRatingLabels = (entries) => GIFT_RATING_SCALE
+    .filter((stage) => !entries.some((entry) => entry.rating === stage.rating))
+    .map((stage) => stage.label);
+  const globalMissingRatings = missingRatingLabels(globalEntries);
+  if (globalMissingRatings.length) {
+    throw new Error(`Global gift preferences do not cover rating tier(s): ${globalMissingRatings.join(", ")}.`);
+  }
+  const effectiveProfessionGroups = new Map();
+  for (const [profession, entries] of professionGroups) {
+    const redundantSelectors = entries.flatMap((entry) => exactGiftSelectors(entry)
+      .filter((selector) => globalRatingsBySelector.get(selector) === entry.rating));
+    if (redundantSelectors.length) {
+      throw new Error(`${profession} repeats global gift selector(s) at the same tier: ${[...new Set(redundantSelectors)].join(", ")}.`);
+    }
+    const effectiveEntries = effectiveGiftPreferences(globalEntries, entries);
+    const duplicates = duplicateExactGiftSelectors(effectiveEntries);
+    if (duplicates.length) {
+      throw new Error(`${profession} resolves gift selector(s) more than once: ${duplicates.map(([selector]) => selector).join(", ")}.`);
+    }
+    const missing = missingRatingLabels(effectiveEntries);
+    if (missing.length) {
+      throw new Error(`${profession} gift preferences do not cover rating tier(s): ${missing.join(", ")}.`);
+    }
+    effectiveProfessionGroups.set(profession, effectiveEntries);
+  }
 
   return {
     totals: {
       preferences: preferences.length,
       rewards: rewards.length
     },
-    globalPreferredItems,
-    globalDislikedItems,
-    globalNeutralItems,
-    reactions: ["loved", "liked", "neutral", "disliked", "hated"].map((reaction) => {
-      const reactionEntries = preferences.filter((entry) => entry.reaction === reaction);
-      const allItems = [...new Set(
-        reactionEntries.flatMap((entry) => firstArray(entry.items || entry.item || entry.tags || entry.tag).map(itemName))
-      )].sort((a, b) => a.localeCompare(b));
-      return {
-        reaction: titleCase(reaction),
-        count: reactionEntries.length,
-        allItems,
-        examples: reactionEntries.slice(0, 8).map((entry) => ({
-          id: entry.id,
-          professions: firstArray(entry.professions).map(titleCase),
-          items: firstArray(entry.items || entry.item || entry.tags || entry.tag).slice(0, 14).map(itemName)
-        }))
-      };
-    }),
-    professionPreferences: [...professionGroups.entries()].map(([profession, entries]) => ({
-      profession: titleCase(profession),
-      entries: entries.map((entry) => ({
-        reaction: titleCase(entry.reaction),
-        items: [...new Set(firstArray(entry.items || entry.item || entry.tags || entry.tag).map(itemName))].sort((a, b) => a.localeCompare(b))
-      }))
+    ratingScale: GIFT_RATING_SCALE,
+    globalPreferences: globalEntries.map(documentedGiftPreference),
+    professionPreferences: [...effectiveProfessionGroups.entries()].map(([profession, entries]) => ({
+      profession,
+      entries: entries.map(documentedGiftPreference)
     })),
     rewards: rewards.map((entry) => ({
       professions: firstArray(entry.professions).map(titleCase),

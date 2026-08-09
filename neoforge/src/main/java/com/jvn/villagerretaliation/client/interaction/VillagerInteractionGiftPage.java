@@ -12,6 +12,7 @@ import com.jvn.toucanlib.client.interaction.ToucanSlotRegistry;
 import com.jvn.toucanlib.client.interaction.ToucanSlotRenderer;
 import com.jvn.toucanlib.client.tooltip.ToucanTooltips;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
@@ -92,7 +93,9 @@ final class VillagerInteractionGiftPage {
         if (VillagerRetaliationConfig.SHOW_GIFT_REACTION_TOOLTIP.get()) {
             context.giftPreference(stack)
                     .filter(reaction -> !VillagerRetaliationConfig.GIFT_REACTION_TOOLTIP_REQUIRES_KNOWN_GIFT.get() || reaction.known())
-                    .ifPresent(reaction -> tooltip.add(giftReactionTooltip(reaction)));
+                    .ifPresent(reaction -> tooltip.add(
+                            Math.min(1, tooltip.size()),
+                            giftReactionTooltip(reaction)));
         }
         ToucanTooltips.renderBounded(
                 graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
@@ -103,28 +106,24 @@ final class VillagerInteractionGiftPage {
             return Component.translatable(GUI_KEY_PREFIX + "gift.preference_unknown")
                     .withStyle(ChatFormatting.GRAY);
         }
-        ChatFormatting color = ratingColor(preference.rating());
+        int color = ratingColor(preference.rating());
         return Component.translatable(
                 GUI_KEY_PREFIX + "gift.preference",
-                preference.displayName().copy().withStyle(color),
-                Component.literal(VillagerGiftKnowledgeService.ratingLabel(preference.rating())).withStyle(color))
-                .withStyle(color);
+                Component.literal(VillagerGiftKnowledgeService.ratingLabel(preference.rating())).withColor(color),
+                preference.displayName().copy().withColor(color))
+                .withColor(color);
     }
 
-    private static ChatFormatting ratingColor(int rating) {
-        if (rating >= 3) {
-            return ChatFormatting.GREEN;
-        }
-        if (rating > 0) {
-            return ChatFormatting.DARK_GREEN;
-        }
-        if (rating <= -3) {
-            return ChatFormatting.DARK_RED;
-        }
-        if (rating < 0) {
-            return ChatFormatting.RED;
-        }
-        return ChatFormatting.GRAY;
+    private static int ratingColor(int rating) {
+        return switch (Mth.clamp(rating, -3, 3)) {
+            case 3 -> 0x55FF55;
+            case 2 -> 0x55D477;
+            case 1 -> 0xA8D65C;
+            case 0 -> 0xAAAAAA;
+            case -1 -> 0xFFD05A;
+            case -2 -> 0xFF8A3D;
+            default -> 0xFF5555;
+        };
     }
 
     static boolean tryClick(
@@ -376,13 +375,17 @@ final class VillagerInteractionGiftPage {
         } else {
             tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.categories_header")
                     .withStyle(ChatFormatting.GRAY));
-            for (GiftPreferenceView preference : context.knownGiftPreferences()) {
-                ChatFormatting color = ratingColor(preference.rating());
+            List<GiftPreferenceView> preferences = context.knownGiftPreferences().stream()
+                    .sorted(Comparator.comparingInt(GiftPreferenceView::rating).reversed()
+                            .thenComparing(preference -> preference.displayName().getString(), String.CASE_INSENSITIVE_ORDER))
+                    .toList();
+            for (GiftPreferenceView preference : preferences) {
+                int color = ratingColor(preference.rating());
                 tooltip.add(Component.literal("  ")
                         .append(preference.displayName().copy())
                         .append(" ")
                         .append(VillagerGiftKnowledgeService.ratingLabel(preference.rating()))
-                        .withStyle(color));
+                        .withColor(color));
             }
         }
         ToucanTooltips.renderBounded(graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
