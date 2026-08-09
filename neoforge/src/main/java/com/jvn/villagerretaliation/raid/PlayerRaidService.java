@@ -427,7 +427,7 @@ public final class PlayerRaidService {
         VillagerRetaliationVillagerBrainUtil.suppressVanillaFleeState(level, villager);
     }
 
-    private static void releaseRaidCombatState(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
+    static void releaseRaidCombatState(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
         for (UUID raiderId : raid.raiderVillagers()) {
             Entity entity = find(server, raiderId);
             if (entity instanceof Villager villager) VillagerRetaliationHandler.clearCustomTarget(villager);
@@ -445,13 +445,18 @@ public final class PlayerRaidService {
         AABB area = AABB.ofSize(Vec3.atCenterOf(raid.center()), 192.0D, 96.0D, 192.0D);
         for (IronGolem golem : level.getEntitiesOfClass(IronGolem.class, area, IronGolem::isAlive)) {
             LivingEntity target = golem.getTarget();
-            if (target != null
-                    && (raid.raiderPlayers().contains(target.getUUID())
-                        || raid.raiderVillagers().contains(target.getUUID()))
-                    && isDefendingGolem(level, raid, golem)) {
-                golem.setTarget(null);
+            UUID persistentTarget = golem.getPersistentAngerTarget();
+            boolean targetingRaider = target != null && isRaidRaider(raid, target.getUUID());
+            boolean angryAtRaider = isRaidRaider(raid, persistentTarget);
+            if ((targetingRaider || angryAtRaider) && isDefendingGolem(level, raid, golem)) {
+                golem.stopBeingAngry();
             }
         }
+    }
+
+    private static boolean isRaidRaider(PlayerRaidSavedData.RaidRecord raid, UUID entityId) {
+        return entityId != null
+                && (raid.raiderPlayers().contains(entityId) || raid.raiderVillagers().contains(entityId));
     }
 
     static void completeMercyIfResolved(MinecraftServer server, UUID raidId) {
