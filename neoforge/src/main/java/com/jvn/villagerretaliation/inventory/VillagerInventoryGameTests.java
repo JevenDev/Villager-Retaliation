@@ -1410,7 +1410,8 @@ public final class VillagerInventoryGameTests {
         ServerPlayer player = fakePlayer(level, "VrPersonalArmorSwap");
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         player.moveTo(villager.getX(), villager.getY(), villager.getZ());
-        HiredVillagerContractService.startHireContract(level, villager, player, 1, 0);
+        VillagerReputationManager.setReputation(
+                level, villager, player.getUUID(), VillagerRetaliationConfig.REVERED_THRESHOLD.get());
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(
                 villager,
                 EquipmentSlot.HEAD,
