@@ -292,7 +292,7 @@ Most major systems can be tuned or disabled, including retaliation, reputation, 
 ## Commands and Testing
 
 Operator commands are included for testing reputation, relationships, dialogue matching, datapack diagnostics, quests, villager profiles, and villager skills.
-All current commands use the `/vr` root. The older `/villagerretaliation` and `/duel` forms remain available temporarily for command-block and server-script compatibility, but new documentation and clickable prompts use `/vr`.
+All Villager Retaliation commands, tab-completion hints, and clickable prompts use the `/vr` root. Player commands live under `/vr party` and `/vr duel`; operator tools are organized under `/vr admin`.
 
 Useful examples:
 
