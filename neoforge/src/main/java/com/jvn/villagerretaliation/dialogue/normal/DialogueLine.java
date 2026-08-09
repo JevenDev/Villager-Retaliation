@@ -132,6 +132,9 @@ public record DialogueLine(
     }
 
     public boolean recentlyUsed(List<String> recentDialogueIds) {
+        if (!this.textKey.isBlank()) {
+            return recentDialogueIds.contains(this.id);
+        }
         if (recentDialogueIds.contains(this.id)) {
             return true;
         }
@@ -144,6 +147,9 @@ public record DialogueLine(
     }
 
     public boolean hasFreshVariant(List<String> recentDialogueIds) {
+        if (!this.textKey.isBlank()) {
+            return !recentDialogueIds.contains(this.id);
+        }
         if (this.lines.isEmpty() || recentDialogueIds.contains(this.id)) {
             return false;
         }

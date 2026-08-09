@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
 const metadataTagPattern = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
+const dialogueOptionIdMaxLength = 128;
+const dialogueOptionLabelMaxLength = 128;
 
 const roots = {
   dialogue: "neoforge/src/main/resources/data/villagerretaliation/dialogue/en_us",
@@ -1339,10 +1341,16 @@ function checkDialogue(file, data) {
   for (const [section, entries] of Object.entries(sections)) {
     for (const [index, entry] of entries.entries()) {
       checkDialogueMetadata(file, entry, `${section}[${index}]`);
+      checkOptionalInteger(file, entry, `${section}[${index}]`, "weight", { min: 0 });
     }
   }
 
   for (const [index, option] of sections.options.entries()) {
+    checkDialogueOptionNetworkBounds(
+      file,
+      `options[${index}]`,
+      stringValue(option?.id),
+      stringValue(option?.label));
     for (const field of legacyOptionFields) {
       if (Object.hasOwn(option, field)) {
         errors.push(`${relative(file)}: options[${index}] uses legacy migrated field "${field}"; use conditions instead for built-in data.`);
@@ -1361,6 +1369,15 @@ function checkDialogue(file, data) {
     checkResourceIdValues(file, line, `lines[${index}]`, ["story_structure", "story_structures"], "story structure id");
     checkResourceIdValues(file, line, `lines[${index}]`, ["story_biome", "story_biomes"], "story biome id");
     checkConditions(file, line, `lines[${index}]`);
+  }
+}
+
+function checkDialogueOptionNetworkBounds(file, location, id, label) {
+  if (id && id.length > dialogueOptionIdMaxLength) {
+    errors.push(`${relative(file)}: ${location}.id exceeds the ${dialogueOptionIdMaxLength}-character network limit.`);
+  }
+  if (label.length > dialogueOptionLabelMaxLength) {
+    errors.push(`${relative(file)}: ${location}.label exceeds the ${dialogueOptionLabelMaxLength}-character network limit.`);
   }
 }
 
@@ -4001,6 +4018,7 @@ function checkDialogueTree(file, data) {
     return;
   }
   const defaultQuestId = dialogueTreeDefaultQuestId(file, data);
+  const treeId = dialogueTreeIdForFile(file, data);
   checkUnknownObjectKeys(file, data, "root", dialogueTreeRootKeys);
   checkOptionalBoolean(file, data, "root", "replace");
   checkOptionalBoolean(file, data, "root", "remove");
@@ -4024,6 +4042,11 @@ function checkDialogueTree(file, data) {
       errors.push(`${relative(file)}: entries[${index}] must be an object.`);
       continue;
     }
+    checkDialogueOptionNetworkBounds(
+      file,
+      `entries[${index}]`,
+      `dt:${treeId}:${stringValue(entry.id) || `entry_${index}`}`,
+      stringValue(entry.label));
     checkUnknownObjectKeys(file, entry, `entries[${index}]`, dialogueTreeEntryKeys);
     checkDialogueTreeEntryFields(file, entry, `entries[${index}]`);
     warnInvisibleDialogueTreeEntry(file, entry, `entries[${index}]`);
@@ -4074,6 +4097,11 @@ function checkDialogueTree(file, data) {
           errors.push(`${relative(file)}: ${responseLocation} must be an object.`);
           continue;
         }
+        checkDialogueOptionNetworkBounds(
+          file,
+          responseLocation,
+          `dr:${treeId}:${stringValue(response.id) || `response_${responseIndex}`}`,
+          stringValue(response.label));
         checkUnknownObjectKeys(file, response, responseLocation, dialogueTreeResponseKeys);
         checkDialogueTreeResponseFields(file, response, responseLocation);
         warnInvisibleDialogueTreeResponse(file, response, responseLocation);

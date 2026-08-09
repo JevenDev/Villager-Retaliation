@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -231,13 +232,13 @@ public final class DialogueTreeResources {
         }
         JsonObject display = DatapackJsonReader.readObject(root, "display");
         ResourceLocation defaultQuestId = defaultQuestId(location, root, defaultQuestIdFromQuestPath(location, id));
-        Map<String, DialogueTreeDefinition.Node> nodes = readNodes(location, root, defaultQuestId);
+        Map<String, DialogueTreeDefinition.Node> nodes = readNodes(location, root, defaultQuestId, id);
         if (nodes.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one node.");
             return null;
         }
 
-        List<DialogueTreeDefinition.Entry> entries = readEntries(location, root, defaultQuestId);
+        List<DialogueTreeDefinition.Entry> entries = readEntries(location, root, defaultQuestId, id);
         if (entries.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one entry.");
             return null;
@@ -284,7 +285,8 @@ public final class DialogueTreeResources {
     private static List<DialogueTreeDefinition.Entry> readEntries(
             ResourceLocation location,
             JsonObject root,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            ResourceLocation treeId) {
         JsonElement element = root.get("entries");
         if (element == null || element.isJsonNull()) {
             return List.of();
@@ -300,10 +302,16 @@ public final class DialogueTreeResources {
             if (child.isJsonObject()) {
                 JsonObject entry = child.getAsJsonObject();
                 String context = "dialogue tree entries[" + index + "]";
+                String entryId = firstNonBlank(DatapackJsonReader.readString(entry, "id"), "entry_" + index);
+                String label = DatapackJsonReader.readString(entry, "label");
+                if (!networkSafeOption(location, context, DialogueTreeService.entryOptionId(treeId, entryId), label)) {
+                    index++;
+                    continue;
+                }
                 ResourceLocation entryQuestId = defaultQuestId(location, entry, defaultQuestId);
                 entries.add(new DialogueTreeDefinition.Entry(
-                        firstNonBlank(DatapackJsonReader.readString(entry, "id"), "entry_" + index),
-                        DatapackJsonReader.readString(entry, "label"),
+                        entryId,
+                        label,
                         DialogueEntryMetadata.read(location, "dialogue tree entry", context, entry),
                         DatapackJsonReader.readString(entry, "start"),
                         DatapackJsonReader.readEnum(entry, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
@@ -324,7 +332,8 @@ public final class DialogueTreeResources {
     private static Map<String, DialogueTreeDefinition.Node> readNodes(
             ResourceLocation location,
             JsonObject root,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            ResourceLocation treeId) {
         JsonElement element = root.get("nodes");
         if (element == null || element.isJsonNull()) {
             return Map.of();
@@ -337,7 +346,8 @@ public final class DialogueTreeResources {
         }
         for (Map.Entry<String, JsonElement> child : element.getAsJsonObject().entrySet()) {
             if (child.getValue().isJsonObject()) {
-                DialogueTreeDefinition.Node node = readNode(location, child.getKey(), child.getValue().getAsJsonObject(), defaultQuestId);
+                DialogueTreeDefinition.Node node = readNode(
+                        location, child.getKey(), child.getValue().getAsJsonObject(), defaultQuestId, treeId);
                 nodes.put(node.id(), node);
             }
         }
@@ -348,7 +358,8 @@ public final class DialogueTreeResources {
             ResourceLocation location,
             String fallbackId,
             JsonObject node,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            ResourceLocation treeId) {
         String id = firstNonBlank(DatapackJsonReader.readString(node, "id"), fallbackId);
         String context = "dialogue tree node \"" + id + "\"";
         ResourceLocation nodeQuestId = defaultQuestId(location, node, defaultQuestId);
@@ -357,7 +368,7 @@ public final class DialogueTreeResources {
                 DatapackJsonReader.readLines(node),
                 VillagerActionDefinition.readList(location, context, node, nodeQuestId),
                 DialogueCondition.readList(location, context, node, nodeQuestId),
-                readResponses(location, context, node, nodeQuestId),
+                readResponses(location, context, node, nodeQuestId, treeId),
                 DatapackJsonReader.readBoolean(node, "end", false)
         );
     }
@@ -366,7 +377,8 @@ public final class DialogueTreeResources {
             ResourceLocation location,
             String context,
             JsonObject node,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            ResourceLocation treeId) {
         JsonElement element = node.get("responses");
         if (element == null || element.isJsonNull()) {
             return List.of();
@@ -383,10 +395,15 @@ public final class DialogueTreeResources {
                 JsonObject response = child.getAsJsonObject();
                 String id = firstNonBlank(DatapackJsonReader.readString(response, "id"), "response_" + index);
                 String responseContext = context + ".responses[" + index + "]";
+                String label = DatapackJsonReader.readString(response, "label");
+                if (!networkSafeOption(location, responseContext, DialogueTreeService.responseOptionId(treeId, id), label)) {
+                    index++;
+                    continue;
+                }
                 ResourceLocation responseQuestId = defaultQuestId(location, response, defaultQuestId);
                 responses.add(new DialogueTreeDefinition.Response(
                         id,
-                        DatapackJsonReader.readString(response, "label"),
+                        label,
                         DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response),
                         DatapackJsonReader.readString(response, "next"),
                         DatapackJsonReader.readEnum(response, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
@@ -400,6 +417,30 @@ public final class DialogueTreeResources {
             index++;
         }
         return List.copyOf(responses);
+    }
+
+    private static boolean networkSafeOption(
+            ResourceLocation location,
+            String context,
+            String optionId,
+            String label) {
+        if (!DialogueOptionDefinition.isNetworkSafeId(optionId)) {
+            DatapackDiagnostics.warnSkippedEntry(
+                    location,
+                    "dialogue tree option",
+                    context,
+                    "generated id must be at most " + DialogueOptionDefinition.MAX_NETWORK_ID_LENGTH + " characters.");
+            return false;
+        }
+        if (!DialogueOptionDefinition.isNetworkSafeLabel(label)) {
+            DatapackDiagnostics.warnSkippedEntry(
+                    location,
+                    "dialogue tree option",
+                    context,
+                    "label must be at most " + DialogueOptionDefinition.MAX_NETWORK_LABEL_LENGTH + " characters.");
+            return false;
+        }
+        return true;
     }
 
     private static Set<VillagerProfession> readProfessions(ResourceLocation location, String context, JsonObject entry) {

@@ -213,35 +213,21 @@ public final class VillagerDialogueResources {
         cachedDialoguePools = CachedDialoguePools.empty();
     }
 
-    public static List<String> openingLines(DialogueContext context, DialogueDisposition disposition) {
-        List<ConversationLine> candidates = load(context.level().getServer(), context.locale()).openings().stream()
-                .filter(line -> line.matches(context, disposition))
-                .toList();
-        List<ConversationLine> itemSpecificCandidates = candidates.stream()
-                .filter(ConversationLine::playerItemSpecific)
-                .toList();
-        if (!itemSpecificCandidates.isEmpty()) {
-            candidates = itemSpecificCandidates;
-        }
-        List<ConversationLine> firstInteractionCandidates = candidates.stream()
-                .filter(ConversationLine::firstInteractionSpecific)
-                .toList();
-        if (!firstInteractionCandidates.isEmpty()) {
-            candidates = firstInteractionCandidates;
-        }
-        List<ConversationLine> dispositionSpecificCandidates = candidates.stream()
-                .filter(ConversationLine::dispositionSpecific)
-                .toList();
-        if (!dispositionSpecificCandidates.isEmpty()) {
-            candidates = dispositionSpecificCandidates;
-        }
-        return candidates.stream()
-                .map(line -> line.selectText(context))
-                .toList();
+    public static Optional<String> openingLine(DialogueContext context, DialogueDisposition disposition) {
+        return selectConversationLine(context, conversationCandidates(context, disposition, true));
     }
 
-    public static List<String> closingLines(DialogueContext context, DialogueDisposition disposition) {
-        List<ConversationLine> candidates = load(context.level().getServer(), context.locale()).closings().stream()
+    public static Optional<String> closingLine(DialogueContext context, DialogueDisposition disposition) {
+        return selectConversationLine(context, conversationCandidates(context, disposition, false));
+    }
+
+    private static List<ConversationLine> conversationCandidates(
+            DialogueContext context,
+            DialogueDisposition disposition,
+            boolean opening) {
+        List<ConversationLine> candidates = (opening
+                ? load(context.level().getServer(), context.locale()).openings()
+                : load(context.level().getServer(), context.locale()).closings()).stream()
                 .filter(line -> line.matches(context, disposition))
                 .toList();
         List<ConversationLine> itemSpecificCandidates = candidates.stream()
@@ -250,13 +236,35 @@ public final class VillagerDialogueResources {
         if (!itemSpecificCandidates.isEmpty()) {
             candidates = itemSpecificCandidates;
         }
+        if (opening) {
+            List<ConversationLine> firstInteractionCandidates = candidates.stream()
+                    .filter(ConversationLine::firstInteractionSpecific)
+                    .toList();
+            if (!firstInteractionCandidates.isEmpty()) {
+                candidates = firstInteractionCandidates;
+            }
+        }
         List<ConversationLine> dispositionSpecificCandidates = candidates.stream()
                 .filter(ConversationLine::dispositionSpecific)
                 .toList();
-        if (!dispositionSpecificCandidates.isEmpty()) {
-            candidates = dispositionSpecificCandidates;
+        return dispositionSpecificCandidates.isEmpty() ? candidates : dispositionSpecificCandidates;
+    }
+
+    private static Optional<String> selectConversationLine(
+            DialogueContext context,
+            List<ConversationLine> candidates) {
+        int totalWeight = candidates.stream().mapToInt(ConversationLine::weight).sum();
+        if (totalWeight <= 0) {
+            return Optional.empty();
         }
-        return candidates.stream().map(line -> line.selectText(context)).toList();
+        int selected = context.random().nextInt(totalWeight);
+        for (ConversationLine candidate : candidates) {
+            selected -= candidate.weight();
+            if (selected < 0) {
+                return Optional.of(candidate.selectText(context));
+            }
+        }
+        return Optional.empty();
     }
 
     public static Optional<String> message(DialogueContext context, String key) {
@@ -354,7 +362,7 @@ public final class VillagerDialogueResources {
         }
 
         int totalWeight = candidates.stream().mapToInt(PacifyLine::weight).sum();
-        int selected = context.random().nextInt(Math.max(1, totalWeight));
+        int selected = context.random().nextInt(totalWeight);
         for (PacifyLine candidate : candidates) {
             selected -= candidate.weight();
             if (selected < 0) {
@@ -378,10 +386,10 @@ public final class VillagerDialogueResources {
             return Optional.empty();
         }
 
-        int totalWeight = candidates.stream().mapToInt(line -> Math.max(1, line.weight())).sum();
-        int selected = context.random().nextInt(Math.max(1, totalWeight));
+        int totalWeight = candidates.stream().mapToInt(DialogueLine::weight).sum();
+        int selected = context.random().nextInt(totalWeight);
         for (DialogueLine candidate : candidates) {
-            selected -= Math.max(1, candidate.weight());
+            selected -= candidate.weight();
             if (selected < 0) {
                 return Optional.of(resolveGiftAdviceText(candidate.selectText(context.random()), giftItemName, giftSubject));
             }
@@ -802,7 +810,7 @@ public final class VillagerDialogueResources {
             String id = readString(entry, "id");
             Set<VillagerProfession> professions = readProfessions(location, context, entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
-            int weight = Math.max(1, readInt(entry, "weight", 10));
+            int weight = Math.max(0, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
             boolean showForBabies = readBoolean(entry, "show_for_babies", professions.isEmpty());
             String resolvedId = id.isBlank() ? fallbackId(location, "message", index) : id;
@@ -909,6 +917,24 @@ public final class VillagerDialogueResources {
             boolean requiresActiveSpecialOrders = readBoolean(entry, "requires_active_special_orders");
             int order = readInt(entry, "order", index);
             String resolvedId = id.isBlank() ? fallbackId(location, "option", index) : id;
+            if (!DialogueOptionDefinition.isNetworkSafeId(resolvedId)) {
+                DatapackDiagnostics.warnSkippedEntry(
+                        location,
+                        "dialogue option",
+                        context,
+                        "id must be between 1 and " + DialogueOptionDefinition.MAX_NETWORK_ID_LENGTH + " characters.");
+                index++;
+                continue;
+            }
+            if (!DialogueOptionDefinition.isNetworkSafeLabel(label)) {
+                DatapackDiagnostics.warnSkippedEntry(
+                        location,
+                        "dialogue option",
+                        context,
+                        "label must be at most " + DialogueOptionDefinition.MAX_NETWORK_LABEL_LENGTH + " characters.");
+                index++;
+                continue;
+            }
             putEntry(location, "dialogue option", resolvedId, new DialogueOptionDefinition(
                     resolvedId,
                     location,
@@ -1116,7 +1142,7 @@ public final class VillagerDialogueResources {
             Set<AllegianceState> villageAllegiances = EnumSet.noneOf(AllegianceState.class);
             villageAllegiances.addAll(readEnumSet(entry, "village_allegiance", AllegianceState.class));
             villageAllegiances.addAll(readEnumSet(entry, "village_allegiances", AllegianceState.class));
-            int weight = Math.max(1, readInt(entry, "weight", 10));
+            int weight = Math.max(0, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
             boolean showForBabies = readBoolean(entry, "show_for_babies", professions.isEmpty());
             boolean firstConversationOnly = readBoolean(entry, "first_conversation_only");
@@ -1174,7 +1200,7 @@ public final class VillagerDialogueResources {
             Set<VillagerProfession> professions = readProfessions(location, context, entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             Set<VillagerPacificationResult> outcomes = readEnumSet(entry, "outcomes", VillagerPacificationResult.class);
-            int weight = Math.max(1, readInt(entry, "weight", 10));
+            int weight = Math.max(0, readInt(entry, "weight", 10));
             String resolvedId = id.isBlank() ? fallbackId(location, "pacify", index) : id;
             putEntry(location, "pacify line", resolvedId, new PacifyLine(
                     resolvedId,
@@ -1595,7 +1621,8 @@ public final class VillagerDialogueResources {
     }
 
     private static String fallbackId(ResourceLocation location, String group, int index) {
-        return stablePath(location).replace('/', '_').replace(".json", "") + "_" + group + "_" + index;
+        return location.getNamespace() + "." + stablePath(location).replace('/', '_').replace(".json", "")
+                + "_" + group + "_" + index;
     }
 
     private static String stablePath(ResourceLocation location) {
@@ -1770,7 +1797,7 @@ public final class VillagerDialogueResources {
             if (this.firstVillageInteractionOnly && !context.firstVillageInteraction()) {
                 return false;
             }
-            return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
+            return this.weight > 0 && (this.dispositions.isEmpty() || this.dispositions.contains(disposition));
         }
 
         private boolean firstInteractionSpecific() {
@@ -1808,7 +1835,7 @@ public final class VillagerDialogueResources {
             if (!this.dispositions.isEmpty() && !this.dispositions.contains(VillagerDialogueService.moodFor(context))) {
                 return false;
             }
-            return this.outcomes.isEmpty() || this.outcomes.contains(result);
+            return this.weight > 0 && (this.outcomes.isEmpty() || this.outcomes.contains(result));
         }
     }
 
@@ -1827,7 +1854,7 @@ public final class VillagerDialogueResources {
         }
 
         private boolean matches(String key) {
-            return this.key.equals(key);
+            return this.weight > 0 && this.key.equals(key);
         }
 
         private boolean matches(DialogueContext context, String key, DialogueDisposition disposition) {

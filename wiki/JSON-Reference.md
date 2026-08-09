@@ -485,6 +485,7 @@ Use `action: "block"` when a dialogue choice or trigger should close a path imme
 ## Weights and Priority
 
 - `weight` changes the random odds between otherwise equivalent matches.
+- `weight: 0` disables normal lines, keyed messages, openings, closings, and pacify lines without removing their data.
 - `priority` is a stronger sort step used on normal dialogue lines before weighted selection.
 
 Example:

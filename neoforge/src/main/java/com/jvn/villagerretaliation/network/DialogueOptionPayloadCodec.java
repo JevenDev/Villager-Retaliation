@@ -14,20 +14,21 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 final class DialogueOptionPayloadCodec {
     private static final int MAX_DIALOGUE_OPTIONS = 128;
     private static final int MAX_STRING_LIST_VALUES = 128;
-    private static final int OPTION_ID_LENGTH = 128;
-    private static final int OPTION_LABEL_LENGTH = 128;
     private static final int STRING_VALUE_LENGTH = 128;
 
     private DialogueOptionPayloadCodec() {
     }
 
     static void writeDialogueOptions(RegistryFriendlyByteBuf buffer, List<DialogueOptionDefinition> options) {
-        List<DialogueOptionDefinition> safeOptions = options == null ? List.of() : options;
-        buffer.writeVarInt(Math.min(safeOptions.size(), MAX_DIALOGUE_OPTIONS));
-        for (int index = 0; index < Math.min(safeOptions.size(), MAX_DIALOGUE_OPTIONS); index++) {
-            DialogueOptionDefinition option = safeOptions.get(index);
-            buffer.writeUtf(option.id(), OPTION_ID_LENGTH);
-            buffer.writeUtf(option.label(), OPTION_LABEL_LENGTH);
+        List<DialogueOptionDefinition> safeOptions = (options == null ? List.<DialogueOptionDefinition>of() : options).stream()
+                .filter(option -> option != null && DialogueOptionDefinition.isNetworkSafeId(option.id()))
+                .limit(MAX_DIALOGUE_OPTIONS)
+                .toList();
+        buffer.writeVarInt(safeOptions.size());
+        for (DialogueOptionDefinition option : safeOptions) {
+            buffer.writeUtf(option.id(), DialogueOptionDefinition.MAX_NETWORK_ID_LENGTH);
+            buffer.writeUtf(DialogueOptionDefinition.networkSafeLabel(option.label()),
+                    DialogueOptionDefinition.MAX_NETWORK_LABEL_LENGTH);
             buffer.writeEnum(option.requestType());
             buffer.writeBoolean(option.forceCameraTowardsVillager());
             buffer.writeVarInt(option.order());
@@ -39,8 +40,8 @@ final class DialogueOptionPayloadCodec {
         int size = VillagerPayloads.readCollectionSize(buffer, MAX_DIALOGUE_OPTIONS, "dialogue options");
         List<DialogueOptionDefinition> options = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
-            String id = buffer.readUtf(OPTION_ID_LENGTH);
-            String label = buffer.readUtf(OPTION_LABEL_LENGTH);
+            String id = buffer.readUtf(DialogueOptionDefinition.MAX_NETWORK_ID_LENGTH);
+            String label = buffer.readUtf(DialogueOptionDefinition.MAX_NETWORK_LABEL_LENGTH);
             DialogueRequestType requestType = buffer.readEnum(DialogueRequestType.class);
             boolean forceCameraTowardsVillager = buffer.readBoolean();
             int order = buffer.readVarInt();
@@ -64,10 +65,16 @@ final class DialogueOptionPayloadCodec {
     }
 
     static void writeStringList(RegistryFriendlyByteBuf buffer, List<String> values) {
-        List<String> safeValues = values == null ? List.of() : values;
-        buffer.writeVarInt(Math.min(safeValues.size(), MAX_STRING_LIST_VALUES));
-        for (int index = 0; index < Math.min(safeValues.size(), MAX_STRING_LIST_VALUES); index++) {
-            buffer.writeUtf(safeValues.get(index), STRING_VALUE_LENGTH);
+        List<String> safeValues = (values == null ? List.<String>of() : values).stream()
+                .filter(value -> value != null)
+                .map(value -> value.length() <= STRING_VALUE_LENGTH
+                        ? value
+                        : value.substring(0, STRING_VALUE_LENGTH))
+                .limit(MAX_STRING_LIST_VALUES)
+                .toList();
+        buffer.writeVarInt(safeValues.size());
+        for (String value : safeValues) {
+            buffer.writeUtf(value, STRING_VALUE_LENGTH);
         }
     }
 

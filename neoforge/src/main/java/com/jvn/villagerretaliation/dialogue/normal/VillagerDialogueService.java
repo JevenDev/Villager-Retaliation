@@ -12,11 +12,9 @@ import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
-import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -152,12 +150,7 @@ public final class VillagerDialogueService {
     public static String selectOpeningGreeting(DialogueContext context) {
         if (OminousBannerRecognition.isDisplaying(context.player())) {
             DialogueDisposition disposition = moodFor(context);
-            return selectConversationLine(
-                    context,
-                    "hello",
-                    VillagerDialogueResources.openingLines(context, disposition),
-                    List.of()
-            );
+            return resolveText(VillagerDialogueResources.openingLine(context, disposition).orElse("hello"), context);
         }
         if (context.reputationLevel() != VillagerReputationLevel.FEARED) {
             Optional<String> giftMemory = selectOpeningGiftMemoryLine(context);
@@ -174,12 +167,7 @@ public final class VillagerDialogueService {
             }
         }
         DialogueDisposition disposition = moodFor(context);
-        return selectConversationLine(
-                context,
-                "hello",
-                VillagerDialogueResources.openingLines(context, disposition),
-                List.of()
-        );
+        return resolveText(VillagerDialogueResources.openingLine(context, disposition).orElse("hello"), context);
     }
 
     private static Optional<String> selectOpeningLongAbsenceLine(DialogueContext context) {
@@ -205,12 +193,7 @@ public final class VillagerDialogueService {
 
     public static String selectClosingGoodbye(DialogueContext context) {
         DialogueDisposition disposition = moodFor(context);
-        return selectConversationLine(
-                context,
-                "goodbye",
-                VillagerDialogueResources.closingLines(context, disposition),
-                List.of()
-        );
+        return resolveText(VillagerDialogueResources.closingLine(context, disposition).orElse("goodbye"), context);
     }
 
     public static String selectPacifyLine(DialogueContext context, VillagerPacificationResult result, PacifyPaymentOffer payment) {
@@ -1013,19 +996,6 @@ public final class VillagerDialogueService {
             return "someone here's";
         }
         return name.endsWith("s") || name.endsWith("S") ? name + "'" : name + "'s";
-    }
-
-    private static String selectConversationLine(
-            DialogueContext context,
-            String fallback,
-            List<String> globalLines,
-            List<String> professionLines) {
-        List<String> candidates = new ArrayList<>(globalLines);
-        candidates.addAll(professionLines);
-        if (candidates.isEmpty()) {
-            return resolveText(fallback, context);
-        }
-        return resolveText(ToucanRandom.choose(context.random(), candidates), context);
     }
 
     public record DialogueResult(
