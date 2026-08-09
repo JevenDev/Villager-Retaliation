@@ -390,7 +390,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int renderSlideOffsetY;
     private int renderContentOffsetX;
     private boolean keyboardOptionFocusVisible;
-    private int selectedInteractionMenuButton;
+    private InteractionMenuAction selectedInteractionMenuAction = InteractionMenuAction.TALK;
     private boolean keyboardInteractionMenuFocusVisible;
     private long animationStartMillis = -1L;
     private long interactionStateTransitionStartMillis = -1L;
@@ -2797,7 +2797,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void activateSelected() {
         if (usesRootIconMenu()) {
-            activateInteractionMenuButton(this.selectedInteractionMenuButton, true);
+            List<InteractionMenuButton> buttons = interactionMenuButtons();
+            activateInteractionMenuButton(buttons, selectedInteractionMenuButtonIndex(buttons), true);
             return;
         }
         if (this.state.selectedOption() < 0 || this.state.selectedOption() >= this.options.size()) {
@@ -3038,15 +3039,29 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void moveInteractionMenuSelection(int direction) {
-        int buttonCount = interactionMenuButtons().size();
+        List<InteractionMenuButton> buttons = interactionMenuButtons();
+        int buttonCount = buttons.size();
         if (buttonCount <= 0) {
             return;
         }
-        int selected = isValidInteractionMenuButton(this.selectedInteractionMenuButton, buttonCount)
-                ? this.selectedInteractionMenuButton
+        int selectedIndex = selectedInteractionMenuButtonIndex(buttons);
+        int selected = isValidInteractionMenuButton(selectedIndex, buttonCount)
+                ? selectedIndex
                 : 0;
-        this.selectedInteractionMenuButton = wrapIndex(selected + direction, buttonCount);
+        this.selectedInteractionMenuAction = buttons.get(wrapIndex(selected + direction, buttonCount)).id();
         this.keyboardInteractionMenuFocusVisible = true;
+    }
+
+    private int selectedInteractionMenuButtonIndex(List<InteractionMenuButton> buttons) {
+        if (this.selectedInteractionMenuAction == null) {
+            return -1;
+        }
+        for (int index = 0; index < buttons.size(); index++) {
+            if (buttons.get(index).id() == this.selectedInteractionMenuAction) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private static boolean isValidInteractionMenuButton(int index, int buttonCount) {
@@ -3531,8 +3546,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void renderInteractionMenuButtons(GuiGraphics graphics, int mouseX, int mouseY) {
         List<InteractionMenuButton> buttons = interactionMenuButtons();
-        int hovered = interactionMenuButtonAt(mouseX, mouseY);
-        int highlighted = highlightedInteractionMenuButton(hovered, buttons.size());
+        int hovered = interactionMenuButtonAt(mouseX, mouseY, buttons);
+        int selectedIndex = selectedInteractionMenuButtonIndex(buttons);
+        int highlighted = highlightedInteractionMenuButton(hovered, selectedIndex, buttons.size());
         int top = interactionMenuButtonTop();
         for (int index = 0; index < buttons.size(); index++) {
             InteractionMenuButton button = buttons.get(index);
@@ -3569,7 +3585,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             List<Component> tooltip = List.of(
                     Component.literal(button.title()).withStyle(ChatFormatting.YELLOW),
                     Component.literal(button.description()).withStyle(ChatFormatting.GRAY));
-            if (hovered < 0 && this.keyboardInteractionMenuFocusVisible && highlighted == this.selectedInteractionMenuButton) {
+            if (hovered < 0 && this.keyboardInteractionMenuFocusVisible && highlighted == selectedIndex) {
                 renderKeyboardInteractionMenuTooltip(graphics, tooltip, highlighted);
             } else {
                 renderInteractionTooltip(graphics, tooltip, mouseX, mouseY);
@@ -3600,12 +3616,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 buttonTop);
     }
 
-    private int highlightedInteractionMenuButton(int hovered, int buttonCount) {
+    private int highlightedInteractionMenuButton(int hovered, int selectedIndex, int buttonCount) {
         if (hovered >= 0 && hovered < buttonCount) {
             return hovered;
         }
-        if (this.keyboardInteractionMenuFocusVisible && isValidInteractionMenuButton(this.selectedInteractionMenuButton, buttonCount)) {
-            return this.selectedInteractionMenuButton;
+        if (this.keyboardInteractionMenuFocusVisible && isValidInteractionMenuButton(selectedIndex, buttonCount)) {
+            return selectedIndex;
         }
         return -1;
     }
@@ -3627,6 +3643,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 : this.stayingHere || canCommandStayHere();
         List<InteractionMenuButton> buttons = new ArrayList<>();
         buttons.add(new InteractionMenuButton(
+                InteractionMenuAction.TALK,
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TALK_TEXTURE,
                 translate("root.talk"),
                 translate("interaction_button.talk.description"),
@@ -3634,6 +3651,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 true));
         if (!this.baby && !this.recruitedPartyVillager && this.canTrade) {
             buttons.add(new InteractionMenuButton(
+                    InteractionMenuAction.TRADE,
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TRADE_TEXTURE,
                     translate("root.trade"),
                     translate("interaction_button.trade.description"),
@@ -3644,6 +3662,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 && hasQuestOptions()
                 && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
             buttons.add(new InteractionMenuButton(
+                    InteractionMenuAction.ADVENTURES,
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
                     translate("root.adventures"),
                     translate("interaction_button.adventures.description"),
@@ -3651,12 +3670,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     true));
         }
         buttons.add(new InteractionMenuButton(
+                InteractionMenuAction.PROFILE,
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_PROFILE_TEXTURE,
                 translate("root.profile"),
                 translate("interaction_button.profile.description"),
                 this::openProfilePage,
                 true));
         buttons.add(new InteractionMenuButton(
+                InteractionMenuAction.ALLEGIANCE,
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_HOME_TEXTURE,
                 translate("root.allegiance"),
                 translate("interaction_button.allegiance.description"),
@@ -3664,6 +3685,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 true));
         if (!this.baby && this.duelVisible) {
             buttons.add(new InteractionMenuButton(
+                    InteractionMenuAction.DUEL,
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_DUEL_TEXTURE,
                     translate("root.duel"),
                     translate("interaction_button.duel.description"),
@@ -3672,6 +3694,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         if (VillagerRetaliationServerConfigClient.villagerGiftsEnabled()) {
             buttons.add(new InteractionMenuButton(
+                    InteractionMenuAction.GIFT,
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_GIFT_TEXTURE,
                     translate("root.gift"),
                     translate("interaction_button.gift.description"),
@@ -3680,6 +3703,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         if (!this.baby) {
             buttons.add(new InteractionMenuButton(
+                    InteractionMenuAction.RECRUIT,
                     VillagerRetaliationClientAssets.PARTY_RECRUITMENT_PLACEHOLDER_ICON,
                     translate(this.recruitedPartyVillager
                             ? "root.party"
@@ -3695,6 +3719,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     hireJobAvailable));
         }
         buttons.add(new InteractionMenuButton(
+                InteractionMenuAction.INVENTORY,
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_INVENTORY_TEXTURE,
                 translate("root.inventory"),
                 translate(inventoryAvailable
@@ -3714,6 +3739,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private InteractionMenuButton followInteractionButton() {
         if (this.recruitedPartyVillager) {
             return new InteractionMenuButton(
+                    InteractionMenuAction.FOLLOW,
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_START_FOLLOW_TEXTURE,
                     translate(this.stayingHere ? "party.follow_me" : "party.following"),
                     translate("interaction_button.follow_me.description"),
@@ -3722,6 +3748,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         if (this.followingPlayer) {
             return new InteractionMenuButton(
+                    InteractionMenuAction.FOLLOW,
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STOP_FOLLOW_TEXTURE,
                     translate("recruit.stop_following"),
                     translate("interaction_button.stop_following.description"),
@@ -3729,6 +3756,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     true);
         }
         return new InteractionMenuButton(
+                InteractionMenuAction.FOLLOW,
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_START_FOLLOW_TEXTURE,
                 translate("recruit.follow_me"),
                 translate(canCommandFollow()
@@ -3741,6 +3769,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private InteractionMenuButton stayInteractionButton(boolean active) {
         if (this.recruitedPartyVillager) {
             return new InteractionMenuButton(
+                    InteractionMenuAction.STAY,
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STAY_TEXTURE,
                     translate(this.stayingHere ? "party.staying" : "party.stay_here"),
                     translate("interaction_button.stay_here.description"),
@@ -3749,6 +3778,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         if (this.stayingHere) {
             return new InteractionMenuButton(
+                    InteractionMenuAction.STAY,
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STAY_TEXTURE,
                     translate("interaction_button.move_freely"),
                     translate("interaction_button.move_freely.description"),
@@ -3756,6 +3786,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     true);
         }
         return new InteractionMenuButton(
+                InteractionMenuAction.STAY,
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STAY_TEXTURE,
                 translate("recruit.stay_here"),
                 translate(active
@@ -4676,6 +4707,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int interactionMenuButtonAt(double mouseX, double mouseY) {
+        return interactionMenuButtonAt(mouseX, mouseY, interactionMenuButtons());
+    }
+
+    private int interactionMenuButtonAt(
+            double mouseX,
+            double mouseY,
+            List<InteractionMenuButton> buttons) {
         if (!usesRootIconMenu()) {
             return -1;
         }
@@ -4684,7 +4722,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (mouseY < top || mouseY >= bottom) {
             return -1;
         }
-        int buttonCount = interactionMenuButtons().size();
+        int buttonCount = buttons.size();
         for (int index = 0; index < buttonCount; index++) {
             int left = interactionMenuButtonLeft(index, buttonCount);
             int right = left + INTERACTION_BUTTON_SIZE;
@@ -4696,22 +4734,30 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean tryActivateInteractionMenuButton(double mouseX, double mouseY) {
-        int hovered = interactionMenuButtonAt(mouseX, mouseY);
+        List<InteractionMenuButton> buttons = interactionMenuButtons();
+        int hovered = interactionMenuButtonAt(mouseX, mouseY, buttons);
         if (hovered < 0) {
             return false;
         }
-        activateInteractionMenuButton(hovered, false);
+        activateInteractionMenuButton(buttons, hovered, false);
         return true;
     }
 
     private void activateInteractionMenuButton(int index, boolean keyboardFocusVisible) {
         List<InteractionMenuButton> buttons = interactionMenuButtons();
+        activateInteractionMenuButton(buttons, index, keyboardFocusVisible);
+    }
+
+    private void activateInteractionMenuButton(
+            List<InteractionMenuButton> buttons,
+            int index,
+            boolean keyboardFocusVisible) {
         if (!isValidInteractionMenuButton(index, buttons.size())) {
             return;
         }
-        this.selectedInteractionMenuButton = index;
-        this.keyboardInteractionMenuFocusVisible = keyboardFocusVisible;
         InteractionMenuButton button = buttons.get(index);
+        this.selectedInteractionMenuAction = button.id();
+        this.keyboardInteractionMenuFocusVisible = keyboardFocusVisible;
         if (button.active()) {
             button.action().run();
         }
@@ -4739,9 +4785,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void updateInteractionMenuMouseSelection(int mouseX, int mouseY) {
-        int hovered = interactionMenuButtonAt(mouseX, mouseY);
+        List<InteractionMenuButton> buttons = interactionMenuButtons();
+        int hovered = interactionMenuButtonAt(mouseX, mouseY, buttons);
         if (hovered >= 0) {
-            this.selectedInteractionMenuButton = hovered;
+            this.selectedInteractionMenuAction = buttons.get(hovered).id();
             this.keyboardInteractionMenuFocusVisible = false;
         }
     }
@@ -5771,7 +5818,27 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private record InteractionMenuButton(ResourceLocation icon, String title, String description, Runnable action, boolean active) {
+    private enum InteractionMenuAction {
+        TALK,
+        TRADE,
+        ADVENTURES,
+        PROFILE,
+        ALLEGIANCE,
+        DUEL,
+        GIFT,
+        RECRUIT,
+        INVENTORY,
+        FOLLOW,
+        STAY
+    }
+
+    private record InteractionMenuButton(
+            InteractionMenuAction id,
+            ResourceLocation icon,
+            String title,
+            String description,
+            Runnable action,
+            boolean active) {
     }
 
     private record TopBackButtonBounds(int left, int right, int top, int bottom) {
