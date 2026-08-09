@@ -86,7 +86,6 @@ public final class VillagerDialogueRequestHandler {
         }
 
         DialogueRequestType requestType = dialogueOption.requestType();
-        VillagerDialogueService.DialogueResult result = selectDialogueResult(context, dialogueOption, interactionState);
         DialogueItemPayment itemPayment = dialogueOption.itemPayment();
         DialogueItemPaymentResult itemPaymentResult = DialogueItemPaymentResult.empty();
         if (!itemPayment.isEmpty()) {
@@ -103,6 +102,10 @@ public final class VillagerDialogueRequestHandler {
             }
             itemPaymentResult = paymentResult.get();
         }
+
+        // Selection may advance a dialogue tree, begin a quest, or claim a report.
+        // Commit the required payment before allowing any of those side effects.
+        VillagerDialogueService.DialogueResult result = selectDialogueResult(context, dialogueOption, interactionState);
 
         var reputationEffect = VillagerQuestService.isQuestDialogueOption(dialogueOption)
                 ? com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect.none(requestType)
