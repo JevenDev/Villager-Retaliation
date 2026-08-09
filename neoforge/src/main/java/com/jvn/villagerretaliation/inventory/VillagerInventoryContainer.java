@@ -570,11 +570,6 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private void setEquipment(EquipmentSlot slot, ItemStack stack) {
-        ItemStack previous = this.villager.getItemBySlot(slot);
-        if (shouldStoreDisplacedEquipment(slot, previous, stack)
-                && !storeDisplacedEquipment(previous)) {
-            return;
-        }
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, slot, stack);
         setChanged();
     }
