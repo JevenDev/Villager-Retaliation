@@ -28,6 +28,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 
@@ -285,10 +286,10 @@ public final class VillagerNaturalJobArmorResources {
         JsonObject items = readObject(armorSet, "items");
         JsonObject source = items == null ? armorSet : items;
         return new ArmorItems(
-                readItem(location, source, profileIndex, armorSetIndex, materialItems.feet(), "feet", "boots"),
-                readItem(location, source, profileIndex, armorSetIndex, materialItems.legs(), "legs", "leggings"),
-                readItem(location, source, profileIndex, armorSetIndex, materialItems.chest(), "chest", "chestplate"),
-                readItem(location, source, profileIndex, armorSetIndex, materialItems.head(), "head", "helmet")
+                readItem(location, source, profileIndex, armorSetIndex, EquipmentSlot.FEET, materialItems.feet(), "feet", "boots"),
+                readItem(location, source, profileIndex, armorSetIndex, EquipmentSlot.LEGS, materialItems.legs(), "legs", "leggings"),
+                readItem(location, source, profileIndex, armorSetIndex, EquipmentSlot.CHEST, materialItems.chest(), "chest", "chestplate"),
+                readItem(location, source, profileIndex, armorSetIndex, EquipmentSlot.HEAD, materialItems.head(), "head", "helmet")
         );
     }
 
@@ -297,6 +298,7 @@ public final class VillagerNaturalJobArmorResources {
             JsonObject entry,
             int profileIndex,
             int armorSetIndex,
+            EquipmentSlot expectedSlot,
             Item fallback,
             String... keys
     ) {
@@ -327,7 +329,21 @@ public final class VillagerNaturalJobArmorResources {
                     "Use a registered armor item id.");
             return fallback;
         }
+        if (!isArmorForSlot(item.get(), expectedSlot)) {
+            DatapackDiagnostics.warnInvalidResourceLocation(
+                    location,
+                    "natural job armor item",
+                    "profiles[" + profileIndex + "].armor_sets[" + armorSetIndex + "]",
+                    value,
+                    "Use an armor item that equips in the " + expectedSlot.getName() + " slot.");
+            return fallback;
+        }
         return item.get();
+    }
+
+    static boolean isArmorForSlot(Item item, EquipmentSlot expectedSlot) {
+        return item instanceof ArmorItem armorItem
+                && armorItem.getEquipmentSlot() == expectedSlot;
     }
 
     private static DifficultyWeights readWeights(JsonObject entry) {
