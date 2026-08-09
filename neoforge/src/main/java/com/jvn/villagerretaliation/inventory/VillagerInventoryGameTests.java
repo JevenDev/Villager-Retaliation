@@ -1445,7 +1445,7 @@ public final class VillagerInventoryGameTests {
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         inventory.setItem(0, helmet);
 
-        VillagerEquipmentDurability.hurtArmor(villager, villager.damageSources().generic(), 4.0F);
+        VillagerEquipmentDurability.hurtArmor(villager, villager.damageSources().mobAttack(villager), 4.0F);
 
         helper.assertTrue(villager.getItemBySlot(EquipmentSlot.HEAD).isEmpty(),
                 "the live job helmet should break");
