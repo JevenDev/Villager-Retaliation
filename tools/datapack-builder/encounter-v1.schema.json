@@ -3600,6 +3600,37 @@
                 "minLength": 1,
                 "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
               },
+              "components": {
+                "type": "object",
+                "title": "Data",
+                "additionalProperties": true
+              },
+              "durability": {
+                "type": "object",
+                "title": "Remaining item durability predicate",
+                "additionalProperties": false,
+                "minProperties": 1,
+                "properties": {
+                  "min": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "max": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              },
+              "custom_data": {
+                "type": "object",
+                "title": "Data",
+                "additionalProperties": true
+              },
+              "nbt": {
+                "type": "object",
+                "title": "Data",
+                "additionalProperties": true
+              },
               "count": {
                 "type": "integer",
                 "minimum": 1,
@@ -3659,6 +3690,26 @@
                         {
                           "required": [
                             "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "components"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "durability"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "custom_data"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "nbt"
                           ]
                         },
                         {
@@ -3732,6 +3783,26 @@
                         },
                         {
                           "required": [
+                            "components"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "durability"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "custom_data"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "nbt"
+                          ]
+                        },
+                        {
+                          "required": [
                             "count"
                           ]
                         },
@@ -3797,6 +3868,26 @@
                         },
                         {
                           "required": [
+                            "components"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "durability"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "custom_data"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "nbt"
+                          ]
+                        },
+                        {
+                          "required": [
                             "count"
                           ]
                         },
@@ -3854,6 +3945,26 @@
                         {
                           "required": [
                             "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "components"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "durability"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "custom_data"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "nbt"
                           ]
                         },
                         {
@@ -3919,6 +4030,26 @@
                         },
                         {
                           "required": [
+                            "components"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "durability"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "custom_data"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "nbt"
+                          ]
+                        },
+                        {
+                          "required": [
                             "count"
                           ]
                         }
@@ -3966,6 +4097,26 @@
                         {
                           "required": [
                             "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "components"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "durability"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "custom_data"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "nbt"
                           ]
                         },
                         {
@@ -4021,6 +4172,26 @@
                         {
                           "required": [
                             "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "components"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "durability"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "custom_data"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "nbt"
                           ]
                         },
                         {
@@ -4086,6 +4257,26 @@
                         {
                           "required": [
                             "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "components"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "durability"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "custom_data"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "nbt"
                           ]
                         },
                         {
@@ -4207,6 +4398,26 @@
                         {
                           "required": [
                             "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "components"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "durability"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "custom_data"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "nbt"
                           ]
                         },
                         {

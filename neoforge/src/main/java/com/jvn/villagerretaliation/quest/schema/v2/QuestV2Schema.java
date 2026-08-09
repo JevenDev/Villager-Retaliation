@@ -258,6 +258,10 @@ public final class QuestV2Schema {
         properties.add("search_radius", integer());
         properties.add("discovery_radius", integer());
         properties.add("proof_item", resourceLocation());
+        properties.add("proof_item_components", itemComponents());
+        properties.add("proof_item_durability", durability());
+        properties.add("proof_item_custom_data", openObject());
+        properties.add("proof_item_nbt", openObject());
         schema.add("properties", properties);
         return schema;
     }
@@ -346,6 +350,18 @@ public final class QuestV2Schema {
         for (String key : new String[]{"items", "item_tags", "entities", "entity_tags", "blocks", "block_tags", "memory_tags", "gift_reactions", "reputation_levels", "tags", "values", "stages", "choices"}) {
             properties.add(key, oneOrArray(string()));
         }
+        properties.add("components", itemComponents());
+        properties.add("durability", durability());
+        properties.add("min_durability", nonNegativeInteger());
+        properties.add("max_durability", nonNegativeInteger());
+        properties.add("min_durability_percent", nonNegativeInteger());
+        properties.add("max_durability_percent", nonNegativeInteger());
+        properties.add("enchantment", resourceLocation());
+        properties.add("enchantments", oneOrArray(resourceLocation()));
+        properties.add("min_enchantment_level", positiveInteger());
+        properties.add("max_enchantment_level", positiveInteger());
+        properties.add("custom_data", openObject());
+        properties.add("nbt", openObject());
         properties.add("gift_reaction", string());
         properties.add("reputation_level", string());
         properties.add("min", integer());
@@ -605,6 +621,20 @@ public final class QuestV2Schema {
     private static JsonObject openObject() {
         JsonObject schema = object();
         schema.addProperty("type", "object");
+        return schema;
+    }
+
+    private static JsonObject itemComponents() {
+        return objectMap(object());
+    }
+
+    private static JsonObject durability() {
+        JsonObject schema = typedObject();
+        schema.addProperty("minProperties", 1);
+        JsonObject properties = object();
+        properties.add("min", nonNegativeInteger());
+        properties.add("max", nonNegativeInteger());
+        schema.add("properties", properties);
         return schema;
     }
 

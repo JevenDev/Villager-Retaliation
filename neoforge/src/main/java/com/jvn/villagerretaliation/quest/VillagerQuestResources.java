@@ -28,6 +28,8 @@ import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +44,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ByteTag;
 import net.minecraft.nbt.CompoundTag;
@@ -384,10 +388,10 @@ public final class VillagerQuestResources {
                 continue;
             }
             if (resource.schemaVersion() == QuestSchemaVersion.V2) {
-                readV2File(resource, quests, compiledQuests, sources, dialogueCatalogs);
+                readV2File(server.registryAccess(), resource, quests, compiledQuests, sources, dialogueCatalogs);
                 continue;
             }
-            readFile(resource, quests, compiledQuests, sources, replacementMode);
+            readFile(server.registryAccess(), resource, quests, compiledQuests, sources, replacementMode);
         }
         validatePrerequisiteReferences(quests, compiledQuests);
         return new LoadedQuestCatalog(
@@ -418,6 +422,7 @@ public final class VillagerQuestResources {
     }
 
     private static void readFile(
+            HolderLookup.Provider registries,
             QuestResourceEnvelope resource,
             Map<ResourceLocation, QuestDefinition> quests,
             Map<ResourceLocation, CompiledQuest> compiledQuests,
@@ -445,7 +450,7 @@ public final class VillagerQuestResources {
             }
             return;
         }
-        QuestDefinition definition = readQuest(location, root, fallbackId);
+        QuestDefinition definition = readQuest(location, root, fallbackId, registries);
         if (definition == null) {
             return;
         }
@@ -458,6 +463,7 @@ public final class VillagerQuestResources {
     }
 
     private static void readV2File(
+            HolderLookup.Provider registries,
             QuestResourceEnvelope resource,
             Map<ResourceLocation, QuestDefinition> quests,
             Map<ResourceLocation, CompiledQuest> compiledQuests,
@@ -467,7 +473,7 @@ public final class VillagerQuestResources {
         if (parsed.isEmpty()) {
             return;
         }
-        Optional<CompiledQuest> compiled = QuestV2Compiler.compile(parsed.get(), resource);
+        Optional<CompiledQuest> compiled = QuestV2Compiler.compile(parsed.get(), resource, registries);
         if (compiled.isEmpty()) {
             return;
         }
@@ -497,10 +503,22 @@ public final class VillagerQuestResources {
     }
 
     static QuestDefinition readCanonicalQuest(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
-        return readQuest(location, root, fallbackId);
+        return readQuest(location, root, fallbackId, ItemStackPredicateParser.DEFAULT_REGISTRIES);
     }
 
-    private static QuestDefinition readQuest(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
+    static QuestDefinition readCanonicalQuest(
+            ResourceLocation location,
+            JsonObject root,
+            ResourceLocation fallbackId,
+            HolderLookup.Provider registries) {
+        return readQuest(location, root, fallbackId, registries);
+    }
+
+    private static QuestDefinition readQuest(
+            ResourceLocation location,
+            JsonObject root,
+            ResourceLocation fallbackId,
+            HolderLookup.Provider registries) {
         ResourceLocation id = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
         if (id == null) {
             return null;
@@ -513,6 +531,15 @@ public final class VillagerQuestResources {
         String descriptionKey = display == null ? "" : DatapackJsonReader.readString(display, "description_key");
         ResourceLocation parent = DatapackJsonReader.readResourceLocation(root, "parent").orElse(null);
         List<ResourceLocation> prerequisites = readQuestPrerequisites(root, parent);
+        QuestDefinition.Target target;
+        List<QuestDefinition.Objective> objectives;
+        try {
+            target = readTarget(root, registries);
+            objectives = readObjectives(location, root, id, registries);
+        } catch (IllegalArgumentException exception) {
+            DatapackDiagnostics.warnSkippedEntry(location, "quest", id.toString(), exception.getMessage());
+            return null;
+        }
 
         return new QuestDefinition(
                 id,
@@ -526,8 +553,8 @@ public final class VillagerQuestResources {
                 prerequisites,
                 DatapackJsonReader.readBoolean(root, "show_locked_adventure_hint", true),
                 readOffer(location, root, id),
-                readTarget(root),
-                readObjectives(location, root, id),
+                target,
+                objectives,
                 readRules(location, root, id),
                 readTracker(root),
                 DatapackJsonReader.readString(root, "entry_stage"),
@@ -628,7 +655,7 @@ public final class VillagerQuestResources {
         return Map.copyOf(skills);
     }
 
-    private static QuestDefinition.Target readTarget(JsonObject root) {
+    private static QuestDefinition.Target readTarget(JsonObject root, HolderLookup.Provider registries) {
         JsonObject target = DatapackJsonReader.readObject(root, "target");
         ResourceLocation structure = target == null
                 ? null
@@ -648,14 +675,32 @@ public final class VillagerQuestResources {
         ResourceLocation proofItem = target == null
                 ? null
                 : DatapackJsonReader.readResourceLocation(target, "proof_item").orElse(null);
+        ItemStackPredicate proofItemPredicate = proofItem == null
+                ? ItemStackPredicate.ANY
+                : ItemStackPredicateParser.parse(
+                        registries,
+                        target,
+                        BuiltInRegistries.ITEM.getOptional(proofItem).stream().toList(),
+                        "proof_item_components",
+                        "proof_item_durability",
+                        "proof_item_custom_data",
+                        "proof_item_nbt");
 
-        return new QuestDefinition.Target(structure, dimension, pieces, searchRadius, discoveryRadius, proofItem);
+        return new QuestDefinition.Target(
+                structure,
+                dimension,
+                pieces,
+                searchRadius,
+                discoveryRadius,
+                proofItem,
+                proofItemPredicate);
     }
 
     private static List<QuestDefinition.Objective> readObjectives(
             ResourceLocation location,
             JsonObject root,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            HolderLookup.Provider registries) {
         JsonElement element = root.get("objectives");
         if (element == null || element.isJsonNull()) {
             return List.of();
@@ -670,7 +715,7 @@ public final class VillagerQuestResources {
         int index = 0;
         for (JsonElement child : element.getAsJsonArray()) {
             if (child.isJsonObject()) {
-                readObjective(location, child.getAsJsonObject(), index, defaultQuestId).ifPresent(objective -> {
+                readObjective(location, child.getAsJsonObject(), index, defaultQuestId, registries).ifPresent(objective -> {
                     if (!objectiveIds.add(objective.id())) {
                         DatapackDiagnostics.warnInvalidDialogueCondition(
                                 location,
@@ -690,7 +735,8 @@ public final class VillagerQuestResources {
             ResourceLocation location,
             JsonObject entry,
             int index,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            HolderLookup.Provider registries) {
         String id = firstNonBlank(DatapackJsonReader.readString(entry, "id"), "objective_" + index);
         String context = "quest objective \"" + id + "\"";
         QuestDefinition.ObjectiveType type = QuestDefinition.ObjectiveType.bySerializedName(
@@ -746,7 +792,7 @@ public final class VillagerQuestResources {
                 criterionData,
                 DatapackJsonReader.readInt(entry, "count", 1),
                 DatapackJsonReader.readBoolean(entry, "consume", true),
-                readObjectiveItemRequirements(entry),
+                readObjectiveItemRequirements(entry, registries),
                 conditions,
                 readObjectiveTracker(entry));
         Optional<String> registryValidation = QuestObjectiveRegistry.validationError(objective);
@@ -1013,19 +1059,42 @@ public final class VillagerQuestResources {
         entityTags.add(tag);
     }
 
-    private static QuestDefinition.ItemRequirements readObjectiveItemRequirements(JsonObject entry) {
+    private static QuestDefinition.ItemRequirements readObjectiveItemRequirements(
+            JsonObject entry, HolderLookup.Provider registries) {
         OptionalInt minEnchantmentLevel = readOptionalInt(entry, "min_enchantment_level");
         OptionalInt maxEnchantmentLevel = readOptionalInt(entry, "max_enchantment_level");
         List<QuestDefinition.EnchantmentRequirement> enchantments = new ArrayList<>();
         readEnchantmentRequirements(entry.get("enchantment"), minEnchantmentLevel, maxEnchantmentLevel, enchantments);
         readEnchantmentRequirements(entry.get("enchantments"), minEnchantmentLevel, maxEnchantmentLevel, enchantments);
+        JsonObject predicateEntry = entry.deepCopy();
+        if (!predicateEntry.has("durability")
+                && (predicateEntry.has("min_durability") || predicateEntry.has("max_durability"))) {
+            JsonObject durability = new JsonObject();
+            if (predicateEntry.has("min_durability")) {
+                durability.add("min", predicateEntry.get("min_durability").deepCopy());
+            }
+            if (predicateEntry.has("max_durability")) {
+                durability.add("max", predicateEntry.get("max_durability").deepCopy());
+            }
+            predicateEntry.add("durability", durability);
+        }
+        ResourceLocation itemId = DatapackJsonReader.readResourceLocation(entry, "item").orElse(null);
+        ItemStackPredicate stackPredicate = ItemStackPredicateParser.parse(
+                registries,
+                predicateEntry,
+                itemId == null ? List.of() : BuiltInRegistries.ITEM.getOptional(itemId).stream().toList(),
+                "components",
+                "durability",
+                "custom_data",
+                "nbt");
         return new QuestDefinition.ItemRequirements(
                 enchantments,
                 readOptionalInt(entry, "min_durability"),
                 readOptionalInt(entry, "max_durability"),
                 readOptionalInt(entry, "min_durability_percent"),
                 readOptionalInt(entry, "max_durability_percent"),
-                readCustomData(entry));
+                readCustomData(entry),
+                stackPredicate);
     }
 
     private static void readEnchantmentRequirements(

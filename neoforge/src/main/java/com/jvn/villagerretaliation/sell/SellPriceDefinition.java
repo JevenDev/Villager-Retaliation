@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.sell;
 
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -12,7 +13,7 @@ public record SellPriceDefinition(
         Item item,
         List<SellRateDefinition> rates,
         ResourceLocation marketGroup,
-        SellStackPredicate stackPredicate,
+        ItemStackPredicate stackPredicate,
         int priority) {
 
     public static final int MAX_ITEM_COUNT = 256;
@@ -29,11 +30,11 @@ public record SellPriceDefinition(
             IntRange itemCount,
             IntRange currencyCount,
             ResourceLocation marketGroup) {
-        this(id, item, List.of(new SellRateDefinition(itemCount, currencyCount)), marketGroup, SellStackPredicate.ANY, 0);
+        this(id, item, List.of(new SellRateDefinition(itemCount, currencyCount)), marketGroup, ItemStackPredicate.ANY, 0);
     }
 
     public SellPriceDefinition(ResourceLocation id, Item item, List<SellRateDefinition> rates) {
-        this(id, item, rates, item == null ? null : BuiltInRegistries.ITEM.getKey(item), SellStackPredicate.ANY);
+        this(id, item, rates, item == null ? null : BuiltInRegistries.ITEM.getKey(item), ItemStackPredicate.ANY);
     }
 
     public SellPriceDefinition(
@@ -41,7 +42,7 @@ public record SellPriceDefinition(
             Item item,
             List<SellRateDefinition> rates,
             ResourceLocation marketGroup) {
-        this(id, item, rates, marketGroup, SellStackPredicate.ANY, 0);
+        this(id, item, rates, marketGroup, ItemStackPredicate.ANY, 0);
     }
 
     public SellPriceDefinition(
@@ -49,7 +50,7 @@ public record SellPriceDefinition(
             Item item,
             List<SellRateDefinition> rates,
             ResourceLocation marketGroup,
-            SellStackPredicate stackPredicate) {
+            ItemStackPredicate stackPredicate) {
         this(id, item, rates, marketGroup, stackPredicate, 0);
     }
 

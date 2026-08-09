@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.sell;
+package com.jvn.villagerretaliation.util.item;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -22,13 +23,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
-final class SellStackPredicateParser {
+public final class ItemStackPredicateParser {
     private static final Set<String> RANGE_KEYS = Set.of("min", "max");
+    public static final HolderLookup.Provider DEFAULT_REGISTRIES =
+            RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
 
-    private SellStackPredicateParser() {
+    private ItemStackPredicateParser() {
     }
 
-    static ParsedItem parseItemShorthand(HolderLookup.Provider registries, String selector) {
+    public static ParsedItem parseItemShorthand(HolderLookup.Provider registries, String selector) {
         StringReader reader = new StringReader(selector);
         ItemParser.ItemResult parsed;
         try {
@@ -45,7 +48,7 @@ final class SellStackPredicateParser {
         ArrayList<ComponentPredicate> predicates = new ArrayList<>();
         for (Map.Entry<DataComponentType<?>, Optional<?>> entry : parsed.components().entrySet()) {
             if (entry.getValue().isEmpty()) {
-                throw new IllegalArgumentException("sell-price item shorthand cannot require a removed component.");
+                throw new IllegalArgumentException("item shorthand cannot require a removed component.");
             }
             predicates.add(exactUnchecked(entry.getKey(), entry.getValue().get()));
         }
@@ -54,11 +57,61 @@ final class SellStackPredicateParser {
         return new ParsedItem(parsed.item().value(), List.copyOf(predicates));
     }
 
-    static SellStackPredicate parse(
+    public static ItemStackPredicate parse(
             HolderLookup.Provider registries,
             JsonObject root,
             List<ComponentPredicate> shorthand,
             List<Item> selectedItems) {
+        return parse(registries, root, shorthand, selectedItems, "components", "durability");
+    }
+
+    public static ItemStackPredicate parse(
+            HolderLookup.Provider registries,
+            JsonObject root,
+            List<Item> selectedItems,
+            String componentsKey,
+            String durabilityKey,
+            String... customDataKeys) {
+        JsonObject normalized = new JsonObject();
+        JsonElement components = root == null ? null : root.get(componentsKey);
+        if (components != null) {
+            normalized.add("components", components.deepCopy());
+        }
+        JsonElement durability = root == null || durabilityKey == null ? null : root.get(durabilityKey);
+        if (durability != null) {
+            normalized.add("durability", durability.deepCopy());
+        }
+        for (String key : customDataKeys == null ? new String[0] : customDataKeys) {
+            JsonElement customData = root == null ? null : root.get(key);
+            if (customData == null || customData.isJsonNull()) {
+                continue;
+            }
+            JsonObject componentObject;
+            if (!normalized.has("components")) {
+                componentObject = new JsonObject();
+                normalized.add("components", componentObject);
+            } else if (normalized.get("components").isJsonObject()) {
+                componentObject = normalized.getAsJsonObject("components");
+            } else {
+                throw new IllegalArgumentException(componentsKey + " must be an object keyed by registered component id.");
+            }
+            if (componentObject.has("minecraft:custom_data")) {
+                throw new IllegalArgumentException(
+                        "minecraft:custom_data cannot be specified in both " + componentsKey + " and " + key + ".");
+            }
+            componentObject.add("minecraft:custom_data", customData.deepCopy());
+        }
+        return parse(registries, normalized, List.of(), selectedItems, "components", "durability");
+    }
+
+    private static ItemStackPredicate parse(
+            HolderLookup.Provider registries,
+            JsonObject root,
+            List<ComponentPredicate> shorthand,
+            List<Item> selectedItems,
+            String componentsKey,
+            String durabilityKey) {
+        HolderLookup.Provider safeRegistries = registries == null ? DEFAULT_REGISTRIES : registries;
         ArrayList<ComponentPredicate> components =
                 new ArrayList<>(shorthand == null ? List.of() : shorthand);
         IdentityHashMap<DataComponentType<?>, ComponentPredicate> seen = new IdentityHashMap<>();
@@ -66,10 +119,10 @@ final class SellStackPredicateParser {
             seen.put(predicate.type(), predicate);
         }
 
-        JsonElement componentElement = root.get("components");
+        JsonElement componentElement = root == null ? null : root.get(componentsKey);
         if (componentElement != null && !componentElement.isJsonNull()) {
             if (!componentElement.isJsonObject()) {
-                throw new IllegalArgumentException("components must be an object keyed by registered component id.");
+                throw new IllegalArgumentException(componentsKey + " must be an object keyed by registered component id.");
             }
             List<Map.Entry<String, JsonElement>> entries =
                     new ArrayList<>(componentElement.getAsJsonObject().entrySet());
@@ -78,32 +131,36 @@ final class SellStackPredicateParser {
                 ResourceLocation id = ResourceLocation.tryParse(entry.getKey());
                 if (id == null) {
                     throw new IllegalArgumentException(
-                            "components contains invalid component id \"" + entry.getKey() + "\".");
+                            componentsKey + " contains invalid component id \"" + entry.getKey() + "\".");
                 }
                 DataComponentType<?> type =
                         BuiltInRegistries.DATA_COMPONENT_TYPE.getOptional(id).orElse(null);
                 if (type == null || type.isTransient()) {
                     throw new IllegalArgumentException(
-                            "components references unknown or non-persistent component \"" + id + "\".");
+                            componentsKey + " references unknown or non-persistent component \"" + id + "\".");
                 }
                 if (seen.containsKey(type)) {
                     throw new IllegalArgumentException(
-                            "component \"" + id + "\" is specified in both item shorthand and components.");
+                            "component \"" + id + "\" is specified more than once.");
                 }
-                ComponentPredicate predicate = parseComponent(registries, id, type, entry.getValue());
+                ComponentPredicate predicate = parseComponent(safeRegistries, id, type, entry.getValue());
                 seen.put(type, predicate);
                 components.add(predicate);
             }
         }
 
-        SellStackPredicate.DurabilityRange durability = parseDurability(root.get("durability"));
-        if (durability != null && !canMatchDurability(selectedItems, durability)) {
+        ItemStackPredicate.DurabilityRange durability = parseDurability(
+                root == null || durabilityKey == null ? null : root.get(durabilityKey),
+                durabilityKey == null ? "durability" : durabilityKey);
+        List<Item> safeItems = selectedItems == null ? List.of() : selectedItems;
+        if (durability != null && !safeItems.isEmpty() && !canMatchDurability(safeItems, durability)) {
             throw new IllegalArgumentException(
-                    "durability cannot match any damageable item selected by this definition.");
+                    (durabilityKey == null ? "durability" : durabilityKey)
+                            + " cannot match any damageable item selected by this definition.");
         }
         return components.isEmpty() && durability == null
-                ? SellStackPredicate.ANY
-                : new SellStackPredicate(components, durability);
+                ? ItemStackPredicate.ANY
+                : new ItemStackPredicate(components, durability);
     }
 
     private static ComponentPredicate parseComponent(
@@ -199,20 +256,20 @@ final class SellStackPredicateParser {
         return new ComponentPredicate.Exact(type, value);
     }
 
-    private static SellStackPredicate.DurabilityRange parseDurability(JsonElement element) {
+    private static ItemStackPredicate.DurabilityRange parseDurability(JsonElement element, String fieldName) {
         if (element == null || element.isJsonNull()) {
             return null;
         }
         if (!element.isJsonObject()) {
-            throw new IllegalArgumentException("durability must be an object with min and/or max.");
+            throw new IllegalArgumentException(fieldName + " must be an object with min and/or max.");
         }
         JsonObject object = element.getAsJsonObject();
         if (object.keySet().stream().anyMatch(key -> !RANGE_KEYS.contains(key))) {
-            throw new IllegalArgumentException("durability only supports min and max.");
+            throw new IllegalArgumentException(fieldName + " only supports min and max.");
         }
-        Integer min = object.has("min") ? readNonNegativeInteger(object.get("min"), "durability.min") : null;
-        Integer max = object.has("max") ? readNonNegativeInteger(object.get("max"), "durability.max") : null;
-        return new SellStackPredicate.DurabilityRange(min, max);
+        Integer min = object.has("min") ? readNonNegativeInteger(object.get("min"), fieldName + ".min") : null;
+        Integer max = object.has("max") ? readNonNegativeInteger(object.get("max"), fieldName + ".max") : null;
+        return new ItemStackPredicate.DurabilityRange(min, max);
     }
 
     private static int readNonNegativeInteger(JsonElement element, String fieldName) {
@@ -231,7 +288,7 @@ final class SellStackPredicateParser {
 
     private static boolean canMatchDurability(
             List<Item> selectedItems,
-            SellStackPredicate.DurabilityRange durability) {
+            ItemStackPredicate.DurabilityRange durability) {
         int requiredMinimum = durability.min() == null ? 0 : durability.min();
         for (Item item : selectedItems) {
             ItemStack stack = new ItemStack(item);
@@ -242,6 +299,6 @@ final class SellStackPredicateParser {
         return false;
     }
 
-    record ParsedItem(Item item, List<ComponentPredicate> components) {
+    public record ParsedItem(Item item, List<ComponentPredicate> components) {
     }
 }

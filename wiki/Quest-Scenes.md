@@ -254,10 +254,12 @@ Phases fire once by default. Setting `repeatable: true` also requires `repeat_in
 | `escort_actor` | `actor`, `point`, optional radii | The live bound actor reaches the named point. The actor's death fails the objective. |
 | `destroy_targets` | `actors` | Every listed bound scene actor dies. |
 | `defeat_leader` | `member` | The encounter member with that stable ID is defeated. |
-| `retrieve_item` | `item`, optional `count` | Captured participants collectively carry the item count. Items are inspected, not consumed. |
+| `retrieve_item` | `item`, optional `count`, stack predicate | Captured participants collectively carry the matching item count. Items are inspected, not consumed. |
 | `hold_areas` | `points`, `duration_ticks`, optional radii | Every named point is continuously occupied by at least one captured participant for the duration. Leaving any area resets the timer. |
 
 Durations are 1-1,728,000 ticks. Horizontal `radius` and `vertical_radius` default to 4 and are bounded to 1-64. Point references use resolved `spawn_points`. Actor references are checked against the owning scene at encounter preparation, item IDs are checked against the item registry, and leader IDs must name an authored member. Runtime evaluation uses only captured participants, bound actor UUIDs, resolved points, and encounter-owned entity UUIDs. It never performs an unbounded world scan.
+
+`retrieve_item` accepts `components`, `custom_data` (or `nbt`), and `durability` beside `item` and `count`. Only stacks satisfying the full predicate count. See [Item stack predicates](JSON-Reference.md#item-stack-predicates).
 
 ```json
 {

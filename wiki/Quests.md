@@ -584,6 +584,8 @@ This module records a route choice, moves to the chosen stage, and completes fro
 
 Root `target` fields define a structure search, discovery radius, and proof item. Stages can combine a visit objective with a proof-item objective.
 
+An `item_check` objective can add `components`, `durability`, `custom_data`, or `nbt` to its item selector. These combine with the existing enchantment and durability-percentage requirements. Root proof items use the prefixed forms `proof_item_components`, `proof_item_durability`, `proof_item_custom_data`, and `proof_item_nbt`. Progress counting, hand-in consumption, tracker synchronization, tooltips, slot highlights, held-item glow, and dropped-item outlines all use the same requirements; advanced objectives no longer highlight a nonmatching variant of the same item ID.
+
 ```json
 {
   "schema": "villagerretaliation:quest/v2",

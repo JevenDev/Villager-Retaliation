@@ -94,6 +94,9 @@ This means a profession-specific payment can safely override a general payment w
 | --- | --- | --- |
 | `item` or `items` | None | One or more exact item IDs. |
 | `tag` or `tags` | None | One or more item tags. |
+| `components` | None | Exact or numeric-range data-component requirements. |
+| `custom_data` or `nbt` | None | Recursive subset requirement for `minecraft:custom_data`. |
+| `durability` | None | Remaining-durability `min`, `max`, or both. |
 | `count` | None | Exact payment count. |
 | `min_count` | `1` | Lowest randomized payment count when `count` is absent. |
 | `max_count` | `min_count` | Highest randomized payment count. |
@@ -111,6 +114,8 @@ Pacification entries do not use explicit IDs, `replace`, or `remove`. All files 
 ## Reputation Can Still Refuse Payment
 
 A valid payment does not guarantee success. The server can block pacification when the player's reputation is too low. In that case, the item is not consumed and the matching pacify refusal line is shown.
+
+Stack predicates are checked before the payment rule is selected, so a named, damaged, or custom-data item can use a different price from the base item. See [Item stack predicates](JSON-Reference.md#item-stack-predicates).
 
 ## Dialogue Example
 

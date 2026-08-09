@@ -367,6 +367,10 @@ public final class QuestTrackerPresenter {
         addQuestItem(
                 items,
                 definition.target().proofItem(),
+                definition.target().proofItemPredicate(),
+                List.of(),
+                -1,
+                -1,
                 1,
                 itemLabeler,
                 currentItemCount(itemCounter, definition.target().proofItem()));
@@ -377,6 +381,15 @@ public final class QuestTrackerPresenter {
             addQuestItem(
                     items,
                     objective.item(),
+                    objective.itemRequirements().stackPredicate(),
+                    objective.itemRequirements().enchantments().stream()
+                            .map(requirement -> new QuestTrackerSyncPayload.QuestItemEnchantment(
+                                    requirement.id().toString(),
+                                    requirement.minLevel().orElse(-1),
+                                    requirement.maxLevel().orElse(-1)))
+                            .toList(),
+                    objective.itemRequirements().minDurabilityPercent().orElse(-1),
+                    objective.itemRequirements().maxDurabilityPercent().orElse(-1),
                     objective.count(),
                     itemLabeler,
                     objectiveCounter == null ? 0 : Math.max(0, objectiveCounter.applyAsInt(objective)));
@@ -582,22 +595,38 @@ public final class QuestTrackerPresenter {
     private static void addQuestItem(
             Map<String, QuestTrackerSyncPayload.QuestItem> items,
             ResourceLocation itemId,
+            com.jvn.villagerretaliation.util.item.ItemStackPredicate stackPredicate,
+            List<QuestTrackerSyncPayload.QuestItemEnchantment> enchantments,
+            int minDurabilityPercent,
+            int maxDurabilityPercent,
             int count,
             Function<ResourceLocation, String> itemLabeler,
             int currentCount) {
         if (itemId == null) {
             return;
         }
-        String key = itemId.toString();
+        com.jvn.villagerretaliation.util.item.ItemStackPredicate predicate = stackPredicate == null
+                ? com.jvn.villagerretaliation.util.item.ItemStackPredicate.ANY
+                : stackPredicate;
+        List<QuestTrackerSyncPayload.QuestItemEnchantment> safeEnchantments =
+                enchantments == null ? List.of() : List.copyOf(enchantments);
+        String key = itemId + "|" + predicate.hashCode() + "|" + safeEnchantments.hashCode()
+                + "|" + minDurabilityPercent + "|" + maxDurabilityPercent;
         QuestTrackerSyncPayload.QuestItem existing = items.get(key);
         if (existing == null || count > existing.count()) {
-            items.put(key, new QuestTrackerSyncPayload.QuestItem(key, itemLabeler.apply(itemId), count, currentCount));
+            items.put(key, new QuestTrackerSyncPayload.QuestItem(
+                    itemId.toString(), itemLabeler.apply(itemId), count, currentCount, predicate,
+                    safeEnchantments, minDurabilityPercent, maxDurabilityPercent));
         } else if (currentCount > existing.currentCount()) {
             items.put(key, new QuestTrackerSyncPayload.QuestItem(
                     existing.itemId(),
                     existing.label(),
                     existing.count(),
-                    currentCount));
+                    currentCount,
+                    existing.stackPredicate(),
+                    existing.enchantments(),
+                    existing.minDurabilityPercent(),
+                    existing.maxDurabilityPercent()));
         }
     }
 

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceLocation;
 
 public final class QuestV2Compiler {
@@ -32,6 +33,16 @@ public final class QuestV2Compiler {
     }
 
     public static Optional<CompiledQuest> compile(QuestV2Resource resource, QuestResourceEnvelope envelope) {
+        return compile(
+                resource,
+                envelope,
+                com.jvn.villagerretaliation.util.item.ItemStackPredicateParser.DEFAULT_REGISTRIES);
+    }
+
+    public static Optional<CompiledQuest> compile(
+            QuestV2Resource resource,
+            QuestResourceEnvelope envelope,
+            HolderLookup.Provider registries) {
         if (resource == null || envelope == null) {
             return Optional.empty();
         }
@@ -41,7 +52,8 @@ public final class QuestV2Compiler {
         QuestDefinition definition = VillagerQuestResources.readCanonicalQuest(
                 envelope.location(),
                 canonical.root(),
-                resource.id());
+                resource.id(),
+                registries);
         if (definition == null) {
             DatapackDiagnostics.warnQuestV2Validation(
                     envelope.location(),

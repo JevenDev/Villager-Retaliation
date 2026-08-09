@@ -5,9 +5,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import com.jvn.toucanlib.util.ToucanRandom;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -123,7 +126,8 @@ public final class VillagerGiftResources {
                 server,
                 GIFT_ROOT,
                 location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
-                (location, resource) -> readFile(location, resource, preferenceDefinitions, rewardRules));
+                (location, resource) -> readFile(
+                        server, location, resource, preferenceDefinitions, rewardRules));
         List<GiftPreferenceDefinition> orderedDefinitions = preferenceDefinitions.values().stream()
                 .sorted(java.util.Comparator.comparing(definition -> definition.id().toString()))
                 .toList();
@@ -131,6 +135,7 @@ public final class VillagerGiftResources {
     }
 
     private static void readFile(
+            MinecraftServer server,
             ResourceLocation location,
             Resource resource,
             Map<ResourceLocation, GiftPreferenceDefinition> preferenceDefinitions,
@@ -140,12 +145,13 @@ public final class VillagerGiftResources {
                 preferenceDefinitions.clear();
                 rewardRules.clear();
             }
-            readPreferenceDefinitions(location, root, preferenceDefinitions);
+            readPreferenceDefinitions(server, location, root, preferenceDefinitions);
             readRewardRules(location, root, rewardRules);
         });
     }
 
     private static void readPreferenceDefinitions(
+            MinecraftServer server,
             ResourceLocation location,
             JsonObject root,
             Map<ResourceLocation, GiftPreferenceDefinition> definitions) {
@@ -176,7 +182,15 @@ public final class VillagerGiftResources {
                     VillagerGiftPreferences.GiftReaction.class);
             Integer rating = readOptionalInt(entry, "rating").orElseGet(
                     () -> legacyReaction.map(VillagerGiftPreferences.GiftReaction::legacyRating).orElse(null));
-            List<GiftPreferenceDefinition.ItemMatcher> matchers = readItemMatchers(entry);
+            List<GiftPreferenceDefinition.ItemMatcher> matchers;
+            try {
+                matchers = readItemMatchers(server, entry);
+            } catch (IllegalArgumentException exception) {
+                DatapackDiagnostics.warnSkippedEntry(
+                        location, "gift preference", id.toString(), exception.getMessage());
+                index++;
+                continue;
+            }
             if (rating == null || rating < -3 || rating > 3 || matchers.isEmpty()) {
                 index++;
                 continue;
@@ -250,33 +264,66 @@ public final class VillagerGiftResources {
         }
     }
 
-    private static List<GiftPreferenceDefinition.ItemMatcher> readItemMatchers(JsonObject entry) {
-        List<GiftPreferenceDefinition.ItemMatcher> matchers = new ArrayList<>();
+    private static List<GiftPreferenceDefinition.ItemMatcher> readItemMatchers(
+            MinecraftServer server,
+            JsonObject entry) {
+        List<Item> exactItems = new ArrayList<>();
         for (String value : readStringList(entry, "item")) {
-            parseItemMatcher(value).ifPresent(matchers::add);
+            if (!value.startsWith("#")) {
+                readItemValue(value).ifPresent(exactItems::add);
+            }
         }
         for (String value : readStringList(entry, "items")) {
-            parseItemMatcher(value).ifPresent(matchers::add);
+            if (!value.startsWith("#")) {
+                readItemValue(value).ifPresent(exactItems::add);
+            }
+        }
+        ItemStackPredicate stackPredicate = ItemStackPredicateParser.parse(
+                server.registryAccess(),
+                entry,
+                exactItems,
+                "components",
+                "durability",
+                "custom_data",
+                "nbt");
+        List<GiftPreferenceDefinition.ItemMatcher> matchers = new ArrayList<>();
+        for (String value : readStringList(entry, "item")) {
+            parseItemMatcher(value, stackPredicate).ifPresent(matchers::add);
+        }
+        for (String value : readStringList(entry, "items")) {
+            parseItemMatcher(value, stackPredicate).ifPresent(matchers::add);
         }
         for (String value : readStringList(entry, "tag")) {
-            parseTagMatcher(value).ifPresent(matchers::add);
+            parseTagMatcher(value, stackPredicate).ifPresent(matchers::add);
         }
         for (String value : readStringList(entry, "tags")) {
-            parseTagMatcher(value).ifPresent(matchers::add);
+            parseTagMatcher(value, stackPredicate).ifPresent(matchers::add);
         }
         return matchers.stream().distinct().toList();
     }
 
-    private static Optional<GiftPreferenceDefinition.ItemMatcher> parseItemMatcher(String value) {
+    private static Optional<GiftPreferenceDefinition.ItemMatcher> parseItemMatcher(
+            String value,
+            ItemStackPredicate stackPredicate) {
         if (value.startsWith("#")) {
-            return parseTagMatcher(value.substring(1));
+            return parseTagMatcher(value.substring(1), stackPredicate);
         }
-        return parseResourceLocation(value, "minecraft").map(GiftPreferenceDefinition.ItemMatcher::item);
+        return parseResourceLocation(value, "minecraft")
+                .map(id -> GiftPreferenceDefinition.ItemMatcher.item(id, stackPredicate));
     }
 
-    private static Optional<GiftPreferenceDefinition.ItemMatcher> parseTagMatcher(String value) {
+    private static Optional<GiftPreferenceDefinition.ItemMatcher> parseTagMatcher(
+            String value,
+            ItemStackPredicate stackPredicate) {
         String normalized = value.startsWith("#") ? value.substring(1) : value;
-        return parseResourceLocation(normalized, "minecraft").map(GiftPreferenceDefinition.ItemMatcher::tag);
+        return parseResourceLocation(normalized, "minecraft")
+                .map(id -> GiftPreferenceDefinition.ItemMatcher.tag(id, stackPredicate));
+    }
+
+    private static Optional<Item> readItemValue(String value) {
+        return parseResourceLocation(value, "minecraft")
+                .flatMap(BuiltInRegistries.ITEM::getOptional)
+                .filter(item -> item != Items.AIR);
     }
 
     private static Optional<Item> readItem(JsonObject entry, String key) {

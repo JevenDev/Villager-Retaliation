@@ -857,7 +857,7 @@ const questV2IdPattern = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
 const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]);
 const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "show_locked_adventure_hint", "author", "version", "revision", "migration"]);
 const questV2MigrationKeys = new Set(["active_policy", "on_active_change", "stage_aliases", "objective_aliases"]);
-const questV2TargetKeys = new Set(["structure", "dimension", "pieces", "search_radius", "discovery_radius", "proof_item"]);
+const questV2TargetKeys = new Set(["structure", "dimension", "pieces", "search_radius", "discovery_radius", "proof_item", "proof_item_components", "proof_item_durability", "proof_item_custom_data", "proof_item_nbt"]);
 const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "death_protection", "filters", "data"]);
 const questV2ActiveStateKeys = new Set(["conditions", "hide_when_unmet", "pause_progress_when_unmet"]);
 const questV2ExpirationKeys = new Set(["after_ticks", "conditions", "consume", "allow_repickup", "notify"]);
@@ -868,7 +868,7 @@ const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stag
 const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "completion", "completion_mode", "completion_count", "bonuses", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
 const questV2CompletionKeys = new Set(["mode", "count"]);
 const questV2BonusKeys = new Set(["id", "when", "mode", "count", "actions"]);
-const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "criterion", "match", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
+const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "criterion", "match", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "components", "durability", "min_durability", "max_durability", "min_durability_percent", "max_durability_percent", "enchantment", "enchantments", "min_enchantment_level", "max_enchantment_level", "custom_data", "nbt", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
 const questV2TrackerKeys = new Set(["text", "text_key", "complete_text", "complete_text_key", "show_progress", "progress", "metadata"]);
 const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
 const questV2SceneKeys = new Set(["id", "slot", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "external", "external_scene", "external_entry", "scene_ref", "metadata"]);
@@ -1649,6 +1649,9 @@ function checkQuestV2Target(file, target, pointer, location) {
   checkQuestV2StringArray(file, target.pieces, `${pointer}/pieces`, `${location}.pieces`, "target piece");
   checkQuestV2OptionalInteger(file, target, pointer, location, "search_radius", { min: 1 });
   checkQuestV2OptionalInteger(file, target, pointer, location, "discovery_radius", { min: 1 });
+  for (const key of ["proof_item_components", "proof_item_durability", "proof_item_custom_data", "proof_item_nbt"]) {
+    checkQuestV2OptionalObject(file, target[key], `${pointer}/${key}`, `${location}.${key}`, key);
+  }
 }
 
 function checkQuestV2Availability(file, availability, pointer, location, questId) {
@@ -1945,6 +1948,9 @@ function checkQuestV2Objectives(file, objectives, pointer, location, questId) {
     checkQuestV2Tracker(file, objective.tracker, `${objectivePointer}/tracker`, `${objectiveLocation}.tracker`);
     checkQuestV2OptionalObject(file, objective.target, `${objectivePointer}/target`, `${objectiveLocation}.target`, "objective target");
     checkQuestV2OptionalObject(file, objective.location, `${objectivePointer}/location`, `${objectiveLocation}.location`, "objective location");
+    for (const key of ["components", "durability", "custom_data", "nbt"]) {
+      checkQuestV2OptionalObject(file, objective[key], `${objectivePointer}/${key}`, `${objectiveLocation}.${key}`, key);
+    }
     checkQuestV2Conditions(file, objective.conditions, `${objectivePointer}/conditions`, `${objectiveLocation}.conditions`, questId, "quest module v2 objective");
     checkQuestV2Ui(file, objective.ui, `${objectivePointer}/ui`, `${objectiveLocation}.ui`);
     checkQuestV2ObjectiveRuntimeRequirements(file, objective, objectivePointer, objectiveLocation, type);
@@ -3057,7 +3063,11 @@ function checkQuestTarget(file, target, location) {
     "pieces",
     "search_radius",
     "discovery_radius",
-    "proof_item"
+    "proof_item",
+    "proof_item_components",
+    "proof_item_durability",
+    "proof_item_custom_data",
+    "proof_item_nbt"
   ]));
   checkOptionalString(file, target, location, "structure");
   checkOptionalString(file, target, location, "dimension");
@@ -3066,6 +3076,12 @@ function checkQuestTarget(file, target, location) {
   checkOptionalInteger(file, target, location, "search_radius", { min: 1 });
   checkOptionalInteger(file, target, location, "discovery_radius", { min: 1 });
   checkOptionalString(file, target, location, "proof_item");
+  for (const key of ["proof_item_components", "proof_item_durability", "proof_item_custom_data", "proof_item_nbt"]) {
+    const value = target[key];
+    if (value !== undefined && (!value || typeof value !== "object" || Array.isArray(value))) {
+      errors.push(`${relative(file)}: ${location}.${key} must be an object.`);
+    }
+  }
 }
 
 function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
@@ -3153,6 +3169,8 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "max_durability",
       "min_durability_percent",
       "max_durability_percent",
+      "components",
+      "durability",
       "custom_data",
       "nbt",
       "conditions",
@@ -3292,7 +3310,7 @@ function checkQuestObjectiveItemRequirements(file, objective, location) {
   for (const key of ["enchantment", "enchantments"]) {
     checkQuestObjectiveEnchantments(file, objective[key], `${location}.${key}`);
   }
-  for (const key of ["custom_data", "nbt"]) {
+  for (const key of ["components", "durability", "custom_data", "nbt"]) {
     const value = objective[key];
     if (value !== undefined && (!value || typeof value !== "object" || Array.isArray(value))) {
       errors.push(`${relative(file)}: ${location}.${key} must be an object.`);

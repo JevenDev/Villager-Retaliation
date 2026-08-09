@@ -67,7 +67,11 @@ public final class QuestV2Parser {
             "pieces",
             "search_radius",
             "discovery_radius",
-            "proof_item");
+            "proof_item",
+            "proof_item_components",
+            "proof_item_durability",
+            "proof_item_custom_data",
+            "proof_item_nbt");
     private static final Set<String> PROVIDER_KEYS = Set.of(
             "type",
             "capabilities",
@@ -175,6 +179,18 @@ public final class QuestV2Parser {
             "items",
             "item_tag",
             "item_tags",
+            "components",
+            "durability",
+            "min_durability",
+            "max_durability",
+            "min_durability_percent",
+            "max_durability_percent",
+            "enchantment",
+            "enchantments",
+            "min_enchantment_level",
+            "max_enchantment_level",
+            "custom_data",
+            "nbt",
             "entity",
             "entities",
             "entity_tag",
@@ -411,6 +427,8 @@ public final class QuestV2Parser {
         readResourceLocation(validator, object, pointer + "/structure", "structure");
         readResourceLocation(validator, object, pointer + "/dimension", "dimension");
         readResourceLocation(validator, object, pointer + "/proof_item", "proof_item");
+        validateItemPredicateObjects(validator, object, pointer, "proof_item_components", "proof_item_durability",
+                "proof_item_custom_data", "proof_item_nbt");
         return object;
     }
 
@@ -608,6 +626,8 @@ public final class QuestV2Parser {
                         Set.of(type));
             }
             readConditionObjects(validator, object.get("conditions"), objectivePointer + "/conditions");
+            validateItemPredicateObjects(
+                    validator, object, objectivePointer, "components", "durability", "custom_data", "nbt");
             objectives.add(new QuestV2Resource.Objective(
                     id,
                     QuestObjectiveRegistry.canonicalTypeId(type),
@@ -615,6 +635,21 @@ public final class QuestV2Parser {
                     object));
         }
         return List.copyOf(objectives);
+    }
+
+    private static void validateItemPredicateObjects(
+            Validator validator,
+            JsonObject object,
+            String pointer,
+            String componentsKey,
+            String durabilityKey,
+            String customDataKey,
+            String nbtKey) {
+        for (String key : List.of(componentsKey, durabilityKey, customDataKey, nbtKey)) {
+            if (object.has(key)) {
+                validator.object(object.get(key), pointer + "/" + key, key, false);
+            }
+        }
     }
 
     private static Map<String, QuestV2Resource.DialogueSlot> readDialogueSlots(

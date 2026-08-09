@@ -108,6 +108,7 @@ final class DialogueOptionPayloadCodec {
                 GiftPreferenceView.Matcher matcher = preference.matchers().get(matcherIndex);
                 buffer.writeEnum(matcher.source());
                 buffer.writeResourceLocation(matcher.value());
+                matcher.stackPredicate().write(buffer);
             }
         }
     }
@@ -127,7 +128,8 @@ final class DialogueOptionPayloadCodec {
             for (int matcherIndex = 0; matcherIndex < matcherCount; matcherIndex++) {
                 matchers.add(new GiftPreferenceView.Matcher(
                         buffer.readEnum(GiftPreferenceDefinition.MatchSource.class),
-                        buffer.readResourceLocation()));
+                        buffer.readResourceLocation(),
+                        com.jvn.villagerretaliation.util.item.ItemStackPredicate.read(buffer)));
             }
             preferences.add(new GiftPreferenceView(
                     categoryId,

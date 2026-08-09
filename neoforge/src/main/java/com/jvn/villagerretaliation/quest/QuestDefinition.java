@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -201,14 +202,27 @@ public record QuestDefinition(
             List<String> pieces,
             int searchRadius,
             int discoveryRadius,
-            ResourceLocation proofItem
+            ResourceLocation proofItem,
+            ItemStackPredicate proofItemPredicate
     ) {
-        public static final Target EMPTY = new Target(null, null, List.of(), 128, 128, null);
+        public static final Target EMPTY =
+                new Target(null, null, List.of(), 128, 128, null, ItemStackPredicate.ANY);
+
+        public Target(
+                ResourceLocation structure,
+                ResourceKey<Level> dimension,
+                List<String> pieces,
+                int searchRadius,
+                int discoveryRadius,
+                ResourceLocation proofItem) {
+            this(structure, dimension, pieces, searchRadius, discoveryRadius, proofItem, ItemStackPredicate.ANY);
+        }
 
         public Target {
             pieces = pieces == null ? List.of() : List.copyOf(pieces);
             searchRadius = Math.max(1, searchRadius);
             discoveryRadius = Math.max(1, discoveryRadius);
+            proofItemPredicate = proofItemPredicate == null ? ItemStackPredicate.ANY : proofItemPredicate;
         }
 
         public boolean hasStructureTarget() {
@@ -347,7 +361,8 @@ public record QuestDefinition(
             OptionalInt maxDurability,
             OptionalInt minDurabilityPercent,
             OptionalInt maxDurabilityPercent,
-            CompoundTag customData
+            CompoundTag customData,
+            ItemStackPredicate stackPredicate
     ) {
         public static final ItemRequirements EMPTY = new ItemRequirements(
                 List.of(),
@@ -355,7 +370,25 @@ public record QuestDefinition(
                 OptionalInt.empty(),
                 OptionalInt.empty(),
                 OptionalInt.empty(),
-                null);
+                null,
+                ItemStackPredicate.ANY);
+
+        public ItemRequirements(
+                List<EnchantmentRequirement> enchantments,
+                OptionalInt minDurability,
+                OptionalInt maxDurability,
+                OptionalInt minDurabilityPercent,
+                OptionalInt maxDurabilityPercent,
+                CompoundTag customData) {
+            this(
+                    enchantments,
+                    minDurability,
+                    maxDurability,
+                    minDurabilityPercent,
+                    maxDurabilityPercent,
+                    customData,
+                    ItemStackPredicate.ANY);
+        }
 
         public ItemRequirements {
             enchantments = enchantments == null ? List.of() : List.copyOf(enchantments);
@@ -364,6 +397,7 @@ public record QuestDefinition(
             minDurabilityPercent = minDurabilityPercent == null ? OptionalInt.empty() : minDurabilityPercent;
             maxDurabilityPercent = maxDurabilityPercent == null ? OptionalInt.empty() : maxDurabilityPercent;
             customData = customData == null ? null : customData.copy();
+            stackPredicate = stackPredicate == null ? ItemStackPredicate.ANY : stackPredicate;
         }
 
         public boolean hasCustomData() {

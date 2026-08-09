@@ -95,7 +95,49 @@ public final class SceneSchema {
     private static JsonObject triggerChoice(String type,String requiredField,String... forbidden){JsonObject choice=requiredWithoutAny(new String[]{"type",requiredField},forbidden);JsonObject properties=new JsonObject();properties.add("type",constant(type));choice.add("properties",properties);return choice;}
 
     private static JsonObject completionObjectives(){JsonObject composition=object("Composable encounter completion objectives");composition.addProperty("additionalProperties",false);composition.add("required",strings("objectives"));JsonObject properties=new JsonObject();properties.add("mode",enumValues(EncounterTemplate.ObjectiveMode.values()));JsonObject objectives=array(encounterObjective(),1);objectives.addProperty("maxItems",32);properties.add("objectives",objectives);composition.add("properties",properties);return composition;}
-    private static JsonObject encounterObjective(){JsonObject objective=object("Durable encounter completion objective");objective.addProperty("additionalProperties",false);JsonObject properties=new JsonObject();properties.add("id",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("type",enumValues(EncounterTemplate.ObjectiveType.values()));properties.add("duration_ticks",boundedInteger(1,1728000));properties.add("actor",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("point",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));JsonObject actors=array(patternedText("^[a-z][a-z0-9_.-]{0,63}$"),1);actors.addProperty("maxItems",32);actors.addProperty("uniqueItems",true);properties.add("actors",actors);JsonObject points=array(patternedText("^[a-z][a-z0-9_.-]{0,63}$"),1);points.addProperty("maxItems",16);points.addProperty("uniqueItems",true);properties.add("points",points);properties.add("member",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("item",resourceLocation());properties.add("count",boundedInteger(1,64));properties.add("radius",boundedInteger(1,64));properties.add("vertical_radius",boundedInteger(1,64));objective.add("properties",properties);String[] all={"duration_ticks","actor","point","actors","points","member","item","count","radius","vertical_radius"};JsonArray choices=new JsonArray();choices.add(objectiveChoice("all_defeated",new String[]{},all));choices.add(objectiveChoice("all_gone",new String[]{},all));choices.add(objectiveChoice("survive_duration",new String[]{"duration_ticks"},"actor","point","actors","points","member","item","count","radius","vertical_radius"));choices.add(objectiveChoice("protect_actor",new String[]{"actor","duration_ticks"},"point","actors","points","member","item","count","radius","vertical_radius"));choices.add(objectiveChoice("prevent_entry",new String[]{"point","duration_ticks"},"actor","actors","points","member","item","count"));choices.add(objectiveChoice("escort_actor",new String[]{"actor","point"},"duration_ticks","actors","points","member","item","count"));choices.add(objectiveChoice("destroy_targets",new String[]{"actors"},"duration_ticks","actor","point","points","member","item","count","radius","vertical_radius"));choices.add(objectiveChoice("defeat_leader",new String[]{"member"},"duration_ticks","actor","point","actors","points","item","count","radius","vertical_radius"));choices.add(objectiveChoice("retrieve_item",new String[]{"item"},"duration_ticks","actor","point","actors","points","member","radius","vertical_radius"));choices.add(objectiveChoice("hold_areas",new String[]{"points","duration_ticks"},"actor","point","actors","member","item","count"));objective.add("oneOf",choices);return objective;}
+    private static JsonObject encounterObjective() {
+        JsonObject objective = object("Durable encounter completion objective");
+        objective.addProperty("additionalProperties", false);
+        JsonObject properties = new JsonObject();
+        properties.add("id", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
+        properties.add("type", enumValues(EncounterTemplate.ObjectiveType.values()));
+        properties.add("duration_ticks", boundedInteger(1, 1728000));
+        properties.add("actor", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
+        properties.add("point", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
+        JsonObject actors = array(patternedText("^[a-z][a-z0-9_.-]{0,63}$"), 1);
+        actors.addProperty("maxItems", 32);
+        actors.addProperty("uniqueItems", true);
+        properties.add("actors", actors);
+        JsonObject points = array(patternedText("^[a-z][a-z0-9_.-]{0,63}$"), 1);
+        points.addProperty("maxItems", 16);
+        points.addProperty("uniqueItems", true);
+        properties.add("points", points);
+        properties.add("member", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
+        properties.add("item", resourceLocation());
+        properties.add("components", map());
+        properties.add("durability", itemDurability());
+        properties.add("custom_data", map());
+        properties.add("nbt", map());
+        properties.add("count", boundedInteger(1, 64));
+        properties.add("radius", boundedInteger(1, 64));
+        properties.add("vertical_radius", boundedInteger(1, 64));
+        objective.add("properties", properties);
+        String[] all = {"duration_ticks", "actor", "point", "actors", "points", "member", "item", "components",
+                "durability", "custom_data", "nbt", "count", "radius", "vertical_radius"};
+        JsonArray choices = new JsonArray();
+        choices.add(objectiveChoice("all_defeated", new String[]{}, all));
+        choices.add(objectiveChoice("all_gone", new String[]{}, all));
+        choices.add(objectiveChoice("survive_duration", new String[]{"duration_ticks"}, "actor", "point", "actors", "points", "member", "item", "components", "durability", "custom_data", "nbt", "count", "radius", "vertical_radius"));
+        choices.add(objectiveChoice("protect_actor", new String[]{"actor", "duration_ticks"}, "point", "actors", "points", "member", "item", "components", "durability", "custom_data", "nbt", "count", "radius", "vertical_radius"));
+        choices.add(objectiveChoice("prevent_entry", new String[]{"point", "duration_ticks"}, "actor", "actors", "points", "member", "item", "components", "durability", "custom_data", "nbt", "count"));
+        choices.add(objectiveChoice("escort_actor", new String[]{"actor", "point"}, "duration_ticks", "actors", "points", "member", "item", "components", "durability", "custom_data", "nbt", "count"));
+        choices.add(objectiveChoice("destroy_targets", new String[]{"actors"}, "duration_ticks", "actor", "point", "points", "member", "item", "components", "durability", "custom_data", "nbt", "count", "radius", "vertical_radius"));
+        choices.add(objectiveChoice("defeat_leader", new String[]{"member"}, "duration_ticks", "actor", "point", "actors", "points", "item", "components", "durability", "custom_data", "nbt", "count", "radius", "vertical_radius"));
+        choices.add(objectiveChoice("retrieve_item", new String[]{"item"}, "duration_ticks", "actor", "point", "actors", "points", "member", "radius", "vertical_radius"));
+        choices.add(objectiveChoice("hold_areas", new String[]{"points", "duration_ticks"}, "actor", "point", "actors", "member", "item", "components", "durability", "custom_data", "nbt", "count"));
+        objective.add("oneOf", choices);
+        return objective;
+    }
     private static JsonObject objectiveChoice(String type,String[] fields,String... forbidden){String[] required=new String[fields.length+2];required[0]="id";required[1]="type";System.arraycopy(fields,0,required,2,fields.length);JsonObject choice=requiredWithoutAny(required,forbidden);JsonObject properties=new JsonObject();properties.add("type",constant(type));choice.add("properties",properties);return choice;}
     private static JsonObject encounterAlly(){JsonObject ally=object("Controlled friendly encounter participant");ally.addProperty("additionalProperties",false);ally.add("required",strings("id"));JsonObject properties=new JsonObject();properties.add("id",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("entity",resourceLocation());properties.add("actor",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("count",boundedInteger(1,16));properties.add("equipment",equipment());JsonObject customName=text();customName.addProperty("maxLength",128);properties.add("custom_name",customName);properties.add("name_visible",bool());properties.add("glowing",bool());properties.add("persistent",bool());properties.add("health",number(1.0D,2048.0D));properties.add("movement_speed",number(0.0D,4.0D));properties.add("attack_damage",number(0.0D,2048.0D));properties.add("armor",number(0.0D,30.0D));properties.add("knockback_resistance",number(0.0D,1.0D));properties.add("attributes",mobAttributes());properties.add("required_survival",bool());properties.add("invulnerable",bool());properties.add("revivable",bool());properties.add("revive_delay_ticks",boundedInteger(1,12000));properties.add("replacement_policy",enumValues(EncounterTemplate.AllyReplacementPolicy.values()));properties.add("cleanup_policy",enumValues(EncounterTemplate.AllyCleanupPolicy.values()));properties.add("affects_completion",bool());ally.add("properties",properties);JsonArray sources=new JsonArray();sources.add(requiredWithoutAny(new String[]{"entity"},"actor"));sources.add(requiredWithoutAny(new String[]{"actor"},"entity","count","equipment","custom_name","name_visible","glowing","persistent","health","movement_speed","attack_damage","armor","knockback_resistance","attributes"));ally.add("oneOf",sources);JsonArray rules=new JsonArray();JsonObject reviveCondition=new JsonObject();reviveCondition.add("required",strings("revive_delay_ticks"));JsonObject reviveConsequence=new JsonObject();reviveConsequence.add("required",strings("revivable"));JsonObject reviveProperties=new JsonObject();reviveProperties.add("revivable",constant(true));reviveConsequence.add("properties",reviveProperties);JsonObject reviveRule=new JsonObject();reviveRule.add("if",reviveCondition);reviveRule.add("then",reviveConsequence);rules.add(reviveRule);JsonObject incompatible=new JsonObject();JsonArray requiredSurvival=new JsonArray();JsonObject both=new JsonObject();both.add("required",strings("required_survival","revivable"));JsonObject bothProperties=new JsonObject();bothProperties.add("required_survival",constant(true));bothProperties.add("revivable",constant(true));both.add("properties",bothProperties);incompatible.add("not",both);rules.add(incompatible);ally.add("allOf",rules);return ally;}
 
@@ -347,6 +389,17 @@ public final class SceneSchema {
     private static JsonObject boundedInteger(int minimum, int maximum) {
         JsonObject value = integer(minimum);
         value.addProperty("maximum", maximum);
+        return value;
+    }
+
+    private static JsonObject itemDurability() {
+        JsonObject value = object("Remaining item durability predicate");
+        value.addProperty("additionalProperties", false);
+        value.addProperty("minProperties", 1);
+        JsonObject properties = new JsonObject();
+        properties.add("min", integer(0));
+        properties.add("max", integer(0));
+        value.add("properties", properties);
         return value;
     }
 

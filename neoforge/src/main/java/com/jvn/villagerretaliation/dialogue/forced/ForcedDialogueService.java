@@ -1302,8 +1302,8 @@ public final class ForcedDialogueService {
             Villager villager,
             ForcedDialogueItemPayment payment) {
         int reducedCount = Math.max(1, (int) Math.ceil(payment.removal().count() * 0.6D));
-        VillagerInventoryItemRemoval removal =
-                new VillagerInventoryItemRemoval(payment.removal().selectors(), reducedCount);
+        VillagerInventoryItemRemoval removal = new VillagerInventoryItemRemoval(
+                payment.removal().selectors(), reducedCount, payment.removal().stackPredicate());
         return new ForcedDialogueItemPayment(
                 removal,
                 forcedMessageList(player, villager, RESTITUTION_REDUCED_PAY_SUCCESS_MESSAGE_KEY, removal.replacements()),
