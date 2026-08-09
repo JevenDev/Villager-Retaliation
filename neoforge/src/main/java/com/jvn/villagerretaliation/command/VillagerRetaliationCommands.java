@@ -64,6 +64,7 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.village.VillageRegistrySavedData;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -75,6 +76,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -105,19 +107,21 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 public final class VillagerRetaliationCommands {
-    private static final double DEFAULT_DEBUG_PROVIDER_RADIUS = 64.0D;
-    private static final double MAX_DEBUG_PROVIDER_RADIUS = 256.0D;
-    private static final int DEFAULT_VILLAGE_REGISTRY_MERGE_RADIUS = 96;
-    private static final int MAX_VILLAGE_REGISTRY_MERGE_RADIUS = 512;
-    private static final int DEFAULT_VILLAGE_REGISTRY_MERGE_LIMIT = 10;
+    static final double DEFAULT_DEBUG_PROVIDER_RADIUS = 64.0D;
+    static final double MAX_DEBUG_PROVIDER_RADIUS = 256.0D;
+    static final int DEFAULT_VILLAGE_REGISTRY_MERGE_RADIUS = 96;
+    static final int MAX_VILLAGE_REGISTRY_MERGE_RADIUS = 512;
+    static final int DEFAULT_VILLAGE_REGISTRY_MERGE_LIMIT = 10;
 
     private VillagerRetaliationCommands() {
     }
 
     public static void onRegisterCommands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(playerDuelCommands());
-        event.getDispatcher().register(
-                literal(VillagerRetaliation.MOD_ID)
+        VrCommandRegistration.register(event);
+    }
+
+    static LiteralArgumentBuilder<CommandSourceStack> legacyRootCommands() {
+        return literal(VillagerRetaliation.MOD_ID)
                         .then(partyCommands())
                         .then(literal("setNearbyReputation")
                                 .requires(source -> source.hasPermission(2))
@@ -243,11 +247,10 @@ public final class VillagerRetaliationCommands {
                                                 .executes(VillagerRetaliationCommands::rerollSkills)))
                                 .then(literal("export")
                                         .then(targetArgument()
-                                                .executes(VillagerRetaliationCommands::exportSkills))))
-        );
+                                                .executes(VillagerRetaliationCommands::exportSkills))));
     }
 
-    private static LiteralArgumentBuilder<CommandSourceStack> playerDuelCommands() {
+    static LiteralArgumentBuilder<CommandSourceStack> playerDuelCommands() {
         return literal("duel")
                 .then(literal("accept")
                         .then(argument("player", EntityArgument.player())
@@ -465,7 +468,7 @@ public final class VillagerRetaliationCommands {
                                         .executes(VillagerRetaliationCommands::resetAbuse))));
     }
 
-    private static int inspectAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int inspectAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Entity entity = allegianceTarget(context);
         if (entity == null) {
             return 0;
@@ -491,7 +494,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int explainAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int explainAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Entity entity = allegianceTarget(context);
         if (entity == null) {
             return 0;
@@ -520,7 +523,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int assignAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int assignAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Entity entity = allegianceTarget(context);
         VillageAllegianceId id = parseAllegianceId(context.getSource(), StringArgumentType.getString(context, "uuid"));
         if (entity == null || id == null) {
@@ -531,7 +534,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int setAllegianceState(CommandContext<CommandSourceStack> context, boolean unaffiliated) throws CommandSyntaxException {
+    static int setAllegianceState(CommandContext<CommandSourceStack> context, boolean unaffiliated) throws CommandSyntaxException {
         Entity entity = allegianceTarget(context);
         if (entity == null) {
             return 0;
@@ -546,7 +549,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int mergeAllegiances(CommandContext<CommandSourceStack> context) {
+    static int mergeAllegiances(CommandContext<CommandSourceStack> context) {
         VillageAllegianceId source = parseAllegianceId(context.getSource(), StringArgumentType.getString(context, "source"));
         VillageAllegianceId target = parseAllegianceId(context.getSource(), StringArgumentType.getString(context, "target"));
         if (source == null || target == null) {
@@ -562,7 +565,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int forkAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int forkAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Entity entity = allegianceTarget(context);
         if (entity == null) {
             return 0;
@@ -575,7 +578,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int migrateAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int migrateAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Entity entity = allegianceTarget(context);
         if (entity == null) {
             return 0;
@@ -585,7 +588,7 @@ public final class VillagerRetaliationCommands {
         return resolved ? 1 : 0;
     }
 
-    private static int allegianceStatistics(CommandContext<CommandSourceStack> context) {
+    static int allegianceStatistics(CommandContext<CommandSourceStack> context) {
         var statistics = VillageAllegianceService.statistics();
         var registry = VillageAllegianceRegistrySavedData.get(context.getSource().getLevel());
         context.getSource().sendSuccess(() -> Component.literal(
@@ -598,7 +601,7 @@ public final class VillagerRetaliationCommands {
         return registry.records().size();
     }
 
-    private static int undoAllegianceMerge(CommandContext<CommandSourceStack> context) {
+    static int undoAllegianceMerge(CommandContext<CommandSourceStack> context) {
         VillageAllegianceId source = parseAllegianceId(
                 context.getSource(), StringArgumentType.getString(context, "source"));
         if (source == null) {
@@ -616,7 +619,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int inspectVillageHere(CommandContext<CommandSourceStack> context) {
+    static int inspectVillageHere(CommandContext<CommandSourceStack> context) {
         ServerLevel level = context.getSource().getLevel();
         BlockPos position = BlockPos.containing(context.getSource().getPosition());
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
@@ -636,7 +639,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int renameVillageHere(CommandContext<CommandSourceStack> context) {
+    static int renameVillageHere(CommandContext<CommandSourceStack> context) {
         ServerLevel level = context.getSource().getLevel();
         BlockPos position = BlockPos.containing(context.getSource().getPosition());
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
@@ -652,7 +655,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int listTrackedVillages(CommandContext<CommandSourceStack> context) {
+    static int listTrackedVillages(CommandContext<CommandSourceStack> context) {
         ServerLevel level = context.getSource().getLevel();
         List<VillageAllegianceRegistrySavedData.AllegianceRecord> records = VillageAllegianceRegistrySavedData.get(level)
                 .activeRecords(level.dimension().location());
@@ -667,12 +670,23 @@ public final class VillagerRetaliationCommands {
         return records.size();
     }
 
-    private static int resetAbuse(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int resetAbuse(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Entity entity = allegianceTarget(context);
         UUID playerId;
         try {
-            playerId = UUID.fromString(StringArgumentType.getString(context, "player"));
+            Collection<GameProfile> profiles = GameProfileArgument.getGameProfiles(context, "player");
+            if (profiles.size() != 1) {
+                throw EntityArgument.ERROR_NOT_SINGLE_PLAYER.create();
+            }
+            playerId = profiles.iterator().next().getId();
         } catch (IllegalArgumentException exception) {
+            try {
+                playerId = UUID.fromString(StringArgumentType.getString(context, "player"));
+            } catch (IllegalArgumentException invalidUuid) {
+                context.getSource().sendFailure(Component.literal("Invalid player UUID."));
+                return 0;
+            }
+        } catch (CommandSyntaxException exception) {
             context.getSource().sendFailure(Component.literal("Invalid player UUID."));
             return 0;
         }
@@ -683,6 +697,12 @@ public final class VillagerRetaliationCommands {
     }
 
     private static Entity allegianceTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        try {
+            context.getArgument("entity", EntitySelector.class);
+            return EntityArgument.getEntity(context, "entity");
+        } catch (IllegalArgumentException ignored) {
+            // Legacy commands accept selectors and quoted preset names as strings.
+        }
         String value = StringArgumentType.getString(context, "entity");
         Entity entity = parseEntityTarget(context.getSource(), value);
         if (entity == null) {
@@ -748,7 +768,7 @@ public final class VillagerRetaliationCommands {
                                                                 IntegerArgumentType.getInteger(context, "wager"))))))));
     }
 
-    private static int startDebugDuel(
+    static int startDebugDuel(
             CommandContext<CommandSourceStack> context,
             String kitName,
             int wager) throws CommandSyntaxException {
@@ -814,7 +834,7 @@ public final class VillagerRetaliationCommands {
                                         .executes(VillagerRetaliationCommands::placeBuilderMaterialsChests))));
     }
 
-    private static int debugTransferVillagerOwnership(CommandContext<CommandSourceStack> context)
+    static int debugTransferVillagerOwnership(CommandContext<CommandSourceStack> context)
             throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager target = profileTarget(context);
@@ -842,7 +862,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int debugFinishRaid(CommandContext<CommandSourceStack> context, boolean raidersWon) {
+    static int debugFinishRaid(CommandContext<CommandSourceStack> context, boolean raidersWon) {
         CommandSourceStack source = context.getSource();
         Entity sourceEntity = source.getEntity();
         PlayerRaidSavedData.RaidRecord raid = PlayerRaidService.debugFinishRaid(
@@ -860,7 +880,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int placeBuilderMaterialsChests(CommandContext<CommandSourceStack> context) {
+    static int placeBuilderMaterialsChests(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         ServerLevel level = source.getLevel();
         String structureValue = StringArgumentType.getString(context, "structure");
@@ -914,7 +934,7 @@ public final class VillagerRetaliationCommands {
         return chestPositions.size();
     }
 
-    private static Iterable<String> builderStructureIdSuggestions(CommandSourceStack source) {
+    static Iterable<String> builderStructureIdSuggestions(CommandSourceStack source) {
         return BuilderStructureCatalog.entries(source.getServer())
                 .stream()
                 .map(entry -> entry.id().toString())
@@ -1163,7 +1183,7 @@ public final class VillagerRetaliationCommands {
                                 .executes(VillagerRetaliationCommands::debugHiredWork)));
     }
 
-    private static int spawnHiredStressGrid(CommandContext<CommandSourceStack> context, int count)
+    static int spawnHiredStressGrid(CommandContext<CommandSourceStack> context, int count)
             throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         ServerPlayer player = source.getPlayerOrException();
@@ -1228,7 +1248,7 @@ public final class VillagerRetaliationCommands {
                                                 .executes(VillagerRetaliationCommands::mergeVillageRegistryKeys)))));
     }
 
-    private static int inspectVillageRegistry(CommandContext<CommandSourceStack> context, int limit) {
+    static int inspectVillageRegistry(CommandContext<CommandSourceStack> context, int limit) {
         CommandSourceStack source = context.getSource();
         ServerLevel level = source.getLevel();
         VillageRegistrySavedData registry = VillageRegistrySavedData.get(level);
@@ -1245,7 +1265,7 @@ public final class VillagerRetaliationCommands {
         return registry.size();
     }
 
-    private static int pruneVillageRegistry(CommandContext<CommandSourceStack> context, int olderThanTicks) {
+    static int pruneVillageRegistry(CommandContext<CommandSourceStack> context, int olderThanTicks) {
         CommandSourceStack source = context.getSource();
         ServerLevel level = source.getLevel();
         VillageRegistrySavedData registry = VillageRegistrySavedData.get(level);
@@ -1257,7 +1277,7 @@ public final class VillagerRetaliationCommands {
         return removed;
     }
 
-    private static int suggestVillageRegistryMerges(CommandContext<CommandSourceStack> context, int radius, int limit) {
+    static int suggestVillageRegistryMerges(CommandContext<CommandSourceStack> context, int radius, int limit) {
         CommandSourceStack source = context.getSource();
         List<VillageRegistrySavedData.EntrySnapshot> entries = VillageRegistrySavedData.get(source.getLevel()).entries();
         long radiusSquared = (long) radius * radius;
@@ -1333,11 +1353,11 @@ public final class VillagerRetaliationCommands {
                 + " | distance~=" + distance
                 + " | sourceLastSeen=" + source.lastSeenGameTime()
                 + " | targetLastSeen=" + target.lastSeenGameTime()
-                + " | command=/villagerretaliation village registry merge \""
+                + " | command=/vr admin village registry merge \""
                 + source.key() + "\" \"" + target.key() + "\"";
     }
 
-    private static int mergeVillageRegistryKeys(CommandContext<CommandSourceStack> context) {
+    static int mergeVillageRegistryKeys(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         ServerLevel level = source.getLevel();
         String sourceKey = unquote(StringArgumentType.getString(context, "source_key"));
@@ -1384,7 +1404,7 @@ public final class VillagerRetaliationCommands {
         return changed;
     }
 
-    private static Iterable<String> villageRegistryKeySuggestions(CommandSourceStack source) {
+    static Iterable<String> villageRegistryKeySuggestions(CommandSourceStack source) {
         return VillageRegistrySavedData.get(source.getLevel()).entries()
                 .stream()
                 .map(VillageRegistrySavedData.EntrySnapshot::key)
@@ -1417,7 +1437,7 @@ public final class VillagerRetaliationCommands {
         return summary.enabled() ? 1 : 0;
     }
 
-    private static int setHiredDebugPreviews(CommandContext<CommandSourceStack> context, boolean enabled, double radius) {
+    static int setHiredDebugPreviews(CommandContext<CommandSourceStack> context, boolean enabled, double radius) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so nearby hired villagers can be previewed."));
@@ -1444,7 +1464,7 @@ public final class VillagerRetaliationCommands {
                 + " containers."), false);
     }
 
-    private static int debugHiredWork(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int debugHiredWork(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager target = profileTarget(context);
         if (!(target instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) {
@@ -1464,7 +1484,7 @@ public final class VillagerRetaliationCommands {
                         builder));
     }
 
-    private static Iterable<String> questIdSuggestions(CommandSourceStack source) {
+    static Iterable<String> questIdSuggestions(CommandSourceStack source) {
         LinkedHashSet<String> suggestions = new LinkedHashSet<>();
         VillagerQuestResources.quests(source.getServer()).forEach(quest -> {
             ResourceLocation id = quest.id();
@@ -1493,7 +1513,7 @@ public final class VillagerRetaliationCommands {
                 });
     }
 
-    private static int listQuestDebugProviders(CommandContext<CommandSourceStack> context, double radius) {
+    static int listQuestDebugProviders(CommandContext<CommandSourceStack> context, double radius) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so nearby villagers can be resolved."));
@@ -1514,7 +1534,7 @@ public final class VillagerRetaliationCommands {
         return providers.size();
     }
 
-    private static int startQuestDebug(CommandContext<CommandSourceStack> context, double radius, boolean force) {
+    static int startQuestDebug(CommandContext<CommandSourceStack> context, double radius, boolean force) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so nearby villagers can be resolved."));
@@ -1528,9 +1548,7 @@ public final class VillagerRetaliationCommands {
         }
 
         ProviderResolution provider = resolveQuestDebugProvider(
-                player,
-                StringArgumentType.getString(context, "provider_name"),
-                debugProviderRadius(radius));
+                context, player, debugProviderRadius(radius));
         if (!provider.error().isBlank()) {
             source.sendFailure(Component.literal(provider.error()));
             provider.matches().forEach(match -> source.sendFailure(Component.literal(providerDebugLine(match))));
@@ -1550,7 +1568,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int removeQuestDebug(CommandContext<CommandSourceStack> context) {
+    static int removeQuestDebug(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
@@ -1595,36 +1613,94 @@ public final class VillagerRetaliationCommands {
                         .executes(VillagerRetaliationCommands::cleanupEncounterDebug)));
     }
 
-    private static int listScenesDebug(CommandContext<CommandSourceStack> context) {
-        SceneSavedData data=SceneSavedData.get(context.getSource().getLevel());
-        List<com.jvn.villagerretaliation.scene.runtime.SceneInstance> scenes=data.active().stream()
-                .sorted(Comparator.comparing(value->value.id().toString())).toList();
-        context.getSource().sendSuccess(()->Component.literal("Active scenes: "+scenes.size()+" (blocked="+data.byState(com.jvn.villagerretaliation.scene.runtime.SceneState.BLOCKED).size()+")"),false);
-        scenes.forEach(scene->context.getSource().sendSuccess(()->Component.literal(scene.id()+" "+scene.sceneId()+" "+scene.state()+" step="+scene.currentStep()),false));
+    static int listScenesDebug(CommandContext<CommandSourceStack> context) {
+        SceneSavedData data = SceneSavedData.get(context.getSource().getLevel());
+        List<com.jvn.villagerretaliation.scene.runtime.SceneInstance> scenes = data.active().stream()
+                .sorted(Comparator.comparing(value -> value.id().toString()))
+                .toList();
+        int blocked = data.byState(
+                com.jvn.villagerretaliation.scene.runtime.SceneState.BLOCKED).size();
+        context.getSource().sendSuccess(
+                () -> Component.literal("Active scenes: " + scenes.size() + " (blocked=" + blocked + ")"),
+                false);
+        scenes.forEach(scene -> context.getSource().sendSuccess(
+                () -> Component.literal(scene.id() + " " + scene.sceneId() + " "
+                        + scene.state() + " step=" + scene.currentStep()),
+                false));
         return scenes.size();
     }
 
-    private static int showSceneLines(CommandContext<CommandSourceStack> context,boolean trace) {
-        UUID id=parseUuid(context,"scene_id");if(id==null)return 0;List<String> lines=trace?SceneOperatorService.trace(context.getSource().getLevel(),id):SceneOperatorService.inspect(context.getSource().getLevel(),id);lines.forEach(line->context.getSource().sendSuccess(()->Component.literal(line),false));return lines.size();
+    static int showSceneLines(CommandContext<CommandSourceStack> context, boolean trace) {
+        UUID id = parseUuid(context, "scene_id");
+        if (id == null) {
+            return 0;
+        }
+        List<String> lines = trace
+                ? SceneOperatorService.trace(context.getSource().getLevel(), id)
+                : SceneOperatorService.inspect(context.getSource().getLevel(), id);
+        lines.forEach(line -> context.getSource().sendSuccess(
+                () -> Component.literal(line), false));
+        return lines.size();
     }
 
-    private static int mutateScene(CommandContext<CommandSourceStack> context,String action) {
-        UUID id=parseUuid(context,"scene_id");if(id==null)return 0;String operator=context.getSource().getTextName();var result=switch(action){case "retry"->SceneOperatorService.retry(context.getSource().getLevel(),id,"operator_retry",operator);case "cancel"->SceneOperatorService.cancel(context.getSource().getLevel(),id,"operator_cancel",operator);default->SceneOperatorService.resume(context.getSource().getLevel(),id,"operator_resume",operator);};context.getSource().sendSuccess(()->Component.literal(result.message()),false);return result.success()?1:0;
+    static int mutateScene(CommandContext<CommandSourceStack> context, String action) {
+        UUID id = parseUuid(context, "scene_id");
+        if (id == null) {
+            return 0;
+        }
+        String operator = context.getSource().getTextName();
+        var result = switch (action) {
+            case "retry" -> SceneOperatorService.retry(
+                    context.getSource().getLevel(), id, "operator_retry", operator);
+            case "cancel" -> SceneOperatorService.cancel(
+                    context.getSource().getLevel(), id, "operator_cancel", operator);
+            default -> SceneOperatorService.resume(
+                    context.getSource().getLevel(), id, "operator_resume", operator);
+        };
+        context.getSource().sendSuccess(() -> Component.literal(result.message()), false);
+        return result.success() ? 1 : 0;
     }
 
-    private static int rebindSceneActorDebug(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        UUID id=parseUuid(context,"scene_id");if(id==null)return 0;var result=SceneOperatorService.rebind(context.getSource().getLevel(),id,StringArgumentType.getString(context,"alias"),EntityArgument.getEntity(context,"target"),"operator_rebind",context.getSource().getTextName());context.getSource().sendSuccess(()->Component.literal(result.message()),false);return result.success()?1:0;
+    static int rebindSceneActorDebug(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        UUID id = parseUuid(context, "scene_id");
+        if (id == null) {
+            return 0;
+        }
+        var result = SceneOperatorService.rebind(
+                context.getSource().getLevel(),
+                id,
+                StringArgumentType.getString(context, "alias"),
+                EntityArgument.getEntity(context, "target"),
+                "operator_rebind",
+                context.getSource().getTextName());
+        context.getSource().sendSuccess(() -> Component.literal(result.message()), false);
+        return result.success() ? 1 : 0;
     }
 
-    private static int cleanupEncounterDebug(CommandContext<CommandSourceStack> context) {
-        UUID id=parseUuid(context,"encounter_id");if(id==null)return 0;var result=SceneOperatorService.forceCleanup(context.getSource().getLevel(),id,"operator_force_cleanup",context.getSource().getTextName());context.getSource().sendSuccess(()->Component.literal(result.message()),false);return result.success()?1:0;
+    static int cleanupEncounterDebug(CommandContext<CommandSourceStack> context) {
+        UUID id = parseUuid(context, "encounter_id");
+        if (id == null) {
+            return 0;
+        }
+        var result = SceneOperatorService.forceCleanup(
+                context.getSource().getLevel(),
+                id,
+                "operator_force_cleanup",
+                context.getSource().getTextName());
+        context.getSource().sendSuccess(() -> Component.literal(result.message()), false);
+        return result.success() ? 1 : 0;
     }
 
-    private static UUID parseUuid(CommandContext<CommandSourceStack> context,String key) {
-        try{return UUID.fromString(StringArgumentType.getString(context,key));}catch(IllegalArgumentException exception){context.getSource().sendFailure(Component.literal(key+" must be a UUID"));return null;}
+    private static UUID parseUuid(CommandContext<CommandSourceStack> context, String key) {
+        try {
+            return UUID.fromString(StringArgumentType.getString(context, key));
+        } catch (IllegalArgumentException exception) {
+            context.getSource().sendFailure(Component.literal(key + " must be a UUID"));
+            return null;
+        }
     }
 
-    private static int rebindQuestDebug(CommandContext<CommandSourceStack> context, double radius) {
+    static int rebindQuestDebug(CommandContext<CommandSourceStack> context, double radius) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This command must be run by a player near the replacement provider."));
@@ -1636,9 +1712,7 @@ public final class VillagerRetaliationCommands {
             return 0;
         }
         ProviderResolution provider = resolveQuestDebugProvider(
-                player,
-                StringArgumentType.getString(context, "provider_name"),
-                debugProviderRadius(radius));
+                context, player, debugProviderRadius(radius));
         if (!provider.error().isBlank()) {
             source.sendFailure(Component.literal(provider.error()));
             return 0;
@@ -1653,7 +1727,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int inspectQuestDebug(CommandContext<CommandSourceStack> context) {
+    static int inspectQuestDebug(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
@@ -1677,7 +1751,7 @@ public final class VillagerRetaliationCommands {
         return result.lines().size();
     }
 
-    private static int explainQuestAvailabilityDebug(CommandContext<CommandSourceStack> context, double radius) {
+    static int explainQuestAvailabilityDebug(CommandContext<CommandSourceStack> context, double radius) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so nearby villagers can be resolved."));
@@ -1689,9 +1763,7 @@ public final class VillagerRetaliationCommands {
             return 0;
         }
         ProviderResolution provider = resolveQuestDebugProvider(
-                player,
-                StringArgumentType.getString(context, "provider_name"),
-                debugProviderRadius(radius));
+                context, player, debugProviderRadius(radius));
         if (!provider.error().isBlank()) {
             source.sendFailure(Component.literal(provider.error()));
             provider.matches().forEach(match -> source.sendFailure(Component.literal(providerDebugLine(match))));
@@ -1703,7 +1775,7 @@ public final class VillagerRetaliationCommands {
                 quest.questId()));
     }
 
-    private static int explainQuestHiddenDebug(
+    static int explainQuestHiddenDebug(
             CommandContext<CommandSourceStack> context,
             double radius,
             boolean hasProvider) {
@@ -1720,9 +1792,7 @@ public final class VillagerRetaliationCommands {
         Villager provider = null;
         if (hasProvider) {
             ProviderResolution resolvedProvider = resolveQuestDebugProvider(
-                    player,
-                    StringArgumentType.getString(context, "provider_name"),
-                    debugProviderRadius(radius));
+                    context, player, debugProviderRadius(radius));
             if (!resolvedProvider.error().isBlank()) {
                 source.sendFailure(Component.literal(resolvedProvider.error()));
                 resolvedProvider.matches().forEach(match -> source.sendFailure(Component.literal(providerDebugLine(match))));
@@ -1733,7 +1803,7 @@ public final class VillagerRetaliationCommands {
         return sendQuestDebugLines(source, VillagerQuestService.debugWhyHidden(player, provider, quest.questId()));
     }
 
-    private static int captureQuestTraceDebug(CommandContext<CommandSourceStack> context, double radius) {
+    static int captureQuestTraceDebug(CommandContext<CommandSourceStack> context, double radius) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so nearby villagers can be resolved."));
@@ -1745,9 +1815,7 @@ public final class VillagerRetaliationCommands {
             return 0;
         }
         ProviderResolution provider = resolveQuestDebugProvider(
-                player,
-                StringArgumentType.getString(context, "provider_name"),
-                debugProviderRadius(radius));
+                context, player, debugProviderRadius(radius));
         if (!provider.error().isBlank()) {
             source.sendFailure(Component.literal(provider.error()));
             provider.matches().forEach(match -> source.sendFailure(Component.literal(providerDebugLine(match))));
@@ -1756,7 +1824,7 @@ public final class VillagerRetaliationCommands {
         return sendQuestDebugLines(source, VillagerQuestService.debugTraceQuest(player, provider.provider(), quest.questId()));
     }
 
-    private static int showQuestTraceDebug(CommandContext<CommandSourceStack> context, int limit) {
+    static int showQuestTraceDebug(CommandContext<CommandSourceStack> context, int limit) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so trace state can be resolved."));
@@ -1765,7 +1833,7 @@ public final class VillagerRetaliationCommands {
         return sendQuestDebugLines(source, VillagerQuestService.debugTraceRecent(player, limit));
     }
 
-    private static int clearQuestTraceDebug(CommandContext<CommandSourceStack> context) {
+    static int clearQuestTraceDebug(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so trace state can be resolved."));
@@ -1774,7 +1842,7 @@ public final class VillagerRetaliationCommands {
         return sendQuestDebugLines(source, VillagerQuestService.debugTraceClear(player));
     }
 
-    private static int setQuestTraceDebug(CommandContext<CommandSourceStack> context, boolean enabled) {
+    static int setQuestTraceDebug(CommandContext<CommandSourceStack> context, boolean enabled) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so trace state can be resolved."));
@@ -1783,7 +1851,7 @@ public final class VillagerRetaliationCommands {
         return sendQuestDebugLines(source, VillagerQuestService.debugTraceSetEnabled(player, enabled));
     }
 
-    private static int showQuestObjectivesDebug(CommandContext<CommandSourceStack> context) {
+    static int showQuestObjectivesDebug(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
@@ -1797,7 +1865,7 @@ public final class VillagerRetaliationCommands {
         return sendQuestDebugLines(source, VillagerQuestService.debugObjectives(player, quest.questId()));
     }
 
-    private static int setQuestStageDebug(CommandContext<CommandSourceStack> context) {
+    static int setQuestStageDebug(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
@@ -1814,7 +1882,7 @@ public final class VillagerRetaliationCommands {
                 StringArgumentType.getString(context, "stage")));
     }
 
-    private static int fireQuestTriggerDebug(CommandContext<CommandSourceStack> context) {
+    static int fireQuestTriggerDebug(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
@@ -1830,7 +1898,7 @@ public final class VillagerRetaliationCommands {
         return sendQuestDebugLines(source, VillagerQuestService.debugFireTrigger(player, quest.questId(), event));
     }
 
-    private static int dryRunQuestTriggerActionsDebug(CommandContext<CommandSourceStack> context) {
+    static int dryRunQuestTriggerActionsDebug(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
@@ -1847,7 +1915,7 @@ public final class VillagerRetaliationCommands {
                 StringArgumentType.getString(context, "trigger_id")));
     }
 
-    private static int showQuestFactsDebug(CommandContext<CommandSourceStack> context) {
+    static int showQuestFactsDebug(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This debug command must be run by a player so fact state can be resolved."));
@@ -2032,6 +2100,69 @@ public final class VillagerRetaliationCommands {
         return changedCount;
     }
 
+    private static ProviderResolution resolveQuestDebugProvider(
+            CommandContext<CommandSourceStack> context,
+            ServerPlayer player,
+            double radius) {
+        try {
+            EntitySelector selector = context.getArgument("provider", EntitySelector.class);
+            Entity entity;
+            try {
+                entity = selector.findSingleEntity(context.getSource());
+            } catch (CommandSyntaxException exception) {
+                return new ProviderResolution(null, List.of(), exception.getRawMessage().getString());
+            }
+            if (!(entity instanceof Villager provider) || !provider.isAlive()) {
+                return new ProviderResolution(null, List.of(),
+                        "Quest provider must be a living villager.");
+            }
+            double clampedRadius = debugProviderRadius(radius);
+            if (provider.level() != player.level()
+                    || provider.distanceToSqr(player) > clampedRadius * clampedRadius) {
+                return new ProviderResolution(null, List.of(provider),
+                        "Quest provider must be within " + formatRadius(clampedRadius) + " blocks.");
+            }
+            return new ProviderResolution(provider, List.of(provider), "");
+        } catch (IllegalArgumentException ignored) {
+            return resolveQuestDebugProvider(
+                    player,
+                    StringArgumentType.getString(context, "provider_name"),
+                    radius);
+        }
+    }
+
+    static int setReputation(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        Collection<? extends Entity> targets = EntityArgument.getEntities(context, "targets");
+        Collection<GameProfile> profiles = GameProfileArgument.getGameProfiles(context, "player");
+        if (profiles.size() != 1) {
+            throw EntityArgument.ERROR_NOT_SINGLE_PLAYER.create();
+        }
+        UUID playerId = profiles.iterator().next().getId();
+        int reputation = IntegerArgumentType.getInteger(context, "value");
+        List<AbstractVillager> merchants = targets.stream()
+                .filter(AbstractVillager.class::isInstance)
+                .map(AbstractVillager.class::cast)
+                .filter(AbstractVillager::isAlive)
+                .toList();
+        if (merchants.size() != targets.size()) {
+            source.sendFailure(Component.literal("Every target must be a living villager or wandering trader."));
+            return 0;
+        }
+
+        int changed = 0;
+        for (AbstractVillager merchant : merchants) {
+            if (VillagerReputationManager.setReputationForDebug(
+                    source.getLevel(), merchant, playerId, reputation)) {
+                changed++;
+            }
+        }
+        int changedCount = changed;
+        source.sendSuccess(() -> Component.literal("Set reputation to " + reputation
+                + " for " + merchants.size() + " merchants (" + changedCount + " changed)."), true);
+        return changed;
+    }
+
     private static int setNearestRelationship(CommandContext<CommandSourceStack> context, String stageName) {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
@@ -2079,7 +2210,38 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int getProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int setRelationship(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        Entity firstEntity = EntityArgument.getEntity(context, "first");
+        Entity secondEntity = EntityArgument.getEntity(context, "second");
+        if (!(firstEntity instanceof Villager first) || !(secondEntity instanceof Villager second)
+                || !first.isAlive() || !second.isAlive() || first.isBaby() || second.isBaby()
+                || first == second || first.level() != second.level()
+                || !(first.level() instanceof ServerLevel level)) {
+            source.sendFailure(Component.literal(
+                    "Targets must be two different living adult villagers in the same dimension."));
+            return 0;
+        }
+        String stageName = StringArgumentType.getString(context, "stage");
+        VillagerRelationshipStage stage = VillagerRelationshipStage.bySerializedName(stageName);
+        if (stage == null) {
+            source.sendFailure(Component.literal("Unknown relationship stage: " + stageName));
+            return 0;
+        }
+        VillagerSocialGraphSavedData.RelationshipValidation validation =
+                VillagerSocialGraphSavedData.get(level).setRomanticRelationshipStage(level, first, second, stage);
+        if (!validation.allowed()) {
+            source.sendFailure(Component.literal(validation.reason()));
+            return 0;
+        }
+        String firstName = VillagerPresetNameRegistry.resolveDisplayName(first).getString();
+        String secondName = VillagerPresetNameRegistry.resolveDisplayName(second).getString();
+        source.sendSuccess(() -> Component.literal("Set " + firstName + " and " + secondName
+                + " to " + stage.displayName() + "."), true);
+        return 1;
+    }
+
+    static int getProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
@@ -2092,7 +2254,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int rerollProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int rerollProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
@@ -2106,7 +2268,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int setProfileAttribute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int setProfileAttribute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
@@ -2133,7 +2295,7 @@ public final class VillagerRetaliationCommands {
         return changed ? 1 : 0;
     }
 
-    private static int exportProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int exportProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
@@ -2146,7 +2308,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int setProfileGender(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int setProfileGender(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
@@ -2176,7 +2338,7 @@ public final class VillagerRetaliationCommands {
         return changed ? 1 : 0;
     }
 
-    private static int explainDialogue(CommandContext<CommandSourceStack> context, String optionId) throws CommandSyntaxException {
+    static int explainDialogue(CommandContext<CommandSourceStack> context, String optionId) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("This command can only be run by a player."));
@@ -2218,7 +2380,7 @@ public final class VillagerRetaliationCommands {
         }
     }
 
-    private static int showDatapackDiagnostics(
+    static int showDatapackDiagnostics(
             CommandContext<CommandSourceStack> context,
             String severityFilter,
             String resourceFilter) {
@@ -2230,6 +2392,10 @@ public final class VillagerRetaliationCommands {
         }
 
         QuestDiagnostic.Severity severity = parseSeverity(severityFilter);
+        if (severity == null && severityFilter != null && !severityFilter.isBlank()) {
+            source.sendFailure(Component.literal("Unknown diagnostic severity: " + severityFilter));
+            return 0;
+        }
         String resource = unquote(resourceFilter);
         List<DatapackDiagnostics.Entry> filtered = diagnostics.stream()
                 .filter(entry -> severity == null || entry.diagnostic().severity() == severity)
@@ -2320,7 +2486,7 @@ public final class VillagerRetaliationCommands {
         source.sendSuccess(() -> Component.literal("Note: story, gift-memory, and container-theft memory preselectors can run before the weighted line pool."), false);
     }
 
-    private static int getSkills(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int getSkills(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
@@ -2333,7 +2499,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int getSkill(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int getSkill(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
@@ -2353,7 +2519,7 @@ public final class VillagerRetaliationCommands {
         return 1;
     }
 
-    private static int setSkill(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int setSkill(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
@@ -2380,7 +2546,7 @@ public final class VillagerRetaliationCommands {
         return changed ? 1 : 0;
     }
 
-    private static int rerollSkills(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static int rerollSkills(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
@@ -2409,6 +2575,17 @@ public final class VillagerRetaliationCommands {
 
     private static AbstractVillager profileTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
+        try {
+            context.getArgument("villager", EntitySelector.class);
+            Entity entity = EntityArgument.getEntity(context, "villager");
+            if (entity instanceof AbstractVillager villager) {
+                return villager;
+            }
+            source.sendFailure(Component.literal("Target must be a villager or wandering trader."));
+            return null;
+        } catch (IllegalArgumentException ignored) {
+            // Legacy commands accept selectors and quoted preset names as strings.
+        }
         String targetValue = StringArgumentType.getString(context, "target");
         Entity target = parseEntityTarget(source, targetValue);
         if (target instanceof AbstractVillager villager) {

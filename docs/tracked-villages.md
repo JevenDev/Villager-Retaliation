@@ -84,14 +84,14 @@ The preview never force-loads chunks, sends archived footprints, or updates play
 ## Administration
 
 ```mcfunction
-/villagerretaliation allegiance inspect <villager>
-/villagerretaliation allegiance explain <villager>
-/villagerretaliation allegiance repair <villager>
-/villagerretaliation allegiance statistics
-/villagerretaliation allegiance undo_merge <source-uuid>
-/villagerretaliation allegiance village inspect_here
-/villagerretaliation allegiance village list
-/villagerretaliation allegiance village rename_here <name>
+/vr admin villager allegiance inspect <villager>
+/vr admin villager allegiance explain <villager>
+/vr admin villager allegiance repair <villager>
+/vr admin villager allegiance statistics
+/vr admin villager allegiance undoMerge <source-uuid>
+/vr admin village inspectHere
+/vr admin village list
+/vr admin village renameHere <name>
 ```
 
 Use `inspect` for the saved assignment, `explain` for the rule that produced it, and `repair` when the assignment is stuck pending. The village commands inspect, list, rename, or undo a merge for tracked village identities.

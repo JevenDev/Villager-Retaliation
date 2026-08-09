@@ -57,6 +57,11 @@ public final class PartyActionHandler {
         declineInvitation(target, invitation == null ? null : invitation.id());
     }
 
+    public static void declineInvitationFromCommand(ServerPlayer target, UUID inviterId) {
+        PartyInvitation invitation = latestPendingInvitationFrom(target, inviterId);
+        declineInvitation(target, invitation == null ? null : invitation.id());
+    }
+
     public static void leavePartyCommand(ServerPlayer player) {
         leaveParty(player);
     }
@@ -374,7 +379,7 @@ public final class PartyActionHandler {
 
     private static void sendInvitationNotice(ServerPlayer target, String inviterName) {
         if (target == null || inviterName == null || inviterName.isBlank()) return;
-        String command = "/villagerretaliation party accept " + inviterName;
+        String command = "/vr party accept " + inviterName;
         Component accept = Component.translatable("villagerretaliation.party.invitation.accept_chat")
                 .withStyle(style -> style
                         .withColor(ChatFormatting.GREEN)

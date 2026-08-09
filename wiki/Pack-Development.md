@@ -173,9 +173,9 @@ If the file loads, you know the path and JSON shape are valid before you build s
 
 ```mcfunction
 /reload
-/villagerretaliation datapack diagnostics
-/villagerretaliation setNearbyReputation <value>
-/villagerretaliation dialogue explain <villager> <request> [option_id]
+/vr admin datapack diagnostics
+/vr admin villager reputation set <targets> <player> <value>
+/vr admin dialogue explain <villager> <request> [option_id]
 ```
 
 `datapack diagnostics` reports loading and validation problems. `dialogue explain` reports why a line matched or was rejected.

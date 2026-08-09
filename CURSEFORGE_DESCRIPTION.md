@@ -227,15 +227,16 @@ Most major systems can be tuned or disabled, including retaliation, reputation, 
 ## Commands and Testing
 
 Operator commands are included for testing reputation, relationships, dialogue matching, datapack diagnostics, quests, villager profiles, and villager skills.
+All current commands use the `/vr` root. The older `/villagerretaliation` and `/duel` forms remain temporarily available for command-block and server-script compatibility.
 
 Useful examples:
 
 ```
-/villagerretaliation setNearbyReputation -150
-/villagerretaliation datapack diagnostics
-/villagerretaliation dialogue explain <villager> <request> [option_id]
-/villagerretaliation quest debug providers [radius]
-/villagerretaliation skill get <villager>
+/vr admin villager reputation set @e[type=minecraft:villager,distance=..16] @s -150
+/vr admin datapack diagnostics
+/vr admin dialogue explain <villager> <request> [option_id]
+/vr admin quest providers [radius]
+/vr admin villager skill get <villager>
 ```
 
 Debug-only family testing items are also available through commands:

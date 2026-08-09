@@ -449,7 +449,7 @@ Active progress remains in the journal using the saved provider name, profession
 Operators can explicitly repair a missing binding with:
 
 ```text
-/villagerretaliation quest debug rebind <quest_id> <provider_name>
+/vr admin quest rebind <quest_id> <provider>
 ```
 
 The command refuses a rebind while the current provider is live, verifies the provider type and authored filters, retains the previous snapshot in save history, and reports the accepted or rejected audit result. A terminal quest can be rebound only while it has deferred lifecycle work. The rebind consumes that work after one dispatch without reopening the quest. The debug inspector lists pending lifecycle events alongside provider history.
@@ -893,18 +893,18 @@ Prefer saved-state conditions for active quest gates that must continue while th
 Available diagnostic commands:
 
 ```text
-/villagerretaliation datapack diagnostics
-/villagerretaliation quest debug providers [radius]
-/villagerretaliation quest debug why_available <quest_id> <provider_name>
-/villagerretaliation quest debug why_hidden <quest_id> [provider_name]
-/villagerretaliation quest debug inspect <quest_id>
-/villagerretaliation quest debug rebind <quest_id> <provider_name>
-/villagerretaliation quest debug objectives <quest_id>
-/villagerretaliation quest debug trace on
-/villagerretaliation quest debug trace show [limit]
-/villagerretaliation quest debug trace capture <quest_id> <provider_name>
-/villagerretaliation quest debug fire_trigger <quest_id> <event>
-/villagerretaliation quest debug actions dry_run <quest_id> <trigger_id>
+/vr admin datapack diagnostics
+/vr admin quest providers [radius]
+/vr admin quest whyAvailable <quest_id> <provider>
+/vr admin quest whyHidden <quest_id> [provider]
+/vr admin quest inspect <quest_id>
+/vr admin quest rebind <quest_id> <provider>
+/vr admin quest objectives <quest_id>
+/vr admin quest trace on
+/vr admin quest trace show [limit]
+/vr admin quest trace capture <quest_id> <provider>
+/vr admin quest fireTrigger <quest_id> <event>
+/vr admin quest actions dryRun <quest_id> <trigger_id>
 ```
 
 Use `inspect` for saved state, issuer context, target context, repeat rules, objective counters, current stage, and fact values. Use `trace` for indexed trigger dispatch, condition traces, action diagnostics, and bounded recent events.

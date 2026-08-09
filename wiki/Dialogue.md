@@ -175,4 +175,4 @@ You can still include explicit `professions` filters when needed, but the path i
 
 For request-specific patterns, see [Dialogue Requests](Dialogue-Requests.md).
 
-The command `/villagerretaliation dialogue explain <villager> <request> [option_id]` reports which request and filters caused a line to match or be rejected.
+The command `/vr admin dialogue explain <villager> <request> [option_id]` reports which request and filters caused a line to match or be rejected.

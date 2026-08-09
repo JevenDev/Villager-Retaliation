@@ -128,4 +128,4 @@ The server still validates every preview, confirmation, blueprint placement, and
 - Keep custom structure templates small enough for the builder max-block config.
 - Builders copy block entity data for placed blocks, but generated loot table tags are stripped from built containers.
 - If a structure appears in the menu but preview says unavailable, confirm the template id exists and the structure is not over the builder max-block limit.
-- Use `/villagerretaliation datapack diagnostics` after `/reload` to see skipped or duplicate datapack entries.
+- Use `/vr admin datapack diagnostics` after `/reload` to see skipped or duplicate datapack entries.

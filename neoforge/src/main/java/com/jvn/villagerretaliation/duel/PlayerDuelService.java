@@ -84,6 +84,15 @@ public final class PlayerDuelService {
         }
     }
 
+    public static void acceptLatest(ServerPlayer opponent) {
+        ServerPlayer challenger = latestChallenger(opponent);
+        if (challenger == null) {
+            notice(opponent, "villagerretaliation.player_duel.error.invitation_invalid");
+            return;
+        }
+        accept(opponent, challenger);
+    }
+
     public static void decline(ServerPlayer opponent, ServerPlayer challenger) {
         Invitation invitation = INVITATIONS.remove(new InvitationKey(challenger.getUUID(), opponent.getUUID()));
         if (invitation == null || invitation.expiresAt() < gameTime(opponent.getServer())) {
@@ -93,6 +102,30 @@ public final class PlayerDuelService {
         notice(opponent, "villagerretaliation.player_duel.invitation_declined");
         notice(challenger, "villagerretaliation.player_duel.invitation_declined_other",
                 opponent.getGameProfile().getName());
+    }
+
+    public static void declineLatest(ServerPlayer opponent) {
+        ServerPlayer challenger = latestChallenger(opponent);
+        if (challenger == null) {
+            notice(opponent, "villagerretaliation.player_duel.error.invitation_invalid");
+            return;
+        }
+        decline(opponent, challenger);
+    }
+
+    private static ServerPlayer latestChallenger(ServerPlayer opponent) {
+        if (opponent == null) {
+            return null;
+        }
+        long now = gameTime(opponent.getServer());
+        INVITATIONS.entrySet().removeIf(entry -> entry.getValue().expiresAt() < now);
+        Invitation invitation = INVITATIONS.values().stream()
+                .filter(value -> value.opponentId().equals(opponent.getUUID()))
+                .max(java.util.Comparator.comparingLong(Invitation::expiresAt))
+                .orElse(null);
+        return invitation == null
+                ? null
+                : opponent.getServer().getPlayerList().getPlayer(invitation.challengerId());
     }
 
     private static String validate(ServerPlayer challenger, ServerPlayer opponent, DuelKit kit, int stake) {
@@ -504,7 +537,7 @@ public final class PlayerDuelService {
 
     private static void sendInvitationNotice(
             ServerPlayer target, String challengerName, String kitName, int stake) {
-        String command = "/duel accept " + challengerName;
+        String command = "/vr duel accept " + challengerName;
         Component accept = Component.translatable("villagerretaliation.player_duel.invitation.accept_chat")
                 .withStyle(style -> style
                         .withColor(ChatFormatting.GREEN)
