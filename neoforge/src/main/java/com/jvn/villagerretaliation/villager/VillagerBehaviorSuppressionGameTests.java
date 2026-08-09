@@ -21,6 +21,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -63,6 +64,35 @@ public final class VillagerBehaviorSuppressionGameTests {
         helper.assertFalse(
                 VillagerNaturalJobArmorResources.isArmorForSlot(Items.STONE, EquipmentSlot.CHEST),
                 "non-armor items must be rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void naturalJobArmorRollWaitsForAConfiguredProfession(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        CompoundTag data = villager.getPersistentData();
+        data.putBoolean("VillagerRetaliationNaturalJobArmorPending", true);
+
+        VillagerNaturalJobArmor.maybeRoll(villager);
+
+        helper.assertTrue(
+                data.getBoolean("VillagerRetaliationNaturalJobArmorPending"),
+                "an unconfigured profession must leave the armor roll pending");
+        helper.assertFalse(
+                data.getBoolean("VillagerRetaliationNaturalJobArmorRolled"),
+                "an unconfigured profession must not consume the armor roll");
+
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FLETCHER));
+        VillagerNaturalJobArmor.maybeRoll(villager);
+
+        helper.assertFalse(
+                data.getBoolean("VillagerRetaliationNaturalJobArmorPending"),
+                "a configured profession should consume the pending roll");
+        helper.assertTrue(
+                data.getBoolean("VillagerRetaliationNaturalJobArmorRolled"),
+                "a configured profession should record the completed roll");
+        villager.discard();
         helper.succeed();
     }
 
