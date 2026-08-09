@@ -655,13 +655,27 @@ public final class VillagerReputationEvents {
     private static List<IronGolem> nearbyIronGolems(AbstractVillager villager, double radius) {
         ServerLevel level = (ServerLevel) villager.level();
         AABB area = villager.getBoundingBox().inflate(radius);
-        return level.getEntitiesOfClass(IronGolem.class, area, IronGolem::isAlive);
+        return level.getEntitiesOfClass(
+                IronGolem.class,
+                area,
+                ironGolem -> ironGolem.isAlive()
+                        && !ironGolem.isPlayerCreated()
+                        && VillageAllegianceRelations.sameCanonical(level, villager, ironGolem));
     }
 
     private static boolean aggroNearbyIronGolems(List<IronGolem> nearbyGolems, Player player, double radiusSqr) {
         boolean aggroedAny = false;
         for (IronGolem ironGolem : nearbyGolems) {
-            if (ironGolem.distanceToSqr(player) > radiusSqr || !ironGolem.hasLineOfSight(player)) {
+            LivingEntity currentTarget = ironGolem.getTarget();
+            UUID persistentTarget = ironGolem.getPersistentAngerTarget();
+            if (ironGolem.distanceToSqr(player) > radiusSqr
+                    || !ironGolem.hasLineOfSight(player)
+                    || !ironGolem.canAttack(player)
+                    || !ironGolem.canAttackType(player.getType())
+                    || currentTarget != null && currentTarget.isAlive() && currentTarget != player
+                    || ironGolem.isAngry()
+                            && persistentTarget != null
+                            && !persistentTarget.equals(player.getUUID())) {
                 continue;
             }
             ironGolem.setTarget(player);
