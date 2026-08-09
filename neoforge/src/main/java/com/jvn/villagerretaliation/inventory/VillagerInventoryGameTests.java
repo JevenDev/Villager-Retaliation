@@ -58,6 +58,7 @@ import net.minecraft.world.entity.ai.behavior.TradeWithVillager;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -1397,6 +1398,39 @@ public final class VillagerInventoryGameTests {
         helper.assertFalse(
                 villager.getPersistentData().contains(EXTRA_INVENTORY_TAG, Tag.TAG_COMPOUND),
                 "empty extra inventory should not leave a persistent tag");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void personalArmorSwapReturnsOldPieceWithoutDuplicatingIt(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrPersonalArmorSwap");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        player.moveTo(villager.getX(), villager.getY(), villager.getZ());
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager,
+                EquipmentSlot.HEAD,
+                new ItemStack(Items.IRON_HELMET));
+
+        VillagerInventoryMenu menu = new VillagerInventoryMenu(
+                1,
+                player.getInventory(),
+                villager,
+                VillagerInventoryMenu.ViewMode.PERSONAL,
+                true,
+                false);
+        menu.setCarried(new ItemStack(Items.DIAMOND_HELMET));
+        menu.clicked(0, 0, ClickType.PICKUP, player);
+
+        helper.assertTrue(villager.getItemBySlot(EquipmentSlot.HEAD).is(Items.DIAMOND_HELMET),
+                "cursor armor should replace the equipped piece");
+        helper.assertTrue(menu.getCarried().is(Items.IRON_HELMET),
+                "the replaced armor should be returned to the cursor");
+        helper.assertValueEqual(countStored(villager, Items.IRON_HELMET), 0,
+                "the armor returned to the cursor must not also be copied into villager storage");
+        menu.removed(player);
         villager.discard();
         helper.succeed();
     }
