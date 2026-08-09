@@ -93,8 +93,11 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
@@ -393,6 +396,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private InteractionMenuAction selectedInteractionMenuAction;
     private boolean keyboardInteractionMenuFocusVisible;
     private boolean mouseInteractionMenuFocusVisible;
+    private int interactionMenuPointerX = Integer.MIN_VALUE;
+    private int interactionMenuPointerY = Integer.MIN_VALUE;
     private long animationStartMillis = -1L;
     private long interactionStateTransitionStartMillis = -1L;
     private int interactionStateTransitionStartOffsetY;
@@ -419,6 +424,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final ProfilePageContext profilePageContext = new ProfilePageContext();
     private final SkillsPageContext skillsPageContext = new SkillsPageContext();
     private final JobStatsPageContext jobStatsPageContext = new JobStatsPageContext();
+    private final EnumMap<InteractionMenuAction, InteractionMenuControl> interactionMenuControls =
+            new EnumMap<>(InteractionMenuAction.class);
 
     public VillagerInteractionScreen(
             int villagerEntityId,
@@ -572,6 +579,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 .bounds(0, 0, GIFT_BUTTON_WIDTH, GIFT_BUTTON_HEIGHT)
                 .build());
         this.giftButton.visible = false;
+        for (InteractionMenuAction action : InteractionMenuAction.values()) {
+            InteractionMenuControl control = new InteractionMenuControl(action);
+            this.interactionMenuControls.put(action, addWidget(control));
+        }
+        syncInteractionMenuControls();
         rebuildOptions();
         startPreparedReplacementTransition();
     }
@@ -710,6 +722,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int totalOffsetY = slideOffset + stateOffsetY;
         this.renderSlideOffsetY = totalOffsetY;
         this.renderContentOffsetX = contentOffsetX;
+        syncInteractionMenuControls();
         int interactionMouseY = mouseY - totalOffsetY;
         int interactionContentMouseX = mouseX - contentOffsetX;
         this.lastMouseX = mouseX;
@@ -717,7 +730,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         updateDialogueMouthAnimation();
         focusVillagerOnPlayer();
         if (!this.closingWithAnimation) {
-            updateMouseSelection(interactionContentMouseX, interactionMouseY);
+            updateMouseSelection(interactionContentMouseX, interactionMouseY, mouseX, mouseY);
             updateOptionScroll();
             updateSkillScroll();
         }
@@ -3062,11 +3075,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int selectedInteractionMenuButtonIndex(List<InteractionMenuButton> buttons) {
-        if (this.selectedInteractionMenuAction == null) {
+        return interactionMenuButtonIndex(buttons, this.selectedInteractionMenuAction);
+    }
+
+    private static int interactionMenuButtonIndex(
+            List<InteractionMenuButton> buttons,
+            InteractionMenuAction action) {
+        if (action == null) {
             return -1;
         }
         for (int index = 0; index < buttons.size(); index++) {
-            if (buttons.get(index).id() == this.selectedInteractionMenuAction) {
+            if (buttons.get(index).id() == action) {
                 return index;
             }
         }
@@ -3743,6 +3762,27 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             buttons.add(stayInteractionButton(stayAvailable));
         }
         return buttons;
+    }
+
+    private void syncInteractionMenuControls() {
+        for (InteractionMenuControl control : this.interactionMenuControls.values()) {
+            control.visible = false;
+        }
+        if (!usesRootIconMenu()) {
+            if (getFocused() instanceof InteractionMenuControl) {
+                setFocused(null);
+            }
+            return;
+        }
+
+        List<InteractionMenuButton> buttons = interactionMenuButtons();
+        for (int index = 0; index < buttons.size(); index++) {
+            InteractionMenuButton button = buttons.get(index);
+            InteractionMenuControl control = this.interactionMenuControls.get(button.id());
+            if (control != null) {
+                control.update(button, index, buttons.size());
+            }
+        }
     }
 
     private InteractionMenuButton followInteractionButton() {
@@ -4782,9 +4822,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
 
-    private void updateMouseSelection(int mouseX, int mouseY) {
+    private void updateMouseSelection(int mouseX, int mouseY, int screenMouseX, int screenMouseY) {
         if (usesRootIconMenu()) {
-            updateInteractionMenuMouseSelection(mouseX, mouseY);
+            updateInteractionMenuMouseSelection(mouseX, mouseY, screenMouseX, screenMouseY);
             return;
         }
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
@@ -4794,7 +4834,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private void updateInteractionMenuMouseSelection(int mouseX, int mouseY) {
+    private void updateInteractionMenuMouseSelection(
+            int mouseX,
+            int mouseY,
+            int screenMouseX,
+            int screenMouseY) {
+        boolean pointerMoved = screenMouseX != this.interactionMenuPointerX
+                || screenMouseY != this.interactionMenuPointerY;
+        this.interactionMenuPointerX = screenMouseX;
+        this.interactionMenuPointerY = screenMouseY;
+        if (!pointerMoved && this.keyboardInteractionMenuFocusVisible) {
+            return;
+        }
         List<InteractionMenuButton> buttons = interactionMenuButtons();
         int hovered = interactionMenuButtonAt(mouseX, mouseY, buttons);
         if (hovered >= 0) {
@@ -5853,6 +5904,55 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             String description,
             Runnable action,
             boolean active) {
+    }
+
+    private final class InteractionMenuControl extends AbstractButton {
+        private final InteractionMenuAction action;
+        private Component description = Component.empty();
+
+        private InteractionMenuControl(InteractionMenuAction action) {
+            super(0, 0, INTERACTION_BUTTON_SIZE, INTERACTION_BUTTON_SIZE, Component.empty());
+            this.action = action;
+            this.visible = false;
+        }
+
+        private void update(InteractionMenuButton button, int index, int buttonCount) {
+            setX(interactionMenuButtonLeft(index, buttonCount) + VillagerInteractionScreen.this.renderContentOffsetX);
+            setY(interactionMenuButtonTop() + VillagerInteractionScreen.this.renderSlideOffsetY);
+            setMessage(Component.literal(button.title()));
+            this.description = Component.literal(button.description());
+            this.active = button.active();
+            this.visible = true;
+        }
+
+        @Override
+        public void onPress() {
+            List<InteractionMenuButton> buttons = interactionMenuButtons();
+            int index = interactionMenuButtonIndex(buttons, this.action);
+            activateInteractionMenuButton(buttons, index, true);
+        }
+
+        @Override
+        public void setFocused(boolean focused) {
+            super.setFocused(focused);
+            if (focused && this.visible) {
+                VillagerInteractionScreen.this.selectedInteractionMenuAction = this.action;
+                VillagerInteractionScreen.this.keyboardInteractionMenuFocusVisible = true;
+                VillagerInteractionScreen.this.mouseInteractionMenuFocusVisible = false;
+            }
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput output) {
+            defaultButtonNarrationText(output);
+            if (!this.description.getString().isBlank()) {
+                output.add(NarratedElementType.HINT, this.description);
+            }
+        }
     }
 
     private record TopBackButtonBounds(int left, int right, int top, int bottom) {
