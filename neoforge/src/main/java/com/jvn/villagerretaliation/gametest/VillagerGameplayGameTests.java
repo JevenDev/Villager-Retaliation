@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.event.VillagerDeathMessageFactory;
+import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -98,6 +99,7 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -297,6 +299,30 @@ public final class VillagerGameplayGameTests {
             attacker.discard();
             helper.succeed();
         });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void damageNullifiedBeforeArmorDoesNotConsumeDurability(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack chestplate = new ItemStack(Items.IRON_CHESTPLATE);
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager,
+                EquipmentSlot.CHEST,
+                chestplate
+        );
+        DamageContainer container = new DamageContainer(villager.damageSources().generic(), 8.0F);
+        container.setReduction(DamageContainer.Reduction.INVULNERABILITY, 8.0F);
+
+        VillagerRetaliationEvents.onLivingDamageFinalPre(
+                new net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre(villager, container)
+        );
+
+        helper.assertValueEqual(
+                villager.getItemBySlot(EquipmentSlot.CHEST).getDamageValue(),
+                0,
+                "damage nullified by attack invulnerability must not damage armor");
+        villager.discard();
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
