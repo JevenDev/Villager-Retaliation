@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
+import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerCombatSkillBehavior;
 import com.jvn.villagerretaliation.duel.DuelAvailabilityReason;
@@ -93,6 +94,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
@@ -122,6 +124,10 @@ import org.lwjgl.glfw.GLFW;
 public class VillagerInteractionScreen extends Screen implements VillagerInteractionSessionScreen {
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
     private static final long ACTIVITY_SIGNAL_INTERVAL_MILLIS = 1_000L;
+    private static final int CHAT_EDGE_MARGIN = 4;
+    private static final int CHAT_TOP_MARGIN = 12;
+    private static final int CHAT_INPUT_AND_GAP_HEIGHT = 38;
+    private static final int CHAT_EXTRA_WIDTH = 8;
     private static final String BACK_LABEL_KEY = GUI_KEY_PREFIX + "back";
     private static final String FORCED_LEAVE_OPTION_ID = "leave";
     private static final String DIALOGUE_TREE_LEAVE_OPTION_ID = DialogueTreeService.LEAVE_OPTION_ID;
@@ -1034,6 +1040,48 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.openingChat = true;
         clearDialogueMouthAnimation();
         Minecraft.getInstance().setScreen(new VillagerInteractionChatScreen(this, initialText));
+    }
+
+    void renderPositionedHudChat(GuiGraphics graphics) {
+        Minecraft minecraft = Minecraft.getInstance();
+        ChatRenderLayout layout = chatRenderLayout();
+        graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
+        graphics.pose().pushPose();
+        try {
+            graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
+            minecraft.gui.getChat().render(graphics, minecraft.gui.getGuiTicks(), 0, 0, false);
+        } finally {
+            graphics.pose().popPose();
+            graphics.disableScissor();
+        }
+    }
+
+    ChatRenderLayout chatRenderLayout() {
+        Minecraft minecraft = Minecraft.getInstance();
+        ChatComponent chat = minecraft.gui.getChat();
+        int chatWidth = chat.getWidth() + CHAT_EXTRA_WIDTH;
+        int chatHeight = chat.getHeight();
+        int groupWidth = Mth.clamp(chatWidth, 40, Math.max(40, this.width - CHAT_EDGE_MARGIN * 2));
+        int groupHeight = Mth.clamp(
+                chatHeight + CHAT_INPUT_AND_GAP_HEIGHT,
+                40,
+                Math.max(40, this.height - CHAT_EDGE_MARGIN * 2));
+        int vanillaTop = this.height - 40 - chatHeight;
+
+        InteractionChatPosition position = VillagerRetaliationConfig.INTERACTION_CHAT_POSITION.get();
+        int targetLeft = position.anchoredLeft(this.width, groupWidth, CHAT_EDGE_MARGIN);
+        int targetTop = position.anchoredTop(
+                this.height,
+                groupHeight,
+                vanillaTop,
+                CHAT_TOP_MARGIN);
+        return new ChatRenderLayout(
+                targetLeft,
+                targetTop,
+                targetLeft + groupWidth,
+                targetTop + groupHeight,
+                targetLeft,
+                targetTop - vanillaTop);
     }
 
     private void rebuildOptions() {
@@ -6673,6 +6721,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public void requestProfileRefresh() {
             VillagerInteractionScreen.this.requestProfileRefresh();
+        }
+    }
+
+    record ChatRenderLayout(int left, int top, int right, int bottom, int xOffset, int yOffset) {
+        int translatedMouseX(int mouseX) {
+            return mouseX - this.xOffset;
+        }
+
+        int translatedMouseY(int mouseY) {
+            return mouseY - this.yOffset;
         }
     }
 }

@@ -8,12 +8,15 @@ import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerItemFilterItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.interaction.ResolvedGiftPreference;
+import com.jvn.villagerretaliation.interaction.VillagerGiftKeepsakes;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge;
 import com.jvn.villagerretaliation.network.ItemFilterCombinationChangePayload;
 import com.jvn.villagerretaliation.recipe.VillagerAttributeFilterCopyRecipe;
 import com.jvn.villagerretaliation.recipe.VillagerFilterResetRecipe;
 import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.party.PartyVillagerDropCollection;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -110,6 +113,39 @@ public final class VillagerInventoryGameTests {
                 VillagerInventoryAccess.preferredViewMode(level, villager, outsider),
                 VillagerInventoryMenu.ViewMode.PERSONAL,
                 "other players must not be routed into the hired job inventory");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void storedGiftTracksOnlyActuallyAwardedReputation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrCappedGiftLedger");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        int awardedReputation = 5;
+
+        VillagerReputationManager.addGiftReputation(level, villager, player, awardedReputation);
+        VillagerGiftKeepsakes.storeGift(
+                level,
+                villager,
+                player,
+                new ItemStack(Items.DIAMOND),
+                ResolvedGiftPreference.neutral().withReputationValue(120),
+                awardedReputation);
+
+        VillagerGiftReturnTracker.GiftSnapshot snapshot =
+                VillagerGiftReturnTracker.capture(player, villager);
+        ItemStack takenGift = VillagerInventoryAccess.takeCarriedItem(
+                villager, stack -> stack.is(Items.DIAMOND));
+        helper.assertFalse(takenGift.isEmpty(), "the capped gift should be stored in the villager inventory");
+        player.getInventory().setItem(0, takenGift);
+
+        VillagerGiftReturnTracker.applyTakenGiftPenalties(player, villager, snapshot);
+        helper.assertValueEqual(
+                VillagerReputationManager.getReputation(level, villager, player.getUUID()),
+                -10,
+                "taking back a gift must revoke the 5 reputation actually awarded plus the 10-point return penalty");
 
         villager.discard();
         helper.succeed();

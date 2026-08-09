@@ -132,7 +132,7 @@ public final class VillagerGiftRequestHandler {
         }
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
         if (!rejected) {
-            VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference);
+            VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference, reputationValue);
             rememberGearGift(level, villager, player, giftedStack);
         }
         VillageEventMemory.rememberGift(

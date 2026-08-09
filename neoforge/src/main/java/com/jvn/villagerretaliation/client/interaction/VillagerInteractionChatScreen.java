@@ -32,9 +32,18 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.interactionScreen.render(graphics, mouseX, mouseY, partialTick);
+        VillagerInteractionScreen.ChatRenderLayout layout = this.interactionScreen.chatRenderLayout();
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.chatLayerZ());
-        super.render(graphics, mouseX, mouseY, partialTick);
-        VillagerClientUiUtil.popGuiLayer(graphics);
+        graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
+        graphics.pose().pushPose();
+        try {
+            graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
+            super.render(graphics, layout.translatedMouseX(mouseX), layout.translatedMouseY(mouseY), partialTick);
+        } finally {
+            graphics.pose().popPose();
+            graphics.disableScissor();
+            VillagerClientUiUtil.popGuiLayer(graphics);
+        }
     }
 
     @Override
@@ -57,7 +66,9 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         this.interactionScreen.noteInteractionActivity();
-        return super.mouseClicked(mouseX, mouseY, button);
+        VillagerInteractionScreen.ChatRenderLayout layout = this.interactionScreen.chatRenderLayout();
+        return super.mouseClicked(
+                mouseX - layout.xOffset(), mouseY - layout.yOffset(), button);
     }
 
     @Override
@@ -129,6 +140,10 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     @Override
     public void prepareReplacementTransition(VillagerInteractionScreen target) {
         this.interactionScreen.prepareReplacementTransition(target);
+    }
+
+    VillagerInteractionScreen interactionScreen() {
+        return this.interactionScreen;
     }
 
     private void returnToInteractionScreen() {
