@@ -112,6 +112,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityEvent;
@@ -313,9 +314,6 @@ public final class VillagerRetaliationEvents {
                     player.getMainHandItem(),
                     target);
         }
-        if (event.getEntity() instanceof AbstractVillager villager) {
-            VillagerEquipmentDurability.hurtArmor(villager, event.getSource(), event.getOriginalDamage());
-        }
         if (event.getEntity() instanceof Villager villager && event.getNewDamage() > 0.0F) {
             VillagerRecruitmentService.rememberFollowerDamage(villager);
         }
@@ -354,6 +352,15 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamageFinalPre(LivingDamageEvent.Pre event) {
+        if (event.getEntity() instanceof AbstractVillager villager
+                && !com.jvn.villagerretaliation.duel.DuelService.isDuelDamage(villager, event.getSource())) {
+            DamageContainer container = event.getContainer();
+            float damageReachingArmor = event.getNewDamage()
+                    + container.getReduction(DamageContainer.Reduction.ARMOR)
+                    + container.getReduction(DamageContainer.Reduction.ENCHANTMENTS)
+                    + container.getReduction(DamageContainer.Reduction.MOB_EFFECTS);
+            VillagerEquipmentDurability.hurtArmor(villager, event.getSource(), damageReachingArmor);
+        }
         VillagerDisciplineService.capFinalDamage(event);
         if (com.jvn.villagerretaliation.duel.DuelService.onFinalDamage(event)) {
             return;
