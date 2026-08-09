@@ -3783,6 +3783,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 control.update(button, index, buttons.size());
             }
         }
+        if (interactionMenuButtonIndex(buttons, this.selectedInteractionMenuAction) < 0) {
+            this.selectedInteractionMenuAction = null;
+            this.keyboardInteractionMenuFocusVisible = false;
+            this.mouseInteractionMenuFocusVisible = false;
+        }
+        if (getFocused() instanceof InteractionMenuControl control && !control.visible) {
+            setFocused(null);
+        }
     }
 
     private InteractionMenuButton followInteractionButton() {
