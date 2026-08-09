@@ -919,7 +919,10 @@ final class VillagerInventoryContainer implements Container {
             // Vanilla has commonly moved the equipped copy into LivingDropsEvent and
             // cleared the entity slot before this callback. Reconcile against the
             // authoritative job stack instead of relying on the now-empty live slot.
-            removeOneMatchingDrop(event, jobStack);
+            ItemStack equipmentDrop = removeOneMatchingEquipmentDrop(event, jobStack);
+            if (!equipmentDrop.isEmpty()) {
+                HiredJobInventory.reconcileEquipmentDrop(villager, slot, equipmentDrop);
+            }
             if (!stack.isEmpty()) {
                 VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
             }
@@ -984,14 +987,33 @@ final class VillagerInventoryContainer implements Container {
                 : 0;
     }
 
-    private static void removeOneMatchingDrop(LivingDropsEvent event, ItemStack stack) {
+    private static ItemStack removeOneMatchingEquipmentDrop(LivingDropsEvent event, ItemStack stack) {
+        ItemStack exactMatch = removeOneMatchingDrop(event, stack);
+        if (!exactMatch.isEmpty()) {
+            return exactMatch;
+        }
+
         Iterator<ItemEntity> drops = event.getDrops().iterator();
         while (drops.hasNext()) {
-            if (ItemStack.isSameItemSameComponents(drops.next().getItem(), stack)) {
+            ItemStack droppedStack = drops.next().getItem();
+            if (ItemStack.isSameItem(droppedStack, stack)) {
                 drops.remove();
-                return;
+                return droppedStack.copy();
             }
         }
+        return ItemStack.EMPTY;
+    }
+
+    private static ItemStack removeOneMatchingDrop(LivingDropsEvent event, ItemStack stack) {
+        Iterator<ItemEntity> drops = event.getDrops().iterator();
+        while (drops.hasNext()) {
+            ItemStack droppedStack = drops.next().getItem();
+            if (ItemStack.isSameItemSameComponents(droppedStack, stack)) {
+                drops.remove();
+                return droppedStack.copy();
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     private record BorrowedCombatWeapon(int slot, ItemStack stack, ItemStack displacedMainHand, int returnFailures) {

@@ -169,6 +169,48 @@ public final class HiredJobInventory implements Container {
         return slot >= 0 ? getJobInventory(villager).items.get(slot) : ItemStack.EMPTY;
     }
 
+    public static void synchronizeEquipmentDurability(Villager villager, EquipmentSlot equipmentSlot) {
+        if (villager == null || equipmentSlot == null) {
+            return;
+        }
+        int slot = jobSlotForEquipmentSlot(equipmentSlot);
+        if (slot < 0 || !hasPersistedJobStack(villager, slot)) {
+            return;
+        }
+
+        HiredJobInventory inventory = getJobInventory(villager);
+        ItemStack storedStack = inventory.items.get(slot);
+        ItemStack liveStack = villager.getItemBySlot(equipmentSlot);
+        if (liveStack.isEmpty()) {
+            inventory.items.set(slot, ItemStack.EMPTY);
+            inventory.resetEmptySlotType(slot);
+            inventory.setChanged();
+            return;
+        }
+        if (!ItemStack.isSameItem(liveStack, storedStack) || sameStack(liveStack, storedStack)) {
+            return;
+        }
+
+        inventory.items.set(slot, liveStack.copy());
+        inventory.setChanged();
+    }
+
+    static void reconcileEquipmentDrop(Villager villager, EquipmentSlot equipmentSlot, ItemStack droppedStack) {
+        if (villager == null || equipmentSlot == null || droppedStack.isEmpty()) {
+            return;
+        }
+        int slot = jobSlotForEquipmentSlot(equipmentSlot);
+        if (slot < 0 || !hasPersistedJobStack(villager, slot)) {
+            return;
+        }
+
+        HiredJobInventory inventory = getJobInventory(villager);
+        if (ItemStack.isSameItem(inventory.items.get(slot), droppedStack)) {
+            inventory.items.set(slot, droppedStack.copy());
+            inventory.setChanged();
+        }
+    }
+
     static boolean consumeEquippedTotem(Villager villager, EquipmentSlot equipmentSlot, ItemStack usedTotem) {
         if (villager == null || equipmentSlot == null || usedTotem == null
                 || !usedTotem.is(Items.TOTEM_OF_UNDYING)

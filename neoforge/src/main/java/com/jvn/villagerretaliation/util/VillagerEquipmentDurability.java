@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.util;
 
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
@@ -8,6 +9,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,8 +31,26 @@ public final class VillagerEquipmentDurability {
             return;
         }
 
+        boolean[] jobControlled = null;
+        if (villager instanceof Villager regularVillager) {
+            jobControlled = new boolean[ARMOR_SLOTS.length];
+            for (int index = 0; index < ARMOR_SLOTS.length; index++) {
+                jobControlled[index] = HiredJobInventory.hasJobEquipmentForSlot(
+                        regularVillager,
+                        ARMOR_SLOTS[index])
+                        && !regularVillager.getItemBySlot(ARMOR_SLOTS[index]).isEmpty();
+            }
+        }
         int armorDamage = Mth.floor(Math.max(1.0F, damageAmount / 4.0F));
         CommonHooks.onArmorHurt(source, ARMOR_SLOTS, armorDamage, villager);
+        if (jobControlled != null) {
+            Villager regularVillager = (Villager) villager;
+            for (int index = 0; index < ARMOR_SLOTS.length; index++) {
+                if (jobControlled[index]) {
+                    HiredJobInventory.synchronizeEquipmentDurability(regularVillager, ARMOR_SLOTS[index]);
+                }
+            }
+        }
     }
 
     public static void postMeleeHit(AbstractVillager villager, LivingEntity target, InteractionHand hand) {
