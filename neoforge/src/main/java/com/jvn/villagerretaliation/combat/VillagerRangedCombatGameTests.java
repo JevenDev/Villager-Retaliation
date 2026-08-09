@@ -1,5 +1,9 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -23,6 +27,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -437,6 +442,54 @@ public final class VillagerRangedCombatGameTests {
         trader.discard();
         hostile.discard();
         cleric.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void smithRepairsOnlyNaturalAlliedGolems(GameTestHelper helper) {
+        Villager smith = spawnVillager(helper, new BlockPos(2, 2, 2));
+        IronGolem allied = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(3, 2, 2));
+        IronGolem foreign = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(4, 2, 2));
+        IronGolem playerCreated = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(5, 2, 2));
+        allied.setHealth(50.0F);
+        foreign.setHealth(50.0F);
+        playerCreated.setHealth(50.0F);
+        playerCreated.setPlayerCreated(true);
+
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
+        VillageAllegianceId smithHome = registry.create(
+                helper.getLevel().getGameTime(),
+                helper.getLevel().dimension().location(),
+                smith.blockPosition(),
+                "Smith Repair Home");
+        VillageAllegianceId foreignHome = registry.create(
+                helper.getLevel().getGameTime(),
+                helper.getLevel().dimension().location(),
+                foreign.blockPosition(),
+                "Foreign Golem Home");
+        VillageAllegianceApi.assignKnown(
+                helper.getLevel(), smith, smithHome, AllegianceAssignmentSource.ADMIN);
+        VillageAllegianceApi.assignKnown(
+                helper.getLevel(), allied, smithHome, AllegianceAssignmentSource.ADMIN);
+        VillageAllegianceApi.assignKnown(
+                helper.getLevel(), foreign, foreignHome, AllegianceAssignmentSource.ADMIN);
+        VillageAllegianceApi.assignKnown(
+                helper.getLevel(), playerCreated, smithHome, AllegianceAssignmentSource.ADMIN);
+
+        helper.assertTrue(
+                VillagerSmithGolemRepairSupport.isRepairTarget(smith, helper.getLevel(), allied),
+                "a damaged natural golem from the smith''s village should be repairable");
+        helper.assertFalse(
+                VillagerSmithGolemRepairSupport.isRepairTarget(smith, helper.getLevel(), foreign),
+                "a foreign-village golem should not be repairable");
+        helper.assertFalse(
+                VillagerSmithGolemRepairSupport.isRepairTarget(smith, helper.getLevel(), playerCreated),
+                "a player-created golem should not be repairable");
+
+        allied.discard();
+        foreign.discard();
+        playerCreated.discard();
+        smith.discard();
         helper.succeed();
     }
 
