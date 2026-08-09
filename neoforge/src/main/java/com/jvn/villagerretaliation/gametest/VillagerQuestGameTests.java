@@ -1012,6 +1012,32 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void invalidDialogueConditionsFailClosed(GameTestHelper helper) {
+        JsonObject unknownRoot = new JsonObject();
+        JsonArray unknownConditions = new JsonArray();
+        JsonObject unknown = new JsonObject();
+        unknown.addProperty("type", "misspelled_condition");
+        unknownConditions.add(unknown);
+        unknownRoot.add("conditions", unknownConditions);
+
+        List<DialogueCondition> parsed = DialogueCondition.readList(
+                VillagerRetaliation.id("test/invalid_condition"),
+                "invalid condition",
+                unknownRoot);
+        helper.assertValueEqual(parsed.size(), 1, "invalid condition sentinel count");
+        helper.assertTrue(parsed.getFirst() instanceof DialogueCondition.Invalid, "unknown condition did not fail closed");
+
+        JsonObject malformedRoot = new JsonObject();
+        malformedRoot.addProperty("conditions", "not an array");
+        List<DialogueCondition> malformed = DialogueCondition.readList(
+                VillagerRetaliation.id("test/malformed_condition"),
+                "malformed condition",
+                malformedRoot);
+        helper.assertTrue(malformed.getFirst() instanceof DialogueCondition.Invalid, "malformed condition list did not fail closed");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void conditionTraceReportsFirstUnknownCondition(GameTestHelper helper) {
         DialogueCondition condition = new DialogueCondition.QuestFact(
                 QuestFactScope.QUEST,
