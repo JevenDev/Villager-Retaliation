@@ -66,9 +66,33 @@ public record DialogueOptionDefinition(
         boolean requiresActiveSpecialOrders,
         int order
 ) {
+    public static final int MAX_NETWORK_ID_LENGTH = 128;
+    public static final int MAX_NETWORK_LABEL_LENGTH = 128;
+
     private static final String LEFT_BEHIND_OPTION_ID = "recruitment_left_behind";
     private static final String DEFAULT_FOLLOWUP_OPTION_ID = "recruitment_followup";
     private static final String LEFT_BEHIND_SCENARIO = "left_behind";
+
+    public static boolean isNetworkSafeId(String id) {
+        return id != null && !id.isBlank() && id.length() <= MAX_NETWORK_ID_LENGTH;
+    }
+
+    public static boolean isNetworkSafeLabel(String label) {
+        return label != null && label.length() <= MAX_NETWORK_LABEL_LENGTH;
+    }
+
+    public static String networkSafeLabel(String label) {
+        if (label == null || label.length() <= MAX_NETWORK_LABEL_LENGTH) {
+            return label == null ? "" : label;
+        }
+        int end = MAX_NETWORK_LABEL_LENGTH;
+        if (Character.isHighSurrogate(label.charAt(end - 1))
+                && end < label.length()
+                && Character.isLowSurrogate(label.charAt(end))) {
+            end--;
+        }
+        return label.substring(0, end);
+    }
 
     public DialogueOptionDefinition {
         id = id == null ? "" : id;

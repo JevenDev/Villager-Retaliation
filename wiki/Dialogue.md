@@ -49,6 +49,8 @@ data/my_pack/dialogue/en_us/global/lines/00_rumor.json
 }
 ```
 
+Dialogue option IDs and labels are limited to 128 characters so they can be sent safely to clients.
+
 ```json
 {
   "id": "my_pack.line.rumor",

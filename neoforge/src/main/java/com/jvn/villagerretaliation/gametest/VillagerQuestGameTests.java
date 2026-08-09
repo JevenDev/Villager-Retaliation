@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueLine;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeDefinition;
@@ -1034,6 +1035,33 @@ public final class VillagerQuestGameTests {
                 "malformed condition",
                 malformedRoot);
         helper.assertTrue(malformed.getFirst() instanceof DialogueCondition.Invalid, "malformed condition list did not fail closed");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void textKeyDialogueLinesParticipateInFreshSelection(GameTestHelper helper) {
+        DialogueLine keyedLine = DialogueLine.builder("keyed_line", DialogueRequestType.QUESTION, List.of())
+                .textKey("test.keyed_line")
+                .build();
+
+        helper.assertTrue(!keyedLine.recentlyUsed(List.of()), "new text_key line was considered recently used");
+        helper.assertTrue(keyedLine.hasFreshVariant(List.of()), "new text_key line was filtered from fresh candidates");
+        helper.assertTrue(keyedLine.recentlyUsed(List.of("keyed_line")), "used text_key line was not remembered");
+        helper.assertTrue(!keyedLine.hasFreshVariant(List.of("keyed_line")), "used text_key line remained fresh");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dialogueOptionNetworkBoundsAreExplicit(GameTestHelper helper) {
+        String maximum = "x".repeat(DialogueOptionDefinition.MAX_NETWORK_ID_LENGTH);
+        String oversized = maximum + "x";
+        helper.assertTrue(DialogueOptionDefinition.isNetworkSafeId(maximum), "maximum-length option id was rejected");
+        helper.assertTrue(!DialogueOptionDefinition.isNetworkSafeId(oversized), "oversized option id was accepted");
+        helper.assertTrue(!DialogueOptionDefinition.isNetworkSafeLabel(oversized), "oversized option label was accepted");
+        helper.assertValueEqual(
+                DialogueOptionDefinition.networkSafeLabel(oversized).length(),
+                DialogueOptionDefinition.MAX_NETWORK_LABEL_LENGTH,
+                "network label truncation");
         helper.succeed();
     }
 
