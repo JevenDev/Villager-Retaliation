@@ -805,6 +805,56 @@ public final class PlayerRaidGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void raidCleanupClearsGolemPersistentAnger(GameTestHelper helper) {
+        BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        IronGolem golem = EntityType.IRON_GOLEM.create(helper.getLevel());
+        helper.assertTrue(golem != null, "raid golem should be creatable");
+        golem.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(golem), "raid golem should spawn");
+
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
+        VillageAllegianceId village = registry.create(
+                helper.getLevel().getGameTime(),
+                helper.getLevel().dimension().location(),
+                center,
+                "Raid Anger Cleanup");
+        VillageAllegianceApi.assignKnown(
+                helper.getLevel(), golem, village, AllegianceAssignmentSource.EXPLICIT_API);
+
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
+        PlayerRaidSavedData.RaidRecord raid = data.create(
+                village,
+                helper.getLevel().dimension().location(),
+                center,
+                Set.of(SectionPos.asLong(center)),
+                "Raid Anger Cleanup",
+                player.getUUID(),
+                null,
+                Set.of(player.getUUID()),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                42L);
+        raid.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 43L);
+        golem.setTarget(player);
+        golem.setPersistentAngerTarget(player.getUUID());
+        golem.startPersistentAngerTimer();
+
+        PlayerRaidService.releaseRaidCombatState(helper.getLevel().getServer(), raid);
+
+        helper.assertTrue(golem.getTarget() == null, "raid cleanup should clear the golem target");
+        helper.assertTrue(golem.getPersistentAngerTarget() == null,
+                "raid cleanup should clear the golem persistent anger target");
+        helper.assertFalse(golem.isAngry(), "raid cleanup should stop the golem anger timer");
+
+        data.remove(raid.id());
+        golem.discard();
+        player.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void missingRaidDimensionSettlesAndReleasesParticipants(GameTestHelper helper) {
         PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
         UUID player = UUID.randomUUID();
