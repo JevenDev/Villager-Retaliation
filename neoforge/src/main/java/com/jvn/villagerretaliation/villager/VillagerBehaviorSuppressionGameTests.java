@@ -25,6 +25,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
@@ -49,6 +50,20 @@ public final class VillagerBehaviorSuppressionGameTests {
     }
 
     private VillagerBehaviorSuppressionGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void naturalJobArmorRequiresArmorForTheConfiguredSlot(GameTestHelper helper) {
+        helper.assertTrue(
+                VillagerNaturalJobArmorResources.isArmorForSlot(Items.IRON_BOOTS, EquipmentSlot.FEET),
+                "boots should be accepted for the feet slot");
+        helper.assertFalse(
+                VillagerNaturalJobArmorResources.isArmorForSlot(Items.IRON_HELMET, EquipmentSlot.FEET),
+                "armor for a different slot must be rejected");
+        helper.assertFalse(
+                VillagerNaturalJobArmorResources.isArmorForSlot(Items.STONE, EquipmentSlot.CHEST),
+                "non-armor items must be rejected");
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
