@@ -9,7 +9,6 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.VillagerDataHolder;
-import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -56,10 +55,6 @@ public final class VillagerNaturalJobArmor {
                 .profile(level.getServer(), villagerDataHolder.getVillagerData().getProfession())
                 .orElse(null);
         if (profile == null) {
-            if (villagerDataHolder.getVillagerData().getProfession() != VillagerProfession.NONE) {
-                villager.getPersistentData().putBoolean(ROLLED_TAG, true);
-                villager.getPersistentData().remove(PENDING_TAG);
-            }
             return;
         }
 
