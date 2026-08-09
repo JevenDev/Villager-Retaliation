@@ -1196,68 +1196,72 @@ function renderPlayerRaids() {
   `;
 }
 
-function renderGifts() {
-  const globalPreferredItems = Array.isArray(DATA.gifts.globalPreferredItems) ? DATA.gifts.globalPreferredItems : [];
-  const globalDislikedItems = Array.isArray(DATA.gifts.globalDislikedItems) ? DATA.gifts.globalDislikedItems : [];
-  const globalNeutralItems = Array.isArray(DATA.gifts.globalNeutralItems) ? DATA.gifts.globalNeutralItems : [];
-  const professionPanels = (DATA.gifts.professionPreferences || [])
-    .slice()
-    .sort((a, b) => String(a.profession || "").localeCompare(String(b.profession || "")))
-    .map((group) => {
-    const preferred = new Set();
-    const disliked = new Set();
-    (group.entries || []).forEach((entry) => {
-      const key = String(entry.reaction || "").toLowerCase();
-      const items = Array.isArray(entry.items) ? entry.items : [];
-      if (key === "loved" || key === "liked") items.forEach((item) => preferred.add(item));
-      if (key === "disliked" || key === "hated") items.forEach((item) => disliked.add(item));
-    });
-    const preferredItems = preferred.size ? [...preferred].sort((a, b) => a.localeCompare(b)) : [];
-    const dislikedItems = disliked.size ? [...disliked].sort((a, b) => a.localeCompare(b)) : [];
-    return `
-      <details class="profession-gift-panel">
-        <summary>
-          <span class="profession-gift-name">${escapeHtml(group.profession)}</span>
-          <span class="profession-gift-meta">${preferredItems.length} favorites, ${dislikedItems.length} disliked</span>
-          ${icon("chevron-down", "profession-gift-chevron")}
-        </summary>
-        <div class="profession-gift-body">
-          <div class="profession-gift-group profession-gift-group-preferred">
-            <strong>Preferred gifts</strong>
-            ${preferredItems.length ? pillList(preferredItems) : '<p class="profession-gift-empty">No profession-specific favorites.</p>'}
-          </div>
-          <div class="profession-gift-group profession-gift-group-disliked">
-            <strong>Disliked gifts</strong>
-            ${dislikedItems.length ? pillList(dislikedItems) : '<p class="profession-gift-empty">No profession-specific dislikes.</p>'}
-          </div>
-        </div>
-      </details>
-    `;
-  }).join("");
+function giftRatingClass(rating) {
+  const value = Math.max(-3, Math.min(3, Number(rating) || 0));
+  if (value > 0) return `gift-rating-positive-${value}`;
+  if (value < 0) return `gift-rating-negative-${Math.abs(value)}`;
+  return "gift-rating-neutral";
+}
 
-  const globalLikedPanel = `
-    <details class="profession-gift-panel profession-gift-panel-global">
+function sortedGiftPreferences(entries) {
+  return (entries || []).slice().sort((a, b) => (
+    Number(b.rating) - Number(a.rating)
+    || String(a.category || "").localeCompare(String(b.category || ""))
+  ));
+}
+
+function renderGiftPreferenceEntries(entries) {
+  return sortedGiftPreferences(entries).map((entry) => `
+    <div class="profession-gift-group gift-rating-group ${giftRatingClass(entry.rating)}">
+      <div class="gift-rating-heading">
+        <strong><span class="gift-rating-symbol">${escapeHtml(entry.ratingLabel || "0")}</span> ${escapeHtml(entry.category || "Gift")}</strong>
+        <span class="gift-rating-reaction">${escapeHtml(entry.reaction || "Neutral")}</span>
+      </div>
+      ${pillList(entry.items || [])}
+    </div>
+  `).join("");
+}
+
+function renderGiftPreferencePanel(name, entries, extraClass = "") {
+  const preferences = sortedGiftPreferences(entries);
+  const selectorCount = new Set(preferences.flatMap((entry) => entry.items || [])).size;
+  return `
+    <details class="profession-gift-panel ${extraClass}">
       <summary>
-        <span class="profession-gift-name">Global gifts</span>
-        <span class="profession-gift-meta">${globalPreferredItems.length} broadly liked, ${globalDislikedItems.length} disliked</span>
+        <span class="profession-gift-name">${escapeHtml(name)}</span>
+        <span class="profession-gift-meta">${plural(preferences.length, "category", "categories")}, ${plural(selectorCount, "selector")}</span>
         ${icon("chevron-down", "profession-gift-chevron")}
       </summary>
       <div class="profession-gift-body">
-        <div class="profession-gift-group profession-gift-group-preferred">
-          <strong>Preferred gifts</strong>
-          ${globalPreferredItems.length ? pillList(globalPreferredItems) : '<p class="profession-gift-empty">No broadly liked gifts.</p>'}
-        </div>
-        <div class="profession-gift-group profession-gift-group-disliked">
-          <strong>Disliked gifts</strong>
-          ${globalDislikedItems.length ? pillList(globalDislikedItems) : '<p class="profession-gift-empty">No broadly disliked gifts.</p>'}
-        </div>
-        <div class="profession-gift-group profession-gift-group-neutral">
-          <strong>Neutral</strong>
-          ${globalNeutralItems.length ? pillList(globalNeutralItems) : pillList(["Other accepted items"])}
-        </div>
+        ${preferences.length ? renderGiftPreferenceEntries(preferences) : '<p class="profession-gift-empty">No explicit preferences.</p>'}
       </div>
     </details>
   `;
+}
+
+function renderGiftRatingScale() {
+  const stages = Array.isArray(DATA.gifts.ratingScale) ? DATA.gifts.ratingScale : [];
+  return `<div class="table-wrap"><table class="gift-rating-table"><thead><tr><th>Rating</th><th>Reaction</th><th>Meaning</th></tr></thead><tbody>${stages.map((stage) => `
+    <tr class="${giftRatingClass(stage.rating)}">
+      <td><strong class="gift-rating-symbol">${escapeHtml(stage.label)}</strong></td>
+      <td>${escapeHtml(stage.reaction)}</td>
+      <td>${escapeHtml(stage.description)}</td>
+    </tr>
+  `).join("")}</tbody></table></div>`;
+}
+
+function renderGifts() {
+  const professionPanels = (DATA.gifts.professionPreferences || [])
+    .slice()
+    .sort((a, b) => String(a.profession || "").localeCompare(String(b.profession || "")))
+    .map((group) => renderGiftPreferencePanel(group.profession, group.entries))
+    .join("");
+
+  const globalPanel = renderGiftPreferencePanel(
+    "Global gifts",
+    DATA.gifts.globalPreferences || [],
+    "profession-gift-panel-global"
+  );
 
   const rewardGroups = new Map();
   (DATA.gifts.rewards || []).forEach((reward) => {
@@ -1289,16 +1293,19 @@ function renderGifts() {
 
   return `
     ${section("Choosing A Gift", `
-      <p>Villagers have shared tastes as well as profession-specific preferences. The same item can therefore mean more to one profession than another. The villager must also have enough inventory space to accept the full stack.</p>
+      <p>Villagers have shared tastes as well as profession-specific preferences. Ratings run from <strong>+++</strong> for the strongest preference to <strong>---</strong> for the strongest dislike.</p>
+      <p>Higher-priority and more specific categories can override broader ones; profession-specific rules win otherwise equivalent matches. Items marked <strong>(tag)</strong> represent every item supplied by that Minecraft item tag, so modpacks can expand those categories.</p>
+      <p>Items without an explicit preference are neutral. The villager must have enough inventory space to accept the full stack.</p>
       <p>Positive gift reputation belongs to your relationship with that villager. Repeating the same gift on the same Minecraft day normally gives only 10% of its reputation, and positive gift reputation is capped at 120 per relationship each day. Disliked gifts keep their full penalty.</p>
       ${statGrid([
         { value: DATA.gifts.totals?.preferences || 0, label: "Gift preferences", icon: "sparkles" },
         { value: DATA.gifts.totals?.rewards || 0, label: "High-trust rewards", icon: "gift" }
       ])}
     `)}
+    ${section("Gift Rating Scale", renderGiftRatingScale())}
     ${section("Profession Gift Preferences", `
       <div class="profession-gift-list">
-        ${globalLikedPanel}
+        ${globalPanel}
         ${professionPanels}
       </div>
     `)}

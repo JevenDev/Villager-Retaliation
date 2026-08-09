@@ -62890,253 +62890,206 @@ window.VR_WIKI_DATA = {
   ],
   "gifts": {
     "totals": {
-      "preferences": 62,
+      "preferences": 75,
       "rewards": 30
     },
-    "globalPreferredItems": [
-      "Apple",
-      "Baked Potato",
-      "Barrel",
-      "Bread",
-      "Cake",
-      "Campfire",
-      "Carrot",
-      "Chest",
-      "Cookie",
-      "Crafting Table",
-      "Deepslate Emerald Ore",
-      "Diamond",
-      "Emerald",
-      "Emerald Block",
-      "Emerald Ore",
-      "Enchanted Golden Apple",
-      "Experience Bottle",
-      "Flower Pot",
-      "Glow Berries",
-      "Gold Ingot",
-      "Golden Apple",
-      "Golden Carrot",
-      "Honey Bottle",
-      "Lantern",
-      "Melon Slice",
-      "Milk Bucket",
-      "Pumpkin Pie",
-      "Sweet Berries",
-      "Torch"
-    ],
-    "globalDislikedItems": [
-      "Bone",
-      "Bone Meal",
-      "Cobweb",
-      "Dead Bush",
-      "Fermented Spider Eye",
-      "Fire Charge",
-      "Firework Rocket",
-      "Flint And Steel",
-      "Gunpowder",
-      "Lava Bucket",
-      "Magma Cream",
-      "Ominous Bottle",
-      "Ominous Trial Key",
-      "Phantom Membrane",
-      "Poisonous Potato",
-      "Pufferfish",
-      "Rotten Flesh",
-      "Slime Ball",
-      "Spider Eye",
-      "Suspicious Stew",
-      "Tnt",
-      "Tnt Minecart",
-      "Trial Key",
-      "Wither Rose",
-      "Wither Skeleton Skull"
-    ],
-    "globalNeutralItems": [],
-    "reactions": [
+    "ratingScale": [
       {
+        "rating": 3,
+        "label": "+++",
         "reaction": "Loved",
-        "count": 16,
-        "allItems": [
-          "Amethyst Shard",
-          "Anvil",
-          "Apple",
-          "Arrow",
-          "Barrel",
-          "Beef",
-          "Beetroot",
-          "Beetroot Seeds",
-          "Black Wool",
-          "Blaze Rod",
-          "Blue Wool",
-          "Book",
-          "Bookshelf",
-          "Bow",
-          "Brewing Stand",
-          "Brick",
-          "Bricks",
-          "Brown Wool",
-          "Bucket",
-          "Bundle",
-          "Cake",
-          "Carrot",
-          "Cartography Table",
-          "Cauldron",
-          "Chainmail Boots",
-          "Chainmail Chestplate",
-          "Chainmail Helmet",
-          "Chainmail Leggings",
-          "Chicken",
-          "Chiseled Bookshelf",
-          "Chiseled Stone Bricks",
-          "Clay",
-          "Clay Ball",
-          "Clock",
-          "Cod",
-          "Compass",
-          "Composter",
-          "Cooked Beef",
-          "Cooked Chicken",
-          "Cooked Cod",
-          "Cooked Mutton",
-          "Cooked Porkchop",
-          "Cooked Rabbit",
-          "Cooked Salmon",
-          "Cookie",
-          "Crossbow",
-          "Cut Copper",
-          "Cyan Wool",
-          "Diamond",
-          "Diamond Axe",
-          "Diamond Boots",
-          "Diamond Chestplate",
-          "Diamond Helmet",
-          "Diamond Hoe",
-          "Diamond Leggings",
-          "Diamond Pickaxe",
-          "Diamond Shovel",
-          "Diamond Sword",
-          "Dragon Breath",
-          "Echo Shard",
+        "description": "Exceptional favorite"
+      },
+      {
+        "rating": 2,
+        "label": "++",
+        "reaction": "Loved",
+        "description": "Strong favorite"
+      },
+      {
+        "rating": 1,
+        "label": "+",
+        "reaction": "Liked",
+        "description": "Positive preference"
+      },
+      {
+        "rating": 0,
+        "label": "0",
+        "reaction": "Neutral",
+        "description": "No preference"
+      },
+      {
+        "rating": -1,
+        "label": "-",
+        "reaction": "Disliked",
+        "description": "Mild dislike"
+      },
+      {
+        "rating": -2,
+        "label": "--",
+        "reaction": "Hated",
+        "description": "Strong dislike"
+      },
+      {
+        "rating": -3,
+        "label": "---",
+        "reaction": "Hated",
+        "description": "Severe rejection"
+      }
+    ],
+    "globalPreferences": [
+      {
+        "id": "builtin.global.loved_emerald_block",
+        "rating": 3,
+        "ratingLabel": "+++",
+        "reaction": "Loved",
+        "category": "Exceptional Valuables",
+        "items": [
+          "Emerald Block"
+        ]
+      },
+      {
+        "id": "builtin.global.loved_valuables",
+        "rating": 2,
+        "ratingLabel": "++",
+        "reaction": "Loved",
+        "category": "Valuables",
+        "items": [
           "Emerald",
-          "Emerald Block",
-          "Enchanted Book",
-          "Enchanted Golden Apple",
-          "Ender Pearl",
-          "Experience Bottle",
-          "Feather",
-          "Filled Map",
-          "Fishing Rod",
-          "Fletching Table",
-          "Flint",
-          "Ghast Tear",
-          "Glowstone",
-          "Glowstone Dust",
+          "Diamond",
           "Gold Ingot",
           "Golden Apple",
-          "Golden Carrot",
-          "Gray Wool",
-          "Green Wool",
-          "Grindstone",
-          "Hay Block",
-          "Heart Of The Sea",
-          "Heavy Core",
-          "Honey Bottle",
-          "Iron Axe",
-          "Iron Block",
-          "Iron Boots",
-          "Iron Chestplate",
-          "Iron Helmet",
-          "Iron Hoe",
-          "Iron Ingot",
-          "Iron Leggings",
-          "Iron Pickaxe",
-          "Iron Shovel",
-          "Iron Sword",
-          "Leather",
-          "Leather Boots",
-          "Leather Chestplate",
-          "Leather Helmet",
-          "Leather Horse Armor",
-          "Leather Leggings",
-          "Lectern",
-          "Light Blue Wool",
-          "Light Gray Wool",
-          "Lime Wool",
-          "Lodestone",
-          "Loom",
-          "Mace",
-          "Magenta Wool",
-          "Map",
-          "Melon",
-          "Melon Seeds",
-          "Music Disc 11",
-          "Music Disc 13",
-          "Music Disc 5",
-          "Music Disc Blocks",
-          "Music Disc Cat",
-          "Music Disc Chirp",
-          "Music Disc Creator",
-          "Music Disc Creator Music Box",
-          "Music Disc Far",
-          "Music Disc Mall",
-          "Music Disc Mellohi",
-          "Music Disc Otherside",
-          "Music Disc Pigstep",
-          "Music Disc Precipice",
-          "Music Disc Relic",
-          "Music Disc Stal",
-          "Music Disc Strad",
-          "Music Disc Wait",
-          "Music Disc Ward",
-          "Mutton",
-          "Name Tag",
-          "Nautilus Shell",
-          "Netherite Ingot",
-          "Netherite Scrap",
-          "Netherite Upgrade Smithing Template",
-          "Orange Wool",
-          "Pink Wool",
-          "Porkchop",
-          "Potato",
-          "Pumpkin",
+          "Enchanted Golden Apple",
+          "Experience Bottle"
+        ]
+      },
+      {
+        "id": "builtin.global.liked_safe_foods",
+        "rating": 1,
+        "ratingLabel": "+",
+        "reaction": "Liked",
+        "category": "Safe Foods",
+        "items": [
+          "Bread",
+          "Apple",
+          "Cookie",
+          "Cake",
           "Pumpkin Pie",
-          "Pumpkin Seeds",
-          "Purple Wool",
-          "Quartz",
-          "Quartz Block",
-          "Rabbit",
-          "Rabbit Hide",
-          "Rabbit Stew",
-          "Recovery Compass",
-          "Red Wool",
-          "Saddle",
-          "Salmon",
-          "Shears",
-          "Shield",
-          "Smithing Table",
-          "Smoker",
-          "Smooth Stone",
-          "Spectral Arrow",
-          "Spyglass",
-          "Stone",
-          "Stone Bricks",
-          "Stonecutter",
-          "Target",
-          "Totem Of Undying",
-          "Tripwire Hook",
-          "Tropical Fish",
-          "Water Bucket",
-          "Wheat",
-          "Wheat Seeds",
-          "White Wool",
-          "Writable Book",
-          "Written Book",
-          "Yellow Wool"
-        ],
-        "examples": [
+          "Honey Bottle",
+          "Sweet Berries",
+          "Glow Berries",
+          "Milk Bucket",
+          "Baked Potato",
+          "Carrot",
+          "Golden Carrot",
+          "Melon Slice"
+        ]
+      },
+      {
+        "id": "builtin.global.liked_village_goods",
+        "rating": 1,
+        "ratingLabel": "+",
+        "reaction": "Liked",
+        "category": "Village Goods",
+        "items": [
+          "Emerald Ore",
+          "Deepslate Emerald Ore",
+          "Lantern",
+          "Flower Pot",
+          "Torch",
+          "Campfire",
+          "Barrel",
+          "Chest",
+          "Crafting Table"
+        ]
+      },
+      {
+        "id": "builtin.global.neutral_everyday",
+        "rating": 0,
+        "ratingLabel": "0",
+        "reaction": "Neutral",
+        "category": "Everyday Items",
+        "items": [
+          "Dirt",
+          "Cobblestone",
+          "Stick",
+          "Bowl",
+          "Paper",
+          "Glass Bottle"
+        ]
+      },
+      {
+        "id": "builtin.global.disliked_unsafe",
+        "rating": -1,
+        "ratingLabel": "-",
+        "reaction": "Disliked",
+        "category": "Unpleasant Items",
+        "items": [
+          "Bone",
+          "Bone Meal",
+          "Dead Bush",
+          "Slime Ball",
+          "Suspicious Stew",
+          "Cobweb"
+        ]
+      },
+      {
+        "id": "builtin.global.hated_dangers",
+        "rating": -2,
+        "ratingLabel": "--",
+        "reaction": "Hated",
+        "category": "Dangerous Items",
+        "items": [
+          "Rotten Flesh",
+          "Poisonous Potato",
+          "Spider Eye",
+          "Fermented Spider Eye",
+          "Gunpowder",
+          "Fire Charge",
+          "Flint And Steel",
+          "Wither Rose",
+          "Pufferfish",
+          "Phantom Membrane",
+          "Magma Cream",
+          "Firework Rocket",
+          "Ominous Bottle",
+          "Ominous Trial Key"
+        ]
+      },
+      {
+        "id": "builtin.global.hated_hazards",
+        "rating": -3,
+        "ratingLabel": "---",
+        "reaction": "Hated",
+        "category": "Hostile Offerings",
+        "items": [
+          "Tnt",
+          "Tnt Minecart",
+          "Lava Bucket",
+          "Wither Skeleton Skull"
+        ]
+      }
+    ],
+    "professionPreferences": [
+      {
+        "profession": "Fisherman",
+        "entries": [
+          {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Exceptional Valuables",
+            "items": [
+              "Emerald Block"
+            ]
+          },
           {
             "id": "builtin.global.loved_valuables",
-            "professions": [],
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
             "items": [
               "Emerald",
               "Diamond",
@@ -63147,327 +63100,11 @@ window.VR_WIKI_DATA = {
             ]
           },
           {
-            "id": "builtin.global.loved_emerald_block",
-            "professions": [],
-            "items": [
-              "Emerald Block"
-            ]
-          },
-          {
-            "id": "builtin.armorer.loved",
-            "professions": [
-              "Armorer"
-            ],
-            "items": [
-              "Iron Ingot",
-              "Iron Block",
-              "Shield",
-              "Chainmail Helmet",
-              "Chainmail Chestplate",
-              "Chainmail Leggings",
-              "Chainmail Boots",
-              "Iron Helmet",
-              "Iron Chestplate",
-              "Iron Leggings",
-              "Iron Boots",
-              "Diamond Helmet",
-              "Diamond Chestplate",
-              "Diamond Leggings"
-            ]
-          },
-          {
-            "id": "builtin.butcher.loved",
-            "professions": [
-              "Butcher"
-            ],
-            "items": [
-              "Beef",
-              "Porkchop",
-              "Mutton",
-              "Chicken",
-              "Rabbit",
-              "Cooked Beef",
-              "Cooked Porkchop",
-              "Cooked Mutton",
-              "Cooked Chicken",
-              "Cooked Rabbit",
-              "Rabbit Stew",
-              "Smoker"
-            ]
-          },
-          {
-            "id": "builtin.cartographer.loved",
-            "professions": [
-              "Cartographer"
-            ],
-            "items": [
-              "Map",
-              "Filled Map",
-              "Compass",
-              "Recovery Compass",
-              "Clock",
-              "Cartography Table",
-              "Spyglass",
-              "Lodestone"
-            ]
-          },
-          {
-            "id": "builtin.cleric.loved",
-            "professions": [
-              "Cleric"
-            ],
-            "items": [
-              "Amethyst Shard",
-              "Glowstone Dust",
-              "Glowstone",
-              "Experience Bottle",
-              "Ender Pearl",
-              "Blaze Rod",
-              "Brewing Stand",
-              "Ghast Tear",
-              "Dragon Breath",
-              "Echo Shard",
-              "Totem Of Undying"
-            ]
-          },
-          {
-            "id": "builtin.farmer.loved",
-            "professions": [
-              "Farmer"
-            ],
-            "items": [
-              "Wheat Seeds",
-              "Beetroot Seeds",
-              "Pumpkin Seeds",
-              "Melon Seeds",
-              "Carrot",
-              "Potato",
-              "Beetroot",
-              "Wheat",
-              "Pumpkin",
-              "Melon",
-              "Hay Block",
-              "Composter",
-              "Golden Carrot",
-              "Golden Apple"
-            ]
-          },
-          {
-            "id": "builtin.fisherman.loved",
-            "professions": [
-              "Fisherman"
-            ],
-            "items": [
-              "Fishing Rod",
-              "Cod",
-              "Salmon",
-              "Tropical Fish",
-              "Cooked Cod",
-              "Cooked Salmon",
-              "Nautilus Shell",
-              "Heart Of The Sea",
-              "Barrel",
-              "Bucket",
-              "Water Bucket"
-            ]
-          }
-        ]
-      },
-      {
-        "reaction": "Liked",
-        "count": 16,
-        "allItems": [
-          "Acacia Planks",
-          "Allium",
-          "Andesite",
-          "Anvil",
-          "Apple",
-          "Armor Stand",
-          "Arrow",
-          "Azure Bluet",
-          "Baked Potato",
-          "Bamboo",
-          "Barrel",
-          "Birch Planks",
-          "Black Dye",
-          "Blast Furnace",
-          "Blaze Powder",
-          "Blue Banner",
-          "Blue Candle",
-          "Blue Carpet",
-          "Blue Dye",
-          "Blue Orchid",
-          "Boat",
-          "Bone Meal",
-          "Book",
-          "Bow",
-          "Bowl",
-          "Bread",
-          "Brown Dye",
-          "Brown Mushroom",
-          "Brown Terracotta",
-          "Brush",
-          "Cactus",
-          "Cake",
-          "Calcite",
-          "Campfire",
-          "Candle",
-          "Carrot",
-          "Charcoal",
-          "Cherry Planks",
-          "Chest",
-          "Chipped Anvil",
-          "Clock",
-          "Coal",
-          "Coarse Dirt",
-          "Cobbled Deepslate",
-          "Cocoa Beans",
-          "Compass",
-          "Cookie",
-          "Copper Block",
-          "Copper Ingot",
-          "Cornflower",
-          "Crafting Table",
-          "Crossbow",
-          "Cyan Dye",
-          "Damaged Anvil",
-          "Dandelion",
-          "Dark Oak Planks",
-          "Deepslate",
-          "Deepslate Emerald Ore",
-          "Diamond",
-          "Diorite",
-          "Dirt",
-          "Dried Kelp",
-          "Egg",
-          "Emerald Ore",
-          "Feather",
-          "Filled Map",
-          "Flint",
-          "Flower Pot",
-          "Glass Bottle",
-          "Glow Berries",
-          "Glow Ink Sac",
-          "Glow Item Frame",
-          "Gold Ingot",
-          "Golden Carrot",
-          "Granite",
-          "Gray Dye",
-          "Green Banner",
-          "Green Dye",
-          "Grindstone",
-          "Hay Block",
-          "Honey Bottle",
-          "Honeycomb",
-          "Ink Sac",
-          "Iron Ingot",
-          "Iron Nugget",
-          "Item Frame",
-          "Jungle Planks",
-          "Kelp",
-          "Lantern",
-          "Lapis Lazuli",
-          "Lead",
-          "Light Blue Banner",
-          "Light Blue Dye",
-          "Light Gray Candle",
-          "Light Gray Dye",
-          "Lilac",
-          "Lily Of The Valley",
-          "Lily Pad",
-          "Lime Dye",
-          "Magenta Dye",
-          "Magma Cream",
-          "Mangrove Planks",
-          "Map",
-          "Melon Slice",
-          "Milk Bucket",
-          "Mud",
-          "Mud Bricks",
-          "Name Tag",
-          "Nether Wart",
-          "Oak Boat",
-          "Oak Planks",
-          "Orange Banner",
-          "Orange Dye",
-          "Orange Terracotta",
-          "Oxeye Daisy",
-          "Painting",
-          "Paper",
-          "Peony",
-          "Pink Dye",
-          "Pitcher Pod",
-          "Polished Andesite",
-          "Polished Deepslate",
-          "Polished Diorite",
-          "Polished Granite",
-          "Polished Tuff",
-          "Poppy",
-          "Powder Snow Bucket",
-          "Prismarine Crystals",
-          "Prismarine Shard",
-          "Pumpkin Pie",
-          "Purple Dye",
-          "Rabbit Foot",
-          "Red Banner",
-          "Red Candle",
-          "Red Carpet",
-          "Red Dye",
-          "Red Mushroom",
-          "Red Sandstone",
-          "Red Terracotta",
-          "Redstone",
-          "Rooted Dirt",
-          "Rose Bush",
-          "Sandstone",
-          "Sculk",
-          "Sculk Catalyst",
-          "Sculk Sensor",
-          "Sculk Shrieker",
-          "Sea Pickle",
-          "Seagrass",
-          "Slime Ball",
-          "Smithing Table",
-          "Snowball",
-          "Soul Lantern",
-          "Soul Torch",
-          "Spectral Arrow",
-          "Sponge",
-          "Spruce Boat",
-          "Spruce Planks",
-          "Stick",
-          "Stone Axe",
-          "Stone Hoe",
-          "Stone Pickaxe",
-          "Stone Shovel",
-          "String",
-          "Sugar Cane",
-          "Sunflower",
-          "Sweet Berries",
-          "Terracotta",
-          "Torch",
-          "Torchflower Seeds",
-          "Trident",
-          "Tuff",
-          "Turtle Egg",
-          "Turtle Helmet",
-          "Turtle Scute",
-          "Water Bucket",
-          "Wet Sponge",
-          "Wheat",
-          "White Banner",
-          "White Candle",
-          "White Carpet",
-          "White Dye",
-          "White Terracotta",
-          "Writable Book",
-          "Yellow Banner",
-          "Yellow Dye"
-        ],
-        "examples": [
-          {
             "id": "builtin.global.liked_safe_foods",
-            "professions": [],
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Safe Foods",
             "items": [
               "Bread",
               "Apple",
@@ -63486,7 +63123,240 @@ window.VR_WIKI_DATA = {
           },
           {
             "id": "builtin.global.liked_village_goods",
-            "professions": [],
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
+            "items": [
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Poisonous Potato",
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Wither Rose",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.fisherman.cooked_fish",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Cooked Fish",
+            "items": [
+              "Cooked Fish (tag)"
+            ]
+          },
+          {
+            "id": "builtin.fisherman.raw_fish",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Raw Fish",
+            "items": [
+              "Raw Fish (tag)"
+            ]
+          },
+          {
+            "id": "builtin.fisherman.boats",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Boats",
+            "items": [
+              "Boats (tag)"
+            ]
+          },
+          {
+            "id": "builtin.fisherman.pufferfish",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Pufferfish",
+            "items": [
+              "Pufferfish"
+            ]
+          },
+          {
+            "id": "builtin.fisherman.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Fisherman Favorites",
+            "items": [
+              "Fishing Rod",
+              "Nautilus Shell",
+              "Heart Of The Sea",
+              "Barrel",
+              "Bucket",
+              "Water Bucket"
+            ]
+          },
+          {
+            "id": "builtin.fisherman.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Fisherman Useful Items",
+            "items": [
+              "String",
+              "Kelp",
+              "Dried Kelp",
+              "Seagrass",
+              "Sea Pickle",
+              "Lily Pad",
+              "Prismarine Shard",
+              "Prismarine Crystals",
+              "Sponge",
+              "Wet Sponge",
+              "Turtle Scute",
+              "Turtle Egg"
+            ]
+          },
+          {
+            "id": "builtin.fisherman.neutral",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Fisherman Everyday Items",
+            "items": [
+              "Sand",
+              "Gravel",
+              "Clay Ball"
+            ]
+          },
+          {
+            "id": "builtin.fisherman.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Fisherman Unwanted Items",
+            "items": [
+              "Rotten Flesh",
+              "Phantom Membrane",
+              "Magma Cream"
+            ]
+          }
+        ]
+      },
+      {
+        "profession": "Armorer",
+        "entries": [
+          {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Exceptional Valuables",
+            "items": [
+              "Emerald Block"
+            ]
+          },
+          {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Safe Foods",
+            "items": [
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
             "items": [
               "Emerald Ore",
               "Deepslate Emerald Ore",
@@ -63500,10 +63370,111 @@ window.VR_WIKI_DATA = {
             ]
           },
           {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Poisonous Potato",
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Wither Rose",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.armorer.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Armorer Exceptional Favorites",
+            "items": [
+              "Diamond Helmet",
+              "Diamond Chestplate",
+              "Diamond Leggings",
+              "Diamond Boots",
+              "Netherite Scrap",
+              "Netherite Ingot"
+            ]
+          },
+          {
+            "id": "builtin.armorer.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Armorer Favorites",
+            "items": [
+              "Iron Ingot",
+              "Iron Block",
+              "Shield",
+              "Chainmail Helmet",
+              "Chainmail Chestplate",
+              "Chainmail Leggings",
+              "Chainmail Boots",
+              "Iron Helmet",
+              "Iron Chestplate",
+              "Iron Leggings",
+              "Iron Boots"
+            ]
+          },
+          {
             "id": "builtin.armorer.liked",
-            "professions": [
-              "Armorer"
-            ],
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Armorer Useful Items",
             "items": [
               "Coal",
               "Charcoal",
@@ -63520,462 +63491,29 @@ window.VR_WIKI_DATA = {
             ]
           },
           {
-            "id": "builtin.butcher.liked",
-            "professions": [
-              "Butcher"
-            ],
+            "id": "builtin.armorer.neutral",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Armorer Everyday Items",
             "items": [
-              "Charcoal",
-              "Coal",
-              "Egg",
-              "Wheat",
-              "Hay Block",
-              "Bowl",
-              "Campfire",
-              "Sweet Berries",
-              "Honey Bottle"
-            ]
-          },
-          {
-            "id": "builtin.cartographer.liked",
-            "professions": [
-              "Cartographer"
-            ],
-            "items": [
-              "Paper",
-              "Feather",
-              "Ink Sac",
-              "Glow Ink Sac",
-              "Book",
-              "Writable Book",
-              "White Banner",
-              "Blue Banner",
-              "Red Banner",
-              "Green Banner",
-              "Orange Banner",
-              "Light Blue Banner",
-              "Yellow Banner"
-            ]
-          },
-          {
-            "id": "builtin.cleric.liked",
-            "professions": [
-              "Cleric"
-            ],
-            "items": [
-              "Redstone",
-              "Lapis Lazuli",
-              "Blaze Powder",
-              "Nether Wart",
-              "Glass Bottle",
-              "Honey Bottle",
-              "Rabbit Foot",
-              "Magma Cream",
-              "Sculk",
-              "Sculk Sensor",
-              "Sculk Catalyst",
-              "Sculk Shrieker",
-              "Soul Lantern",
-              "Soul Torch"
-            ]
-          },
-          {
-            "id": "builtin.farmer.liked",
-            "professions": [
-              "Farmer"
-            ],
-            "items": [
-              "Melon Slice",
-              "Apple",
-              "Sweet Berries",
-              "Glow Berries",
-              "Sugar Cane",
-              "Cocoa Beans",
-              "Cactus",
-              "Bamboo",
-              "Kelp",
-              "Dried Kelp",
-              "Brown Mushroom",
-              "Red Mushroom",
-              "Torchflower Seeds",
-              "Pitcher Pod"
-            ]
-          },
-          {
-            "id": "builtin.fisherman.liked",
-            "professions": [
-              "Fisherman"
-            ],
-            "items": [
-              "String",
-              "Kelp",
-              "Dried Kelp",
-              "Seagrass",
-              "Sea Pickle",
-              "Lily Pad",
-              "Prismarine Shard",
-              "Prismarine Crystals",
-              "Sponge",
-              "Wet Sponge",
-              "Turtle Scute",
-              "Turtle Egg",
-              "Boat",
-              "Oak Boat"
-            ]
-          }
-        ]
-      },
-      {
-        "reaction": "Neutral",
-        "count": 0,
-        "allItems": [],
-        "examples": []
-      },
-      {
-        "reaction": "Disliked",
-        "count": 15,
-        "allItems": [
-          "Bone",
-          "Bone Meal",
-          "Cobweb",
-          "Dead Bush",
-          "Fermented Spider Eye",
-          "Fire Charge",
-          "Firework Rocket",
-          "Gravel",
-          "Gunpowder",
-          "Leather Boots",
-          "Leather Chestplate",
-          "Leather Helmet",
-          "Leather Leggings",
-          "Magma Cream",
-          "Phantom Membrane",
-          "Poisonous Potato",
-          "Pufferfish",
-          "Rotten Flesh",
-          "Sand",
-          "Shears",
-          "Shield",
-          "Slime Ball",
-          "Spider Eye",
-          "Suspicious Stew",
-          "Tnt",
-          "Wither Rose",
-          "Wooden Axe",
-          "Wooden Hoe",
-          "Wooden Pickaxe",
-          "Wooden Shovel",
-          "Wooden Sword"
-        ],
-        "examples": [
-          {
-            "id": "builtin.global.disliked_unsafe",
-            "professions": [],
-            "items": [
-              "Bone",
-              "Bone Meal",
-              "Dead Bush",
-              "Pufferfish",
-              "Phantom Membrane",
-              "Magma Cream",
-              "Slime Ball",
-              "Firework Rocket",
-              "Suspicious Stew",
-              "Cobweb",
-              "Poisonous Potato"
+              "Stone",
+              "Furnace"
             ]
           },
           {
             "id": "builtin.armorer.disliked",
-            "professions": [
-              "Armorer"
-            ],
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Armorer Unwanted Items",
             "items": [
               "Leather Chestplate",
               "Leather Helmet",
               "Leather Leggings",
               "Leather Boots",
               "Wooden Sword",
-              "Dead Bush",
               "Rotten Flesh"
-            ]
-          },
-          {
-            "id": "builtin.butcher.disliked",
-            "professions": [
-              "Butcher"
-            ],
-            "items": [
-              "Bone",
-              "Bone Meal",
-              "Wither Rose",
-              "Pufferfish",
-              "Magma Cream"
-            ]
-          },
-          {
-            "id": "builtin.cartographer.disliked",
-            "professions": [
-              "Cartographer"
-            ],
-            "items": [
-              "Dead Bush",
-              "Suspicious Stew",
-              "Rotten Flesh",
-              "Cobweb",
-              "Phantom Membrane"
-            ]
-          },
-          {
-            "id": "builtin.cleric.disliked",
-            "professions": [
-              "Cleric"
-            ],
-            "items": [
-              "Rotten Flesh",
-              "Fermented Spider Eye",
-              "Poisonous Potato",
-              "Dead Bush",
-              "Spider Eye"
-            ]
-          },
-          {
-            "id": "builtin.farmer.disliked",
-            "professions": [
-              "Farmer"
-            ],
-            "items": [
-              "Rotten Flesh",
-              "Spider Eye",
-              "Fermented Spider Eye",
-              "Gunpowder",
-              "Tnt"
-            ]
-          },
-          {
-            "id": "builtin.fisherman.disliked",
-            "professions": [
-              "Fisherman"
-            ],
-            "items": [
-              "Pufferfish",
-              "Rotten Flesh",
-              "Phantom Membrane",
-              "Magma Cream",
-              "Fire Charge"
-            ]
-          },
-          {
-            "id": "builtin.fletcher.disliked",
-            "professions": [
-              "Fletcher"
-            ],
-            "items": [
-              "Shield",
-              "Rotten Flesh",
-              "Wither Rose",
-              "Dead Bush"
-            ]
-          }
-        ]
-      },
-      {
-        "reaction": "Hated",
-        "count": 15,
-        "allItems": [
-          "Dead Bush",
-          "Fermented Spider Eye",
-          "Fire Charge",
-          "Flint And Steel",
-          "Gunpowder",
-          "Lava Bucket",
-          "Ominous Bottle",
-          "Ominous Trial Key",
-          "Poisonous Potato",
-          "Rotten Flesh",
-          "Spider Eye",
-          "Suspicious Stew",
-          "Tnt",
-          "Tnt Minecart",
-          "Trial Key",
-          "Wither Rose",
-          "Wither Skeleton Skull"
-        ],
-        "examples": [
-          {
-            "id": "builtin.global.hated_hazards",
-            "professions": [],
-            "items": [
-              "Rotten Flesh",
-              "Poisonous Potato",
-              "Spider Eye",
-              "Fermented Spider Eye",
-              "Gunpowder",
-              "Tnt",
-              "Tnt Minecart",
-              "Fire Charge",
-              "Flint And Steel",
-              "Lava Bucket",
-              "Wither Rose",
-              "Wither Skeleton Skull",
-              "Ominous Bottle",
-              "Trial Key"
-            ]
-          },
-          {
-            "id": "builtin.armorer.hated",
-            "professions": [
-              "Armorer"
-            ],
-            "items": [
-              "Tnt",
-              "Tnt Minecart",
-              "Fire Charge",
-              "Lava Bucket",
-              "Flint And Steel"
-            ]
-          },
-          {
-            "id": "builtin.butcher.hated",
-            "professions": [
-              "Butcher"
-            ],
-            "items": [
-              "Rotten Flesh",
-              "Poisonous Potato",
-              "Spider Eye",
-              "Fermented Spider Eye",
-              "Suspicious Stew"
-            ]
-          },
-          {
-            "id": "builtin.cartographer.hated",
-            "professions": [
-              "Cartographer"
-            ],
-            "items": [
-              "Tnt",
-              "Tnt Minecart",
-              "Flint And Steel",
-              "Fire Charge",
-              "Lava Bucket"
-            ]
-          },
-          {
-            "id": "builtin.cleric.hated",
-            "professions": [
-              "Cleric"
-            ],
-            "items": [
-              "Tnt",
-              "Tnt Minecart",
-              "Wither Skeleton Skull",
-              "Wither Rose",
-              "Ominous Bottle"
-            ]
-          },
-          {
-            "id": "builtin.farmer.hated",
-            "professions": [
-              "Farmer"
-            ],
-            "items": [
-              "Poisonous Potato",
-              "Dead Bush",
-              "Wither Rose",
-              "Lava Bucket"
-            ]
-          },
-          {
-            "id": "builtin.fisherman.hated",
-            "professions": [
-              "Fisherman"
-            ],
-            "items": [
-              "Tnt",
-              "Tnt Minecart",
-              "Lava Bucket",
-              "Flint And Steel"
-            ]
-          },
-          {
-            "id": "builtin.fletcher.hated",
-            "professions": [
-              "Fletcher"
-            ],
-            "items": [
-              "Tnt",
-              "Tnt Minecart",
-              "Fire Charge",
-              "Lava Bucket"
-            ]
-          }
-        ]
-      }
-    ],
-    "professionPreferences": [
-      {
-        "profession": "Armorer",
-        "entries": [
-          {
-            "reaction": "Loved",
-            "items": [
-              "Chainmail Boots",
-              "Chainmail Chestplate",
-              "Chainmail Helmet",
-              "Chainmail Leggings",
-              "Diamond Boots",
-              "Diamond Chestplate",
-              "Diamond Helmet",
-              "Diamond Leggings",
-              "Iron Block",
-              "Iron Boots",
-              "Iron Chestplate",
-              "Iron Helmet",
-              "Iron Ingot",
-              "Iron Leggings",
-              "Netherite Ingot",
-              "Netherite Scrap",
-              "Shield"
-            ]
-          },
-          {
-            "reaction": "Liked",
-            "items": [
-              "Anvil",
-              "Armor Stand",
-              "Blast Furnace",
-              "Charcoal",
-              "Chipped Anvil",
-              "Coal",
-              "Copper Block",
-              "Copper Ingot",
-              "Damaged Anvil",
-              "Diamond",
-              "Iron Nugget",
-              "Turtle Helmet"
-            ]
-          },
-          {
-            "reaction": "Hated",
-            "items": [
-              "Fire Charge",
-              "Flint And Steel",
-              "Lava Bucket",
-              "Tnt",
-              "Tnt Minecart"
-            ]
-          },
-          {
-            "reaction": "Disliked",
-            "items": [
-              "Dead Bush",
-              "Leather Boots",
-              "Leather Chestplate",
-              "Leather Helmet",
-              "Leather Leggings",
-              "Rotten Flesh",
-              "Wooden Sword"
             ]
           }
         ]
@@ -63984,54 +63522,205 @@ window.VR_WIKI_DATA = {
         "profession": "Butcher",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Beef",
-              "Chicken",
+              "Emerald Block"
+            ]
+          },
+          {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Safe Foods",
+            "items": [
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
+            "items": [
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Slime Ball",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Phantom Membrane",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.butcher.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Butcher Exceptional Favorites",
+            "items": [
               "Cooked Beef",
-              "Cooked Chicken",
-              "Cooked Mutton",
               "Cooked Porkchop",
+              "Cooked Mutton",
+              "Cooked Chicken",
               "Cooked Rabbit",
-              "Mutton",
-              "Porkchop",
-              "Rabbit",
               "Rabbit Stew",
               "Smoker"
             ]
           },
           {
-            "reaction": "Liked",
+            "id": "builtin.butcher.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Butcher Favorites",
             "items": [
-              "Bowl",
-              "Campfire",
-              "Charcoal",
-              "Coal",
-              "Egg",
-              "Hay Block",
-              "Honey Bottle",
-              "Sweet Berries",
-              "Wheat"
+              "Beef",
+              "Porkchop",
+              "Mutton",
+              "Chicken",
+              "Rabbit"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.butcher.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Butcher Useful Items",
             "items": [
-              "Fermented Spider Eye",
-              "Poisonous Potato",
-              "Rotten Flesh",
-              "Spider Eye",
+              "Charcoal",
+              "Coal",
+              "Egg",
+              "Wheat",
+              "Hay Block"
+            ]
+          },
+          {
+            "id": "builtin.butcher.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Butcher Unwanted Items",
+            "items": [
+              "Wither Rose",
+              "Pufferfish",
+              "Magma Cream"
+            ]
+          },
+          {
+            "id": "builtin.butcher.dangerous",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Butcher Serious Hazards",
+            "items": [
               "Suspicious Stew"
             ]
           },
           {
-            "reaction": "Disliked",
+            "id": "builtin.butcher.hated",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Butcher Severe Hazards",
             "items": [
-              "Bone",
-              "Bone Meal",
-              "Magma Cream",
-              "Pufferfish",
-              "Wither Rose"
+              "Rotten Flesh",
+              "Poisonous Potato"
             ]
           }
         ]
@@ -64040,54 +63729,190 @@ window.VR_WIKI_DATA = {
         "profession": "Cartographer",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Cartography Table",
-              "Clock",
-              "Compass",
-              "Filled Map",
-              "Lodestone",
-              "Map",
-              "Recovery Compass",
-              "Spyglass"
+              "Emerald Block"
             ]
           },
           {
-            "reaction": "Liked",
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
             "items": [
-              "Blue Banner",
-              "Book",
-              "Feather",
-              "Glow Ink Sac",
-              "Green Banner",
-              "Ink Sac",
-              "Light Blue Banner",
-              "Orange Banner",
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Safe Foods",
+            "items": [
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
+            "items": [
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Poisonous Potato",
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Wither Rose",
+              "Pufferfish",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.cartographer.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Cartographer Exceptional Favorites",
+            "items": [
+              "Recovery Compass",
+              "Cartography Table",
+              "Spyglass",
+              "Lodestone"
+            ]
+          },
+          {
+            "id": "builtin.cartographer.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Cartographer Favorites",
+            "items": [
+              "Map",
+              "Filled Map",
+              "Compass",
+              "Clock"
+            ]
+          },
+          {
+            "id": "builtin.cartographer.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Cartographer Useful Items",
+            "items": [
               "Paper",
-              "Red Banner",
-              "White Banner",
+              "Feather",
+              "Ink Sac",
+              "Glow Ink Sac",
+              "Book",
               "Writable Book",
+              "White Banner",
+              "Blue Banner",
+              "Red Banner",
+              "Green Banner",
+              "Orange Banner",
+              "Light Blue Banner",
               "Yellow Banner"
             ]
           },
           {
-            "reaction": "Hated",
-            "items": [
-              "Fire Charge",
-              "Flint And Steel",
-              "Lava Bucket",
-              "Tnt",
-              "Tnt Minecart"
-            ]
-          },
-          {
+            "id": "builtin.cartographer.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
             "reaction": "Disliked",
+            "category": "Cartographer Unwanted Items",
             "items": [
-              "Cobweb",
-              "Dead Bush",
-              "Phantom Membrane",
               "Rotten Flesh",
-              "Suspicious Stew"
+              "Phantom Membrane"
             ]
           }
         ]
@@ -64096,57 +63921,201 @@ window.VR_WIKI_DATA = {
         "profession": "Cleric",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Amethyst Shard",
-              "Blaze Rod",
-              "Brewing Stand",
+              "Emerald Block"
+            ]
+          },
+          {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Safe Foods",
+            "items": [
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
+            "items": [
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Wither Rose",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.cleric.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Cleric Exceptional Favorites",
+            "items": [
+              "Ghast Tear",
               "Dragon Breath",
               "Echo Shard",
-              "Ender Pearl",
-              "Experience Bottle",
-              "Ghast Tear",
-              "Glowstone",
-              "Glowstone Dust",
               "Totem Of Undying"
             ]
           },
           {
-            "reaction": "Liked",
+            "id": "builtin.cleric.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Cleric Favorites",
             "items": [
-              "Blaze Powder",
-              "Glass Bottle",
-              "Honey Bottle",
-              "Lapis Lazuli",
-              "Magma Cream",
-              "Nether Wart",
-              "Rabbit Foot",
+              "Amethyst Shard",
+              "Glowstone Dust",
+              "Glowstone",
+              "Ender Pearl",
+              "Blaze Rod",
+              "Brewing Stand"
+            ]
+          },
+          {
+            "id": "builtin.cleric.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Cleric Useful Items",
+            "items": [
               "Redstone",
+              "Lapis Lazuli",
+              "Blaze Powder",
+              "Nether Wart",
+              "Glass Bottle",
+              "Rabbit Foot",
+              "Magma Cream",
               "Sculk",
-              "Sculk Catalyst",
               "Sculk Sensor",
+              "Sculk Catalyst",
               "Sculk Shrieker",
               "Soul Lantern",
               "Soul Torch"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.cleric.neutral",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Cleric Everyday Items",
             "items": [
-              "Ominous Bottle",
-              "Tnt",
-              "Tnt Minecart",
-              "Wither Rose",
-              "Wither Skeleton Skull"
+              "Book",
+              "Candle"
             ]
           },
           {
+            "id": "builtin.cleric.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
             "reaction": "Disliked",
+            "category": "Cleric Unwanted Items",
             "items": [
-              "Dead Bush",
+              "Rotten Flesh",
               "Fermented Spider Eye",
               "Poisonous Potato",
-              "Rotten Flesh",
               "Spider Eye"
             ]
           }
@@ -64156,125 +64125,212 @@ window.VR_WIKI_DATA = {
         "profession": "Farmer",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Beetroot",
-              "Beetroot Seeds",
-              "Carrot",
-              "Composter",
-              "Golden Apple",
-              "Golden Carrot",
-              "Hay Block",
-              "Melon",
-              "Melon Seeds",
-              "Potato",
-              "Pumpkin",
-              "Pumpkin Seeds",
-              "Wheat",
-              "Wheat Seeds"
+              "Emerald Block"
             ]
           },
           {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
             "reaction": "Liked",
+            "category": "Safe Foods",
             "items": [
+              "Bread",
               "Apple",
-              "Bamboo",
-              "Bone Meal",
-              "Brown Mushroom",
-              "Cactus",
-              "Coarse Dirt",
-              "Cocoa Beans",
-              "Dirt",
-              "Dried Kelp",
-              "Glow Berries",
-              "Kelp",
-              "Melon Slice",
-              "Mud",
-              "Pitcher Pod",
-              "Red Mushroom",
-              "Rooted Dirt",
-              "Sugar Cane",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
               "Sweet Berries",
-              "Torchflower Seeds"
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Melon Slice"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
             "items": [
-              "Dead Bush",
-              "Lava Bucket",
-              "Poisonous Potato",
-              "Wither Rose"
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
             ]
           },
           {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
             "reaction": "Disliked",
+            "category": "Unpleasant Items",
             "items": [
-              "Fermented Spider Eye",
-              "Gunpowder",
+              "Bone",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Poisonous Potato",
+              "Fire Charge",
+              "Flint And Steel",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.farmer.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Farmer Exceptional Favorites",
+            "items": [
+              "Hay Block",
+              "Composter",
+              "Golden Carrot",
+              "Golden Apple"
+            ]
+          },
+          {
+            "id": "builtin.farmer.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Farmer Favorites",
+            "items": [
+              "Wheat Seeds",
+              "Beetroot Seeds",
+              "Pumpkin Seeds",
+              "Melon Seeds",
+              "Carrot",
+              "Potato",
+              "Beetroot",
+              "Wheat",
+              "Pumpkin",
+              "Melon"
+            ]
+          },
+          {
+            "id": "builtin.farmer.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Farmer Useful Items",
+            "items": [
+              "Sugar Cane",
+              "Cocoa Beans",
+              "Cactus",
+              "Bamboo",
+              "Kelp",
+              "Dried Kelp",
+              "Brown Mushroom",
+              "Red Mushroom",
+              "Torchflower Seeds",
+              "Pitcher Pod",
+              "Bone Meal",
+              "Dirt",
+              "Coarse Dirt",
+              "Rooted Dirt",
+              "Mud"
+            ]
+          },
+          {
+            "id": "builtin.farmer.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Farmer Unwanted Items",
+            "items": [
               "Rotten Flesh",
               "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
               "Tnt"
             ]
-          }
-        ]
-      },
-      {
-        "profession": "Fisherman",
-        "entries": [
-          {
-            "reaction": "Loved",
-            "items": [
-              "Barrel",
-              "Bucket",
-              "Cod",
-              "Cooked Cod",
-              "Cooked Salmon",
-              "Fishing Rod",
-              "Heart Of The Sea",
-              "Nautilus Shell",
-              "Salmon",
-              "Tropical Fish",
-              "Water Bucket"
-            ]
           },
           {
-            "reaction": "Liked",
-            "items": [
-              "Boat",
-              "Dried Kelp",
-              "Kelp",
-              "Lily Pad",
-              "Oak Boat",
-              "Prismarine Crystals",
-              "Prismarine Shard",
-              "Sea Pickle",
-              "Seagrass",
-              "Sponge",
-              "Spruce Boat",
-              "String",
-              "Turtle Egg",
-              "Turtle Scute",
-              "Wet Sponge"
-            ]
-          },
-          {
+            "id": "builtin.farmer.dangerous",
+            "rating": -2,
+            "ratingLabel": "--",
             "reaction": "Hated",
+            "category": "Farmer Serious Hazards",
             "items": [
-              "Flint And Steel",
-              "Lava Bucket",
-              "Tnt",
-              "Tnt Minecart"
+              "Dead Bush"
             ]
           },
           {
-            "reaction": "Disliked",
+            "id": "builtin.farmer.hated",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Farmer Severe Hazards",
             "items": [
-              "Fire Charge",
-              "Magma Cream",
-              "Phantom Membrane",
-              "Pufferfish",
-              "Rotten Flesh"
+              "Wither Rose"
             ]
           }
         ]
@@ -64283,55 +64339,193 @@ window.VR_WIKI_DATA = {
         "profession": "Fletcher",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
+              "Emerald Block"
+            ]
+          },
+          {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Safe Foods",
+            "items": [
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
+            "items": [
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Poisonous Potato",
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.fletcher.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Fletcher Exceptional Favorites",
+            "items": [
+              "Spectral Arrow",
+              "Crossbow",
+              "Fletching Table",
+              "Target"
+            ]
+          },
+          {
+            "id": "builtin.fletcher.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Fletcher Favorites",
+            "items": [
+              "Flint",
+              "Feather",
               "Arrow",
               "Bow",
-              "Crossbow",
-              "Feather",
-              "Fletching Table",
-              "Flint",
-              "Spectral Arrow",
-              "Target",
               "Tripwire Hook"
             ]
           },
           {
+            "id": "builtin.fletcher.liked",
+            "rating": 1,
+            "ratingLabel": "+",
             "reaction": "Liked",
+            "category": "Fletcher Useful Items",
             "items": [
-              "Acacia Planks",
+              "Stick",
+              "String",
               "Bamboo",
-              "Birch Planks",
-              "Cherry Planks",
               "Copper Ingot",
-              "Dark Oak Planks",
-              "Honeycomb",
               "Iron Ingot",
-              "Jungle Planks",
-              "Mangrove Planks",
-              "Oak Planks",
               "Redstone",
               "Slime Ball",
+              "Honeycomb",
+              "Oak Planks",
               "Spruce Planks",
-              "Stick",
-              "String"
+              "Birch Planks",
+              "Jungle Planks",
+              "Acacia Planks",
+              "Dark Oak Planks",
+              "Mangrove Planks",
+              "Cherry Planks"
             ]
           },
           {
-            "reaction": "Hated",
-            "items": [
-              "Fire Charge",
-              "Lava Bucket",
-              "Tnt",
-              "Tnt Minecart"
-            ]
-          },
-          {
+            "id": "builtin.fletcher.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
             "reaction": "Disliked",
+            "category": "Fletcher Unwanted Items",
             "items": [
-              "Dead Bush",
-              "Rotten Flesh",
               "Shield",
+              "Rotten Flesh",
               "Wither Rose"
             ]
           }
@@ -64341,56 +64535,194 @@ window.VR_WIKI_DATA = {
         "profession": "Leatherworker",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Bundle",
-              "Cauldron",
-              "Leather",
-              "Leather Boots",
-              "Leather Chestplate",
-              "Leather Helmet",
-              "Leather Horse Armor",
-              "Leather Leggings",
-              "Rabbit Hide",
-              "Saddle"
+              "Emerald Block"
             ]
           },
           {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
             "reaction": "Liked",
+            "category": "Safe Foods",
             "items": [
-              "Black Dye",
-              "Blue Dye",
-              "Brown Dye",
-              "Brush",
-              "Cyan Dye",
-              "Green Dye",
-              "Lead",
-              "Name Tag",
-              "Orange Dye",
-              "Powder Snow Bucket",
-              "Purple Dye",
-              "Red Dye",
-              "Water Bucket",
-              "White Dye",
-              "Yellow Dye"
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
             "items": [
-              "Fire Charge",
-              "Flint And Steel",
-              "Lava Bucket",
-              "Tnt"
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
             ]
           },
           {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
             "reaction": "Disliked",
+            "category": "Unpleasant Items",
             "items": [
               "Bone",
               "Bone Meal",
-              "Poisonous Potato",
+              "Dead Bush",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.leatherworker.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Leatherworker Exceptional Favorites",
+            "items": [
+              "Saddle",
+              "Leather Horse Armor",
+              "Cauldron",
+              "Bundle"
+            ]
+          },
+          {
+            "id": "builtin.leatherworker.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Leatherworker Favorites",
+            "items": [
+              "Leather",
+              "Rabbit Hide",
+              "Leather Helmet",
+              "Leather Chestplate",
+              "Leather Leggings",
+              "Leather Boots"
+            ]
+          },
+          {
+            "id": "builtin.leatherworker.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Leatherworker Useful Items",
+            "items": [
+              "Lead",
+              "Name Tag",
+              "Brush",
+              "Water Bucket",
+              "Powder Snow Bucket",
+              "White Dye",
+              "Black Dye",
+              "Brown Dye",
+              "Blue Dye",
+              "Red Dye",
+              "Yellow Dye",
+              "Green Dye",
+              "Purple Dye",
+              "Cyan Dye",
+              "Orange Dye"
+            ]
+          },
+          {
+            "id": "builtin.leatherworker.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Leatherworker Unwanted Items",
+            "items": [
               "Rotten Flesh",
+              "Poisonous Potato",
               "Wither Rose"
             ]
           }
@@ -64400,56 +64732,191 @@ window.VR_WIKI_DATA = {
         "profession": "Librarian",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Book",
-              "Bookshelf",
-              "Chiseled Bookshelf",
-              "Enchanted Book",
-              "Lectern",
-              "Name Tag",
-              "Recovery Compass",
-              "Writable Book",
-              "Written Book"
+              "Emerald Block"
             ]
           },
           {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
             "reaction": "Liked",
+            "category": "Safe Foods",
             "items": [
-              "Blue Candle",
-              "Candle",
-              "Clock",
-              "Compass",
-              "Feather",
-              "Filled Map",
-              "Glow Ink Sac",
-              "Ink Sac",
-              "Lantern",
-              "Light Gray Candle",
-              "Map",
-              "Paper",
-              "Red Candle",
-              "White Candle"
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
             "items": [
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
               "Fire Charge",
               "Flint And Steel",
-              "Lava Bucket",
-              "Tnt",
-              "Tnt Minecart"
+              "Wither Rose",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
             ]
           },
           {
-            "reaction": "Disliked",
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
             "items": [
-              "Cobweb",
-              "Dead Bush",
-              "Poisonous Potato",
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.librarian.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Librarian Exceptional Favorites",
+            "items": [
+              "Written Book",
+              "Chiseled Bookshelf",
+              "Enchanted Book",
+              "Recovery Compass"
+            ]
+          },
+          {
+            "id": "builtin.librarian.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Librarian Favorites",
+            "items": [
+              "Book",
+              "Writable Book",
+              "Bookshelf",
+              "Lectern",
+              "Name Tag"
+            ]
+          },
+          {
+            "id": "builtin.librarian.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Librarian Useful Items",
+            "items": [
+              "Paper",
+              "Ink Sac",
+              "Glow Ink Sac",
+              "Feather",
+              "Map",
+              "Filled Map",
+              "Clock",
+              "Compass",
+              "Candle",
+              "White Candle",
+              "Blue Candle",
+              "Red Candle",
+              "Light Gray Candle"
+            ]
+          },
+          {
+            "id": "builtin.librarian.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Librarian Unwanted Items",
+            "items": [
               "Rotten Flesh",
-              "Suspicious Stew"
+              "Poisonous Potato"
             ]
           }
         ]
@@ -64458,64 +64925,214 @@ window.VR_WIKI_DATA = {
         "profession": "Mason",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Brick",
-              "Bricks",
+              "Emerald Block"
+            ]
+          },
+          {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Safe Foods",
+            "items": [
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
+            "items": [
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Poisonous Potato",
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Wither Rose",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.mason.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Mason Exceptional Favorites",
+            "items": [
               "Chiseled Stone Bricks",
-              "Clay",
-              "Clay Ball",
-              "Cut Copper",
-              "Quartz",
               "Quartz Block",
-              "Smooth Stone",
-              "Stone",
-              "Stone Bricks",
+              "Cut Copper",
               "Stonecutter"
             ]
           },
           {
+            "id": "builtin.mason.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Mason Favorites",
+            "items": [
+              "Clay Ball",
+              "Clay",
+              "Brick",
+              "Bricks",
+              "Stone",
+              "Smooth Stone",
+              "Stone Bricks",
+              "Quartz"
+            ]
+          },
+          {
+            "id": "builtin.mason.liked",
+            "rating": 1,
+            "ratingLabel": "+",
             "reaction": "Liked",
+            "category": "Mason Useful Items",
             "items": [
-              "Andesite",
-              "Brown Terracotta",
-              "Calcite",
-              "Cobbled Deepslate",
-              "Deepslate",
-              "Diorite",
               "Granite",
-              "Mud Bricks",
-              "Orange Terracotta",
-              "Polished Andesite",
-              "Polished Deepslate",
-              "Polished Diorite",
               "Polished Granite",
-              "Polished Tuff",
-              "Red Sandstone",
-              "Red Terracotta",
-              "Sandstone",
+              "Diorite",
+              "Polished Diorite",
+              "Andesite",
+              "Polished Andesite",
               "Terracotta",
+              "White Terracotta",
+              "Orange Terracotta",
+              "Red Terracotta",
+              "Brown Terracotta",
+              "Deepslate",
+              "Cobbled Deepslate",
+              "Polished Deepslate",
+              "Mud Bricks",
+              "Sandstone",
+              "Red Sandstone",
+              "Calcite",
               "Tuff",
-              "White Terracotta"
+              "Polished Tuff"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.mason.neutral",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Mason Everyday Items",
             "items": [
-              "Fire Charge",
-              "Lava Bucket",
-              "Tnt",
-              "Tnt Minecart"
+              "Flint"
             ]
           },
           {
+            "id": "builtin.mason.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
             "reaction": "Disliked",
+            "category": "Mason Unwanted Items",
             "items": [
-              "Dead Bush",
-              "Gravel",
-              "Rotten Flesh",
               "Sand",
-              "Slime Ball"
+              "Gravel",
+              "Rotten Flesh"
             ]
           }
         ]
@@ -64524,69 +65141,207 @@ window.VR_WIKI_DATA = {
         "profession": "Shepherd",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Black Wool",
-              "Blue Wool",
-              "Brown Wool",
-              "Cyan Wool",
-              "Gray Wool",
-              "Green Wool",
-              "Light Blue Wool",
-              "Light Gray Wool",
-              "Lime Wool",
-              "Loom",
-              "Magenta Wool",
-              "Orange Wool",
-              "Pink Wool",
-              "Purple Wool",
-              "Red Wool",
-              "Shears",
-              "White Wool",
-              "Yellow Wool"
+              "Emerald Block"
             ]
           },
           {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
             "reaction": "Liked",
+            "category": "Safe Foods",
             "items": [
-              "Black Dye",
-              "Blue Carpet",
-              "Blue Dye",
-              "Brown Dye",
-              "Cyan Dye",
-              "Gray Dye",
-              "Green Dye",
-              "Lead",
-              "Light Blue Dye",
-              "Light Gray Dye",
-              "Lime Dye",
-              "Magenta Dye",
-              "Orange Dye",
-              "Pink Dye",
-              "Purple Dye",
-              "Red Carpet",
-              "Red Dye",
-              "White Carpet",
-              "White Dye",
-              "Yellow Dye"
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
             "items": [
-              "Fire Charge",
-              "Lava Bucket",
-              "Tnt",
-              "Tnt Minecart"
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
             ]
           },
           {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
             "reaction": "Disliked",
+            "category": "Unpleasant Items",
             "items": [
               "Bone",
+              "Bone Meal",
               "Dead Bush",
-              "Rotten Flesh",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Poisonous Potato",
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.shepherd.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Shepherd Exceptional Favorites",
+            "items": [
               "Shears",
+              "Loom"
+            ]
+          },
+          {
+            "id": "builtin.shepherd.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Shepherd Favorites",
+            "items": [
+              "White Wool",
+              "Black Wool",
+              "Brown Wool",
+              "Gray Wool",
+              "Light Gray Wool",
+              "Red Wool",
+              "Orange Wool",
+              "Yellow Wool",
+              "Green Wool",
+              "Lime Wool",
+              "Blue Wool",
+              "Light Blue Wool",
+              "Cyan Wool",
+              "Purple Wool",
+              "Magenta Wool",
+              "Pink Wool"
+            ]
+          },
+          {
+            "id": "builtin.shepherd.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Shepherd Useful Items",
+            "items": [
+              "White Dye",
+              "Black Dye",
+              "Brown Dye",
+              "Gray Dye",
+              "Light Gray Dye",
+              "Red Dye",
+              "Orange Dye",
+              "Yellow Dye",
+              "Green Dye",
+              "Lime Dye",
+              "Blue Dye",
+              "Light Blue Dye",
+              "Cyan Dye",
+              "Purple Dye",
+              "Magenta Dye",
+              "Pink Dye",
+              "White Carpet",
+              "Red Carpet",
+              "Blue Carpet",
+              "Lead"
+            ]
+          },
+          {
+            "id": "builtin.shepherd.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Shepherd Unwanted Items",
+            "items": [
+              "Rotten Flesh",
               "Wither Rose"
             ]
           }
@@ -64596,59 +65351,198 @@ window.VR_WIKI_DATA = {
         "profession": "Toolsmith",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Anvil",
-              "Diamond",
-              "Diamond Axe",
-              "Diamond Hoe",
-              "Diamond Pickaxe",
-              "Diamond Shovel",
-              "Iron Axe",
-              "Iron Block",
-              "Iron Hoe",
-              "Iron Ingot",
-              "Iron Pickaxe",
-              "Iron Shovel",
-              "Netherite Upgrade Smithing Template",
-              "Smithing Table"
+              "Emerald Block"
             ]
           },
           {
-            "reaction": "Liked",
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
             "items": [
-              "Brush",
-              "Charcoal",
+              "Emerald",
+              "Diamond",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Safe Foods",
+            "items": [
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
+            "items": [
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Poisonous Potato",
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Wither Rose",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.toolsmith.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Toolsmith Exceptional Favorites",
+            "items": [
+              "Diamond Pickaxe",
+              "Diamond Axe",
+              "Diamond Shovel",
+              "Diamond Hoe",
+              "Netherite Upgrade Smithing Template"
+            ]
+          },
+          {
+            "id": "builtin.toolsmith.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Toolsmith Favorites",
+            "items": [
+              "Iron Ingot",
+              "Iron Block",
+              "Anvil",
+              "Smithing Table",
+              "Iron Pickaxe",
+              "Iron Axe",
+              "Iron Shovel",
+              "Iron Hoe"
+            ]
+          },
+          {
+            "id": "builtin.toolsmith.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Toolsmith Useful Items",
+            "items": [
               "Coal",
-              "Copper Ingot",
+              "Charcoal",
               "Flint",
+              "Copper Ingot",
+              "Iron Nugget",
               "Gold Ingot",
               "Grindstone",
-              "Iron Nugget",
-              "Stone Axe",
-              "Stone Hoe",
               "Stone Pickaxe",
-              "Stone Shovel"
+              "Stone Axe",
+              "Stone Shovel",
+              "Stone Hoe",
+              "Brush"
             ]
           },
           {
-            "reaction": "Hated",
-            "items": [
-              "Fire Charge",
-              "Lava Bucket",
-              "Tnt",
-              "Tnt Minecart"
-            ]
-          },
-          {
+            "id": "builtin.toolsmith.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
             "reaction": "Disliked",
+            "category": "Toolsmith Unwanted Items",
             "items": [
-              "Dead Bush",
-              "Rotten Flesh",
-              "Wooden Axe",
-              "Wooden Hoe",
               "Wooden Pickaxe",
-              "Wooden Shovel"
+              "Wooden Axe",
+              "Wooden Shovel",
+              "Wooden Hoe",
+              "Rotten Flesh"
             ]
           }
         ]
@@ -64657,57 +65551,194 @@ window.VR_WIKI_DATA = {
         "profession": "Weaponsmith",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
+              "Emerald Block"
+            ]
+          },
+          {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
               "Diamond",
-              "Diamond Axe",
-              "Diamond Sword",
-              "Grindstone",
-              "Heavy Core",
-              "Iron Axe",
-              "Iron Block",
-              "Iron Ingot",
-              "Iron Sword",
-              "Mace",
-              "Netherite Ingot",
-              "Shield"
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
             ]
           },
           {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
             "reaction": "Liked",
+            "category": "Safe Foods",
             "items": [
-              "Anvil",
-              "Arrow",
-              "Bow",
-              "Charcoal",
-              "Coal",
-              "Copper Ingot",
-              "Crossbow",
-              "Flint",
-              "Gold Ingot",
-              "Smithing Table",
-              "Spectral Arrow",
-              "Trident"
+              "Bread",
+              "Apple",
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
             "items": [
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Slime Ball",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
+              "Spider Eye",
+              "Fermented Spider Eye",
+              "Gunpowder",
               "Fire Charge",
               "Flint And Steel",
-              "Lava Bucket",
-              "Tnt",
-              "Tnt Minecart"
+              "Wither Rose",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
             ]
           },
           {
-            "reaction": "Disliked",
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
             "items": [
-              "Poisonous Potato",
-              "Rotten Flesh",
-              "Slime Ball",
+              "Tnt",
+              "Tnt Minecart",
+              "Lava Bucket",
+              "Wither Skeleton Skull"
+            ]
+          },
+          {
+            "id": "builtin.weaponsmith.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Weaponsmith Exceptional Favorites",
+            "items": [
+              "Diamond Sword",
+              "Diamond Axe",
+              "Netherite Ingot",
+              "Mace",
+              "Heavy Core"
+            ]
+          },
+          {
+            "id": "builtin.weaponsmith.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Weaponsmith Favorites",
+            "items": [
+              "Iron Ingot",
+              "Iron Block",
+              "Iron Sword",
+              "Iron Axe",
+              "Shield",
+              "Grindstone"
+            ]
+          },
+          {
+            "id": "builtin.weaponsmith.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Weaponsmith Useful Items",
+            "items": [
+              "Coal",
+              "Charcoal",
+              "Flint",
+              "Crossbow",
+              "Bow",
+              "Arrow",
+              "Spectral Arrow",
+              "Trident",
+              "Copper Ingot",
+              "Gold Ingot",
+              "Smithing Table",
+              "Anvil"
+            ]
+          },
+          {
+            "id": "builtin.weaponsmith.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Weaponsmith Unwanted Items",
+            "items": [
+              "Wooden Sword",
               "Wooden Axe",
-              "Wooden Sword"
+              "Rotten Flesh",
+              "Poisonous Potato"
             ]
           }
         ]
@@ -64716,75 +65747,205 @@ window.VR_WIKI_DATA = {
         "profession": "Nitwit",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Apple",
-              "Cake",
-              "Cookie",
-              "Honey Bottle",
-              "Music Disc 11",
-              "Music Disc 13",
-              "Music Disc 5",
-              "Music Disc Blocks",
-              "Music Disc Cat",
-              "Music Disc Chirp",
-              "Music Disc Creator",
-              "Music Disc Creator Music Box",
-              "Music Disc Far",
-              "Music Disc Mall",
-              "Music Disc Mellohi",
-              "Music Disc Otherside",
-              "Music Disc Pigstep",
-              "Music Disc Precipice",
-              "Music Disc Relic",
-              "Music Disc Stal",
-              "Music Disc Strad",
-              "Music Disc Wait",
-              "Music Disc Ward",
-              "Pumpkin Pie"
+              "Emerald Block"
             ]
           },
           {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
             "reaction": "Liked",
+            "category": "Safe Foods",
             "items": [
-              "Allium",
-              "Azure Bluet",
-              "Blue Orchid",
-              "Cornflower",
-              "Dandelion",
-              "Flower Pot",
-              "Glow Item Frame",
-              "Item Frame",
-              "Lilac",
-              "Lily Of The Valley",
-              "Oxeye Daisy",
-              "Painting",
-              "Peony",
-              "Poppy",
-              "Rose Bush",
-              "Slime Ball",
-              "Snowball",
-              "Sunflower"
+              "Bread",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
             "items": [
-              "Lava Bucket",
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
               "Poisonous Potato",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Wither Rose",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
               "Tnt",
               "Tnt Minecart",
+              "Lava Bucket",
               "Wither Skeleton Skull"
             ]
           },
           {
-            "reaction": "Disliked",
+            "id": "builtin.nitwit.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Nitwit Exceptional Favorites",
             "items": [
-              "Bone",
-              "Dead Bush",
-              "Fermented Spider Eye",
+              "Music Disc Pigstep",
+              "Music Disc Relic",
+              "Music Disc Creator",
+              "Music Disc Creator Music Box",
+              "Music Disc Precipice"
+            ]
+          },
+          {
+            "id": "builtin.nitwit.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Nitwit Favorites",
+            "items": [
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Apple",
+              "Music Disc 13",
+              "Music Disc Cat",
+              "Music Disc Blocks",
+              "Music Disc Chirp",
+              "Music Disc Far",
+              "Music Disc Mall",
+              "Music Disc Mellohi",
+              "Music Disc Stal",
+              "Music Disc Strad",
+              "Music Disc Ward",
+              "Music Disc 11",
+              "Music Disc Wait",
+              "Music Disc Otherside",
+              "Music Disc 5"
+            ]
+          },
+          {
+            "id": "builtin.nitwit.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Nitwit Useful Items",
+            "items": [
+              "Slime Ball",
+              "Snowball",
+              "Painting",
+              "Item Frame",
+              "Glow Item Frame",
+              "Dandelion",
+              "Poppy",
+              "Blue Orchid",
+              "Allium",
+              "Azure Bluet",
+              "Oxeye Daisy",
+              "Cornflower",
+              "Lily Of The Valley",
+              "Sunflower",
+              "Lilac",
+              "Rose Bush",
+              "Peony"
+            ]
+          },
+          {
+            "id": "builtin.nitwit.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Nitwit Unwanted Items",
+            "items": [
               "Rotten Flesh",
-              "Spider Eye"
+              "Spider Eye",
+              "Fermented Spider Eye"
             ]
           }
         ]
@@ -64793,75 +65954,205 @@ window.VR_WIKI_DATA = {
         "profession": "None",
         "entries": [
           {
+            "id": "builtin.global.loved_emerald_block",
+            "rating": 3,
+            "ratingLabel": "+++",
             "reaction": "Loved",
+            "category": "Exceptional Valuables",
             "items": [
-              "Apple",
-              "Cake",
-              "Cookie",
-              "Honey Bottle",
-              "Music Disc 11",
-              "Music Disc 13",
-              "Music Disc 5",
-              "Music Disc Blocks",
-              "Music Disc Cat",
-              "Music Disc Chirp",
-              "Music Disc Creator",
-              "Music Disc Creator Music Box",
-              "Music Disc Far",
-              "Music Disc Mall",
-              "Music Disc Mellohi",
-              "Music Disc Otherside",
-              "Music Disc Pigstep",
-              "Music Disc Precipice",
-              "Music Disc Relic",
-              "Music Disc Stal",
-              "Music Disc Strad",
-              "Music Disc Wait",
-              "Music Disc Ward",
-              "Pumpkin Pie"
+              "Emerald Block"
             ]
           },
           {
+            "id": "builtin.global.loved_valuables",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Valuables",
+            "items": [
+              "Emerald",
+              "Diamond",
+              "Gold Ingot",
+              "Golden Apple",
+              "Enchanted Golden Apple",
+              "Experience Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.liked_safe_foods",
+            "rating": 1,
+            "ratingLabel": "+",
             "reaction": "Liked",
+            "category": "Safe Foods",
             "items": [
-              "Allium",
-              "Azure Bluet",
-              "Blue Orchid",
-              "Cornflower",
-              "Dandelion",
-              "Flower Pot",
-              "Glow Item Frame",
-              "Item Frame",
-              "Lilac",
-              "Lily Of The Valley",
-              "Oxeye Daisy",
-              "Painting",
-              "Peony",
-              "Poppy",
-              "Rose Bush",
-              "Slime Ball",
-              "Snowball",
-              "Sunflower"
+              "Bread",
+              "Sweet Berries",
+              "Glow Berries",
+              "Milk Bucket",
+              "Baked Potato",
+              "Carrot",
+              "Golden Carrot",
+              "Melon Slice"
             ]
           },
           {
-            "reaction": "Hated",
+            "id": "builtin.global.liked_village_goods",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Village Goods",
             "items": [
-              "Lava Bucket",
+              "Emerald Ore",
+              "Deepslate Emerald Ore",
+              "Lantern",
+              "Flower Pot",
+              "Torch",
+              "Campfire",
+              "Barrel",
+              "Chest",
+              "Crafting Table"
+            ]
+          },
+          {
+            "id": "builtin.global.neutral_everyday",
+            "rating": 0,
+            "ratingLabel": "0",
+            "reaction": "Neutral",
+            "category": "Everyday Items",
+            "items": [
+              "Dirt",
+              "Cobblestone",
+              "Stick",
+              "Bowl",
+              "Paper",
+              "Glass Bottle"
+            ]
+          },
+          {
+            "id": "builtin.global.disliked_unsafe",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Unpleasant Items",
+            "items": [
+              "Bone",
+              "Bone Meal",
+              "Dead Bush",
+              "Suspicious Stew",
+              "Cobweb"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_dangers",
+            "rating": -2,
+            "ratingLabel": "--",
+            "reaction": "Hated",
+            "category": "Dangerous Items",
+            "items": [
               "Poisonous Potato",
+              "Gunpowder",
+              "Fire Charge",
+              "Flint And Steel",
+              "Wither Rose",
+              "Pufferfish",
+              "Phantom Membrane",
+              "Magma Cream",
+              "Firework Rocket",
+              "Ominous Bottle",
+              "Ominous Trial Key"
+            ]
+          },
+          {
+            "id": "builtin.global.hated_hazards",
+            "rating": -3,
+            "ratingLabel": "---",
+            "reaction": "Hated",
+            "category": "Hostile Offerings",
+            "items": [
               "Tnt",
               "Tnt Minecart",
+              "Lava Bucket",
               "Wither Skeleton Skull"
             ]
           },
           {
-            "reaction": "Disliked",
+            "id": "builtin.nitwit.exceptional",
+            "rating": 3,
+            "ratingLabel": "+++",
+            "reaction": "Loved",
+            "category": "Nitwit Exceptional Favorites",
             "items": [
-              "Bone",
-              "Dead Bush",
-              "Fermented Spider Eye",
+              "Music Disc Pigstep",
+              "Music Disc Relic",
+              "Music Disc Creator",
+              "Music Disc Creator Music Box",
+              "Music Disc Precipice"
+            ]
+          },
+          {
+            "id": "builtin.nitwit.loved",
+            "rating": 2,
+            "ratingLabel": "++",
+            "reaction": "Loved",
+            "category": "Nitwit Favorites",
+            "items": [
+              "Cookie",
+              "Cake",
+              "Pumpkin Pie",
+              "Honey Bottle",
+              "Apple",
+              "Music Disc 13",
+              "Music Disc Cat",
+              "Music Disc Blocks",
+              "Music Disc Chirp",
+              "Music Disc Far",
+              "Music Disc Mall",
+              "Music Disc Mellohi",
+              "Music Disc Stal",
+              "Music Disc Strad",
+              "Music Disc Ward",
+              "Music Disc 11",
+              "Music Disc Wait",
+              "Music Disc Otherside",
+              "Music Disc 5"
+            ]
+          },
+          {
+            "id": "builtin.nitwit.liked",
+            "rating": 1,
+            "ratingLabel": "+",
+            "reaction": "Liked",
+            "category": "Nitwit Useful Items",
+            "items": [
+              "Slime Ball",
+              "Snowball",
+              "Painting",
+              "Item Frame",
+              "Glow Item Frame",
+              "Dandelion",
+              "Poppy",
+              "Blue Orchid",
+              "Allium",
+              "Azure Bluet",
+              "Oxeye Daisy",
+              "Cornflower",
+              "Lily Of The Valley",
+              "Sunflower",
+              "Lilac",
+              "Rose Bush",
+              "Peony"
+            ]
+          },
+          {
+            "id": "builtin.nitwit.disliked",
+            "rating": -1,
+            "ratingLabel": "-",
+            "reaction": "Disliked",
+            "category": "Nitwit Unwanted Items",
+            "items": [
               "Rotten Flesh",
-              "Spider Eye"
+              "Spider Eye",
+              "Fermented Spider Eye"
             ]
           }
         ]

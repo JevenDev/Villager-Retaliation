@@ -864,6 +864,71 @@ code {
   font-size: 14px;
 }
 
+.gift-rating-positive-3 {
+  --gift-rating-color: #55ff55;
+}
+
+.gift-rating-positive-2 {
+  --gift-rating-color: #55d477;
+}
+
+.gift-rating-positive-1 {
+  --gift-rating-color: #a8d65c;
+}
+
+.gift-rating-neutral {
+  --gift-rating-color: #aaaaaa;
+}
+
+.gift-rating-negative-1 {
+  --gift-rating-color: #ffd05a;
+}
+
+.gift-rating-negative-2 {
+  --gift-rating-color: #ff8a3d;
+}
+
+.gift-rating-negative-3 {
+  --gift-rating-color: #ff5555;
+}
+
+.gift-rating-table th:first-child,
+.gift-rating-table td:first-child {
+  width: 88px;
+}
+
+.gift-rating-table .gift-rating-symbol {
+  color: var(--gift-rating-color);
+}
+
+.gift-rating-group {
+  border-left: 2px solid var(--gift-rating-color);
+  padding-left: 10px;
+}
+
+.gift-rating-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gift-rating-group strong {
+  color: var(--gift-rating-color);
+}
+
+.gift-rating-symbol {
+  display: inline-block;
+  min-width: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gift-rating-reaction {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .profession-gift-group-preferred strong {
   color: #9ee28f;
 }
