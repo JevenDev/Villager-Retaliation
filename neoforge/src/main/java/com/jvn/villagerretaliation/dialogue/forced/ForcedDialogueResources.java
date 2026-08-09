@@ -48,6 +48,7 @@ public final class ForcedDialogueResources {
             "witness_profession", "witness_professions", "professions",
             "requires_witness_unarmed", "witness_unarmed", "requires_witness_armed", "witness_armed",
             "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
+            "player_item_components", "held_item_components", "player_item_custom_data", "held_item_custom_data", "player_item_nbt", "held_item_nbt",
             "requires_held_trade_item", "requires_trade_item", "requires_matching_trade_item",
             "requires_player_aiming_at_witness",
             "min_trade_level", "max_trade_level", "min_villager_trade_level", "max_villager_trade_level",

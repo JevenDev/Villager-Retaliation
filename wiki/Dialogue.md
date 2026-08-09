@@ -128,6 +128,8 @@ Two item tags make ominous-symbol recognition extensible:
 
 For other gear-specific dialogue, openings and closings accept the same `player_item`, `player_items`, `player_item_tag`, `player_item_tags`, `player_item_slot`, and `player_item_slots` filters as normal dialogue lines. Slots can be `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `accessories`, `equipment`, or `any`. The `accessories` slot reads equipped Curios or Accessories items when either optional mod is installed; `equipment` and `any` include them as well. Item-filtered conversation text can use placeholders such as `{player_item}`, `{player_item_id}`, and `{player_item_slot}`.
 
+These filters can require stack data with `player_item_components`, `player_item_custom_data`, or `player_item_nbt`; `held_item_components`, `held_item_custom_data`, and `held_item_nbt` are aliases. Component and custom-data predicates combine with the existing item, tag, slot, durability, and enchantment checks. See [Item stack predicates](JSON-Reference.md#item-stack-predicates).
+
 ```json
 {
   "id": "my_pack.opening.custom_uniform",

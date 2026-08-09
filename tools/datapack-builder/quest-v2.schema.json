@@ -538,6 +538,31 @@
         "proof_item": {
           "type": "string",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "proof_item_components": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "proof_item_durability": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "proof_item_custom_data": {
+          "type": "object"
+        },
+        "proof_item_nbt": {
+          "type": "object"
         }
       }
     },
@@ -1093,6 +1118,74 @@
               }
             }
           ]
+        },
+        "components": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "durability": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "min_durability": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_durability": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_durability_percent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_durability_percent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "enchantment": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "enchantments": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              }
+            }
+          ]
+        },
+        "min_enchantment_level": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_enchantment_level": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "custom_data": {
+          "type": "object"
+        },
+        "nbt": {
+          "type": "object"
         },
         "gift_reaction": {
           "type": "string"

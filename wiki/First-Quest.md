@@ -233,7 +233,7 @@ The debug inspector reports saved state, availability, active conditions, issuer
 | Quest appears for the wrong story branch | Missing `metadata.parent`, `availability.conditions`, or branch-lock rules |
 | Tracker text is vague | Add `ui.tracker_text` or objective `tracker.text` |
 | Player cannot find the quest giver | Keep `locked_to_villager: true` for personal favors. Use `cross_villager_compatible: true` only when another villager should continue the same quest |
-| Advanced item objective highlights the wrong stack | The client highlights by item id. Explain enchantment, durability, or custom-data requirements in tracker text |
+| Advanced item objective highlights the wrong stack | Ensure the active objective and synchronized tracker were refreshed after the datapack reload; highlights now use components, enchantments, durability, and custom-data requirements |
 
 ## When To Add More Files
 

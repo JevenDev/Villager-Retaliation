@@ -73,6 +73,7 @@ import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -4308,7 +4309,11 @@ public final class VillagerQuestService {
         if (!definition.target().hasProofItem()) {
             return true;
         }
-        return hasItemCount(player, definition.target().proofItem(), 1);
+        return itemCount(
+                        player,
+                        definition.target().proofItem(),
+                        definition.target().proofItemPredicate())
+                >= 1;
     }
 
     private static boolean hasItemCount(ServerPlayer player, ResourceLocation itemId, int count) {
@@ -4322,6 +4327,27 @@ public final class VillagerQuestService {
         InventoryItemCountCache cache = cachedInventoryCache(player);
         cache.recordSimpleLookup();
         return cache.counts().getOrDefault(itemId, 0);
+    }
+
+    private static int itemCount(
+            ServerPlayer player,
+            ResourceLocation itemId,
+            ItemStackPredicate stackPredicate) {
+        ItemStackPredicate predicate = stackPredicate == null ? ItemStackPredicate.ANY : stackPredicate;
+        if (predicate.isAny()) {
+            return itemCount(player, itemId);
+        }
+        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
+        if (item.isEmpty()) {
+            return 0;
+        }
+        int total = 0;
+        for (ItemStack stack : removablePlayerStacks(player)) {
+            if (!stack.isEmpty() && stack.is(item.get()) && predicate.matches(stack)) {
+                total += stack.getCount();
+            }
+        }
+        return total;
     }
 
     private static int itemCount(ServerPlayer player, QuestDefinition.Objective objective) {
@@ -4410,7 +4436,8 @@ public final class VillagerQuestService {
                 && requirements.maxDurability().isEmpty()
                 && requirements.minDurabilityPercent().isEmpty()
                 && requirements.maxDurabilityPercent().isEmpty()
-                && !requirements.hasCustomData());
+                && !requirements.hasCustomData()
+                && requirements.stackPredicate().isAny());
     }
 
     private static boolean updateObjectiveProgress(
@@ -4992,6 +5019,9 @@ public final class VillagerQuestService {
             return false;
         }
         QuestDefinition.ItemRequirements requirements = objective.itemRequirements();
+        if (!requirements.stackPredicate().matches(stack)) {
+            return false;
+        }
         if (!requirements.enchantments().isEmpty()
                 && requirements.enchantments().stream().anyMatch(requirement -> !matchesEnchantment(stack, requirement))) {
             return false;
@@ -6549,7 +6579,9 @@ public final class VillagerQuestService {
                         definition,
                         progress,
                         VillagerQuestService::itemName,
-                        itemId -> itemCount(player, itemId),
+                        itemId -> itemId != null && itemId.equals(definition.target().proofItem())
+                                ? itemCount(player, itemId, definition.target().proofItemPredicate())
+                                : itemCount(player, itemId),
                         objective -> itemCount(player, objective),
                         requiredObjectivesForReadiness(definition, progress)),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements),

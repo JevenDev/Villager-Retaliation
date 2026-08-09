@@ -85,6 +85,8 @@ Forced-dialogue options can take items directly from the player.
 
 `take_items` removes matching items from the player's inventory. Its default `destination` is `discard`, which is best for fees, bribes, and abstract payments. `take_stolen_items` or `return_stolen_items` returns the exact stolen stacks. Its default `destination` is `villager_inventory_then_source_container`.
 
+`take_items`, `payment`, and `give_items` can add `components`, `custom_data` (or `nbt`), and `durability` beside their item or tag selector. Only matching variants count and are removed or transferred. See [Item stack predicates](JSON-Reference.md#item-stack-predicates).
+
 Destination values:
 
 | Value | Result |
@@ -182,6 +184,8 @@ Use normal [Dialogue](Dialogue.md) when the player chooses to ask something on p
 ## Held Item Proximity
 
 Use `trigger: "player_item_proximity"` for lines that fire when a nearby player is holding, wearing, or carrying a matching item. Add `output.mode: "chat"` for a bark instead of a locked conversation.
+
+Proximity rules also accept `player_item_components`, `player_item_custom_data`, and `player_item_nbt`, plus the equivalent `held_item_*` aliases.
 
 ```json
 {

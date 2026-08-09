@@ -60,6 +60,8 @@ hated
 
 Pick the reaction first, then tune specifics with `reputation_per_item`, profession filters, and `priority`.
 
+Preference entries can add `components`, `custom_data` (or `nbt`), and `durability` beside `item`, `items`, `tag`, or `tags`. The predicate applies to every selector in that entry. At equal priority and scope, a component-specific match wins over a broader match; server gift evaluation and the synchronized client preference view use the same predicate. See [Item stack predicates](JSON-Reference.md#item-stack-predicates).
+
 ## Reputation Limits
 
 Positive gift reputation is tracked separately for each player-villager relationship. By default, the first stack of an item earns its full value, additional stacks of the same item on that Minecraft day earn 10%, and total positive gift reputation is capped at 120 per day. Disliked and hated gift penalties are not reduced or counted against that cap.

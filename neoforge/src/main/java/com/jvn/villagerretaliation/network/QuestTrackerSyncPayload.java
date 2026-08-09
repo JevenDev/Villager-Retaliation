@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -19,6 +20,7 @@ public record QuestTrackerSyncPayload(
     public static final int MAX_TRACKED_QUESTS = QuestTrackerLimits.MAX_TRACKED_QUESTS;
     public static final int MAX_SYNC_ENTRIES = 32;
     public static final int MAX_QUEST_ITEMS = 16;
+    public static final int MAX_QUEST_ITEM_ENCHANTMENTS = 16;
     public static final int MAX_REWARD_PREVIEWS = 8;
     public static final int MAX_PREREQUISITES = 8;
     public static final int MAX_OBJECTIVE_STEPS = 24;
@@ -122,6 +124,15 @@ public record QuestTrackerSyncPayload(
                 buffer.writeUtf(item.label(), 128);
                 buffer.writeVarInt(item.count());
                 buffer.writeVarInt(item.currentCount());
+                item.stackPredicate().write(buffer);
+                buffer.writeVarInt(Math.min(MAX_QUEST_ITEM_ENCHANTMENTS, item.enchantments().size()));
+                for (QuestItemEnchantment enchantment : item.enchantments()) {
+                    buffer.writeUtf(enchantment.id(), MAX_ITEM_ID_LENGTH);
+                    buffer.writeVarInt(enchantment.minLevel() + 1);
+                    buffer.writeVarInt(enchantment.maxLevel() + 1);
+                }
+                buffer.writeVarInt(item.minDurabilityPercent() + 1);
+                buffer.writeVarInt(item.maxDurabilityPercent() + 1);
             }
             buffer.writeVarInt(Math.min(MAX_REWARD_PREVIEWS, entry.rewardPreviews().size()));
             for (RewardPreview reward : entry.rewardPreviews()) {
@@ -241,12 +252,23 @@ public record QuestTrackerSyncPayload(
         int size = VillagerPayloads.readCollectionSize(buffer, MAX_QUEST_ITEMS, "quest tracker items");
         List<QuestItem> items = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
+            String itemId = buffer.readUtf(128);
+            String label = buffer.readUtf(128);
+            int count = buffer.readVarInt();
+            int currentCount = buffer.readVarInt();
+            ItemStackPredicate stackPredicate = ItemStackPredicate.read(buffer);
+            int enchantmentCount = VillagerPayloads.readCollectionSize(
+                    buffer, MAX_QUEST_ITEM_ENCHANTMENTS, "quest item enchantments");
+            List<QuestItemEnchantment> enchantments = new ArrayList<>(enchantmentCount);
+            for (int enchantmentIndex = 0; enchantmentIndex < enchantmentCount; enchantmentIndex++) {
+                enchantments.add(new QuestItemEnchantment(
+                        buffer.readUtf(MAX_ITEM_ID_LENGTH),
+                        buffer.readVarInt() - 1,
+                        buffer.readVarInt() - 1));
+            }
             QuestItem item = new QuestItem(
-                    buffer.readUtf(128),
-                    buffer.readUtf(128),
-                    buffer.readVarInt(),
-                    buffer.readVarInt()
-            );
+                    itemId, label, count, currentCount, stackPredicate, enchantments,
+                    buffer.readVarInt() - 1, buffer.readVarInt() - 1);
             items.add(item);
         }
         return items;
@@ -758,9 +780,26 @@ public record QuestTrackerSyncPayload(
         }
     }
 
-    public record QuestItem(String itemId, String label, int count, int currentCount) {
+    public record QuestItem(
+            String itemId,
+            String label,
+            int count,
+            int currentCount,
+            ItemStackPredicate stackPredicate,
+            List<QuestItemEnchantment> enchantments,
+            int minDurabilityPercent,
+            int maxDurabilityPercent) {
         public QuestItem(String itemId, String label, int count) {
-            this(itemId, label, count, 0);
+            this(itemId, label, count, 0, ItemStackPredicate.ANY, List.of(), -1, -1);
+        }
+
+        public QuestItem(String itemId, String label, int count, int currentCount) {
+            this(itemId, label, count, currentCount, ItemStackPredicate.ANY, List.of(), -1, -1);
+        }
+
+        public QuestItem(
+                String itemId, String label, int count, int currentCount, ItemStackPredicate stackPredicate) {
+            this(itemId, label, count, currentCount, stackPredicate, List.of(), -1, -1);
         }
 
         public QuestItem {
@@ -768,6 +807,21 @@ public record QuestTrackerSyncPayload(
             label = boundedUtf(label, MAX_ITEM_LABEL_LENGTH);
             count = Math.max(1, count);
             currentCount = Math.max(0, currentCount);
+            stackPredicate = stackPredicate == null ? ItemStackPredicate.ANY : stackPredicate;
+            enchantments = enchantments == null
+                    ? List.of()
+                    : List.copyOf(enchantments.stream().filter(Objects::nonNull)
+                            .limit(MAX_QUEST_ITEM_ENCHANTMENTS).toList());
+            minDurabilityPercent = Math.max(-1, Math.min(100, minDurabilityPercent));
+            maxDurabilityPercent = Math.max(-1, Math.min(100, maxDurabilityPercent));
+        }
+    }
+
+    public record QuestItemEnchantment(String id, int minLevel, int maxLevel) {
+        public QuestItemEnchantment {
+            id = boundedUtf(id, MAX_ITEM_ID_LENGTH);
+            minLevel = Math.max(-1, minLevel);
+            maxLevel = Math.max(-1, maxLevel);
         }
     }
 }

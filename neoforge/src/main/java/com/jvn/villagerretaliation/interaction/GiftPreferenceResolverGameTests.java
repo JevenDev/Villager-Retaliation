@@ -1,13 +1,18 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -133,6 +138,42 @@ public final class GiftPreferenceResolverGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void componentSpecificPreferencesMatchOnServerAndClient(GameTestHelper helper) {
+        var predicate = ItemStackPredicateParser.parse(
+                helper.getLevel().registryAccess(),
+                JsonParser.parseString("{\"custom_data\":{\"quality\":3}}").getAsJsonObject(),
+                List.of(Items.STONE),
+                "components",
+                "durability",
+                "custom_data");
+        GiftPreferenceDefinition definition = definition(
+                "test:quality_stone",
+                Set.of(),
+                3,
+                10,
+                GiftPreferenceDefinition.ItemMatcher.item(
+                        ResourceLocation.withDefaultNamespace("stone"), predicate));
+        GiftPreferenceView view = view(definition, true, definition.rating());
+        ItemStack matching = new ItemStack(Items.STONE);
+        CompoundTag data = new CompoundTag();
+        data.putInt("quality", 3);
+        matching.set(DataComponents.CUSTOM_DATA, CustomData.of(data));
+
+        helper.assertTrue(
+                GiftPreferenceResolver.resolve(
+                                List.of(definition), null, VillagerProfession.FARMER, matching)
+                        .isPresent(),
+                "server preference resolution should match custom_data");
+        helper.assertTrue(
+                GiftPreferenceResolver.resolveView(List.of(view), matching).isPresent(),
+                "client preference resolution should match the synchronized predicate");
+        helper.assertFalse(
+                GiftPreferenceResolver.resolveView(List.of(view), new ItemStack(Items.STONE)).isPresent(),
+                "plain items must not match a component-specific preference");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void discoveredIdentityUsesTheCurrentRatingAndProfession(GameTestHelper helper) {
         GiftPreferenceDefinition oldDefinition = definition(
                 "test:changing",
@@ -221,7 +262,8 @@ public final class GiftPreferenceResolverGameTests {
                 definition.professionSpecific(),
                 definition.name(),
                 definition.matchers().stream()
-                        .map(matcher -> new GiftPreferenceView.Matcher(matcher.source(), matcher.value()))
+                        .map(matcher -> new GiftPreferenceView.Matcher(
+                                matcher.source(), matcher.value(), matcher.stackPredicate()))
                         .toList());
     }
 }

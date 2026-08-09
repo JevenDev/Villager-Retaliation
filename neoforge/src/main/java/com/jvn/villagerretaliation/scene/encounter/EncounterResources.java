@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -15,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -40,8 +43,11 @@ public final class EncounterResources {
     public static void warm(MinecraftServer server){load(server);}public static void clearCache(){cache=new Cache(null,Map.of(),Map.of());}
     public static void installTestTemplates(MinecraftServer server,List<EncounterTemplate> templates){Map<ResourceLocation,EncounterTemplate> map=new LinkedHashMap<>();templates.stream().sorted(Comparator.comparing(v->v.id().toString())).forEach(v->map.put(v.id(),v));cache=new Cache(server,Map.copyOf(map),Map.of());}
     public static void validateRewardLootTables(MinecraftServer server,EncounterTemplate template,List<String> errors){if(template==null||template.rewards()==null)return;java.util.stream.Stream.of(template.rewards().waves(),template.rewards().phases(),template.rewards().completion()).flatMap(List::stream).map(EncounterTemplate.Reward::lootTable).filter(java.util.Objects::nonNull).distinct().forEach(id->{if(server.reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE,id))==LootTable.EMPTY)errors.add("unknown encounter reward loot table "+id);});}
-    private static Cache load(MinecraftServer server){Cache value=cache;if(value.server==server)return value;synchronized(EncounterResources.class){if(cache.server==server)return cache;Map<ResourceLocation,EncounterTemplate> templates=new LinkedHashMap<>();Map<ResourceLocation,List<String>> diagnostics=new LinkedHashMap<>();for(var resource:DatapackResourceLoader.jsonResources(server,"quest_encounters")){JsonObject root=DatapackResourceLoader.readObject(resource.location(),"quest encounter",resource.resource()).orElse(null);List<String> errors=new ArrayList<>();EncounterTemplate template=parse(resource.location(),root,errors);validateRewardLootTables(server,template,errors);ResourceLocation key=template==null?resource.location():template.id();diagnostics.put(key,List.copyOf(errors));if(template!=null&&errors.isEmpty())templates.put(template.id(),template);}validateVariantGraph(templates,diagnostics);cache=new Cache(server,Map.copyOf(templates),Map.copyOf(diagnostics));return cache;}}
+    private static Cache load(MinecraftServer server){Cache value=cache;if(value.server==server)return value;synchronized(EncounterResources.class){if(cache.server==server)return cache;Map<ResourceLocation,EncounterTemplate> templates=new LinkedHashMap<>();Map<ResourceLocation,List<String>> diagnostics=new LinkedHashMap<>();for(var resource:DatapackResourceLoader.jsonResources(server,"quest_encounters")){JsonObject root=DatapackResourceLoader.readObject(resource.location(),"quest encounter",resource.resource()).orElse(null);List<String> errors=new ArrayList<>();EncounterTemplate template=parse(resource.location(),root,errors,server.registryAccess());validateRewardLootTables(server,template,errors);ResourceLocation key=template==null?resource.location():template.id();diagnostics.put(key,List.copyOf(errors));if(template!=null&&errors.isEmpty())templates.put(template.id(),template);}validateVariantGraph(templates,diagnostics);cache=new Cache(server,Map.copyOf(templates),Map.copyOf(diagnostics));return cache;}}
     public static EncounterTemplate parse(ResourceLocation source,JsonObject root,List<String> errors){
+        return parse(source,root,errors,ItemStackPredicateParser.DEFAULT_REGISTRIES);
+    }
+    private static EncounterTemplate parse(ResourceLocation source,JsonObject root,List<String> errors,HolderLookup.Provider registries){
         if(root==null){errors.add("root must be an object");return null;}
         ResourceLocation schema=ResourceLocation.tryParse(string(root,"schema",""));if(!SCHEMA.equals(schema))errors.add("schema must be "+SCHEMA);
         ResourceLocation id=parseId(source,string(root,"id",""));
@@ -50,7 +56,7 @@ public final class EncounterResources {
         boolean hasWaves=root.has("waves"),hasVariants=root.has("variants");List<EncounterTemplate.Member> members=parseMembers(root.get("members"),Map.of(),errors,"encounter");
         List<EncounterTemplate.Wave> waves=parseWaves(root,errors);
         List<EncounterTemplate.Variant> variants=parseVariants(root,errors);
-        List<EncounterTemplate.SpawnPoint> spawnPoints=parseSpawnPoints(root,errors);EncounterTemplate.SpawnSelectionMode spawnSelection=strictEnum(EncounterTemplate.SpawnSelectionMode.class,root,"spawn_selection",EncounterTemplate.SpawnSelectionMode.RANDOM,errors);List<EncounterTemplate.Phase> phases=parsePhases(root,errors);EncounterTemplate.ObjectiveComposition objectives=parseCompletionObjectives(root,errors);
+        List<EncounterTemplate.SpawnPoint> spawnPoints=parseSpawnPoints(root,errors);EncounterTemplate.SpawnSelectionMode spawnSelection=strictEnum(EncounterTemplate.SpawnSelectionMode.class,root,"spawn_selection",EncounterTemplate.SpawnSelectionMode.RANDOM,errors);List<EncounterTemplate.Phase> phases=parsePhases(root,errors);EncounterTemplate.ObjectiveComposition objectives=parseCompletionObjectives(root,errors,registries);
         if(hasWaves&&root.has("members"))errors.add("members and waves are mutually exclusive");
         if(hasVariants&&(root.has("members")||hasWaves))errors.add("variants are mutually exclusive with members and waves");
         if(hasVariants)for(String key:root.keySet())if(!List.of("schema","id","version","controller","variants").contains(key))errors.add("variant selector field "+key+" is unreachable");
@@ -105,9 +111,112 @@ public final class EncounterResources {
         if(!root.has("phases"))return List.of();JsonElement raw=root.get("phases");if(!raw.isJsonArray()){errors.add("phases must be an array");return List.of();}if(raw.getAsJsonArray().size()<1||raw.getAsJsonArray().size()>64)errors.add("phases must contain between 1 and 64 entries");List<EncounterTemplate.Phase> phases=new ArrayList<>();int index=0;
         for(JsonElement value:raw.getAsJsonArray()){if(!value.isJsonObject()){errors.add("phase["+index+"] must be an object");index++;continue;}JsonObject phase=value.getAsJsonObject();for(String key:phase.keySet())if(!List.of("id","trigger","actions","repeatable","repeat_interval_ticks","max_fires").contains(key))errors.add("unknown phase field "+key);String id=string(phase,"id","");EncounterTemplate.PhaseTrigger trigger=parsePhaseTrigger(phase.get("trigger"),id,errors);List<EncounterTemplate.PhaseAction> actions=parsePhaseActions(phase.get("actions"),id,errors);boolean repeatable=strictBoolean(phase,"repeatable",false,"phase "+id,errors);if(repeatable&&!phase.has("repeat_interval_ticks"))errors.add("repeatable phase "+id+" requires repeat_interval_ticks");if(repeatable&&!phase.has("max_fires"))errors.add("repeatable phase "+id+" requires max_fires");if(!repeatable&&(phase.has("repeat_interval_ticks")||phase.has("max_fires")))errors.add("non-repeatable phase "+id+" cannot configure repeat fields");try{phases.add(new EncounterTemplate.Phase(id,trigger,actions,repeatable,boundedInteger(phase,"repeat_interval_ticks",0,0,12000,"phase "+id,errors),boundedInteger(phase,"max_fires",1,1,64,"phase "+id,errors)));}catch(IllegalArgumentException e){errors.add(e.getMessage());}index++;}return phases;
     }
-    private static EncounterTemplate.ObjectiveComposition parseCompletionObjectives(JsonObject root,List<String> errors){
-        if(!root.has("completion_objectives"))return null;JsonElement raw=root.get("completion_objectives");if(!raw.isJsonObject()){errors.add("completion_objectives must be an object");return null;}JsonObject composition=raw.getAsJsonObject();for(String key:composition.keySet())if(!List.of("mode","objectives").contains(key))errors.add("unknown completion_objectives field "+key);EncounterTemplate.ObjectiveMode mode=strictEnum(EncounterTemplate.ObjectiveMode.class,composition,"mode",EncounterTemplate.ObjectiveMode.ALL,errors);JsonElement entries=composition.get("objectives");if(entries==null||!entries.isJsonArray()){errors.add("completion_objectives.objectives must be an array");return null;}if(entries.getAsJsonArray().size()<1||entries.getAsJsonArray().size()>32)errors.add("completion_objectives.objectives must contain between 1 and 32 entries");List<EncounterTemplate.Objective> objectives=new ArrayList<>();for(JsonElement value:entries.getAsJsonArray()){if(!value.isJsonObject()){errors.add("completion objective must be an object");continue;}JsonObject objective=value.getAsJsonObject();for(String key:objective.keySet())if(!List.of("id","type","duration_ticks","actor","point","actors","points","member","item","count","radius","vertical_radius").contains(key))errors.add("unknown completion objective field "+key);String id=string(objective,"id","");EncounterTemplate.ObjectiveType type=strictEnum(EncounterTemplate.ObjectiveType.class,objective,"type",null,errors);if(type==null)continue;java.util.Set<String> reachable=switch(type){case ALL_DEFEATED,ALL_GONE->java.util.Set.of();case SURVIVE_DURATION->java.util.Set.of("duration_ticks");case PROTECT_ACTOR->java.util.Set.of("actor","duration_ticks");case PREVENT_ENTRY->java.util.Set.of("point","duration_ticks","radius","vertical_radius");case ESCORT_ACTOR->java.util.Set.of("actor","point","radius","vertical_radius");case DESTROY_TARGETS->java.util.Set.of("actors");case DEFEAT_LEADER->java.util.Set.of("member");case RETRIEVE_ITEM->java.util.Set.of("item","count");case HOLD_AREAS->java.util.Set.of("points","duration_ticks","radius","vertical_radius");};for(String key:objective.keySet())if(!key.equals("id")&&!key.equals("type")&&!reachable.contains(key))errors.add("objective "+id+" field "+key+" is unreachable for "+type.name().toLowerCase(Locale.ROOT));List<String> actors=stableStrings(objective,"actors",32,"objective "+id,errors);List<String> points=stableStrings(objective,"points",16,"objective "+id,errors);ResourceLocation item=null;if(objective.has("item")){String itemValue=string(objective,"item","");item=itemValue.contains(":")?ResourceLocation.tryParse(itemValue):null;if(item==null||!BuiltInRegistries.ITEM.containsKey(item)||BuiltInRegistries.ITEM.get(item)==net.minecraft.world.item.Items.AIR){errors.add("objective "+id+" has unknown item "+itemValue);item=null;}}try{objectives.add(new EncounterTemplate.Objective(id,type,boundedInteger(objective,"duration_ticks",0,0,1728000,"objective "+id,errors),string(objective,"actor",""),string(objective,"point",""),actors,points,string(objective,"member",""),item,boundedInteger(objective,"count",type==EncounterTemplate.ObjectiveType.RETRIEVE_ITEM?1:0,0,64,"objective "+id,errors),boundedInteger(objective,"radius",type==EncounterTemplate.ObjectiveType.PREVENT_ENTRY||type==EncounterTemplate.ObjectiveType.ESCORT_ACTOR||type==EncounterTemplate.ObjectiveType.HOLD_AREAS?4:0,0,64,"objective "+id,errors),boundedInteger(objective,"vertical_radius",type==EncounterTemplate.ObjectiveType.PREVENT_ENTRY||type==EncounterTemplate.ObjectiveType.ESCORT_ACTOR||type==EncounterTemplate.ObjectiveType.HOLD_AREAS?4:0,0,64,"objective "+id,errors)));}catch(IllegalArgumentException e){errors.add(e.getMessage());}}
-        try{return new EncounterTemplate.ObjectiveComposition(mode,objectives);}catch(IllegalArgumentException e){errors.add(e.getMessage());return null;}
+    private static EncounterTemplate.ObjectiveComposition parseCompletionObjectives(
+            JsonObject root, List<String> errors, HolderLookup.Provider registries) {
+        if (!root.has("completion_objectives")) return null;
+        JsonElement raw = root.get("completion_objectives");
+        if (!raw.isJsonObject()) {
+            errors.add("completion_objectives must be an object");
+            return null;
+        }
+        JsonObject composition = raw.getAsJsonObject();
+        for (String key : composition.keySet())
+            if (!List.of("mode", "objectives").contains(key))
+                errors.add("unknown completion_objectives field " + key);
+        EncounterTemplate.ObjectiveMode mode = strictEnum(
+                EncounterTemplate.ObjectiveMode.class, composition, "mode", EncounterTemplate.ObjectiveMode.ALL, errors);
+        JsonElement entries = composition.get("objectives");
+        if (entries == null || !entries.isJsonArray()) {
+            errors.add("completion_objectives.objectives must be an array");
+            return null;
+        }
+        if (entries.getAsJsonArray().size() < 1 || entries.getAsJsonArray().size() > 32)
+            errors.add("completion_objectives.objectives must contain between 1 and 32 entries");
+        List<EncounterTemplate.Objective> objectives = new ArrayList<>();
+        for (JsonElement value : entries.getAsJsonArray()) {
+            if (!value.isJsonObject()) {
+                errors.add("completion objective must be an object");
+                continue;
+            }
+            JsonObject objective = value.getAsJsonObject();
+            for (String key : objective.keySet())
+                if (!List.of("id", "type", "duration_ticks", "actor", "point", "actors", "points", "member",
+                        "item", "components", "durability", "custom_data", "nbt", "count", "radius",
+                        "vertical_radius").contains(key))
+                    errors.add("unknown completion objective field " + key);
+            String id = string(objective, "id", "");
+            EncounterTemplate.ObjectiveType type = strictEnum(
+                    EncounterTemplate.ObjectiveType.class, objective, "type", null, errors);
+            if (type == null) continue;
+            Set<String> reachable = switch (type) {
+                case ALL_DEFEATED, ALL_GONE -> Set.of();
+                case SURVIVE_DURATION -> Set.of("duration_ticks");
+                case PROTECT_ACTOR -> Set.of("actor", "duration_ticks");
+                case PREVENT_ENTRY -> Set.of("point", "duration_ticks", "radius", "vertical_radius");
+                case ESCORT_ACTOR -> Set.of("actor", "point", "radius", "vertical_radius");
+                case DESTROY_TARGETS -> Set.of("actors");
+                case DEFEAT_LEADER -> Set.of("member");
+                case RETRIEVE_ITEM -> Set.of("item", "components", "durability", "custom_data", "nbt", "count");
+                case HOLD_AREAS -> Set.of("points", "duration_ticks", "radius", "vertical_radius");
+            };
+            for (String key : objective.keySet())
+                if (!key.equals("id") && !key.equals("type") && !reachable.contains(key))
+                    errors.add("objective " + id + " field " + key + " is unreachable for "
+                            + type.name().toLowerCase(Locale.ROOT));
+            List<String> actors = stableStrings(objective, "actors", 32, "objective " + id, errors);
+            List<String> points = stableStrings(objective, "points", 16, "objective " + id, errors);
+            ResourceLocation item = null;
+            if (objective.has("item")) {
+                String itemValue = string(objective, "item", "");
+                item = itemValue.contains(":") ? ResourceLocation.tryParse(itemValue) : null;
+                if (item == null || !BuiltInRegistries.ITEM.containsKey(item)
+                        || BuiltInRegistries.ITEM.get(item) == net.minecraft.world.item.Items.AIR) {
+                    errors.add("objective " + id + " has unknown item " + itemValue);
+                    item = null;
+                }
+            }
+            try {
+                ItemStackPredicate predicate = ItemStackPredicateParser.parse(
+                        registries,
+                        objective,
+                        item == null ? List.of() : List.of(BuiltInRegistries.ITEM.get(item)),
+                        "components",
+                        "durability",
+                        "custom_data",
+                        "nbt");
+                objectives.add(new EncounterTemplate.Objective(
+                        id,
+                        type,
+                        boundedInteger(objective, "duration_ticks", 0, 0, 1728000, "objective " + id, errors),
+                        string(objective, "actor", ""),
+                        string(objective, "point", ""),
+                        actors,
+                        points,
+                        string(objective, "member", ""),
+                        item,
+                        predicate,
+                        boundedInteger(objective, "count", type == EncounterTemplate.ObjectiveType.RETRIEVE_ITEM ? 1 : 0,
+                                0, 64, "objective " + id, errors),
+                        boundedInteger(objective, "radius",
+                                type == EncounterTemplate.ObjectiveType.PREVENT_ENTRY
+                                        || type == EncounterTemplate.ObjectiveType.ESCORT_ACTOR
+                                        || type == EncounterTemplate.ObjectiveType.HOLD_AREAS ? 4 : 0,
+                                0, 64, "objective " + id, errors),
+                        boundedInteger(objective, "vertical_radius",
+                                type == EncounterTemplate.ObjectiveType.PREVENT_ENTRY
+                                        || type == EncounterTemplate.ObjectiveType.ESCORT_ACTOR
+                                        || type == EncounterTemplate.ObjectiveType.HOLD_AREAS ? 4 : 0,
+                                0, 64, "objective " + id, errors)));
+            } catch (IllegalArgumentException exception) {
+                errors.add(exception.getMessage());
+            }
+        }
+        try {
+            return new EncounterTemplate.ObjectiveComposition(mode, objectives);
+        } catch (IllegalArgumentException exception) {
+            errors.add(exception.getMessage());
+            return null;
+        }
     }
     private static List<String> stableStrings(JsonObject object,String key,int maximum,String owner,List<String> errors){if(!object.has(key))return List.of();if(!object.get(key).isJsonArray()){errors.add(owner+" "+key+" must be an array");return List.of();}List<String> values=new ArrayList<>();java.util.Set<String> unique=new java.util.LinkedHashSet<>();for(JsonElement raw:object.getAsJsonArray(key)){String value=raw.isJsonPrimitive()?raw.getAsString():"";if(!value.matches("[a-z][a-z0-9_.-]{0,63}"))errors.add(owner+" "+key+" requires stable aliases");else if(!unique.add(value))errors.add(owner+" "+key+" contains duplicate "+value);else values.add(value);}if(values.size()<1||values.size()>maximum)errors.add(owner+" "+key+" must contain between 1 and "+maximum+" entries");return values;}
     private static EncounterTemplate.PhaseTrigger parsePhaseTrigger(JsonElement raw,String phaseId,List<String> errors){

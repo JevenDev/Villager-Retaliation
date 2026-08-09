@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.sell;
+package com.jvn.villagerretaliation.util.item;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -9,6 +9,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 
@@ -20,6 +21,57 @@ public sealed interface ComponentPredicate
     boolean matches(ItemStack stack);
 
     boolean overlaps(ComponentPredicate other);
+
+    default int specificity() {
+        return 1;
+    }
+
+    default void write(RegistryFriendlyByteBuf buffer) {
+        DataComponentType.STREAM_CODEC.encode(buffer, this.type());
+        if (this instanceof Exact<?> exact) {
+            buffer.writeBoolean(true);
+            writeExactValue(buffer, exact.type(), exact.expected());
+            return;
+        }
+        NumericRange range = (NumericRange) this;
+        buffer.writeBoolean(false);
+        buffer.writeBoolean(range.min() != null);
+        if (range.min() != null) {
+            buffer.writeDouble(range.min());
+        }
+        buffer.writeBoolean(range.max() != null);
+        if (range.max() != null) {
+            buffer.writeDouble(range.max());
+        }
+    }
+
+    static ComponentPredicate read(RegistryFriendlyByteBuf buffer) {
+        DataComponentType<?> type = DataComponentType.STREAM_CODEC.decode(buffer);
+        if (buffer.readBoolean()) {
+            return exactUnchecked(type, readExactValue(buffer, type));
+        }
+        Double min = buffer.readBoolean() ? buffer.readDouble() : null;
+        Double max = buffer.readBoolean() ? buffer.readDouble() : null;
+        return new NumericRange(type, min, max);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void writeExactValue(
+            RegistryFriendlyByteBuf buffer,
+            DataComponentType type,
+            Object value) {
+        type.streamCodec().encode(buffer, value);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static Object readExactValue(RegistryFriendlyByteBuf buffer, DataComponentType type) {
+        return type.streamCodec().decode(buffer);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static ComponentPredicate exactUnchecked(DataComponentType type, Object value) {
+        return new Exact(type, value);
+    }
 
     record Exact<T>(DataComponentType<T> type, T expected) implements ComponentPredicate {
         public Exact {
@@ -72,6 +124,9 @@ public sealed interface ComponentPredicate
     }
 
     private static boolean matchesNbtSubset(Tag expected, Tag actual) {
+        if (expected == null || actual == null) {
+            return expected == actual;
+        }
         if (NbtUtils.compareNbt(expected, actual, true)) {
             return true;
         }

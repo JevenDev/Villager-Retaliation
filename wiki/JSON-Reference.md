@@ -141,6 +141,26 @@ Use tags with `#` when any item in the tag should count:
 
 The same pattern is used in sell prices, gifts, pacification, and some forced-dialogue payment selectors.
 
+### Item stack predicates
+
+Item selectors in sell prices, gifts, pacification payments, dialogue item payments, quest item objectives, proof items, and encounter `retrieve_item` objectives can also distinguish stacks by data components, custom NBT-like data, and remaining durability:
+
+```json
+{
+  "item": "minecraft:diamond_pickaxe",
+  "components": {
+    "minecraft:custom_model_data": 6,
+    "minecraft:damage": { "min": 4, "max": 20 }
+  },
+  "custom_data": { "my_pack": { "quality": 3 } },
+  "durability": { "min": 250 }
+}
+```
+
+`components` is keyed by registered data-component ID. A normal value is an exact codec-backed match; numeric components also accept `{ "min": ..., "max": ... }`. `custom_data` is a shortcut for the `minecraft:custom_data` component and uses recursive subset matching, so unrelated keys on the actual stack are allowed. `nbt` is an alias for `custom_data`. `durability` is remaining durability, not raw damage, and accepts `min`, `max`, or both.
+
+Player-item dialogue conditions use the prefixed fields `player_item_components`, `player_item_custom_data`, and `player_item_nbt`; the equivalent `held_item_*` aliases are accepted. Root quest proof items use `proof_item_components`, `proof_item_durability`, `proof_item_custom_data`, and `proof_item_nbt`. All other locations above use the unprefixed names.
+
 ## Currency
 
 Villager Retaliation's hire payments, payment boxes, wallet deposits, wallet UI, default currency drops, and emerald-default skill-trade costs use:

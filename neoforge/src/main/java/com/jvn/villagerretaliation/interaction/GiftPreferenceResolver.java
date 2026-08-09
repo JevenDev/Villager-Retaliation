@@ -11,6 +11,7 @@ public final class GiftPreferenceResolver {
     private static final Comparator<Match> ORDER = Comparator
             .comparingInt((Match match) -> match.definition().priority()).reversed()
             .thenComparing(match -> match.matcher().exact(), Comparator.reverseOrder())
+            .thenComparingInt(match -> -match.matcher().specificity())
             .thenComparing(match -> match.definition().professionSpecific(), Comparator.reverseOrder())
             .thenComparing(match -> match.definition().id().toString())
             .thenComparing(match -> match.matcher().value().toString());
@@ -55,6 +56,7 @@ public final class GiftPreferenceResolver {
                 .sorted(Comparator
                         .comparingInt((ViewMatch match) -> match.view().priority()).reversed()
                         .thenComparing(match -> match.matcher().exact(), Comparator.reverseOrder())
+                        .thenComparingInt(match -> -match.matcher().specificity())
                         .thenComparing(match -> match.view().professionSpecific(), Comparator.reverseOrder())
                         .thenComparing(match -> match.view().categoryId().toString())
                         .thenComparing(match -> match.matcher().value().toString()))
@@ -63,15 +65,13 @@ public final class GiftPreferenceResolver {
     }
 
     private static boolean matches(GiftPreferenceView.Matcher matcher, ItemStack stack) {
-        if (matcher.source() == GiftPreferenceDefinition.MatchSource.ITEM) {
-            return matcher.value().equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()));
-        }
-        if (matcher.source() == GiftPreferenceDefinition.MatchSource.TAG) {
-            return stack.is(net.minecraft.tags.TagKey.create(
+        boolean selectorMatches = matcher.source() == GiftPreferenceDefinition.MatchSource.ITEM
+                ? matcher.value().equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()))
+                : matcher.source() == GiftPreferenceDefinition.MatchSource.TAG
+                && stack.is(net.minecraft.tags.TagKey.create(
                     net.minecraft.core.registries.Registries.ITEM,
                     matcher.value()));
-        }
-        return false;
+        return selectorMatches && matcher.stackPredicate().matches(stack);
     }
 
     private static ResolvedGiftPreference resolved(Match match) {

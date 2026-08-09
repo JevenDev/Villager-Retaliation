@@ -182,7 +182,8 @@ public final class VillagerGiftKnowledgeService {
                 definition.professionSpecific(),
                 definition.name(),
                 definition.matchers().stream()
-                        .map(matcher -> new GiftPreferenceView.Matcher(matcher.source(), matcher.value()))
+                        .map(matcher -> new GiftPreferenceView.Matcher(
+                                matcher.source(), matcher.value(), matcher.stackPredicate()))
                         .toList());
     }
 

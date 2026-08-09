@@ -7,6 +7,9 @@ import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
+import com.jvn.villagerretaliation.util.item.ComponentPredicate;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import com.jvn.villagerretaliation.util.ServerResourceCache;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -208,7 +211,7 @@ public final class SellPriceResources {
         try {
             List<SellRateDefinition> rates = readRates(location, root);
             ResourceLocation marketGroup = readMarketGroup(root, selection.defaultMarketGroup());
-            SellStackPredicate stackPredicate = SellStackPredicateParser.parse(
+            ItemStackPredicate stackPredicate = ItemStackPredicateParser.parse(
                     registries, root, selection.shorthandComponents(), selection.items());
             int priority = readPriority(root);
             ResourceLocation definitionId = resourceId(location);
@@ -270,8 +273,8 @@ public final class SellPriceResources {
         boolean isTag = selector.startsWith("#");
         boolean hasShorthand = selector.indexOf('[') >= 0;
         if (!isTag && hasShorthand) {
-            SellStackPredicateParser.ParsedItem parsed =
-                    SellStackPredicateParser.parseItemShorthand(registries, selector);
+            ItemStackPredicateParser.ParsedItem parsed =
+                    ItemStackPredicateParser.parseItemShorthand(registries, selector);
             ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(parsed.item());
             return new ItemSelection(List.of(parsed.item()), itemId, parsed.components());
         }
