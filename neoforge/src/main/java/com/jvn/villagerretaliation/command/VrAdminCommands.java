@@ -31,6 +31,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
+import net.minecraft.network.chat.Component;
 
 final class VrAdminCommands {
     private VrAdminCommands() {
@@ -39,6 +40,11 @@ final class VrAdminCommands {
     static LiteralArgumentBuilder<CommandSourceStack> root() {
         return literal("admin")
                 .requires(source -> source.hasPermission(2))
+                .executes(context -> {
+                    context.getSource().sendSuccess(
+                            () -> Component.translatable("villagerretaliation.command.admin.help"), false);
+                    return 1;
+                })
                 .then(villager())
                 .then(village())
                 .then(datapack())
@@ -384,6 +390,11 @@ final class VrAdminCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> debug() {
         return literal("debug")
+                .executes(context -> {
+                    context.getSource().sendSuccess(
+                            () -> Component.translatable("villagerretaliation.command.admin.debug.help"), false);
+                    return 1;
+                })
                 .then(debugDuel())
                 .then(debugHired())
                 .then(literal("raid")
@@ -433,6 +444,11 @@ final class VrAdminCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> debugHired() {
         return literal("hired")
+                .executes(context -> {
+                    context.getSource().sendSuccess(
+                            () -> Component.translatable("villagerretaliation.command.admin.debug.hired.help"), false);
+                    return 1;
+                })
                 .then(literal("previews")
                         .then(argument("enabled", BoolArgumentType.bool())
                                 .executes(context -> VillagerRetaliationCommands.setHiredDebugPreviews(
