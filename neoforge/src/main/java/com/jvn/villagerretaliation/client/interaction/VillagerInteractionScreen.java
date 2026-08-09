@@ -390,8 +390,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int renderSlideOffsetY;
     private int renderContentOffsetX;
     private boolean keyboardOptionFocusVisible;
-    private InteractionMenuAction selectedInteractionMenuAction = InteractionMenuAction.TALK;
+    private InteractionMenuAction selectedInteractionMenuAction;
     private boolean keyboardInteractionMenuFocusVisible;
+    private boolean mouseInteractionMenuFocusVisible;
     private long animationStartMillis = -1L;
     private long interactionStateTransitionStartMillis = -1L;
     private int interactionStateTransitionStartOffsetY;
@@ -991,10 +992,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         int index = interactionMenuShortcutIndex(keyCode);
-        if (index < 0) {
+        List<InteractionMenuButton> buttons = interactionMenuButtons();
+        if (!isValidInteractionMenuButton(index, buttons.size())) {
             return false;
         }
-        activateInteractionMenuButton(index, true);
+        activateInteractionMenuButton(buttons, index, true);
         return true;
     }
 
@@ -1010,6 +1012,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         if (keyCode == GLFW.GLFW_KEY_KP_0) {
             return 9;
+        }
+        if (keyCode == GLFW.GLFW_KEY_MINUS || keyCode == GLFW.GLFW_KEY_KP_DECIMAL) {
+            return 10;
         }
         return -1;
     }
@@ -2798,7 +2803,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void activateSelected() {
         if (usesRootIconMenu()) {
             List<InteractionMenuButton> buttons = interactionMenuButtons();
-            activateInteractionMenuButton(buttons, selectedInteractionMenuButtonIndex(buttons), true);
+            int selectedIndex = selectedInteractionMenuButtonIndex(buttons);
+            if (this.keyboardInteractionMenuFocusVisible || this.mouseInteractionMenuFocusVisible) {
+                activateInteractionMenuButton(buttons, selectedIndex, true);
+            }
             return;
         }
         if (this.state.selectedOption() < 0 || this.state.selectedOption() >= this.options.size()) {
@@ -3045,11 +3053,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         int selectedIndex = selectedInteractionMenuButtonIndex(buttons);
-        int selected = isValidInteractionMenuButton(selectedIndex, buttonCount)
-                ? selectedIndex
-                : 0;
-        this.selectedInteractionMenuAction = buttons.get(wrapIndex(selected + direction, buttonCount)).id();
+        int nextIndex = isValidInteractionMenuButton(selectedIndex, buttonCount)
+                ? wrapIndex(selectedIndex + direction, buttonCount)
+                : direction < 0 ? buttonCount - 1 : 0;
+        this.selectedInteractionMenuAction = buttons.get(nextIndex).id();
         this.keyboardInteractionMenuFocusVisible = true;
+        this.mouseInteractionMenuFocusVisible = false;
     }
 
     private int selectedInteractionMenuButtonIndex(List<InteractionMenuButton> buttons) {
@@ -4758,6 +4767,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         InteractionMenuButton button = buttons.get(index);
         this.selectedInteractionMenuAction = button.id();
         this.keyboardInteractionMenuFocusVisible = keyboardFocusVisible;
+        this.mouseInteractionMenuFocusVisible = !keyboardFocusVisible;
         if (button.active()) {
             button.action().run();
         }
@@ -4790,6 +4800,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (hovered >= 0) {
             this.selectedInteractionMenuAction = buttons.get(hovered).id();
             this.keyboardInteractionMenuFocusVisible = false;
+            this.mouseInteractionMenuFocusVisible = true;
+        } else if (!this.keyboardInteractionMenuFocusVisible) {
+            this.selectedInteractionMenuAction = null;
+            this.mouseInteractionMenuFocusVisible = false;
         }
     }
 
