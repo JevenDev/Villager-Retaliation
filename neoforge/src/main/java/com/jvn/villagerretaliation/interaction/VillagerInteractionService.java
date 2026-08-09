@@ -629,7 +629,7 @@ public final class VillagerInteractionService {
         VillagerAssignmentSnapshot before = villager == null
                 ? VillagerAssignmentSnapshot.unassigned(0L)
                 : ensureAssignmentSnapshot(player.serverLevel(), villager);
-        if (expectedRevision >= 0L && before.revision() != expectedRevision) {
+        if (expectedRevision < 0L || before.revision() != expectedRevision) {
             sendRecruitmentResult(player, entityId, false,
                     com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.STALE_STATE,
                     before);
