@@ -21,7 +21,8 @@ public final class ItemFilterModeClient {
         }
         Slot slot = screen.getSlotUnderMouse();
         if (slot == null
-                || !VillagerRetaliationItems.isItemFilter(slot.getItem())
+                || (!VillagerRetaliationItems.isItemFilter(slot.getItem())
+                        && !VillagerRetaliationItems.isAttributeFilter(slot.getItem()))
                 || slot.getItem().getCount() != 1) {
             return;
         }
