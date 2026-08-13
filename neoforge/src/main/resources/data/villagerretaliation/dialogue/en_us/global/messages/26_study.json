@@ -58,6 +58,14 @@
       ],
       "weight": 1,
       "id": "global.messages.26_study.messages.interaction.study.unavailable.004"
+    },
+    {
+      "key": "interaction.study.low_reputation",
+      "lines": [
+        "I don't trust you enough to take study orders from you."
+      ],
+      "weight": 1,
+      "id": "global.messages.26_study.messages.interaction.study.low_reputation.005"
     }
   ]
 }

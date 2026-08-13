@@ -3818,7 +3818,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 VillagerProfileClientCache.get(this.villagerEntityId);
         if (state.isEmpty() || profile.isEmpty() || !state.get().featureEnabled()
                 || state.get().studying() || state.get().cooldownRemaining() > 0L
-                || this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager) {
+                || this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager
+                || this.reputationLevel == null
+                || this.reputationLevel.trustRank() < VillagerReputationLevel.NEUTRAL.trustRank()) {
             return false;
         }
         for (VillagerSkill skill : VillagerSkill.values()) {
@@ -3853,6 +3855,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         if (this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager) {
             return translate("interaction_button.study.incompatible_description");
+        }
+        if (this.reputationLevel == null) {
+            return translate("interaction_button.study.loading_description");
+        }
+        if (this.reputationLevel.trustRank() < VillagerReputationLevel.NEUTRAL.trustRank()) {
+            return translate("interaction_button.study.low_reputation_description");
         }
         return translate(canBeginStudy()
                 ? "interaction_button.study.description"
