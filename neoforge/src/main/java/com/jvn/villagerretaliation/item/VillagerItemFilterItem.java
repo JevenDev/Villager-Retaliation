@@ -90,7 +90,8 @@ public final class VillagerItemFilterItem extends Item implements MenuProvider {
                 return;
             }
         }
-        if (!VillagerRetaliationItems.isItemFilter(filter)) {
+        boolean attributeFilter = VillagerRetaliationItems.isAttributeFilter(filter);
+        if (!VillagerRetaliationItems.isItemFilter(filter) && !attributeFilter) {
             return;
         }
         if (requestedMode == null && filter.getCount() != 1) {
@@ -98,9 +99,13 @@ public final class VillagerItemFilterItem extends Item implements MenuProvider {
         }
 
         VillagerItemFilterData.Mode nextMode = requestedMode == null
-                ? VillagerItemFilterData.mode(filter).opposite()
+                ? attributeFilter
+                        ? VillagerFilterPolicy.read(filter).listMode() == VillagerFilterPolicy.ListMode.DENY_MATCHING
+                                ? VillagerItemFilterData.Mode.ALLOWLIST
+                                : VillagerItemFilterData.Mode.DENYLIST
+                        : VillagerItemFilterData.mode(filter).opposite()
                 : requestedMode;
-        if (VillagerFilterPolicy.hasStoredPolicy(filter)) {
+        if (attributeFilter || VillagerFilterPolicy.hasStoredPolicy(filter)) {
             VillagerFilterPolicy.applyChange(
                     filter,
                     VillagerFilterPolicy.PolicyField.LIST_MODE,
