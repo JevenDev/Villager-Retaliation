@@ -68,6 +68,7 @@ import com.jvn.villagerretaliation.runtime.ServerRuntimeState;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
+import com.jvn.villagerretaliation.study.VillagerStudyService;
 import com.jvn.villagerretaliation.trade.VillagerTradeMemory;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
 import com.jvn.villagerretaliation.util.TickThrottle;
@@ -409,6 +410,7 @@ public final class VillagerRetaliationEvents {
         if (entity instanceof Villager villager) {
             VillagerDownedService.onVillagerTickPre(villager);
             VillagerSleepHealingService.onVillagerTick(villager);
+            VillagerStudyService.tick(villager);
             if (VillagerDownedService.isDowned(villager)) {
                 return;
             }

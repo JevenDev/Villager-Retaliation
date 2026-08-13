@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.party.PartyQuickCommandService;
+import com.jvn.villagerretaliation.study.VillagerStudyService;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -28,8 +29,11 @@ public final class VillagerAiArbitration {
         if (villager.isTrading() || VillagerConversationService.isConversing(villager)) {
             return Priority.TRADING_OR_CONVERSATION;
         }
-        if (villager.isSleeping() && HiredVillagerFocusService.shouldUseVanillaRest(level, villager)) {
+        if (villager.isSleeping() || brain.isActive(Activity.REST)) {
             return Priority.SLEEP;
+        }
+        if (VillagerStudyService.isActivelyStudying(level, villager)) {
+            return Priority.STUDY;
         }
 
         VillagerAssignmentSnapshot assignment = VillagerAssignmentStore.snapshot(villager);
@@ -42,6 +46,16 @@ public final class VillagerAiArbitration {
             return Priority.FOLLOW_OR_RETURN_MOVEMENT;
         }
         return Priority.VANILLA_SCHEDULE_OR_IDLE;
+    }
+
+    public static boolean interruptsStudy(ServerLevel level, Villager villager) {
+        Brain<Villager> brain = villager.getBrain();
+        return isImmediateDanger(villager, brain)
+                || isCombatOrSupportAction(villager)
+                || villager.isTrading()
+                || VillagerConversationService.isConversing(villager)
+                || villager.isSleeping()
+                || brain.isActive(Activity.REST);
     }
 
     private static boolean isImmediateDanger(Villager villager, Brain<Villager> brain) {
@@ -74,6 +88,7 @@ public final class VillagerAiArbitration {
         COMBAT_OR_SUPPORT_ACTION,
         TRADING_OR_CONVERSATION,
         SLEEP,
+        STUDY,
         HIRED_ROLE_TASK,
         FOLLOW_OR_RETURN_MOVEMENT,
         VANILLA_SCHEDULE_OR_IDLE;
