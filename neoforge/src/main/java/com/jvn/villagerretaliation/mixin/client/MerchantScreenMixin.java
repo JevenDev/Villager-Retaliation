@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.mixin.client;
 
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
 import com.jvn.villagerretaliation.client.trade.VillagerTradeScreenBackground;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
@@ -17,6 +18,9 @@ public abstract class MerchantScreenMixin {
             int mouseX,
             int mouseY,
             CallbackInfo callbackInfo) {
+        if (!VillagerRetaliationServerConfigClient.skillTradeFeaturesEnabled()) {
+            return;
+        }
         VillagerTradeScreenBackground.render(graphics, (MerchantScreen) (Object) this);
         callbackInfo.cancel();
     }
