@@ -318,8 +318,11 @@ public final class VillagerReputationManager {
             return;
         }
 
+        ResolvedVillagerNotification notification =
+                resolveTierChangeNotification(level, villager, player, previousLevel, newLevel, false, "");
         notifyTierChange(player, new PendingTierMessage(
-                resolveTierChangeNotification(level, villager, player, previousLevel, newLevel),
+                notification,
+                resolveTierChangeNotification(level, villager, player, previousLevel, newLevel, true, notification.text()),
                 previousLevel,
                 newLevel
         ));
@@ -339,9 +342,12 @@ public final class VillagerReputationManager {
             AbstractVillager villager,
             Player player,
             VillagerReputationLevel previousLevel,
-            VillagerReputationLevel newLevel) {
+            VillagerReputationLevel newLevel,
+            boolean collapsed,
+            String collapsedFallback) {
         String direction = newLevel.isMoreTrustedThan(previousLevel) ? "improved" : "worsened";
-        String trigger = "reputation.tier." + newLevel.name().toLowerCase(java.util.Locale.ROOT) + "." + direction;
+        String trigger = "reputation.tier." + newLevel.name().toLowerCase(java.util.Locale.ROOT) + "." + direction
+                + (collapsed ? ".collapsed" : "");
         String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
         return VillagerNotifications.resolve(
                 level,
@@ -353,9 +359,10 @@ public final class VillagerReputationManager {
                         "villager_possessive", toPossessive(name),
                         "villager_kind", villager instanceof WanderingTrader ? "wandering trader" : "villager",
                         "previous_level", previousLevel.name().toLowerCase(java.util.Locale.ROOT),
-                        "new_level", newLevel.name().toLowerCase(java.util.Locale.ROOT)
+                        "new_level", newLevel.name().toLowerCase(java.util.Locale.ROOT),
+                        "amount", "{amount}"
                 ),
-                resolveTierChangeMessage(villager, previousLevel, newLevel),
+                collapsed ? collapsedFallback : resolveTierChangeMessage(villager, previousLevel, newLevel),
                 VillagerReputationNoticeKind.DEFAULT
         );
     }
@@ -424,10 +431,6 @@ public final class VillagerReputationManager {
         }
     }
 
-    private static String collapsedTierChangeMessage(String localizedMessage, int count) {
-        return localizedMessage + " (" + count + ")";
-    }
-
     private static void spawnTierChangeParticles(ServerLevel level, AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
         double x = villager.getX();
         double y = villager.getY() + villager.getBbHeight() + 0.25D;
@@ -494,6 +497,7 @@ public final class VillagerReputationManager {
 
     private record PendingTierMessage(
             ResolvedVillagerNotification notification,
+            ResolvedVillagerNotification collapsedTemplate,
             VillagerReputationLevel previousLevel,
             VillagerReputationLevel newLevel) {
         private TierMessageGroupKey groupKey() {
@@ -512,11 +516,11 @@ public final class VillagerReputationManager {
                 return this.notification;
             }
             return new ResolvedVillagerNotification(
-                    collapsedTierChangeMessage(this.notification.text(), count),
-                    this.notification.textColor(),
-                    this.notification.chatColor(),
-                    this.notification.noticeKind(),
-                    this.notification.worldTextKind()
+                    this.collapsedTemplate.text().replace("{amount}", Integer.toString(count)),
+                    this.collapsedTemplate.textColor(),
+                    this.collapsedTemplate.chatColor(),
+                    this.collapsedTemplate.noticeKind(),
+                    this.collapsedTemplate.worldTextKind()
             );
         }
     }

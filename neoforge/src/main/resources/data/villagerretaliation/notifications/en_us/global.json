@@ -229,6 +229,96 @@
       "color": "light_purple"
     },
     {
+      "trigger": "reputation.tier.royalty.improved.collapsed",
+      "text": "{amount} villagers now treat you like royalty.",
+      "color": "yellow"
+    },
+    {
+      "trigger": "reputation.tier.royalty.worsened.collapsed",
+      "text": "{amount} villagers no longer see you as royalty.",
+      "color": "gold"
+    },
+    {
+      "trigger": "reputation.tier.revered.improved.collapsed",
+      "text": "{amount} villagers now revere you.",
+      "color": "gold"
+    },
+    {
+      "trigger": "reputation.tier.revered.worsened.collapsed",
+      "text": "{amount} villagers' reverence for you has faded.",
+      "color": "yellow"
+    },
+    {
+      "trigger": "reputation.tier.respected.improved.collapsed",
+      "text": "{amount} villagers now deeply respect you.",
+      "color": "aqua"
+    },
+    {
+      "trigger": "reputation.tier.respected.worsened.collapsed",
+      "text": "{amount} villagers' deep respect for you has faded.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.trusted.improved.collapsed",
+      "text": "{amount} villagers now trust you.",
+      "color": "green"
+    },
+    {
+      "trigger": "reputation.tier.trusted.worsened.collapsed",
+      "text": "{amount} villagers' trust in you has weakened.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.neutral.improved.collapsed",
+      "text": "{amount} villagers now feel neutral toward you again.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.neutral.worsened.collapsed",
+      "text": "{amount} villagers now feel neutral toward you again.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.suspicious.improved.collapsed",
+      "text": "{amount} villagers are now less suspicious of you.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.suspicious.worsened.collapsed",
+      "text": "{amount} villagers have become suspicious of you.",
+      "color": "#FFAA55"
+    },
+    {
+      "trigger": "reputation.tier.hostile.improved.collapsed",
+      "text": "{amount} villagers no longer see you as completely unforgivable.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.hostile.worsened.collapsed",
+      "text": "{amount} villagers have become hostile toward you.",
+      "color": "red"
+    },
+    {
+      "trigger": "reputation.tier.despised.improved.collapsed",
+      "text": "{amount} villagers' hatred for you has softened.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.despised.worsened.collapsed",
+      "text": "{amount} villagers now despise you.",
+      "color": "dark_red"
+    },
+    {
+      "trigger": "reputation.tier.feared.improved.collapsed",
+      "text": "{amount} villagers no longer fear you completely.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.feared.worsened.collapsed",
+      "text": "{amount} villagers now fear you.",
+      "color": "light_purple"
+    },
+    {
       "trigger": "ambient.murmur",
       "world_text_kind": "murmur",
       "color": "#E9EEF5",
