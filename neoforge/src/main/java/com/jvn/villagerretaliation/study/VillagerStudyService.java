@@ -37,6 +37,7 @@ public final class VillagerStudyService {
         VillagerStudyState started = profile.studyState().start(skill);
         if (profile.setStudyState(started, level.getGameTime())) {
             VillagerProfileSavedData.get(level).setDirty();
+            VillagerReputationNetworking.syncStudyStateToTracking(villager);
         }
         return new StartResult(true, Eligibility.ELIGIBLE, started);
     }
@@ -109,15 +110,22 @@ public final class VillagerStudyService {
         VillagerStudyState current = previous.withPaused(paused);
         if (paused) {
             saveState(level, profile, current);
+            if (!current.equals(previous)) {
+                VillagerReputationNetworking.syncStudyStateToTracking(villager);
+            }
             return current.equals(previous) ? TickResult.NONE : TickResult.PAUSED;
         }
 
+        boolean resumed = previous.paused() && !current.paused();
         suppressOrdinaryActivity(villager);
         current = current.advance();
         int duration = configuredDurationTicks();
         if (current.activeTicks() < duration) {
             saveState(level, profile, current);
-            return current.paused() != previous.paused() ? TickResult.RESUMED : TickResult.PROGRESSED;
+            if (resumed) {
+                VillagerReputationNetworking.syncStudyStateToTracking(villager);
+            }
+            return resumed ? TickResult.RESUMED : TickResult.PROGRESSED;
         }
 
         VillagerSkill skill = current.skill();
@@ -135,6 +143,7 @@ public final class VillagerStudyService {
         VillagerStudyState completed = current.complete(saturatedAdd(now, configuredCooldownTicks()));
         profile.setStudyState(completed, level.getGameTime());
         VillagerProfileSavedData.get(level).setDirty();
+        VillagerReputationNetworking.syncStudyStateToTracking(villager);
         syncCompletedProfile(level, villager, profile);
         VillagerBehaviorSuppressionPolicy.restoreAfterRelease(level, villager);
         return new TickResult(true, skill, applied, oldValue + applied);

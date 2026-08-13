@@ -1,13 +1,24 @@
 package com.jvn.villagerretaliation.study;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.network.VillagerStudyRequestPayload;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillGenerator;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import java.io.Reader;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -48,6 +59,57 @@ public final class VillagerStudyGameTests {
                 eligibility(true, true, false, false, false, none, VillagerSkill.MINING, 50),
                 VillagerStudyService.Eligibility.ELIGIBLE,
                 "ordinary adults must be eligible");
+        helper.assertValueEqual(
+                eligibility(true, true, false, false, false, none, null, 50),
+                VillagerStudyService.Eligibility.INVALID_SKILL,
+                "unknown client skill ids must be rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void studyRequestCannotForgeAuthoritativeState(GameTestHelper helper) {
+        Set<String> requestFields = Arrays.stream(VillagerStudyRequestPayload.class.getRecordComponents())
+                .map(java.lang.reflect.RecordComponent::getName)
+                .collect(Collectors.toSet());
+        helper.assertValueEqual(
+                requestFields,
+                Set.of("entityId", "skillId"),
+                "study requests must not expose progress, rewards, completion, or cooldown fields");
+        helper.assertTrue(VillagerSkill.bySerializedName("villagerretaliation:not_a_skill") == null,
+                "unregistered remote skill ids must not resolve");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void builtInStudyDialogueLoadsTenTranslatedVariants(GameTestHelper helper) {
+        var id = VillagerRetaliation.id("dialogue/en_us/global/messages/26_study.json");
+        var resource = helper.getLevel().getServer().getResourceManager().getResource(id).orElseThrow();
+        try (Reader reader = resource.openAsReader()) {
+            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            JsonArray messages = root.getAsJsonArray("messages");
+            JsonObject busy = null;
+            for (var element : messages) {
+                JsonObject message = element.getAsJsonObject();
+                if ("interaction.study.busy".equals(message.get("key").getAsString())) {
+                    busy = message;
+                    break;
+                }
+            }
+            helper.assertTrue(busy != null, "study busy dialogue must load from the built-in datapack");
+            JsonArray lines = busy.getAsJsonArray("lines");
+            helper.assertValueEqual(lines.size(), 10, "study dialogue must provide ten variants");
+            String skillName = VillagerStudyDialogueService.localizedSkillName(VillagerSkill.CARTOGRAPHY);
+            for (var element : lines) {
+                String template = element.getAsString();
+                helper.assertTrue(template.contains("{skill}"), "every study line must expose the skill placeholder");
+                String resolved = VillagerDialogueResources.resolveTemplate(
+                        template, Map.of("skill", skillName));
+                helper.assertTrue(resolved.contains("Cartography") && !resolved.contains("{skill}"),
+                        "study dialogue must resolve the translated skill label");
+            }
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException("Failed to read built-in study dialogue", exception);
+        }
         helper.succeed();
     }
 

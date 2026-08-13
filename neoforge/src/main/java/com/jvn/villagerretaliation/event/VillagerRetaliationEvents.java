@@ -551,6 +551,7 @@ public final class VillagerRetaliationEvents {
             VillagerReputationNetworking.sendDownedState(player, villager, VillagerDownedService.isDowned(villager));
             VillagerReputationNetworking.sendHunger(
                     player, villager, com.jvn.villagerretaliation.villager.VillagerRecoveryService.foodLevel(villager));
+            VillagerReputationNetworking.sendStudyState(player, villager);
         }
         if (VillagerPresetNameRegistry.isVillagerForm(event.getTarget())) {
             VillagerReputationNetworking.sendName(player, event.getTarget());

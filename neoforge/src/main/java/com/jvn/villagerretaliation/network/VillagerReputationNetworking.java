@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "72";
+    private static final String PROTOCOL_VERSION = "73";
 
     private VillagerReputationNetworking() {
     }
@@ -87,6 +87,12 @@ public final class VillagerReputationNetworking {
                 VillagerHungerSyncPayload.TYPE,
                 VillagerHungerSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.villager.VillagerHungerClientCache",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                VillagerStudyStatePayload.TYPE,
+                VillagerStudyStatePayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.villager.VillagerStudyClientCache",
                 "accept"
         );
         network.safePlayToClientThreaded(
@@ -319,6 +325,14 @@ public final class VillagerReputationNetworking {
                                 payload.entityId(),
                                 payload.action()
                         )))
+        );
+        network.playToServer(
+                VillagerStudyRequestPayload.TYPE,
+                VillagerStudyRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                VillagerInteractionService.handleStudyRequest(
+                                        player, payload.entityId(), payload.skillId())))
         );
         network.playToServer(
                 VillagerProfileRequestPayload.TYPE,
@@ -823,6 +837,37 @@ public final class VillagerReputationNetworking {
                 profile.tradeLevelSkillAdjustedXpProgress(),
                 tradeLevelXpMultiplier(villager, profile)
         ));
+    }
+
+    public static void sendStudyState(ServerPlayer player, Villager villager) {
+        var profile = com.jvn.villagerretaliation.profile.VillagerProfileManager
+                .getOrCreateProfile(player.serverLevel(), villager);
+        trySendToPlayer(player, VillagerStudyStatePayload.create(
+                villager.getId(),
+                villager.getUUID(),
+                VillagerRetaliationConfig.ENABLE_VILLAGER_STUDYING.get(),
+                profile.studyState(),
+                player.getServer().overworld().getGameTime()));
+    }
+
+    public static void syncStudyStateToTracking(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        var profile = com.jvn.villagerretaliation.profile.VillagerProfileManager
+                .getOrCreateProfile(level, villager);
+        try {
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(
+                    villager,
+                    VillagerStudyStatePayload.create(
+                            villager.getId(),
+                            villager.getUUID(),
+                            VillagerRetaliationConfig.ENABLE_VILLAGER_STUDYING.get(),
+                            profile.studyState(),
+                            level.getServer().overworld().getGameTime()));
+        } catch (UnsupportedOperationException ignored) {
+            // Server-side harnesses can use mock connections without negotiated payloads.
+        }
     }
 
     public static void sendHunger(ServerPlayer player, Villager villager, int hunger) {

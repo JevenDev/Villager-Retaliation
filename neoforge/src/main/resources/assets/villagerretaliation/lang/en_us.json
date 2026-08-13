@@ -2167,5 +2167,18 @@
   "gift_category.villagerretaliation.unpleasant_items": "Unpleasant Items",
   "gift_category.villagerretaliation.valuables": "Valuables",
   "gift_category.villagerretaliation.village_goods": "Village Goods",
-  "screen.villagerretaliation.beta_warning.title": "Villager Retaliation Beta Warning"
+  "screen.villagerretaliation.beta_warning.title": "Villager Retaliation Beta Warning",
+  "villagerretaliation.gui.root.study": "Study",
+  "villagerretaliation.gui.interaction_button.study.description": "Choose a skill for this villager to study.",
+  "villagerretaliation.gui.interaction_button.study.loading_description": "Loading study availability...",
+  "villagerretaliation.gui.interaction_button.study.disabled_description": "Villager studying is disabled on this server.",
+  "villagerretaliation.gui.interaction_button.study.incompatible_description": "Hired and party villagers cannot begin studying.",
+  "villagerretaliation.gui.interaction_button.study.active_description": "Studying %s — %s / %s",
+  "villagerretaliation.gui.interaction_button.study.paused_description": "Study paused: %s — %s / %s",
+  "villagerretaliation.gui.interaction_button.study.cooldown_description": "Can study again in %s",
+  "villagerretaliation.gui.interaction_button.study.maxed_description": "Every skill is already at its maximum.",
+  "villagerretaliation.gui.study.loading": "Loading skills...",
+  "villagerretaliation.gui.study.skill.value": "%s — %s",
+  "villagerretaliation.gui.study.skill.maxed": "%s — %s (Maxed)",
+  "villagerretaliation.gui.study.back": "Back"
 }
