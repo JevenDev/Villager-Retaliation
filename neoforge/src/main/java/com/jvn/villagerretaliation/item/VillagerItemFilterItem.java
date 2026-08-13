@@ -72,10 +72,11 @@ public final class VillagerItemFilterItem extends Item implements MenuProvider {
         ItemStack filter;
         Slot hoveredSlot = null;
         if (menuSlotIndex == -1) {
-            if (!(player.containerMenu instanceof VillagerItemFilterMenu menu) || !menu.isEditingHeldFilter()) {
-                return;
+            if (player.containerMenu instanceof VillagerItemFilterMenu menu && menu.isEditingHeldFilter()) {
+                filter = player.getMainHandItem();
+            } else {
+                filter = heldFilter(player);
             }
-            filter = player.getMainHandItem();
         } else {
             if (menuSlotIndex < 0 || menuSlotIndex >= player.containerMenu.slots.size()) {
                 return;
@@ -118,6 +119,17 @@ public final class VillagerItemFilterItem extends Item implements MenuProvider {
         }
         player.getInventory().setChanged();
         player.containerMenu.broadcastChanges();
+    }
+
+    private static ItemStack heldFilter(ServerPlayer player) {
+        ItemStack mainHand = player.getMainHandItem();
+        if (VillagerRetaliationItems.isItemFilter(mainHand)
+                || VillagerRetaliationItems.isAttributeFilter(mainHand)) {
+            return mainHand;
+        }
+        ItemStack offhand = player.getOffhandItem();
+        return VillagerRetaliationItems.isItemFilter(offhand)
+                || VillagerRetaliationItems.isAttributeFilter(offhand) ? offhand : ItemStack.EMPTY;
     }
 
     public static void handleCombinationChange(ServerPlayer player, int combinationId) {
