@@ -31,6 +31,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
+import com.jvn.villagerretaliation.study.VillagerStudyDialogueService;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -59,7 +60,8 @@ public final class VillagerInteractionScreenOpener {
                 level, player, villager, VillagerDialogueResources.dialogueOptions(dialogueContext, mood));
         dialogueOptions = com.jvn.villagerretaliation.duel.DuelDialogueService.addAvailableOptions(
                 level, player, villager, dialogueOptions);
-        String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
+        String greetingText = VillagerStudyDialogueService.openingLine(dialogueContext)
+                .orElseGet(() -> VillagerDialogueService.selectOpeningGreeting(dialogueContext));
         OpenVillagerInteractionPayload payload = createPayload(
                 level,
                 player,

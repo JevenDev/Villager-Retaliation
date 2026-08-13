@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.network.VillagerStudyRequestPayload;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -23,6 +24,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -127,6 +129,38 @@ public final class VillagerStudyGameTests {
         } catch (java.io.IOException exception) {
             throw new IllegalStateException("Failed to read built-in study dialogue", exception);
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void conversationPausesStudyAndUsesStudyOpening(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.moveTo(villager.getX(), villager.getY(), villager.getZ(), 0.0F, 0.0F);
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(helper.getLevel(), villager);
+        VillagerStudyState studying = VillagerStudyState.NONE.start(VillagerSkill.SCHOLARSHIP);
+        profile.setStudyState(studying, helper.getLevel().getGameTime());
+
+        helper.assertTrue(VillagerStudyDialogueService.usesStudyOpening(studying),
+                "an active study session should replace the normal opening greeting");
+        helper.assertTrue(VillagerConversationService.start(player, villager),
+                "studying villagers should still accept normal conversations");
+        try {
+            helper.assertValueEqual(VillagerStudyService.tick(villager), VillagerStudyService.TickResult.PAUSED,
+                    "opening a conversation should pause study progress");
+            VillagerStudyState paused = VillagerStudyService.state(helper.getLevel(), villager);
+            helper.assertTrue(paused.paused() && paused.activeTicks() == 0,
+                    "conversation pause must preserve accumulated study progress");
+            helper.assertTrue(VillagerStudyDialogueService.usesStudyOpening(paused),
+                    "the study opening should remain available after the pause is recorded");
+        } finally {
+            VillagerConversationService.endForPlayer(player, false);
+        }
+
+        helper.assertValueEqual(VillagerStudyService.tick(villager), VillagerStudyService.TickResult.RESUMED,
+                "study should resume when the conversation ends");
+        helper.assertValueEqual(VillagerStudyService.state(helper.getLevel(), villager).activeTicks(), 1,
+                "resumed study should continue from preserved progress");
         helper.succeed();
     }
 

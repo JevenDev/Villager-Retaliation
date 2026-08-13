@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
 import com.jvn.villagerretaliation.client.renderer.VillagerRenderEquipmentState;
 import com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache;
 import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
+import com.jvn.villagerretaliation.client.villager.VillagerStudyClientCache;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -24,6 +25,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extends BaseVillagerModel<T> {
     public static final ModelLayerLocation LAYER_LOCATION =
             new ModelLayerLocation(VillagerRetaliation.id("villager"), "main");
+    private static final int STUDY_LOOK_CYCLE_TICKS = 220;
+    private static final int STUDY_GLANCE_DURATION_TICKS = 30;
+    private static final int STUDY_GLANCE_FADE_TICKS = 5;
+    private static final int STUDY_GLANCE_EARLIEST_TICK = 80;
+    private static final int STUDY_GLANCE_START_VARIANCE = 70;
+    private static final float STUDY_BOOK_HEAD_PITCH = 0.55F;
 
     private final ModelPart root;
     private final ModelPart body;
@@ -112,6 +119,23 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
                     this.rightLeg,
                     this.leftLeg);
             this.syncRobe(villager);
+            return;
+        }
+
+        if (villager instanceof net.minecraft.world.entity.npc.Villager studyingVillager
+                && VillagerStudyClientCache.isActive(studyingVillager)) {
+            float bookLookAmount = studyBookLookAmount(studyingVillager, ageInTicks);
+            this.head.xRot = Mth.lerp(bookLookAmount, this.head.xRot, STUDY_BOOK_HEAD_PITCH);
+            this.head.yRot = Mth.lerp(bookLookAmount, this.head.yRot, 0.0F);
+            this.setArmLayout(true);
+            this.rightArm.xRot = -1.08F;
+            this.rightArm.yRot = -0.22F;
+            this.rightArm.zRot = 0.16F;
+            this.leftArm.xRot = -1.08F;
+            this.leftArm.yRot = 0.22F;
+            this.leftArm.zRot = -0.16F;
+            this.syncRobe(villager);
+            this.dialogueMouthParts.apply(villager, ageInTicks);
             return;
         }
 
@@ -215,6 +239,39 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     @Override
     public void translateRoot(PoseStack poseStack) {
         this.root.translateAndRotate(poseStack);
+    }
+
+    private static float studyBookLookAmount(
+            net.minecraft.world.entity.npc.Villager villager,
+            float ageInTicks
+    ) {
+        int cycle = Math.max(0, Mth.floor(ageInTicks / STUDY_LOOK_CYCLE_TICKS));
+        float cycleTick = ageInTicks - cycle * STUDY_LOOK_CYCLE_TICKS;
+        long hash = villager.getUUID().getMostSignificantBits()
+                ^ villager.getUUID().getLeastSignificantBits()
+                ^ (cycle * 0xD1B54A32D192ED03L);
+        hash ^= hash >>> 29;
+        hash *= 0x94D049BB133111EBL;
+        hash ^= hash >>> 31;
+        int glanceStart = STUDY_GLANCE_EARLIEST_TICK
+                + (int) Math.floorMod(hash, STUDY_GLANCE_START_VARIANCE);
+        float glanceTick = cycleTick - glanceStart;
+        if (glanceTick < 0.0F || glanceTick >= STUDY_GLANCE_DURATION_TICKS) {
+            return 1.0F;
+        }
+        if (glanceTick < STUDY_GLANCE_FADE_TICKS) {
+            return 1.0F - smoothStep(glanceTick / STUDY_GLANCE_FADE_TICKS);
+        }
+        float fadeBackStart = STUDY_GLANCE_DURATION_TICKS - STUDY_GLANCE_FADE_TICKS;
+        if (glanceTick >= fadeBackStart) {
+            return smoothStep((glanceTick - fadeBackStart) / STUDY_GLANCE_FADE_TICKS);
+        }
+        return 0.0F;
+    }
+
+    private static float smoothStep(float value) {
+        float clamped = Mth.clamp(value, 0.0F, 1.0F);
+        return clamped * clamped * (3.0F - 2.0F * clamped);
     }
 
     private void setArmLayout(boolean sideArmsVisible) {
