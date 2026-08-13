@@ -2405,14 +2405,16 @@ public final class VillagerInteractionService {
         Villager villager = target.get().villager();
         ServerLevel level = target.get().level();
         VillagerSkill skill = VillagerSkill.bySerializedName(skillId);
-        VillagerStudyService.StartResult result = VillagerStudyService.start(level, villager, skill);
+        VillagerStudyService.StartResult result = VillagerStudyService.requestStart(level, villager, player, skill);
         if (result.started()) {
             sendVillagerNotice(player, villager, "interaction.study.started",
                     Map.of("skill", VillagerStudyDialogueService.localizedSkillName(skill)));
             return;
         }
 
-        if (result.eligibility() == VillagerStudyService.Eligibility.COOLDOWN) {
+        if (result.eligibility() == VillagerStudyService.Eligibility.LOW_REPUTATION) {
+            sendVillagerNotice(player, villager, "interaction.study.low_reputation");
+        } else if (result.eligibility() == VillagerStudyService.Eligibility.COOLDOWN) {
             long remaining = result.state().cooldownRemaining(level.getServer().overworld().getGameTime());
             sendVillagerNotice(player, villager, "interaction.study.cooldown",
                     Map.of("study_cooldown", formatStudyTicks(remaining)));

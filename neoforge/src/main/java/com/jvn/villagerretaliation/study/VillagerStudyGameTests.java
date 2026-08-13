@@ -81,6 +81,23 @@ public final class VillagerStudyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void studyRequestsRequireNeutralReputation(GameTestHelper helper) {
+        helper.assertTrue(
+                !VillagerStudyService.meetsReputationRequirement(
+                        com.jvn.villagerretaliation.reputation.VillagerReputationLevel.SUSPICIOUS),
+                "suspicious players must not be able to request study");
+        helper.assertTrue(
+                VillagerStudyService.meetsReputationRequirement(
+                        com.jvn.villagerretaliation.reputation.VillagerReputationLevel.NEUTRAL),
+                "neutral players must be able to request study");
+        helper.assertTrue(
+                VillagerStudyService.meetsReputationRequirement(
+                        com.jvn.villagerretaliation.reputation.VillagerReputationLevel.TRUSTED),
+                "trusted players must be able to request study");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void builtInStudyDialogueLoadsTenTranslatedVariants(GameTestHelper helper) {
         var id = VillagerRetaliation.id("dialogue/en_us/global/messages/26_study.json");
         var resource = helper.getLevel().getServer().getResourceManager().getResource(id).orElseThrow();

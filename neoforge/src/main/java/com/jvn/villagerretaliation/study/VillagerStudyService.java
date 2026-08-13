@@ -9,6 +9,8 @@ import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
@@ -27,8 +29,32 @@ public final class VillagerStudyService {
     private VillagerStudyService() {
     }
 
-    public static StartResult start(ServerLevel level, Villager villager, @Nullable VillagerSkill skill) {
+    public static StartResult requestStart(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            @Nullable VillagerSkill skill
+    ) {
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        VillagerReputationLevel reputationLevel =
+                VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+        if (!meetsReputationRequirement(reputationLevel)) {
+            return new StartResult(false, Eligibility.LOW_REPUTATION, profile.studyState());
+        }
+        return start(level, villager, profile, skill);
+    }
+
+    static StartResult start(ServerLevel level, Villager villager, @Nullable VillagerSkill skill) {
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        return start(level, villager, profile, skill);
+    }
+
+    private static StartResult start(
+            ServerLevel level,
+            Villager villager,
+            VillagerProfile profile,
+            @Nullable VillagerSkill skill
+    ) {
         Eligibility eligibility = eligibility(level, villager, profile, skill);
         if (eligibility != Eligibility.ELIGIBLE) {
             return new StartResult(false, eligibility, profile.studyState());
@@ -40,6 +66,11 @@ public final class VillagerStudyService {
             VillagerReputationNetworking.syncStudyStateToTracking(villager);
         }
         return new StartResult(true, Eligibility.ELIGIBLE, started);
+    }
+
+    static boolean meetsReputationRequirement(@Nullable VillagerReputationLevel reputationLevel) {
+        return reputationLevel != null
+                && reputationLevel.trustRank() >= VillagerReputationLevel.NEUTRAL.trustRank();
     }
 
     public static Eligibility eligibility(ServerLevel level, Villager villager, @Nullable VillagerSkill skill) {
@@ -234,6 +265,7 @@ public final class VillagerStudyService {
         BABY,
         HIRED,
         RECRUITED,
+        LOW_REPUTATION,
         ALREADY_STUDYING,
         COOLDOWN,
         INVALID_SKILL,
