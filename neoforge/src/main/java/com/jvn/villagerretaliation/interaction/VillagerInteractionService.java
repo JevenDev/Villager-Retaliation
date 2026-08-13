@@ -325,12 +325,6 @@ public final class VillagerInteractionService {
             return InteractionResult.CONSUME;
         }
 
-        if (villager.level() instanceof ServerLevel level
-                && VillagerStudyDialogueService.tryHandle(level, villager, player)) {
-            focusVillagerOnPlayer(villager, player);
-            return InteractionResult.CONSUME;
-        }
-
         if (!VillagerConversationService.start(player, villager)) {
             sendVillagerNotice(player, villager, "interaction.busy");
             return InteractionResult.FAIL;

@@ -111,6 +111,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_adventures");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_PROFILE_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_profile");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_STUDY_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_study");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_GIFT_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_gift");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_HIRE_TEXTURE =

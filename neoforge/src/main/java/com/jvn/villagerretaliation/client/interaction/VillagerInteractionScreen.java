@@ -3746,7 +3746,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (!this.baby) {
             buttons.add(new InteractionMenuButton(
                     InteractionMenuAction.STUDY,
-                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_PROFILE_TEXTURE,
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STUDY_TEXTURE,
                     translate("root.study"),
                     studyButtonDescription(),
                     this::openStudyPage,
