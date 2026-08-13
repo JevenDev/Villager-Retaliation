@@ -762,6 +762,7 @@ const knownPlaceholders = new Set([
   "sibling_possessive",
   "site",
   "skill",
+  "study_cooldown",
   "spouse",
   "spouse_possessive",
   "state",

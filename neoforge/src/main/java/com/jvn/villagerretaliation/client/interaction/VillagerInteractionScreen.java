@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfig
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
+import com.jvn.villagerretaliation.client.villager.VillagerStudyClientCache;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -61,6 +62,7 @@ import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
 import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerStudyRequestPayload;
 import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
@@ -75,6 +77,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.client.reputation.VillagerReputationNotificationOverlay;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.villager.VillagerGender;
@@ -1125,6 +1128,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addProfileOptions();
         } else if (this.page == DialoguePage.SKILLS) {
             addSkillsOptions();
+        } else if (this.page == DialoguePage.STUDY) {
+            addStudyOptions();
         } else if (this.page == DialoguePage.ALLEGIANCE) {
             addAllegianceOptions();
         } else if (this.page == DialoguePage.FAMILY) {
@@ -1440,6 +1445,29 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addSkillsOptions() {
+    }
+
+    private void addStudyOptions() {
+        Optional<VillagerProfileClientCache.DisplayEntry> profile =
+                VillagerProfileClientCache.get(this.villagerEntityId);
+        if (profile.isEmpty()) {
+            addPassiveOption("study.loading");
+            addOption("study.back", this::navigateToRootPage);
+            requestProfileRefresh();
+            return;
+        }
+
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            int value = profile.get().skillValue(skill);
+            boolean maxed = value >= VillagerSkillSet.MAX_VALUE;
+            String label = translate(maxed ? "study.skill.maxed" : "study.skill.value",
+                    localizedSkill(skill), value);
+            this.options.add(DialogueOption.enabled(
+                    label,
+                    maxed ? NO_ACTION : () -> requestStudy(skill),
+                    maxed));
+        }
+        addOption("study.back", this::navigateToRootPage);
     }
 
     private void addRecruitOptions() {
@@ -2245,6 +2273,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.SKILLS);
     }
 
+    private void openStudyPage() {
+        this.profileRefreshRequested = false;
+        requestProfileRefresh();
+        openPage(DialoguePage.STUDY);
+    }
+
+    private void requestStudy(VillagerSkill skill) {
+        sendToServer(new VillagerStudyRequestPayload(this.villagerEntityId, skill.serializedName()));
+    }
+
     private void openAllegiancePage() {
         acceptVillagerDialogue(allegianceText(this.allegiance.prompt(), "allegiance.prompt"), List.of());
         openPage(DialoguePage.ALLEGIANCE);
@@ -2449,7 +2487,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void tickSkillsProfileKeepAlive() {
-        if (this.closingWithAnimation || this.page != DialoguePage.SKILLS) {
+        if (this.closingWithAnimation
+                || (this.page != DialoguePage.SKILLS && this.page != DialoguePage.STUDY)) {
             return;
         }
         long now = Util.getMillis();
@@ -3704,6 +3743,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 translate("interaction_button.profile.description"),
                 this::openProfilePage,
                 true));
+        if (!this.baby) {
+            buttons.add(new InteractionMenuButton(
+                    InteractionMenuAction.STUDY,
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_PROFILE_TEXTURE,
+                    translate("root.study"),
+                    studyButtonDescription(),
+                    this::openStudyPage,
+                    canBeginStudy()));
+        }
         buttons.add(new InteractionMenuButton(
                 InteractionMenuAction.ALLEGIANCE,
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_HOME_TEXTURE,
@@ -3762,6 +3810,60 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             buttons.add(stayInteractionButton(stayAvailable));
         }
         return buttons;
+    }
+
+    private boolean canBeginStudy() {
+        Optional<VillagerStudyClientCache.Entry> state = VillagerStudyClientCache.get(this.villagerEntityId);
+        Optional<VillagerProfileClientCache.DisplayEntry> profile =
+                VillagerProfileClientCache.get(this.villagerEntityId);
+        if (state.isEmpty() || profile.isEmpty() || !state.get().featureEnabled()
+                || state.get().studying() || state.get().cooldownRemaining() > 0L
+                || this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager) {
+            return false;
+        }
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            if (profile.get().skillValue(skill) < VillagerSkillSet.MAX_VALUE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String studyButtonDescription() {
+        Optional<VillagerStudyClientCache.Entry> optional = VillagerStudyClientCache.get(this.villagerEntityId);
+        if (optional.isEmpty()) {
+            return translate("interaction_button.study.loading_description");
+        }
+        VillagerStudyClientCache.Entry state = optional.get();
+        if (!state.featureEnabled()) {
+            return translate("interaction_button.study.disabled_description");
+        }
+        if (state.studying() && state.skill() != null) {
+            return translate(
+                    state.paused()
+                            ? "interaction_button.study.paused_description"
+                            : "interaction_button.study.active_description",
+                    localizedSkill(state.skill()),
+                    formatStudyTicks(state.displayedActiveTicks()),
+                    formatStudyTicks(state.durationTicks()));
+        }
+        long cooldown = state.cooldownRemaining();
+        if (cooldown > 0L) {
+            return translate("interaction_button.study.cooldown_description", formatStudyTicks(cooldown));
+        }
+        if (this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager) {
+            return translate("interaction_button.study.incompatible_description");
+        }
+        return translate(canBeginStudy()
+                ? "interaction_button.study.description"
+                : "interaction_button.study.maxed_description");
+    }
+
+    private static String formatStudyTicks(long ticks) {
+        long seconds = Math.max(0L, (ticks + 19L) / 20L);
+        long minutes = seconds / 60L;
+        long remainder = seconds % 60L;
+        return minutes > 0L ? minutes + "m " + remainder + "s" : remainder + "s";
     }
 
     private void syncInteractionMenuControls() {
@@ -5790,7 +5892,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static int interactionPageDepth(DialoguePage page) {
         return switch (page) {
             case ROOT -> 0;
-            case TALK, ADVENTURES, DUEL, PROFILE, SKILLS, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT -> 1;
+            case TALK, ADVENTURES, DUEL, PROFILE, SKILLS, STUDY, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT -> 1;
             case DUEL_LOADOUT, DUEL_WAGER, DUEL_CONFIRM, ANCESTRY, DESCENDANTS, STORAGE, PAYMENT, HIRE, CONTRACT, ROLE, WORK -> 2;
             case HIRE_DURATION,
                     END_CONTRACT_CONFIRMATION,
@@ -5829,6 +5931,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         DUEL_CONFIRM,
         PROFILE,
         SKILLS,
+        STUDY,
         ALLEGIANCE,
         GIFT,
         FAMILY,
@@ -5896,6 +5999,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         TRADE,
         ADVENTURES,
         PROFILE,
+        STUDY,
         ALLEGIANCE,
         DUEL,
         GIFT,

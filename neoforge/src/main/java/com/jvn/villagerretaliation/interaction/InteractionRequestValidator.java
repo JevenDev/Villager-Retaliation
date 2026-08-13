@@ -80,6 +80,17 @@ public final class InteractionRequestValidator {
         );
     }
 
+    public static Optional<InteractionTargetContext> requireStudyConversation(ServerPlayer player, int entityId) {
+        return requireActiveConversation(
+                player,
+                entityId,
+                "interaction.study.unavailable",
+                "interaction.conversation_ended",
+                false,
+                false
+        );
+    }
+
     public static void endConversationWithRefusal(
             InteractionTargetContext target,
             String refusalNoticeKey) {

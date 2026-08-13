@@ -53,6 +53,7 @@ import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerStudyRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationRequestPayload;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
@@ -72,6 +73,9 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.study.VillagerStudyDialogueService;
+import com.jvn.villagerretaliation.study.VillagerStudyService;
 import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
 import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
@@ -318,6 +322,12 @@ public final class VillagerInteractionService {
 
         if (villager.level() instanceof ServerLevel level
                 && ForcedDialogueService.tryOpenTradeRefreshReadyDialogue(level, villager, player)) {
+            return InteractionResult.CONSUME;
+        }
+
+        if (villager.level() instanceof ServerLevel level
+                && VillagerStudyDialogueService.tryHandle(level, villager, player)) {
+            focusVillagerOnPlayer(villager, player);
             return InteractionResult.CONSUME;
         }
 
@@ -2380,6 +2390,46 @@ public final class VillagerInteractionService {
 
         int reputation = VillagerReputationManager.getReputation(player.serverLevel(), villager, player.getUUID());
         VillagerReputationNetworking.sendReputation(player, villager, reputation);
+    }
+
+    public static void handleStudyRequest(ServerPlayer player, int entityId, String skillId) {
+        if (!ServerboundRequestLimiter.tryAcquire(player, VillagerStudyRequestPayload.TYPE.id(), 5L)) {
+            return;
+        }
+        Optional<InteractionTargetContext> target =
+                InteractionRequestValidator.requireStudyConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+
+        Villager villager = target.get().villager();
+        ServerLevel level = target.get().level();
+        VillagerSkill skill = VillagerSkill.bySerializedName(skillId);
+        VillagerStudyService.StartResult result = VillagerStudyService.start(level, villager, skill);
+        if (result.started()) {
+            sendVillagerNotice(player, villager, "interaction.study.started",
+                    Map.of("skill", VillagerStudyDialogueService.localizedSkillName(skill)));
+            return;
+        }
+
+        if (result.eligibility() == VillagerStudyService.Eligibility.COOLDOWN) {
+            long remaining = result.state().cooldownRemaining(level.getServer().overworld().getGameTime());
+            sendVillagerNotice(player, villager, "interaction.study.cooldown",
+                    Map.of("study_cooldown", formatStudyTicks(remaining)));
+        } else if (result.eligibility() == VillagerStudyService.Eligibility.SKILL_MAXED && skill != null) {
+            sendVillagerNotice(player, villager, "interaction.study.maxed",
+                    Map.of("skill", VillagerStudyDialogueService.localizedSkillName(skill)));
+        } else {
+            sendVillagerNotice(player, villager, "interaction.study.unavailable");
+        }
+        VillagerReputationNetworking.sendStudyState(player, villager);
+    }
+
+    private static String formatStudyTicks(long ticks) {
+        long seconds = Math.max(0L, (ticks + 19L) / 20L);
+        long minutes = seconds / 60L;
+        long remainder = seconds % 60L;
+        return minutes > 0L ? minutes + "m " + remainder + "s" : remainder + "s";
     }
 
     public static void handleProfileRequest(ServerPlayer player, int entityId) {
