@@ -35,6 +35,9 @@ public final class VillagerRetaliationConfigModel {
     public Social social = new Social();
 
     @Nest
+    public Study study = new Study();
+
+    @Nest
     public Reputation reputation = new Reputation();
 
     @Nest
@@ -300,6 +303,22 @@ public final class VillagerRetaliationConfigModel {
         public boolean enableOppositeGenderBreedingRules = false;
 
         public boolean enableParentReputationInheritance = true;
+    }
+
+    public static final class Study {
+        public boolean enabled = true;
+
+        @RangeConstraint(min = 1, max = 72_000)
+        public int durationTicks = 4_800;
+
+        @RangeConstraint(min = 0, max = 72_000)
+        public int cooldownTicks = 9_600;
+
+        @RangeConstraint(min = 1, max = 100)
+        public int minimumReward = 1;
+
+        @RangeConstraint(min = 1, max = 100)
+        public int maximumReward = 3;
     }
 
     public static final class Balance {

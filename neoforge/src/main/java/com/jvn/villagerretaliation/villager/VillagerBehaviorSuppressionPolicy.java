@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.social.VillagerBreedingPolicy;
+import com.jvn.villagerretaliation.study.VillagerStudyService;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
@@ -40,6 +41,10 @@ public final class VillagerBehaviorSuppressionPolicy {
         }
         if (HiredVillagerContractService.hasActiveOrPendingContract(villager)) {
             return ControlState.HIRED;
+        }
+        if (villager.level() instanceof ServerLevel level
+                && VillagerStudyService.isActivelyStudying(level, villager)) {
+            return ControlState.STUDYING;
         }
         return ControlState.NORMAL;
     }
@@ -149,6 +154,12 @@ public final class VillagerBehaviorSuppressionPolicy {
                 Behavior.VANILLA_PANIC,
                 Behavior.JOB_SITE_CLAIMING,
                 Behavior.VILLAGE_MIGRATION));
+        rules.put(ControlState.STUDYING, EnumSet.of(
+                Behavior.BREEDING,
+                Behavior.GOSSIPING,
+                Behavior.VANILLA_WORKING,
+                Behavior.WANDERING,
+                Behavior.VANILLA_ITEM_PICKUP));
         return Map.copyOf(rules);
     }
 
@@ -156,7 +167,8 @@ public final class VillagerBehaviorSuppressionPolicy {
         NORMAL,
         DOWNED,
         HIRED,
-        PARTIED
+        PARTIED,
+        STUDYING
     }
 
     public enum Behavior {

@@ -48,6 +48,11 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> SHOW_TRADE_GUI_REPUTATION_ICON = bind("general.showTradeGuiReputationIcon", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_DEATH_MESSAGES = bind("general.enableVillagerDeathMessages", Boolean.class);
     public static final ConfigValue<Integer> RETIRED_VILLAGER_PROFILE_RETENTION_DAYS = bind("general.retiredVillagerProfileRetentionDays", Integer.class);
+    public static final ConfigValue<Boolean> ENABLE_VILLAGER_STUDYING = bind("study.enabled", Boolean.class);
+    public static final ConfigValue<Integer> STUDY_DURATION_TICKS = bind("study.durationTicks", Integer.class);
+    public static final ConfigValue<Integer> STUDY_COOLDOWN_TICKS = bind("study.cooldownTicks", Integer.class);
+    public static final ConfigValue<Integer> STUDY_MINIMUM_REWARD = bind("study.minimumReward", Integer.class);
+    public static final ConfigValue<Integer> STUDY_MAXIMUM_REWARD = bind("study.maximumReward", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_INTERACTION_SCREEN = bind("dialogue.enableInteractionScreen", Boolean.class);
     public static final ConfigValue<Boolean> SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN = bind("dialogue.shiftRightClickBypassesInteractionScreen", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_DIALOGUE_REPUTATION_EFFECTS = bind("dialogue.enableDialogueReputationEffects", Boolean.class);

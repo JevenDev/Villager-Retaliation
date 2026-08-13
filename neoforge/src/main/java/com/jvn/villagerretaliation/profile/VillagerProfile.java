@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.profile;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillGenerator;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import com.jvn.villagerretaliation.study.VillagerStudyState;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -26,6 +27,7 @@ public class VillagerProfile {
     private static final String TAG_SKILL_PRACTICE_XP = "SkillPracticeXp";
     private static final String TAG_SKILL_PRACTICE_DAILY_STATE = "SkillPracticeDailyState";
     private static final String TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS = "TradeLevelSkillAdjustedXpProgress";
+    private static final String TAG_STUDY_STATE = "StudyState";
     private static final String TAG_CREATED_GAME_TIME = "CreatedGameTime";
     private static final String TAG_UPDATED_GAME_TIME = "UpdatedGameTime";
 
@@ -41,6 +43,7 @@ public class VillagerProfile {
     private final EnumMap<VillagerSkill, Double> skillPracticeXp;
     private final EnumMap<VillagerSkill, PracticeDayState> skillPracticeDailyState;
     private double tradeLevelSkillAdjustedXpProgress;
+    private VillagerStudyState studyState;
     private long createdGameTime;
     private long updatedGameTime;
 
@@ -57,6 +60,7 @@ public class VillagerProfile {
             Map<VillagerSkill, Double> skillPracticeXp,
             Map<VillagerSkill, PracticeDayState> skillPracticeDailyState,
             double tradeLevelSkillAdjustedXpProgress,
+            VillagerStudyState studyState,
             long createdGameTime,
             long updatedGameTime) {
         this.villagerUuid = villagerUuid;
@@ -71,6 +75,7 @@ public class VillagerProfile {
         this.skillPracticeXp = copySkillPracticeXp(skillPracticeXp);
         this.skillPracticeDailyState = copyPracticeDailyState(skillPracticeDailyState);
         this.tradeLevelSkillAdjustedXpProgress = clampFractionalProgress(tradeLevelSkillAdjustedXpProgress);
+        this.studyState = studyState == null ? VillagerStudyState.NONE : studyState;
         this.createdGameTime = createdGameTime;
         this.updatedGameTime = updatedGameTime;
     }
@@ -97,6 +102,7 @@ public class VillagerProfile {
                 Map.of(),
                 Map.of(),
                 0.0D,
+                VillagerStudyState.NONE,
                 gameTime,
                 gameTime
         );
@@ -136,6 +142,9 @@ public class VillagerProfile {
                 tag.contains(TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS, Tag.TAG_DOUBLE)
                         ? tag.getDouble(TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS)
                         : 0.0D,
+                tag.contains(TAG_STUDY_STATE, Tag.TAG_COMPOUND)
+                        ? VillagerStudyState.load(tag.getCompound(TAG_STUDY_STATE))
+                        : VillagerStudyState.NONE,
                 tag.contains(TAG_CREATED_GAME_TIME, Tag.TAG_LONG) ? tag.getLong(TAG_CREATED_GAME_TIME) : 0L,
                 tag.contains(TAG_UPDATED_GAME_TIME, Tag.TAG_LONG) ? tag.getLong(TAG_UPDATED_GAME_TIME) : 0L
         );
@@ -166,6 +175,10 @@ public class VillagerProfile {
         if (this.tradeLevelSkillAdjustedXpProgress > 0.000_001D) {
             tag.putDouble(TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS, this.tradeLevelSkillAdjustedXpProgress);
         }
+        CompoundTag study = this.studyState.save();
+        if (!study.isEmpty()) {
+            tag.put(TAG_STUDY_STATE, study);
+        }
         tag.putLong(TAG_CREATED_GAME_TIME, this.createdGameTime);
         tag.putLong(TAG_UPDATED_GAME_TIME, this.updatedGameTime);
         return tag;
@@ -189,6 +202,7 @@ public class VillagerProfile {
                 this.skillPracticeXp,
                 this.skillPracticeDailyState,
                 this.tradeLevelSkillAdjustedXpProgress,
+                this.studyState,
                 this.createdGameTime,
                 this.updatedGameTime
         );
@@ -278,6 +292,10 @@ public class VillagerProfile {
         return this.tradeLevelSkillAdjustedXpProgress;
     }
 
+    public VillagerStudyState studyState() {
+        return this.studyState;
+    }
+
     public long createdGameTime() {
         return this.createdGameTime;
     }
@@ -302,6 +320,16 @@ public class VillagerProfile {
             return false;
         }
         this.skills = updated;
+        this.updatedGameTime = gameTime;
+        return true;
+    }
+
+    public boolean setStudyState(VillagerStudyState state, long gameTime) {
+        VillagerStudyState safeState = state == null ? VillagerStudyState.NONE : state;
+        if (safeState.equals(this.studyState)) {
+            return false;
+        }
+        this.studyState = safeState;
         this.updatedGameTime = gameTime;
         return true;
     }
