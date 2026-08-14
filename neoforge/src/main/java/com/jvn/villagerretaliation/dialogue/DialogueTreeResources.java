@@ -6,6 +6,8 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextVariant;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueUsagePolicy;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -370,6 +372,11 @@ public final class DialogueTreeResources {
         return new DialogueTreeDefinition.Node(
                 id,
                 DatapackJsonReader.readLines(node),
+                DialogueTextVariant.read(location, "dialogue tree", context,
+                        treeId + "/node/" + id,
+                        node.has("variants") ? node.get("variants") : node.get("lines"),
+                        nodeQuestId, DialogueEntryMetadata.EMPTY,
+                        DialogueUsagePolicy.read(node, DialogueUsagePolicy.DEFAULT)),
                 VillagerActionDefinition.readList(location, context, node, nodeQuestId),
                 DialogueCondition.readList(location, context, node, nodeQuestId),
                 readResponses(location, context, node, nodeQuestId, treeId),
@@ -412,6 +419,12 @@ public final class DialogueTreeResources {
                         DatapackJsonReader.readString(response, "next"),
                         DatapackJsonReader.readEnum(response, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
                         DatapackJsonReader.readLines(response),
+                        DialogueTextVariant.read(location, "dialogue tree", responseContext,
+                                treeId + "/response/" + id,
+                                response.has("variants") ? response.get("variants") : response.get("lines"),
+                                responseQuestId,
+                                DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response),
+                                DialogueUsagePolicy.read(response, DialogueUsagePolicy.DEFAULT)),
                         VillagerActionDefinition.readList(location, responseContext, response, responseQuestId),
                         DialogueCondition.readList(location, responseContext, response, responseQuestId),
                         DatapackJsonReader.readBoolean(response, "end", false),

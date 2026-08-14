@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextVariant;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
@@ -1047,7 +1048,8 @@ public record QuestDefinition(
             List<String> missingProof,
             List<String> missingProofKeys,
             List<String> locateFailed,
-            List<String> locateFailedKeys
+            List<String> locateFailedKeys,
+            Map<String, List<DialogueTextVariant>> variants
     ) {
         public static final Dialogue EMPTY = new Dialogue(
                 List.of("I do not have the details for that quest."),
@@ -1089,6 +1091,18 @@ public record QuestDefinition(
             missingProofKeys = normalizeKeys(missingProofKeys);
             locateFailed = normalize(locateFailed, List.of("I cannot get a clear reading on that place."));
             locateFailedKeys = normalizeKeys(locateFailedKeys);
+            variants = variants == null ? Map.of() : Map.copyOf(variants);
+        }
+
+        public Dialogue(
+                List<String> start, List<String> startKeys, List<String> reminder, List<String> reminderKeys,
+                List<String> turnIn, List<String> turnInKeys, List<String> alreadyCompleted, List<String> alreadyCompletedKeys,
+                List<String> unavailable, List<String> unavailableKeys, List<String> inactive, List<String> inactiveKeys,
+                List<String> missingTarget, List<String> missingTargetKeys, List<String> missingProof, List<String> missingProofKeys,
+                List<String> locateFailed, List<String> locateFailedKeys) {
+            this(start, startKeys, reminder, reminderKeys, turnIn, turnInKeys,
+                    alreadyCompleted, alreadyCompletedKeys, unavailable, unavailableKeys, inactive, inactiveKeys,
+                    missingTarget, missingTargetKeys, missingProof, missingProofKeys, locateFailed, locateFailedKeys, Map.of());
         }
 
         public String selectStart(RandomSource random) {
@@ -1098,6 +1112,16 @@ public record QuestDefinition(
         public SelectedText selectStartText(RandomSource random) {
             return select(this.start, this.startKeys, random);
         }
+
+        public SelectedText selectStartText(DialogueContext context) { return select("start", this.start, this.startKeys, context); }
+        public SelectedText selectReminderText(DialogueContext context) { return select("reminder", this.reminder, this.reminderKeys, context); }
+        public SelectedText selectTurnInText(DialogueContext context) { return select("turn_in", this.turnIn, this.turnInKeys, context); }
+        public SelectedText selectAlreadyCompletedText(DialogueContext context) { return select("already_completed", this.alreadyCompleted, this.alreadyCompletedKeys, context); }
+        public SelectedText selectUnavailableText(DialogueContext context) { return select("unavailable", this.unavailable, this.unavailableKeys, context); }
+        public SelectedText selectInactiveText(DialogueContext context) { return select("inactive", this.inactive, this.inactiveKeys, context); }
+        public SelectedText selectMissingTargetText(DialogueContext context) { return select("missing_target", this.missingTarget, this.missingTargetKeys, context); }
+        public SelectedText selectMissingProofText(DialogueContext context) { return select("missing_proof", this.missingProof, this.missingProofKeys, context); }
+        public SelectedText selectLocateFailedText(DialogueContext context) { return select("locate_failed", this.locateFailed, this.locateFailedKeys, context); }
 
         public String selectReminder(RandomSource random) {
             return selectReminderText(random).text();
@@ -1190,6 +1214,17 @@ public record QuestDefinition(
             return new SelectedText(text, "");
         }
 
+        private SelectedText select(String slot, List<String> lines, List<String> keys, DialogueContext context) {
+            List<DialogueTextVariant> rich = this.variants.getOrDefault(slot, List.of());
+            if (!rich.isEmpty()) {
+                return DialogueTextVariant.selectAndRecord(rich, context, List.of())
+                        .map(variant -> new SelectedText(variant.id(), variant.text(), variant.textKey()))
+                        .orElseGet(() -> new SelectedText("", "", ""));
+            }
+            SelectedText legacy = select(lines, keys, context.random());
+            return new SelectedText("", legacy.text(), legacy.key());
+        }
+
         private static String selectInline(List<String> lines, RandomSource random) {
             if (lines == null || lines.isEmpty()) {
                 return "";
@@ -1198,7 +1233,10 @@ public record QuestDefinition(
         }
     }
 
-    public record SelectedText(String text, String key) {
+    public record SelectedText(String id, String text, String key) {
+        public SelectedText(String text, String key) {
+            this("", text, key);
+        }
         public SelectedText {
             text = text == null ? "" : text;
             key = key == null ? "" : key;

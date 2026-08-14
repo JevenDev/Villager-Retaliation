@@ -939,7 +939,7 @@ public final class VillagerQuestService {
                 .filter(value -> !value.isBlank())
                 .orElseGet(() -> resolveQuestText(
                         context,
-                        definition.dialogue().selectUnavailableText(context.random()),
+                        definition.dialogue().selectUnavailableText(context),
                         replacements(context, definition, progress)));
         return Optional.of(result(
                 "offer_hint",
@@ -1179,12 +1179,12 @@ public final class VillagerQuestService {
         boolean progressNotice = false;
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.progress(player.getUUID())) {
             VillagerQuestSavedData.QuestProgress progress = entry.getValue();
-            if (!progress.hasPendingLifecycleEvents()) {
+            if (!progress.hasPendingLifecycleEvents() && !progress.hasPendingTriggerEvents()) {
                 continue;
             }
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
             if (definition != null) {
-                changed |= resumePendingLifecycleEvents(player, definition, progress);
+                changed |= resumePendingTriggerWork(player, definition, progress);
             }
         }
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
@@ -1518,7 +1518,8 @@ public final class VillagerQuestService {
         QuestDefinition definition = compiled == null ? null : compiled.asQuestDefinition();
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), questId);
-        boolean resumableTerminal = progress != null && progress.hasPendingLifecycleEvents();
+        boolean resumableTerminal = progress != null
+                && (progress.hasPendingLifecycleEvents() || progress.hasPendingTriggerEvents());
         if (definition == null || progress == null
                 || (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE && !resumableTerminal)) {
             return new ProviderRebindResult(false, "Quest is missing, inactive, or has no deferred lifecycle work.",
@@ -1544,8 +1545,8 @@ public final class VillagerQuestService {
         progress.rebindProvider(binding, level.getGameTime(), "operator_rebind");
         SceneLifecycleIntegration.onQuestProviderRebind(level, player.getUUID(), questId, previousId, replacement,
                 "compatible_quest_provider_rebind");
-        int pendingBeforeReplay = progress.pendingLifecycleEvents().size();
-        resumePendingLifecycleEvents(context, compiled, progress);
+        int pendingBeforeReplay = progress.pendingLifecycleEvents().size() + progress.pendingTriggerEvents().size();
+        resumePendingTriggerWork(context, compiled, progress);
         data.setDirty();
         QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.PROVIDER, questId,
                 "rebind result=accepted previous=" + previousId + " replacement=" + replacement.getUUID());
@@ -2289,7 +2290,7 @@ public final class VillagerQuestService {
                     lineId(definition, "locate_failed"),
                     resolveQuestText(
                             context,
-                            definition.dialogue().selectLocateFailedText(context.random()),
+                            definition.dialogue().selectLocateFailedText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -2345,7 +2346,7 @@ public final class VillagerQuestService {
                 lineId(definition, "start"),
                 resolveQuestText(
                         context,
-                        definition.dialogue().selectStartText(context.random()),
+                        definition.dialogue().selectStartText(context),
                         replacements(context, definition, started)),
                 replacements(context, definition, started));
     }
@@ -2615,7 +2616,7 @@ public final class VillagerQuestService {
                     lineId(definition, "unavailable"),
                     resolveQuestText(
                             context,
-                            definition.dialogue().selectUnavailableText(context.random()),
+                            definition.dialogue().selectUnavailableText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -2625,7 +2626,7 @@ public final class VillagerQuestService {
                     lineId(definition, "inactive"),
                     resolveQuestText(
                             context,
-                            definition.dialogue().selectInactiveText(context.random()),
+                            definition.dialogue().selectInactiveText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -2634,7 +2635,7 @@ public final class VillagerQuestService {
                 lineId(definition, "reminder"),
                 resolveQuestText(
                         context,
-                        definition.dialogue().selectReminderText(context.random()),
+                        definition.dialogue().selectReminderText(context),
                         replacements(context, definition, progress)),
                 replacements(context, definition, progress));
     }
@@ -2648,7 +2649,7 @@ public final class VillagerQuestService {
                     lineId(definition, "unavailable"),
                     resolveQuestText(
                             context,
-                            definition.dialogue().selectUnavailableText(context.random()),
+                            definition.dialogue().selectUnavailableText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -2658,7 +2659,7 @@ public final class VillagerQuestService {
                     lineId(definition, "inactive"),
                     resolveQuestText(
                             context,
-                            definition.dialogue().selectInactiveText(context.random()),
+                            definition.dialogue().selectInactiveText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -2668,7 +2669,7 @@ public final class VillagerQuestService {
                     lineId(definition, "missing_target"),
                     resolveQuestText(
                             context,
-                            definition.dialogue().selectMissingTargetText(context.random()),
+                            definition.dialogue().selectMissingTargetText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -2678,7 +2679,7 @@ public final class VillagerQuestService {
                     lineId(definition, "missing_proof"),
                     resolveQuestText(
                             context,
-                            definition.dialogue().selectMissingProofText(context.random()),
+                            definition.dialogue().selectMissingProofText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -2732,7 +2733,7 @@ public final class VillagerQuestService {
                 lineId(definition, "turn_in"),
                 resolveQuestText(
                         context,
-                        definition.dialogue().selectTurnInText(context.random()),
+                        definition.dialogue().selectTurnInText(context),
                         replacements(context, definition, progress)),
                 replacements(context, definition, progress));
     }
@@ -2918,7 +2919,7 @@ public final class VillagerQuestService {
                     lineId(definition, "unavailable"),
                     resolveQuestText(
                             context,
-                            definition.dialogue().selectUnavailableText(context.random()),
+                            definition.dialogue().selectUnavailableText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -2973,7 +2974,7 @@ public final class VillagerQuestService {
                     lineId(definition, "already_completed"),
                     resolveQuestText(
                             context,
-                            definition.dialogue().selectAlreadyCompletedText(context.random()),
+                            definition.dialogue().selectAlreadyCompletedText(context),
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
@@ -4233,12 +4234,12 @@ public final class VillagerQuestService {
                 || !withinCompletionLimit(context, definition, progress)) {
             return resolveQuestText(
                     context,
-                    definition.dialogue().selectAlreadyCompletedText(context.random()),
+                    definition.dialogue().selectAlreadyCompletedText(context),
                     replacements(context, definition, progress));
         }
         return resolveQuestText(
                 context,
-                definition.dialogue().selectUnavailableText(context.random()),
+                definition.dialogue().selectUnavailableText(context),
                 replacements(context, definition, progress));
     }
 
@@ -5425,6 +5426,10 @@ public final class VillagerQuestService {
         }
         Villager villager = startedVillager(level, progress);
         if (villager == null || !villager.isAlive()) {
+            if (objectiveEvent != null) {
+                return progress.deferTriggerEvent(QuestTriggerContext.of(
+                        null, event, level.getGameTime(), progress.currentStage(), objectiveEvent));
+            }
             return false;
         }
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
@@ -5526,6 +5531,48 @@ public final class VillagerQuestService {
                             + " dirty=" + result.dirty());
         }
         return result.dirty();
+    }
+
+    private static boolean resumePendingTriggerWork(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        Villager provider = startedVillager(level, progress);
+        if (provider == null || !provider.isAlive()) {
+            return false;
+        }
+        CompiledQuest compiled = VillagerQuestResources.compiledQuest(level.getServer(), definition.id()).orElse(null);
+        if (compiled == null) {
+            return false;
+        }
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, provider);
+        return resumePendingTriggerWork(context, compiled, progress);
+    }
+
+    private static boolean resumePendingTriggerWork(
+            DialogueContext context,
+            CompiledQuest compiled,
+            VillagerQuestSavedData.QuestProgress progress) {
+        boolean changed = resumePendingLifecycleEvents(context, compiled, progress);
+        for (QuestTriggerContext pending : List.copyOf(progress.pendingTriggerEvents())) {
+            boolean stillAuthored = compiled.triggerIndex().hasEvent(pending.event());
+            if (stillAuthored) {
+                dispatchQuestTriggers(pending.withDialogueContext(context), compiled, progress);
+            }
+            if (progress.resolveTriggerEvent(pending)) {
+                changed = true;
+                QuestDebugTraceService.recordIfEnabled(
+                        context.player(), QuestDebugTraceService.EventType.TRIGGER, compiled.id(),
+                        "resume deferred_payload_event=" + QuestTriggerRegistry.canonicalEventId(pending.event())
+                                + " stage=" + pending.stage()
+                                + " payload=" + pending.payload().keySet()
+                                + " result=" + (stillAuthored ? "dispatched" : "removed_no_longer_authored"));
+            }
+        }
+        return changed;
     }
 
     private static boolean dispatchQuestTriggers(

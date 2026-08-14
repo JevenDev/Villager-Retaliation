@@ -48,11 +48,11 @@ public record DialogueTextVariant(
         List<String> safe = lines == null ? List.of() : lines;
         for (int index = 0; index < safe.size(); index++) {
             variants.add(new DialogueTextVariant(
-                    stableId(ownerId, "line_" + index), safe.get(index),
+                    legacyId(ownerId, index, safe.size()), safe.get(index),
                     index == 0 ? textKey : "", 0, 1, 1.0D, List.of(), metadata, usage));
         }
         if (variants.isEmpty() && textKey != null && !textKey.isBlank()) {
-            variants.add(new DialogueTextVariant(stableId(ownerId, "key"), "", textKey,
+            variants.add(new DialogueTextVariant(ownerId, "", textKey,
                     0, 1, 1.0D, List.of(), metadata, usage));
         }
         return List.copyOf(variants);
@@ -78,7 +78,7 @@ public record DialogueTextVariant(
         for (JsonElement child : raw) {
             if (child.isJsonPrimitive()) {
                 variants.add(new DialogueTextVariant(
-                        stableId(ownerId, "line_" + index), child.getAsString(), "",
+                        legacyId(ownerId, index, raw.size()), child.getAsString(), "",
                         0, 1, 1.0D, List.of(), inheritedMetadata, inheritedUsage));
             } else if (child.isJsonObject()) {
                 JsonObject object = child.getAsJsonObject();
@@ -114,10 +114,14 @@ public record DialogueTextVariant(
         List<String> recent = recentIds == null ? List.of() : recentIds;
         List<DialogueTextVariant> matched = variants == null ? List.of() : variants.stream()
                 .filter(variant -> variant.matches(context))
+                .filter(variant -> DialogueUsageService.available(context, variant.id(), variant.usage()))
                 .filter(variant -> !variant.usage().antiRepeat() || !recent.contains(variant.id()))
                 .toList();
         if (matched.isEmpty() && variants != null) {
-            matched = variants.stream().filter(variant -> variant.matches(context)).toList();
+            matched = variants.stream()
+                    .filter(variant -> variant.matches(context))
+                    .filter(variant -> DialogueUsageService.available(context, variant.id(), variant.usage()))
+                    .toList();
         }
         RandomSource random = context == null ? RandomSource.create(0L) : context.random();
         return CandidateArbitrator.select(
@@ -125,6 +129,19 @@ public record DialogueTextVariant(
                         variant.id(), variant, variant.priority(), variant.chance(), variant.weight())).toList(),
                 random,
                 ignored -> true);
+    }
+
+    public static java.util.Optional<DialogueTextVariant> selectAndRecord(
+            List<DialogueTextVariant> variants,
+            DialogueContext context,
+            List<String> recentIds) {
+        java.util.Optional<DialogueTextVariant> selected = select(variants, context, recentIds);
+        selected.ifPresent(variant -> DialogueUsageService.record(context, variant.id(), variant.usage()));
+        return selected;
+    }
+
+    private static String legacyId(String ownerId, int index, int total) {
+        return total == 1 ? ownerId : stableId(ownerId, "line_" + index);
     }
 
     private static String stableId(String ownerId, String localId) {
