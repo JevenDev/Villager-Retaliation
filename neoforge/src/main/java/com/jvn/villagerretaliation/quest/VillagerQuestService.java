@@ -3008,6 +3008,23 @@ public final class VillagerQuestService {
                 replacements(context, definition, locked));
     }
 
+    /**
+     * Evaluates every start requirement except quest-pool membership. Pool
+     * selection uses this to avoid spending bounded offer slots on quests that
+     * cannot be started in the current player/provider context.
+     */
+    public static boolean canStartIgnoringPools(DialogueContext context, QuestDefinition definition) {
+        if (context == null || definition == null) {
+            return false;
+        }
+        VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(context.level())
+                .get(context.player().getUUID(), definition.id());
+        return QuestAvailabilityService.canStart(
+                context, definition, progress, false, true,
+                VillagerQuestService::parentCompleted,
+                VillagerQuestService::scopedCompletionCount);
+    }
+
     private static boolean canStart(
             DialogueContext context,
             QuestDefinition definition,
