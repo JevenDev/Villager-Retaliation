@@ -7,6 +7,19 @@
   "max_offers": 3,
   "anti_repeat_rotations": 2,
   "default_weight": 10,
+  "weight_rules": [
+    {
+      "any_tags": ["activity.build", "activity.trade", "activity.explore"],
+      "multiplier": 2
+    }
+  ],
+  "tag_quotas": {
+    "activity.combat": 1,
+    "commitment.expedition": 1,
+    "destination.remote": 1,
+    "difficulty.hard": 1,
+    "difficulty.extreme": 1
+  },
   "any_tags": ["pool.quest_board"],
   "seed_salt": 16411
 }
