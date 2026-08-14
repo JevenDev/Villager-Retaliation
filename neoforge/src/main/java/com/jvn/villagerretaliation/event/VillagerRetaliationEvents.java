@@ -263,6 +263,7 @@ public final class VillagerRetaliationEvents {
     public static void onServerTickPost(ServerTickEvent.Post event) {
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onServerTick(event.getServer());
         com.jvn.villagerretaliation.duel.DuelService.tick(event.getServer());
+        ForcedDialogueService.maybeTriggerPlayerAiming(event.getServer());
         VillagerInventoryAccess.onServerTick(event.getServer());
         PartyVillagerContractService.onServerTick(event.getServer());
         SceneRuntime.tick(event.getServer());

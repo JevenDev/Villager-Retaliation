@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.forced;
 
+import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.mojang.authlib.GameProfile;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -11,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
@@ -131,6 +134,104 @@ public final class PlayerItemProximityForcedDialogueGameTests {
                 ordered,
                 List.of("chat-first", "chat-second", "forced-first", "forced-second"),
                 "selection should remain chat-first and stable within each output kind");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void samePartyWeaponAimingRuleProvidesTenNonHostileArmedVariations(GameTestHelper helper) {
+        ForcedDialogueResources.clearCache();
+        ForcedDialogueResources.ForcedDialogueDefinition definition =
+                ForcedDialogueResources.playerItemProximityCandidates(helper.getLevel().getServer()).stream()
+                        .filter(candidate -> candidate.id().equals("player_aiming_weapon_same_party"))
+                        .findFirst()
+                        .orElseThrow();
+
+        helper.assertTrue(definition.requiresSameParty(),
+                "the party aiming rule should only match villagers in the same party as the player");
+        helper.assertTrue(definition.requiresPlayerAimingAtWitness(),
+                "the party aiming rule should require the player to aim at the witness");
+        helper.assertFalse(definition.aggroImmediately(),
+                "arming in response to an ally should not immediately start retaliation");
+        helper.assertValueEqual(definition.drawWeaponTicks(), 100,
+                "the party villager should retain a five-second sheathing delay");
+        helper.assertValueEqual(definition.lines().size(), 10,
+                "the party aiming rule should retain all ten inline dialogue variations");
+        helper.assertTrue(definition.lines().stream().allMatch(line -> line.key().isBlank()),
+                "inline variations should not collapse to one translation-key fallback");
+        helper.assertTrue(definition.lines().stream().noneMatch(line ->
+                        line.text().contains(";") || line.text().contains("\u2014")),
+                "party dialogue should not contain semicolons or em dashes");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void matchingAimRefreshesWeaponDrawWhileDialogueIsOnCooldown(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrAimingDrawRefresh");
+        BlockPos playerPos = helper.absolutePos(new BlockPos(1, 2, 1));
+        player.moveTo(playerPos.getX() + 0.5D, playerPos.getY(), playerPos.getZ() + 0.5D, 0.0F, 0.0F);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+        Villager witness = helper.spawn(EntityType.VILLAGER, new BlockPos(5, 2, 1));
+        witness.setNoAi(true);
+        VillagerInventoryAccess.addItem(witness, new ItemStack(Items.IRON_SWORD));
+        player.lookAt(EntityAnchorArgument.Anchor.EYES, witness.getEyePosition());
+
+        ForcedDialogueResources.clearCache();
+        ForcedDialogueResources.ForcedDialogueDefinition definition =
+                ForcedDialogueResources.playerItemProximityCandidates(level.getServer()).stream()
+                        .filter(candidate -> candidate.id().equals("player_aiming_sword_neutral"))
+                        .findFirst()
+                        .orElseThrow();
+        long gameTime = level.getGameTime();
+        PlayerItemProximityForcedDialogueService.clearRuntimeState();
+        PlayerItemProximityForcedDialogueService.markCooldownUsed(
+                gameTime, witness.getUUID(), player.getUUID(), definition.id());
+        boolean[] dialogueTriggered = {false};
+
+        PlayerItemProximityForcedDialogueService.tryDefinitions(
+                level,
+                witness,
+                player,
+                List.of(definition),
+                gameTime,
+                new PlayerItemProximityForcedDialogueService.Delegate() {
+                    @Override
+                    public boolean canUseForcedInteractionSystem(ServerPlayer ignoredPlayer, Villager ignoredVillager) {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean hasForcedSession(ServerPlayer ignoredPlayer) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean matchesReputation(
+                            ServerLevel ignoredLevel,
+                            Villager ignoredVillager,
+                            ServerPlayer ignoredPlayer,
+                            ForcedDialogueResources.ForcedDialogueDefinition ignoredDefinition) {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean trigger(
+                            ServerLevel ignoredLevel,
+                            Villager ignoredVillager,
+                            ServerPlayer ignoredPlayer,
+                            ForcedDialogueResources.ForcedDialogueDefinition ignoredDefinition,
+                            Optional<PlayerItemProximityForcedDialogueService.TradeItemMatch> ignoredTradeItemMatch) {
+                        dialogueTriggered[0] = true;
+                        return true;
+                    }
+                });
+
+        helper.assertFalse(dialogueTriggered[0], "dialogue should remain blocked by its cooldown");
+        helper.assertTrue(VillagerWeaponDrawService.isDrawn(witness),
+                "a matching aim should refresh the weapon draw despite the dialogue cooldown");
+        VillagerWeaponDrawService.sheathe(witness);
+        PlayerItemProximityForcedDialogueService.clearRuntimeState();
+        witness.discard();
         helper.succeed();
     }
 

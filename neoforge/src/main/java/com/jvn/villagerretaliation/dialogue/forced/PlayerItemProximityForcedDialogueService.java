@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.dialogue.forced;
 
+import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueDefinition;
 import com.jvn.villagerretaliation.dialogue.forced.container.ForcedDialogueContainers;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.ArrayList;
@@ -27,7 +29,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 final class PlayerItemProximityForcedDialogueService {
-    private static final long SCAN_INTERVAL_TICKS = 80L;
+    private static final long PROXIMITY_SCAN_INTERVAL_TICKS = 80L;
+    private static final long AIM_SCAN_INTERVAL_TICKS = 5L;
     private static final long COOLDOWN_TICKS = 20L * 30L;
     private static final Map<CooldownKey, Long> NEXT_TRIGGER_TICK = new HashMap<>();
 
@@ -47,7 +50,7 @@ final class PlayerItemProximityForcedDialogueService {
         }
 
         long gameTime = level.getGameTime();
-        if (!TickThrottle.isSpreadTick(villager.getUUID(), gameTime, SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.isSpreadTick(villager.getUUID(), gameTime, PROXIMITY_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
@@ -59,7 +62,8 @@ final class PlayerItemProximityForcedDialogueService {
         List<ForcedDialogueDefinition> witnessDefinitions = new ArrayList<>();
         double maxRadius = 0.0D;
         for (ForcedDialogueDefinition definition : definitions) {
-            if (!definition.matchesWitness(villager)) {
+            if (definition.requiresPlayerAimingAtWitness()
+                    || !definition.matchesWitness(villager)) {
                 continue;
             }
             witnessDefinitions.add(definition);
@@ -93,12 +97,87 @@ final class PlayerItemProximityForcedDialogueService {
         }
     }
 
+    static void maybeTriggerAiming(MinecraftServer server, Delegate delegate) {
+        if (!ForcedDialogueTriggerGates.playerItemProximityEnabled()) {
+            return;
+        }
+
+        List<ForcedDialogueDefinition> definitions = new ArrayList<>();
+        for (ForcedDialogueDefinition definition : ForcedDialogueResources.playerItemProximityCandidates(server)) {
+            if (definition.requiresPlayerAimingAtWitness()) {
+                definitions.add(definition);
+            }
+        }
+        if (definitions.isEmpty()) {
+            return;
+        }
+        List<ForcedDialogueDefinition> orderedDefinitions = chatFirst(
+                definitions,
+                ForcedDialogueTriggerGates::isChatOutput);
+
+        for (ServerLevel level : server.getAllLevels()) {
+            long gameTime = level.getGameTime();
+            for (ServerPlayer player : level.players()) {
+                if (!player.isAlive()
+                        || player.isSpectator()
+                        || delegate.hasForcedSession(player)
+                        || !TickThrottle.isSpreadTick(player.getUUID(), gameTime, AIM_SCAN_INTERVAL_TICKS)) {
+                    continue;
+                }
+
+                List<ForcedDialogueDefinition> playerDefinitions = new ArrayList<>();
+                double maxRadius = 0.0D;
+                for (ForcedDialogueDefinition definition : orderedDefinitions) {
+                    if (!definition.matchesPlayerItem(player)) {
+                        continue;
+                    }
+                    playerDefinitions.add(definition);
+                    maxRadius = Math.max(maxRadius, definition.witnessRadius());
+                }
+                if (maxRadius <= 0.0D) {
+                    continue;
+                }
+
+                Optional<Villager> target = aimedAtVillager(player, maxRadius);
+                if (target.isEmpty()) {
+                    continue;
+                }
+                Villager villager = target.get();
+                if (!villager.isAlive() || villager.isBaby() || villager.isTrading()) {
+                    continue;
+                }
+
+                List<ForcedDialogueDefinition> targetDefinitions = new ArrayList<>();
+                for (ForcedDialogueDefinition definition : playerDefinitions) {
+                    if (definition.matchesWitness(villager)) {
+                        targetDefinitions.add(definition);
+                    }
+                }
+                if (tryDefinitions(
+                        level, villager, player, targetDefinitions, gameTime, true, delegate)) {
+                    pruneCooldowns(gameTime);
+                }
+            }
+        }
+    }
+
+    static boolean tryDefinitions(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            List<ForcedDialogueDefinition> definitions,
+            long gameTime,
+            Delegate delegate) {
+        return tryDefinitions(level, villager, player, definitions, gameTime, false, delegate);
+    }
+
     private static boolean tryDefinitions(
             ServerLevel level,
             Villager villager,
             ServerPlayer player,
             List<ForcedDialogueDefinition> definitions,
             long gameTime,
+            boolean aimingAlreadyConfirmed,
             Delegate delegate) {
         for (ForcedDialogueDefinition definition : definitions) {
             Optional<TradeItemMatch> tradeItemMatch = definition.requiresHeldTradeItem()
@@ -107,11 +186,18 @@ final class PlayerItemProximityForcedDialogueService {
             if ((definition.requiresHeldTradeItem() && tradeItemMatch.isEmpty())
                     || !definition.matchesPlayerItem(player)
                     || !delegate.matchesReputation(level, villager, player, definition)
+                    || (definition.requiresSameParty() && !PartyService.areInSameParty(villager, player))
                     || villager.distanceToSqr(player) > definition.witnessRadius() * definition.witnessRadius()
                     || (definition.requiresLineOfSight() && !villager.hasLineOfSight(player))
                     || (definition.requiresPlayerAimingAtWitness()
-                    && !isAimingAtWitness(player, villager, definition.witnessRadius()))
-                    || !cooldownReady(gameTime, villager.getUUID(), player.getUUID(), definition.id())) {
+                    && !aimingAlreadyConfirmed && !isAimingAtWitness(player, villager, definition.witnessRadius()))) {
+                continue;
+            }
+
+            if (definition.drawWeaponTicks() > 0) {
+                VillagerWeaponDrawService.draw(villager, definition.drawWeaponTicks());
+            }
+            if (!cooldownReady(gameTime, villager.getUUID(), player.getUUID(), definition.id())) {
                 continue;
             }
 
@@ -124,8 +210,17 @@ final class PlayerItemProximityForcedDialogueService {
     }
 
     static boolean isAimingAtWitness(ServerPlayer player, Villager witness, double maxDistance) {
-        if (player == null || witness == null || player.level() != witness.level() || maxDistance <= 0.0D) {
+        if (witness == null || player == null || player.level() != witness.level()) {
             return false;
+        }
+        return aimedAtVillager(player, maxDistance)
+                .filter(target -> target == witness)
+                .isPresent();
+    }
+
+    static Optional<Villager> aimedAtVillager(ServerPlayer player, double maxDistance) {
+        if (player == null || maxDistance <= 0.0D) {
+            return Optional.empty();
         }
         ServerLevel level = player.serverLevel();
         Vec3 eye = player.getEyePosition();
@@ -133,21 +228,26 @@ final class PlayerItemProximityForcedDialogueService {
         HitResult blockHit = level.clip(new ClipContext(
                 eye, rayEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         Vec3 visibleEnd = blockHit.getType() == HitResult.Type.BLOCK ? blockHit.getLocation() : rayEnd;
-        Optional<Vec3> witnessIntersection = witness.getBoundingBox().inflate(0.1D).clip(eye, visibleEnd);
-        if (witnessIntersection.isEmpty()) return false;
 
-        double witnessDistanceSqr = eye.distanceToSqr(witnessIntersection.get());
+        Entity closestEntity = null;
+        double closestDistanceSqr = Double.MAX_VALUE;
         AABB search = player.getBoundingBox().expandTowards(visibleEnd.subtract(eye)).inflate(1.0D);
         for (Entity entity : level.getEntities(player, search, candidate ->
-                candidate != witness && candidate.isAlive() && candidate.isPickable())) {
-            AABB bounds = entity.getBoundingBox();
+                candidate.isAlive() && candidate.isPickable())) {
+            AABB bounds = entity instanceof Villager
+                    ? entity.getBoundingBox().inflate(0.1D)
+                    : entity.getBoundingBox();
             Optional<Vec3> intersection = bounds.contains(eye) ? Optional.of(eye) : bounds.clip(eye, visibleEnd);
-            if (intersection.isPresent()
-                    && eye.distanceToSqr(intersection.get()) + 1.0E-6D < witnessDistanceSqr) {
-                return false;
+            if (intersection.isEmpty()) {
+                continue;
+            }
+            double distanceSqr = eye.distanceToSqr(intersection.get());
+            if (distanceSqr + 1.0E-6D < closestDistanceSqr) {
+                closestEntity = entity;
+                closestDistanceSqr = distanceSqr;
             }
         }
-        return true;
+        return closestEntity instanceof Villager villager ? Optional.of(villager) : Optional.empty();
     }
 
     private static Optional<TradeItemMatch> matchingHeldTradeItem(

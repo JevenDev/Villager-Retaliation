@@ -70,6 +70,22 @@ public final class DuelGameTests {
     private DuelGameTests() {}
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void challengeButtonOnlyShowsWhenDuelIsCurrentlyAvailable(GameTestHelper helper) {
+        DuelAvailability available = new DuelAvailability(
+                true, true, DuelAvailabilityReason.AVAILABLE, 0, 0, 0, 0L, 0, 0);
+        DuelAvailability coolingDown = new DuelAvailability(
+                true, false, DuelAvailabilityReason.COOLDOWN, 0, 0, 0, 200L, 0, 0);
+
+        helper.assertTrue(available.showChallengeButton(),
+                "the duel button should show when the duel can currently start");
+        helper.assertFalse(coolingDown.showChallengeButton(),
+                "the duel button should hide for a currently ineligible villager");
+        helper.assertFalse(DuelAvailability.hidden().showChallengeButton(),
+                "the duel button should remain hidden when the feature is not visible");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void recordsAreIsolatedPerPlayerAndLossStreakRefuses(GameTestHelper helper) {
         DuelSavedData data = new DuelSavedData();
         UUID villager = UUID.randomUUID();
