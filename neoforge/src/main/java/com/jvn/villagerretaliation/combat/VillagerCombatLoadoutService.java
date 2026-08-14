@@ -49,6 +49,9 @@ public final class VillagerCombatLoadoutService {
     }
 
     private static boolean ensurePreferredWeapon(Villager villager, PartyWeaponPreference preference) {
+        if (com.jvn.villagerretaliation.party.PartyQuickCommandService.hasWeaponsUnequipped(villager)) {
+            return false;
+        }
         if (preference == PartyWeaponPreference.AUTO) {
             return false;
         }
@@ -67,11 +70,17 @@ public final class VillagerCombatLoadoutService {
     }
 
     static boolean equipCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
+        if (com.jvn.villagerretaliation.party.PartyQuickCommandService.hasWeaponsUnequipped(villager)) {
+            return false;
+        }
         return villager != null && predicate != null && tryEquip(villager, predicate);
     }
 
     static boolean hasCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
         if (villager == null || predicate == null || VillagerInventoryAccess.hasOpenInventory(villager)) {
+            return false;
+        }
+        if (com.jvn.villagerretaliation.party.PartyQuickCommandService.hasWeaponsUnequipped(villager)) {
             return false;
         }
         if (predicate.test(villager.getMainHandItem())) {

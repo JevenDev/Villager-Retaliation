@@ -365,18 +365,32 @@ public final class PartyQuickCommandWheel {
     }
 
     private static List<WheelEntry> entries() {
-        var roster = PartyRosterClient.roster();
-        if (commandedVillagerId != null
-                || !roster.mountFeatureAvailable()
-                || roster.villagers().stream().noneMatch(villager ->
-                        villager.quickCommandsEnabled() && villager.assignedMount())) {
-            return BASE_ENTRIES;
-        }
         List<WheelEntry> entries = new ArrayList<>(BASE_ENTRIES);
-        entries.add(entry(roster.mountMode()
-                ? PartyQuickCommand.DISMOUNT_MOUNT
-                : PartyQuickCommand.RIDE_MOUNT, Items.SADDLE));
+        List<PartyRosterSyncPayload.VillagerEntry> targets = selectedCommandTargets();
+        if (!targets.isEmpty()) {
+            boolean allUnequipped = targets.stream()
+                    .allMatch(PartyRosterSyncPayload.VillagerEntry::weaponsUnequipped);
+            entries.add(entry(allUnequipped
+                    ? PartyQuickCommand.REEQUIP_WEAPONS
+                    : PartyQuickCommand.UNEQUIP_WEAPONS, Items.IRON_SWORD));
+        }
+        var roster = PartyRosterClient.roster();
+        if (commandedVillagerId == null
+                && roster.mountFeatureAvailable()
+                && roster.villagers().stream().anyMatch(villager ->
+                        villager.quickCommandsEnabled() && villager.assignedMount())) {
+            entries.add(entry(roster.mountMode()
+                    ? PartyQuickCommand.DISMOUNT_MOUNT
+                    : PartyQuickCommand.RIDE_MOUNT, Items.SADDLE));
+        }
         return entries;
+    }
+
+    private static List<PartyRosterSyncPayload.VillagerEntry> selectedCommandTargets() {
+        return commandableVillagers().stream()
+                .filter(villager -> commandedVillagerId == null
+                        || villager.villagerId().equals(commandedVillagerId))
+                .toList();
     }
 
     private static void cycleCommandTarget(int delta) {

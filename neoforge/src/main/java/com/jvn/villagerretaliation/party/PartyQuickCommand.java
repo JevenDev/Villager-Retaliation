@@ -11,6 +11,8 @@ public enum PartyQuickCommand {
     HEAL,
     PICK_UP_DROPS,
     LOOT_CONTAINERS,
+    UNEQUIP_WEAPONS,
+    REEQUIP_WEAPONS,
     RIDE_MOUNT,
     DISMOUNT_MOUNT
 }

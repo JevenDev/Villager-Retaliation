@@ -591,6 +591,9 @@ public final class HiredJobInventory implements Container {
                 continue;
             }
             ItemStack stack = getItem(slot);
+            if (stowedPartyVillagerWeapon(stack)) {
+                continue;
+            }
             if (!stack.isEmpty() && predicate.test(stack)) {
                 return stack;
             }
@@ -606,6 +609,9 @@ public final class HiredJobInventory implements Container {
                 continue;
             }
             ItemStack stack = this.items.get(slot);
+            if (stowedPartyVillagerWeapon(stack)) {
+                continue;
+            }
             if (stack.isEmpty() || !predicate.test(stack)) {
                 continue;
             }
@@ -1637,6 +1643,13 @@ public final class HiredJobInventory implements Container {
         if (current.isEmpty() || isCurrentJobEquipment(current, previousJobStack)) {
             VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, ItemStack.EMPTY);
         }
+    }
+
+    private boolean stowedPartyVillagerWeapon(ItemStack stack) {
+        return com.jvn.villagerretaliation.party.PartyQuickCommandService.hasWeaponsUnequipped(this.villager)
+                && !stack.isEmpty()
+                && com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
+                        .isUsableWeapon(stack);
     }
 
     private boolean maintainEquipmentAuthority() {

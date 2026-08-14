@@ -270,6 +270,7 @@ public final class PartyGameTests {
         helper.assertValueEqual(record.weaponPreference(), PartyWeaponPreference.AUTO,
                 "legacy/default weapon preference should be AUTO");
         record.setWeaponPreference(PartyWeaponPreference.RANGED);
+        record.setWeaponsUnequipped(true);
         UUID moveCommanderId = UUID.randomUUID();
         record.setStaying(Level.OVERWORLD.location(), new BlockPos(8, 64, 3));
         record.setMoveToReturnCommander(moveCommanderId);
@@ -280,6 +281,8 @@ public final class PartyGameTests {
         PartyVillagerRecord loaded = PartyVillagerRecord.load(record.save());
         helper.assertValueEqual(loaded.weaponPreference(), PartyWeaponPreference.RANGED,
                 "weapon preference should survive party record serialization");
+        helper.assertTrue(loaded.weaponsUnequipped(),
+                "per-villager stowed weapon state should survive party record serialization");
         helper.assertTrue(loaded.regrouping(),
                 "regroup acquisition suppression should survive unload/reload");
         helper.assertValueEqual(loaded.moveToReturnCommanderId(), moveCommanderId,
@@ -291,10 +294,13 @@ public final class PartyGameTests {
 
         CompoundTag legacy = record.save();
         legacy.remove("WeaponPreference");
+        legacy.remove("WeaponsUnequipped");
         legacy.remove("Regrouping");
         PartyVillagerRecord legacyLoaded = PartyVillagerRecord.load(legacy);
         helper.assertValueEqual(legacyLoaded.weaponPreference(), PartyWeaponPreference.AUTO,
                 "missing legacy preference should migrate to AUTO");
+        helper.assertFalse(legacyLoaded.weaponsUnequipped(),
+                "legacy records should begin with weapons equipped");
         helper.assertFalse(legacyLoaded.regrouping(),
                 "legacy records should not begin with target suppression");
         helper.succeed();
@@ -1060,6 +1066,71 @@ public final class PartyGameTests {
                 "an individually targeted villager should receive the quick command");
         helper.assertValueEqual(otherRecord.weaponPreference(), PartyWeaponPreference.AUTO,
                 "other enabled party villagers must not receive an individual quick command");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        selected.discard();
+        other.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void quickCommandsStowAndRestoreWeaponsPerVillager(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_weapon_stow"));
+        Villager selected = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager other = spawnVillager(helper, new BlockPos(4, 2, 2));
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord selectedRecord = villagerRecord(selected.getUUID(), leader.getUUID(), 0, now);
+        PartyVillagerRecord otherRecord = villagerRecord(other.getUUID(), leader.getUUID(), 1, now);
+        PartySavedData.get(level).addVillager(party, selectedRecord);
+        PartySavedData.get(level).addVillager(party, otherRecord);
+
+        HiredJobInventory selectedInventory = HiredJobInventory.getJobInventory(selected);
+        selectedInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        selectedInventory.setItem(HiredJobInventory.OFFHAND_SLOT, new ItemStack(Items.SHIELD));
+        HiredJobInventory otherInventory = HiredJobInventory.getJobInventory(other);
+        otherInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.STONE_SWORD));
+
+        PartyQuickCommandService.handle(leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.UNEQUIP_WEAPONS,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        null,
+                        selected.getUUID()));
+
+        helper.assertTrue(selected.getMainHandItem().isEmpty() && selected.getOffhandItem().isEmpty(),
+                "the selected villager should put both weapon and shield away");
+        helper.assertTrue(selectedRecord.weaponsUnequipped(),
+                "the selected villager should retain an individual re-equip state");
+        helper.assertTrue(selectedInventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.IRON_SWORD)
+                        && selectedInventory.getItem(HiredJobInventory.HOTBAR_START + 1).is(Items.SHIELD),
+                "stowed equipment should use party hotbar slots first");
+        helper.assertTrue(other.getMainHandItem().is(Items.STONE_SWORD)
+                        && !otherRecord.weaponsUnequipped(),
+                "an individual command must not alter another party villager");
+
+        selectedRecord.setWeaponPreference(PartyWeaponPreference.MELEE);
+        VillagerCombatLoadoutService.applyPreference(selected, PartyWeaponPreference.MELEE);
+        helper.assertTrue(selected.getMainHandItem().isEmpty(),
+                "combat loadout maintenance must respect the explicit unequip state");
+
+        PartyQuickCommandService.handle(leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.REEQUIP_WEAPONS,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        null,
+                        selected.getUUID()));
+
+        helper.assertTrue(selected.getMainHandItem().is(Items.IRON_SWORD)
+                        && selected.getOffhandItem().is(Items.SHIELD),
+                "re-equip should restore each stowed stack to its original hand");
+        helper.assertFalse(selectedRecord.weaponsUnequipped(),
+                "re-equipping all tracked stacks should clear the villager's stowed state");
+        helper.assertTrue(selectedInventory.getItem(HiredJobInventory.HOTBAR_START).isEmpty()
+                        && selectedInventory.getItem(HiredJobInventory.HOTBAR_START + 1).isEmpty(),
+                "re-equipped stacks should no longer occupy party hotbar slots");
 
         PartyService.deleteParty(level, party.id());
         PartyQuickCommandService.clearRuntimeState();

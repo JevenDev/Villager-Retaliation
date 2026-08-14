@@ -102,6 +102,8 @@ public final class PartyQuickCommandService {
             case HEAL -> heal(player, participants);
             case PICK_UP_DROPS -> pickUpDrops(player, participants);
             case LOOT_CONTAINERS -> lootContainers(player, participants, payload.targetPosition());
+            case UNEQUIP_WEAPONS -> unequipWeapons(player, participants);
+            case REEQUIP_WEAPONS -> reequipWeapons(player, participants);
             case RIDE_MOUNT -> setMountMode(player, party, participants, true);
             case DISMOUNT_MOUNT -> setMountMode(player, party, participants, false);
         };
@@ -279,6 +281,16 @@ public final class PartyQuickCommandService {
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
         return record != null && record.quickCommandsEnabled() && record.regrouping();
+    }
+
+    public static boolean hasWeaponsUnequipped(Villager villager) {
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        return PartyService.getPartyForVillager(level, villager.getUUID())
+                .map(party -> party.villager(villager.getUUID()))
+                .map(PartyVillagerRecord::weaponsUnequipped)
+                .orElse(false);
     }
 
     private static int setMountMode(
@@ -676,6 +688,48 @@ public final class PartyQuickCommandService {
         return affected;
     }
 
+    private static int unequipWeapons(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            if (record.weaponsUnequipped()) {
+                continue;
+            }
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
+            if (villager == null || !villager.isAlive()) {
+                continue;
+            }
+            int stowed = PartyWeaponEquipmentService.unequip(villager);
+            if (stowed > 0) {
+                clearStandGuard(villager);
+                VillagerRetaliationHandler.clearCustomTarget(villager);
+                MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+                record.setWeaponsUnequipped(true);
+                affected++;
+            }
+        }
+        return affected;
+    }
+
+    private static int reequipWeapons(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            if (!record.weaponsUnequipped()) {
+                continue;
+            }
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
+            if (villager == null || !villager.isAlive()) {
+                continue;
+            }
+            int equipped = PartyWeaponEquipmentService.reequip(villager);
+            boolean stillStowed = PartyWeaponEquipmentService.hasStowedWeapons(villager);
+            if (equipped > 0 || record.weaponsUnequipped() != stillStowed) {
+                record.setWeaponsUnequipped(stillStowed);
+                affected++;
+            }
+        }
+        return affected;
+    }
+
     private static int heal(ServerPlayer player, List<PartyVillagerRecord> records) {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
@@ -698,6 +752,7 @@ public final class PartyQuickCommandService {
 
     private static int standGuard(ServerPlayer player, List<PartyVillagerRecord> records) {
         List<Villager> loaded = records.stream()
+                .filter(record -> !record.weaponsUnequipped())
                 .map(record -> VillagerEntityResolver.active(player.serverLevel(), record.villagerId()))
                 .filter(java.util.Objects::nonNull)
                 .toList();
