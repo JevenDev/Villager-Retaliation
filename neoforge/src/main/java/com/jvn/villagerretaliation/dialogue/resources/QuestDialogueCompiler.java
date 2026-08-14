@@ -264,6 +264,7 @@ public final class QuestDialogueCompiler {
         }
         copyArrayIfPresent(scene.data(), node, "actions");
         copyArrayIfPresent(scene.data(), node, "conditions");
+        copyIfPresent(scene.data(), node, "end");
         JsonArray responses = responseArray(
                 resource,
                 stageId,
@@ -299,6 +300,8 @@ public final class QuestDialogueCompiler {
                 object.addProperty("request", request);
             }
             copyIfPresent(response.data(), object, "order");
+            copyIfPresent(response.data(), object, "priority");
+            copyIfPresent(response.data(), object, "end");
             object.add("metadata", metadata(
                     resource,
                     stageId,
@@ -392,6 +395,7 @@ public final class QuestDialogueCompiler {
         copyIfPresent(entryData, entry, "request");
         copyIfPresent(entryData, entry, "show_for_babies");
         copyIfPresent(entryData, entry, "order");
+        copyIfPresent(entryData, entry, "priority");
         copyArrayIfPresent(entryData, entry, "conditions");
         entries.add(entry);
     }

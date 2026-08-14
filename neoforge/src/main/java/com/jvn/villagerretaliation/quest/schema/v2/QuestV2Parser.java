@@ -232,6 +232,7 @@ public final class QuestV2Parser {
             "request",
             "show_for_babies",
             "order",
+            "priority",
             "text",
             "text_key",
             "lines",
@@ -246,6 +247,7 @@ public final class QuestV2Parser {
             "request",
             "show_for_babies",
             "order",
+            "priority",
             "text",
             "text_key",
             "lines",
@@ -253,6 +255,7 @@ public final class QuestV2Parser {
             "actions",
             "conditions",
             "next",
+            "end",
             "transition",
             "external",
             "external_scene",
@@ -285,6 +288,8 @@ public final class QuestV2Parser {
             "fail",
             "request",
             "order",
+            "priority",
+            "end",
             "metadata");
     private static final Set<String> TRANSITION_KEYS = Set.of(
             "stage",

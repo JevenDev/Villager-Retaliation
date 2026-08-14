@@ -55,8 +55,11 @@ public final class DialogueTreeResources {
                 .filter(tree -> tree.matches(context))
                 .flatMap(tree -> tree.entries().stream()
                         .filter(entry -> entry.matches(context, disposition))
-                        .map(entry -> entry.toOption(tree.id())))
-                .sorted(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id))
+                        .map(entry -> new RankedOption(entry.toOption(tree.id()), entry.priority())))
+                .sorted(Comparator.comparingInt(RankedOption::priority).reversed()
+                        .thenComparingInt(value -> value.option().order())
+                        .thenComparing(value -> value.option().id()))
+                .map(RankedOption::option)
                 .toList();
     }
 
@@ -321,7 +324,8 @@ public final class DialogueTreeResources {
                         readDispositions(entry),
                         DialogueCondition.readList(location, context, entry, entryQuestId),
                         DatapackJsonReader.readBoolean(entry, "force_camera_towards_villager"),
-                        DatapackJsonReader.readInt(entry, "order", index)
+                        DatapackJsonReader.readInt(entry, "order", index),
+                        DatapackJsonReader.readInt(entry, "priority", 0)
                 ));
             }
             index++;
@@ -411,7 +415,8 @@ public final class DialogueTreeResources {
                         VillagerActionDefinition.readList(location, responseContext, response, responseQuestId),
                         DialogueCondition.readList(location, responseContext, response, responseQuestId),
                         DatapackJsonReader.readBoolean(response, "end", false),
-                        DatapackJsonReader.readInt(response, "order", index)
+                        DatapackJsonReader.readInt(response, "order", index),
+                        DatapackJsonReader.readInt(response, "priority", 0)
                 ));
             }
             index++;
@@ -520,6 +525,9 @@ public final class DialogueTreeResources {
     }
 
     private record TreeSource(ResourceLocation location, boolean builtInModResource) {
+    }
+
+    private record RankedOption(DialogueOptionDefinition option, int priority) {
     }
 
     private record CachedTrees(MinecraftServer server, Map<String, LoadedTrees> treesByLocale) {

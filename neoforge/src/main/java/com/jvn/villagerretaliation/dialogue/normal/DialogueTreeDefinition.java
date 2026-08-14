@@ -61,7 +61,8 @@ public record DialogueTreeDefinition(
             Set<DialogueDisposition> dispositions,
             List<DialogueCondition> conditions,
             boolean forceCameraTowardsVillager,
-            int order
+            int order,
+            int priority
     ) {
         public Entry {
             id = id == null || id.isBlank() ? "default" : id;
@@ -72,6 +73,15 @@ public record DialogueTreeDefinition(
             professions = professions == null ? Set.of() : Set.copyOf(professions);
             dispositions = dispositions == null ? Set.of() : Set.copyOf(dispositions);
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
+        }
+
+        public Entry(
+                String id, String label, DialogueEntryMetadata metadata, String start, DialogueRequestType requestType,
+                boolean showForAdults, boolean showForBabies, Set<VillagerProfession> professions,
+                Set<DialogueDisposition> dispositions, List<DialogueCondition> conditions,
+                boolean forceCameraTowardsVillager, int order) {
+            this(id, label, metadata, start, requestType, showForAdults, showForBabies, professions, dispositions,
+                    conditions, forceCameraTowardsVillager, order, 0);
         }
 
         public boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -146,7 +156,8 @@ public record DialogueTreeDefinition(
             List<VillagerActionDefinition> actions,
             List<DialogueCondition> conditions,
             boolean end,
-            int order
+            int order,
+            int priority
     ) {
         public Response {
             id = id == null || id.isBlank() ? "response" : id;
@@ -157,6 +168,13 @@ public record DialogueTreeDefinition(
             lines = lines == null ? List.of() : List.copyOf(lines);
             actions = actions == null ? List.of() : List.copyOf(actions);
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
+        }
+
+        public Response(
+                String id, String label, DialogueEntryMetadata metadata, String next, DialogueRequestType requestType,
+                List<String> lines, List<VillagerActionDefinition> actions, List<DialogueCondition> conditions,
+                boolean end, int order) {
+            this(id, label, metadata, next, requestType, lines, actions, conditions, end, order, 0);
         }
 
         public boolean matches(DialogueContext context) {
