@@ -1533,15 +1533,27 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void emptyHungerStarvesVillagersLikePlayers(GameTestHelper helper) {
+    public static void villagerStarvationDamageRespectsConfig(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Difficulty previousDifficulty = level.getDifficulty();
+        boolean previousStarvationDamage =
+                VillagerRetaliationConfig.ENABLE_VILLAGER_STARVATION_DAMAGE.get();
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         try {
             level.getServer().setDifficulty(Difficulty.NORMAL, true);
             setRecoveryState(villager, 0, 0.0F);
             float initialHealth = villager.getHealth();
 
+            VillagerRetaliationConfig.ENABLE_VILLAGER_STARVATION_DAMAGE.set(false);
+            for (int tick = 0; tick < 80; tick++) {
+                VillagerRecoveryService.onVillagerTickPost(villager);
+            }
+            helper.assertValueEqual(
+                    villager.getHealth(),
+                    initialHealth,
+                    "disabled starvation damage should leave an empty villager's health unchanged");
+
+            VillagerRetaliationConfig.ENABLE_VILLAGER_STARVATION_DAMAGE.set(true);
             for (int tick = 0; tick < 80; tick++) {
                 VillagerRecoveryService.onVillagerTickPost(villager);
             }
@@ -1549,8 +1561,9 @@ public final class VillagerGameplayGameTests {
             helper.assertValueEqual(
                     villager.getHealth(),
                     initialHealth - 1.0F,
-                    "a villager at zero hunger should take player-equivalent starvation damage");
+                    "enabled starvation damage should hurt an empty villager like a player");
         } finally {
+            VillagerRetaliationConfig.ENABLE_VILLAGER_STARVATION_DAMAGE.set(previousStarvationDamage);
             level.getServer().setDifficulty(previousDifficulty, true);
             VillagerRecoveryService.onVillagerUnloaded(villager);
             villager.discard();
