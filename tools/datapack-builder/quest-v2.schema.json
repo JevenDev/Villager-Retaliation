@@ -951,17 +951,32 @@
           "type": "string"
         },
         "items": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "array",
-              "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
                 "type": "string"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "tag": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "weight": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
               }
-            }
-          ]
+            ]
+          }
         },
         "item_tags": {
           "oneOf": [
@@ -1117,6 +1132,12 @@
                 "type": "string"
               }
             }
+          ]
+        },
+        "selection": {
+          "type": "string",
+          "enum": [
+            "random"
           ]
         },
         "components": {

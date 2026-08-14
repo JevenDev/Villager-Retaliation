@@ -287,7 +287,9 @@ public record QuestDefinition(
             boolean consume,
             ItemRequirements itemRequirements,
             List<DialogueCondition> conditions,
-            ObjectiveTracker tracker
+            ObjectiveTracker tracker,
+            List<ItemSelectionEntry> itemSelections,
+            ItemSelectionMode itemSelectionMode
     ) {
         public Objective {
             id = id == null || id.isBlank() ? "objective" : id;
@@ -313,6 +315,8 @@ public record QuestDefinition(
             itemRequirements = itemRequirements == null ? ItemRequirements.EMPTY : itemRequirements;
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
             tracker = tracker == null ? ObjectiveTracker.EMPTY : tracker;
+            itemSelections = itemSelections == null ? List.of() : List.copyOf(itemSelections);
+            itemSelectionMode = itemSelectionMode == null ? ItemSelectionMode.FIXED : itemSelectionMode;
         }
 
         public Objective(
@@ -351,7 +355,79 @@ public record QuestDefinition(
             this(id, type, optional, structure, dimension, location, radius, pieces, searchRadius, discoveryRadius,
                     item, entityTypes, entityTags, blockTypes, blockTags, memoryTags, giftReactions,
                     reputationLevels, minReputation, maxReputation, factScope, factQuestId, factTags, factKey,
-                    factValues, factMin, factMax, null, Map.of(), count, consume, itemRequirements, conditions, tracker);
+                    factValues, factMin, factMax, null, Map.of(), count, consume, itemRequirements, conditions, tracker,
+                    List.of(), ItemSelectionMode.FIXED);
+        }
+
+        public Objective(
+                String id,
+                ObjectiveType type,
+                boolean optional,
+                ResourceLocation structure,
+                ResourceKey<Level> dimension,
+                BlockPos location,
+                int radius,
+                List<String> pieces,
+                int searchRadius,
+                int discoveryRadius,
+                ResourceLocation item,
+                Set<ResourceLocation> entityTypes,
+                Set<ResourceLocation> entityTags,
+                Set<ResourceLocation> blockTypes,
+                Set<ResourceLocation> blockTags,
+                Set<ResourceLocation> memoryTags,
+                Set<String> giftReactions,
+                Set<VillagerReputationLevel> reputationLevels,
+                Integer minReputation,
+                Integer maxReputation,
+                QuestFactScope factScope,
+                ResourceLocation factQuestId,
+                Set<ResourceLocation> factTags,
+                String factKey,
+                Set<String> factValues,
+                Integer factMin,
+                Integer factMax,
+                ResourceLocation criterion,
+                Map<String, String> criterionData,
+                int count,
+                boolean consume,
+                ItemRequirements itemRequirements,
+                List<DialogueCondition> conditions,
+                ObjectiveTracker tracker) {
+            this(id, type, optional, structure, dimension, location, radius, pieces, searchRadius, discoveryRadius,
+                    item, entityTypes, entityTags, blockTypes, blockTags, memoryTags, giftReactions,
+                    reputationLevels, minReputation, maxReputation, factScope, factQuestId, factTags, factKey,
+                    factValues, factMin, factMax, criterion, criterionData, count, consume, itemRequirements,
+                    conditions, tracker, List.of(), ItemSelectionMode.FIXED);
+        }
+
+        public boolean usesRandomItemSelection() {
+            return this.type == ObjectiveType.ITEM_CHECK
+                    && this.itemSelectionMode == ItemSelectionMode.RANDOM
+                    && !this.itemSelections.isEmpty();
+        }
+    }
+
+    public record ItemSelectionEntry(
+            ResourceLocation item,
+            ResourceLocation tag,
+            int weight
+    ) {
+        public ItemSelectionEntry {
+            weight = Math.max(1, weight);
+        }
+
+        public boolean isTag() {
+            return this.tag != null;
+        }
+    }
+
+    public enum ItemSelectionMode {
+        FIXED,
+        RANDOM;
+
+        public static ItemSelectionMode bySerializedName(String value) {
+            return "random".equalsIgnoreCase(value == null ? "" : value.trim()) ? RANDOM : FIXED;
         }
     }
 

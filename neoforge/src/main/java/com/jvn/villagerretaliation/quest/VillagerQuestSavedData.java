@@ -31,7 +31,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 3;
+    public static final int CURRENT_DATA_VERSION = 4;
     public static final int MAX_QUEST_RECORDS_PER_PLAYER = 1024;
     public static final int MAX_CHOICE_HISTORY = 256;
     public static final int MAX_COMPLETION_HISTORY = 128;
@@ -70,11 +70,13 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_CURRENT_STAGE = "CurrentStage";
     private static final String TAG_COMPLETED_OBJECTIVES = "CompletedObjectives";
     private static final String TAG_OBJECTIVE_COUNTERS = "ObjectiveCounters";
+    private static final String TAG_RESOLVED_OBJECTIVE_ITEMS = "ResolvedObjectiveItems";
     private static final String TAG_CLAIMED_BONUSES = "ClaimedBonuses";
     private static final String TAG_DEFINITION_REVISION = "DefinitionRevision";
     private static final String TAG_LAST_REVISION_POLICY = "LastRevisionPolicy";
     private static final String TAG_LAST_REVISION_TIME = "LastRevisionGameTime";
     private static final String TAG_OBJECTIVE = "Objective";
+    private static final String TAG_ITEM = "Item";
     private static final String TAG_COUNT = "Count";
     private static final String TAG_START_COUNT = "StartCount";
     private static final String TAG_COMPLETION_COUNT = "CompletionCount";
@@ -597,6 +599,7 @@ public class VillagerQuestSavedData extends SavedData {
         private String currentStage = "";
         private final java.util.Set<String> completedObjectives = new java.util.HashSet<>();
         private final Map<String, Integer> objectiveCounters = new HashMap<>();
+        private final Map<String, ResourceLocation> resolvedObjectiveItems = new HashMap<>();
         private final Set<String> claimedBonuses = new LinkedHashSet<>();
         private int definitionRevision;
         private String lastRevisionPolicy = "";
@@ -665,6 +668,20 @@ public class VillagerQuestSavedData extends SavedData {
                     String objectiveId = counterTag.getString(TAG_OBJECTIVE);
                     if (!objectiveId.isBlank()) {
                         progress.objectiveCounters.put(objectiveId, Math.max(0, counterTag.getInt(TAG_COUNT)));
+                    }
+                }
+            }
+            if (tag.contains(TAG_RESOLVED_OBJECTIVE_ITEMS, Tag.TAG_LIST)) {
+                for (Tag rawSelection : tag.getList(TAG_RESOLVED_OBJECTIVE_ITEMS, Tag.TAG_COMPOUND)) {
+                    if (!(rawSelection instanceof CompoundTag selectionTag)
+                            || !selectionTag.contains(TAG_OBJECTIVE, Tag.TAG_STRING)
+                            || !selectionTag.contains(TAG_ITEM, Tag.TAG_STRING)) {
+                        continue;
+                    }
+                    String objectiveId = selectionTag.getString(TAG_OBJECTIVE);
+                    ResourceLocation itemId = ResourceLocation.tryParse(selectionTag.getString(TAG_ITEM));
+                    if (!objectiveId.isBlank() && itemId != null) {
+                        progress.resolvedObjectiveItems.put(objectiveId, itemId);
                     }
                 }
             }
@@ -790,6 +807,18 @@ public class VillagerQuestSavedData extends SavedData {
                     countersTag.add(counterTag);
                 }
                 tag.put(TAG_OBJECTIVE_COUNTERS, countersTag);
+            }
+            if (!this.resolvedObjectiveItems.isEmpty()) {
+                ListTag selectionsTag = new ListTag();
+                this.resolvedObjectiveItems.entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .forEach(entry -> {
+                            CompoundTag selectionTag = new CompoundTag();
+                            selectionTag.putString(TAG_OBJECTIVE, entry.getKey());
+                            selectionTag.putString(TAG_ITEM, entry.getValue().toString());
+                            selectionsTag.add(selectionTag);
+                        });
+                tag.put(TAG_RESOLVED_OBJECTIVE_ITEMS, selectionsTag);
             }
             if (!this.claimedBonuses.isEmpty()) {
                 tag.put(TAG_CLAIMED_BONUSES, NbtDataUtil.stringList(this.claimedBonuses));
@@ -1084,6 +1113,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.triggerTimes.clear();
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
+            this.resolvedObjectiveItems.clear();
             this.claimedBonuses.clear();
             this.lastRevisionPolicy = "";
             this.lastRevisionGameTime = -1L;
@@ -1345,6 +1375,27 @@ public class VillagerQuestSavedData extends SavedData {
             if (counter != null) {
                 this.objectiveCounters.merge(nextId, counter, Math::max);
             }
+            ResourceLocation resolvedItem = this.resolvedObjectiveItems.remove(previousId);
+            if (resolvedItem != null) {
+                this.resolvedObjectiveItems.putIfAbsent(nextId, resolvedItem);
+            }
+        }
+
+        public ResourceLocation resolvedObjectiveItem(String objectiveId) {
+            return objectiveId == null || objectiveId.isBlank()
+                    ? null
+                    : this.resolvedObjectiveItems.get(objectiveId);
+        }
+
+        public boolean resolveObjectiveItem(String objectiveId, ResourceLocation itemId) {
+            if (objectiveId == null || objectiveId.isBlank() || itemId == null) {
+                return false;
+            }
+            ResourceLocation existing = this.resolvedObjectiveItems.putIfAbsent(objectiveId, itemId);
+            if (existing != null && !existing.equals(itemId)) {
+                throw new IllegalStateException("resolved quest objective item cannot change during a run");
+            }
+            return existing == null;
         }
 
         public void resetObjectiveProgress(Set<String> objectiveIds) {

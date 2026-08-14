@@ -45,6 +45,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.tags.TagKey;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ByteTag;
@@ -59,6 +60,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
 public final class VillagerQuestResources {
@@ -750,6 +753,10 @@ public final class VillagerQuestResources {
         ResourceKey<Level> dimension = readDimension(entry);
         BlockPos objectiveLocation = readLocation(entry);
         ResourceLocation item = DatapackJsonReader.readResourceLocation(entry, "item").orElse(null);
+        ItemSelection itemSelection = readItemSelection(location, context, entry, type, item);
+        if (!itemSelection.valid()) {
+            return Optional.empty();
+        }
         EntitySelectors entitySelectors = readEntitySelectors(location, context, entry);
         BlockSelectors blockSelectors = readBlockSelectors(location, context, entry);
         MemoryEventSelectors memoryEventSelectors = readMemoryEventSelectors(location, context, entry);
@@ -792,15 +799,160 @@ public final class VillagerQuestResources {
                 criterionData,
                 DatapackJsonReader.readInt(entry, "count", 1),
                 DatapackJsonReader.readBoolean(entry, "consume", true),
-                readObjectiveItemRequirements(entry, registries),
+                readObjectiveItemRequirements(entry, registries, itemSelection.entries()),
                 conditions,
-                readObjectiveTracker(entry));
+                readObjectiveTracker(entry),
+                itemSelection.entries(),
+                itemSelection.mode());
         Optional<String> registryValidation = QuestObjectiveRegistry.validationError(objective);
         if (registryValidation.isPresent()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, registryValidation.get());
             return Optional.empty();
         }
         return Optional.of(objective);
+    }
+
+    private static ItemSelection readItemSelection(
+            ResourceLocation location,
+            String context,
+            JsonObject objective,
+            QuestDefinition.ObjectiveType type,
+            ResourceLocation fixedItem) {
+        String selection = DatapackJsonReader.readString(objective, "selection").trim();
+        JsonElement items = objective.get("items");
+        boolean hasItems = items != null && !items.isJsonNull();
+        if (selection.isBlank() && !hasItems) {
+            return ItemSelection.fixed();
+        }
+        if (type != QuestDefinition.ObjectiveType.ITEM_CHECK) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "selection and items are only supported by item_check objectives.");
+            return ItemSelection.invalid();
+        }
+        if (!"random".equalsIgnoreCase(selection)) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "items requires selection to be random.");
+            return ItemSelection.invalid();
+        }
+        if (fixedItem != null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "random item_check objectives cannot combine item with items.");
+            return ItemSelection.invalid();
+        }
+        if (items == null || !items.isJsonArray() || items.getAsJsonArray().isEmpty()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "random item_check objectives require a non-empty items array.");
+            return ItemSelection.invalid();
+        }
+
+        List<QuestDefinition.ItemSelectionEntry> entries = new ArrayList<>();
+        int index = 0;
+        for (JsonElement element : items.getAsJsonArray()) {
+            QuestDefinition.ItemSelectionEntry entry = readItemSelectionEntry(
+                    location, context + " items[" + index + "]", element);
+            if (entry == null) {
+                return ItemSelection.invalid();
+            }
+            entries.add(entry);
+            index++;
+        }
+        return new ItemSelection(List.copyOf(entries), QuestDefinition.ItemSelectionMode.RANDOM, true);
+    }
+
+    private static QuestDefinition.ItemSelectionEntry readItemSelectionEntry(
+            ResourceLocation location,
+            String context,
+            JsonElement element) {
+        String itemValue = "";
+        String tagValue = "";
+        int weight = 1;
+        if (element != null && element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            String value = element.getAsString().trim();
+            if (value.startsWith("#")) {
+                tagValue = value.substring(1).trim();
+            } else {
+                itemValue = value;
+            }
+        } else if (element != null && element.isJsonObject()) {
+            JsonObject object = element.getAsJsonObject();
+            for (String key : object.keySet()) {
+                if (!Set.of("item", "tag", "weight").contains(key)) {
+                    DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location, context, "unsupported random item entry field: " + key);
+                    return null;
+                }
+            }
+            itemValue = DatapackJsonReader.readString(object, "item").trim();
+            tagValue = DatapackJsonReader.readString(object, "tag").trim();
+            if (tagValue.startsWith("#")) {
+                tagValue = tagValue.substring(1).trim();
+            }
+            JsonElement rawWeight = object.get("weight");
+            if (rawWeight != null) {
+                if (!rawWeight.isJsonPrimitive() || !rawWeight.getAsJsonPrimitive().isNumber()) {
+                    DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location, context, "weight must be a positive integer.");
+                    return null;
+                }
+                double numericWeight = rawWeight.getAsDouble();
+                if (!Double.isFinite(numericWeight) || numericWeight < 1.0D || numericWeight != Math.rint(numericWeight)
+                        || numericWeight > Integer.MAX_VALUE) {
+                    DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location, context, "weight must be a positive integer.");
+                    return null;
+                }
+                weight = (int) numericWeight;
+            }
+        } else {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "entry must be an item/tag string or an object.");
+            return null;
+        }
+
+        if (itemValue.isBlank() == tagValue.isBlank()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "entry must define exactly one of item or tag.");
+            return null;
+        }
+        if (!itemValue.isBlank()) {
+            ResourceLocation itemId = ResourceLocation.tryParse(itemValue);
+            if (itemId == null || BuiltInRegistries.ITEM.getOptional(itemId).filter(item -> item != Items.AIR).isEmpty()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(
+                        location, context, "unknown item: " + itemValue);
+                return null;
+            }
+            return new QuestDefinition.ItemSelectionEntry(itemId, null, weight);
+        }
+
+        ResourceLocation tagId = ResourceLocation.tryParse(tagValue);
+        if (tagId == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "invalid item tag: " + tagValue);
+            return null;
+        }
+        TagKey<Item> tag = TagKey.create(Registries.ITEM, tagId);
+        boolean populated = BuiltInRegistries.ITEM.getTag(tag)
+                .map(values -> values.stream().anyMatch(holder -> holder.value() != Items.AIR))
+                .orElse(false);
+        if (!populated) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "item tag is missing or empty: " + tagValue);
+            return null;
+        }
+        return new QuestDefinition.ItemSelectionEntry(null, tagId, weight);
+    }
+
+    private record ItemSelection(
+            List<QuestDefinition.ItemSelectionEntry> entries,
+            QuestDefinition.ItemSelectionMode mode,
+            boolean valid) {
+        private static ItemSelection fixed() {
+            return new ItemSelection(List.of(), QuestDefinition.ItemSelectionMode.FIXED, true);
+        }
+
+        private static ItemSelection invalid() {
+            return new ItemSelection(List.of(), QuestDefinition.ItemSelectionMode.FIXED, false);
+        }
     }
 
     private static Map<String, String> readCriterionData(
@@ -1060,7 +1212,9 @@ public final class VillagerQuestResources {
     }
 
     private static QuestDefinition.ItemRequirements readObjectiveItemRequirements(
-            JsonObject entry, HolderLookup.Provider registries) {
+            JsonObject entry,
+            HolderLookup.Provider registries,
+            List<QuestDefinition.ItemSelectionEntry> selections) {
         OptionalInt minEnchantmentLevel = readOptionalInt(entry, "min_enchantment_level");
         OptionalInt maxEnchantmentLevel = readOptionalInt(entry, "max_enchantment_level");
         List<QuestDefinition.EnchantmentRequirement> enchantments = new ArrayList<>();
@@ -1079,10 +1233,26 @@ public final class VillagerQuestResources {
             predicateEntry.add("durability", durability);
         }
         ResourceLocation itemId = DatapackJsonReader.readResourceLocation(entry, "item").orElse(null);
+        List<Item> predicateItems = new ArrayList<>(itemId == null
+                ? List.of()
+                : BuiltInRegistries.ITEM.getOptional(itemId).stream().toList());
+        for (QuestDefinition.ItemSelectionEntry selection : selections == null
+                ? List.<QuestDefinition.ItemSelectionEntry>of()
+                : selections) {
+            if (selection.item() != null) {
+                BuiltInRegistries.ITEM.getOptional(selection.item()).ifPresent(predicateItems::add);
+            } else if (selection.tag() != null) {
+                BuiltInRegistries.ITEM.getTag(TagKey.create(Registries.ITEM, selection.tag()))
+                        .ifPresent(values -> values.stream()
+                                .map(holder -> holder.value())
+                                .filter(candidate -> candidate != Items.AIR)
+                                .forEach(predicateItems::add));
+            }
+        }
         ItemStackPredicate stackPredicate = ItemStackPredicateParser.parse(
                 registries,
                 predicateEntry,
-                itemId == null ? List.of() : BuiltInRegistries.ITEM.getOptional(itemId).stream().toList(),
+                predicateItems.stream().distinct().toList(),
                 "components",
                 "durability",
                 "custom_data",

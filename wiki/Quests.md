@@ -580,6 +580,52 @@ This module records a route choice, moves to the chosen stage, and completes fro
 }
 ```
 
+## Random Item Objectives
+
+The existing fixed selector remains unchanged:
+
+```json
+{
+  "type": "item_check",
+  "item": "minecraft:bread",
+  "count": 8
+}
+```
+
+To choose one required item when a quest run starts, set `selection` to `random` and provide a non-empty `items` array. A string beginning with `#` expands the current item tag:
+
+```json
+{
+  "type": "item_check",
+  "items": [
+    "minecraft:wheat",
+    "minecraft:sugar_cane",
+    "#c:tools"
+  ],
+  "selection": "random",
+  "count": 8
+}
+```
+
+Entries may be weighted. The default weight is `1`:
+
+```json
+{
+  "type": "item_check",
+  "items": [
+    { "item": "minecraft:wheat", "weight": 5 },
+    { "item": "minecraft:lava_bucket", "weight": 1 },
+    { "tag": "c:swords", "weight": 2 }
+  ],
+  "selection": "random",
+  "count": 1
+}
+```
+
+Weights select an entry first. If the selected entry is a tag, one item is then chosen uniformly from that tag. A large tag therefore has the same entry probability as a one-item tag with the same weight. The resolved concrete item is stored in quest saved data and is not rerolled by reloads, reconnects, restarts, tracker refreshes, or objective checks. A new repeatable quest run resolves a new item.
+
+`{objective_item}` and `{objective_item_id}` display the resolved name and ID in objective tracker text, UI text, and quest dialogue. Item `components`, `durability`, enchantment, `custom_data`, and `nbt` requirements apply to the resolved item exactly as they do to a fixed `item`.
+
 ## Structure Target Example
 
 Root `target` fields define a structure search, discovery radius, and proof item. Stages can combine a visit objective with a proof-item objective.

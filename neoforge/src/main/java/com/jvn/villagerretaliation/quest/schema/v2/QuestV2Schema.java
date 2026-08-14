@@ -347,9 +347,11 @@ public final class QuestV2Schema {
         for (String key : new String[]{"item", "item_tag", "entity", "entity_tag", "block", "block_tag", "memory", "memory_tag", "quest", "quest_id", "tag"}) {
             properties.add(key, string());
         }
-        for (String key : new String[]{"items", "item_tags", "entities", "entity_tags", "blocks", "block_tags", "memory_tags", "gift_reactions", "reputation_levels", "tags", "values", "stages", "choices"}) {
+        properties.add("items", arrayOf(itemSelectionEntry()));
+        for (String key : new String[]{"item_tags", "entities", "entity_tags", "blocks", "block_tags", "memory_tags", "gift_reactions", "reputation_levels", "tags", "values", "stages", "choices"}) {
             properties.add(key, oneOrArray(string()));
         }
+        properties.add("selection", stringEnum(List.of("random")));
         properties.add("components", itemComponents());
         properties.add("durability", durability());
         properties.add("min_durability", nonNegativeInteger());
@@ -651,6 +653,16 @@ public final class QuestV2Schema {
         options.add(ref("#/$defs/transition"));
         schema.add("oneOf", options);
         return schema;
+    }
+
+    private static JsonObject itemSelectionEntry() {
+        JsonObject weighted = typedObject();
+        JsonObject properties = object();
+        properties.add("item", resourceLocation());
+        properties.add("tag", resourceLocation());
+        properties.add("weight", positiveInteger());
+        weighted.add("properties", properties);
+        return oneOf(string(), weighted);
     }
 
     private static JsonObject externalSceneRef() {

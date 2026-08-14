@@ -894,8 +894,8 @@ public final class QuestObjectiveRegistry {
 
         @Override
         public Optional<String> validationError(QuestDefinition.Objective objective) {
-            return objective.item() == null
-                    ? Optional.of("item_check objective must define item.")
+            return objective.item() == null && !objective.usesRandomItemSelection()
+                    ? Optional.of("item_check objective must define item or a non-empty random items selection.")
                     : Optional.empty();
         }
 
@@ -914,7 +914,7 @@ public final class QuestObjectiveRegistry {
 
         @Override
         public boolean requiresItemHandIn(QuestDefinition.Objective objective) {
-            return objective.consume() && objective.item() != null;
+            return objective.consume() && (objective.item() != null || objective.usesRandomItemSelection());
         }
     }
 }
