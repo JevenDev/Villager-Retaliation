@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
@@ -8,6 +9,8 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -171,6 +174,20 @@ public final class VillagerInteractionRoutingGameTests {
         helper.assertTrue(player.getInventory().getItem(0).is(Items.APPLE)
                         && player.getInventory().getItem(0).getCount() == 11,
                 "the unselected remainder should stay in the player's inventory");
+        helper.succeed();
+    }
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void constructionBlueprintOpeningAlwaysProvidesDialogue(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+        DialogueContext context = VillagerInteractionService.createDialogueContext(
+                helper.getLevel(), player, villager);
+
+        String opening = VillagerInteractionService.constructionBlueprintOpening(context);
+
+        helper.assertFalse(opening.isBlank(),
+                "opening a Builder blueprint interaction must provide dialogue alongside its options");
+        villager.discard();
         helper.succeed();
     }
 

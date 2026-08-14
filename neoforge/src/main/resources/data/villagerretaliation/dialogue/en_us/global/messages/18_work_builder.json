@@ -1206,6 +1206,32 @@
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.complete.043"
     },
     {
+      "key": "interaction.work.builder.blueprint_review",
+      "lines": [
+        "Let me look over that blueprint. How would you like to proceed?",
+        "I can work from this plan. Are you ready for me to start?",
+        "This blueprint is clear enough. Shall I begin the job?",
+        "I have reviewed the plan. Do you want construction to begin?",
+        "The site is marked on this blueprint. What would you like me to do?",
+        "I see the plan you brought. Should I start building it?",
+        "This is a workable design. Are we starting now?",
+        "I am ready to build from this blueprint when you are.",
+        "The plan is in order. Shall I take the job?",
+        "I can follow these markings. Do you want me to begin?",
+        "You brought me a complete blueprint. What is your decision?",
+        "I have the dimensions and materials here. Should I get started?",
+        "This plan tells me what I need. Are you hiring me to build it?",
+        "I have looked over the structure plan. Shall we proceed?",
+        "The blueprint is ready for construction. What comes next?",
+        "Everything I need is marked here. Do you want the job started?",
+        "I understand this design. Shall I put it into the ground?",
+        "This blueprint can become a real structure. Are you ready?",
+        "The plan checks out. Tell me whether to start.",
+        "I can take this from paper to stone. How would you like to proceed?"
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_review.044"
+    },
+    {
       "key": "interaction.work.builder.cancel_refund_unavailable",
       "lines": [
         "I cannot cancel yet because I have nowhere to return {cost}.",
