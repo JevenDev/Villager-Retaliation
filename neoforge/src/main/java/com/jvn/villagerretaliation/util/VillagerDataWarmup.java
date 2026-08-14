@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.allegiance.VillageNameResources;
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.dialogue.resources.BiomeStoryResources;
 import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
+import com.jvn.villagerretaliation.dialogue.resources.DialogueTuningResources;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources;
 import com.jvn.villagerretaliation.dialogue.forced.container.GeneratedContainerLootResources;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
@@ -46,6 +47,7 @@ public final class VillagerDataWarmup {
 
     public static void warm(MinecraftServer server) {
         VillagerDialogueResources.warm(server);
+        DialogueTuningResources.warm(server);
         DialogueTreeResources.warm(server);
         VillagerGiftResources.warm(server);
         ProfessionLootResources.warm(server);
@@ -91,6 +93,7 @@ public final class VillagerDataWarmup {
     public static void clearResourceCaches() {
         DatapackDiagnostics.clear();
         VillagerDialogueResources.clearCache();
+        DialogueTuningResources.clearCache();
         DialogueTreeResources.clearCache();
         VillagerGiftResources.clearCache();
         ProfessionLootResources.clearCache();

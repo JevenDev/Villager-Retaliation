@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue.normal;
 
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.resources.DialogueTuningResources;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
@@ -222,7 +223,7 @@ public final class DialogueReputationService {
         }
         if (!firstConversation) {
             return context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank()
-                    && context.random().nextInt(100) < 15
+                    && DialogueTuningResources.passes(context, "reputation.repeat_greeting_chance", 0.15D)
                     ? positive(VillagerRetaliationConfig.GREETING_REPUTATION_GAIN.get(), "greeting", occasionalPositiveResponse(context))
                     : PlannedEffect.none();
         }
@@ -233,8 +234,11 @@ public final class DialogueReputationService {
         if (context.reputationLevel().trustRank() < VillagerReputationLevel.NEUTRAL.trustRank()) {
             return PlannedEffect.none();
         }
-        int chance = context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank() ? 55 : 30;
-        return context.random().nextInt(100) < chance
+        boolean trusted = context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank();
+        return DialogueTuningResources.passes(
+                context,
+                trusted ? "reputation.question.trusted_chance" : "reputation.question.neutral_chance",
+                trusted ? 0.55D : 0.30D)
                 ? positive(VillagerRetaliationConfig.QUESTION_REPUTATION_GAIN.get(), "question", occasionalPositiveResponse(context))
                 : PlannedEffect.none();
     }
@@ -277,31 +281,45 @@ public final class DialogueReputationService {
         if (context.reputationLevel().trustRank() < VillagerReputationLevel.NEUTRAL.trustRank()) {
             return PlannedEffect.none();
         }
-        int chance = context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank() ? 65 : 40;
+        boolean trusted = context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank();
+        double chance = DialogueTuningResources.value(
+                context,
+                trusted ? "reputation.story.trusted_chance" : "reputation.story.neutral_chance",
+                trusted ? 0.65D : 0.40D);
         if (context.profession() == VillagerProfession.LIBRARIAN
                 || context.profession() == VillagerProfession.CLERIC
                 || context.profession() == VillagerProfession.NITWIT) {
-            chance += 15;
+            chance += DialogueTuningResources.value(context, "reputation.story.profession_bonus", 0.15D);
         }
-        return context.random().nextInt(100) < chance
+        return DialogueTuningResources.passes(context, chance)
                 ? positive(VillagerRetaliationConfig.STORY_REPUTATION_GAIN.get(), "story", occasionalPositiveResponse(context))
                 : PlannedEffect.none();
     }
 
     private static PlannedEffect planJoke(DialogueContext context) {
-        int goodChance = switch (context.reputationLevel()) {
-            case ROYALTY, REVERED -> 85;
-            case RESPECTED, TRUSTED -> 70;
-            case NEUTRAL -> 50;
-            case SUSPICIOUS -> 35;
-            case HOSTILE -> 25;
-            case DESPISED, FEARED -> 15;
+        String chanceTier = switch (context.reputationLevel()) {
+            case ROYALTY, REVERED -> "royalty";
+            case RESPECTED, TRUSTED -> "trusted";
+            case NEUTRAL -> "neutral";
+            case SUSPICIOUS -> "suspicious";
+            case HOSTILE -> "hostile";
+            case DESPISED, FEARED -> "despised";
         };
+        double fallback = switch (chanceTier) {
+            case "royalty" -> 0.85D;
+            case "trusted" -> 0.70D;
+            case "neutral" -> 0.50D;
+            case "suspicious" -> 0.35D;
+            case "hostile" -> 0.25D;
+            default -> 0.15D;
+        };
+        double goodChance = DialogueTuningResources.value(
+                context, "reputation.joke." + chanceTier + "_chance", fallback);
         if (context.profession() == VillagerProfession.NITWIT) {
-            goodChance += 10;
+            goodChance += DialogueTuningResources.value(context, "reputation.joke.nitwit_bonus", 0.10D);
         }
 
-        if (context.random().nextInt(100) < goodChance) {
+        if (DialogueTuningResources.passes(context, goodChance)) {
             return new PlannedEffect(
                     VillagerRetaliationConfig.JOKE_REPUTATION_GAIN.get(),
                     "joke_landed",
@@ -315,7 +333,8 @@ public final class DialogueReputationService {
                 "joke_missed",
                 DialogueReputationEffect.CooldownCategory.JOKE,
                 false,
-                context.random().nextInt(3) == 0 ? response(context, "reputation.joke_missed") : null
+                DialogueTuningResources.passes(context, "reputation.joke.missed_response_chance", 1.0D / 3.0D)
+                        ? response(context, "reputation.joke_missed") : null
         );
     }
 
@@ -360,7 +379,7 @@ public final class DialogueReputationService {
     }
 
     private static String occasionalPositiveResponse(DialogueContext context) {
-        if (context.random().nextInt(4) != 0) {
+        if (!DialogueTuningResources.passes(context, "reputation.positive_response_chance", 0.25D)) {
             return null;
         }
         return response(context, "reputation.positive");

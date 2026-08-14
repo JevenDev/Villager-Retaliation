@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.DialogueTuningResources;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.village.VillagerRaidMemorySavedData;
 import java.util.Optional;
@@ -9,15 +10,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 
 public final class VillagerRaidDialogueService {
-    private static final int RAID_STORY_CHANCE_PERCENT = 35;
-
     private VillagerRaidDialogueService() {
     }
 
     public static Optional<VillagerDialogueService.DialogueResult> selectRaidStory(DialogueContext context) {
         Optional<VillagerRaidMemorySavedData.RaidMemory> memory = VillagerRaidMemorySavedData.get(context.level())
                 .memory(context.villager().getUUID(), context.player().getUUID());
-        if (memory.isEmpty() || context.random().nextInt(100) >= RAID_STORY_CHANCE_PERCENT) {
+        if (memory.isEmpty() || !DialogueTuningResources.passes(context, "raid.story_chance", 0.35D)) {
             return Optional.empty();
         }
 
