@@ -41,7 +41,7 @@ public final class VillagerDialogueService {
     }
 
     public static DialogueResult select(DialogueContext context, DialogueOptionDefinition option, List<String> recentDialogueIds) {
-        return select(context, option.requestType(), option.id(), option.metadata().tags(), recentDialogueIds);
+        return select(context, option.requestType(), option.id(), option.metadata().effectiveRoutingTags(), recentDialogueIds);
     }
 
     public static DialogueExplanation explain(
@@ -432,7 +432,7 @@ public final class VillagerDialogueService {
     private static List<DialogueLine> preferMetadataTagCandidates(Set<String> requestedTags, List<DialogueLine> candidates) {
         if (requestedTags == null || requestedTags.isEmpty()) return candidates;
         List<DialogueLine> tagged = candidates.stream()
-                .filter(line -> line.metadata().tags().stream().anyMatch(requestedTags::contains))
+                .filter(line -> line.metadata().effectiveRoutingTags().stream().anyMatch(requestedTags::contains))
                 .toList();
         return tagged.isEmpty() ? candidates : tagged;
     }
@@ -442,21 +442,23 @@ public final class VillagerDialogueService {
             List<DialogueLine> availableLines,
             List<String> recentIds) {
         if (candidates.size() < 2 || recentIds.isEmpty()) return candidates;
-        Set<String> recentTopics = availableLines.stream()
+        Set<String> recentGroups = availableLines.stream()
                 .filter(line -> line.recentlyUsed(recentIds))
-                .map(line -> line.metadata().topic())
-                .filter(topic -> !topic.isBlank())
-                .collect(java.util.stream.Collectors.toSet());
-        Set<String> recentTags = availableLines.stream()
-                .filter(line -> line.recentlyUsed(recentIds))
-                .flatMap(line -> line.metadata().tags().stream())
+                .flatMap(line -> antiRepeatGroups(line).stream())
                 .collect(java.util.stream.Collectors.toSet());
         List<DialogueLine> fresh = candidates.stream()
-                .filter(line -> (line.metadata().topic().isBlank() || !recentTopics.contains(line.metadata().topic()))
-                        && (line.metadata().tags().isEmpty()
-                                || line.metadata().tags().stream().noneMatch(recentTags::contains)))
+                .filter(line -> antiRepeatGroups(line).stream().noneMatch(recentGroups::contains))
                 .toList();
         return fresh.isEmpty() ? candidates : fresh;
+    }
+
+    private static Set<String> antiRepeatGroups(DialogueLine line) {
+        Set<String> groups = new java.util.LinkedHashSet<>(line.metadata().effectiveAntiRepeatGroups());
+        String category = com.jvn.villagerretaliation.util.ContentTags.normalize(line.category());
+        if (!category.isBlank()) {
+            groups.add(category);
+        }
+        return Set.copyOf(groups);
     }
 
     private static List<DialogueLine> matchingLines(

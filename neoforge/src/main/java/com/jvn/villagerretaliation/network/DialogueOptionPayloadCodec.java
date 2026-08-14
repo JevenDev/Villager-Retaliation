@@ -48,6 +48,8 @@ final class DialogueOptionPayloadCodec {
             DialogueEntryMetadata metadata = new DialogueEntryMetadata(
                     "",
                     Set.copyOf(readStringList(buffer)),
+                    Set.of(),
+                    Set.of(),
                     "",
                     "",
                     "",

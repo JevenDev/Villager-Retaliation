@@ -84,6 +84,7 @@ import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.scene.SceneContinuationService;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.scene.runtime.SceneTransitionService;
+import com.jvn.villagerretaliation.util.ContentTags;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.io.ByteArrayInputStream;
@@ -1049,6 +1050,36 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(keyedLine.hasFreshVariant(List.of()), "new text_key line was filtered from fresh candidates");
         helper.assertTrue(keyedLine.recentlyUsed(List.of("keyed_line")), "used text_key line was not remembered");
         helper.assertTrue(!keyedLine.hasFreshVariant(List.of("keyed_line")), "used text_key line remained fresh");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dialogueMetadataSeparatesRoutingAndRepetition(GameTestHelper helper) {
+        DialogueEntryMetadata legacy = new DialogueEntryMetadata(
+                "market rumors",
+                Set.of("content.dialogue", "dialogue.ambient", "scope.global", "route:market"),
+                "",
+                "",
+                "",
+                "");
+        helper.assertValueEqual(legacy.effectiveRoutingTags(), Set.of("route:market"), "legacy routing tags");
+        helper.assertValueEqual(legacy.effectiveAntiRepeatGroups(), Set.of("market_rumors"), "legacy topic repetition group");
+
+        DialogueEntryMetadata explicit = new DialogueEntryMetadata(
+                "ignored topic",
+                Set.of("content.dialogue", "route:legacy"),
+                Set.of("route:explicit"),
+                Set.of("rotation:market"),
+                "",
+                "",
+                "",
+                "");
+        helper.assertValueEqual(explicit.effectiveRoutingTags(), Set.of("route:explicit"), "explicit routing tags");
+        helper.assertValueEqual(explicit.effectiveAntiRepeatGroups(), Set.of("rotation:market"), "explicit repetition groups");
+        helper.assertValueEqual(ContentTags.normalize("Pack:Route/Market"), "pack:route/market", "namespaced tag normalization");
+        helper.assertTrue(
+                !ContentTags.normalize("pack:route").equals(ContentTags.normalize("pack.route")),
+                "tag normalization collapsed namespace and path separators");
         helper.succeed();
     }
 

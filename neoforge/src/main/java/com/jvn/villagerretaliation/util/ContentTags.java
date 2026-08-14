@@ -15,11 +15,19 @@ public final class ContentTags {
     public static String normalize(String value) {
         if (value == null || value.isBlank()) return "";
         String normalized = value.trim().toLowerCase(Locale.ROOT)
-                .replace(':', '.')
-                .replace('/', '.')
-                .replaceAll("[^a-z0-9_.-]+", "_");
+                .replaceAll("[^a-z0-9_.:/-]+", "_");
         while (normalized.contains("..")) normalized = normalized.replace("..", ".");
-        return normalized.replaceAll("^[._-]+|[._-]+$", "");
+        return normalized.replaceAll("^[._:/-]+|[._:/-]+$", "");
+    }
+
+    public static boolean isStructuralDialogueTag(String value) {
+        String tag = normalize(value);
+        return tag.startsWith("content.")
+                || tag.startsWith("scope.")
+                || tag.startsWith("section.")
+                || tag.startsWith("generated.")
+                || tag.equals("dialogue.ambient")
+                || tag.equals("dialogue.interaction");
     }
 
     public static Set<String> normalizeAll(Collection<String> values) {
