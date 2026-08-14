@@ -37,11 +37,11 @@ public final class VillagerDialogueService {
     }
 
     public static DialogueResult select(DialogueContext context, DialogueRequestType requestType, List<String> recentDialogueIds) {
-        return select(context, requestType, "", recentDialogueIds);
+        return select(context, requestType, "", Set.of(), recentDialogueIds);
     }
 
     public static DialogueResult select(DialogueContext context, DialogueOptionDefinition option, List<String> recentDialogueIds) {
-        return select(context, option.requestType(), option.id(), recentDialogueIds);
+        return select(context, option.requestType(), option.id(), option.metadata().tags(), recentDialogueIds);
     }
 
     public static DialogueExplanation explain(
@@ -49,7 +49,7 @@ public final class VillagerDialogueService {
             DialogueRequestType requestType,
             String requestedOptionId,
             List<String> recentDialogueIds) {
-        LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, recentDialogueIds);
+        LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, Set.of(), recentDialogueIds);
 
         List<DialogueCandidateExplanation> candidates = pool.candidates().stream()
                 .sorted(Comparator.comparingInt(DialogueLine::priority).reversed()
@@ -108,6 +108,7 @@ public final class VillagerDialogueService {
             DialogueContext context,
             DialogueRequestType requestType,
             String requestedOptionId,
+            Set<String> requestedTags,
             List<String> recentDialogueIds) {
         boolean feared = context.reputationLevel() == VillagerReputationLevel.FEARED;
         if (!feared && requestType == DialogueRequestType.STORY) {
@@ -127,7 +128,7 @@ public final class VillagerDialogueService {
             }
         }
 
-        LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, recentDialogueIds);
+        LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, requestedTags, recentDialogueIds);
         List<DialogueLine> candidates = pool.candidates();
         if (candidates.isEmpty()) {
             String fallbackKey = feared ? "dialogue.feared_fallback" : "dialogue.fallback";
@@ -378,6 +379,7 @@ public final class VillagerDialogueService {
             DialogueContext context,
             DialogueRequestType requestType,
             String requestedOptionId,
+            Set<String> requestedTags,
             List<String> recentDialogueIds) {
         List<String> recentIds = recentDialogueIds == null ? List.of() : recentDialogueIds;
         DialogueDisposition disposition = moodFor(context);
@@ -401,6 +403,7 @@ public final class VillagerDialogueService {
         }
 
         List<DialogueLine> preferred = preferRequestedOptionCandidates(requestedOptionId, matched);
+        preferred = preferMetadataTagCandidates(requestedTags, preferred);
         preferred = preferDirectHitMemoryCandidates(context, requestType, preferred);
         preferred = preferBrokenBedMemoryCandidates(context, requestType, preferred);
         preferred = preferVillageEventCandidates(context, requestType, preferred);
@@ -415,6 +418,7 @@ public final class VillagerDialogueService {
         if (!freshCandidates.isEmpty()) {
             weightedPool = freshCandidates;
         }
+        weightedPool = preferFreshMetadata(weightedPool, availableLines, recentIds);
         return new LineCandidatePool(
                 availableLines,
                 matched,
@@ -423,6 +427,36 @@ public final class VillagerDialogueService {
                 preferHighestPriority(weightedPool),
                 disposition,
                 usedNeutralFallback);
+    }
+
+    private static List<DialogueLine> preferMetadataTagCandidates(Set<String> requestedTags, List<DialogueLine> candidates) {
+        if (requestedTags == null || requestedTags.isEmpty()) return candidates;
+        List<DialogueLine> tagged = candidates.stream()
+                .filter(line -> line.metadata().tags().stream().anyMatch(requestedTags::contains))
+                .toList();
+        return tagged.isEmpty() ? candidates : tagged;
+    }
+
+    private static List<DialogueLine> preferFreshMetadata(
+            List<DialogueLine> candidates,
+            List<DialogueLine> availableLines,
+            List<String> recentIds) {
+        if (candidates.size() < 2 || recentIds.isEmpty()) return candidates;
+        Set<String> recentTopics = availableLines.stream()
+                .filter(line -> line.recentlyUsed(recentIds))
+                .map(line -> line.metadata().topic())
+                .filter(topic -> !topic.isBlank())
+                .collect(java.util.stream.Collectors.toSet());
+        Set<String> recentTags = availableLines.stream()
+                .filter(line -> line.recentlyUsed(recentIds))
+                .flatMap(line -> line.metadata().tags().stream())
+                .collect(java.util.stream.Collectors.toSet());
+        List<DialogueLine> fresh = candidates.stream()
+                .filter(line -> (line.metadata().topic().isBlank() || !recentTopics.contains(line.metadata().topic()))
+                        && (line.metadata().tags().isEmpty()
+                                || line.metadata().tags().stream().noneMatch(recentTags::contains)))
+                .toList();
+        return fresh.isEmpty() ? candidates : fresh;
     }
 
     private static List<DialogueLine> matchingLines(
