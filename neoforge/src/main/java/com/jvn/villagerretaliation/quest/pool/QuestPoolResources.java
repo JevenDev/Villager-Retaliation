@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
-import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
@@ -65,9 +64,6 @@ public final class QuestPoolResources {
             return true;
         }
         Collection<QuestDefinition> catalog = VillagerQuestResources.quests(context.level().getServer());
-        List<QuestDefinition> eligibleCatalog = catalog.stream()
-                .filter(candidate -> VillagerQuestService.canStartIgnoringPools(context, candidate))
-                .toList();
         int highestExclusivePriority = claiming.stream().filter(QuestPoolDefinition::exclusive)
                 .mapToInt(QuestPoolDefinition::priority).max().orElse(Integer.MIN_VALUE);
         for (QuestPoolDefinition pool : claiming) {
@@ -75,16 +71,13 @@ public final class QuestPoolResources {
                     && (!pool.exclusive() || pool.priority() < highestExclusivePriority)) continue;
             String scopeKey = scopeKey(pool, context);
             long epoch = context.level().getGameTime() / pool.refreshTicks();
-            SelectionKey key = new SelectionKey(
-                    pool.id(), scopeKey, epoch,
-                    context.player().getUUID(), context.villager().getUUID(),
-                    context.level().getGameTime());
+            SelectionKey key = new SelectionKey(pool.id(), scopeKey, epoch);
             if (SELECTION_CACHE.size() > 4_096) {
                 SELECTION_CACHE.clear();
             }
             Set<ResourceLocation> selected = SELECTION_CACHE.computeIfAbsent(
                     key,
-                    ignored -> QuestPoolSelector.select(pool, eligibleCatalog, scopeKey, epoch));
+                    ignored -> QuestPoolSelector.select(pool, catalog, scopeKey, epoch));
             if (selected.contains(quest.id())) {
                 return true;
             }
@@ -221,12 +214,6 @@ public final class QuestPoolResources {
     private record Cache(MinecraftServer server, List<QuestPoolDefinition> pools) {
     }
 
-    private record SelectionKey(
-            ResourceLocation pool,
-            String scope,
-            long epoch,
-            java.util.UUID player,
-            java.util.UUID provider,
-            long gameTime) {
+    private record SelectionKey(ResourceLocation pool, String scope, long epoch) {
     }
 }
