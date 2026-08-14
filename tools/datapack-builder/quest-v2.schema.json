@@ -1961,6 +1961,10 @@
           "minimum": 0.0,
           "maximum": 1.0
         },
+        "weight": {
+          "type": "integer",
+          "minimum": 0
+        },
         "exclusive": {
           "type": "boolean"
         },
@@ -2091,6 +2095,7 @@
             "dimension",
             "entity_nearby",
             "equipment",
+            "event_payload",
             "fact",
             "family",
             "held_item",
@@ -2109,6 +2114,7 @@
             "quest_stage",
             "quest_stage_history",
             "quest_tag",
+            "quest_trigger_payload",
             "quest_variable",
             "recruitment_memory",
             "relationship",
@@ -2125,6 +2131,7 @@
             "time",
             "time_of_day",
             "trade_level",
+            "trigger_payload",
             "village",
             "village_presence",
             "villager_age",

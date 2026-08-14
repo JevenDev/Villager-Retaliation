@@ -9,7 +9,9 @@
     "schema": {"const": "villagerretaliation:quest_pool/v1"},
     "id": {"type": "string", "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"},
     "enabled": {"type": "boolean"},
-    "scope": {"enum": ["player", "village", "provider", "world"]},
+    "scope": {"enum": ["player", "village", "provider", "dimension", "world"]},
+    "replace": {"type": "boolean"},
+    "remove": {"type": "boolean"},
     "refresh": {"type": "string"},
     "refresh_ticks": {"type": "integer", "minimum": 1},
     "refresh_seconds": {"type": "integer", "minimum": 1},
@@ -23,10 +25,33 @@
     "any_tags": {"$ref": "#/$defs/string_list"},
     "all_tags": {"$ref": "#/$defs/string_list"},
     "exclude_tags": {"$ref": "#/$defs/string_list"},
-    "weights": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 10000}}
+    "weights": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 10000}},
+    "match": {"enum": ["any", "all"]},
+    "priority": {"type": "integer"},
+    "exclusive": {"type": "boolean"},
+    "conditions": {"$ref": "#/$defs/conditions"},
+    "weight_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "any_tags": {"$ref": "#/$defs/string_list"},
+          "all_tags": {"$ref": "#/$defs/string_list"},
+          "exclude_tags": {"$ref": "#/$defs/string_list"},
+          "multiplier": {"type": "number", "minimum": 0, "maximum": 100},
+          "conditions": {"$ref": "#/$defs/conditions"}
+        }
+      }
+    },
+    "tag_quotas": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 64}
+    }
   },
   "$defs": {
     "resource_list": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"}, "uniqueItems": true},
-    "string_list": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+    "string_list": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "conditions": {"type": "array", "items": {"type": "object"}}
   }
 }

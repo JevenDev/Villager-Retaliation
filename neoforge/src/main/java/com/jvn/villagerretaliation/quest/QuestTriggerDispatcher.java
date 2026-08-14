@@ -90,7 +90,6 @@ public final class QuestTriggerDispatcher {
                 .sorted(Comparator.comparingInt((CompiledQuestTrigger candidate) -> candidate.definition().priority())
                         .reversed().thenComparingInt(CompiledQuestTrigger::index))
                 .toList();
-        int evaluated = candidates.size();
         List<CompiledQuestTrigger> eligible = new ArrayList<>();
         for (CompiledQuestTrigger compiledTrigger : candidates) {
             if (matches(triggerContext, progress, compiledTrigger.definition(), event, dispatchStage)) {
@@ -110,6 +109,7 @@ public final class QuestTriggerDispatcher {
                 random);
         int matched = ordered.size();
         int ran = 0;
+        int evaluated = candidates.size();
         boolean dirty = false;
         for (CompiledQuestTrigger compiledTrigger : ordered) {
             QuestDefinition.Trigger trigger = compiledTrigger.definition();
@@ -118,6 +118,10 @@ public final class QuestTriggerDispatcher {
                 dirty = true;
                 ran++;
                 if (trigger.exclusive()) {
+                    int exclusivePriority = trigger.priority();
+                    evaluated = (int) candidates.stream()
+                            .filter(candidate -> candidate.definition().priority() >= exclusivePriority)
+                            .count();
                     break;
                 }
             }

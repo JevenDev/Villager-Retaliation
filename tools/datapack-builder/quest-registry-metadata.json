@@ -254,6 +254,17 @@
         "implementation": "Village"
       },
       {
+        "id": "trigger_payload",
+        "aliases": [
+          "event_payload",
+          "quest_trigger_payload"
+        ],
+        "capabilities": [
+          "trigger_payload"
+        ],
+        "implementation": "TriggerPayload"
+      },
+      {
         "id": "mood",
         "aliases": [
           "villager_mood"
@@ -2074,6 +2085,7 @@
         "dimension",
         "entity_nearby",
         "equipment",
+        "event_payload",
         "fact",
         "family",
         "held_item",
@@ -2092,6 +2104,7 @@
         "quest_stage",
         "quest_stage_history",
         "quest_tag",
+        "quest_trigger_payload",
         "quest_variable",
         "recruitment_memory",
         "relationship",
@@ -2108,6 +2121,7 @@
         "time",
         "time_of_day",
         "trade_level",
+        "trigger_payload",
         "village",
         "village_presence",
         "villager_age",
