@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "73";
+    private static final String PROTOCOL_VERSION = "74";
 
     private VillagerReputationNetworking() {
     }
@@ -221,6 +221,12 @@ public final class VillagerReputationNetworking {
                 "com.jvn.villagerretaliation.client.inventory.ClipboardWorkforceClient",
                 "accept"
         );
+        network.safePlayToClientThreaded(
+                BlueprintChecklistSyncPayload.TYPE,
+                BlueprintChecklistSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.item.BlueprintChecklistClient",
+                "accept"
+        );
         network.playToServer(
                 ClipboardWorkforceSubscriptionPayload.TYPE,
                 ClipboardWorkforceSubscriptionPayload.STREAM_CODEC,
@@ -228,6 +234,18 @@ public final class VillagerReputationNetworking {
                         ToucanNetwork.withServerPlayer(context, player -> {
                             if (!payload.enabled()) {
                                 com.jvn.villagerretaliation.interaction.ClipboardWorkforceService.closeClipboard(player);
+                            }
+                        }))
+        );
+        network.playToServer(
+                BlueprintChecklistTogglePayload.TYPE,
+                BlueprintChecklistTogglePayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (ServerboundRequestLimiter.tryAcquire(
+                                    player, BlueprintChecklistTogglePayload.TYPE.id(), 1L)) {
+                                com.jvn.villagerretaliation.item.BlueprintChecklistItem.handleToggle(
+                                        player, payload.hand(), payload.entryIndex());
                             }
                         }))
         );

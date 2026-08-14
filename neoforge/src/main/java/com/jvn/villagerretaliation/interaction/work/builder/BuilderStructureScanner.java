@@ -158,6 +158,27 @@ public final class BuilderStructureScanner {
         return String.join(", ", parts);
     }
 
+    /** Rebuilds the carried-material list from a blueprint's stored block palette. */
+    public static List<MaterialRequirement> materialRequirements(Iterable<BlockState> states) {
+        if (states == null) {
+            return List.of();
+        }
+        Map<Item, Integer> materials = new LinkedHashMap<>();
+        for (BlockState state : states) {
+            if (state == null || shouldSkip(state) || !consumesRequiredItem(state)) {
+                continue;
+            }
+            ItemStack required = requiredItem(state, toolAction(state));
+            if (!required.isEmpty()) {
+                materials.merge(required.getItem(), 1, Integer::sum);
+            }
+        }
+        return materials.entrySet().stream()
+                .map(entry -> new MaterialRequirement(new ItemStack(entry.getKey()), entry.getValue()))
+                .sorted(Comparator.comparing(MaterialRequirement::count).reversed().thenComparing(MaterialRequirement::itemName))
+                .toList();
+    }
+
     private static StructurePlan scanTemplate(
             ServerLevel level,
             BuilderStructureCatalog.Entry entry,

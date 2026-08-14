@@ -18,6 +18,8 @@ public final class VillagerRetaliationItems {
             ITEMS.register("clipboard", () -> new HiredStorageClipboardItem(new Item.Properties().stacksTo(1)));
     public static final DeferredHolder<Item, Item> CONSTRUCTION_BLUEPRINT =
             ITEMS.register("construction_blueprint", () -> new ConstructionBlueprintItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredHolder<Item, Item> BLUEPRINT_CHECKLIST =
+            ITEMS.register("blueprint_checklist", () -> new BlueprintChecklistItem(new Item.Properties().stacksTo(1)));
     public static final DeferredHolder<Item, Item> ITEM_FILTER =
             ITEMS.register("item_filter", () -> new VillagerItemFilterItem(new Item.Properties().stacksTo(64)));
     public static final DeferredHolder<Item, Item> ATTRIBUTE_FILTER =
@@ -46,6 +48,10 @@ public final class VillagerRetaliationItems {
 
     public static boolean isConstructionBlueprint(ItemStack stack) {
         return ConstructionBlueprintItem.isBlueprint(stack);
+    }
+
+    public static boolean isBlueprintChecklist(ItemStack stack) {
+        return BlueprintChecklistItem.isChecklist(stack);
     }
 
     public static boolean isItemFilter(ItemStack stack) {

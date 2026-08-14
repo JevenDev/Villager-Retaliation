@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "villagerretaliation:item/recipe_filter"
+    "layer0": "minecraft:item/knowledge_book"
   }
 }

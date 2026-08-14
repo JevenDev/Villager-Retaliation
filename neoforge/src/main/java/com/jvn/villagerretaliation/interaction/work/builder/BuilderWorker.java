@@ -410,7 +410,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
         BuilderTaskState.setMissingMaterials(context.state(), missing.summary());
         Map<String, String> replacements = Map.of(
-                "materials", missing.summary(),
+                "materials", missing.dialogueList(),
                 "structure", BuilderTaskState.structureLabel(context.state()),
                 "storage_radius", Integer.toString(builderMaterialStorageRadius()));
         if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
@@ -2681,8 +2681,6 @@ public final class BuilderWorker extends AbstractBlockWorker {
     }
 
     public record MissingMaterials(List<String> missing) {
-        private static final int SUMMARY_LIMIT = 5;
-
         public static MissingMaterials of(BuilderStructureScanner.BuildBlock block) {
             if (block == null || !block.requiresMaterial()) {
                 return new MissingMaterials(List.of());
@@ -2699,13 +2697,14 @@ public final class BuilderWorker extends AbstractBlockWorker {
             if (this.missing.isEmpty()) {
                 return "none";
             }
-            if (this.missing.size() <= SUMMARY_LIMIT) {
-                return String.join(", ", this.missing);
+            return String.join(", ", this.missing);
+        }
+
+        public String dialogueList() {
+            if (this.missing.isEmpty()) {
+                return "none";
             }
-            int shown = SUMMARY_LIMIT - 1;
-            List<String> parts = new java.util.ArrayList<>(this.missing.subList(0, shown));
-            parts.add("+" + (this.missing.size() - shown) + " more");
-            return String.join(", ", parts);
+            return "\n\u2022 " + String.join("\n\u2022 ", this.missing) + "\n";
         }
     }
 }

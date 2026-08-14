@@ -90,6 +90,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -827,7 +828,7 @@ public final class VillagerRetaliationCommands {
                                 .executes(context -> debugFinishRaid(context, false))))
                 .then(literal("builder")
                         .then(literal("materials")
-                                .then(argument("structure", StringArgumentType.string())
+                                .then(argument("structure", ResourceLocationArgument.id())
                                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                                 builderStructureIdSuggestions(context.getSource()),
                                                 builder))
@@ -883,12 +884,7 @@ public final class VillagerRetaliationCommands {
     static int placeBuilderMaterialsChests(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         ServerLevel level = source.getLevel();
-        String structureValue = StringArgumentType.getString(context, "structure");
-        ResourceLocation structureId = parseBuilderStructureId(structureValue);
-        if (structureId == null) {
-            source.sendFailure(Component.literal("Invalid builder structure id: " + structureValue));
-            return 0;
-        }
+        ResourceLocation structureId = ResourceLocationArgument.getId(context, "structure");
 
         Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(source.getServer(), structureId);
         if (entry.isEmpty()) {
@@ -939,17 +935,6 @@ public final class VillagerRetaliationCommands {
                 .stream()
                 .map(entry -> entry.id().toString())
                 .toList();
-    }
-
-    private static ResourceLocation parseBuilderStructureId(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        String normalized = value.trim();
-        if (!normalized.contains(":")) {
-            normalized = "minecraft:" + normalized;
-        }
-        return ResourceLocation.tryParse(normalized);
     }
 
     private static List<ItemStack> builderDebugSupplyStacks(BuilderStructureScanner.StructurePlan plan) {

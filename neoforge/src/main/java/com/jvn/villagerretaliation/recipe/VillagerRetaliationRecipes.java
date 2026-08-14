@@ -32,6 +32,11 @@ public final class VillagerRetaliationRecipes {
                     "filter_resetting",
                     () -> new SimpleCraftingRecipeSerializer<>(VillagerFilterResetRecipe::new));
 
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<BlueprintChecklistRecipe>>
+            BLUEPRINT_CHECKLIST = SERIALIZERS.register(
+                    "blueprint_checklist",
+                    () -> new SimpleCraftingRecipeSerializer<>(BlueprintChecklistRecipe::new));
+
     private VillagerRetaliationRecipes() {
     }
 

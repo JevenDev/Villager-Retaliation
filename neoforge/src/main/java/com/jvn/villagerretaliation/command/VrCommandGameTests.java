@@ -100,6 +100,14 @@ public final class VrCommandGameTests {
         helper.assertTrue(stressGrid.getExceptions().isEmpty(),
                 "hired stress-grid command should parse without exceptions");
 
+        ParseResults<CommandSourceStack> builderMaterials = dispatcher.parse(
+                "vr admin debug builder materials minecraft:village/plains/houses/plains_animal_pen_1",
+                playerSource.withPermission(2));
+        helper.assertFalse(builderMaterials.getReader().canRead(),
+                "builder structure ids should parse completely without quotation marks");
+        helper.assertTrue(builderMaterials.getExceptions().isEmpty(),
+                "unquoted namespaced builder structure ids should parse without exceptions");
+
         helper.succeed();
     }
 
