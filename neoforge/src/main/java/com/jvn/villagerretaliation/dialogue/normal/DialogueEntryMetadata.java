@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.ContentTags;
+import com.jvn.villagerretaliation.util.ContentTagSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
@@ -133,6 +134,10 @@ public record DialogueEntryMetadata(
             return this.antiRepeatGroups;
         }
         return this.topic.isBlank() ? Set.of() : Set.of(this.topic);
+    }
+
+    public ContentTagSet tagSet() {
+        return ContentTagSet.dialogue(this.tags, effectiveRoutingTags(), effectiveAntiRepeatGroups());
     }
 
     public DialogueEntryMetadata merge(DialogueEntryMetadata override) {

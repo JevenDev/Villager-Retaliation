@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue.normal;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.CandidateArbitrator;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.resources.DialogueTuningResources;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
@@ -133,26 +134,18 @@ public final class VillagerDialogueService {
         }
 
         LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, requestedTags, recentDialogueIds);
-        List<DialogueLine> candidates = pool.weightedPool().stream()
-                .filter(line -> passesChance(line, context.random()))
-                .toList();
-        candidates = preferHighestPriority(candidates);
-        if (candidates.isEmpty()) {
+        Optional<DialogueLine> selected = CandidateArbitrator.select(
+                pool.weightedPool().stream()
+                        .map(line -> CandidateArbitrator.Candidate.eligible(
+                                line.id(), line, line.priority(), line.chance(), effectiveWeight(line)))
+                        .toList(),
+                context.random(),
+                ignored -> true);
+        if (selected.isEmpty()) {
             String fallbackKey = feared ? "dialogue.feared_fallback" : "dialogue.fallback";
             return new DialogueResult("fallback", VillagerDialogueResources.message(context, fallbackKey).orElse(""));
         }
-
-        int totalWeight = candidates.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
-        int selected = context.random().nextInt(Math.max(1, totalWeight));
-        for (DialogueLine candidate : candidates) {
-            selected -= effectiveWeight(candidate);
-            if (selected < 0) {
-                return resolveText(candidate, context, recentDialogueIds);
-            }
-        }
-
-        DialogueLine fallback = candidates.getLast();
-        return resolveText(fallback, context, recentDialogueIds);
+        return resolveText(selected.get(), context, recentDialogueIds);
     }
 
     public static String selectOpeningGreeting(DialogueContext context) {
@@ -466,8 +459,13 @@ public final class VillagerDialogueService {
 
     private static List<DialogueLine> preferMetadataTagCandidates(Set<String> requestedTags, List<DialogueLine> candidates) {
         if (requestedTags == null || requestedTags.isEmpty()) return candidates;
+        com.jvn.villagerretaliation.util.ContentTagQuery query = new com.jvn.villagerretaliation.util.ContentTagQuery(
+                com.jvn.villagerretaliation.util.ContentTagDomain.ROUTING,
+                requestedTags,
+                Set.of(),
+                Set.of());
         List<DialogueLine> tagged = candidates.stream()
-                .filter(line -> line.metadata().effectiveRoutingTags().stream().anyMatch(requestedTags::contains))
+                .filter(line -> line.metadata().tagSet().matches(query))
                 .toList();
         return tagged.isEmpty() ? candidates : tagged;
     }
@@ -507,6 +505,7 @@ public final class VillagerDialogueService {
         return availableLines.stream()
                 .filter(line -> context.reputationLevel() != VillagerReputationLevel.FEARED || isFearSpecific(line))
                 .filter(line -> line.matches(context, requestType, requestedOptionId, disposition))
+                .filter(line -> line.hasEligibleTextVariant(context))
                 .filter(line -> selectionAvailable(line, context))
                 .sorted(Comparator.comparingInt(line -> line.recentlyUsed(recentIds) ? 1 : 0))
                 .toList();
@@ -970,20 +969,29 @@ public final class VillagerDialogueService {
     }
 
     private static String resolveText(DialogueLine line, DialogueContext context) {
-        Optional<String> textKeyResult = resolveTextKey(line, context);
-        if (textKeyResult.isPresent()) {
-            return textKeyResult.get();
-        }
-        return resolveText(line.selectText(context.random()), line, context);
+        DialogueLine.SelectedText selected = line.selectText(context, List.of());
+        return resolveSelectedText(selected, line, context);
     }
 
     private static DialogueResult resolveText(DialogueLine line, DialogueContext context, List<String> recentDialogueIds) {
-        Optional<String> textKeyResult = resolveTextKey(line, context);
-        if (textKeyResult.isPresent() || line.lines().isEmpty()) {
-            return DialogueResult.fromText(line.id(), textKeyResult.orElse(""), line.textEffects());
+        DialogueLine.SelectedText selected = line.selectText(context, recentDialogueIds);
+        return DialogueResult.fromText(selected.id(), resolveSelectedText(selected, line, context), line.textEffects());
+    }
+
+    private static String resolveSelectedText(
+            DialogueLine.SelectedText selected,
+            DialogueLine line,
+            DialogueContext context) {
+        if (selected != null && !selected.textKey().isBlank()) {
+            Optional<String> keyed = VillagerDialogueResources.message(
+                    context,
+                    selected.textKey(),
+                    line.playerItemCondition().replacements(context.player()));
+            if (keyed.isPresent()) {
+                return resolveText(keyed.get(), context);
+            }
         }
-        DialogueLine.SelectedText selected = line.selectText(context.random(), recentDialogueIds);
-        return DialogueResult.fromText(selected.id(), resolveText(selected.text(), line, context), line.textEffects());
+        return resolveText(selected == null ? "" : selected.text(), line, context);
     }
 
     private static Optional<String> resolveTextKey(DialogueLine line, DialogueContext context) {

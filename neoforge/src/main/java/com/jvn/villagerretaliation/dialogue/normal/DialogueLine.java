@@ -92,7 +92,8 @@ public record DialogueLine(
         int specificityWeight,
         double chance,
         long cooldownTicks,
-        int maxUses
+        int maxUses,
+        List<DialogueTextVariant> textVariants
 ) {
     public DialogueLine {
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
@@ -104,6 +105,17 @@ public record DialogueLine(
         chance = Math.clamp(chance, 0.0D, 1.0D);
         cooldownTicks = Math.max(0L, cooldownTicks);
         maxUses = Math.max(0, maxUses);
+        if (textVariants == null || textVariants.isEmpty()) {
+            textVariants = DialogueTextVariant.legacy(
+                    id,
+                    lines,
+                    textKey,
+                    metadata,
+                    new DialogueUsagePolicy(cooldownTicks, maxUses, true,
+                            DialogueUsagePolicy.Scope.PLAYER_VILLAGER));
+        } else {
+            textVariants = List.copyOf(textVariants);
+        }
     }
 
     public String text() {
@@ -118,11 +130,19 @@ public record DialogueLine(
     }
 
     public SelectedText selectText(RandomSource random, List<String> recentDialogueIds) {
+        if (!this.textVariants.isEmpty()) {
+            List<DialogueTextVariant> fresh = this.textVariants.stream()
+                    .filter(variant -> !variant.usage().antiRepeat() || !recentDialogueIds.contains(variant.id()))
+                    .toList();
+            List<DialogueTextVariant> candidates = fresh.isEmpty() ? this.textVariants : fresh;
+            DialogueTextVariant selected = candidates.get(random.nextInt(candidates.size()));
+            return new SelectedText(selected.id(), selected.text(), selected.textKey());
+        }
         if (this.lines.isEmpty()) {
-            return new SelectedText(this.id, "");
+            return new SelectedText(this.id, "", this.textKey);
         }
         if (this.lines.size() == 1) {
-            return new SelectedText(this.id, this.lines.getFirst());
+            return new SelectedText(this.id, this.lines.getFirst(), this.textKey);
         }
 
         List<Integer> freshIndexes = new java.util.ArrayList<>();
@@ -136,12 +156,22 @@ public record DialogueLine(
         int selectedIndex = freshIndexes.isEmpty()
                 ? random.nextInt(this.lines.size())
                 : freshIndexes.get(random.nextInt(freshIndexes.size()));
-        return new SelectedText(variantId(selectedIndex), this.lines.get(selectedIndex));
+        return new SelectedText(variantId(selectedIndex), this.lines.get(selectedIndex), "");
+    }
+
+    public SelectedText selectText(DialogueContext context, List<String> recentDialogueIds) {
+        return DialogueTextVariant.select(this.textVariants, context, recentDialogueIds)
+                .map(variant -> new SelectedText(variant.id(), variant.text(), variant.textKey()))
+                .orElseGet(() -> new SelectedText(this.id, "", ""));
+    }
+
+    public boolean hasEligibleTextVariant(DialogueContext context) {
+        return this.textVariants.stream().anyMatch(variant -> variant.matches(context) && variant.weight() > 0);
     }
 
     public boolean recentlyUsed(List<String> recentDialogueIds) {
-        if (!this.textKey.isBlank()) {
-            return recentDialogueIds.contains(this.id);
+        if (!this.textVariants.isEmpty()) {
+            return this.textVariants.stream().anyMatch(variant -> recentDialogueIds.contains(variant.id()));
         }
         if (recentDialogueIds.contains(this.id)) {
             return true;
@@ -155,8 +185,8 @@ public record DialogueLine(
     }
 
     public boolean hasFreshVariant(List<String> recentDialogueIds) {
-        if (!this.textKey.isBlank()) {
-            return !recentDialogueIds.contains(this.id);
+        if (!this.textVariants.isEmpty()) {
+            return this.textVariants.stream().anyMatch(variant -> !recentDialogueIds.contains(variant.id()));
         }
         if (this.lines.isEmpty() || recentDialogueIds.contains(this.id)) {
             return false;
@@ -490,7 +520,10 @@ public record DialogueLine(
         return new Builder(id, requestType, lines);
     }
 
-    public record SelectedText(String id, String text) {
+    public record SelectedText(String id, String text, String textKey) {
+        public SelectedText(String id, String text) {
+            this(id, text, "");
+        }
     }
 
     public static class Builder {
@@ -569,6 +602,7 @@ public record DialogueLine(
         private double chance = 1.0D;
         private long cooldownTicks;
         private int maxUses;
+        private List<DialogueTextVariant> textVariants = List.of();
 
         protected Builder(String id, DialogueRequestType requestType, String text) {
             this(id, requestType, List.of(text));
@@ -1002,6 +1036,11 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder textVariants(List<DialogueTextVariant> variants) {
+            this.textVariants = variants == null ? List.of() : List.copyOf(variants);
+            return this;
+        }
+
         public DialogueLine build() {
             return new DialogueLine(
                     this.id,
@@ -1078,7 +1117,8 @@ public record DialogueLine(
                     this.specificityWeight,
                     this.chance,
                     this.cooldownTicks,
-                    this.maxUses
+                    this.maxUses,
+                    this.textVariants
             );
         }
     }
