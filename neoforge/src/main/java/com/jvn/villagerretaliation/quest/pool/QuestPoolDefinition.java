@@ -1,6 +1,10 @@
 package com.jvn.villagerretaliation.quest.pool;
 
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.util.ContentTagDomain;
+import com.jvn.villagerretaliation.util.ContentTagQuery;
 import com.jvn.villagerretaliation.util.ContentTags;
 import java.util.Map;
 import java.util.List;
@@ -26,7 +30,8 @@ public record QuestPoolDefinition(
         int priority,
         boolean exclusive,
         List<WeightRule> weightRules,
-        Map<String, Integer> tagQuotas) {
+        Map<String, Integer> tagQuotas,
+        List<DialogueCondition> conditions) {
     public QuestPoolDefinition {
         scope = scope == null ? Scope.PLAYER : scope;
         refreshTicks = Math.max(1L, refreshTicks);
@@ -42,6 +47,7 @@ public record QuestPoolDefinition(
         matchMode = matchMode == null ? MatchMode.ANY : matchMode;
         weightRules = weightRules == null ? List.of() : List.copyOf(weightRules);
         tagQuotas = ContentTags.normalizeKeys(tagQuotas);
+        conditions = conditions == null ? List.of() : List.copyOf(conditions);
     }
 
     public QuestPoolDefinition(
@@ -51,7 +57,23 @@ public record QuestPoolDefinition(
             Set<String> excludedTags, Map<ResourceLocation, Integer> weights) {
         this(id, enabled, scope, refreshTicks, maxOffers, antiRepeatRotations, defaultWeight, seedSalt,
                 quests, anyTags, allTags, excludedQuests, excludedTags, weights,
-                MatchMode.ANY, 0, false, List.of(), Map.of());
+                MatchMode.ANY, 0, false, List.of(), Map.of(), List.of());
+    }
+
+    public QuestPoolDefinition(
+            ResourceLocation id, boolean enabled, Scope scope, long refreshTicks, int maxOffers,
+            int antiRepeatRotations, int defaultWeight, long seedSalt, Set<ResourceLocation> quests,
+            Set<String> anyTags, Set<String> allTags, Set<ResourceLocation> excludedQuests,
+            Set<String> excludedTags, Map<ResourceLocation, Integer> weights, MatchMode matchMode,
+            int priority, boolean exclusive, List<WeightRule> weightRules, Map<String, Integer> tagQuotas) {
+        this(id, enabled, scope, refreshTicks, maxOffers, antiRepeatRotations, defaultWeight, seedSalt,
+                quests, anyTags, allTags, excludedQuests, excludedTags, weights, matchMode, priority,
+                exclusive, weightRules, tagQuotas, List.of());
+    }
+
+    public boolean matchesContext(DialogueContext context) {
+        return this.enabled && (this.conditions.isEmpty()
+                || DialogueCondition.matchesAll(context, this.conditions));
     }
 
     public boolean claims(QuestDefinition quest) {
@@ -59,7 +81,9 @@ public record QuestPoolDefinition(
             return false;
         }
         Set<String> tags = quest.tags();
-        if (tags.stream().anyMatch(this.excludedTags::contains)) {
+        ContentTagQuery query = new ContentTagQuery(
+                ContentTagDomain.CLASSIFICATION, this.anyTags, this.allTags, this.excludedTags);
+        if (tags.stream().anyMatch(query.not()::contains)) {
             return false;
         }
         boolean explicit = this.quests.isEmpty() || this.quests.contains(quest.id());
@@ -75,13 +99,17 @@ public record QuestPoolDefinition(
     }
 
     public int weight(QuestDefinition quest) {
-        long value = this.weights.containsKey(quest.id())
+        return weight(quest, null);
+    }
+
+    public int weight(QuestDefinition quest, DialogueContext context) {
+        double value = this.weights.containsKey(quest.id())
                 ? Math.max(0, this.weights.get(quest.id()))
-                : (long) this.defaultWeight * quest.offer().weight();
+                : (double) this.defaultWeight * quest.offer().weight();
         for (WeightRule rule : this.weightRules) {
-            if (rule.matches(quest.tags())) value *= rule.multiplier();
+            if (rule.matches(quest.tags(), context)) value *= rule.multiplier();
         }
-        return (int) Math.max(0, Math.min(10_000, value));
+        return (int) Math.max(0, Math.min(10_000, Math.round(value)));
     }
 
     public boolean quotaAllows(QuestDefinition candidate, List<QuestDefinition> selected) {
@@ -101,18 +129,32 @@ public record QuestPoolDefinition(
         }
     }
 
-    public record WeightRule(Set<String> anyTags, Set<String> allTags, Set<String> excludeTags, int multiplier) {
+    public record WeightRule(
+            Set<String> anyTags,
+            Set<String> allTags,
+            Set<String> excludeTags,
+            double multiplier,
+            List<DialogueCondition> conditions) {
+        public WeightRule(Set<String> anyTags, Set<String> allTags, Set<String> excludeTags, int multiplier) {
+            this(anyTags, allTags, excludeTags, (double) multiplier, List.of());
+        }
+
         public WeightRule {
             anyTags = ContentTags.normalizeAll(anyTags);
             allTags = ContentTags.normalizeAll(allTags);
             excludeTags = ContentTags.normalizeAll(excludeTags);
-            multiplier = Math.max(1, Math.min(100, multiplier));
+            multiplier = Double.isFinite(multiplier) ? Math.max(0.0D, Math.min(100.0D, multiplier)) : 1.0D;
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
         }
 
         public boolean matches(Set<String> tags) {
-            return tags.stream().noneMatch(this.excludeTags::contains)
-                    && (this.anyTags.isEmpty() || tags.stream().anyMatch(this.anyTags::contains))
-                    && (this.allTags.isEmpty() || tags.containsAll(this.allTags));
+            return matches(tags, null);
+        }
+
+        public boolean matches(Set<String> tags, DialogueContext context) {
+            return new ContentTagQuery(ContentTagDomain.CLASSIFICATION,
+                    this.anyTags, this.allTags, this.excludeTags).matches(tags)
+                    && (this.conditions.isEmpty() || DialogueCondition.matchesAll(context, this.conditions));
         }
     }
 
