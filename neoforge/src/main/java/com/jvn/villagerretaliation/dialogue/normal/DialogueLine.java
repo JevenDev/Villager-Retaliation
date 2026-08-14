@@ -88,7 +88,9 @@ public record DialogueLine(
         DialogueTextEffects textEffects,
         int priority,
         String category,
-        int weight
+        int weight,
+        int specificityWeight,
+        double chance
 ) {
     public DialogueLine {
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
@@ -96,6 +98,8 @@ public record DialogueLine(
         eventTagIds = eventTagIds == null ? Set.of() : Set.copyOf(eventTagIds);
         playerEventTagIds = playerEventTagIds == null ? Set.of() : Set.copyOf(playerEventTagIds);
         conditions = conditions == null ? List.of() : List.copyOf(conditions);
+        specificityWeight = Math.max(0, specificityWeight);
+        chance = Math.clamp(chance, 0.0D, 1.0D);
     }
 
     public String text() {
@@ -557,6 +561,8 @@ public record DialogueLine(
         private int priority;
         private String category = "";
         private int weight = 10;
+        private int specificityWeight;
+        private double chance = 1.0D;
 
         protected Builder(String id, DialogueRequestType requestType, String text) {
             this(id, requestType, List.of(text));
@@ -970,6 +976,16 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder specificityWeight(int specificityWeight) {
+            this.specificityWeight = Math.max(0, specificityWeight);
+            return this;
+        }
+
+        public Builder chance(double chance) {
+            this.chance = Math.clamp(chance, 0.0D, 1.0D);
+            return this;
+        }
+
         public DialogueLine build() {
             return new DialogueLine(
                     this.id,
@@ -1042,7 +1058,9 @@ public record DialogueLine(
                     this.textEffects,
                     this.priority,
                     this.category,
-                    this.weight
+                    this.weight,
+                    this.specificityWeight,
+                    this.chance
             );
         }
     }

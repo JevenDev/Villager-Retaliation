@@ -63,6 +63,8 @@ public final class VillagerDialogueService {
                         line.category(),
                         line.weight(),
                         line.specificityScore(),
+                        line.specificityWeight(),
+                        line.chance(),
                         effectiveWeight(line),
                         line.recentlyUsed(recentDialogueIds),
                         line.hasFreshVariant(recentDialogueIds)))
@@ -129,7 +131,9 @@ public final class VillagerDialogueService {
         }
 
         LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, requestedTags, recentDialogueIds);
-        List<DialogueLine> candidates = pool.candidates();
+        List<DialogueLine> candidates = pool.candidates().stream()
+                .filter(line -> passesChance(line, context.random()))
+                .toList();
         if (candidates.isEmpty()) {
             String fallbackKey = feared ? "dialogue.feared_fallback" : "dialogue.fallback";
             return new DialogueResult("fallback", VillagerDialogueResources.message(context, fallbackKey).orElse(""));
@@ -359,7 +363,15 @@ public final class VillagerDialogueService {
     }
 
     public static int effectiveWeight(DialogueLine line) {
-        return line.weight() + line.specificityScore() * 8;
+        return line.weight() + line.specificityScore() * line.specificityWeight();
+    }
+
+    public static boolean passesChance(DialogueLine line, net.minecraft.util.RandomSource random) {
+        return line.chance() >= 1.0D || (line.chance() > 0.0D && random.nextDouble() < line.chance());
+    }
+
+    public static List<DialogueLine> highestPriority(List<DialogueLine> candidates) {
+        return preferHighestPriority(candidates);
     }
 
     private static List<DialogueLine> preferHighestPriority(List<DialogueLine> candidates) {
@@ -1067,6 +1079,8 @@ public final class VillagerDialogueService {
             String category,
             int weight,
             int specificityScore,
+            int specificityWeight,
+            double chance,
             int effectiveWeight,
             boolean recentlyUsed,
             boolean hasFreshVariant) {
