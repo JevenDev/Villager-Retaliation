@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
-const metadataTagPattern = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
+const metadataTagPattern = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/;
 const dialogueOptionIdMaxLength = 128;
 const dialogueOptionLabelMaxLength = 128;
 
@@ -109,6 +109,30 @@ const conditionTypes = new Set([
   "quest_stage",
   "fact",
   "stage",
+  "selected_choice",
+  "choice_selected",
+  "response_selected",
+  "quest_choice_selected",
+  "stage_history",
+  "quest_stage_history",
+  "visited_stage",
+  "player_item",
+  "item",
+  "held_item",
+  "villager_equipment",
+  "equipment",
+  "armed",
+  "biome",
+  "dimension",
+  "advancement",
+  "advancements",
+  "scoreboard",
+  "score",
+  "nearby_entity",
+  "nearby_entities",
+  "entity_nearby",
+  "village",
+  "village_presence",
   "mood",
   "villager_mood",
   "weather",
@@ -135,6 +159,22 @@ const questFactConditionKeys = new Set([
   "stages",
   "min",
   "max"
+]);
+
+const playerItemConditionKeys = new Set([
+  "type", "item", "items", "item_tag", "item_tags", "slot", "slots",
+  "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
+  "enchantment", "enchantments", "player_item_enchantment", "player_item_enchantments",
+  "min_player_item_durability", "max_player_item_durability",
+  "min_player_item_durability_percent", "max_player_item_durability_percent",
+  "min_player_item_enchantment_level", "max_player_item_enchantment_level",
+  "components", "player_item_components", "custom_data", "player_item_custom_data", "nbt", "player_item_nbt"
+]);
+const selectedChoiceConditionKeys = new Set([
+  "type", "quest", "quest_id", "scene", "scene_path", "response", "response_id", "prior_stage", "next_stage"
+]);
+const stageHistoryConditionKeys = new Set([
+  "type", "quest", "quest_id", "stage", "prior_stage", "next_stage"
 ]);
 
 const conditionKeys = {
@@ -177,6 +217,30 @@ const conditionKeys = {
   quest_stage: questFactConditionKeys,
   fact: questFactConditionKeys,
   stage: questFactConditionKeys,
+  selected_choice: selectedChoiceConditionKeys,
+  choice_selected: selectedChoiceConditionKeys,
+  response_selected: selectedChoiceConditionKeys,
+  quest_choice_selected: selectedChoiceConditionKeys,
+  stage_history: stageHistoryConditionKeys,
+  quest_stage_history: stageHistoryConditionKeys,
+  visited_stage: stageHistoryConditionKeys,
+  player_item: playerItemConditionKeys,
+  item: playerItemConditionKeys,
+  held_item: playerItemConditionKeys,
+  villager_equipment: new Set(["type", "armed", "unarmed", "requires_villager_armed", "villager_armed", "requires_villager_unarmed", "villager_unarmed"]),
+  equipment: new Set(["type", "armed", "unarmed", "requires_villager_armed", "villager_armed", "requires_villager_unarmed", "villager_unarmed"]),
+  armed: new Set(["type", "armed", "unarmed", "requires_villager_armed", "villager_armed", "requires_villager_unarmed", "villager_unarmed"]),
+  biome: new Set(["type", "biome", "biomes", "tag", "tags", "biome_tag", "biome_tags"]),
+  dimension: new Set(["type", "dimension", "dimensions", "value", "values"]),
+  advancement: new Set(["type", "advancement", "advancements", "id", "ids", "all"]),
+  advancements: new Set(["type", "advancement", "advancements", "id", "ids", "all"]),
+  scoreboard: new Set(["type", "objective", "score", "value", "min", "max"]),
+  score: new Set(["type", "objective", "score", "value", "min", "max"]),
+  nearby_entity: new Set(["type", "entity", "entities", "entity_type", "entity_types", "entity_tag", "entity_tags", "radius", "min_count", "max_count", "origin"]),
+  nearby_entities: new Set(["type", "entity", "entities", "entity_type", "entity_types", "entity_tag", "entity_tags", "radius", "min_count", "max_count", "origin"]),
+  entity_nearby: new Set(["type", "entity", "entities", "entity_type", "entity_types", "entity_tag", "entity_tags", "radius", "min_count", "max_count", "origin"]),
+  village: new Set(["type", "present", "key", "keys", "village", "villages"]),
+  village_presence: new Set(["type", "present", "key", "keys", "village", "villages"]),
   mood: new Set(["type", "mood", "moods", "state", "states", "min", "min_intensity", "min_mood_intensity", "max", "max_intensity", "max_mood_intensity"]),
   villager_mood: new Set(["type", "mood", "moods", "state", "states", "min", "min_intensity", "min_mood_intensity", "max", "max_intensity", "max_mood_intensity"]),
   weather: new Set(["type", "state", "states", "weather", "weathers"]),
@@ -219,6 +283,8 @@ const dialogueMetadataKeys = new Set([
 const nestedDialogueMetadataKeys = new Set([
   "topic",
   "tags",
+  "routing_tags",
+  "anti_repeat_groups",
   "questline",
   "quest",
   "stage",
@@ -5289,6 +5355,19 @@ function checkCondition(file, condition, location, defaultQuestId = "") {
     }
   } else if (type === "quest_fact" || type === "quest_tag" || type === "quest_variable" || type === "quest_counter" || type === "quest_stage" || type === "fact" || type === "stage") {
     checkQuestFactCondition(file, condition, location, defaultQuestId);
+  } else if (["villager_equipment", "equipment", "armed"].includes(type)) {
+    for (const key of ["armed", "unarmed", "requires_villager_armed", "villager_armed", "requires_villager_unarmed", "villager_unarmed"]) {
+      checkOptionalBoolean(file, condition, location, key);
+    }
+  } else if (["advancement", "advancements"].includes(type)) {
+    checkStringList(file, condition, location, ["advancement", "advancements", "id", "ids"], "advancement id");
+    checkOptionalBoolean(file, condition, location, "all");
+  } else if (["scoreboard", "score"].includes(type)) {
+    for (const key of ["value", "min", "max"]) checkOptionalInteger(file, condition, location, key);
+  } else if (["nearby_entity", "nearby_entities", "entity_nearby"].includes(type)) {
+    for (const key of ["radius", "min_count", "max_count"]) checkOptionalInteger(file, condition, location, key, { min: 0 });
+  } else if (["village", "village_presence"].includes(type)) {
+    checkOptionalBoolean(file, condition, location, "present");
   } else if (type === "mood" || type === "villager_mood") {
     checkStringValues(file, condition, location, ["mood", "moods", "state", "states"], moodStates, "villager mood", { requireAny: true });
     checkOptionalInteger(file, condition, location, "min", { min: 0, max: 100 });

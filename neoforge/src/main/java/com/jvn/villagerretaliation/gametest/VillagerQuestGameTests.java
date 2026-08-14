@@ -1084,6 +1084,35 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sharedDialogueConditionsCoverWorldAndInventoryContext(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND));
+        Villager speaker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        spawnVillager(helper, new BlockPos(4, 2, 2));
+        DialogueContext context = VillagerInteractionService.createDialogueContext(helper.getLevel(), player, speaker);
+
+        JsonObject root = JsonParser.parseString("""
+                {
+                  "conditions": [
+                    {"type":"player_item","item":"minecraft:diamond","slot":"main_hand"},
+                    {"type":"dimension","dimension":"minecraft:overworld"},
+                    {"type":"nearby_entity","entity":"minecraft:villager","radius":8,"min_count":1},
+                    {"type":"villager_equipment","armed":false}
+                  ]
+                }
+                """).getAsJsonObject();
+        List<DialogueCondition> conditions = DialogueCondition.readList(
+                VillagerRetaliation.id("test/shared_conditions"), "shared conditions", root);
+        helper.assertValueEqual(conditions.size(), 4, "shared condition count");
+        helper.assertTrue(DialogueCondition.matchesAll(context, conditions), "shared conditions did not match live context");
+        helper.assertTrue(
+                DialogueCondition.descriptors().stream().map(DialogueCondition.ConditionTypeDescriptor::id).collect(java.util.stream.Collectors.toSet())
+                        .containsAll(Set.of("player_item", "villager_equipment", "biome", "dimension", "advancement", "scoreboard", "nearby_entity", "village")),
+                "shared condition registry is incomplete");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void dialogueSpecificityWeightIsExplicit(GameTestHelper helper) {
         DialogueLine defaultLine = DialogueLine.builder("default_weight", DialogueRequestType.QUESTION, "Default")
                 .professions(net.minecraft.world.entity.npc.VillagerProfession.FARMER)
