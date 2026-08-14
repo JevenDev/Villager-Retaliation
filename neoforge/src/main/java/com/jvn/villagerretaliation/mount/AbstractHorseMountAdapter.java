@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.mount;
 
-import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -33,7 +32,7 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
     @Override
     public int seatCapacity(Entity entity) {
         return entity instanceof AbstractHorse horse
-                ? VillagerRideOnCompat.seatCapacity(horse)
+                ? VillagerMountPassengers.seatCapacity(horse)
                 : 0;
     }
 
@@ -51,9 +50,7 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
         if (!(entity instanceof AbstractHorse horse)) {
             return false;
         }
-        return VillagerRideOnCompat.available()
-                ? VillagerRideOnCompat.tryMountAvailableSeat(horse, villager)
-                : VanillaHorseMounting.tryMount(horse, villager);
+        return VillagerMountPassengers.tryMountAvailableSeat(horse, villager);
     }
 
     @Override
@@ -61,17 +58,13 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
         if (!(entity instanceof AbstractHorse horse)) {
             return false;
         }
-        return VillagerRideOnCompat.available()
-                ? VillagerRideOnCompat.tryDismount(horse, villager)
-                : VanillaHorseMounting.tryDismount(horse, villager);
+        return VillagerMountPassengers.tryDismount(horse, villager);
     }
 
     @Override
     public boolean isDriver(Entity entity, Villager villager) {
         return entity instanceof AbstractHorse horse
-                && (VillagerRideOnCompat.available()
-                        ? VillagerRideOnCompat.occupant(horse, false) == villager
-                        : VanillaHorseMounting.rider(horse) == villager)
+                && VillagerMountPassengers.occupant(horse, false) == villager
                 && horse.getControllingPassenger() == villager;
     }
 

@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.mixin;
 
-import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
+import com.jvn.villagerretaliation.mount.VillagerMountPassengers;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
@@ -22,7 +22,7 @@ public abstract class HorseVillagerPassengerPositionMixin {
         AbstractHorse horse = (AbstractHorse) (Object) this;
         if (passenger instanceof Villager
                 && horse.getFirstPassenger() == passenger
-                && !VillagerRideOnCompat.managesPassengerPosition(horse, passenger)) {
+                && !VillagerMountPassengers.managesPassengerPosition(horse, passenger)) {
             passenger.setPos(
                     passenger.getX(),
                     passenger.getY() + VILLAGER_HORSE_RIDING_OFFSET,

@@ -67,13 +67,6 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies."${mod_id}"]]
-modId="rideon"
-type="optional"
-versionRange="[1.0.0-pre-release.2,)"
-ordering="AFTER"
-side="BOTH"
-
-[[dependencies."${mod_id}"]]
 modId="mebahelrpgrquest"
 type="incompatible"
 reason="Mebahel's slop is incompatible with Villager Retaliation."

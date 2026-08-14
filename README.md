@@ -102,9 +102,9 @@ Party leaders and active hirers can assign one adult horse, donkey, mule, llama,
 
 Hired workers can toggle **Mounted Travel** for long work journeys. Parties have a shared mount mode plus **Ride Mount** and **Dismount Mount** quick commands. Villagers dismount near precise work, keep trying when an assigned mount is temporarily unloaded or occupied, and park idle mounts near their last anchor while yielding to players, leashes, and panic behavior.
 
-Without a companion mod, mounted villagers use Minecraft's native mob-jockey behavior: one villager controls the mount and delegates movement to it. When Ride On 1.0.0-pre-release.3 or newer is installed, an assigned mount supports two villagers. The front rider controls the mount while the rear rider shares the journey without competing for navigation or rotation.
+Mounted villagers use Minecraft's native mob-jockey control path and ToucanLib's shared passenger seats. A normal horse can carry two assigned villagers: the front rider controls the mount while the rear rider shares the journey without competing for navigation or rotation. Other assignable horse-family mounts retain one assigned seat.
 
-An authorized party leader or hirer can take the front seat of a saddled assigned mount. If both seats are occupied, Ride On moves the current villager driver to the rear and temporarily dismounts the former rear rider. After the player leaves, the villagers promote and remount automatically. Villager Retaliation remains responsible for assignment and access rules; Ride On remains responsible for seats, offsets, and passenger transitions.
+An authorized party leader or hirer can take the front seat of a saddled assigned mount. If both seats are occupied, ToucanLib atomically moves the current villager driver to the rear and temporarily dismounts the former rear rider. After the player leaves, the villagers promote and remount automatically. Villager Retaliation remains responsible for assignment and access rules while ToucanLib owns ordered seats, offsets, and passenger transactions.
 
 ### Hired Work, Skills, and Job Stats
 
@@ -354,7 +354,7 @@ Villager Retaliation! is designed to work with vanilla villager systems rather t
 - Uses vanilla gossip integration where enabled
 - Uses NeoForge item tags for weapon detection where possible
 - Does not replace the villager entity type
-- Uses Minecraft's native mob-jockey control path for assigned mounts with no companion mod required, plus optional Ride On dual-rider integration
+- Uses Minecraft's native mob-jockey control path with ToucanLib-owned dual-rider seats for assigned normal horses
 
 Compatibility may vary with mods that heavily replace villager AI, trading, combat, or entity classes.
 

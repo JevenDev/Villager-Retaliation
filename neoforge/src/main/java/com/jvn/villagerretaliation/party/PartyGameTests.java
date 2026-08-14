@@ -903,6 +903,11 @@ public final class PartyGameTests {
                 "Ordinary leader follow must retain the assigned villager as the horse's controlling passenger");
         helper.assertTrue(firstTarget.distSqr(expectedFormationTarget) <= 1.0D,
                 "The live follow route must be placed on the horse navigator instead of the villager's on-foot navigator");
+
+        leader.moveTo(horse.getX() + 2.5D, horse.getY(), horse.getZ(), -90.0F, 0.0F);
+        VillagerRecruitmentService.onVillagerTickPost(villager);
+        helper.assertTrue(horse.getNavigation().isDone(),
+                "A mounted follower inside its three-block stopping distance must settle instead of circling its leader");
         PartyService.deleteParty(level, recruited.partyId());
         helper.succeed();
     }

@@ -24,6 +24,8 @@ import net.minecraft.world.level.pathfinder.Path;
 public final class VillagerCommandController {
     private static final double FOLLOW_START_DISTANCE_SQR = 1.5D * 1.5D;
     private static final double FOLLOW_STOP_DISTANCE_SQR = 0.75D * 0.75D;
+    private static final double MOUNTED_FOLLOW_START_DISTANCE_SQR = 4.0D * 4.0D;
+    private static final double MOUNTED_FOLLOW_STOP_DISTANCE_SQR = 3.0D * 3.0D;
     private static final double STAY_RETURN_START_DISTANCE_SQR = 2.25D * 2.25D;
     private static final double STAY_RETURN_STOP_DISTANCE_SQR = 1.25D * 1.25D;
     private static final double STAY_SPEED = VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
@@ -117,17 +119,28 @@ public final class VillagerCommandController {
         }
         if (owner == null || owner.level() != level) return TickResult.NONE;
 
-        villager.getLookControl().setLookAt(owner, 30.0F, 30.0F);
+        // A horse rider faces with the mount. Asking the rider to stare back at its owner makes
+        // its body controller fight the saddle-facing rotation every tick.
+        if (!(villager.getVehicle() instanceof AbstractHorse)) {
+            villager.getLookControl().setLookAt(owner, 30.0F, 30.0F);
+        }
         if (owner.getVehicle() != null && villager.getVehicle() == owner.getVehicle()) {
             stopNavigation(villager);
             return TickResult.NONE;
         }
         Entity anchor = owner.getVehicle() == null ? owner : owner.getVehicle();
         double distanceSqr = villager.distanceToSqr(anchor);
-        if (distanceSqr > FOLLOW_START_DISTANCE_SQR) {
+        boolean mountedDriver = isMountedDriver(villager);
+        double startDistanceSqr = mountedDriver
+                ? MOUNTED_FOLLOW_START_DISTANCE_SQR
+                : FOLLOW_START_DISTANCE_SQR;
+        double stopDistanceSqr = mountedDriver
+                ? MOUNTED_FOLLOW_STOP_DISTANCE_SQR
+                : FOLLOW_STOP_DISTANCE_SQR;
+        if (distanceSqr > startDistanceSqr) {
             moveToward(villager, anchor, VillagerMovementSpeedPolicy.following(distanceSqr));
         }
-        else if (distanceSqr < FOLLOW_STOP_DISTANCE_SQR) stopNavigation(villager);
+        else if (distanceSqr < stopDistanceSqr) stopNavigation(villager);
         return TickResult.NONE;
     }
 

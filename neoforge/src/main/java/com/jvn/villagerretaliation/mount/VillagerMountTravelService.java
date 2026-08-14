@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.mount;
 
-import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyCommandMode;
@@ -76,7 +75,7 @@ public final class VillagerMountTravelService {
             return;
         }
         if (mount instanceof AbstractHorse horse
-                && VillagerRideOnCompat.isRearPassenger(horse, villager)) {
+                && VillagerMountPassengers.isRearPassenger(horse, villager)) {
             // A rear villager keeps look/combat AI, but its private on-foot navigator must not
             // compete with the controlling rider or request movement it cannot perform.
             villager.getNavigation().stop();
@@ -212,21 +211,25 @@ public final class VillagerMountTravelService {
     /** Lets the horse own body steering while the rider smoothly tracks its combat target. */
     public static void alignMountedCombatLook(Villager villager) {
         if (villager == null
-                || !(villager.getControlledVehicle() instanceof AbstractHorse horse)
-                || !(villager.getTarget() instanceof LivingEntity target)
-                || !target.isAlive()) {
+                || !(villager.getVehicle() instanceof AbstractHorse horse)) {
             return;
         }
-        double deltaX = target.getX() - villager.getX();
-        double deltaZ = target.getZ() - villager.getZ();
-        if (deltaX * deltaX + deltaZ * deltaZ < 1.0E-6D) {
-            return;
-        }
-        float targetYaw = (float) (Mth.atan2(deltaZ, deltaX) * 180.0D / Math.PI) - 90.0F;
         float bodyYaw = horse.yBodyRot;
-        float boundedTargetYaw = bodyYaw + Mth.clamp(Mth.wrapDegrees(targetYaw - bodyYaw), -70.0F, 70.0F);
+        float boundedTargetYaw = bodyYaw;
+        if (villager.getTarget() instanceof LivingEntity target && target.isAlive()) {
+            double deltaX = target.getX() - villager.getX();
+            double deltaZ = target.getZ() - villager.getZ();
+            if (deltaX * deltaX + deltaZ * deltaZ >= 1.0E-6D) {
+                float targetYaw = (float) (Mth.atan2(deltaZ, deltaX) * 180.0D / Math.PI) - 90.0F;
+                boundedTargetYaw = bodyYaw
+                        + Mth.clamp(Mth.wrapDegrees(targetYaw - bodyYaw), -70.0F, 70.0F);
+            }
+        }
+        villager.setYRot(bodyYaw);
         villager.yBodyRot = bodyYaw;
-        villager.yHeadRot = Mth.approachDegrees(villager.yHeadRot, boundedTargetYaw, 15.0F);
+        float approachedHeadYaw = Mth.approachDegrees(villager.yHeadRot, boundedTargetYaw, 15.0F);
+        villager.yHeadRot = bodyYaw
+                + Mth.clamp(Mth.wrapDegrees(approachedHeadYaw - bodyYaw), -70.0F, 70.0F);
     }
 
     private static void maintainMountedNavigationSpeed(Villager villager) {

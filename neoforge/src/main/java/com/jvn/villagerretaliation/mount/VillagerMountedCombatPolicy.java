@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.mount;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
-import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -67,8 +66,7 @@ public final class VillagerMountedCombatPolicy {
     }
 
     private static boolean isRearSeatPair(LivingEntity passenger, LivingEntity driver) {
-        if (!VillagerRideOnCompat.available()
-                || passenger == null
+        if (passenger == null
                 || driver == null
                 || passenger == driver
                 || !passenger.isAlive()
@@ -79,7 +77,7 @@ public final class VillagerMountedCombatPolicy {
                 || driver.getVehicle() != horse) {
             return false;
         }
-        return VillagerRideOnCompat.occupant(horse, false) == driver
-                && VillagerRideOnCompat.occupant(horse, true) == passenger;
+        return VillagerMountPassengers.occupant(horse, false) == driver
+                && VillagerMountPassengers.occupant(horse, true) == passenger;
     }
 }

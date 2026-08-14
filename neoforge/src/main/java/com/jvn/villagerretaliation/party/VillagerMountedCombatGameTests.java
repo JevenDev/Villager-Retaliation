@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.party;
 
-import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
+import com.jvn.villagerretaliation.mount.VillagerMountPassengers;
 import com.jvn.villagerretaliation.mount.VillagerMountedCombatPolicy;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,10 +39,6 @@ public final class VillagerMountedCombatGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, batch = "mount_friendly_fire_villager_passenger")
     public static void partyVillagerPassengerCannotDamagePlayerDriver(GameTestHelper helper) {
-        if (!VillagerRideOnCompat.available()) {
-            helper.succeed();
-            return;
-        }
         ServerLevel level = helper.getLevel();
         ServerPlayer driver = helper.makeMockServerPlayerInLevel();
         Villager passenger = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
@@ -74,22 +70,18 @@ public final class VillagerMountedCombatGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, batch = "mount_friendly_fire_player_passenger")
     public static void partyPlayerPassengerCannotDamageVillagerDriver(GameTestHelper helper) {
-        if (!VillagerRideOnCompat.available()) {
-            helper.succeed();
-            return;
-        }
         ServerLevel level = helper.getLevel();
         ServerPlayer passenger = helper.makeMockServerPlayerInLevel();
         Villager driver = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
         AbstractHorse horse = helper.spawn(EntityType.HORSE, 4, 1, 2);
         PartyRecord party = recruit(level, passenger, driver);
         horse.setTamed(true);
-        helper.assertTrue(VillagerRideOnCompat.tryMountAvailableSeat(horse, driver),
+        helper.assertTrue(VillagerMountPassengers.tryMountAvailableSeat(horse, driver),
                 "The villager must mount in the driver seat");
-        helper.assertTrue(VillagerRideOnCompat.tryMountAvailableSeat(horse, passenger),
+        helper.assertTrue(VillagerMountPassengers.tryMountAvailableSeat(horse, passenger),
                 "The player must mount in the rear seat");
-        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, true), passenger,
-                "The player must be Ride On's rear passenger");
+        helper.assertValueEqual(VillagerMountPassengers.occupant(horse, true), passenger,
+                "The player must be the rear passenger");
 
         helper.assertTrue(VillagerMountedCombatPolicy.isProtectedPair(passenger, driver),
                 "The party player passenger and villager driver must be protected co-riders");
@@ -120,12 +112,12 @@ public final class VillagerMountedCombatGameTests {
         horse.setTamed(true);
         helper.assertTrue(driver.startRiding(horse, true),
                 "The player must mount in the driver seat");
-        helper.assertTrue(VillagerRideOnCompat.tryMountAvailableSeat(horse, passenger),
+        helper.assertTrue(VillagerMountPassengers.tryMountAvailableSeat(horse, passenger),
                 "The villager must mount in the rear seat");
-        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, false), driver,
-                "The player must be Ride On's driver");
-        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, true), passenger,
-                "The villager must be Ride On's rear passenger");
+        helper.assertValueEqual(VillagerMountPassengers.occupant(horse, false), driver,
+                "The player must be the driver");
+        helper.assertValueEqual(VillagerMountPassengers.occupant(horse, true), passenger,
+                "The villager must be the rear passenger");
     }
 
     private static PartyVillagerRecord partyVillager(Villager villager, ServerPlayer leader, long now) {
