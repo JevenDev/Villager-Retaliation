@@ -10,6 +10,43 @@
   },
   "entries": [
     {
+      "id": "player_aiming_weapon_same_party",
+      "trigger": "player_item_proximity",
+      "output": {
+        "mode": "chat",
+        "radius": 16,
+        "look_at_player": true
+      },
+      "lines": [
+        "Easy, {player}. We are on the same side.",
+        "That is me in your sights, not the enemy.",
+        "Watch where you point {held_item}. I still trust you.",
+        "Friendly fire starts with careless aim. Lower it.",
+        "We joined your party to fight beside you, not beneath your weapon.",
+        "Save that aim for whoever we face next.",
+        "I have your back, {player}. Please keep that weapon off mine.",
+        "If this is practice, choose a target that cannot complain.",
+        "Same party, same side. Point {held_item} somewhere else.",
+        "You recruited me as an ally. Treat me like one."
+      ],
+      "priority": -200,
+      "chance": 1.0,
+      "witness_radius": 8,
+      "requires_line_of_sight": true,
+      "requires_player_aiming_at_witness": true,
+      "requires_same_party": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
+      "player_items": [
+        "#minecraft:swords",
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
+      ],
+      "player_item_slots": [
+        "hands"
+      ]
+    },
+    {
       "id": "player_aiming_sword_royalty",
       "message_prefix": "forced.player_item_proximity.aiming_sword.royalty",
       "trigger": "player_item_proximity",
@@ -19,14 +56,14 @@
         "look_at_player": true
       },
       "lines": [
-        "Your Majesty, please lower {held_item}; no ceremony makes that angle harmless.",
+        "Your Majesty, please lower {held_item}. No ceremony makes that angle harmless.",
         "My liege, the edge is pointed at me, and I would rather not test it.",
         "The crown has my loyalty, but that blade still has my full attention.",
         "Please mind your sword, Your Majesty. It is resting far too close to my future.",
         "Royal hands should steady a village, not make its people flinch.",
         "I will bow when {held_item} is no longer aimed through me.",
         "Your guards would object if I stood this way before you, my liege.",
-        "One step aside with that weapon, please; dignity needs room to breathe.",
+        "One step aside with that weapon, please. Dignity needs room to breathe.",
         "You have nothing to prove at swordpoint here, Your Majesty.",
         "Command me if you must, but do not let the blade speak for you."
       ],
@@ -35,16 +72,13 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "royalty"
       ],
       "player_items": [
-        "minecraft:wooden_sword",
-        "minecraft:stone_sword",
-        "minecraft:iron_sword",
-        "minecraft:golden_sword",
-        "minecraft:diamond_sword",
-        "minecraft:netherite_sword"
+        "#minecraft:swords"
       ],
       "player_item_slots": [
         "hands"
@@ -62,7 +96,7 @@
       "lines": [
         "Your Majesty, turn {held_item} away before someone mistakes this for an order to fire.",
         "My liege, I can see exactly where that shot would land.",
-        "Please lower your aim; loyalty is poor armor against an arrow.",
+        "Please lower your aim. Loyalty is poor armor against an arrow.",
         "The crown should not place its own villagers beneath a drawn sight.",
         "Even a royal bolt cannot be recalled once loosed.",
         "I trust your judgment, Your Majesty, so show me by pointing elsewhere.",
@@ -76,12 +110,14 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "royalty"
       ],
       "player_items": [
-        "minecraft:bow",
-        "minecraft:crossbow"
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
       ],
       "player_item_slots": [
         "hands"
@@ -98,12 +134,12 @@
       },
       "lines": [
         "{player}, you are honored here. Do not make us fear {held_item}.",
-        "I have praised your name before; I do not want to whisper it beneath a blade.",
+        "I have praised your name before. I do not want to whisper it beneath a blade.",
         "That sword belongs between us and danger, not between you and me.",
         "You earned our admiration without threats. Keep it that way.",
         "Please lower the steel, hero. This village still wants to trust you.",
         "I expected protection when you reached for that weapon, not this.",
-        "People follow your example, {player}; give them a better one.",
+        "People follow your example, {player}. Give them a better one.",
         "Your victories mean little if your friends must watch your sword hand.",
         "Take the edge off me and I will hear whatever you came to say.",
         "We built respect carefully. Do not cut through it in one careless moment."
@@ -113,16 +149,13 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "revered"
       ],
       "player_items": [
-        "minecraft:wooden_sword",
-        "minecraft:stone_sword",
-        "minecraft:iron_sword",
-        "minecraft:golden_sword",
-        "minecraft:diamond_sword",
-        "minecraft:netherite_sword"
+        "#minecraft:swords"
       ],
       "player_item_slots": [
         "hands"
@@ -139,7 +172,7 @@
       },
       "lines": [
         "{player}, heroes aim beyond their neighbors, not through them.",
-        "I have trusted your eye in battle; move it off me now.",
+        "I have trusted your eye in battle. Move it off me now.",
         "That bow once made us feel safe. At this angle, it does the opposite.",
         "Your reputation deserves better than a frightened misfire.",
         "Ease the crossbow down, and let me remember why we cheer for you.",
@@ -154,12 +187,14 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "revered"
       ],
       "player_items": [
-        "minecraft:bow",
-        "minecraft:crossbow"
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
       ],
       "player_item_slots": [
         "hands"
@@ -183,7 +218,7 @@
         "There are enemies outside the village. I am not one of them.",
         "Keep {held_item} at your side and your welcome intact.",
         "You should know how quickly a pointed sword changes a conversation.",
-        "We have defended your name before; do not make that difficult.",
+        "We have defended your name before. Do not make that difficult.",
         "Step back, lower the edge, and let good sense return."
       ],
       "priority": -100,
@@ -191,16 +226,13 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "respected"
       ],
       "player_items": [
-        "minecraft:wooden_sword",
-        "minecraft:stone_sword",
-        "minecraft:iron_sword",
-        "minecraft:golden_sword",
-        "minecraft:diamond_sword",
-        "minecraft:netherite_sword"
+        "#minecraft:swords"
       ],
       "player_item_slots": [
         "hands"
@@ -222,7 +254,7 @@
         "That crossbow is making a poor argument on your behalf.",
         "I know your record. I also know a bolt does not care about reputations.",
         "Move your sights before the square notices where they are resting.",
-        "We call you dependable; do not make me revise that while staring down a string.",
+        "We call you dependable. Do not make me revise that while staring down a string.",
         "A respected guest checks the line of fire before raising a weapon.",
         "Take me out of your aim and keep your good name.",
         "I expected a greeting from you, not a firing solution."
@@ -232,12 +264,14 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "respected"
       ],
       "player_items": [
-        "minecraft:bow",
-        "minecraft:crossbow"
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
       ],
       "player_item_slots": [
         "hands"
@@ -261,7 +295,7 @@
         "You know my face. Aim that steel at someone who means us harm.",
         "Do not spend our friendship on one threatening gesture.",
         "I should not need courage to ask a friend to move their weapon.",
-        "The village door is open to you; keep the sword out of the doorway.",
+        "The village door is open to you. Keep the sword out of the doorway.",
         "Lower the edge, and I will forget how close it came."
       ],
       "priority": -100,
@@ -269,16 +303,13 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "trusted"
       ],
       "player_items": [
-        "minecraft:wooden_sword",
-        "minecraft:stone_sword",
-        "minecraft:iron_sword",
-        "minecraft:golden_sword",
-        "minecraft:diamond_sword",
-        "minecraft:netherite_sword"
+        "#minecraft:swords"
       ],
       "player_item_slots": [
         "hands"
@@ -298,7 +329,7 @@
         "Take the crossbow off me before my trust starts arguing with my instincts.",
         "I know you can hit what you aim at, which is exactly why I am worried.",
         "Relax the bow and tell me what is actually wrong.",
-        "We have watched each other's backs; stop lining up mine.",
+        "We have watched each other's backs. Stop lining up mine.",
         "Your finger is too close to making a very permanent mistake.",
         "Point {held_item} at the horizon and we can laugh about this later.",
         "I trust your heart, {player}, but the arrow cannot see it.",
@@ -310,12 +341,14 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "trusted"
       ],
       "player_items": [
-        "minecraft:bow",
-        "minecraft:crossbow"
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
       ],
       "player_item_slots": [
         "hands"
@@ -347,16 +380,13 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "neutral"
       ],
       "player_items": [
-        "minecraft:wooden_sword",
-        "minecraft:stone_sword",
-        "minecraft:iron_sword",
-        "minecraft:golden_sword",
-        "minecraft:diamond_sword",
-        "minecraft:netherite_sword"
+        "#minecraft:swords"
       ],
       "player_item_slots": [
         "hands"
@@ -388,12 +418,14 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "neutral"
       ],
       "player_items": [
-        "minecraft:bow",
-        "minecraft:crossbow"
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
       ],
       "player_item_slots": [
         "hands"
@@ -413,10 +445,10 @@
         "So this is why you have been watching us. Put the blade away.",
         "One more inch and the whole village hears about it.",
         "You have given me no reason to trust you and a sharp reason not to.",
-        "Keep {held_item} where I can see it—down by your side.",
+        "Keep {held_item} where I can see it, down by your side.",
         "Do not pretend that stance is accidental.",
         "The guards already know your face. Shall I give them a direction too?",
-        "You came under suspicion; pointing steel confirms plenty.",
+        "You came under suspicion. Pointing steel confirms plenty.",
         "Back away before caution turns into an alarm.",
         "I was willing to hear you out. The sword has changed my mind."
       ],
@@ -425,16 +457,13 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "suspicious"
       ],
       "player_items": [
-        "minecraft:wooden_sword",
-        "minecraft:stone_sword",
-        "minecraft:iron_sword",
-        "minecraft:golden_sword",
-        "minecraft:diamond_sword",
-        "minecraft:netherite_sword"
+        "#minecraft:swords"
       ],
       "player_item_slots": [
         "hands"
@@ -452,13 +481,13 @@
       "lines": [
         "Of course you brought a crossbow into this. Unmark me as your target.",
         "I have been watching your hands, and now everyone else should too.",
-        "Lower the bow slowly; sudden movements will answer the wrong question.",
+        "Lower the bow slowly. Sudden movements will answer the wrong question.",
         "You expect me to believe that bolt found me by accident?",
         "Move your aim before I shout your name across the square.",
         "This is exactly the kind of trouble we expected from you.",
         "Keep the string quiet and your excuses shorter.",
         "You are measuring the shot. I am measuring the distance to the bell.",
-        "Take your sights off me; suspicion is about to become certainty.",
+        "Take your sights off me. Suspicion is about to become certainty.",
         "A traveler with honest business does not line up villagers."
       ],
       "priority": -99,
@@ -466,12 +495,14 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "suspicious"
       ],
       "player_items": [
-        "minecraft:bow",
-        "minecraft:crossbow"
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
       ],
       "player_item_slots": [
         "hands"
@@ -494,7 +525,7 @@
         "We know what you are capable of, and we are done giving ground.",
         "That blade confirms every warning we have shared about you.",
         "Try one swing and see how quickly the square closes around you.",
-        "You are not feared here; you are watched.",
+        "You are not feared here. You are watched.",
         "Put the weapon down and leave while leaving is still offered.",
         "I have no patience left for your threats, spoken or sharpened."
       ],
@@ -503,16 +534,13 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "hostile"
       ],
       "player_items": [
-        "minecraft:wooden_sword",
-        "minecraft:stone_sword",
-        "minecraft:iron_sword",
-        "minecraft:golden_sword",
-        "minecraft:diamond_sword",
-        "minecraft:netherite_sword"
+        "#minecraft:swords"
       ],
       "player_item_slots": [
         "hands"
@@ -532,24 +560,26 @@
         "Take the shot off me. This village is already ready for you.",
         "We will not wait for the string to snap before defending ourselves.",
         "Your next movement decides whether this remains a warning.",
-        "Aim elsewhere, outsider; every rooftop is watching.",
+        "Aim elsewhere, outsider. Every rooftop is watching.",
         "That bow has bought you no distance from the consequences.",
         "You think range makes this safe for you? It does not.",
         "Lower the weapon before someone faster answers it.",
         "I see the bolt, the angle, and the choice you are making.",
-        "Release your aim—not the arrow—and get out."
+        "Release your aim, not the arrow, and get out."
       ],
       "priority": -99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "hostile"
       ],
       "player_items": [
-        "minecraft:bow",
-        "minecraft:crossbow"
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
       ],
       "player_item_slots": [
         "hands"
@@ -567,7 +597,7 @@
       "lines": [
         "Of course it comes to this with you. Get that sword out of my face.",
         "You have taken enough from us without reaching for blood.",
-        "Lower the blade; your name is already a curse here.",
+        "Lower the blade. Your name is already a curse here.",
         "Nobody in this village mistakes you for a protector anymore.",
         "Keep your filthy threat to yourself and keep walking.",
         "I would call for help, but half the square is already watching you.",
@@ -581,16 +611,13 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "despised"
       ],
       "player_items": [
-        "minecraft:wooden_sword",
-        "minecraft:stone_sword",
-        "minecraft:iron_sword",
-        "minecraft:golden_sword",
-        "minecraft:diamond_sword",
-        "minecraft:netherite_sword"
+        "#minecraft:swords"
       ],
       "player_item_slots": [
         "hands"
@@ -611,7 +638,7 @@
         "Do not hide cowardice behind a bowstring.",
         "Every villager you cover with that weapon adds another witness.",
         "We know better than to trust you with distance and a loaded bolt.",
-        "Turn it away; nobody here owes you a clean shot.",
+        "Turn it away. Nobody here owes you a clean shot.",
         "You have made enemies without firing. Imagine what happens if you do.",
         "That crossbow cannot make us respect you, only resist you.",
         "Keep the arrow and take your hatred beyond our walls.",
@@ -622,12 +649,14 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "despised"
       ],
       "player_items": [
-        "minecraft:bow",
-        "minecraft:crossbow"
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
       ],
       "player_item_slots": [
         "hands"
@@ -643,15 +672,15 @@
         "look_at_player": true
       },
       "lines": [
-        "Please—lower the sword. I will not stand in your way.",
+        "Please, lower the sword. I will not stand in your way.",
         "Do not point that at me. I have seen what happens next.",
         "Take whatever space you need, just move the blade away.",
         "I am backing up. You do not need to raise {held_item}.",
-        "No alarm, no argument—please let me leave.",
+        "No alarm, no argument. Please let me leave.",
         "My hands are empty. Keep yours from swinging.",
         "Everyone told me not to meet your eyes. Now I understand.",
         "I cannot breathe with that edge so close.",
-        "You have already frightened me; there is nothing more to prove.",
+        "You have already frightened me. There is nothing more to prove.",
         "Lower it, and I swear I will be gone before you count to three."
       ],
       "priority": -100,
@@ -659,16 +688,13 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "feared"
       ],
       "player_items": [
-        "minecraft:wooden_sword",
-        "minecraft:stone_sword",
-        "minecraft:iron_sword",
-        "minecraft:golden_sword",
-        "minecraft:diamond_sword",
-        "minecraft:netherite_sword"
+        "#minecraft:swords"
       ],
       "player_item_slots": [
         "hands"
@@ -687,7 +713,7 @@
         "Please take the crossbow off me. I will do whatever keeps it quiet.",
         "I see the bolt. You do not have to show me what it can do.",
         "Let me step aside before your finger slips.",
-        "Do not loose it—I am moving, I promise.",
+        "Do not loose it. I am moving, I promise.",
         "The sight is on my chest. Please, point anywhere else.",
         "I cannot outrun an arrow, and we both know it.",
         "Say what you want without drawing the string tighter.",
@@ -700,12 +726,14 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "draw_weapon": true,
+      "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
         "feared"
       ],
       "player_items": [
-        "minecraft:bow",
-        "minecraft:crossbow"
+        "#minecraft:enchantable/bow",
+        "#minecraft:enchantable/crossbow"
       ],
       "player_item_slots": [
         "hands"

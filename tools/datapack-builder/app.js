@@ -448,8 +448,10 @@ const FIELD_TOOLTIPS = {
   "forced-player_items": "For player_item_proximity, requires the nearby player to carry one matching item or item tag. Prefix tags with #.",
   "forced-player_item_slots": "Where to check player items. Defaults to hands when player_items is set.",
   "forced-draw_weapon": "Makes a matching villager visibly equip a carried weapon without assigning a target or starting retaliation.",
-  "forced-draw_weapon_duration_seconds": "How long the villager keeps the weapon drawn. Defaults to 10 seconds.",
+  "forced-draw_weapon_duration_seconds": "Minimum draw time. Ongoing player-item proximity matches refresh it, making this the delay before the villager sheathes after the condition stops.",
   "forced-requires_held_trade_item": "For player_item_proximity, matches when the player holds an active trade cost item for this villager.",
+  "forced-requires_player_aiming_at_witness": "Requires the player sight ray to hit the witnessing villager before another living entity.",
+  "forced-requires_same_party": "Requires the witnessing villager and nearby player to belong to the same party.",
   "forced-min_trade_level": "Minimum villager trade level from 1 to 5.",
   "forced-max_trade_level": "Maximum villager trade level from 1 to 5.",
   "forced-min_player_item_durability": "Minimum remaining durability required on the matched player item.",
@@ -7335,6 +7337,8 @@ function renderForcedDialogue() {
                 ${toggle({ id: "forced-requires_line_of_sight", label: "Requires line of sight", checked: entry.requires_line_of_sight !== false })}
                 ${toggle({ id: "forced-draw_weapon", label: "Draw weapon", checked: entry.draw_weapon === true })}
                 ${toggle({ id: "forced-requires_held_trade_item", label: "Held trade item", checked: (entry.requires_held_trade_item ?? entry.requires_trade_item ?? entry.requires_matching_trade_item) === true })}
+                ${toggle({ id: "forced-requires_player_aiming_at_witness", label: "Player aiming at witness", checked: entry.requires_player_aiming_at_witness === true })}
+                ${toggle({ id: "forced-requires_same_party", label: "Same party", checked: entry.requires_same_party === true })}
               </div>
             </div>
             <div class="field full ${forcedOnlyClass}">
@@ -8220,6 +8224,8 @@ function readForcedDialogueEntry(options = {}) {
     draw_weapon: readValue("forced-draw_weapon"),
     draw_weapon_duration_seconds: parseInteger(readValue("forced-draw_weapon_duration_seconds")),
     requires_held_trade_item: readValue("forced-requires_held_trade_item"),
+    requires_player_aiming_at_witness: readValue("forced-requires_player_aiming_at_witness"),
+    requires_same_party: readValue("forced-requires_same_party"),
     min_trade_level: parseInteger(readValue("forced-min_trade_level")),
     max_trade_level: parseInteger(readValue("forced-max_trade_level")),
     ...readPlayerItemDurability("forced"),

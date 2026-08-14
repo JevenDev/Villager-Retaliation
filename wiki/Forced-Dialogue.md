@@ -202,13 +202,15 @@ Proximity rules also accept `player_item_components`, `player_item_custom_data`,
   "player_items": ["minecraft:diamond_sword"],
   "player_item_slots": ["hands"],
   "draw_weapon": true,
-  "draw_weapon_duration_seconds": 10
+  "draw_weapon_duration_seconds": 5
 }
 ```
 
-`draw_weapon: true` makes the matching villager visibly equip the best usable weapon they carry for 10 seconds by default. Set `draw_weapon_duration_ticks`, `draw_weapon_duration_seconds`, or `draw_weapon_duration_days` to change that window. Drawing a weapon does not assign a target or start retaliation.
+`draw_weapon: true` makes the matching villager visibly equip the best usable weapon they carry for 10 seconds by default. Set `draw_weapon_duration_ticks`, `draw_weapon_duration_seconds`, or `draw_weapon_duration_days` to change that window. Ongoing `player_item_proximity` matches refresh the window even while dialogue is on cooldown, so the duration becomes the sheathing delay after the condition stops matching. Drawing a weapon does not assign a target or start retaliation.
 
-`requires_player_aiming_at_witness: true` requires the player's unobstructed server-side sight ray to hit this villager before another living entity. It can be combined with `player_items` and `player_item_slots` to author weapon-specific warnings.
+`requires_player_aiming_at_witness: true` requires the player's unobstructed server-side sight ray to hit this villager before another living entity. Aiming rules use one staggered sight ray per matching player every 5 ticks, so their cost scales with armed players instead of nearby villagers. They can be combined with `player_items` and `player_item_slots` to author weapon-specific warnings.
+
+`requires_same_party: true` restricts a `player_item_proximity` entry to villagers in the nearby player's party. This is useful for ally-specific warnings that should take priority over reputation-based reactions.
 
 `requires_held_trade_item: true` makes the entry match only adult, non-nitwit villagers the player can currently trade with, and only when the player's main hand or off hand matches one of that villager's active trade cost items. It uses vanilla's `ShowTradesToPlayer` item check, extended to also consider the off hand, so counts and components do not need to match. Out-of-stock offers are ignored. You can also use `requires_trade_item` or `requires_matching_trade_item` as aliases.
 
