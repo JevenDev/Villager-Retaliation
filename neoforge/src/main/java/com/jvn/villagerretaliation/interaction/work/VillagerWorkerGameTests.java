@@ -2702,6 +2702,10 @@ public final class VillagerWorkerGameTests {
         farmer.setVillagerData(farmer.getVillagerData().setProfession(VillagerProfession.FARMER));
         Villager mason = spawnVillager(helper, new BlockPos(4, 2, 2));
         mason.setVillagerData(mason.getVillagerData().setProfession(VillagerProfession.MASON));
+        Villager toolsmith = spawnVillager(helper, new BlockPos(2, 2, 4));
+        toolsmith.setVillagerData(toolsmith.getVillagerData().setProfession(VillagerProfession.TOOLSMITH));
+        Villager weaponsmith = spawnVillager(helper, new BlockPos(4, 2, 4));
+        weaponsmith.setVillagerData(weaponsmith.getVillagerData().setProfession(VillagerProfession.WEAPONSMITH));
 
         VillagerSkillSet lowSkills = VillagerSkillSet.filled(1);
 
@@ -2728,12 +2732,33 @@ public final class VillagerWorkerGameTests {
                 "nitwits should automatically qualify for Nitwit work");
         helper.assertTrue(
                 HiredVillagerRoles.canOfferBuilderService(level, mason),
-                "an adult villager should be able to offer one-off Builder services");
+                "masons should be able to offer one-off Builder services");
+        helper.assertTrue(
+                HiredVillagerRoles.canOfferBuilderService(level, toolsmith),
+                "toolsmiths should be able to offer one-off Builder services");
+        helper.assertTrue(
+                HiredVillagerRoles.canOfferBuilderService(level, weaponsmith),
+                "weaponsmiths should be able to offer one-off Builder services");
+        helper.assertFalse(
+                HiredVillagerRoles.canOfferBuilderService(level, farmer),
+                "other professions must not offer blueprints or perform Builder work");
+        ServerPlayer hirer = fakePlayer(level, "VrBuilderProfessionGate");
+        HiredVillagerContractService.startOneOffBuilderJob(level, farmer, hirer);
+        helper.assertFalse(
+                HiredVillagerContractService.isHired(level, farmer),
+                "a disallowed profession must not start a Builder job through the contract service");
+        HiredVillagerContractService.startOneOffBuilderJob(level, toolsmith, hirer);
+        helper.assertTrue(
+                HiredVillagerContractService.isOneOffBuilderJob(level, toolsmith),
+                "an allowed profession should start a one-off Builder job");
+        HiredVillagerContractService.endHireContract(level, toolsmith, hirer);
         helper.assertFalse(
                 HiredVillagerRoles.availableContractRoles(level, mason).contains(HiredVillagerRole.BUILDER),
                 "Builder should remain excluded from ordinary contracts");
 
         farmer.discard();
+        toolsmith.discard();
+        weaponsmith.discard();
         mason.discard();
         helper.succeed();
     }
