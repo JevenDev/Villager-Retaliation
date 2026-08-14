@@ -4,12 +4,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,7 +63,11 @@ public final class QuestPoolResources {
         if (claiming.isEmpty()) {
             return true;
         }
-        Collection<QuestDefinition> catalog = VillagerQuestResources.quests(context.level().getServer());
+        List<QuestDefinition> catalog = VillagerQuestResources.quests(context.level().getServer()).stream()
+                .filter(candidate -> VillagerQuestService.canStartIgnoringPools(context, candidate))
+                .toList();
+        List<ResourceLocation> eligibleIds = catalog.stream().map(QuestDefinition::id)
+                .sorted().toList();
         int highestExclusivePriority = claiming.stream().filter(QuestPoolDefinition::exclusive)
                 .mapToInt(QuestPoolDefinition::priority).max().orElse(Integer.MIN_VALUE);
         for (QuestPoolDefinition pool : claiming) {
@@ -71,7 +75,7 @@ public final class QuestPoolResources {
                     && (!pool.exclusive() || pool.priority() < highestExclusivePriority)) continue;
             String scopeKey = scopeKey(pool, context);
             long epoch = context.level().getGameTime() / pool.refreshTicks();
-            SelectionKey key = new SelectionKey(pool.id(), scopeKey, epoch);
+            SelectionKey key = new SelectionKey(pool.id(), scopeKey, epoch, eligibleIds);
             if (SELECTION_CACHE.size() > 4_096) {
                 SELECTION_CACHE.clear();
             }
@@ -136,7 +140,7 @@ public final class QuestPoolResources {
             for (Map.Entry<String, JsonElement> entry : weightObject.entrySet()) {
                 ResourceLocation questId = ResourceLocation.tryParse(entry.getKey());
                 if (questId != null && entry.getValue().isJsonPrimitive()) {
-                    weights.put(questId, Math.max(1, entry.getValue().getAsInt()));
+                    weights.put(questId, Math.max(0, entry.getValue().getAsInt()));
                 }
             }
         }
@@ -214,6 +218,6 @@ public final class QuestPoolResources {
     private record Cache(MinecraftServer server, List<QuestPoolDefinition> pools) {
     }
 
-    private record SelectionKey(ResourceLocation pool, String scope, long epoch) {
+    private record SelectionKey(ResourceLocation pool, String scope, long epoch, List<ResourceLocation> eligibleIds) {
     }
 }

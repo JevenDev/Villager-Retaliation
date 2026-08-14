@@ -62,7 +62,7 @@ public final class VillagerDialogueResources {
             "options", "lines", "messages", "openings", "closings", "pacify", "metadata",
             "notifications", "entries", "preferences", "rewards", "payments");
     private static final Set<String> OPTION_KEYS = Set.of(
-            "id", "label", "type", "request", "order", "professions", "dispositions",
+            "id", "label", "type", "request", "priority", "order", "professions", "dispositions",
             "metadata",
             "quest_action",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
@@ -92,7 +92,8 @@ public final class VillagerDialogueResources {
             "id", "key", "text", "lines", "professions", "dispositions",
             "metadata",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
-            "show_for_adults", "show_for_babies", "weight");
+            "conditions", "availability", "available_when",
+            "show_for_adults", "show_for_babies", "priority", "weight", "chance");
     private static final Set<String> CONVERSATION_KEYS = Set.of(
             "id", "text", "lines", "professions", "dispositions",
             "metadata",
@@ -105,11 +106,13 @@ public final class VillagerDialogueResources {
             "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
             "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
             "min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level",
-            "show_for_adults", "show_for_babies", "first_conversation_only", "first_village_interaction_only", "weight");
+            "conditions", "availability", "available_when",
+            "show_for_adults", "show_for_babies", "first_conversation_only", "first_village_interaction_only", "priority", "weight", "chance");
     private static final Set<String> PACIFY_KEYS = Set.of(
             "id", "text", "lines", "outcomes", "professions", "dispositions",
             "metadata",
-            "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed", "weight");
+            "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
+            "conditions", "availability", "available_when", "priority", "weight", "chance");
     private static final Set<String> LINE_KEYS = Set.of(
             "id", "request", "text", "lines", "text_key", "option", "option_ids", "professions", "dispositions",
             "metadata",
@@ -258,6 +261,12 @@ public final class VillagerDialogueResources {
     private static Optional<String> selectConversationLine(
             DialogueContext context,
             List<ConversationLine> candidates) {
+        candidates = candidates.stream()
+                .filter(candidate -> candidate.chance() >= 1.0D
+                        || candidate.chance() > 0.0D && context.random().nextDouble() < candidate.chance())
+                .toList();
+        int highestPriority = candidates.stream().mapToInt(ConversationLine::priority).max().orElse(Integer.MIN_VALUE);
+        candidates = candidates.stream().filter(candidate -> candidate.priority() == highestPriority).toList();
         int totalWeight = candidates.stream().mapToInt(ConversationLine::weight).sum();
         if (totalWeight <= 0) {
             return Optional.empty();
@@ -281,6 +290,7 @@ public final class VillagerDialogueResources {
         List<KeyedMessageLine> candidates = load(context.level().getServer(), context.locale()).messages().stream()
                 .filter(line -> line.matches(context, key, disposition))
                 .toList();
+        candidates = eligibleMessages(candidates, context.random());
         return selectMessage(candidates, context.random().nextInt(Math.max(1, totalMessageWeight(candidates))))
                 .map(line -> resolveTemplate(line.selectText(context.random()), replacements));
     }
@@ -294,6 +304,7 @@ public final class VillagerDialogueResources {
         List<KeyedMessageLine> candidates = matches.stream()
                 .filter(line -> !hasProfessionSpecificMatch || line.professionSpecific())
                 .toList();
+        candidates = eligibleMessages(candidates, context.random());
         return selectMessage(candidates, context.random().nextInt(Math.max(1, totalMessageWeight(candidates))))
                 .map(line -> resolveTemplate(line.selectText(context.random()), replacements));
     }
@@ -327,6 +338,7 @@ public final class VillagerDialogueResources {
         List<KeyedMessageLine> candidates = load(server, locale).messages().stream()
                 .filter(line -> line.matches(key))
                 .toList();
+        candidates = eligibleMessages(candidates, random);
         return selectMessage(candidates, random.nextInt(Math.max(1, totalMessageWeight(candidates))))
                 .map(line -> resolveTemplate(line.selectText(random), replacements));
     }
@@ -339,12 +351,16 @@ public final class VillagerDialogueResources {
 
         List<DialogueOptionDefinition> options = new ArrayList<>(load(context.level().getServer(), context.locale()).options().stream()
                 .filter(option -> option.matches(context, disposition))
-                .sorted(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id))
+                .sorted(Comparator.comparingInt(DialogueOptionDefinition::priority).reversed()
+                        .thenComparingInt(DialogueOptionDefinition::order)
+                        .thenComparing(DialogueOptionDefinition::id))
                 .toList());
         options.addAll(DialogueTreeResources.entryOptions(context, disposition));
         options.addAll(VillagerQuestService.embeddedDialogueOptions(context, disposition));
         options.addAll(VillagerQuestService.stageBranchOptions(context));
-        options.sort(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id));
+        options.sort(Comparator.comparingInt(DialogueOptionDefinition::priority).reversed()
+                .thenComparingInt(DialogueOptionDefinition::order)
+                .thenComparing(DialogueOptionDefinition::id));
         return List.copyOf(options);
     }
 
@@ -362,6 +378,12 @@ public final class VillagerDialogueResources {
         List<PacifyLine> candidates = load(context.level().getServer(), context.locale()).pacifyLines().stream()
                 .filter(line -> line.matches(context, result))
                 .toList();
+        candidates = candidates.stream()
+                .filter(candidate -> candidate.chance() >= 1.0D
+                        || candidate.chance() > 0.0D && context.random().nextDouble() < candidate.chance())
+                .toList();
+        int highestPriority = candidates.stream().mapToInt(PacifyLine::priority).max().orElse(Integer.MIN_VALUE);
+        candidates = candidates.stream().filter(candidate -> candidate.priority() == highestPriority).toList();
         if (candidates.isEmpty()) {
             return Optional.empty();
         }
@@ -578,11 +600,11 @@ public final class VillagerDialogueResources {
             DatapackDiagnostics.warnUnknownRootKeys(location, "dialogue", root, ROOT_KEYS);
             Set<VillagerProfession> defaultProfessions = defaultProfessionsFor(location, locale);
             readDialogueOptions(location, root, rootMetadata, defaultProfessions, options, optionSources);
-            readKeyedMessages(location, root, defaultProfessions, messages, messageSources);
+            readKeyedMessages(location, root, rootMetadata, defaultProfessions, messages, messageSources);
             readDialogueLines(location, root, rootMetadata, defaultProfessions, lines, lineSources);
-            readConversationLines(location, root, "openings", defaultProfessions, openings, openingSources);
-            readConversationLines(location, root, "closings", defaultProfessions, closings, closingSources);
-            readPacifyLines(location, root, defaultProfessions, pacifyLines, pacifySources);
+            readConversationLines(location, root, rootMetadata, "openings", defaultProfessions, openings, openingSources);
+            readConversationLines(location, root, rootMetadata, "closings", defaultProfessions, closings, closingSources);
+            readPacifyLines(location, root, rootMetadata, defaultProfessions, pacifyLines, pacifySources);
         });
     }
 
@@ -726,10 +748,10 @@ public final class VillagerDialogueResources {
         switch (section) {
             case OPTIONS -> readDialogueOptions(location, syntheticRoot, rootMetadata, defaultProfessions, options, optionSources);
             case LINES -> readDialogueLines(location, syntheticRoot, rootMetadata, defaultProfessions, lines, lineSources);
-            case MESSAGES -> readKeyedMessages(location, syntheticRoot, defaultProfessions, messages, messageSources);
-            case OPENINGS -> readConversationLines(location, syntheticRoot, "openings", defaultProfessions, openings, openingSources);
-            case CLOSINGS -> readConversationLines(location, syntheticRoot, "closings", defaultProfessions, closings, closingSources);
-            case PACIFY -> readPacifyLines(location, syntheticRoot, defaultProfessions, pacifyLines, pacifySources);
+            case MESSAGES -> readKeyedMessages(location, syntheticRoot, rootMetadata, defaultProfessions, messages, messageSources);
+            case OPENINGS -> readConversationLines(location, syntheticRoot, rootMetadata, "openings", defaultProfessions, openings, openingSources);
+            case CLOSINGS -> readConversationLines(location, syntheticRoot, rootMetadata, "closings", defaultProfessions, closings, closingSources);
+            case PACIFY -> readPacifyLines(location, syntheticRoot, rootMetadata, defaultProfessions, pacifyLines, pacifySources);
         }
     }
 
@@ -793,6 +815,7 @@ public final class VillagerDialogueResources {
     private static void readKeyedMessages(
             ResourceLocation location,
             JsonObject root,
+            DialogueEntryMetadata rootMetadata,
             Set<VillagerProfession> defaultProfessions,
             Map<String, KeyedMessageLine> messages,
             Map<String, ResourceLocation> messageSources) {
@@ -811,7 +834,7 @@ public final class VillagerDialogueResources {
             JsonObject entry = element.getAsJsonObject();
             String context = entryContext("message", entry, index);
             DatapackDiagnostics.warnUnknownKeys(location, "dialogue message", context, entry, MESSAGE_KEYS);
-            DialogueEntryMetadata.read(location, "dialogue message", context, entry);
+            DialogueEntryMetadata metadata = rootMetadata.merge(DialogueEntryMetadata.read(location, "dialogue message", context, entry));
             String key = readString(entry, "key");
             List<String> entryLines = readLines(entry);
             if (key.isBlank() || entryLines.isEmpty()) {
@@ -835,7 +858,11 @@ public final class VillagerDialogueResources {
                     professions,
                     dispositions,
                     VillagerEquipmentCondition.read(entry),
-                    weight
+                    weight,
+                    readInt(entry, "priority", 0),
+                    Math.max(0.0D, Math.min(1.0D, DatapackJsonReader.readDouble(entry, "chance", 1.0D))),
+                    metadata,
+                    DialogueCondition.readList(location, context, entry)
             ), messages, messageSources);
             index++;
         }
@@ -1000,6 +1027,7 @@ public final class VillagerDialogueResources {
                     requiresKnownWidowedPartner,
                     DialogueCondition.readList(location, context, entry),
                     requiresActiveSpecialOrders,
+                    DatapackJsonReader.readInt(entry, "priority", 0),
                     order
             ), options, optionSources);
             index++;
@@ -1121,6 +1149,7 @@ public final class VillagerDialogueResources {
     private static void readConversationLines(
             ResourceLocation location,
             JsonObject root,
+            DialogueEntryMetadata rootMetadata,
             String key,
             Set<VillagerProfession> defaultProfessions,
             Map<String, ConversationLine> lines,
@@ -1141,7 +1170,7 @@ public final class VillagerDialogueResources {
             String context = entryContext(key, entry, index);
             DatapackDiagnostics.warnUnknownKeys(location, "dialogue " + key, context, entry, CONVERSATION_KEYS);
             DatapackDiagnostics.warnInertPlayerItemSlots(location, context, entry);
-            DialogueEntryMetadata.read(location, "dialogue " + key, context, entry);
+            DialogueEntryMetadata metadata = rootMetadata.merge(DialogueEntryMetadata.read(location, "dialogue " + key, context, entry));
             List<String> entryLines = readLines(entry);
             if (entryLines.isEmpty()) {
                 index++;
@@ -1174,7 +1203,11 @@ public final class VillagerDialogueResources {
                     Set.copyOf(villageAllegiances),
                     weight,
                     firstConversationOnly,
-                    firstVillageInteractionOnly
+                    firstVillageInteractionOnly,
+                    readInt(entry, "priority", 0),
+                    Math.max(0.0D, Math.min(1.0D, DatapackJsonReader.readDouble(entry, "chance", 1.0D))),
+                    metadata,
+                    DialogueCondition.readList(location, context, entry)
             ), lines, lineSources);
             index++;
         }
@@ -1183,6 +1216,7 @@ public final class VillagerDialogueResources {
     private static void readPacifyLines(
             ResourceLocation location,
             JsonObject root,
+            DialogueEntryMetadata rootMetadata,
             Set<VillagerProfession> defaultProfessions,
             Map<String, PacifyLine> lines,
             Map<String, ResourceLocation> pacifySources) {
@@ -1201,7 +1235,7 @@ public final class VillagerDialogueResources {
             JsonObject entry = element.getAsJsonObject();
             String context = entryContext("pacify", entry, index);
             DatapackDiagnostics.warnUnknownKeys(location, "pacify line", context, entry, PACIFY_KEYS);
-            DialogueEntryMetadata.read(location, "pacify line", context, entry);
+            DialogueEntryMetadata metadata = rootMetadata.merge(DialogueEntryMetadata.read(location, "pacify line", context, entry));
             List<String> entryLines = readLines(entry);
             if (entryLines.isEmpty()) {
                 index++;
@@ -1221,7 +1255,11 @@ public final class VillagerDialogueResources {
                     dispositions,
                     outcomes,
                     VillagerEquipmentCondition.read(entry),
-                    weight
+                    weight,
+                    readInt(entry, "priority", 0),
+                    Math.max(0.0D, Math.min(1.0D, DatapackJsonReader.readDouble(entry, "chance", 1.0D))),
+                    metadata,
+                    DialogueCondition.readList(location, context, entry)
             ), lines, pacifySources);
             index++;
         }
@@ -1668,6 +1706,14 @@ public final class VillagerDialogueResources {
                 .replace("{gift_subject}", giftSubject);
     }
 
+    private static List<KeyedMessageLine> eligibleMessages(List<KeyedMessageLine> candidates, RandomSource random) {
+        candidates = candidates.stream()
+                .filter(candidate -> candidate.chance() >= 1.0D
+                        || candidate.chance() > 0.0D && random.nextDouble() < candidate.chance()).toList();
+        int highestPriority = candidates.stream().mapToInt(KeyedMessageLine::priority).max().orElse(Integer.MIN_VALUE);
+        return candidates.stream().filter(candidate -> candidate.priority() == highestPriority).toList();
+    }
+
     private static int totalMessageWeight(List<KeyedMessageLine> candidates) {
         return candidates.stream().mapToInt(KeyedMessageLine::weight).sum();
     }
@@ -1767,7 +1813,11 @@ public final class VillagerDialogueResources {
             Set<AllegianceState> villageAllegiances,
             int weight,
             boolean firstConversationOnly,
-            boolean firstVillageInteractionOnly) {
+            boolean firstVillageInteractionOnly,
+            int priority,
+            double chance,
+            DialogueEntryMetadata metadata,
+            List<DialogueCondition> conditions) {
         private String selectText(DialogueContext context) {
             String text = this.lines.get(context.random().nextInt(this.lines.size()));
             return resolveTemplate(text, this.playerItemCondition.replacements(context.player()));
@@ -1814,7 +1864,8 @@ public final class VillagerDialogueResources {
             if (this.firstVillageInteractionOnly && !context.firstVillageInteraction()) {
                 return false;
             }
-            return this.weight > 0 && (this.dispositions.isEmpty() || this.dispositions.contains(disposition));
+            return this.weight > 0 && DialogueCondition.matchesAll(context, this.conditions)
+                    && (this.dispositions.isEmpty() || this.dispositions.contains(disposition));
         }
 
         private boolean firstInteractionSpecific() {
@@ -1837,7 +1888,11 @@ public final class VillagerDialogueResources {
             Set<DialogueDisposition> dispositions,
             Set<VillagerPacificationResult> outcomes,
             VillagerEquipmentCondition equipmentCondition,
-            int weight) {
+            int weight,
+            int priority,
+            double chance,
+            DialogueEntryMetadata metadata,
+            List<DialogueCondition> conditions) {
         private String selectText(RandomSource random) {
             return this.lines.get(random.nextInt(this.lines.size()));
         }
@@ -1852,7 +1907,8 @@ public final class VillagerDialogueResources {
             if (!this.dispositions.isEmpty() && !this.dispositions.contains(VillagerDialogueService.moodFor(context))) {
                 return false;
             }
-            return this.weight > 0 && (this.outcomes.isEmpty() || this.outcomes.contains(result));
+            return this.weight > 0 && DialogueCondition.matchesAll(context, this.conditions)
+                    && (this.outcomes.isEmpty() || this.outcomes.contains(result));
         }
     }
 
@@ -1865,17 +1921,21 @@ public final class VillagerDialogueResources {
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
             VillagerEquipmentCondition equipmentCondition,
-            int weight) {
+            int weight,
+            int priority,
+            double chance,
+            DialogueEntryMetadata metadata,
+            List<DialogueCondition> conditions) {
         private String selectText(RandomSource random) {
             return this.lines.get(random.nextInt(this.lines.size()));
         }
 
         private boolean matches(String key) {
-            return this.weight > 0 && this.key.equals(key);
+            return this.weight > 0 && this.conditions.isEmpty() && this.key.equals(key);
         }
 
         private boolean matches(DialogueContext context, String key, DialogueDisposition disposition) {
-            if (!matches(key)) {
+            if (this.weight <= 0 || !this.key.equals(key)) {
                 return false;
             }
             if (context.villager().isBaby()) {
@@ -1891,7 +1951,8 @@ public final class VillagerDialogueResources {
             if (!this.equipmentCondition.matches(context.villager())) {
                 return false;
             }
-            return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
+            return DialogueCondition.matchesAll(context, this.conditions)
+                    && (this.dispositions.isEmpty() || this.dispositions.contains(disposition));
         }
 
         private boolean professionSpecific() {

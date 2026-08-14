@@ -632,7 +632,8 @@ public final class VillagerQuestResources {
                 professions,
                 minLevel,
                 readSkillRequirements(offer),
-                DialogueCondition.readList(location, "quest offer", offer, defaultQuestId)
+                DialogueCondition.readList(location, "quest offer", offer, defaultQuestId),
+                DatapackJsonReader.readInt(offer, "weight", DatapackJsonReader.readInt(offer, "selection_weight", 1))
         );
     }
 
@@ -1979,7 +1980,10 @@ public final class VillagerQuestResources {
                 readTriggerStages(trigger),
                 DatapackJsonReader.readDurationTicks(trigger, "cooldown", defaultTriggerCooldown(event)),
                 DatapackJsonReader.readDouble(trigger, "radius", 10.0D),
-                repeatable
+                repeatable,
+                DatapackJsonReader.readInt(trigger, "priority", 0),
+                DatapackJsonReader.readDouble(trigger, "chance", 1.0D),
+                DatapackJsonReader.readBoolean(trigger, "exclusive", false)
         ));
     }
 

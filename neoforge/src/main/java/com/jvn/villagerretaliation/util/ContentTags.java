@@ -30,6 +30,14 @@ public final class ContentTags {
                 || tag.equals("dialogue.interaction");
     }
 
+    public static boolean isDialogueRoutingTag(String value) {
+        String tag = normalize(value);
+        return tag.startsWith("route.")
+                || tag.startsWith("route:")
+                || tag.startsWith("routing.")
+                || tag.startsWith("routing:");
+    }
+
     public static Set<String> normalizeAll(Collection<String> values) {
         if (values == null || values.isEmpty()) return Set.of();
         Set<String> normalized = new LinkedHashSet<>();

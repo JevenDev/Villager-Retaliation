@@ -81,6 +81,8 @@ public final class QuestV2Parser {
             "data");
     private static final Set<String> AVAILABILITY_KEYS = Set.of(
             "conditions",
+            "weight",
+            "selection_weight",
             "active",
             "expiration",
             "branch",
@@ -318,6 +320,9 @@ public final class QuestV2Parser {
             "cooldown_days",
             "radius",
             "repeatable",
+            "priority",
+            "chance",
+            "exclusive",
             "metadata");
     private static final Set<String> REWARDS_KEYS = Set.of(
             "actions",

@@ -117,6 +117,7 @@ public record DialogueTreeDefinition(
                     this.label,
                     this.requestType,
                     this.forceCameraTowardsVillager,
+                    this.priority,
                     this.order
             );
         }
@@ -198,6 +199,7 @@ public record DialogueTreeDefinition(
                     this.label,
                     this.requestType,
                     false,
+                    this.priority,
                     this.order
             );
         }
@@ -218,6 +220,7 @@ public record DialogueTreeDefinition(
             String label,
             DialogueRequestType requestType,
             boolean forceCameraTowardsVillager,
+            int priority,
             int order) {
         return new DialogueOptionDefinition(
                 id,
@@ -272,6 +275,7 @@ public record DialogueTreeDefinition(
                 false,
                 List.of(),
                 false,
+                priority,
                 order
         );
     }

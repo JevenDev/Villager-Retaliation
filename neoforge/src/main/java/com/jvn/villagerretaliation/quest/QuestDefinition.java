@@ -163,10 +163,16 @@ public record QuestDefinition(
             Set<VillagerProfession> professions,
             int minVillagerLevel,
             Map<VillagerSkill, Integer> minSkills,
-            List<DialogueCondition> conditions
+            List<DialogueCondition> conditions,
+            int weight
     ) {
         public static Offer any() {
             return new Offer(Set.of(), 1, Map.of(), List.of());
+        }
+
+        public Offer(Set<VillagerProfession> professions, int minVillagerLevel,
+                     Map<VillagerSkill, Integer> minSkills, List<DialogueCondition> conditions) {
+            this(professions, minVillagerLevel, minSkills, conditions, 1);
         }
 
         public Offer {
@@ -174,6 +180,7 @@ public record QuestDefinition(
             minVillagerLevel = Math.max(1, Math.min(5, minVillagerLevel));
             minSkills = minSkills == null ? Map.of() : Map.copyOf(minSkills);
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
+            weight = Math.max(0, Math.min(10_000, weight));
         }
 
         public boolean matches(DialogueContext context) {
@@ -959,9 +966,18 @@ public record QuestDefinition(
             Set<String> stages,
             long cooldownTicks,
             double radius,
-            boolean repeatable
+            boolean repeatable,
+            int priority,
+            double chance,
+            boolean exclusive
     ) {
         private static final double DEFAULT_RADIUS = 10.0D;
+
+        public Trigger(String id, TriggerEvent event, List<DialogueCondition> conditions,
+                       List<VillagerActionDefinition> actions, Set<String> stages, long cooldownTicks,
+                       double radius, boolean repeatable) {
+            this(id, event, conditions, actions, stages, cooldownTicks, radius, repeatable, 0, 1.0D, false);
+        }
 
         public Trigger {
             id = id == null || id.isBlank() ? "trigger" : id;
@@ -971,6 +987,7 @@ public record QuestDefinition(
             stages = stages == null ? Set.of() : Set.copyOf(stages);
             cooldownTicks = Math.max(0L, cooldownTicks);
             radius = Double.isFinite(radius) && radius > 0.0D ? radius : DEFAULT_RADIUS;
+            chance = Double.isFinite(chance) ? Math.max(0.0D, Math.min(1.0D, chance)) : 1.0D;
         }
     }
 
@@ -979,6 +996,15 @@ public record QuestDefinition(
         PROXIMITY,
         STARTED,
         PROGRESS,
+        MOB_KILL,
+        BLOCK_BREAK,
+        BLOCK_PLACE,
+        BLOCK_INTERACT,
+        MEMORY_EVENT,
+        GIFT,
+        TRADE,
+        REPUTATION,
+        CRITERION,
         STAGE_CHANGED,
         COMPLETED,
         FAILED,

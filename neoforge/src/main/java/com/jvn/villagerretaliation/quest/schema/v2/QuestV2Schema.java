@@ -151,6 +151,8 @@ public final class QuestV2Schema {
         JsonObject schema = typedObject();
         JsonObject properties = object();
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
+        properties.add("weight", integerRange(0, 10_000));
+        properties.add("selection_weight", integerRange(0, 10_000));
         properties.add("active", ref("#/$defs/active_state"));
         properties.add("expiration", ref("#/$defs/expiration"));
         properties.add("branch", ref("#/$defs/branch"));
@@ -508,6 +510,9 @@ public final class QuestV2Schema {
         properties.add("cooldown_days", integer());
         properties.add("radius", number());
         properties.add("repeatable", booleanSchema());
+        properties.add("priority", integer());
+        properties.add("chance", probability());
+        properties.add("exclusive", booleanSchema());
         properties.add("metadata", openObject());
         schema.add("properties", properties);
         return schema;
@@ -768,6 +773,20 @@ public final class QuestV2Schema {
         schema.addProperty("minimum", 0);
         return schema;
     }
+    private static JsonObject integerRange(int minimum, int maximum) {
+        JsonObject schema = integer();
+        schema.addProperty("minimum", minimum);
+        schema.addProperty("maximum", maximum);
+        return schema;
+    }
+
+    private static JsonObject probability() {
+        JsonObject schema = number();
+        schema.addProperty("minimum", 0.0D);
+        schema.addProperty("maximum", 1.0D);
+        return schema;
+    }
+
 
     private static JsonObject primitive() {
         JsonObject schema = object();

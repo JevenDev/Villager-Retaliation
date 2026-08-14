@@ -4613,6 +4613,20 @@ public final class VillagerQuestService {
         onObjectiveEvent(level, player, event, Set.of());
     }
 
+    private static QuestDefinition.TriggerEvent triggerEventFor(QuestObjectiveEventKind kind) {
+        return switch (kind) {
+            case MOB_KILL -> QuestDefinition.TriggerEvent.MOB_KILL;
+            case BLOCK_BREAK -> QuestDefinition.TriggerEvent.BLOCK_BREAK;
+            case BLOCK_PLACE -> QuestDefinition.TriggerEvent.BLOCK_PLACE;
+            case BLOCK_INTERACT -> QuestDefinition.TriggerEvent.BLOCK_INTERACT;
+            case MEMORY_EVENT -> QuestDefinition.TriggerEvent.MEMORY_EVENT;
+            case GIFT -> QuestDefinition.TriggerEvent.GIFT;
+            case TRADE -> QuestDefinition.TriggerEvent.TRADE;
+            case REPUTATION -> QuestDefinition.TriggerEvent.REPUTATION;
+            case CRITERION -> QuestDefinition.TriggerEvent.CRITERION;
+        };
+    }
+
     private static QuestActionOutcome failQuest(
             DialogueContext context,
             QuestDefinition definition,
@@ -4656,42 +4670,50 @@ public final class VillagerQuestService {
         }
 
         Set<ResourceLocation> candidateQuestIds = objectiveEventQuestIds(level, event);
+        QuestDefinition.TriggerEvent objectiveTriggerEvent = triggerEventFor(event.kind());
         QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.OBJECTIVE_EVENT, null,
                 "event=" + event.kind().name().toLowerCase(Locale.ROOT)
                         + " candidate_quests=" + candidateQuestIds.size());
-        if (candidateQuestIds.isEmpty()) {
-            return;
-        }
 
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         boolean changed = false;
         boolean progressNotice = false;
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
-            if (!candidateQuestIds.contains(entry.getKey()) || excludedQuestIds.contains(entry.getKey())) {
+            if (excludedQuestIds.contains(entry.getKey())) {
                 continue;
             }
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
             if (definition == null) {
                 continue;
             }
+            boolean objectiveCandidate = candidateQuestIds.contains(entry.getKey());
+            boolean triggerCandidate = VillagerQuestResources.questTriggerIndex(level.getServer(), entry.getKey())
+                    .map(index -> index.hasEvent(objectiveTriggerEvent))
+                    .orElse(false);
+            if (!objectiveCandidate && !triggerCandidate) {
+                continue;
+            }
             VillagerQuestSavedData.QuestProgress progress = entry.getValue();
             if (!activeConditionsMetForPlayer(player, definition, progress)) {
                 continue;
             }
-            boolean questProgressChanged = updateEventObjectiveProgress(level, player, event, definition, progress);
-            if (!questProgressChanged) {
-                continue;
+            boolean questProgressChanged = objectiveCandidate
+                    && updateEventObjectiveProgress(level, player, event, definition, progress);
+            if (triggerCandidate) {
+                changed |= dispatchQuestTriggers(player, definition, progress, objectiveTriggerEvent);
             }
-            questProgressChanged |= advanceStageAfterEvent(level, player, definition, progress);
-            changed = true;
-            progressNotice = true;
-            sendQuestProgressNotification(
-                    player,
-                    definition,
-                    progress,
-                    "quest.updated",
-                    "Quest updated: {quest}");
-            changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
+            if (questProgressChanged) {
+                questProgressChanged |= advanceStageAfterEvent(level, player, definition, progress);
+                changed = true;
+                progressNotice = true;
+                sendQuestProgressNotification(
+                        player,
+                        definition,
+                        progress,
+                        "quest.updated",
+                        "Quest updated: {quest}");
+                changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
+            }
         }
         if (changed) {
             data.setDirty();

@@ -196,6 +196,8 @@ public final class QuestV2Compiler {
             copyIfPresent(filters, offer, "min_villager_level");
             copyIfPresent(filters, offer, "skills");
         }
+        copyIfPresent(resource.availability().data(), offer, "weight");
+        copyIfPresent(resource.availability().data(), offer, "selection_weight");
         JsonArray conditions = jsonObjectArray(resource.availability().conditions());
         if (conditions.size() > 0) {
             offer.add("conditions", conditions);
@@ -679,6 +681,9 @@ public final class QuestV2Compiler {
         copyIfPresent(event.data(), trigger, "cooldown_days");
         copyIfPresent(event.data(), trigger, "radius");
         copyIfPresent(event.data(), trigger, "repeatable");
+        copyIfPresent(event.data(), trigger, "priority");
+        copyIfPresent(event.data(), trigger, "chance");
+        copyIfPresent(event.data(), trigger, "exclusive");
         triggers.add(trigger);
         triggerSources.put(triggerId, source);
     }
