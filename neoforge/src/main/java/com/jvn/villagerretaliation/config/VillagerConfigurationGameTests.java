@@ -86,12 +86,18 @@ public final class VillagerConfigurationGameTests {
                 new VillagerRetaliationConfigModel.DebugOverlay();
         helper.assertTrue(balanceDefaults.hungerEffectAffectsVillagers,
                 "Hunger status effects should affect villagers by default");
+        helper.assertFalse(balanceDefaults.enableVillagerStarvationDamage,
+                "Villager starvation damage should remain opt-in");
         helper.assertFalse(debugDefaults.reputationDebugOverlayShowHunger,
                 "Debug hunger should remain opt-in like debug health and armor");
         helper.assertTrue(
                 VillagerRetaliationConfig.HUNGER_EFFECT_AFFECTS_VILLAGERS.option()
                         != VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_HUNGER.option(),
                 "Gameplay and debug hunger settings must use distinct config bindings");
+        helper.assertTrue(
+                VillagerRetaliationConfig.ENABLE_VILLAGER_STARVATION_DAMAGE.option()
+                        != VillagerRetaliationConfig.HUNGER_EFFECT_AFFECTS_VILLAGERS.option(),
+                "Starvation damage and Hunger effect settings must use distinct config bindings");
         helper.succeed();
     }
 

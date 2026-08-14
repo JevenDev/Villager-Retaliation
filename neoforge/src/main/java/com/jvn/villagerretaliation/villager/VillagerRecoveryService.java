@@ -362,6 +362,9 @@ public final class VillagerRecoveryService {
             Villager villager,
             RecoveryState state) {
         if (state.food() <= 0) {
+            if (!VillagerRetaliationConfig.ENABLE_VILLAGER_STARVATION_DAMAGE.get()) {
+                return state.withHealTimer(0);
+            }
             int timer = state.healTimer() + 1;
             if (timer >= 80) {
                 Difficulty difficulty = level.getDifficulty();

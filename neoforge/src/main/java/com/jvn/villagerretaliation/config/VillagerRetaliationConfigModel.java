@@ -328,6 +328,8 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean hungerEffectAffectsVillagers = true;
 
+        public boolean enableVillagerStarvationDamage = false;
+
         @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
         public double villagerEmeraldDropChance = 0.35;
 

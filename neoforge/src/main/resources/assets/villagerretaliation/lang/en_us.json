@@ -438,6 +438,8 @@
   "text.config.villagerretaliation.option.balance.hiredWorkSkillGrowth.nitwit.tooltip": "Skill XP per normalized completed nitwit report; waiting and walking grant none.",
   "text.config.villagerretaliation.option.balance.hiredWorkTickInterval": "Hired Work Tick Interval",
   "text.config.villagerretaliation.option.balance.hiredWorkTickInterval.tooltip": "Baseline ticks between hired-worker decisions at 100%% operational efficiency. Only roles whose aptitude represents action cadence modify this interval; other skills change their concrete role effect instead.",
+  "text.config.villagerretaliation.option.balance.enableVillagerStarvationDamage": "Enable Villager Starvation Damage",
+  "text.config.villagerretaliation.option.balance.enableVillagerStarvationDamage.tooltip": "Allows villagers at zero food to take player-like starvation damage. Disabled by default.",
   "text.config.villagerretaliation.option.balance.hungerEffectAffectsVillagers": "Hunger Effect Affects Villagers",
   "text.config.villagerretaliation.option.balance.hungerEffectAffectsVillagers.tooltip": "Makes the vanilla Hunger status effect drain a villager's food and saturation using the same exhaustion rate as players.",
   "text.config.villagerretaliation.option.balance.professionDropChance": "Profession Drop Chance",

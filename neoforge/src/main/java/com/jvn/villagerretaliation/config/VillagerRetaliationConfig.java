@@ -135,6 +135,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> BABY_VILLAGERS_DROP_LOOT = bind("balance.babyVillagersDropLoot", Boolean.class);
     public static final ConfigValue<Boolean> REQUIRE_PLAYER_KILL_FOR_PROFESSION_LOOT = bind("balance.requirePlayerKillForProfessionLoot", Boolean.class);
     public static final ConfigValue<Boolean> HUNGER_EFFECT_AFFECTS_VILLAGERS = bind("balance.hungerEffectAffectsVillagers", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_VILLAGER_STARVATION_DAMAGE = bind("balance.enableVillagerStarvationDamage", Boolean.class);
     public static final ConfigValue<Double> VILLAGER_EMERALD_DROP_CHANCE = bind("balance.villagerEmeraldDropChance", Double.class);
     public static final ConfigValue<Double> VILLAGER_BREAD_DROP_CHANCE = bind("balance.villagerBreadDropChance", Double.class);
     public static final ConfigValue<Double> PROFESSION_DROP_CHANCE = bind("balance.professionDropChance", Double.class);
