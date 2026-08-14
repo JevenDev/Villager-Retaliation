@@ -173,6 +173,8 @@ public final class QuestV2Schema {
         properties.add("repeatable", booleanSchema());
         properties.add("max_starts", nonNegativeInteger());
         properties.add("max_completions", nonNegativeInteger());
+        properties.add("max_active_quests", nonNegativeInteger());
+        properties.add("max_active_by_tag", objectMap(nonNegativeInteger()));
         properties.add("completion_scope", string());
         properties.add("scope", string());
         properties.add("abandonment", string());

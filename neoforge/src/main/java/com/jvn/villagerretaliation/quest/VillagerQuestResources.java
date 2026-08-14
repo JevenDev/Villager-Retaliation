@@ -1451,6 +1451,15 @@ public final class VillagerQuestResources {
         boolean repeatable = DatapackJsonReader.readBoolean(rules, "repeatable", false);
         int maxStarts = Math.max(0, DatapackJsonReader.readInt(rules, "max_starts", repeatable ? 0 : 1));
         int maxCompletions = Math.max(0, DatapackJsonReader.readInt(rules, "max_completions", repeatable ? 0 : 1));
+        Map<String, Integer> maxActiveByTag = new LinkedHashMap<>();
+        JsonObject activeTagCaps = DatapackJsonReader.readObject(rules, "max_active_by_tag");
+        if (activeTagCaps != null) {
+            activeTagCaps.entrySet().forEach(entry -> {
+                if (entry.getValue().isJsonPrimitive()) {
+                    maxActiveByTag.put(entry.getKey(), Math.max(0, entry.getValue().getAsInt()));
+                }
+            });
+        }
         return new QuestDefinition.Rules(
                 repeatable,
                 DatapackJsonReader.readBoolean(rules, "locked_to_villager", true),
@@ -1468,7 +1477,9 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readBoolean(rules, "consume_on_abandonment", false),
                 readActiveState(location, rules, defaultQuestId),
                 readExpiration(location, rules, defaultQuestId),
-                readBranching(rules)
+                readBranching(rules),
+                DatapackJsonReader.readInt(rules, "max_active_quests", 0),
+                maxActiveByTag
         );
     }
 

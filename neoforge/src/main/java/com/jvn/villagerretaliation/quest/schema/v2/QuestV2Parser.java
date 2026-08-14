@@ -103,6 +103,8 @@ public final class QuestV2Parser {
             "repeatable",
             "max_starts",
             "max_completions",
+            "max_active_quests",
+            "max_active_by_tag",
             "completion_scope",
             "scope",
             "abandonment",

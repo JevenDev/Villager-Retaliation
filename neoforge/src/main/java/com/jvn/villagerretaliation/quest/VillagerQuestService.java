@@ -3019,6 +3019,7 @@ public final class VillagerQuestService {
         }
         VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(context.level())
                 .get(context.player().getUUID(), definition.id());
+        if (!withinActiveCapacity(context, definition, progress)) return false;
         return QuestAvailabilityService.canStart(
                 context, definition, progress, false, true,
                 VillagerQuestService::parentCompleted,
@@ -3037,6 +3038,7 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             boolean bypassOfferRequirements) {
+        if (!withinActiveCapacity(context, definition, progress)) return false;
         return QuestAvailabilityService.canStart(
                 context,
                 definition,
@@ -3044,6 +3046,29 @@ public final class VillagerQuestService {
                 bypassOfferRequirements,
                 VillagerQuestService::parentCompleted,
                 VillagerQuestService::scopedCompletionCount);
+    }
+
+    private static boolean withinActiveCapacity(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (context == null || definition == null
+                || (progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE)) return true;
+        List<Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress>> active =
+                VillagerQuestSavedData.get(context.level()).activeProgress(context.player().getUUID());
+        int totalLimit = definition.rules().maxActiveQuests();
+        if (totalLimit > 0 && active.size() >= totalLimit) return false;
+        if (definition.rules().maxActiveByTag().isEmpty()) return true;
+        Map<String, Integer> activeByTag = new HashMap<>();
+        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : active) {
+            VillagerQuestResources.quest(context.level().getServer(), entry.getKey()).ifPresent(activeQuest ->
+                    activeQuest.tags().forEach(tag -> activeByTag.merge(tag, 1, Integer::sum)));
+        }
+        for (Map.Entry<String, Integer> limit : definition.rules().maxActiveByTag().entrySet()) {
+            if (definition.tags().contains(limit.getKey()) && limit.getValue() > 0
+                    && activeByTag.getOrDefault(limit.getKey(), 0) >= limit.getValue()) return false;
+        }
+        return true;
     }
 
     private static boolean withinStartLimit(
