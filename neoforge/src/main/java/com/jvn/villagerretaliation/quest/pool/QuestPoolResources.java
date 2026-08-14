@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest.pool;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
@@ -57,6 +58,7 @@ public final class QuestPoolResources {
             return true;
         }
         List<QuestPoolDefinition> claiming = pools(context.level().getServer()).stream()
+                .filter(pool -> pool.matchesContext(context))
                 .filter(pool -> pool.claims(quest))
                 .sorted(java.util.Comparator.comparingInt(QuestPoolDefinition::priority).reversed())
                 .toList();
@@ -66,8 +68,6 @@ public final class QuestPoolResources {
         List<QuestDefinition> catalog = VillagerQuestResources.quests(context.level().getServer()).stream()
                 .filter(candidate -> VillagerQuestService.canStartIgnoringPools(context, candidate))
                 .toList();
-        List<ResourceLocation> eligibleIds = catalog.stream().map(QuestDefinition::id)
-                .sorted().toList();
         int highestExclusivePriority = claiming.stream().filter(QuestPoolDefinition::exclusive)
                 .mapToInt(QuestPoolDefinition::priority).max().orElse(Integer.MIN_VALUE);
         for (QuestPoolDefinition pool : claiming) {
@@ -75,13 +75,19 @@ public final class QuestPoolResources {
                     && (!pool.exclusive() || pool.priority() < highestExclusivePriority)) continue;
             String scopeKey = scopeKey(pool, context);
             long epoch = context.level().getGameTime() / pool.refreshTicks();
-            SelectionKey key = new SelectionKey(pool.id(), scopeKey, epoch, eligibleIds);
+            List<WeightedQuestId> effectiveWeights = catalog.stream()
+                    .filter(pool::claims)
+                    .map(candidate -> new WeightedQuestId(candidate.id(), pool.weight(candidate, context)))
+                    .filter(candidate -> candidate.weight() > 0)
+                    .sorted(java.util.Comparator.comparing(candidate -> candidate.id().toString()))
+                    .toList();
+            SelectionKey key = new SelectionKey(pool.id(), scopeKey, epoch, effectiveWeights);
             if (SELECTION_CACHE.size() > 4_096) {
                 SELECTION_CACHE.clear();
             }
             Set<ResourceLocation> selected = SELECTION_CACHE.computeIfAbsent(
                     key,
-                    ignored -> QuestPoolSelector.select(pool, catalog, scopeKey, epoch));
+                    ignored -> QuestPoolSelector.select(pool, catalog, context, scopeKey, epoch));
             if (selected.contains(quest.id())) {
                 return true;
             }
@@ -106,6 +112,12 @@ public final class QuestPoolResources {
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
         DatapackResourceLoader.forEachJsonResource(server, RESOURCE_ROOT, (location, resource) ->
                 DatapackResourceLoader.readObject(location, "quest pool", resource).ifPresent(root -> {
+                    ResourceLocation requestedId = poolId(location, root);
+                    if (DatapackJsonReader.readBoolean(root, "remove", false)) {
+                        pools.removeIf(existing -> existing.id().equals(requestedId));
+                        sources.remove(requestedId);
+                        return;
+                    }
                     QuestPoolDefinition pool = parse(location, root);
                     if (pool == null) {
                         return;
@@ -126,11 +138,7 @@ public final class QuestPoolResources {
             DatapackDiagnostics.warnSkippedEntry(location, "quest pool", "root", "unsupported schema " + schema);
             return null;
         }
-        ResourceLocation id = ResourceLocation.tryParse(DatapackJsonReader.readString(root, "id"));
-        if (id == null) {
-            String path = location.getPath().substring((RESOURCE_ROOT + "/").length());
-            id = ResourceLocation.fromNamespaceAndPath(location.getNamespace(), path.substring(0, path.length() - 5));
-        }
+        ResourceLocation id = poolId(location, root);
         Set<ResourceLocation> quests = resourceSet(root.get("quests"));
         Set<ResourceLocation> excludedQuests = resourceSet(root.get("exclude_quests"));
         Map<ResourceLocation, Integer> weights = new LinkedHashMap<>();
@@ -151,7 +159,9 @@ public final class QuestPoolResources {
                     JsonObject rule = raw.getAsJsonObject();
                     weightRules.add(new QuestPoolDefinition.WeightRule(
                             stringSet(rule.get("any_tags")), stringSet(rule.get("all_tags")),
-                            stringSet(rule.get("exclude_tags")), DatapackJsonReader.readInt(rule, "multiplier", 1)));
+                            stringSet(rule.get("exclude_tags")),
+                            DatapackJsonReader.readDouble(rule, "multiplier", 1.0D),
+                            DialogueCondition.readList(location, "quest pool weight rule", rule)));
                 }
             });
         }
@@ -180,7 +190,18 @@ public final class QuestPoolResources {
                 DatapackJsonReader.readInt(root, "priority", 0),
                 root.has("exclusive") && root.get("exclusive").getAsBoolean(),
                 weightRules,
-                tagQuotas);
+                tagQuotas,
+                DialogueCondition.readList(location, "quest pool", root));
+    }
+
+    private static ResourceLocation poolId(ResourceLocation location, JsonObject root) {
+        ResourceLocation id = ResourceLocation.tryParse(DatapackJsonReader.readString(root, "id"));
+        if (id != null) {
+            return id;
+        }
+        String path = location.getPath().substring((RESOURCE_ROOT + "/").length());
+        return ResourceLocation.fromNamespaceAndPath(
+                location.getNamespace(), path.substring(0, path.length() - 5));
     }
 
     private static Set<ResourceLocation> resourceSet(JsonElement element) {
@@ -218,6 +239,9 @@ public final class QuestPoolResources {
     private record Cache(MinecraftServer server, List<QuestPoolDefinition> pools) {
     }
 
-    private record SelectionKey(ResourceLocation pool, String scope, long epoch, List<ResourceLocation> eligibleIds) {
+    private record WeightedQuestId(ResourceLocation id, int weight) {
+    }
+
+    private record SelectionKey(ResourceLocation pool, String scope, long epoch, List<WeightedQuestId> effectiveWeights) {
     }
 }
