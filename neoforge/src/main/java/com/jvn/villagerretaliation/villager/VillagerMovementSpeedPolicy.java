@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
 
 /** Canonical movement speeds for every unmounted villager activity. */
@@ -28,6 +29,12 @@ public final class VillagerMovementSpeedPolicy {
 
     /** Enforces the final intent after vanilla AI and all mod movement owners run for the tick. */
     public static void enforce(ServerLevel level, Villager villager) {
+        // NeoForge delegates a controlling mob's navigation to its mob vehicle. Mounted
+        // travel has already normalized the horse's speed for this tick, so applying an
+        // on-foot villager modifier here would throttle the horse navigator instead.
+        if (villager.getControlledVehicle() instanceof AbstractHorse) {
+            return;
+        }
         double speed = intendedSpeed(level, villager);
         if (!villager.getNavigation().isDone()) {
             villager.getNavigation().setSpeedModifier(speed);

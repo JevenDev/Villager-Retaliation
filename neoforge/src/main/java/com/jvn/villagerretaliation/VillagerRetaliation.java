@@ -24,6 +24,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.mount.VillagerMountedCombatPolicy;
+import com.jvn.villagerretaliation.mount.VillagerMountPassengers;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.villagerretaliation.raid.PlayerRaidDialogueService;
@@ -54,6 +55,7 @@ public class VillagerRetaliation {
     }
 
     public VillagerRetaliation(IEventBus modEventBus, ModContainer modContainer) {
+        VillagerMountPassengers.init();
         VillagerRetaliationRegistries.registerBuiltIns();
         VillagerSecondWindCompat.init();
         VillagerRetaliationConfig.init();

@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.mount;
 
-import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.network.VillagerMountTargetModePayload;
@@ -259,14 +258,13 @@ public final class VillagerMountAssignmentService {
             return true;
         }
         if (event.getTarget() instanceof AbstractHorse mount
-                && VillagerRideOnCompat.available()
                 && !player.isSecondaryUseActive()
                 && event.getItemStack().isEmpty()
-                && VillagerRideOnCompat.occupant(mount, false) instanceof Villager driver
+                && VillagerMountPassengers.occupant(mount, false) instanceof Villager driver
                 && assignment(player.serverLevel(), driver.getUUID())
                         .filter(assigned -> assigned.mountId().equals(mount.getUUID()))
                         .isPresent()) {
-            // Ride On permits a player to join behind any living driver. Assigned mounts reserve
+            // A second-seat interaction could otherwise join behind any living driver. Assigned mounts reserve
             // that interaction for VR's authorization-aware driver takeover instead of allowing
             // an unauthorized player to bypass the party contract by occupying the rear seat.
             if (!canRideAssignedMount(player, driver)) {
@@ -286,9 +284,7 @@ public final class VillagerMountAssignmentService {
         if (!featureAvailable() || player == null || mount == null || player.getVehicle() != null) {
             return false;
         }
-        Entity driver = VillagerRideOnCompat.available()
-                ? VillagerRideOnCompat.occupant(mount, false)
-                : VanillaHorseMounting.rider(mount);
+        Entity driver = VillagerMountPassengers.occupant(mount, false);
         if (!(driver instanceof Villager villager)
                 || VillagerMountAssignmentSavedData.get(player.serverLevel())
                 .forVillager(villager.getUUID())
@@ -297,9 +293,7 @@ public final class VillagerMountAssignmentService {
                 || !canRideAssignedMount(player, villager)) {
             return false;
         }
-        return VillagerRideOnCompat.available()
-                ? VillagerRideOnCompat.tryTakeDriverSeat(mount, player)
-                : VanillaHorseMounting.tryTakeOver(mount, player);
+        return VillagerMountPassengers.tryTakeDriverSeat(mount, player);
     }
 
     public static void cancelTargeting(ServerPlayer player) {

@@ -33,5 +33,4 @@ If this guide disagrees with a price, threshold, duration, quest, or gift on you
 Optional integrations:
 
 - **Second Wind:** adds channeled early revival and a crawl presentation to protected downed villagers.
-- **Ride On 1.0.0-pre-release.3+:** adds supported two-seat mount behavior.
 

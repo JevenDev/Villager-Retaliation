@@ -63,7 +63,7 @@ Beta.13 is the Hired Help and Village Life update. It adds complete worker logis
 - Added Stay Here for Revered unhired villagers and authorized hirers, plus one command policy that arbitrates following, holding position, Move To, Regroup, work, party orders, combat, and mounted travel.
 - Added persisted one-to-one mount assignments for party villagers and hired workers, supporting horses, donkeys, mules, llamas, and camels through native Minecraft mob-jockey control.
 - Added mounted following and long-distance work travel, precise-work dismounts, idle parking, unload/reload recovery, remount and seat promotion, leashed-mount selection, player takeover, and quick mount commands.
-- Added optional Ride On integration for two villager seats, front-rider control, rear-rider safety, player seat takeover, and automatic passenger reshuffling without competing navigation.
+- Added ToucanLib-owned dual-rider horse seats, front-rider control, rear-rider safety, player seat takeover, and automatic passenger reshuffling without requiring Ride On.
 
 #### Villages, Allegiance, Raids, And Villager Life
 

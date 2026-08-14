@@ -20,8 +20,7 @@ sourceSets.main.resources {
     exclude('src/generated/**/.cache')
 }
 
-def defaultGameTestOriginSeed = providers.gradleProperty('rideOnIntegrationJar').orNull == null ? '3733' : '5147'
-def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse(defaultGameTestOriginSeed)
+def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('3733')
 
 neoForge {
     version = rootProject.neo_version
@@ -157,10 +156,6 @@ tasks.named('check') {
     dependsOn tasks.named('gameTest')
 }
 
-configurations {
-    runtimeClasspath.extendsFrom localRuntime
-}
-
 dependencies {
     implementation "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
     annotationProcessor "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
@@ -171,10 +166,6 @@ dependencies {
     compileOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rootProject.rei_version}"
     compileOnly "top.theillusivec4.curios:curios-neoforge:${rootProject.curios_version}:api"
     compileOnly "io.wispforest:accessories-neoforge:${rootProject.accessories_version}"
-
-    providers.gradleProperty('rideOnIntegrationJar').orNull?.with { jarPath ->
-        localRuntime files(jarPath)
-    }
 
     if (rootProject.enable_toucanlib.toBoolean()) {
         if (rootProject.useLocalToucanLib.toBoolean()) {

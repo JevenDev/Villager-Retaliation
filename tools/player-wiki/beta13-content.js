@@ -741,12 +741,12 @@
           "Close to a destination, the mount travels normally. Farther away, it uses catch-up movement."
         ])}
       `)}
-      ${section("Ride On Compatibility", `
-        <p>Ride On is optional. Villager Retaliation provides mount assignment, single-villager riding, mounted travel, parking, retries, and ordinary player takeover without it.</p>
+      ${section("Shared Passenger Seats", `
+        <p>ToucanLib owns the ordered-passenger mechanics used by Villager Retaliation and Ride On. Villager Retaliation's complete assigned-mount flow works without Ride On.</p>
         ${beta13FactList([
-          ["Without Ride On", "One assigned villager rides and controls the mount through Minecraft's normal passenger behavior"],
-          ["With Ride On 1.0.0-pre-release.3 or newer", "A supported assigned horse-family mount can carry two villagers, or an authorized player and villager can share the mount"],
-          ["Ride On is required for", "The second seat, rear-passenger behavior, and coordinated driver-seat transitions"],
+          ["ToucanLib provides", "Ordered seats, synchronized seat offsets, safe dismounts, and atomic driver-seat transitions"],
+          ["Villager Retaliation provides", "Two assigned villagers on a horse, or an authorized player driving with a villager behind them"],
+          ["Ride On compatibility", "Ride On is optional and applies its own riding features through the same ToucanLib passenger layer"],
           ["Villager Retaliation still controls", "Mount assignment, riding permission, travel orders, combat allegiance, parking, and automatic remount attempts"]
         ])}
       `)}
@@ -756,7 +756,7 @@
           "A mount must be structurally eligible, available, and have an open supported seat.",
           "Precise jobs still dismount. The mount speeds travel rather than performing the block interaction.",
           "An unloaded or occupied mount cannot move until it becomes available. The villager keeps retrying.",
-          "Two-villager or player-and-villager seating on supported horse-family mounts requires Ride On 1.0.0-pre-release.3 or newer."
+          "Horses support two assigned seats; other assignable horse-family mounts retain one assigned seat."
         ])}
       `)}
     `;
@@ -1100,12 +1100,12 @@
         ])}
       `)}
       ${section("Optional Mod Compatibility", `
-        <p>Second Wind and Ride On are optional companion mods. Villager Retaliation runs without them, but the features listed below need the matching mod. In multiplayer, use the same companion-mod setup on the server and participating clients.</p>
+        <p>Second Wind and Ride On are optional companion mods. Ride On is not required for any Villager Retaliation mount feature because both mods use ToucanLib's shared passenger layer. In multiplayer, use the same companion-mod setup on the server and participating clients.</p>
         ${beta13Table(
           ["Companion mod", "Available without it", "Features that require it"],
           [
             ["Second Wind", "Protected downed villagers and automatic recovery", "Player-channeled early revival and the crawl downed presentation"],
-            ["Ride On 1.0.0-pre-release.3 or newer", "Assigned mounts, one villager per mount, mounted travel, parking, retries, and ordinary player takeover", "Two riders on a supported horse-family mount, rear-passenger behavior, and coordinated seat transitions"]
+            ["Ride On", "All Villager Retaliation assigned-mount and dual-seat behavior", "No Villager Retaliation features; Ride On adds its own riding interactions and presentation"]
           ]
         )}
       `)}
@@ -1237,7 +1237,7 @@
       "Assigned Mounts",
       "Parties And Travel",
       "route",
-      "Assign mounts, control mounted travel, parking, and retries, and understand which two-seat features require Ride On.",
+      "Assign mounts, control mounted travel, parking, retries, and ToucanLib-backed dual-seat behavior.",
       beta13RenderMounts
     ),
     beta13NewPage(

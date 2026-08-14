@@ -83,7 +83,7 @@ Party leaders and active hirers can assign one adult horse, donkey, mule, llama,
 
 Hired workers can toggle **Mounted Travel** for long work journeys. Parties have a shared mount mode plus **Ride Mount** and **Dismount Mount** quick commands. Villagers dismount near precise work, retry temporarily unavailable mounts, and park idle mounts while yielding to players, leashes, and panic behavior.
 
-Without a companion mod, mounted villagers use Minecraft's native mob-jockey behavior. With Ride On 1.0.0-pre-release.3 or newer, an assigned horse can carry two villagers, or an authorized party leader or hirer can drive with a villager behind them. Villager passengers promote and remount automatically after the player leaves.
+ToucanLib supplies the shared ordered-passenger mechanics, so an assigned horse can carry two villagers, or an authorized party leader or hirer can drive with a villager behind them, without Ride On. Villager passengers promote and remount automatically after the player leaves. Ride On remains compatible and uses the same ToucanLib passenger layer for its own riding features.
 
 ### Dialogue and Interaction
 
@@ -283,7 +283,7 @@ Villager Retaliation! is designed to work with vanilla villager systems rather t
 * Uses vanilla gossip integration where enabled
 * Uses NeoForge item tags for weapon detection where possible
 * Does not replace the villager entity type
-* Uses Minecraft's native mob-jockey control path for assigned mounts with no companion mod required, plus optional Ride On dual-rider integration
+* Uses ToucanLib's shared ordered-passenger layer for assigned mounts, dual riders, and coordinated seat transitions without requiring Ride On
 
 Compatibility may vary with mods that heavily replace villager AI, trading, combat, rendering, or entity classes.
 

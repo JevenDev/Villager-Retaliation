@@ -6,7 +6,7 @@ keywords:
   - mount
   - horse
   - camel
-  - ride on
+  - passenger
   - travel
 ---
 
@@ -21,9 +21,9 @@ An active hirer or party leader can assign an eligible adult horse, donkey, mule
 - Villagers dismount near precise work, storage, construction, and block interactions.
 - Temporarily unloaded or occupied mounts are retried later and park near their last anchor.
 
-## Ride On compatibility
+## Shared passenger seats
 
-Villager Retaliation supplies assignment, one-villager riding, mounted travel, parking, retries, and ordinary player takeover by itself.
+Villager Retaliation supplies assignment, mounted travel, parking, retries, and permission-aware player takeover. ToucanLib supplies the ordered passenger mechanics used by assigned mounts.
 
-With **Ride On 1.0.0-pre-release.3 or newer**, supported horse-family mounts can carry two villagers, or an authorized player and villager together. Ride On supplies the second seat and coordinated seat transitions; Villager Retaliation still controls assignment, permissions, travel, allegiance, and remounting.
+Normal horses can carry two assigned villagers, or an authorized player and villager together, without a companion mount mod. The other supported horse-family mounts retain one assigned seat. ToucanLib coordinates exact seats, offsets, driver takeover, and rollback while Villager Retaliation controls assignment, permissions, travel, allegiance, and remounting.
 
