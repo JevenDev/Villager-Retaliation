@@ -18,13 +18,31 @@ public final class QuestAvailabilityService {
             boolean bypassOfferRequirements,
             ParentCompletionLookup parentCompletionLookup,
             ScopedCompletionCounter scopedCompletionCounter) {
+        return canStart(
+                context,
+                definition,
+                progress,
+                bypassOfferRequirements,
+                bypassOfferRequirements,
+                parentCompletionLookup,
+                scopedCompletionCounter);
+    }
+
+    public static boolean canStart(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            boolean bypassOfferRequirements,
+            boolean bypassQuestPools,
+            ParentCompletionLookup parentCompletionLookup,
+            ScopedCompletionCounter scopedCompletionCounter) {
         // A live dialogue offer is fully described by DialogueContext. Building a
         // QuestExecutionContext here also rebuilds the provider binding and village
         // scope once per quest candidate, which made tracker scans multiplicative.
         if (!bypassOfferRequirements && !definition.offer().matches(context)) {
             return false;
         }
-        if (!bypassOfferRequirements && !QuestPoolResources.allows(context, definition)) {
+        if (!bypassQuestPools && !QuestPoolResources.allows(context, definition)) {
             return false;
         }
         if (!parentCompletionLookup.parentCompleted(context, definition)) {
