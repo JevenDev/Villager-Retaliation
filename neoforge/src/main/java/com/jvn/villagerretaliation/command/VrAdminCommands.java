@@ -30,6 +30,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
 
@@ -404,7 +405,7 @@ final class VrAdminCommands {
                                 VillagerRetaliationCommands.debugFinishRaid(context, false))))
                 .then(literal("builder")
                         .then(literal("materials")
-                                .then(argument("structure", StringArgumentType.string())
+                                .then(argument("structure", ResourceLocationArgument.id())
                                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                                 VillagerRetaliationCommands.builderStructureIdSuggestions(
                                                         context.getSource()),

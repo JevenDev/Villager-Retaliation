@@ -131,6 +131,13 @@ public final class ConstructionBlueprintItem extends Item {
                 .orElse(false);
     }
 
+    public static List<BuilderStructureScanner.MaterialRequirement> materialRequirements(ItemStack stack) {
+        return previewData(stack)
+                .map(preview -> BuilderStructureScanner.materialRequirements(
+                        preview.blocks().stream().map(PreviewBlock::state).toList()))
+                .orElseGet(List::of);
+    }
+
 
     public static void expireMatchingBlueprints(ServerPlayer player, UUID jobId) {
         if (player == null || jobId == null) {

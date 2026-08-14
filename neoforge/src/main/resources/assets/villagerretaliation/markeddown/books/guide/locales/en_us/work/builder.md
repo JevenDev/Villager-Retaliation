@@ -32,6 +32,8 @@ The order ends when planned blocks are complete or the project is cancelled unde
 :::
 :::
 
+Craft a Construction Blueprint together with a regular book in any arrangement to make a :item[villagerretaliation:blueprint_checklist]. The blueprint is returned to you. Open the checklist to see every material, its item icon, and the latest counted amount. Entries check themselves permanently once your inventory contains the full amount, while every checkbox can still be toggled manually. Shift-right-click a container to count that logical inventory, including both halves of a double chest.
+
 Default limits are **4096 planned blocks**, **28 blocks** from builder to site, and a **32-block** material-storage search. The default fee is 8 currency items plus 3 per 64 planned blocks. The built-in currency is emeralds. The final quote is authoritative.
 
 Cancelling before any block is placed returns the full builder payment. After placement begins, payment is released and the villager cannot change roles until the project is resolved.
