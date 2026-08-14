@@ -1,0 +1,12 @@
+{
+  "schema": "villagerretaliation:quest_pool/v1",
+  "id": "villagerretaliation:quest_board",
+  "enabled": true,
+  "scope": "village",
+  "refresh_days": 1,
+  "max_offers": 3,
+  "anti_repeat_rotations": 2,
+  "default_weight": 10,
+  "any_tags": ["pool.quest_board"],
+  "seed_salt": 16411
+}
