@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.dialogue.resources.BiomeStoryResources;
 import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
+import com.jvn.villagerretaliation.dialogue.resources.DialogueTuningResources;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
@@ -54,7 +55,10 @@ public final class VillagerStoryHintService {
 
     public static Optional<VillagerDialogueService.DialogueResult> select(DialogueContext context) {
         HintQuality quality = HintQuality.forReputation(context.reputationLevel());
-        if (quality == HintQuality.NONE || context.random().nextInt(100) >= quality.chancePercent) {
+        if (quality == HintQuality.NONE || !DialogueTuningResources.passes(
+                context,
+                "story_hint." + quality.name().toLowerCase(Locale.ROOT) + "_chance",
+                quality.chancePercent / 100.0D)) {
             return Optional.empty();
         }
 
@@ -277,7 +281,7 @@ public final class VillagerStoryHintService {
     private static boolean maybeGiveCartographerMap(DialogueContext context, CachedTarget target, String targetName) {
         if (context.profession() != VillagerProfession.CARTOGRAPHER
                 || target.kind() != HintKind.STRUCTURE
-                || context.random().nextInt(100) >= cartographerMapChancePercent(context.reputationLevel())) {
+                || !DialogueTuningResources.passes(context, cartographerMapChance(context))) {
             return false;
         }
 
@@ -321,7 +325,7 @@ public final class VillagerStoryHintService {
                 || structureId == null
                 || targetPos == null
                 || context.profession() != VillagerProfession.CARTOGRAPHER
-                || context.random().nextInt(100) >= cartographerMapChancePercent(context.reputationLevel())) {
+                || !DialogueTuningResources.passes(context, cartographerMapChance(context))) {
             return false;
         }
 
@@ -383,13 +387,15 @@ public final class VillagerStoryHintService {
         return holder.unwrapKey().map(ResourceKey::location);
     }
 
-    private static int cartographerMapChancePercent(VillagerReputationLevel reputationLevel) {
-        return switch (reputationLevel) {
-            case ROYALTY -> 9;
-            case REVERED -> 6;
-            case RESPECTED -> 3;
-            default -> 0;
+    private static double cartographerMapChance(DialogueContext context) {
+        String level = context.reputationLevel().name().toLowerCase(Locale.ROOT);
+        double fallback = switch (context.reputationLevel()) {
+            case ROYALTY -> 0.09D;
+            case REVERED -> 0.06D;
+            case RESPECTED -> 0.03D;
+            default -> 0.0D;
         };
+        return DialogueTuningResources.value(context, "cartographer_map." + level + "_chance", fallback);
     }
 
     private static String biomeText(DialogueContext context, String name, HintPlacement placement, HintQuality quality) {

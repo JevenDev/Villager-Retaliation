@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue.normal;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.resources.DialogueTuningResources;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.item.OminousBannerRecognition;
 import com.jvn.villagerretaliation.interaction.VillagerItemText;
@@ -31,8 +32,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class VillagerDialogueService {
-    private static final long LONG_ABSENCE_MIN_DAYS = 3L;
-
     private VillagerDialogueService() {
     }
 
@@ -180,11 +179,17 @@ public final class VillagerDialogueService {
             return Optional.empty();
         }
         long daysSinceLastSeen = context.daysSinceLastSeenCount();
-        if (daysSinceLastSeen < LONG_ABSENCE_MIN_DAYS) {
+        long minimumDays = Math.max(0L, Math.round(DialogueTuningResources.value(
+                context, "opening.long_absence.minimum_days", 3.0D)));
+        if (daysSinceLastSeen < minimumDays) {
             return Optional.empty();
         }
-        int chance = (int) Math.min(85L, 40L + (daysSinceLastSeen - LONG_ABSENCE_MIN_DAYS) * 10L);
-        if (context.random().nextInt(100) >= chance) {
+        double chance = Math.min(
+                DialogueTuningResources.value(context, "opening.long_absence.max_chance", 0.85D),
+                DialogueTuningResources.value(context, "opening.long_absence.base_chance", 0.40D)
+                        + (daysSinceLastSeen - minimumDays)
+                        * DialogueTuningResources.value(context, "opening.long_absence.chance_per_day", 0.10D));
+        if (!DialogueTuningResources.passes(context, chance)) {
             return Optional.empty();
         }
         Map<String, String> replacements = Map.of(
@@ -646,8 +651,11 @@ public final class VillagerDialogueService {
         if (requestType != DialogueRequestType.QUESTION && requestType != DialogueRequestType.GREETING) {
             return Optional.empty();
         }
-        int chance = requestType == DialogueRequestType.QUESTION ? 45 : 35;
-        if (context.random().nextInt(100) >= chance) {
+        String chanceKey = requestType == DialogueRequestType.QUESTION
+                ? "memory.gift.question_chance"
+                : "memory.gift.greeting_chance";
+        if (!DialogueTuningResources.passes(context, chanceKey,
+                requestType == DialogueRequestType.QUESTION ? 0.45D : 0.35D)) {
             return Optional.empty();
         }
 
@@ -670,7 +678,7 @@ public final class VillagerDialogueService {
     }
 
     private static Optional<String> selectOpeningGiftMemoryLine(DialogueContext context) {
-        if (context.random().nextInt(100) >= 30) {
+        if (!DialogueTuningResources.passes(context, "memory.gift.opening_chance", 0.30D)) {
             return Optional.empty();
         }
         Optional<VillageEventMemory.MemoryEvent> directGift = context.recentGiftToThisVillager();
@@ -688,8 +696,11 @@ public final class VillagerDialogueService {
         if (requestType != DialogueRequestType.QUESTION && requestType != DialogueRequestType.GREETING) {
             return Optional.empty();
         }
-        int chance = requestType == DialogueRequestType.QUESTION ? 40 : 25;
-        if (context.random().nextInt(100) >= chance) {
+        String chanceKey = requestType == DialogueRequestType.QUESTION
+                ? "memory.container_theft.question_chance"
+                : "memory.container_theft.greeting_chance";
+        if (!DialogueTuningResources.passes(context, chanceKey,
+                requestType == DialogueRequestType.QUESTION ? 0.40D : 0.25D)) {
             return Optional.empty();
         }
 
@@ -712,7 +723,7 @@ public final class VillagerDialogueService {
     }
 
     private static Optional<String> selectOpeningContainerTheftMemoryLine(DialogueContext context) {
-        if (context.random().nextInt(100) >= 25) {
+        if (!DialogueTuningResources.passes(context, "memory.container_theft.opening_chance", 0.25D)) {
             return Optional.empty();
         }
         Optional<VillageEventMemory.MemoryEvent> directTheft = context.recentContainerTheftToThisVillager();

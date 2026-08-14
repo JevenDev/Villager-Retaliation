@@ -22,6 +22,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.DialogueTuningResources;
 import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog;
 import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCompiler;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
@@ -1109,6 +1110,19 @@ public final class VillagerQuestGameTests {
                 DialogueCondition.descriptors().stream().map(DialogueCondition.ConditionTypeDescriptor::id).collect(java.util.stream.Collectors.toSet())
                         .containsAll(Set.of("player_item", "villager_equipment", "biome", "dimension", "advancement", "scoreboard", "nearby_entity", "village")),
                 "shared condition registry is incomplete");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dialogueFrequencyTuningLoadsFromDatapacks(GameTestHelper helper) {
+        helper.assertValueEqual(
+                DialogueTuningResources.value(helper.getLevel().getServer(), "raid.story_chance", -1.0D),
+                0.35D,
+                "raid story tuning");
+        helper.assertValueEqual(
+                DialogueTuningResources.value(helper.getLevel().getServer(), "memory.gift.question_chance", -1.0D),
+                0.45D,
+                "gift memory tuning");
         helper.succeed();
     }
 
