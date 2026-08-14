@@ -321,6 +321,7 @@ public final class QuestV2Compiler {
         }
         addCompletionComposition(stage, canonical);
         addBonuses(stage, canonical, canonicalIds);
+        copyIfPresent(stage.data(), canonical, "metadata");
         if (!stage.next().stage().isBlank()) {
             canonical.addProperty("next", stage.next().stage());
         }

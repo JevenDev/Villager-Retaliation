@@ -2519,6 +2519,7 @@ public final class VillagerQuestGameTests {
                   "actions": [{"type": "experience", "amount": 3}]
                 }]
                 """));
+        firstStage.add("metadata", JsonParser.parseString("{\"chapter\": \"opening\"}"));
         JsonObject objectiveUi = new JsonObject();
         objectiveUi.addProperty("tracker_text", "Choose a route.");
         objectiveUi.addProperty("tracker_complete_text", "Route chosen.");
@@ -2575,6 +2576,10 @@ public final class VillagerQuestGameTests {
                 definition.stages().get("offer").bonuses().getFirst().actions().getFirst().amount(),
                 3,
                 "v2 bonus action");
+        helper.assertValueEqual(
+                definition.stages().get("offer").metadata().get("chapter"),
+                "opening",
+                "v2 stage metadata");
         helper.assertValueEqual(
                 definition.objectives().getFirst().tracker().completeText(),
                 "Route chosen.",
@@ -2980,6 +2985,18 @@ public final class VillagerQuestGameTests {
                 "/stages/0/dialogue/offer",
                 "v2 generated offer source pointer");
         helper.assertValueEqual(catalog.bindings(parsed.id()).size(), 6, "v2 generated binding count");
+        helper.assertTrue(tree.metadata().tags().contains("test"), "quest metadata tags did not reach generated tree");
+        DialogueTreeDefinition.Entry authoredOffer = tree.entry("stage.offer.offer").orElseThrow();
+        helper.assertValueEqual(authoredOffer.priority(), 7, "v2 dialogue slot priority");
+        helper.assertValueEqual(authoredOffer.metadata().topic(), "authored_offer", "v2 dialogue slot topic");
+        helper.assertTrue(authoredOffer.metadata().tags().contains("route.offer"), "v2 dialogue slot tag");
+        DialogueTreeDefinition.Response authoredAccept = tree.node("stage.offer.scene.offer_intro").orElseThrow()
+                .responses().stream()
+                .filter(response -> response.id().equals("accept"))
+                .findFirst()
+                .orElseThrow();
+        helper.assertValueEqual(authoredAccept.priority(), 11, "v2 dialogue response priority");
+        helper.assertTrue(authoredAccept.metadata().tags().contains("route.accept"), "v2 dialogue response tag");
         helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "v2 dialogue compiler emitted diagnostics");
         DatapackDiagnostics.clear();
 
@@ -6177,6 +6194,11 @@ public final class VillagerQuestGameTests {
                       "dialogue": {
                         "offer": {
                           "scene": "offer_intro",
+                          "priority": 7,
+                          "metadata": {
+                            "topic": "authored_offer",
+                            "tags": ["route.offer"]
+                          },
                           "conditions": [
                             {
                               "type": "quest",
@@ -6206,6 +6228,10 @@ public final class VillagerQuestGameTests {
                         {
                           "id": "offer_intro",
                           "text": "Can you help with this v2 errand?",
+                          "priority": 5,
+                          "metadata": {
+                            "tags": ["route.scene"]
+                          },
                           "actions": [
                             {
                               "type": "tracker"
@@ -6215,6 +6241,10 @@ public final class VillagerQuestGameTests {
                             {
                               "id": "accept",
                               "label": "I will help.",
+                              "priority": 11,
+                              "metadata": {
+                                "tags": ["route.accept"]
+                              },
                               "actions": [
                                 {
                                   "type": "quest",

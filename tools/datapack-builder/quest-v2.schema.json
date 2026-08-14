@@ -313,6 +313,17 @@
           "type": "integer",
           "minimum": 0
         },
+        "max_active_quests": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_active_by_tag": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
         "completion_scope": {
           "type": "string"
         },
@@ -1382,6 +1393,9 @@
         "order": {
           "type": "integer"
         },
+        "priority": {
+          "type": "integer"
+        },
         "text": {
           "type": "string"
         },
@@ -1411,6 +1425,9 @@
           "items": {
             "$ref": "#/$defs/action"
           }
+        },
+        "end": {
+          "type": "boolean"
         },
         "metadata": {
           "type": "object"
@@ -1443,6 +1460,9 @@
         "order": {
           "type": "integer"
         },
+        "priority": {
+          "type": "integer"
+        },
         "text": {
           "type": "string"
         },
@@ -1472,6 +1492,9 @@
           "items": {
             "$ref": "#/$defs/condition"
           }
+        },
+        "end": {
+          "type": "boolean"
         },
         "next": {
           "oneOf": [
@@ -1659,6 +1682,12 @@
         },
         "order": {
           "type": "integer"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "end": {
+          "type": "boolean"
         },
         "metadata": {
           "type": "object"

@@ -821,7 +821,8 @@ public record QuestDefinition(
             List<VillagerActionDefinition> entryActions,
             List<VillagerActionDefinition> exitActions,
             List<StageBranch> branches,
-            List<BonusOutcome> bonuses
+            List<BonusOutcome> bonuses,
+            Map<String, String> metadata
     ) {
         public Stage {
             id = id == null ? "" : id.trim();
@@ -834,6 +835,22 @@ public record QuestDefinition(
             exitActions = exitActions == null ? List.of() : List.copyOf(exitActions);
             branches = branches == null ? List.of() : List.copyOf(branches);
             bonuses = bonuses == null ? List.of() : List.copyOf(bonuses);
+            metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
+        }
+
+        public Stage(
+                String id,
+                List<String> objectives,
+                List<StagePredicate> completeWhen,
+                CompletionMode completionMode,
+                int completionCount,
+                String next,
+                List<VillagerActionDefinition> entryActions,
+                List<VillagerActionDefinition> exitActions,
+                List<StageBranch> branches,
+                List<BonusOutcome> bonuses) {
+            this(id, objectives, completeWhen, completionMode, completionCount, next,
+                    entryActions, exitActions, branches, bonuses, Map.of());
         }
 
         public Stage(
@@ -844,7 +861,8 @@ public record QuestDefinition(
                 List<VillagerActionDefinition> entryActions,
                 List<VillagerActionDefinition> exitActions,
                 List<StageBranch> branches) {
-            this(id, objectives, completeWhen, CompletionMode.ALL, 1, next, entryActions, exitActions, branches, List.of());
+            this(id, objectives, completeWhen, CompletionMode.ALL, 1, next,
+                    entryActions, exitActions, branches, List.of(), Map.of());
         }
 
         public boolean hasEntryActions() {

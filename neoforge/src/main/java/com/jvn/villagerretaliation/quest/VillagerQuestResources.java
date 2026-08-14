@@ -1672,7 +1672,8 @@ public final class VillagerQuestResources {
                 readActionsFromKey(location, context + ".entry_actions", stage, "entry_actions", defaultQuestId),
                 readActionsFromKey(location, context + ".exit_actions", stage, "exit_actions", defaultQuestId),
                 readStageBranches(location, context, stage.get("branches"), defaultQuestId),
-                readBonusOutcomes(location, context, stage.get("bonuses"), defaultQuestId));
+                readBonusOutcomes(location, context, stage.get("bonuses"), defaultQuestId),
+                readStringMap(DatapackJsonReader.readObject(stage, "metadata")));
     }
 
     private static List<QuestDefinition.BonusOutcome> readBonusOutcomes(
