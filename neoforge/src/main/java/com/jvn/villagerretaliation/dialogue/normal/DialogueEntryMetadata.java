@@ -3,9 +3,8 @@ package com.jvn.villagerretaliation.dialogue.normal;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
-import java.util.Collections;
+import com.jvn.villagerretaliation.util.ContentTags;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
@@ -29,11 +28,11 @@ public record DialogueEntryMetadata(
             "notes");
 
     public DialogueEntryMetadata {
-        topic = normalizeTopic(topic);
-        tags = normalizeTags(tags);
-        questline = normalizeId(questline);
-        quest = normalizeId(quest);
-        stage = normalizeId(stage);
+        topic = ContentTags.normalize(topic);
+        tags = ContentTags.normalizeAll(tags);
+        questline = ContentTags.normalize(questline);
+        quest = ContentTags.normalize(quest);
+        stage = ContentTags.normalize(stage);
         notes = notes == null ? "" : notes.trim();
     }
 
@@ -110,36 +109,4 @@ public record DialogueEntryMetadata(
         );
     }
 
-    private static Set<String> normalizeTags(Set<String> rawTags) {
-        if (rawTags == null || rawTags.isEmpty()) {
-            return Set.of();
-        }
-
-        Set<String> normalized = new LinkedHashSet<>();
-        for (String tag : rawTags) {
-            String value = normalizeId(tag);
-            if (!value.isBlank()) {
-                normalized.add(value);
-            }
-        }
-        return Collections.unmodifiableSet(normalized);
-    }
-
-    private static String normalizeTopic(String value) {
-        return value == null ? "" : value.trim();
-    }
-
-    private static String normalizeId(String value) {
-        if (value == null || value.isBlank()) {
-            return "";
-        }
-        String normalized = value.trim().toLowerCase(Locale.ROOT)
-                .replace(':', '.')
-                .replace('/', '.')
-                .replaceAll("[^a-z0-9_.-]+", "_");
-        while (normalized.contains("..")) {
-            normalized = normalized.replace("..", ".");
-        }
-        return normalized.replaceAll("^[._-]+|[._-]+$", "");
-    }
 }
