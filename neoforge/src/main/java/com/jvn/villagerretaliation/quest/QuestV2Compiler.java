@@ -683,6 +683,7 @@ public final class QuestV2Compiler {
         copyIfPresent(event.data(), trigger, "repeatable");
         copyIfPresent(event.data(), trigger, "priority");
         copyIfPresent(event.data(), trigger, "chance");
+        copyIfPresent(event.data(), trigger, "weight");
         copyIfPresent(event.data(), trigger, "exclusive");
         triggers.add(trigger);
         triggerSources.put(triggerId, source);

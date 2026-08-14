@@ -322,6 +322,7 @@ public final class QuestV2Parser {
             "repeatable",
             "priority",
             "chance",
+            "weight",
             "exclusive",
             "metadata");
     private static final Set<String> REWARDS_KEYS = Set.of(

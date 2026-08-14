@@ -512,6 +512,7 @@ public final class QuestV2Schema {
         properties.add("repeatable", booleanSchema());
         properties.add("priority", integer());
         properties.add("chance", probability());
+        properties.add("weight", nonNegativeInteger());
         properties.add("exclusive", booleanSchema());
         properties.add("metadata", openObject());
         schema.add("properties", properties);

@@ -969,14 +969,22 @@ public record QuestDefinition(
             boolean repeatable,
             int priority,
             double chance,
-            boolean exclusive
+            boolean exclusive,
+            int weight
     ) {
         private static final double DEFAULT_RADIUS = 10.0D;
 
         public Trigger(String id, TriggerEvent event, List<DialogueCondition> conditions,
                        List<VillagerActionDefinition> actions, Set<String> stages, long cooldownTicks,
                        double radius, boolean repeatable) {
-            this(id, event, conditions, actions, stages, cooldownTicks, radius, repeatable, 0, 1.0D, false);
+            this(id, event, conditions, actions, stages, cooldownTicks, radius, repeatable, 0, 1.0D, false, 1);
+        }
+
+        public Trigger(String id, TriggerEvent event, List<DialogueCondition> conditions,
+                       List<VillagerActionDefinition> actions, Set<String> stages, long cooldownTicks,
+                       double radius, boolean repeatable, int priority, double chance, boolean exclusive) {
+            this(id, event, conditions, actions, stages, cooldownTicks, radius, repeatable,
+                    priority, chance, exclusive, 1);
         }
 
         public Trigger {
@@ -988,6 +996,7 @@ public record QuestDefinition(
             cooldownTicks = Math.max(0L, cooldownTicks);
             radius = Double.isFinite(radius) && radius > 0.0D ? radius : DEFAULT_RADIUS;
             chance = Double.isFinite(chance) ? Math.max(0.0D, Math.min(1.0D, chance)) : 1.0D;
+            weight = Math.max(0, Math.min(10_000, weight));
         }
     }
 

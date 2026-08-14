@@ -1983,7 +1983,8 @@ public final class VillagerQuestResources {
                 repeatable,
                 DatapackJsonReader.readInt(trigger, "priority", 0),
                 DatapackJsonReader.readDouble(trigger, "chance", 1.0D),
-                DatapackJsonReader.readBoolean(trigger, "exclusive", false)
+                DatapackJsonReader.readBoolean(trigger, "exclusive", false),
+                DatapackJsonReader.readInt(trigger, "weight", 1)
         ));
     }
 
