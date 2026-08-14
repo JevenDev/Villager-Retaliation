@@ -1084,6 +1084,27 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dialogueSpecificityWeightIsExplicit(GameTestHelper helper) {
+        DialogueLine defaultLine = DialogueLine.builder("default_weight", DialogueRequestType.QUESTION, "Default")
+                .professions(net.minecraft.world.entity.npc.VillagerProfession.FARMER)
+                .weight(11)
+                .build();
+        DialogueLine biasedLine = DialogueLine.builder("biased_weight", DialogueRequestType.QUESTION, "Biased")
+                .professions(net.minecraft.world.entity.npc.VillagerProfession.FARMER)
+                .weight(11)
+                .specificityWeight(4)
+                .chance(0.25D)
+                .build();
+        helper.assertValueEqual(VillagerDialogueService.effectiveWeight(defaultLine), 11, "default authored weight");
+        helper.assertValueEqual(
+                VillagerDialogueService.effectiveWeight(biasedLine),
+                11 + biasedLine.specificityScore() * 4,
+                "opt-in specificity weight");
+        helper.assertValueEqual(biasedLine.chance(), 0.25D, "line chance");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void dialogueOptionNetworkBoundsAreExplicit(GameTestHelper helper) {
         String maximum = "x".repeat(DialogueOptionDefinition.MAX_NETWORK_ID_LENGTH);
         String oversized = maximum + "x";

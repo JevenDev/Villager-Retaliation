@@ -137,6 +137,7 @@ public final class VillagerDialogueResources {
             "min_recruitment_follow_distance", "requires_recruitment_boat_trip", "requires_recruitment_ocean_crossing",
             "requires_recruitment_swim_trip", "excludes_recruitment_ocean_crossing",
             "first_conversation_only", "gift_advice", "show_for_adults", "show_for_babies", "priority", "category", "weight",
+            "specificity_weight", "chance",
             "italic", "italics", "bold", "bolded", "underlined", "underline", "strikethrough", "obfuscated", "obfuscate",
             "wavy", "wave", "shake", "shaky", "pulse", "pulsing", "jump", "jumping",
             "rainbow", "rainbow_text", "color", "text_color", "gradient_start", "gradientStart", "gradient_end", "gradientEnd", "text_effects",
@@ -389,10 +390,17 @@ public final class VillagerDialogueResources {
             return Optional.empty();
         }
 
-        int totalWeight = candidates.stream().mapToInt(DialogueLine::weight).sum();
-        int selected = context.random().nextInt(totalWeight);
+        candidates = candidates.stream()
+                .filter(line -> VillagerDialogueService.passesChance(line, context.random()))
+                .toList();
+        candidates = VillagerDialogueService.highestPriority(candidates);
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        int totalWeight = candidates.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
+        int selected = context.random().nextInt(Math.max(1, totalWeight));
         for (DialogueLine candidate : candidates) {
-            selected -= candidate.weight();
+            selected -= VillagerDialogueService.effectiveWeight(candidate);
             if (selected < 0) {
                 return Optional.of(resolveGiftAdviceText(candidate.selectText(context.random()), giftItemName, giftSubject));
             }
@@ -1482,6 +1490,8 @@ public final class VillagerDialogueResources {
         builder.priority(readInt(entry, "priority", 0));
         builder.category(readString(entry, "category"));
         builder.weight(readInt(entry, "weight", 10));
+        builder.specificityWeight(readInt(entry, "specificity_weight", 0));
+        builder.chance(DatapackJsonReader.readDouble(entry, "chance", 1.0D));
     }
 
     private static Set<VillagerProfession> defaultProfessionsFor(ResourceLocation location, String locale) {
