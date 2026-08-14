@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue.normal;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.resources.DialogueTuningResources;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.item.OminousBannerRecognition;
@@ -64,6 +65,8 @@ public final class VillagerDialogueService {
                         line.specificityScore(),
                         line.specificityWeight(),
                         line.chance(),
+                        line.cooldownTicks(),
+                        line.maxUses(),
                         effectiveWeight(line),
                         line.recentlyUsed(recentDialogueIds),
                         line.hasFreshVariant(recentDialogueIds)))
@@ -379,6 +382,20 @@ public final class VillagerDialogueService {
         return preferHighestPriority(candidates);
     }
 
+    public static boolean selectionAvailable(DialogueLine line, DialogueContext context) {
+        if (line.cooldownTicks() <= 0L && line.maxUses() <= 0) {
+            return true;
+        }
+        VillagerInteractionTracker.DialogueUsage usage = VillagerInteractionTracker.dialogueUsage(
+                context.level(), context.villager(), context.player(), line.id());
+        if (line.maxUses() > 0 && usage.count() >= line.maxUses()) {
+            return false;
+        }
+        return line.cooldownTicks() <= 0L
+                || usage.lastUsedGameTime() == Long.MIN_VALUE
+                || context.level().getGameTime() >= usage.lastUsedGameTime() + line.cooldownTicks();
+    }
+
     private static List<DialogueLine> preferHighestPriority(List<DialogueLine> candidates) {
         if (candidates.isEmpty()) {
             return candidates;
@@ -489,6 +506,7 @@ public final class VillagerDialogueService {
         return availableLines.stream()
                 .filter(line -> context.reputationLevel() != VillagerReputationLevel.FEARED || isFearSpecific(line))
                 .filter(line -> line.matches(context, requestType, requestedOptionId, disposition))
+                .filter(line -> selectionAvailable(line, context))
                 .sorted(Comparator.comparingInt(line -> line.recentlyUsed(recentIds) ? 1 : 0))
                 .toList();
     }
@@ -1092,6 +1110,8 @@ public final class VillagerDialogueService {
             int specificityScore,
             int specificityWeight,
             double chance,
+            long cooldownTicks,
+            int maxUses,
             int effectiveWeight,
             boolean recentlyUsed,
             boolean hasFreshVariant) {

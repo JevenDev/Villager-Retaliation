@@ -34,6 +34,8 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_ROUTINE_CHAT_MUTED = "RoutineChatMuted";
     private static final String TAG_LAST_SEEN_DAY = "LastSeenDay";
     private static final String TAG_RECENT_LINES = "RecentLines";
+    private static final String TAG_DIALOGUE_USAGE = "DialogueUsage";
+    private static final String TAG_DIALOGUE_ID = "DialogueId";
     private static final String TAG_LAST_POSITIVE_DIALOGUE_REPUTATION = "LastPositiveDialogueReputation";
     private static final String TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY = "LastPositiveDialogueReputationDay";
     private static final String TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION = "LastNegativeDialogueReputation";
@@ -109,6 +111,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_DAILY_POSITIVE_GIFT_REPUTATION = "DailyPositiveGiftReputation";
     private static final String TAG_DAILY_POSITIVE_GIFT_ITEMS = "DailyPositiveGiftItems";
     private static final int MAX_RECENT_LINES = 5;
+    private static final int MAX_DIALOGUE_USAGE = 256;
     private static final int MAX_CARTOGRAPHER_MAPS = 8;
     private static final int MAX_STORY_HINTS = 12;
     private static final int MAX_SHARED_STORY_TARGETS = 64;
@@ -231,6 +234,18 @@ public class VillagerInteractionSavedData extends SavedData {
             ListTag recentLines = entryTag.getList(TAG_RECENT_LINES, Tag.TAG_STRING);
             for (Tag rawLine : recentLines) {
                 entry.recentDialogueIds.addLast(rawLine.getAsString());
+            }
+            ListTag dialogueUsage = entryTag.getList(TAG_DIALOGUE_USAGE, Tag.TAG_COMPOUND);
+            for (Tag rawUsage : dialogueUsage) {
+                if (!(rawUsage instanceof CompoundTag usageTag)) {
+                    continue;
+                }
+                String dialogueId = usageTag.getString(TAG_DIALOGUE_ID);
+                if (!dialogueId.isBlank()) {
+                    entry.dialogueUsage.put(dialogueId, new DialogueUsage(
+                            Math.max(0, usageTag.getInt(TAG_COUNT)),
+                            readOptionalLong(usageTag, TAG_GAME_TIME)));
+                }
             }
             ListTag requestTypeTimes = entryTag.getList(TAG_LAST_REQUEST_TYPE_REPUTATION, Tag.TAG_COMPOUND);
             for (Tag rawRequestTypeTime : requestTypeTimes) {
@@ -494,6 +509,15 @@ public class VillagerInteractionSavedData extends SavedData {
                     recentLines.add(StringTag.valueOf(lineId));
                 }
                 entryTag.put(TAG_RECENT_LINES, recentLines);
+                ListTag dialogueUsage = new ListTag();
+                for (Map.Entry<String, DialogueUsage> usageEntry : playerEntry.getValue().dialogueUsage.entrySet()) {
+                    CompoundTag usageTag = new CompoundTag();
+                    usageTag.putString(TAG_DIALOGUE_ID, usageEntry.getKey());
+                    usageTag.putInt(TAG_COUNT, usageEntry.getValue().count());
+                    usageTag.putLong(TAG_GAME_TIME, usageEntry.getValue().lastUsedGameTime());
+                    dialogueUsage.add(usageTag);
+                }
+                entryTag.put(TAG_DIALOGUE_USAGE, dialogueUsage);
                 ListTag requestTypeTimes = new ListTag();
                 for (Map.Entry<DialogueRequestType, Long> requestTypeEntry : playerEntry.getValue().lastReputationByRequestType.entrySet()) {
                     CompoundTag requestTypeTag = new CompoundTag();
@@ -1275,6 +1299,10 @@ public class VillagerInteractionSavedData extends SavedData {
         return entry == null ? null : entry.claimUnreportedGiftAdviceResult(villagerId);
     }
 
+    public record DialogueUsage(int count, long lastUsedGameTime) {
+        private static final DialogueUsage EMPTY = new DialogueUsage(0, Long.MIN_VALUE);
+    }
+
     public static class InteractionEntry {
         private boolean hasTalked;
         private boolean routineChatMuted;
@@ -1321,6 +1349,7 @@ public class VillagerInteractionSavedData extends SavedData {
         private DialogueRequestType consecutiveRequestType;
         private int consecutiveRequestCount;
         private final ArrayDeque<String> recentDialogueIds = new ArrayDeque<>();
+        private final LinkedHashMap<String, DialogueUsage> dialogueUsage = new LinkedHashMap<>();
         private final Map<DialogueRequestType, Long> lastReputationByRequestType = new EnumMap<>(DialogueRequestType.class);
         private final Map<DialogueRequestType, Long> lastDialogueByRequestType = new EnumMap<>(DialogueRequestType.class);
         private final Map<DialogueRequestType, RequestUseWindow> requestUseWindows = new EnumMap<>(DialogueRequestType.class);
@@ -1396,6 +1425,10 @@ public class VillagerInteractionSavedData extends SavedData {
 
         public List<String> recentDialogueIds() {
             return new ArrayList<>(this.recentDialogueIds);
+        }
+
+        public DialogueUsage dialogueUsage(String dialogueId) {
+            return this.dialogueUsage.getOrDefault(dialogueId, DialogueUsage.EMPTY);
         }
 
         public long lastPositiveDialogueReputationGameTime() {
@@ -1696,9 +1729,27 @@ public class VillagerInteractionSavedData extends SavedData {
                     .recordUse(gameTime, day, resetTicks);
             this.recentDialogueIds.remove(dialogueId);
             this.recentDialogueIds.addLast(dialogueId);
+            rememberDialogueUsage(dialogueId, gameTime);
+            int variantSeparator = dialogueId.indexOf("#line_");
+            if (variantSeparator > 0) {
+                rememberDialogueUsage(dialogueId.substring(0, variantSeparator), gameTime);
+            }
             this.lastDialogueByRequestType.put(requestType, gameTime);
             while (this.recentDialogueIds.size() > MAX_RECENT_LINES) {
                 this.recentDialogueIds.removeFirst();
+            }
+        }
+
+        private void rememberDialogueUsage(String dialogueId, long gameTime) {
+            if (dialogueId == null || dialogueId.isBlank()) {
+                return;
+            }
+            DialogueUsage previous = this.dialogueUsage.remove(dialogueId);
+            this.dialogueUsage.put(dialogueId, new DialogueUsage(
+                    previous == null ? 1 : Math.min(Integer.MAX_VALUE, previous.count() + 1),
+                    gameTime));
+            while (this.dialogueUsage.size() > MAX_DIALOGUE_USAGE) {
+                this.dialogueUsage.remove(this.dialogueUsage.keySet().iterator().next());
             }
         }
 
@@ -2014,6 +2065,7 @@ public class VillagerInteractionSavedData extends SavedData {
                     && this.consecutiveRequestType == null
                     && this.consecutiveRequestCount == 0
                     && this.recentDialogueIds.isEmpty()
+                    && this.dialogueUsage.isEmpty()
                     && this.lastReputationByRequestType.isEmpty()
                     && this.lastDialogueByRequestType.isEmpty()
                     && this.requestUseWindows.isEmpty()
