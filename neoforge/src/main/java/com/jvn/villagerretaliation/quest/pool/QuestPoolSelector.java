@@ -28,11 +28,14 @@ public final class QuestPoolSelector {
 
         Set<net.minecraft.resources.ResourceLocation> recent = new LinkedHashSet<>();
         for (int offset = 1; offset <= pool.antiRepeatRotations(); offset++) {
-            recent.addAll(draw(pool, candidates, scopeKey, epoch - offset, Set.of()));
+            recent.addAll(draw(pool, candidates, scopeKey, epoch - offset, Set.of(), pool.maxOffers(), List.of()));
         }
-        Set<net.minecraft.resources.ResourceLocation> selected = draw(pool, candidates, scopeKey, epoch, recent);
+        Set<net.minecraft.resources.ResourceLocation> selected = new LinkedHashSet<>(
+                draw(pool, candidates, scopeKey, epoch, recent, pool.maxOffers(), List.of()));
         if (selected.size() < Math.min(pool.maxOffers(), candidates.size())) {
-            selected = draw(pool, candidates, scopeKey, epoch, Set.of());
+            List<QuestDefinition> selectedQuests = candidates.stream().filter(quest -> selected.contains(quest.id())).toList();
+            selected.addAll(draw(pool, candidates, scopeKey + "\u0000backfill", epoch, selected,
+                    pool.maxOffers() - selected.size(), selectedQuests));
         }
         return Set.copyOf(selected);
     }
@@ -42,13 +45,18 @@ public final class QuestPoolSelector {
             List<QuestDefinition> candidates,
             String scopeKey,
             long epoch,
-            Set<net.minecraft.resources.ResourceLocation> excluded) {
+            Set<net.minecraft.resources.ResourceLocation> excluded,
+            int limit,
+            List<QuestDefinition> initialSelections) {
         List<QuestDefinition> remaining = new ArrayList<>(candidates.stream()
                 .filter(quest -> !excluded.contains(quest.id()))
                 .toList());
         Set<net.minecraft.resources.ResourceLocation> selected = new LinkedHashSet<>();
+        List<QuestDefinition> selectedQuests = new ArrayList<>(initialSelections);
         long state = seed(pool, scopeKey, epoch);
-        while (!remaining.isEmpty() && selected.size() < pool.maxOffers()) {
+        while (!remaining.isEmpty() && selected.size() < limit) {
+            remaining.removeIf(candidate -> !pool.quotaAllows(candidate, selectedQuests));
+            if (remaining.isEmpty()) break;
             int totalWeight = remaining.stream().mapToInt(pool::weight).sum();
             state = mix64(state + 0x9E3779B97F4A7C15L);
             int ticket = (int) Long.remainderUnsigned(state, totalWeight);
@@ -61,7 +69,9 @@ public final class QuestPoolSelector {
                     break;
                 }
             }
-            selected.add(remaining.remove(chosen).id());
+            QuestDefinition choice = remaining.remove(chosen);
+            selected.add(choice.id());
+            selectedQuests.add(choice);
         }
         return selected;
     }

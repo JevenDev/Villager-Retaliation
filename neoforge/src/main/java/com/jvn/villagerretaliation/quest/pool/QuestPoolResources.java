@@ -59,6 +59,7 @@ public final class QuestPoolResources {
         }
         List<QuestPoolDefinition> claiming = pools(context.level().getServer()).stream()
                 .filter(pool -> pool.claims(quest))
+                .sorted(java.util.Comparator.comparingInt(QuestPoolDefinition::priority).reversed())
                 .toList();
         if (claiming.isEmpty()) {
             return true;
@@ -67,7 +68,11 @@ public final class QuestPoolResources {
         List<QuestDefinition> eligibleCatalog = catalog.stream()
                 .filter(candidate -> VillagerQuestService.canStartIgnoringPools(context, candidate))
                 .toList();
+        int highestExclusivePriority = claiming.stream().filter(QuestPoolDefinition::exclusive)
+                .mapToInt(QuestPoolDefinition::priority).max().orElse(Integer.MIN_VALUE);
         for (QuestPoolDefinition pool : claiming) {
+            if (highestExclusivePriority != Integer.MIN_VALUE
+                    && (!pool.exclusive() || pool.priority() < highestExclusivePriority)) continue;
             String scopeKey = scopeKey(pool, context);
             long epoch = context.level().getGameTime() / pool.refreshTicks();
             SelectionKey key = new SelectionKey(
@@ -94,7 +99,8 @@ public final class QuestPoolResources {
             case VILLAGE -> context.villageKey() == null || context.villageKey().isBlank()
                     ? context.villager().getUUID().toString()
                     : context.villageKey();
-            case WORLD -> context.level().dimension().location().toString();
+            case WORLD -> "world";
+            case DIMENSION -> context.level().dimension().location().toString();
         };
     }
 
@@ -141,6 +147,23 @@ public final class QuestPoolResources {
                 }
             }
         }
+        List<QuestPoolDefinition.WeightRule> weightRules = new ArrayList<>();
+        if (root.has("weight_rules") && root.get("weight_rules").isJsonArray()) {
+            root.getAsJsonArray("weight_rules").forEach(raw -> {
+                if (raw.isJsonObject()) {
+                    JsonObject rule = raw.getAsJsonObject();
+                    weightRules.add(new QuestPoolDefinition.WeightRule(
+                            stringSet(rule.get("any_tags")), stringSet(rule.get("all_tags")),
+                            stringSet(rule.get("exclude_tags")), DatapackJsonReader.readInt(rule, "multiplier", 1)));
+                }
+            });
+        }
+        Map<String, Integer> tagQuotas = new LinkedHashMap<>();
+        if (root.has("tag_quotas") && root.get("tag_quotas").isJsonObject()) {
+            root.getAsJsonObject("tag_quotas").entrySet().forEach(entry -> {
+                if (entry.getValue().isJsonPrimitive()) tagQuotas.put(entry.getKey(), Math.max(0, entry.getValue().getAsInt()));
+            });
+        }
         return new QuestPoolDefinition(
                 id,
                 !root.has("enabled") || root.get("enabled").getAsBoolean(),
@@ -155,7 +178,12 @@ public final class QuestPoolResources {
                 stringSet(root.get("all_tags")),
                 excludedQuests,
                 stringSet(root.get("exclude_tags")),
-                weights);
+                weights,
+                QuestPoolDefinition.MatchMode.parse(DatapackJsonReader.readString(root, "match")),
+                DatapackJsonReader.readInt(root, "priority", 0),
+                root.has("exclusive") && root.get("exclusive").getAsBoolean(),
+                weightRules,
+                tagQuotas);
     }
 
     private static Set<ResourceLocation> resourceSet(JsonElement element) {
