@@ -28,7 +28,7 @@
         "You have a moment to make this sound less ugly than it looks.",
         "<shake>{player}</shake>, answer carefully. The whole village is listening now."
       ],
-      "priority": -35,
+      "priority": 35,
       "witness_radius": 16,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,

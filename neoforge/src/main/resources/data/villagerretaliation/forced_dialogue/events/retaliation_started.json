@@ -29,7 +29,7 @@
         "No steel, just stubborn. Still enough.",
         "I may be empty-handed, but I am not alone."
       ],
-      "priority": -35,
+      "priority": 35,
       "chance": 0.35,
       "witness_radius": 24,
       "requires_line_of_sight": true,
@@ -58,7 +58,7 @@
         "Keep it off me! I am unarmed!",
         "Do not let it reach the doors!"
       ],
-      "priority": -34,
+      "priority": 34,
       "chance": 0.35,
       "witness_radius": 24,
       "requires_line_of_sight": true,
@@ -106,7 +106,7 @@
         "Back up now or get pushed back.",
         "You swing at one of us, you answer all of us."
       ],
-      "priority": -30,
+      "priority": 30,
       "chance": 0.35,
       "witness_radius": 24,
       "requires_line_of_sight": true,
@@ -134,7 +134,7 @@
         "We survived worse than you.",
         "Turn around before this gets uglier."
       ],
-      "priority": -25,
+      "priority": 25,
       "chance": 0.35,
       "witness_radius": 24,
       "requires_line_of_sight": true,
@@ -166,7 +166,7 @@
         "Try that spell on stone, not villagers.",
         "We break your focus and send you running."
       ],
-      "priority": -28,
+      "priority": 28,
       "chance": 0.35,
       "witness_radius": 24,
       "requires_line_of_sight": true,
@@ -194,7 +194,7 @@
         "Your patrol ends in this square.",
         "Take your raid horn and walk."
       ],
-      "priority": -28,
+      "priority": 28,
       "chance": 0.35,
       "witness_radius": 24,
       "requires_line_of_sight": true,
@@ -222,7 +222,7 @@
         "No chopping paths through our homes.",
         "Drop it or we drop you."
       ],
-      "priority": -28,
+      "priority": 28,
       "chance": 0.35,
       "witness_radius": 24,
       "requires_line_of_sight": true,
@@ -250,7 +250,7 @@
         "No bites, no arrows, no shadows in our homes.",
         "Rot somewhere else."
       ],
-      "priority": -20,
+      "priority": 20,
       "chance": 0.35,
       "witness_radius": 24,
       "requires_line_of_sight": true,
@@ -286,7 +286,7 @@
         "One more step and the whole village swings.",
         "This lane is guarded. Go hunt elsewhere."
       ],
-      "priority": -15,
+      "priority": 15,
       "chance": 0.35,
       "witness_radius": 24,
       "requires_line_of_sight": true,

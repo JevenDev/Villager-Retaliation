@@ -27,7 +27,7 @@
         "I notice {trade_cost}. Check my goods before you wander off.",
         "If you want to turn that {held_item} into {trade_result}, I am open."
       ],
-      "priority": -25,
+      "priority": 25,
       "chance": 0.35,
       "witness_radius": 4,
       "requires_line_of_sight": true,
@@ -54,7 +54,7 @@
         "I can work with {trade_cost}. You may like what I have for sale.",
         "Interested in a quick exchange? Your {held_item}, my {trade_result}."
       ],
-      "priority": -24,
+      "priority": 24,
       "chance": 0.35,
       "witness_radius": 4,
       "requires_line_of_sight": true,
@@ -81,7 +81,7 @@
         "{trade_cost} is enough to make a useful deal. Have a look.",
         "I have something worth your {held_item}: {trade_result_stack}."
       ],
-      "priority": -23,
+      "priority": 23,
       "chance": 0.35,
       "witness_radius": 4,
       "requires_line_of_sight": true,
@@ -108,7 +108,7 @@
         "That payment suits my stock. Step closer and look at {trade_result}.",
         "I can make that {held_item} worth your while."
       ],
-      "priority": -22,
+      "priority": 22,
       "chance": 0.35,
       "witness_radius": 4,
       "requires_line_of_sight": true,
@@ -135,7 +135,7 @@
         "I can make a clean exchange: {trade_cost} for {trade_result_stack}.",
         "With {held_item} in hand, you may want to inspect my best offer."
       ],
-      "priority": -21,
+      "priority": 21,
       "chance": 0.35,
       "witness_radius": 4,
       "requires_line_of_sight": true,

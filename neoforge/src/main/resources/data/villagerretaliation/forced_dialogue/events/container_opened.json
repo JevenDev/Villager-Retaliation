@@ -21,7 +21,7 @@
         "Close that cartography chest. A wrong hand can lose a whole road.",
         "Those records are not for browsing with both hands in the chest."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -97,7 +97,7 @@
         "Close the armory chest. Protection only works when we know where it is.",
         "That armor stock is counted for the village. Step back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -203,7 +203,7 @@
         "Close the forge chest. Every missing piece makes the village weaker.",
         "Those supplies are not a public rack. Step back and ask."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -316,7 +316,7 @@
         "Close the temple stores. Those supplies are for need, not curiosity.",
         "Offerings and remedies stay accounted for. Step back from the chest."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -429,7 +429,7 @@
         "Close the butcher chest. Village food is counted before it is shared.",
         "If you are hungry, ask. Do not start with the latch."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -542,7 +542,7 @@
         "Close the fisher chest. The catch is counted before it is shared.",
         "Ask before reaching into stores pulled from cold water."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -655,7 +655,7 @@
         "Close the fletcher chest. Defense starts with knowing what is stocked.",
         "Those supplies have a target, and it is not your pocket."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -768,7 +768,7 @@
         "Close the mason chest. Every missing piece shows up somewhere.",
         "Stone, clay, tools, all of it is counted. Step back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -881,7 +881,7 @@
         "Close the shepherd chest. Warmth is shared better by asking.",
         "Those stores took work to gather. Step back from the chest."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -994,7 +994,7 @@
         "Close the tannery chest. Prepared stock is not spare just because it is stored.",
         "Ask before reaching into work that took this long to finish."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -1107,7 +1107,7 @@
         "Close the toolsmith chest. Work stops when tools wander.",
         "Every tool in there has a job. Step back and ask."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -1220,7 +1220,7 @@
         "You do not get to put your hands on village stores. Close it now.",
         "After what the village knows of you, an open chest is a threat. Step back."
       ],
-      "priority": -20,
+      "priority": 20,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -1342,7 +1342,7 @@
         "Close that {container}. Village stores are shared by asking first.",
         "That chest belongs to the village. Step back and speak plainly."
       ],
-      "priority": -5,
+      "priority": 5,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,

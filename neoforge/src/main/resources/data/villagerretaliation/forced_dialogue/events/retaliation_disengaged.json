@@ -34,7 +34,7 @@
         "Go. Every door in this village will know your name.",
         "I am done following you. I am not done remembering."
       ],
-      "priority": 20,
+      "priority": -20,
       "chance": 1.0,
       "witness_radius": 40,
       "requires_line_of_sight": false,
@@ -68,7 +68,7 @@
         "I got my answer. You can keep your distance.",
         "Go before my courage returns."
       ],
-      "priority": 20,
+      "priority": -20,
       "chance": 1.0,
       "witness_radius": 40,
       "requires_line_of_sight": false,
@@ -102,7 +102,7 @@
         "That is far enough. Now stay away.",
         "Next time you may not be fast enough."
       ],
-      "priority": 20,
+      "priority": -20,
       "chance": 1.0,
       "witness_radius": 40,
       "requires_line_of_sight": false,
@@ -135,7 +135,7 @@
         "I will stop looking, but I will stay ready.",
         "The trail ends here. The grudge does not."
       ],
-      "priority": 20,
+      "priority": -20,
       "chance": 1.0,
       "witness_radius": 40,
       "requires_line_of_sight": false,

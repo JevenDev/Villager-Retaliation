@@ -21,7 +21,7 @@
         "<shake>Again?</shake> You were warned. The village is done asking.",
         "Three times with your hands in village stores. <bold>No more words.</bold>"
       ],
-      "priority": -40,
+      "priority": 40,
       "witness_radius": 16,
       "requires_line_of_sight": true,
       "initiate_dialogue": false,
@@ -42,7 +42,7 @@
         "<shake>Again?</shake> I warned you once about village stores. This time you make it right.",
         "You were given a warning for this once. Return {stolen_stack}, or pay for what you keep taking."
       ],
-      "priority": -30,
+      "priority": 30,
       "witness_radius": 16,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -162,7 +162,7 @@
         "I saw {stolen_stack} leave that {container}. Return it.",
         "Those supplies are counted for village work. Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -414,7 +414,7 @@
         "I saw you take {stolen_stack} from the temple stores. Return it.",
         "Those supplies are for the <pulse>frightened and the sick</pulse>. Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -620,7 +620,7 @@
         "I saw {stolen_stack} leave the armory chest. Return it.",
         "<bold>Protection starts with stocked supplies.</bold> Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -845,7 +845,7 @@
         "I saw {stolen_stack} leave the butcher chest. Return it.",
         "Those stores feed <italic>more than one mouth</italic>. Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -1070,7 +1070,7 @@
         "I saw {stolen_stack} leave the cartography chest. Return it.",
         "Maps, paper, tools, <italic>all of it</italic> matters here. Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -1295,7 +1295,7 @@
         "I saw {stolen_stack} leave the fisher chest. Return it.",
         "Nets, meals, bait, whatever you took, <bold>put {stolen_stack} back.</bold>"
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -1520,7 +1520,7 @@
         "I saw {stolen_stack} leave the fletcher chest. Return it.",
         "Those supplies are for <bold>work and defense</bold>. Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -1745,7 +1745,7 @@
         "I saw {stolen_stack} leave the mason chest. Return it.",
         "Walls do not stay standing when supplies <shake>vanish</shake>. Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -1970,7 +1970,7 @@
         "I saw {stolen_stack} leave the shepherd chest. Return it.",
         "That work keeps people <pulse>clothed and warm</pulse>. Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -2195,7 +2195,7 @@
         "I saw {stolen_stack} leave the tannery chest. Return it.",
         "Leatherwork, tools, scraps, all of it is <italic>accounted for</italic>. Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -2420,7 +2420,7 @@
         "I saw {stolen_stack} leave the toolsmith chest. Return it.",
         "Every missing tool or supply costs someone a <pulse>day of work</pulse>. Put {stolen_stack} back."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -2645,7 +2645,7 @@
         "That {container} was stocked for the village. Put {stolen_stack} back.",
         "Village stores are not free supplies. Return {stolen_stack}."
       ],
-      "priority": -5,
+      "priority": 5,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -2991,7 +2991,7 @@
         "I saw what you took. Put {stolen_stack} back.",
         "That was not yours. Return {stolen_stack}."
       ],
-      "priority": 10,
+      "priority": -10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
