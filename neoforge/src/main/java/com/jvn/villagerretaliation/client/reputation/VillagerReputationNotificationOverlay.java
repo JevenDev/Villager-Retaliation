@@ -134,7 +134,6 @@ public final class VillagerReputationNotificationOverlay {
 
     private static void renderEntries(GuiGraphics graphics, Minecraft minecraft, float partialTick) {
         Font font = minecraft.font;
-        int index = 0;
         int screenWidth = minecraft.getWindow().getGuiScaledWidth();
         int screenHeight = minecraft.getWindow().getGuiScaledHeight();
         ReputationChangeHudPosition position = VillagerRetaliationConfig.REPUTATION_CHANGE_HUD_POSITION.get();
@@ -144,7 +143,6 @@ public final class VillagerReputationNotificationOverlay {
         for (NotificationEntry entry : ACTIVE_ENTRIES) {
             float alpha = entry.alpha(partialTick);
             if (alpha <= 0.01F) {
-                index++;
                 continue;
             }
 
@@ -157,13 +155,12 @@ public final class VillagerReputationNotificationOverlay {
                 case TOP_RIGHT, MID_RIGHT -> anchor.x() + horizontalSlide;
                 case MID_TOP -> anchor.x();
             };
-            int y = anchor.y() + index * (entryHeight + entryGap());
+            int y = anchor.y() + Math.round(entry.visualSlot(partialTick) * (entryHeight + entryGap()));
             if (style.experimental()) {
                 renderExperimentalEntry(graphics, font, entry, x, y, width, entryHeight, alpha, entry.age + partialTick, position);
             } else {
                 renderEntry(graphics, font, entry, x, y, width, entryHeight, alpha);
             }
-            index++;
         }
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
@@ -184,8 +181,13 @@ public final class VillagerReputationNotificationOverlay {
                     pending.text(),
                     pending.kind(),
                     pending.textColor(),
-                    pending.chatColor()
+                    pending.chatColor(),
+                    ACTIVE_ENTRIES.size()
             ));
+        }
+        int slot = 0;
+        for (NotificationEntry entry : ACTIVE_ENTRIES) {
+            entry.moveToSlot(slot++);
         }
     }
 
@@ -382,24 +384,43 @@ public final class VillagerReputationNotificationOverlay {
         private final int textColor;
         private final int chatColor;
         private int age;
+        private float previousVisualSlot;
+        private float visualSlot;
 
-        private NotificationEntry(String text, VillagerReputationNoticeKind kind, int textColor, int chatColor) {
+        private NotificationEntry(String text, VillagerReputationNoticeKind kind, int textColor, int chatColor, int slot) {
             this.text = text;
             this.kind = kind;
             this.textColor = textColor;
             this.chatColor = chatColor;
+            this.previousVisualSlot = slot;
+            this.visualSlot = slot;
         }
 
         private float alpha(float partialTick) {
             float progress = this.age + partialTick;
             if (progress < FADE_IN_TICKS) {
-                return progress / FADE_IN_TICKS;
+                return VillagerClientUiUtil.smoothstep(progress / FADE_IN_TICKS);
             }
             float fadeOutStart = ENTRY_LIFETIME_TICKS - FADE_OUT_TICKS;
             if (progress > fadeOutStart) {
-                return Math.max(0.0F, (ENTRY_LIFETIME_TICKS - progress) / FADE_OUT_TICKS);
+                return VillagerClientUiUtil.smoothstep(
+                        Math.max(0.0F, (ENTRY_LIFETIME_TICKS - progress) / FADE_OUT_TICKS));
             }
             return 1.0F;
+        }
+
+        private void moveToSlot(int slot) {
+            this.previousVisualSlot = this.visualSlot;
+            this.visualSlot += (slot - this.visualSlot) * 0.42F;
+            if (Math.abs(slot - this.visualSlot) < 0.01F) {
+                this.previousVisualSlot = slot;
+                this.visualSlot = slot;
+            }
+        }
+
+        private float visualSlot(float partialTick) {
+            float frameProgress = VillagerClientUiUtil.smoothstep(partialTick);
+            return this.previousVisualSlot + (this.visualSlot - this.previousVisualSlot) * frameProgress;
         }
     }
 }

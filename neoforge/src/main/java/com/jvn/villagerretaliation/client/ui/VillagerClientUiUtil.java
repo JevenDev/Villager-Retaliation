@@ -54,6 +54,17 @@ public final class VillagerClientUiUtil {
         return ToucanColors.multiplyAlpha(color, alphaFactor);
     }
 
+    public static float smoothstep(float value) {
+        float progress = Mth.clamp(value, 0.0F, 1.0F);
+        return progress * progress * (3.0F - 2.0F * progress);
+    }
+
+    public static float easeOutCubic(float value) {
+        float progress = Mth.clamp(value, 0.0F, 1.0F);
+        float inverse = 1.0F - progress;
+        return 1.0F - inverse * inverse * inverse;
+    }
+
     public static boolean containsInclusive(double x, double y, int left, int top, int right, int bottom) {
         return x >= left && x <= right && y >= top && y <= bottom;
     }

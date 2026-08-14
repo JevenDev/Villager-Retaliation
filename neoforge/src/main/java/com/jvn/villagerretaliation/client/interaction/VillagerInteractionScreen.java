@@ -84,9 +84,11 @@ import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -198,6 +200,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_BUTTON_HIGHLIGHT_COLOR = 0x40FFFFFF;
     private static final int INTERACTION_BUTTON_DISABLED_HIGHLIGHT_COLOR = 0x28FFFFFF;
     private static final int INTERACTION_BUTTON_HIGHLIGHT_INSET = 2;
+    private static final float INTERACTION_BUTTON_HOVER_SCALE = 1.12F;
+    private static final float INTERACTION_BUTTON_NEIGHBOR_SCALE = 1.04F;
+    private static final float INTERACTION_BUTTON_KEYBOARD_SCALE = 1.08F;
+    private static final float INTERACTION_BUTTON_SCALE_RESPONSE_MILLIS = 32.0F;
+    private static final float INTERACTION_OPTION_DOCK_HOVER_SCALE = 1.10F;
+    private static final float INTERACTION_OPTION_DOCK_NEIGHBOR_SCALE = 1.035F;
+    private static final float INTERACTION_OPTION_DOCK_KEYBOARD_SCALE = 1.065F;
+    private static final float INTERACTION_OPTION_DOCK_RESPONSE_MILLIS = 32.0F;
     private static final int INTERACTION_KEYBOARD_TOOLTIP_X_GAP = 8;
     private static final int INTERACTION_KEYBOARD_TOOLTIP_Y_GAP = 4;
     private static final int INTERACTION_NAMEPLATE_TEXT_HORIZONTAL_PADDING = 8;
@@ -386,9 +396,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int selectedInventorySlot = -1;
     private int selectedGiftAmount = 0;
     private final ToucanLimitFeedback giftLimitFeedback = new ToucanLimitFeedback();
-    private boolean pixelOptionEdgeScaleInitialized;
-    private float pixelOptionTopEdgeScaleBlend;
-    private float pixelOptionBottomEdgeScaleBlend;
     private int lastMouseX;
     private int lastMouseY;
     private long mouseStareStartMillis = -1L;
@@ -429,6 +436,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final JobStatsPageContext jobStatsPageContext = new JobStatsPageContext();
     private final EnumMap<InteractionMenuAction, InteractionMenuControl> interactionMenuControls =
             new EnumMap<>(InteractionMenuAction.class);
+    private final EnumMap<InteractionMenuAction, Float> interactionMenuButtonScales =
+            new EnumMap<>(InteractionMenuAction.class);
+    private long lastInteractionMenuAnimationMillis = -1L;
+    private final Map<Integer, Float> interactionOptionDockScales = new HashMap<>();
+    private long lastInteractionOptionDockAnimationMillis = -1L;
 
     public VillagerInteractionScreen(
             int villagerEntityId,
@@ -745,6 +757,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         renderInteractionContainer(graphics);
         graphics.pose().pushPose();
         graphics.pose().translate(contentOffsetX, 0.0F, 0.0F);
+        boolean optionContentHandlesAlpha = !usesRootIconMenu()
+                && this.page != DialoguePage.GIFT
+                && this.page != DialoguePage.PROFILE
+                && this.page != DialoguePage.SKILLS;
+        if (!optionContentHandlesAlpha) {
+            graphics.setColor(1.0F, 1.0F, 1.0F, VillagerInteractionUiAnimation.uiAlpha());
+        }
         if (usesRootIconMenu()) {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
@@ -768,6 +787,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
             renderOptions(graphics, interactionContentMouseX, interactionMouseY, optionsTop());
         }
+        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         graphics.pose().popPose();
         renderInteractionStatTooltips(graphics, mouseX, interactionMouseY);
         graphics.pose().popPose();
@@ -1198,7 +1218,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
         }
         this.state.resetOptions(!this.options.isEmpty());
-        resetPixelOptionEdgeScaleBlends();
+        resetInteractionOptionDockAnimation();
         this.keyboardOptionFocusVisible = false;
         ensureSelectedVisible();
     }
@@ -3062,6 +3082,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         rebuildOptions();
         restoreRememberedPageOptionListPosition(page);
+        if (previousPage != page) {
+            VillagerInteractionUiAnimation.resetContentAnimation();
+            this.interactionMenuButtonScales.clear();
+            this.lastInteractionMenuAnimationMillis = -1L;
+        }
         startInteractionStateTransition(previousPage, page, previousInteractionTop, interactionContainerTopForPage(page));
     }
 
@@ -3617,34 +3642,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int selectedIndex = selectedInteractionMenuButtonIndex(buttons);
         int highlighted = highlightedInteractionMenuButton(hovered, selectedIndex, buttons.size());
         int top = interactionMenuButtonTop();
+        float[] buttonScales = updateInteractionMenuButtonScales(buttons, hovered, selectedIndex);
         for (int index = 0; index < buttons.size(); index++) {
+            if (index == highlighted) {
+                continue;
+            }
             InteractionMenuButton button = buttons.get(index);
             int left = interactionMenuButtonLeft(index, buttons.size());
-            graphics.blit(
-                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_TEXTURE,
-                    left,
-                    top,
-                    0,
-                    0,
-                    INTERACTION_BUTTON_SIZE,
-                    INTERACTION_BUTTON_SIZE,
-                    INTERACTION_BUTTON_SIZE,
-                    INTERACTION_BUTTON_SIZE
-            );
-            graphics.blit(
-                    button.icon(),
-                    left,
-                    top,
-                    0,
-                    0,
-                    INTERACTION_BUTTON_SIZE,
-                    INTERACTION_BUTTON_SIZE,
-                    INTERACTION_BUTTON_SIZE,
-                    INTERACTION_BUTTON_SIZE
-            );
-            if (index == highlighted) {
-                renderInteractionButtonHighlight(graphics, left, top, button.active());
-            }
+            renderInteractionMenuButton(graphics, button, left, top, buttonScales[index], false);
+        }
+        if (highlighted >= 0 && highlighted < buttons.size()) {
+            InteractionMenuButton button = buttons.get(highlighted);
+            int left = interactionMenuButtonLeft(highlighted, buttons.size());
+            renderInteractionMenuButton(graphics, button, left, top, buttonScales[highlighted], true);
         }
 
         if (highlighted >= 0 && highlighted < buttons.size()) {
@@ -3658,6 +3668,89 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 renderInteractionTooltip(graphics, tooltip, mouseX, mouseY);
             }
         }
+    }
+
+    private float[] updateInteractionMenuButtonScales(
+            List<InteractionMenuButton> buttons,
+            int hovered,
+            int selectedIndex) {
+        long now = Util.getMillis();
+        float elapsedMillis = this.lastInteractionMenuAnimationMillis < 0L
+                ? 16.0F
+                : Math.min(50.0F, Math.max(0.0F, now - this.lastInteractionMenuAnimationMillis));
+        this.lastInteractionMenuAnimationMillis = now;
+        float blend = 1.0F - (float) Math.exp(-elapsedMillis / INTERACTION_BUTTON_SCALE_RESPONSE_MILLIS);
+        float[] scales = new float[buttons.size()];
+        for (int index = 0; index < buttons.size(); index++) {
+            InteractionMenuButton button = buttons.get(index);
+            float targetScale = interactionMenuButtonTargetScale(index, hovered, selectedIndex);
+            float currentScale = this.interactionMenuButtonScales.getOrDefault(button.id(), 1.0F);
+            float scale = Mth.lerp(blend, currentScale, targetScale);
+            if (Math.abs(scale - targetScale) < 0.001F) {
+                scale = targetScale;
+            }
+            this.interactionMenuButtonScales.put(button.id(), scale);
+            scales[index] = scale;
+        }
+        return scales;
+    }
+
+    private float interactionMenuButtonTargetScale(int index, int hovered, int selectedIndex) {
+        if (hovered >= 0) {
+            int distance = Math.abs(index - hovered);
+            if (distance == 0) {
+                return INTERACTION_BUTTON_HOVER_SCALE;
+            }
+            if (distance == 1) {
+                return INTERACTION_BUTTON_NEIGHBOR_SCALE;
+            }
+            return 1.0F;
+        }
+        if (this.keyboardInteractionMenuFocusVisible && index == selectedIndex) {
+            return INTERACTION_BUTTON_KEYBOARD_SCALE;
+        }
+        return 1.0F;
+    }
+
+    private void renderInteractionMenuButton(
+            GuiGraphics graphics,
+            InteractionMenuButton button,
+            int left,
+            int top,
+            float scale,
+            boolean highlighted) {
+        float pivotX = left + INTERACTION_BUTTON_SIZE * 0.5F;
+        float pivotY = top + INTERACTION_BUTTON_SIZE;
+        graphics.pose().pushPose();
+        graphics.pose().translate(pivotX, pivotY, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.pose().translate(-pivotX, -pivotY, 0.0F);
+        graphics.blit(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_TEXTURE,
+                left,
+                top,
+                0,
+                0,
+                INTERACTION_BUTTON_SIZE,
+                INTERACTION_BUTTON_SIZE,
+                INTERACTION_BUTTON_SIZE,
+                INTERACTION_BUTTON_SIZE
+        );
+        graphics.blit(
+                button.icon(),
+                left,
+                top,
+                0,
+                0,
+                INTERACTION_BUTTON_SIZE,
+                INTERACTION_BUTTON_SIZE,
+                INTERACTION_BUTTON_SIZE,
+                INTERACTION_BUTTON_SIZE
+        );
+        if (highlighted) {
+            renderInteractionButtonHighlight(graphics, left, top, button.active());
+        }
+        graphics.pose().popPose();
     }
 
     private void renderKeyboardInteractionMenuTooltip(GuiGraphics graphics, List<Component> tooltip, int buttonIndex) {
@@ -5602,46 +5695,49 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.state.setTargetOptionScroll(scroll, maxOptionScroll());
     }
 
-    private void resetPixelOptionEdgeScaleBlends() {
-        this.pixelOptionEdgeScaleInitialized = false;
-        this.pixelOptionTopEdgeScaleBlend = 0.0F;
-        this.pixelOptionBottomEdgeScaleBlend = 0.0F;
+    private void resetInteractionOptionDockAnimation() {
+        this.interactionOptionDockScales.clear();
+        this.lastInteractionOptionDockAnimationMillis = -1L;
     }
 
-    private float pixelOptionEdgeScaleBlend(int index, int edgePosition) {
-        if (!usesInteractionOptionStack() || index < 0 || index >= this.options.size()) {
-            return 0.0F;
+    private void updateInteractionOptionDockScales(int hovered) {
+        long now = Util.getMillis();
+        float elapsedMillis = this.lastInteractionOptionDockAnimationMillis < 0L
+                ? 16.0F
+                : Math.min(50.0F, Math.max(0.0F, now - this.lastInteractionOptionDockAnimationMillis));
+        this.lastInteractionOptionDockAnimationMillis = now;
+        float blend = 1.0F - (float) Math.exp(-elapsedMillis / INTERACTION_OPTION_DOCK_RESPONSE_MILLIS);
+        this.interactionOptionDockScales.keySet().removeIf(index -> index < 0 || index >= this.options.size());
+        for (int index = 0; index < this.options.size(); index++) {
+            float targetScale = interactionOptionDockTargetScale(index, hovered);
+            float currentScale = this.interactionOptionDockScales.getOrDefault(index, 1.0F);
+            float scale = Mth.lerp(blend, currentScale, targetScale);
+            if (Math.abs(scale - targetScale) < 0.001F) {
+                scale = targetScale;
+            }
+            this.interactionOptionDockScales.put(index, scale);
         }
-        return switch (edgePosition) {
-            case -1 -> this.pixelOptionTopEdgeScaleBlend;
-            case 1 -> this.pixelOptionBottomEdgeScaleBlend;
-            default -> 0.0F;
-        };
     }
 
-    private void updatePixelOptionEdgeScaling(boolean topEdgeVisible, boolean bottomEdgeVisible) {
-        if (!usesInteractionOptionStack()) {
-            return;
+    private float interactionOptionDockTargetScale(int index, int hovered) {
+        if (hovered >= 0) {
+            int distance = Math.abs(index - hovered);
+            if (distance == 0) {
+                return INTERACTION_OPTION_DOCK_HOVER_SCALE;
+            }
+            if (distance == 1) {
+                return INTERACTION_OPTION_DOCK_NEIGHBOR_SCALE;
+            }
+            return 1.0F;
         }
-        updatePixelOptionEdgeSlotBlends(topEdgeVisible, bottomEdgeVisible);
-    }
-
-    private void updatePixelOptionEdgeSlotBlends(boolean topEdgeVisible, boolean bottomEdgeVisible) {
-        float topTarget = topEdgeVisible ? 1.0F : 0.0F;
-        float bottomTarget = bottomEdgeVisible ? 1.0F : 0.0F;
-        if (!this.pixelOptionEdgeScaleInitialized) {
-            this.pixelOptionTopEdgeScaleBlend = topTarget;
-            this.pixelOptionBottomEdgeScaleBlend = bottomTarget;
-            this.pixelOptionEdgeScaleInitialized = true;
-            return;
+        if (this.keyboardOptionFocusVisible && index == this.state.selectedOption()) {
+            return INTERACTION_OPTION_DOCK_KEYBOARD_SCALE;
         }
-        this.pixelOptionTopEdgeScaleBlend = lerpPixelOptionEdgeBlend(this.pixelOptionTopEdgeScaleBlend, topTarget);
-        this.pixelOptionBottomEdgeScaleBlend = lerpPixelOptionEdgeBlend(this.pixelOptionBottomEdgeScaleBlend, bottomTarget);
+        return 1.0F;
     }
 
-    private static float lerpPixelOptionEdgeBlend(float current, float target) {
-        float blend = Mth.lerp(OPTION_SCROLL_LERP, current, target);
-        return Math.abs(blend - target) < 0.01F ? target : blend;
+    private float interactionOptionDockScale(int index) {
+        return this.interactionOptionDockScales.getOrDefault(index, 1.0F);
     }
 
     private float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
@@ -6328,11 +6424,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
-        public float textAlpha() {
-            return 1.0F;
-        }
-
-        @Override
         public int guiScissorOffsetY() {
             return VillagerInteractionScreen.this.renderSlideOffsetY;
         }
@@ -6458,13 +6549,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
-        public float pixelOptionEdgeScaleBlend(int index, int edgePosition) {
-            return VillagerInteractionScreen.this.pixelOptionEdgeScaleBlend(index, edgePosition);
+        public void updatePixelOptionDockScales(int hovered) {
+            VillagerInteractionScreen.this.updateInteractionOptionDockScales(hovered);
         }
 
         @Override
-        public void updatePixelOptionEdgeScaling(boolean topEdgeVisible, boolean bottomEdgeVisible) {
-            VillagerInteractionScreen.this.updatePixelOptionEdgeScaling(topEdgeVisible, bottomEdgeVisible);
+        public float pixelOptionDockScale(int index) {
+            return VillagerInteractionScreen.this.interactionOptionDockScale(index);
         }
 
         @Override
@@ -6587,7 +6678,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public float uiAlpha() {
-            return 1.0F;
+            return VillagerInteractionUiAnimation.uiAlpha();
         }
     }
 

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.party;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
 import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
 import com.jvn.villagerretaliation.party.PartyQuickCommand;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
 import java.util.UUID;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -46,6 +48,8 @@ public final class PartyQuickCommandWheel {
     private static final int SLOT_ITEM_SIZE = 16;
     private static final int SLOT_FRAME_SIZE = (SLOT_TEXTURE_SIZE - SLOT_ITEM_SIZE) / 2;
     private static final float SLOT_BACKGROUND_ALPHA = 186.0F / 255.0F;
+    private static final float OPEN_FADE_DURATION_MILLIS = 160.0F;
+    private static final float HIGHLIGHT_CROSSFADE_DURATION_MILLIS = 120.0F;
     private static final ResourceLocation SLOT_TEXTURE =
             VillagerRetaliation.id("textures/gui/quick_command/inventory_slot.png");
     private static final ResourceLocation GUI_LAYER =
@@ -72,6 +76,9 @@ public final class PartyQuickCommandWheel {
     private static boolean open;
     private static boolean wasMouseGrabbed;
     private static int highlightedIndex = -1;
+    private static int previousHighlightedIndex = -1;
+    private static long openedAtMillis = -1L;
+    private static long highlightChangedAtMillis = -1L;
     private static UUID commandedVillagerId;
     private static String commandedVillagerName;
     private static CapturedTarget capturedTarget = CapturedTarget.EMPTY;
@@ -145,6 +152,9 @@ public final class PartyQuickCommandWheel {
     private static void open(Minecraft minecraft) {
         open = true;
         highlightedIndex = -1;
+        previousHighlightedIndex = -1;
+        openedAtMillis = Util.getMillis();
+        highlightChangedAtMillis = -1L;
         commandedVillagerId = null;
         commandedVillagerName = null;
         capturedTarget = captureTarget(minecraft);
@@ -161,6 +171,9 @@ public final class PartyQuickCommandWheel {
         }
         open = false;
         highlightedIndex = -1;
+        previousHighlightedIndex = -1;
+        openedAtMillis = -1L;
+        highlightChangedAtMillis = -1L;
         capturedTarget = CapturedTarget.EMPTY;
         commandedVillagerId = null;
         commandedVillagerName = null;
@@ -252,13 +265,22 @@ public final class PartyQuickCommandWheel {
         double dx = mouseX - centerX;
         double dy = mouseY - centerY;
         if (Math.hypot(dx, dy) < INNER_DEADZONE) {
-            highlightedIndex = -1;
+            setHighlightedIndex(-1);
             return;
         }
         double angle = normalizeAngle(Math.atan2(dy, dx) + Math.PI / 2.0D);
         List<WheelEntry> entries = entries();
         int index = (int) Math.floor(angle / (FULL_CIRCLE / entries.size()));
-        highlightedIndex = Math.min(index, entries.size() - 1);
+        setHighlightedIndex(Math.min(index, entries.size() - 1));
+    }
+
+    private static void setHighlightedIndex(int nextIndex) {
+        if (highlightedIndex == nextIndex) {
+            return;
+        }
+        previousHighlightedIndex = highlightedIndex;
+        highlightedIndex = nextIndex;
+        highlightChangedAtMillis = Util.getMillis();
     }
 
     private static void render(GuiGraphics graphics) {
@@ -267,44 +289,79 @@ public final class PartyQuickCommandWheel {
         int centerX = minecraft.getWindow().getGuiScaledWidth() / 2;
         int centerY = minecraft.getWindow().getGuiScaledHeight() / 2;
         List<WheelEntry> entries = entries();
+        long now = Util.getMillis();
+        float entranceAlpha = entranceAlpha(now);
+        int textColor = VillagerClientUiUtil.withAlphaRound(0xFFFFFFFF, entranceAlpha);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        drawCircle(centerX, centerY, WHEEL_RADIUS, 96, 0xB0101010);
+        drawCircle(centerX, centerY, WHEEL_RADIUS, 96,
+                VillagerClientUiUtil.withAlphaRound(0xB0101010, entranceAlpha));
         double slice = FULL_CIRCLE / entries.size();
         for (int index = 0; index < entries.size(); index++) {
             double start = -Math.PI / 2.0D + index * slice;
             double end = start + slice;
             drawWedge(centerX, centerY, WHEEL_RADIUS, start, end,
-                    index == highlightedIndex ? 0x995DADE2 : 0x22000000);
+                    VillagerClientUiUtil.withAlphaRound(0x22000000, entranceAlpha));
+            float highlightAlpha = highlightAlpha(index, now) * entranceAlpha;
+            if (highlightAlpha > 0.01F) {
+                drawWedge(centerX, centerY, WHEEL_RADIUS, start, end,
+                        VillagerClientUiUtil.withAlphaRound(0x885DADE2, highlightAlpha));
+            }
         }
-        drawCircle(centerX, centerY, CENTER_RADIUS, 48, 0xD0181818);
+        drawCircle(centerX, centerY, CENTER_RADIUS, 48,
+                VillagerClientUiUtil.withAlphaRound(0xD0181818, entranceAlpha));
         RenderSystem.disableBlend();
 
         for (int index = 0; index < entries.size(); index++) {
             double angle = -Math.PI / 2.0D + (index + 0.5D) * slice;
             int iconX = centerX + (int) Math.round(Math.cos(angle) * ICON_RADIUS) - 8;
             int iconY = centerY + (int) Math.round(Math.sin(angle) * ICON_RADIUS) - 8;
-            renderSlotBackground(graphics, iconX - SLOT_FRAME_SIZE, iconY - SLOT_FRAME_SIZE);
+            renderSlotBackground(graphics, iconX - SLOT_FRAME_SIZE, iconY - SLOT_FRAME_SIZE, entranceAlpha);
             ItemStack stack = entries.get(index).icon();
+            graphics.setColor(1.0F, 1.0F, 1.0F, entranceAlpha);
             graphics.renderItem(stack, iconX, iconY);
+            graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         }
 
         graphics.drawCenteredString(font, truncate(font, targetTitle().getString(), 180),
-                centerX, centerY - WHEEL_RADIUS - 18, 0xFFFFFF);
+                centerX, centerY - WHEEL_RADIUS - 18, textColor);
         Component label = highlightedIndex >= 0
                 ? selectionLabel(entries.get(highlightedIndex))
                 : Component.translatable("villagerretaliation.party.quick_command.cancel");
         graphics.drawCenteredString(font, truncate(font, label.getString(), 118),
-                centerX, centerY + WHEEL_RADIUS + font.lineHeight, 0xFFFFFF);
+                centerX, centerY + WHEEL_RADIUS + font.lineHeight, textColor);
     }
 
-    private static void renderSlotBackground(GuiGraphics graphics, int x, int y) {
+    private static float entranceAlpha(long now) {
+        if (openedAtMillis < 0L) {
+            return 1.0F;
+        }
+        float progress = (now - openedAtMillis) / OPEN_FADE_DURATION_MILLIS;
+        return VillagerClientUiUtil.easeOutCubic(progress);
+    }
+
+    private static float highlightAlpha(int index, long now) {
+        if (highlightChangedAtMillis < 0L) {
+            return index == highlightedIndex ? 1.0F : 0.0F;
+        }
+        float progress = VillagerClientUiUtil.smoothstep(
+                (now - highlightChangedAtMillis) / HIGHLIGHT_CROSSFADE_DURATION_MILLIS);
+        if (index == highlightedIndex) {
+            return progress;
+        }
+        if (index == previousHighlightedIndex) {
+            return 1.0F - progress;
+        }
+        return 0.0F;
+    }
+
+    private static void renderSlotBackground(GuiGraphics graphics, int x, int y, float alpha) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        graphics.setColor(1.0F, 1.0F, 1.0F, SLOT_BACKGROUND_ALPHA);
+        graphics.setColor(1.0F, 1.0F, 1.0F, SLOT_BACKGROUND_ALPHA * alpha);
         graphics.blit(SLOT_TEXTURE, x, y, 0.0F, 0.0F,
                 SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE);
-        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        graphics.setColor(1.0F, 1.0F, 1.0F, alpha);
         graphics.blit(SLOT_TEXTURE, x, y, SLOT_TEXTURE_SIZE, SLOT_FRAME_SIZE,
                 0.0F, 0.0F, SLOT_TEXTURE_SIZE, SLOT_FRAME_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE);
         graphics.blit(SLOT_TEXTURE, x, y + SLOT_TEXTURE_SIZE - SLOT_FRAME_SIZE,
@@ -316,6 +373,7 @@ public final class PartyQuickCommandWheel {
                 SLOT_FRAME_SIZE, SLOT_ITEM_SIZE, SLOT_TEXTURE_SIZE - SLOT_FRAME_SIZE, SLOT_FRAME_SIZE,
                 SLOT_FRAME_SIZE, SLOT_ITEM_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE);
         RenderSystem.disableBlend();
+        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     private static void drawCircle(double centerX, double centerY, double radius, int segments, int color) {
@@ -415,6 +473,8 @@ public final class PartyQuickCommandWheel {
             commandedVillagerName = villager.name();
         }
         highlightedIndex = -1;
+        previousHighlightedIndex = -1;
+        highlightChangedAtMillis = -1L;
     }
 
     private static Component targetTitle() {
