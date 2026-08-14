@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -112,7 +113,7 @@ public final class QuestDialogueCompiler {
             String nodeId = lifecycleNodeId(scene.id());
             String entryId = lifecycleEntryId(scene.id());
             addSceneNode(resource, "", scene, sceneSource, nodeId, null, nodes);
-            addEntry(resource, "", entryId, titleCase(scene.id()), nodeId, sceneSource, null, entries);
+            addEntry(resource, "", entryId, titleCase(scene.id()), nodeId, sceneSource, scene.data(), entries);
             putBinding(
                     bindings,
                     new QuestDialogueCatalog.Binding(
@@ -201,7 +202,7 @@ public final class QuestDialogueCompiler {
                 String nodeId = stageSceneNodeId(stage.id(), scene.id());
                 String entryId = stageSceneEntryId(stage.id(), scene.id());
                 addSceneNode(resource, stage.id(), scene, sceneSource, nodeId, stage, nodes);
-                addEntry(resource, stage.id(), entryId, titleCase(scene.id()), nodeId, sceneSource, null, entries);
+                addEntry(resource, stage.id(), entryId, titleCase(scene.id()), nodeId, sceneSource, scene.data(), entries);
                 putBinding(
                         bindings,
                         new QuestDialogueCatalog.Binding(
@@ -306,7 +307,8 @@ public final class QuestDialogueCompiler {
                     resource,
                     stageId,
                     "quest_module_v2_response",
-                    source.child(Integer.toString(index))));
+                    source.child(Integer.toString(index)),
+                    response.data()));
             copyArrayIfPresent(response.data(), object, "conditions");
             copyResponseActionObjects(
                     object,
@@ -391,7 +393,7 @@ public final class QuestDialogueCompiler {
         String explicitLabel = entryData == null ? "" : DatapackJsonReader.readString(entryData, "label");
         entry.addProperty("label", explicitLabel.isBlank() ? label : explicitLabel);
         entry.addProperty("start", nodeId);
-        entry.add("metadata", metadata(resource, stageId, "quest_module_v2_entry", source));
+        entry.add("metadata", metadata(resource, stageId, "quest_module_v2_entry", source, entryData));
         copyIfPresent(entryData, entry, "request");
         copyIfPresent(entryData, entry, "show_for_babies");
         copyIfPresent(entryData, entry, "order");
@@ -405,17 +407,60 @@ public final class QuestDialogueCompiler {
             String stageId,
             String topic,
             QuestSourcePointer source) {
+        return metadata(resource, stageId, topic, source, null);
+    }
+
+    private static JsonObject metadata(
+            QuestV2Resource resource,
+            String stageId,
+            String topic,
+            QuestSourcePointer source,
+            JsonObject owner) {
         JsonObject metadata = new JsonObject();
         metadata.addProperty("topic", topic);
+        metadata.addProperty("notes", source.jsonPointer());
+
+        JsonObject authored = owner == null ? null : DatapackJsonReader.readObject(owner, "metadata");
+        if (authored != null) {
+            authored.entrySet().stream()
+                    .filter(entry -> !"tags".equals(entry.getKey()))
+                    .filter(entry -> !"quest".equals(entry.getKey()))
+                    .filter(entry -> !"stage".equals(entry.getKey()))
+                    .forEach(entry -> metadata.add(entry.getKey(), entry.getValue().deepCopy()));
+        }
+
         metadata.addProperty("quest", resource.id().toString());
         putString(metadata, "questline", metadataString(resource, "questline"));
         putString(metadata, "stage", stageId);
+
+        Set<String> tagValues = new LinkedHashSet<>();
+        tagValues.add("generated");
+        tagValues.add("quest_v2");
+        tagValues.addAll(stringValues(resource.metadata().get("tags")));
+        if (authored != null) {
+            tagValues.addAll(stringValues(authored.get("tags")));
+        }
         JsonArray tags = new JsonArray();
-        tags.add("generated");
-        tags.add("quest_v2");
+        tagValues.stream().filter(value -> value != null && !value.isBlank()).forEach(tags::add);
         metadata.add("tags", tags);
-        metadata.addProperty("notes", source.jsonPointer());
         return metadata;
+    }
+
+    private static List<String> stringValues(JsonElement element) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        List<String> values = new ArrayList<>();
+        if (element.isJsonArray()) {
+            element.getAsJsonArray().forEach(value -> {
+                if (value.isJsonPrimitive()) {
+                    values.add(value.getAsString());
+                }
+            });
+        } else if (element.isJsonPrimitive()) {
+            values.add(element.getAsString());
+        }
+        return List.copyOf(values);
     }
 
     private static void addDisplay(JsonObject root, QuestV2Resource resource) {

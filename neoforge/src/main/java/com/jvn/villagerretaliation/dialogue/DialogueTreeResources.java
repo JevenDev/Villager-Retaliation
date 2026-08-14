@@ -55,7 +55,7 @@ public final class DialogueTreeResources {
                 .filter(tree -> tree.matches(context))
                 .flatMap(tree -> tree.entries().stream()
                         .filter(entry -> entry.matches(context, disposition))
-                        .map(entry -> new RankedOption(entry.toOption(tree.id()), entry.priority())))
+                        .map(entry -> new RankedOption(entry.toOption(tree.id(), tree.metadata()), entry.priority())))
                 .sorted(Comparator.comparingInt(RankedOption::priority).reversed()
                         .thenComparingInt(value -> value.option().order())
                         .thenComparing(value -> value.option().id()))

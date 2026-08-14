@@ -105,11 +105,15 @@ public record DialogueTreeDefinition(
         }
 
         public DialogueOptionDefinition toOption(ResourceLocation treeId) {
+            return toOption(treeId, DialogueEntryMetadata.EMPTY);
+        }
+
+        public DialogueOptionDefinition toOption(ResourceLocation treeId, DialogueEntryMetadata inheritedMetadata) {
             return option(
                     DialogueTreeService.entryOptionId(treeId, this.id),
                     DialogueTreeReference.entry(treeId, this.id),
                     treeId,
-                    this.metadata,
+                    inheritedMetadata == null ? this.metadata : inheritedMetadata.merge(this.metadata),
                     this.label,
                     this.requestType,
                     this.forceCameraTowardsVillager,
@@ -182,11 +186,15 @@ public record DialogueTreeDefinition(
         }
 
         public DialogueOptionDefinition toOption(ResourceLocation treeId) {
+            return toOption(treeId, DialogueEntryMetadata.EMPTY);
+        }
+
+        public DialogueOptionDefinition toOption(ResourceLocation treeId, DialogueEntryMetadata inheritedMetadata) {
             return option(
                     DialogueTreeService.responseOptionId(treeId, this.id),
                     DialogueTreeReference.response(treeId, this.id),
                     treeId,
-                    this.metadata,
+                    inheritedMetadata == null ? this.metadata : inheritedMetadata.merge(this.metadata),
                     this.label,
                     this.requestType,
                     false,

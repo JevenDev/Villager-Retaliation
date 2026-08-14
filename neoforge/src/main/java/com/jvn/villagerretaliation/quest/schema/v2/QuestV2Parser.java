@@ -241,6 +241,7 @@ public final class QuestV2Parser {
             "responses",
             "conditions",
             "actions",
+            "end",
             "metadata");
     private static final Set<String> SCENE_KEYS = Set.of(
             "id",

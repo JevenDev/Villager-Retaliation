@@ -406,12 +406,14 @@ public final class QuestV2Schema {
         properties.add("request", string());
         properties.add("show_for_babies", booleanSchema());
         properties.add("order", integer());
+        properties.add("priority", integer());
         properties.add("text", string());
         properties.add("text_key", string());
         properties.add("lines", arrayOf(string()));
         properties.add("responses", arrayOf(ref("#/$defs/response")));
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
         properties.add("actions", arrayOf(ref("#/$defs/action")));
+        properties.add("end", booleanSchema());
         properties.add("metadata", openObject());
         schema.add("properties", properties);
         return schema;
@@ -426,12 +428,14 @@ public final class QuestV2Schema {
         properties.add("request", string());
         properties.add("show_for_babies", booleanSchema());
         properties.add("order", integer());
+        properties.add("priority", integer());
         properties.add("text", string());
         properties.add("text_key", string());
         properties.add("lines", arrayOf(string()));
         properties.add("responses", arrayOf(ref("#/$defs/response")));
         properties.add("actions", arrayOf(ref("#/$defs/action")));
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
+        properties.add("end", booleanSchema());
         properties.add("next", transitionStringOrObject());
         properties.add("transition", ref("#/$defs/transition"));
         properties.add("external", externalSceneRef());
@@ -465,6 +469,8 @@ public final class QuestV2Schema {
         properties.add("fail", booleanSchema());
         properties.add("request", string());
         properties.add("order", integer());
+        properties.add("priority", integer());
+        properties.add("end", booleanSchema());
         properties.add("metadata", openObject());
         schema.add("properties", properties);
         return schema;
