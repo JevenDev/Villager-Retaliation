@@ -427,7 +427,8 @@ public final class HiredVillagerContractService {
     }
 
     public static void startOneOffBuilderJob(ServerLevel level, Villager villager, ServerPlayer player) {
-        if (level == null || villager == null || villager.isBaby() || player == null) {
+        if (level == null || villager == null || villager.isBaby() || player == null
+                || !HiredVillagerRoles.canOfferBuilderService(level, villager)) {
             return;
         }
         VillagerAssignmentSnapshot assignment = synchronizeAssignment(level, villager);

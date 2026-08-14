@@ -287,7 +287,11 @@ public final class HiredVillagerRoles {
         definitions.put(HiredVillagerRole.FISHING, role(VillagerSkill.FISHING, VillagerSkill.SURVIVAL, "fisherman"));
         definitions.put(HiredVillagerRole.BREWING, role(VillagerSkill.MEDICINE, VillagerSkill.SCHOLARSHIP, "cleric"));
         definitions.put(HiredVillagerRole.CRAFTSMAN, role(VillagerSkill.CRAFTING, VillagerSkill.GATHERING, "toolsmith"));
-        definitions.put(HiredVillagerRole.BUILDER, role(VillagerSkill.MASONRY, VillagerSkill.CRAFTING, "mason"));
+        definitions.put(HiredVillagerRole.BUILDER, restrictedRole(
+                VillagerSkill.MASONRY,
+                VillagerSkill.CRAFTING,
+                Set.of("mason", "toolsmith", "weaponsmith"),
+                "mason", "toolsmith", "weaponsmith"));
         definitions.put(HiredVillagerRole.ANIMAL_HANDLING, role(
                 VillagerSkill.ANIMAL_HANDLING, VillagerSkill.FARMING, "shepherd", "leatherworker"));
         definitions.put(HiredVillagerRole.COOK, role(VillagerSkill.COOKING, VillagerSkill.GATHERING, "butcher"));

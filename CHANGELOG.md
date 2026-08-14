@@ -11,7 +11,7 @@ Beta.13 is the Hired Help and Village Life update. It adds complete worker logis
 
 - Added renewable hired-villager contracts with role and duration selection, reputation- and aptitude-aware prices, daily wages, extension limits, early-cancellation refunds, payment grace, automatic renewal, and live contract countdowns.
 - Added thirteen contract roles: Combat, Hunting, Mining, Logging, Farming, Fishing, Brewing, Craftsman, Animal Handling, Nitwit, Cook, Smelter, and Courier. Builder is offered separately as a paid one-off construction service.
-- Added role qualification through primary and support skills. Canonical professions qualify automatically, Courier is available to every adult, Nitwit remains profession-restricted, and Builder uses its own service eligibility.
+- Added role qualification through primary and support skills. Canonical professions qualify automatically, Courier is available to every adult, Nitwit remains profession-restricted, and only masons, toolsmiths, and weaponsmiths can provide blueprints or perform Builder work.
 - Added a Job Stats view with role readiness, profession overrides, the two contributing skills, weighted aptitude, work speed, transfer capacity, and role-specific job icons and explanations.
 - Added skill-based hired-work practice and throughput. Completed work trains both role skills at a 70/30 split, the same weighted aptitude scales work cadence from 75% to 125% and transfer capacity from 50% to 150% without changing vanilla workstation timers.
 - Added a persistent, server-authoritative worker runtime with bounded work areas, route focus, work plans, task states, status and final reports, path backoff, unreachable-target memory, stall recovery, storage navigation, and budgeted scans.
