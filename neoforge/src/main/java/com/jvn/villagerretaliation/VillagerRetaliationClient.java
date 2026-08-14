@@ -23,7 +23,6 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagKeyMappings::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandKeyMappings::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::registerGuiLayer);
-        modEventBus.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::registerGuiLayer);
         com.jvn.villagerretaliation.client.item.VillagerFishingRodItemProperties.register();
         modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintItemProperties::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::registerShaders);
