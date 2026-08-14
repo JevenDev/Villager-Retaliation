@@ -572,7 +572,9 @@ public record QuestDefinition(
             boolean consumeOnAbandonment,
             ActiveState activeState,
             Expiration expiration,
-            Branching branching
+            Branching branching,
+            int maxActiveQuests,
+            Map<String, Integer> maxActiveByTag
     ) {
         public static final Rules DEFAULT = new Rules(
                 false,
@@ -589,7 +591,9 @@ public record QuestDefinition(
                 false,
                 ActiveState.DEFAULT,
                 Expiration.DEFAULT,
-                Branching.DEFAULT
+                Branching.DEFAULT,
+                0,
+                Map.of()
         );
 
         public Rules {
@@ -603,6 +607,20 @@ public record QuestDefinition(
             activeState = activeState == null ? ActiveState.DEFAULT : activeState;
             expiration = expiration == null ? Expiration.DEFAULT : expiration;
             branching = branching == null ? Branching.DEFAULT : branching;
+            maxActiveQuests = Math.max(0, maxActiveQuests);
+            maxActiveByTag = ContentTags.normalizeKeys(maxActiveByTag);
+        }
+
+        public Rules(
+                boolean repeatable, boolean lockedToVillager, boolean crossVillagerCompatible,
+                int maxStarts, int maxCompletions, CompletionScope completionScope,
+                long completionCooldownTicks, long prerequisiteCooldownTicks, AbandonmentMode abandonment,
+                long abandonmentCooldownTicks, boolean consumeOnCompletion, boolean consumeOnAbandonment,
+                ActiveState activeState, Expiration expiration, Branching branching) {
+            this(repeatable, lockedToVillager, crossVillagerCompatible, maxStarts, maxCompletions,
+                    completionScope, completionCooldownTicks, prerequisiteCooldownTicks, abandonment,
+                    abandonmentCooldownTicks, consumeOnCompletion, consumeOnAbandonment, activeState, expiration,
+                    branching, 0, Map.of());
         }
     }
 

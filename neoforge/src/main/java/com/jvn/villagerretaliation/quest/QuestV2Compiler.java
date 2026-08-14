@@ -230,6 +230,8 @@ public final class QuestV2Compiler {
         copyIfPresent(availability, rules, "prerequisite_cooldown_seconds");
         copyIfPresent(availability, rules, "max_starts");
         copyIfPresent(availability, rules, "max_completions");
+        copyIfPresent(availability, rules, "max_active_quests");
+        copyIfPresent(availability, rules, "max_active_by_tag");
         copyIfPresent(availability, rules, "completion_scope");
         copyIfPresent(availability, rules, "scope");
         copyIfPresent(availability, rules, "abandonment");
