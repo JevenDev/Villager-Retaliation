@@ -21,7 +21,7 @@
         "Smashing a weaponsmith chest is not borrowing. Explain yourself.",
         "That chest held steel for village work, not a reward for your pickaxe."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -113,7 +113,7 @@
         "You broke a chest full of work meant to keep people alive.",
         "I saw the armor stores break under your hand. Speak carefully."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -205,7 +205,7 @@
         "You smashed the tool stores. The village works with those.",
         "I saw you break the toolsmith chest. Explain the damage."
       ],
-      "priority": -10,
+      "priority": 10,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
@@ -297,7 +297,7 @@
         "That {container} was stocked for the village. You do not get to break it apart.",
         "I saw you break the {container}. Explain yourself."
       ],
-      "priority": -5,
+      "priority": 5,
       "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,

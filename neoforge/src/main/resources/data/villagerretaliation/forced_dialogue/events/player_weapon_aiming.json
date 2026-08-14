@@ -29,7 +29,7 @@
         "Same party, same side. Point {held_item} somewhere else.",
         "You recruited me as an ally. Treat me like one."
       ],
-      "priority": -200,
+      "priority": 200,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -67,7 +67,7 @@
         "You have nothing to prove at swordpoint here, Your Majesty.",
         "Command me if you must, but do not let the blade speak for you."
       ],
-      "priority": -100,
+      "priority": 100,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -105,7 +105,7 @@
         "A ruler may command attention without taking aim at it.",
         "Please give the string and my nerves a moment to relax."
       ],
-      "priority": -99,
+      "priority": 99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -144,7 +144,7 @@
         "Take the edge off me and I will hear whatever you came to say.",
         "We built respect carefully. Do not cut through it in one careless moment."
       ],
-      "priority": -100,
+      "priority": 100,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -182,7 +182,7 @@
         "Shift your sights and we can speak as allies again.",
         "I would rather tell stories about your marksmanship than become one."
       ],
-      "priority": -99,
+      "priority": 99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -221,7 +221,7 @@
         "We have defended your name before. Do not make that difficult.",
         "Step back, lower the edge, and let good sense return."
       ],
-      "priority": -100,
+      "priority": 100,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -259,7 +259,7 @@
         "Take me out of your aim and keep your good name.",
         "I expected a greeting from you, not a firing solution."
       ],
-      "priority": -99,
+      "priority": 99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -298,7 +298,7 @@
         "The village door is open to you. Keep the sword out of the doorway.",
         "Lower the edge, and I will forget how close it came."
       ],
-      "priority": -100,
+      "priority": 100,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -336,7 +336,7 @@
         "You are making an old friend feel like prey.",
         "Drop your sights and give me a reason to keep calling you welcome."
       ],
-      "priority": -99,
+      "priority": 99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -375,7 +375,7 @@
         "Whatever you came for, a sword at my chest will not help you get it.",
         "Turn the weapon aside before the bell gets a reason to ring."
       ],
-      "priority": -100,
+      "priority": 100,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -413,7 +413,7 @@
         "We welcome travelers, not firing lines.",
         "Point at the ground, stranger, while you still have the choice."
       ],
-      "priority": -99,
+      "priority": 99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -452,7 +452,7 @@
         "Back away before caution turns into an alarm.",
         "I was willing to hear you out. The sword has changed my mind."
       ],
-      "priority": -100,
+      "priority": 100,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -490,7 +490,7 @@
         "Take your sights off me. Suspicion is about to become certainty.",
         "A traveler with honest business does not line up villagers."
       ],
-      "priority": -99,
+      "priority": 99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -529,7 +529,7 @@
         "Put the weapon down and leave while leaving is still offered.",
         "I have no patience left for your threats, spoken or sharpened."
       ],
-      "priority": -100,
+      "priority": 100,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -567,7 +567,7 @@
         "I see the bolt, the angle, and the choice you are making.",
         "Release your aim, not the arrow, and get out."
       ],
-      "priority": -99,
+      "priority": 99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -606,7 +606,7 @@
         "The only mercy left for you is a chance to put the sword away.",
         "You are despised for reasons, and that raised edge is another."
       ],
-      "priority": -100,
+      "priority": 100,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -644,7 +644,7 @@
         "Keep the arrow and take your hatred beyond our walls.",
         "I would rather face your sneer than the point you put behind it."
       ],
-      "priority": -99,
+      "priority": 99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -683,7 +683,7 @@
         "You have already frightened me. There is nothing more to prove.",
         "Lower it, and I swear I will be gone before you count to three."
       ],
-      "priority": -100,
+      "priority": 100,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,
@@ -721,7 +721,7 @@
         "I have heard the stories about your aim. Spare me the proof.",
         "Turn the bow away and I will not call anyone."
       ],
-      "priority": -99,
+      "priority": 99,
       "chance": 1.0,
       "witness_radius": 8,
       "requires_line_of_sight": true,

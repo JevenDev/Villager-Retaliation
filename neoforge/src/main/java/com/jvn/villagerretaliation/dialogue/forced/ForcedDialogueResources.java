@@ -43,7 +43,7 @@ public final class ForcedDialogueResources {
     private static final Set<String> ROOT_KEYS = Set.of(
             "entries", "notifications", "messages", "openings", "closings", "pacify",
             "metadata",
-            "id", "trigger", "event", "line", "lines", "priority", "chance", "witness_radius",
+            "id", "trigger", "event", "line", "lines", "priority", "weight", "chance", "witness_radius",
             "replace", "remove", "message_prefix", "text_prefix", "line_key", "line_keys", "text_key", "text_keys",
             "witness_profession", "witness_professions", "professions",
             "requires_witness_unarmed", "witness_unarmed", "requires_witness_armed", "witness_armed",
@@ -74,7 +74,7 @@ public final class ForcedDialogueResources {
     private static final Set<String> NOTIFICATION_TRIGGER_PREFIXES = Set.of(
             "ambient.", "alert.", "combat.", "dialogue.", "gift.", "quest.", "recruitment.", "reputation.", "trade.");
     private static final Comparator<ForcedDialogueDefinition> CANDIDATE_ORDER =
-            Comparator.comparingInt(ForcedDialogueDefinition::priority)
+            Comparator.comparingInt(ForcedDialogueDefinition::priority).reversed()
                     .thenComparing(definition -> definition.lootTables().isEmpty() ? 1 : 0);
     private static volatile CachedForcedDialogues cachedDialogues = CachedForcedDialogues.empty();
 
@@ -106,7 +106,7 @@ public final class ForcedDialogueResources {
     }
 
     public static List<ForcedDialogueDefinition> playerItemProximityCandidates(MinecraftServer server) {
-        return load(server).playerItemProximityCandidates();
+        return weightedOrder(server, load(server).playerItemProximityCandidates());
     }
 
     private static List<ForcedDialogueDefinition> select(
@@ -114,10 +114,47 @@ public final class ForcedDialogueResources {
             ForcedDialogueTrigger trigger,
             ResourceLocation lootTable,
             ResourceLocation targetEntityType) {
-        return load(server).byTrigger().getOrDefault(trigger, List.of()).stream()
+        List<ForcedDialogueDefinition> candidates = load(server).byTrigger().getOrDefault(trigger, List.of()).stream()
                 .filter(definition -> definition.matchesLootTable(lootTable))
                 .filter(definition -> definition.matchesTargetEntityType(targetEntityType))
                 .toList();
+        return weightedOrder(server, candidates);
+    }
+
+    private static List<ForcedDialogueDefinition> weightedOrder(
+            MinecraftServer server,
+            List<ForcedDialogueDefinition> candidates) {
+        if (candidates.size() < 2 || server == null) {
+            return candidates;
+        }
+        List<ForcedDialogueDefinition> remaining = new ArrayList<>(candidates);
+        remaining.sort(CANDIDATE_ORDER);
+        List<ForcedDialogueDefinition> ordered = new ArrayList<>(remaining.size());
+        RandomSource random = server.overworld().getRandom();
+        while (!remaining.isEmpty()) {
+            ForcedDialogueDefinition head = remaining.getFirst();
+            int priority = head.priority();
+            boolean specificLoot = !head.lootTables().isEmpty();
+            List<ForcedDialogueDefinition> tier = remaining.stream()
+                    .filter(candidate -> candidate.priority() == priority
+                            && !candidate.lootTables().isEmpty() == specificLoot)
+                    .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+            remaining.removeAll(tier);
+            while (!tier.isEmpty()) {
+                int totalWeight = tier.stream().mapToInt(ForcedDialogueDefinition::weight).sum();
+                int ticket = random.nextInt(Math.max(1, totalWeight));
+                int chosen = 0;
+                for (int index = 0; index < tier.size(); index++) {
+                    ticket -= tier.get(index).weight();
+                    if (ticket < 0) {
+                        chosen = index;
+                        break;
+                    }
+                }
+                ordered.add(tier.remove(chosen));
+            }
+        }
+        return List.copyOf(ordered);
     }
 
     private static CachedForcedDialogues load(MinecraftServer server) {
@@ -298,6 +335,7 @@ public final class ForcedDialogueResources {
                 clampChance(readDouble(entry, "chance", 1.0D)),
                 readInt(entry, "reputation", 0),
                 readInt(entry, "priority", 0),
+                Math.max(1, Math.min(10_000, readInt(entry, "weight", 1))),
                 DatapackJsonReader.readDurationTicks(entry, "cooldown", defaultCooldownTicks(trigger.get())),
                 readInt(entry, "min_recent_container_thefts", 0),
                 readInt(entry, "max_recent_container_thefts", Integer.MAX_VALUE),
@@ -1059,6 +1097,7 @@ public final class ForcedDialogueResources {
             double chance,
             int reputationDelta,
             int priority,
+            int weight,
             long cooldownTicks,
             int minRecentContainerThefts,
             int maxRecentContainerThefts,
@@ -1079,6 +1118,10 @@ public final class ForcedDialogueResources {
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
             List<ForcedDialogueOption> leaveOptions) {
+        public ForcedDialogueDefinition {
+            weight = Math.max(1, Math.min(10_000, weight));
+        }
+
         public LocalizedText selectLine(RandomSource random) {
             if (this.lines.isEmpty()) {
                 return LocalizedText.EMPTY;
