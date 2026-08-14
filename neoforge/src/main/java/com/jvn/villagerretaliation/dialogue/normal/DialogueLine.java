@@ -90,7 +90,9 @@ public record DialogueLine(
         String category,
         int weight,
         int specificityWeight,
-        double chance
+        double chance,
+        long cooldownTicks,
+        int maxUses
 ) {
     public DialogueLine {
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
@@ -100,6 +102,8 @@ public record DialogueLine(
         conditions = conditions == null ? List.of() : List.copyOf(conditions);
         specificityWeight = Math.max(0, specificityWeight);
         chance = Math.clamp(chance, 0.0D, 1.0D);
+        cooldownTicks = Math.max(0L, cooldownTicks);
+        maxUses = Math.max(0, maxUses);
     }
 
     public String text() {
@@ -563,6 +567,8 @@ public record DialogueLine(
         private int weight = 10;
         private int specificityWeight;
         private double chance = 1.0D;
+        private long cooldownTicks;
+        private int maxUses;
 
         protected Builder(String id, DialogueRequestType requestType, String text) {
             this(id, requestType, List.of(text));
@@ -986,6 +992,16 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder cooldownTicks(long cooldownTicks) {
+            this.cooldownTicks = Math.max(0L, cooldownTicks);
+            return this;
+        }
+
+        public Builder maxUses(int maxUses) {
+            this.maxUses = Math.max(0, maxUses);
+            return this;
+        }
+
         public DialogueLine build() {
             return new DialogueLine(
                     this.id,
@@ -1060,7 +1076,9 @@ public record DialogueLine(
                     this.category,
                     this.weight,
                     this.specificityWeight,
-                    this.chance
+                    this.chance,
+                    this.cooldownTicks,
+                    this.maxUses
             );
         }
     }

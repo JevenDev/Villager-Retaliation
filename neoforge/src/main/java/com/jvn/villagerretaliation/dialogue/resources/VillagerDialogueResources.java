@@ -137,7 +137,8 @@ public final class VillagerDialogueResources {
             "min_recruitment_follow_distance", "requires_recruitment_boat_trip", "requires_recruitment_ocean_crossing",
             "requires_recruitment_swim_trip", "excludes_recruitment_ocean_crossing",
             "first_conversation_only", "gift_advice", "show_for_adults", "show_for_babies", "priority", "category", "weight",
-            "specificity_weight", "chance",
+            "specificity_weight", "chance", "cooldown", "cooldown_ticks", "cooldown_seconds", "cooldown_days",
+            "once", "max_uses",
             "italic", "italics", "bold", "bolded", "underlined", "underline", "strikethrough", "obfuscated", "obfuscate",
             "wavy", "wave", "shake", "shaky", "pulse", "pulsing", "jump", "jumping",
             "rainbow", "rainbow_text", "color", "text_color", "gradient_start", "gradientStart", "gradient_end", "gradientEnd", "text_effects",
@@ -1492,6 +1493,9 @@ public final class VillagerDialogueResources {
         builder.weight(readInt(entry, "weight", 10));
         builder.specificityWeight(readInt(entry, "specificity_weight", 0));
         builder.chance(DatapackJsonReader.readDouble(entry, "chance", 1.0D));
+        builder.cooldownTicks(DatapackJsonReader.readDurationTicks(entry, "cooldown", 0L));
+        int maxUses = readInt(entry, "max_uses", 0);
+        builder.maxUses(readBoolean(entry, "once") && maxUses <= 0 ? 1 : maxUses);
     }
 
     private static Set<VillagerProfession> defaultProfessionsFor(ResourceLocation location, String locale) {

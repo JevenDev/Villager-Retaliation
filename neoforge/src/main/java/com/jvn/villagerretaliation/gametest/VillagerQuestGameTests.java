@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueLine;
@@ -1123,6 +1124,26 @@ public final class VillagerQuestGameTests {
                 DialogueTuningResources.value(helper.getLevel().getServer(), "memory.gift.question_chance", -1.0D),
                 0.45D,
                 "gift memory tuning");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dialogueLineUsageRulesAreDurable(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        DialogueContext context = VillagerInteractionService.createDialogueContext(helper.getLevel(), player, villager);
+        DialogueLine once = DialogueLine.builder("test_once_line", DialogueRequestType.QUESTION, "Once")
+                .cooldownTicks(200L)
+                .maxUses(1)
+                .build();
+        helper.assertTrue(VillagerDialogueService.selectionAvailable(once, context), "unused line was unavailable");
+        VillagerInteractionTracker.rememberDialogue(
+                helper.getLevel(), villager, player, DialogueRequestType.QUESTION, once.id());
+        helper.assertTrue(!VillagerDialogueService.selectionAvailable(once, context), "once line remained available after use");
+        VillagerInteractionTracker.DialogueUsage usage = VillagerInteractionTracker.dialogueUsage(
+                helper.getLevel(), villager, player, once.id());
+        helper.assertValueEqual(usage.count(), 1, "durable dialogue use count");
+        helper.assertValueEqual(usage.lastUsedGameTime(), helper.getLevel().getGameTime(), "durable dialogue timestamp");
         helper.succeed();
     }
 

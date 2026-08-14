@@ -75,6 +75,14 @@ public final class VillagerInteractionTracker {
         );
     }
 
+    public static DialogueUsage dialogueUsage(
+            ServerLevel level, Villager villager, ServerPlayer player, String dialogueId) {
+        VillagerInteractionSavedData.InteractionEntry entry = VillagerInteractionSavedData.get(level)
+                .getOrEmptyForRead(villager.getUUID(), player.getUUID());
+        VillagerInteractionSavedData.DialogueUsage usage = entry.dialogueUsage(dialogueId);
+        return new DialogueUsage(usage.count(), usage.lastUsedGameTime());
+    }
+
     public static void rememberDialogue(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType, String dialogueId) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
@@ -662,6 +670,9 @@ public final class VillagerInteractionTracker {
     public static ContextReports contextReports(ServerLevel level, Villager villager, ServerPlayer player) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         return data.contextReports(villager.getUUID(), player.getUUID(), level.getGameTime());
+    }
+
+    public record DialogueUsage(int count, long lastUsedGameTime) {
     }
 
     public record ContextReports(
