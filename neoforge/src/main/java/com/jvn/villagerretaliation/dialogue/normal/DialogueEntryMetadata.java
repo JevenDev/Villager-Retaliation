@@ -11,17 +11,22 @@ import net.minecraft.resources.ResourceLocation;
 public record DialogueEntryMetadata(
         String topic,
         Set<String> tags,
+        Set<String> routingTags,
+        Set<String> antiRepeatGroups,
         String questline,
         String quest,
         String stage,
         String notes) {
-    public static final DialogueEntryMetadata EMPTY = new DialogueEntryMetadata("", Set.of(), "", "", "", "");
+    public static final DialogueEntryMetadata EMPTY = new DialogueEntryMetadata(
+            "", Set.of(), Set.of(), Set.of(), "", "", "", "");
     public static final Set<String> FIELD_KEYS = Set.of(
             "metadata");
 
     private static final Set<String> NESTED_KEYS = Set.of(
             "topic",
             "tags",
+            "routing_tags",
+            "anti_repeat_groups",
             "questline",
             "quest",
             "stage",
@@ -30,10 +35,22 @@ public record DialogueEntryMetadata(
     public DialogueEntryMetadata {
         topic = ContentTags.normalize(topic);
         tags = ContentTags.normalizeAll(tags);
+        routingTags = ContentTags.normalizeAll(routingTags);
+        antiRepeatGroups = ContentTags.normalizeAll(antiRepeatGroups);
         questline = ContentTags.normalize(questline);
         quest = ContentTags.normalize(quest);
         stage = ContentTags.normalize(stage);
         notes = notes == null ? "" : notes.trim();
+    }
+
+    public DialogueEntryMetadata(
+            String topic,
+            Set<String> tags,
+            String questline,
+            String quest,
+            String stage,
+            String notes) {
+        this(topic, tags, Set.of(), Set.of(), questline, quest, stage, notes);
     }
 
     public static DialogueEntryMetadata read(ResourceLocation location, String systemName, String context, JsonObject entry) {
@@ -43,8 +60,12 @@ public record DialogueEntryMetadata(
         }
 
         Set<String> tags = new LinkedHashSet<>();
+        Set<String> routingTags = new LinkedHashSet<>();
+        Set<String> antiRepeatGroups = new LinkedHashSet<>();
         if (metadata != null) {
             tags.addAll(DatapackJsonReader.readStringList(metadata, "tags"));
+            routingTags.addAll(DatapackJsonReader.readStringList(metadata, "routing_tags"));
+            antiRepeatGroups.addAll(DatapackJsonReader.readStringList(metadata, "anti_repeat_groups"));
         }
 
         String topic = metadata == null ? "" : DatapackJsonReader.readString(metadata, "topic");
@@ -53,12 +74,15 @@ public record DialogueEntryMetadata(
         String stage = metadata == null ? "" : DatapackJsonReader.readString(metadata, "stage");
         String notes = metadata == null ? "" : DatapackJsonReader.readString(metadata, "notes");
 
-        return new DialogueEntryMetadata(topic, tags, questline, quest, stage, notes);
+        return new DialogueEntryMetadata(
+                topic, tags, routingTags, antiRepeatGroups, questline, quest, stage, notes);
     }
 
     public boolean isEmpty() {
         return this.topic.isBlank()
                 && this.tags.isEmpty()
+                && this.routingTags.isEmpty()
+                && this.antiRepeatGroups.isEmpty()
                 && this.questline.isBlank()
                 && this.quest.isBlank()
                 && this.stage.isBlank()
@@ -86,7 +110,29 @@ public record DialogueEntryMetadata(
         if (!this.tags.isEmpty()) {
             parts.add("tags=" + String.join("|", this.tags));
         }
+        if (!this.routingTags.isEmpty()) {
+            parts.add("routing_tags=" + String.join("|", this.routingTags));
+        }
+        if (!this.antiRepeatGroups.isEmpty()) {
+            parts.add("anti_repeat_groups=" + String.join("|", this.antiRepeatGroups));
+        }
         return String.join(", ", parts);
+    }
+
+    public Set<String> effectiveRoutingTags() {
+        if (!this.routingTags.isEmpty()) {
+            return this.routingTags;
+        }
+        return this.tags.stream()
+                .filter(tag -> !ContentTags.isStructuralDialogueTag(tag))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    public Set<String> effectiveAntiRepeatGroups() {
+        if (!this.antiRepeatGroups.isEmpty()) {
+            return this.antiRepeatGroups;
+        }
+        return this.topic.isBlank() ? Set.of() : Set.of(this.topic);
     }
 
     public DialogueEntryMetadata merge(DialogueEntryMetadata override) {
@@ -99,9 +145,15 @@ public record DialogueEntryMetadata(
 
         Set<String> mergedTags = new LinkedHashSet<>(this.tags);
         mergedTags.addAll(override.tags);
+        Set<String> mergedRoutingTags = new LinkedHashSet<>(this.routingTags);
+        mergedRoutingTags.addAll(override.routingTags);
+        Set<String> mergedAntiRepeatGroups = new LinkedHashSet<>(this.antiRepeatGroups);
+        mergedAntiRepeatGroups.addAll(override.antiRepeatGroups);
         return new DialogueEntryMetadata(
                 override.topic.isBlank() ? this.topic : override.topic,
                 mergedTags,
+                mergedRoutingTags,
+                mergedAntiRepeatGroups,
                 override.questline.isBlank() ? this.questline : override.questline,
                 override.quest.isBlank() ? this.quest : override.quest,
                 override.stage.isBlank() ? this.stage : override.stage,
