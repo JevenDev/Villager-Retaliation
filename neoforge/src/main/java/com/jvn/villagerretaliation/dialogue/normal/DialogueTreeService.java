@@ -69,7 +69,8 @@ public final class DialogueTreeService {
 
         List<DialogueOptionDefinition> options = node.responses().stream()
                 .filter(response -> response.matches(context))
-                .sorted(Comparator.comparingInt(DialogueTreeDefinition.Response::order)
+                .sorted(Comparator.comparingInt(DialogueTreeDefinition.Response::priority).reversed()
+                        .thenComparingInt(DialogueTreeDefinition.Response::order)
                         .thenComparing(DialogueTreeDefinition.Response::id))
                 .map(response -> response.toOption(tree.id()))
                 .toList();
@@ -160,7 +161,7 @@ public final class DialogueTreeService {
         ActionText responseActionText = executeActions(context, response.actions(), session.replacements());
         String responseLine = resolve(response.selectLine(context.random()), context, responseActionText.replacements());
         String leadingText = firstNonBlank(responseLine, responseActionText.text());
-        if (!response.next().isBlank()) {
+        if (!response.end() && !response.next().isBlank()) {
             return Optional.of(enterNode(context, tree, response.next(), leadingText, responseActionText.replacements()));
         }
 
