@@ -1838,7 +1838,7 @@ public final class VillagerDialogueResources {
             DialogueEntryMetadata metadata,
             List<DialogueCondition> conditions) {
         private String selectText(DialogueContext context) {
-            DialogueTextVariant variant = DialogueTextVariant.select(this.variants, context, List.of()).orElse(null);
+            DialogueTextVariant variant = DialogueTextVariant.selectAndRecord(this.variants, context, List.of()).orElse(null);
             if (variant == null) {
                 return "";
             }
@@ -1919,7 +1919,7 @@ public final class VillagerDialogueResources {
             DialogueEntryMetadata metadata,
             List<DialogueCondition> conditions) {
         private String selectText(DialogueContext context) {
-            DialogueTextVariant variant = DialogueTextVariant.select(this.variants, context, List.of()).orElse(null);
+            DialogueTextVariant variant = DialogueTextVariant.selectAndRecord(this.variants, context, List.of()).orElse(null);
             if (variant == null) {
                 return "";
             }

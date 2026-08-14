@@ -159,7 +159,7 @@ public final class DialogueTreeService {
         }
 
         ActionText responseActionText = executeActions(context, response.actions(), session.replacements());
-        String responseLine = resolve(response.selectLine(context.random()), context, responseActionText.replacements());
+        String responseLine = resolve(response.selectLine(context), context, responseActionText.replacements());
         String leadingText = firstNonBlank(responseLine, responseActionText.text());
         if (!response.end() && !response.next().isBlank()) {
             return Optional.of(enterNode(context, tree, response.next(), leadingText, responseActionText.replacements()));
@@ -185,7 +185,7 @@ public final class DialogueTreeService {
         }
 
         ActionText actionText = executeActions(context, node.actions(), inheritedReplacements);
-        String nodeLine = resolve(node.selectLine(context.random()), context, actionText.replacements());
+        String nodeLine = resolve(node.selectLine(context), context, actionText.replacements());
         String text = firstNonBlank(leadingText, actionText.text(), nodeLine);
         if (!node.end() && node.responses().stream().anyMatch(response -> response.matches(context))) {
             SESSIONS.put(key(context), new Session(

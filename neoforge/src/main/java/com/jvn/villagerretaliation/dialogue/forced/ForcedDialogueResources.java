@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.dialogue.forced;
 
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.CandidateArbitrator;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueUsagePolicy;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.normal.SocialAttributeCondition;
 import com.google.gson.JsonArray;
@@ -474,6 +476,13 @@ public final class ForcedDialogueResources {
     }
 
     private static List<LocalizedText> readLines(JsonObject entry, String messagePrefix) {
+        List<LocalizedText> rich = readLocalizedObjects(entry.get("variants"), messagePrefix + ".line");
+        if (rich.isEmpty()) {
+            rich = readLocalizedObjects(entry.get("lines"), messagePrefix + ".line");
+        }
+        if (!rich.isEmpty()) {
+            return rich;
+        }
         List<String> lines = new ArrayList<>(readStringList(entry, "lines"));
         String line = readString(entry, "line");
         if (!line.isBlank()) {
@@ -492,6 +501,10 @@ public final class ForcedDialogueResources {
     }
 
     private static List<LocalizedText> readResponseVariants(JsonObject entry, String singleKey, String listKey, String messageKey) {
+        List<LocalizedText> rich = readLocalizedObjects(entry.get(listKey), messageKey);
+        if (!rich.isEmpty()) {
+            return rich;
+        }
         List<String> responses = new ArrayList<>(readStringList(entry, listKey));
         String response = readString(entry, singleKey);
         if (!response.isBlank()) {
@@ -503,6 +516,41 @@ public final class ForcedDialogueResources {
         }
         String fallback = response.isBlank() && !responses.isEmpty() ? responses.getFirst() : response;
         return localizedVariants(responses, keys, fallback);
+    }
+
+    private static List<LocalizedText> readLocalizedObjects(JsonElement element, String ownerId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        List<JsonElement> values = element.isJsonArray() ? element.getAsJsonArray().asList() : List.of(element);
+        List<LocalizedText> result = new ArrayList<>();
+        for (int index = 0; index < values.size(); index++) {
+            JsonElement value = values.get(index);
+            if (!value.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = value.getAsJsonObject();
+            String localId = readString(object, "id");
+            String id = (ownerId == null || ownerId.isBlank() ? "forced" : ownerId)
+                    + "#" + (localId.isBlank() ? "line_" + index : localId);
+            LocalizedText variant = new LocalizedText(
+                    id,
+                    nonBlankOr(readString(object, "text"), readString(object, "line")),
+                    nonBlankOr(readString(object, "text_key"), readString(object, "line_key")),
+                    readInt(object, "priority", 0),
+                    Math.max(0, Math.min(10_000, readInt(object, "weight", 1))),
+                    clampChance(readDouble(object, "chance", 1.0D)),
+                    DialogueEntryMetadata.EMPTY,
+                    DialogueUsagePolicy.read(object, DialogueUsagePolicy.DEFAULT));
+            if (!variant.isBlank()) {
+                result.add(variant);
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private static String nonBlankOr(String first, String second) {
+        return first == null || first.isBlank() ? (second == null ? "" : second) : first;
     }
 
     private static List<LocalizedText> localizedVariants(List<String> values, List<String> keys, String fallback) {
@@ -1076,12 +1124,33 @@ public final class ForcedDialogueResources {
         DROP_AT_CONTAINER
     }
 
-    public record LocalizedText(String text, String key) {
-        private static final LocalizedText EMPTY = new LocalizedText("", "");
+    public record LocalizedText(
+            String id,
+            String text,
+            String key,
+            int priority,
+            int weight,
+            double chance,
+            DialogueEntryMetadata metadata,
+            DialogueUsagePolicy usage) {
+        private static final LocalizedText EMPTY = new LocalizedText("", "", "");
 
         public LocalizedText {
+            id = id == null ? "" : id.trim();
             text = text == null ? "" : text;
             key = key == null ? "" : key.trim();
+            weight = Math.max(0, Math.min(10_000, weight));
+            chance = Double.isFinite(chance) ? Math.clamp(chance, 0.0D, 1.0D) : 1.0D;
+            metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
+            usage = usage == null ? DialogueUsagePolicy.DEFAULT : usage;
+        }
+
+        public LocalizedText(String text, String key) {
+            this("", text, key, 0, 1, 1.0D, DialogueEntryMetadata.EMPTY, DialogueUsagePolicy.DEFAULT);
+        }
+
+        public LocalizedText(String id, String text, String key) {
+            this(id, text, key, 0, 1, 1.0D, DialogueEntryMetadata.EMPTY, DialogueUsagePolicy.DEFAULT);
         }
 
         public static LocalizedText inline(String text) {
@@ -1147,10 +1216,7 @@ public final class ForcedDialogueResources {
         }
 
         public LocalizedText selectLine(RandomSource random) {
-            if (this.lines.isEmpty()) {
-                return LocalizedText.EMPTY;
-            }
-            return this.lines.get(random.nextInt(this.lines.size()));
+            return selectResponse(this.lines, random);
         }
 
         private boolean matchesLootTable(ResourceLocation lootTable) {
@@ -1221,10 +1287,7 @@ public final class ForcedDialogueResources {
             List<DialogueCondition> conditions,
             ForcedDialogueFollowUp followUp) {
         public LocalizedText selectResponse(RandomSource random) {
-            if (this.responses.isEmpty()) {
-                return LocalizedText.EMPTY;
-            }
-            return this.responses.get(random.nextInt(this.responses.size()));
+            return ForcedDialogueResources.selectResponse(this.responses, random);
         }
     }
 
@@ -1331,7 +1394,11 @@ public final class ForcedDialogueResources {
         if (responses.isEmpty()) {
             return LocalizedText.EMPTY;
         }
-        return responses.get(random.nextInt(responses.size()));
+        return CandidateArbitrator.select(
+                responses.stream().map(response -> CandidateArbitrator.Candidate.eligible(
+                        response.id(), response, response.priority(), response.chance(), response.weight())).toList(),
+                random,
+                ignored -> true).orElse(LocalizedText.EMPTY);
     }
 
     public record ForcedDialogueContext(

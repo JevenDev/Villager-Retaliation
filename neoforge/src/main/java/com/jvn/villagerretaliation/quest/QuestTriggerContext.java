@@ -8,6 +8,8 @@ import java.util.Locale;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -39,6 +41,35 @@ public record QuestTriggerContext(
 
     public QuestTriggerContext withDialogueContext(DialogueContext context) {
         return new QuestTriggerContext(this.event, this.gameTime, this.stage, this.payload, context);
+    }
+
+    public CompoundTag save() {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("Event", QuestTriggerRegistry.canonicalEventId(this.event));
+        tag.putLong("GameTime", this.gameTime);
+        tag.putString("Stage", this.stage);
+        CompoundTag payloadTag = new CompoundTag();
+        this.payload.forEach(payloadTag::putString);
+        tag.put("Payload", payloadTag);
+        return tag;
+    }
+
+    public static QuestTriggerContext load(CompoundTag tag) {
+        if (tag == null || !tag.contains("Event", Tag.TAG_STRING)) {
+            return null;
+        }
+        QuestDefinition.TriggerEvent event = QuestDefinition.TriggerEvent.bySerializedName(tag.getString("Event"));
+        if (event == null) {
+            return null;
+        }
+        Map<String, String> payload = new LinkedHashMap<>();
+        CompoundTag payloadTag = tag.getCompound("Payload");
+        for (String key : payloadTag.getAllKeys()) {
+            if (payloadTag.contains(key, Tag.TAG_STRING)) {
+                payload.put(key, payloadTag.getString(key));
+            }
+        }
+        return new QuestTriggerContext(event, tag.getLong("GameTime"), tag.getString("Stage"), payload, null);
     }
 
     public String value(String key) {

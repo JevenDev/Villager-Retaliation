@@ -377,17 +377,9 @@ public final class VillagerDialogueService {
     }
 
     public static boolean selectionAvailable(DialogueLine line, DialogueContext context) {
-        if (line.cooldownTicks() <= 0L && line.maxUses() <= 0) {
-            return true;
-        }
-        VillagerInteractionTracker.DialogueUsage usage = VillagerInteractionTracker.dialogueUsage(
-                context.level(), context.villager(), context.player(), line.id());
-        if (line.maxUses() > 0 && usage.count() >= line.maxUses()) {
-            return false;
-        }
-        return line.cooldownTicks() <= 0L
-                || usage.lastUsedGameTime() == Long.MIN_VALUE
-                || context.level().getGameTime() >= usage.lastUsedGameTime() + line.cooldownTicks();
+        return DialogueUsageService.available(context, line.id(),
+                new DialogueUsagePolicy(line.cooldownTicks(), line.maxUses(), true,
+                        DialogueUsagePolicy.Scope.PLAYER_VILLAGER));
     }
 
     private static List<DialogueLine> preferHighestPriority(List<DialogueLine> candidates) {

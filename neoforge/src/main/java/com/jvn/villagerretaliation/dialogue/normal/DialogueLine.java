@@ -160,13 +160,15 @@ public record DialogueLine(
     }
 
     public SelectedText selectText(DialogueContext context, List<String> recentDialogueIds) {
-        return DialogueTextVariant.select(this.textVariants, context, recentDialogueIds)
+        return DialogueTextVariant.selectAndRecord(this.textVariants, context, recentDialogueIds)
                 .map(variant -> new SelectedText(variant.id(), variant.text(), variant.textKey()))
                 .orElseGet(() -> new SelectedText(this.id, "", ""));
     }
 
     public boolean hasEligibleTextVariant(DialogueContext context) {
-        return this.textVariants.stream().anyMatch(variant -> variant.matches(context) && variant.weight() > 0);
+        return this.textVariants.stream().anyMatch(variant -> variant.matches(context)
+                && variant.weight() > 0
+                && DialogueUsageService.available(context, variant.id(), variant.usage()));
     }
 
     public boolean recentlyUsed(List<String> recentDialogueIds) {

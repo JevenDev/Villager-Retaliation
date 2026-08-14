@@ -11,6 +11,8 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextVariant;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueUsagePolicy;
 import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog;
 import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCompiler;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
@@ -564,7 +566,7 @@ public final class VillagerQuestResources {
                 readStages(location, root, id),
                 readTriggers(location, root, id),
                 readRewards(root),
-                readDialogue(root),
+                readDialogue(location, id, root),
                 DialogueEntryMetadata.read(location, "quest", "quest", root),
                 readLinks(root),
                 readRevision(root)
@@ -2015,7 +2017,7 @@ public final class VillagerQuestResources {
         return VillageEventMemory.parseTagId(value).orElse(null);
     }
 
-    private static QuestDefinition.Dialogue readDialogue(JsonObject root) {
+    private static QuestDefinition.Dialogue readDialogue(ResourceLocation location, ResourceLocation questId, JsonObject root) {
         JsonObject dialogue = DatapackJsonReader.readObject(root, "dialogue");
         if (dialogue == null) {
             return QuestDefinition.Dialogue.EMPTY;
@@ -2038,8 +2040,35 @@ public final class VillagerQuestResources {
                 readLines(dialogue, "missing_proof"),
                 readLineKeys(dialogue, "missing_proof"),
                 readLines(dialogue, "locate_failed"),
-                readLineKeys(dialogue, "locate_failed")
+                readLineKeys(dialogue, "locate_failed"),
+                readDialogueVariants(location, questId, dialogue)
         );
+    }
+
+    private static Map<String, List<DialogueTextVariant>> readDialogueVariants(
+            ResourceLocation location, ResourceLocation questId, JsonObject dialogue) {
+        Map<String, List<DialogueTextVariant>> variants = new LinkedHashMap<>();
+        for (String slot : List.of("start", "reminder", "turn_in", "already_completed", "unavailable",
+                "inactive", "missing_target", "missing_proof", "locate_failed")) {
+            JsonElement element = dialogue.get(slot);
+            if (element == null || !containsDialogueVariantObject(element)) {
+                continue;
+            }
+            List<DialogueTextVariant> parsed = DialogueTextVariant.read(
+                    location, "quest dialogue", "dialogue." + slot, questId + "/dialogue/" + slot,
+                    element, questId, DialogueEntryMetadata.EMPTY, DialogueUsagePolicy.DEFAULT);
+            if (!parsed.isEmpty()) {
+                variants.put(slot, parsed);
+            }
+        }
+        return Map.copyOf(variants);
+    }
+
+    private static boolean containsDialogueVariantObject(JsonElement element) {
+        if (element.isJsonObject()) {
+            return true;
+        }
+        return element.isJsonArray() && element.getAsJsonArray().asList().stream().anyMatch(JsonElement::isJsonObject);
     }
 
     private static QuestDefinition.Links readLinks(JsonObject root) {

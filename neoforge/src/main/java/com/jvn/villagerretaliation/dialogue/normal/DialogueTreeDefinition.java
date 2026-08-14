@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue.normal;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
@@ -126,6 +127,7 @@ public record DialogueTreeDefinition(
     public record Node(
             String id,
             List<String> lines,
+            List<DialogueTextVariant> textVariants,
             List<VillagerActionDefinition> actions,
             List<DialogueCondition> conditions,
             List<Response> responses,
@@ -134,9 +136,17 @@ public record DialogueTreeDefinition(
         public Node {
             id = id == null || id.isBlank() ? "start" : id;
             lines = lines == null ? List.of() : List.copyOf(lines);
+            textVariants = textVariants == null || textVariants.isEmpty()
+                    ? DialogueTextVariant.legacy(id, lines, "", DialogueEntryMetadata.EMPTY, DialogueUsagePolicy.DEFAULT)
+                    : List.copyOf(textVariants);
             actions = actions == null ? List.of() : List.copyOf(actions);
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
             responses = responses == null ? List.of() : List.copyOf(responses);
+        }
+
+        public Node(String id, List<String> lines, List<VillagerActionDefinition> actions,
+                List<DialogueCondition> conditions, List<Response> responses, boolean end) {
+            this(id, lines, List.of(), actions, conditions, responses, end);
         }
 
         public boolean matches(DialogueContext context) {
@@ -149,6 +159,13 @@ public record DialogueTreeDefinition(
             }
             return this.lines.get(random.nextInt(this.lines.size()));
         }
+
+        public String selectLine(DialogueContext context) {
+            return DialogueTextVariant.selectAndRecord(this.textVariants, context, List.of())
+                    .map(variant -> variant.textKey().isBlank() ? variant.text()
+                            : VillagerDialogueResources.message(context, variant.textKey()).orElse(variant.text()))
+                    .orElse("");
+        }
     }
 
     public record Response(
@@ -158,6 +175,7 @@ public record DialogueTreeDefinition(
             String next,
             DialogueRequestType requestType,
             List<String> lines,
+            List<DialogueTextVariant> textVariants,
             List<VillagerActionDefinition> actions,
             List<DialogueCondition> conditions,
             boolean end,
@@ -171,6 +189,9 @@ public record DialogueTreeDefinition(
             next = next == null ? "" : next;
             requestType = requestType == null ? DialogueRequestType.STORY : requestType;
             lines = lines == null ? List.of() : List.copyOf(lines);
+            textVariants = textVariants == null || textVariants.isEmpty()
+                    ? DialogueTextVariant.legacy(id, lines, "", metadata, DialogueUsagePolicy.DEFAULT)
+                    : List.copyOf(textVariants);
             actions = actions == null ? List.of() : List.copyOf(actions);
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
         }
@@ -179,7 +200,14 @@ public record DialogueTreeDefinition(
                 String id, String label, DialogueEntryMetadata metadata, String next, DialogueRequestType requestType,
                 List<String> lines, List<VillagerActionDefinition> actions, List<DialogueCondition> conditions,
                 boolean end, int order) {
-            this(id, label, metadata, next, requestType, lines, actions, conditions, end, order, 0);
+            this(id, label, metadata, next, requestType, lines, List.of(), actions, conditions, end, order, 0);
+        }
+
+        public Response(
+                String id, String label, DialogueEntryMetadata metadata, String next, DialogueRequestType requestType,
+                List<String> lines, List<VillagerActionDefinition> actions, List<DialogueCondition> conditions,
+                boolean end, int order, int priority) {
+            this(id, label, metadata, next, requestType, lines, List.of(), actions, conditions, end, order, priority);
         }
 
         public boolean matches(DialogueContext context) {
@@ -209,6 +237,13 @@ public record DialogueTreeDefinition(
                 return "";
             }
             return this.lines.get(random.nextInt(this.lines.size()));
+        }
+
+        public String selectLine(DialogueContext context) {
+            return DialogueTextVariant.selectAndRecord(this.textVariants, context, List.of())
+                    .map(variant -> variant.textKey().isBlank() ? variant.text()
+                            : VillagerDialogueResources.message(context, variant.textKey()).orElse(variant.text()))
+                    .orElse("");
         }
     }
 
