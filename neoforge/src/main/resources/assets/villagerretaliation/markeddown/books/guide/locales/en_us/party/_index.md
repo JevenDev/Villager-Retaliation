@@ -15,7 +15,9 @@ keywords:
 
 Recruited villagers belong to a party rather than the hired-work system. Parties support up to **4 players** and **4 recruited villagers** by default. An eligible adult costs **32 currency items for one Minecraft day** (emeralds in the built-in setup). Extension is manual and Payment Boxes do not renew party contracts.
 
-The leader opens quick commands with :key[key.villagerretaliation.quick_command]. Commands include Attack, Move To, Stay Here, Regroup, Stand Guard, Range, Melee, Heal, Pick Up Drops, Loot Containers, Ride Mount, and Dismount Mount.
+The leader opens quick commands with :key[key.villagerretaliation.quick_command]. Commands include Attack, Move To, Stay Here, Regroup, Stand Guard, Range, Melee, Heal, Pick Up Drops, Loot Containers, Unequip Weapons, Re-equip Weapons, Ride Mount, and Dismount Mount.
+
+**Unequip Weapons** deliberately stows each selected villager's weapons. Combat loadouts and guard behavior respect that saved choice until **Re-equip Weapons** lets the villager choose usable carried weapons again.
 
 ## Combat and control
 

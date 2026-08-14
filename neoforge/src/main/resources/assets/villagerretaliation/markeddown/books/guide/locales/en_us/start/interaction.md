@@ -28,6 +28,8 @@ The villager may have the wrong profession or trade level, lack a hidden skill o
 :::details{id="dialogue-context" title="What dialogue remembers"}
 Dialogue can react to personal reputation, profession, family, social attributes, mood, recent village events, first meetings, time apart, weather, equipment, nearby danger, stories, and quest history.
 
+Villagers can choose different wording for the current context. Some lines are one-time or have durable per-player, per-villager, village, dimension, or world cooldowns, so repeating the same interaction does not guarantee the same response.
+
 These are separate systems: **reputation** is persistent standing, **gossip** spreads witnessed information, **mood** is temporary, and **village allegiance** identifies community membership.
 :::
 

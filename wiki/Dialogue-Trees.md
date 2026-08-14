@@ -102,9 +102,56 @@ The external tree still owns its `entries`, `nodes`, and branch actions. The que
 | `responses` | Buttons shown inside the scene |
 | `actions` | State changes such as starting a quest, giving XP, writing facts, or forcing another scene |
 
+## Conditions, Metadata, And Rich Text
+
+Trees, entries, nodes, and responses accept the shared `conditions` array. Tree metadata is inherited by its menu entries, while response metadata is carried into the selected option:
+
+```json
+{
+  "metadata": {
+    "topic": "old_roads",
+    "routing_tags": ["route.story"],
+    "anti_repeat_groups": ["rotation.old_roads"],
+    "quest": "my_pack:road_ledger"
+  },
+  "conditions": [
+    { "type": "dimension", "dimension": "minecraft:overworld" }
+  ]
+}
+```
+
+Node `lines` and response `lines` can use the rich variant objects documented in [Dialogue](Dialogue.md#rich-text-variants). A parent node or response can provide `usage` defaults, and each variant can override its stable `id`, `text` or `text_key`, `priority`, `chance`, `weight`, `conditions`, metadata, or usage policy:
+
+```json
+{
+  "lines": [
+    {
+      "id": "first_visit",
+      "text": "The old road still remembers its first travelers.",
+      "conditions": [
+        { "type": "quest", "quest": "my_pack:road_ledger", "state": "available" }
+      ],
+      "usage": {
+        "once": true,
+        "scope": "player"
+      }
+    },
+    {
+      "id": "return_visit",
+      "text": "Back to the road again?",
+      "weight": 3
+    }
+  ]
+}
+```
+
+Tree entry and response buttons sort by `priority` first, then `order`, then stable ID. Rich text variants use the shared priority, chance, and weight arbitration rules.
+
+
 ## Replacing Or Removing Built-Ins
 
 At the top of a dialogue-tree file:
+
 
 ```json
 { "replace": true }

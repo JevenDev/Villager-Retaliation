@@ -232,7 +232,7 @@ Active quests with `availability.expiration.after_ticks` show a live remaining-t
 
 ## Quest Pools
 
-Quest pools turn quest tags or explicit quest IDs into bounded rotating offers. Put pool resources under `data/<namespace>/quest_pools/`. A pool only controls quests that match one of its selectors; quests not claimed by any pool keep their normal availability.
+Quest pools turn quest tags or explicit quest IDs into bounded rotating offers. Put pool resources under `data/<namespace>/quest_pools/`. A pool only controls quests it claims; quests not claimed by any currently matching pool keep their normal availability.
 
 ```json
 {
@@ -242,15 +242,81 @@ Quest pools turn quest tags or explicit quest IDs into bounded rotating offers. 
   "refresh_days": 1,
   "max_offers": 3,
   "anti_repeat_rotations": 2,
+  "default_weight": 10,
+  "match": "any",
+  "priority": 20,
+  "exclusive": false,
   "any_tags": ["pool.daily", "pool.commission"],
   "exclude_tags": ["difficulty.extreme"],
   "weights": {
-    "my_pack:urgent_repairs": 4
+    "my_pack:urgent_repairs": 40,
+    "my_pack:disabled_today": 0
+  },
+  "weight_rules": [
+    {
+      "any_tags": ["activity.build", "activity.trade"],
+      "multiplier": 2,
+      "conditions": [
+        { "type": "weather", "state": "clear" }
+      ]
+    }
+  ],
+  "tag_quotas": {
+    "activity.combat": 1,
+    "destination.remote": 1
+  },
+  "conditions": [
+    { "type": "dimension", "dimension": "minecraft:overworld" }
+  ]
+}
+```
+
+Selection is deterministic for the pool, scope key, and refresh epoch. `scope` accepts `player`, `village`, `provider`, `dimension`, or `world`. `refresh` and its `_ticks`, `_seconds`, and `_days` forms set the epoch length. `anti_repeat_rotations` avoids recent deterministic selections when enough alternatives exist, then backfills so avoidable repeats do not leave the board short.
+
+Candidate controls:
+
+| Field | Meaning |
+| --- | --- |
+| `quests` | Explicit quest IDs |
+| `any_tags` | Quests with at least one listed tag |
+| `all_tags` | Quests with every listed tag |
+| `exclude_quests`, `exclude_tags` | Remove candidates before selection |
+| `match` | `any` (default) lets any non-empty selector claim a quest; `all` requires every supplied selector family |
+| `max_offers` | Maximum selected quests, from 1 through 64 |
+| `enabled` | Disable the definition without deleting it |
+| `remove` | Remove a previously loaded pool with the same `id` |
+
+A pool with no positive selector claims no quests. Quest availability, provider filters, active capacity, prerequisites, and other ordinary start rules are evaluated before pool selection.
+
+Weighting and diversity:
+
+- An explicit `weights` value replaces the calculated weight for that quest; `0` excludes it.
+- Otherwise the weight is `default_weight` multiplied by the quest's `availability.weight` or `selection_weight`.
+- Every matching `weight_rules` multiplier is applied. A rule can filter by tags and shared `conditions`.
+- `tag_quotas` caps how many selected quests may carry each listed tag.
+- Selection is weighted without replacement.
+
+Pool-level `conditions` decide whether a pool participates for the current player, provider, village, dimension, and world context. When several pools claim the same quest, selection by any applicable non-exclusive pool allows it. If an applicable claiming pool is `exclusive: true`, only exclusive pools at the highest exclusive `priority` are considered for that quest.
+
+The built-in `villagerretaliation:quest_board` is village-scoped, refreshes every Minecraft day, shows at most three eligible `pool.quest_board` quests, avoids the previous two rotations where possible, and limits combat, remote, expedition, hard, and extreme offers for variety.
+
+## Active Quest Capacity
+
+A quest can limit how many quests the same player may already have active when they try to start it:
+
+```json
+{
+  "availability": {
+    "max_active_quests": 6,
+    "max_active_by_tag": {
+      "role.story": 2,
+      "commitment.expedition": 1
+    }
   }
 }
 ```
 
-Selection is deterministic for the pool, scope key, and refresh epoch. `scope` accepts `player`, `village`, `provider`, or `world`. `quests`, `any_tags`, and `all_tags` select candidates; `exclude_quests` and `exclude_tags` remove candidates. Selection is weighted without replacement, and `anti_repeat_rotations` avoids recent selections when the pool has enough alternatives.
+`max_active_quests` is a total per-player cap enforced by this candidate quest. `max_active_by_tag` is checked only for keys also present in the candidate's `metadata.tags`; it counts active quests carrying the same normalized tag. `0` means no cap. These gates prevent a new start but do not cancel an already active quest.
 
 ## Generic Criterion Objectives
 
@@ -902,6 +968,48 @@ The forced quest scene above can live in `data/my_pack/forced_dialogue/quests/lo
   ]
 }
 ```
+
+## Quest Trigger Arbitration And Payloads
+
+Quest `events` can react to `player_tick`, `proximity`, `started`, `progress`, `mob_kill`, `block_break`, `block_place`, `block_interact`, `memory_event`, `gift`, `trade`, `reputation`, `criterion`, `stage_changed`, `completed`, `failed`, `abandoned`, and `expired`.
+
+```json
+{
+  "events": [
+    {
+      "id": "crafted_blade_reaction",
+      "event": "criterion",
+      "stages": ["forge"],
+      "priority": 20,
+      "chance": 0.75,
+      "weight": 3,
+      "exclusive": true,
+      "cooldown_seconds": 30,
+      "repeatable": true,
+      "conditions": [
+        {
+          "type": "trigger_payload",
+          "all": {
+            "criterion": ["villagerretaliation:crafted"],
+            "criterion_item": ["minecraft:iron_sword"]
+          }
+        }
+      ],
+      "actions": [
+        {
+          "type": "notification",
+          "trigger": "quest.updated",
+          "text": "The smith noticed your finished blade."
+        }
+      ]
+    }
+  ]
+}
+```
+
+The dispatcher snapshots the canonical event, dispatch stage, game time, player/provider identity, position, and scalar payload values. Objective payloads therefore remain available to conditions and actions for that dispatch instead of being reduced to a bare event name. See [Trigger Payload Conditions](JSON-Reference.md#trigger-payload-conditions) for the query shape.
+
+Matching triggers are grouped by `priority`. `chance` gates each trigger, `weight` orders surviving triggers inside a tier, and `weight: 0` disables a trigger. Every selected trigger normally runs; after a successfully executed `exclusive: true` trigger, lower-priority work stops. `cooldown` and its duration suffixes are stored per trigger and quest run. `repeatable: false` permits one successful execution for that run.
 
 ## Localization
 

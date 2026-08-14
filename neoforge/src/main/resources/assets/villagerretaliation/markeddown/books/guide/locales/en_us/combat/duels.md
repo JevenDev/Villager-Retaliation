@@ -12,7 +12,7 @@ keywords:
 
 # Villager Duels
 
-Eligible adult villagers can accept a controlled, non-lethal duel. Open the villager interaction screen and choose **Duel**. The option is hidden when the villager's Guts is below the server threshold -- **60 by default**.
+Eligible adult villagers can accept a controlled, non-lethal duel. Open the villager interaction screen and choose **Duel**. The option appears only when the duel can start now: the villager's Guts must meet the server threshold -- **60 by default** -- and every other current eligibility check must pass.
 
 A villager must be alive, awake, nearby, out of combat, and available. Hired, recruited, downed, death-protected, trading, or otherwise busy villagers cannot duel. Creative and spectator players cannot issue a normal challenge.
 

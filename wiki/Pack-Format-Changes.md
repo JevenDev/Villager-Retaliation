@@ -20,6 +20,13 @@ Beta.13 is primarily additive for pack authors. Existing beta.12 dialogue, notif
 6. New beta.13 examples live in `example-packs/cinematic-gate-ambush/` and `example-packs/repeatable-scene-run-id/`.
 7. Sell-price `item` fields accept item tags such as `#minecraft:logs` as well as exact item IDs.
 8. Shared actions accept `type: "draw_weapon"`, while `player_item_proximity` forced-dialogue rules can set `draw_weapon: true` and a draw duration without starting retaliation.
+9. Normal dialogue and dialogue-tree text accept rich variants with stable IDs, per-variant conditions, `priority`, `chance`, `weight`, metadata, and durable usage policies.
+10. Shared `conditions` now cover player items, villager equipment, biome, dimension, advancements, scoreboards, nearby entities, tracked villages, selected quest choices, stage history, and quest trigger payloads.
+11. Dialogue metadata separates general `tags`, `routing_tags`, and `anti_repeat_groups`; older topic and route-tag behavior remains compatible.
+12. Built-in conversation probabilities can be overridden under `data/<namespace>/dialogue_tuning/` with `schema: "villagerretaliation:dialogue_tuning/v1"`.
+13. Quest pools under `data/<namespace>/quest_pools/` support context conditions, selector match mode, priority/exclusivity, conditional weight rules, tag quotas, and dimension scope.
+14. Quest availability accepts `weight` or `selection_weight`, `max_active_quests`, and `max_active_by_tag`.
+15. Quest triggers accept `priority`, `chance`, `weight`, and `exclusive`; their dispatch payload can be queried with `trigger_payload`.
 
 Start with [Persistent Quest Scenes](Quest-Scenes.md) for the authoring surface. [Quest Scene Runtime](../docs/quest-scene-runtime.md) defines the underlying ownership, continuation, recovery, and cleanup guarantees for developers who need the high-level runtime contract.
 
