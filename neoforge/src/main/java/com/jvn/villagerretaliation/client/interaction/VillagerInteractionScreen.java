@@ -190,6 +190,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int SKILLS_DIALOGUE_BUTTON_WIDTH = 12;
     private static final int SKILLS_DIALOGUE_BUTTON_HEIGHT = 46;
     private static final int SKILLS_DIALOGUE_BUTTON_INSET = 1;
+    private static final float SKILLS_DIALOGUE_BUTTON_HOVER_SCALE = 1.07F;
+    private static final float SKILLS_DIALOGUE_BUTTON_RESPONSE_MILLIS = 32.0F;
     private static final int SKILLS_DIALOGUE_BACK_HINT_GAP = 3;
     private static final int SKILLS_DIALOGUE_BACK_HINT_COLOR = 0x80FFFFFF;
     private static final String SKILLS_DIALOGUE_BACK_HINT_KEY = GUI_KEY_PREFIX + "skills.back_hint";
@@ -241,9 +243,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_PORTRAIT_SCISSOR_RIGHT_EXTENSION = 1;
     private static final int INTERACTION_PORTRAIT_SCALE = 54;
     private static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 1;
+    private static final float INTERACTION_PORTRAIT_LOOK_RESPONSE_MILLIS = 55.0F;
     private static final int QUEST_INDICATOR_WIDTH = 6;
     private static final int QUEST_INDICATOR_HEIGHT = 13;
     private static final int INTERACTION_QUEST_INDICATOR_SCALE = 2;
+    private static final float INTERACTION_QUEST_INDICATOR_BOUNCE_PERIOD_MILLIS = 720.0F;
     private static final int INTERACTION_QUEST_INDICATOR_NAMEPLATE_GAP = 3;
     private static final long MOUSE_STARE_REQUIRED_MILLIS = 10_000L;
     private static final double VILLAGER_PORTRAIT_EYE_BRIDGE_RADIUS_X = 3.5D;
@@ -441,6 +445,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private long lastInteractionMenuAnimationMillis = -1L;
     private final Map<Integer, Float> interactionOptionDockScales = new HashMap<>();
     private long lastInteractionOptionDockAnimationMillis = -1L;
+    private final EnumMap<SkillsProfileCycleButton, Float> skillsProfileCycleButtonScales =
+            new EnumMap<>(SkillsProfileCycleButton.class);
+    private long lastSkillsProfileCycleButtonAnimationMillis = -1L;
+    private float interactionPortraitYaw;
+    private float interactionPortraitPitch;
+    private long lastInteractionPortraitAnimationMillis = -1L;
 
     public VillagerInteractionScreen(
             int villagerEntityId,
@@ -3086,6 +3096,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             VillagerInteractionUiAnimation.resetContentAnimation();
             this.interactionMenuButtonScales.clear();
             this.lastInteractionMenuAnimationMillis = -1L;
+            this.skillsProfileCycleButtonScales.clear();
+            this.lastSkillsProfileCycleButtonAnimationMillis = -1L;
         }
         startInteractionStateTransition(previousPage, page, previousInteractionTop, interactionContainerTopForPage(page));
     }
@@ -3228,11 +3240,40 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void renderSkillsProfileCycleButtons(GuiGraphics graphics, int mouseX, int mouseY) {
         int top = skillsDialogueButtonTop();
-        int leftButtonLeft = skillsDialogueLeftButtonLeft();
-        int rightButtonLeft = skillsDialogueRightButtonLeft();
+        SkillsProfileCycleButton hovered = hoveredSkillsProfileCycleButton(mouseX, mouseY);
+        updateSkillsProfileCycleButtonScales(hovered);
+        for (SkillsProfileCycleButton button : SkillsProfileCycleButton.values()) {
+            if (button != hovered) {
+                renderSkillsProfileCycleButton(graphics, button, top);
+            }
+        }
+        if (hovered != null) {
+            renderSkillsProfileCycleButton(graphics, hovered, top);
+        }
+    }
+
+    private void renderSkillsProfileCycleButton(
+            GuiGraphics graphics,
+            SkillsProfileCycleButton button,
+            int top) {
+        int left = button == SkillsProfileCycleButton.LEFT
+                ? skillsDialogueLeftButtonLeft()
+                : skillsDialogueRightButtonLeft();
+        float scale = this.skillsProfileCycleButtonScales.getOrDefault(button, 1.0F);
+        float pivotX = button == SkillsProfileCycleButton.LEFT
+                ? left + SKILLS_DIALOGUE_BUTTON_WIDTH
+                : left;
+        float pivotY = top + SKILLS_DIALOGUE_BUTTON_HEIGHT * 0.5F;
+        ResourceLocation texture = button == SkillsProfileCycleButton.LEFT
+                ? VillagerRetaliationClientAssets.INTERACTION_CONTAINER_SKILLS_DIALOGUE_BUTTON_LEFT_TEXTURE
+                : VillagerRetaliationClientAssets.INTERACTION_CONTAINER_SKILLS_DIALOGUE_BUTTON_RIGHT_TEXTURE;
+        graphics.pose().pushPose();
+        graphics.pose().translate(pivotX, pivotY, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.pose().translate(-pivotX, -pivotY, 0.0F);
         graphics.blit(
-                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_SKILLS_DIALOGUE_BUTTON_LEFT_TEXTURE,
-                leftButtonLeft,
+                texture,
+                left,
                 top,
                 0,
                 0,
@@ -3240,16 +3281,25 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 SKILLS_DIALOGUE_BUTTON_HEIGHT,
                 SKILLS_DIALOGUE_BUTTON_WIDTH,
                 SKILLS_DIALOGUE_BUTTON_HEIGHT);
-        graphics.blit(
-                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_SKILLS_DIALOGUE_BUTTON_RIGHT_TEXTURE,
-                rightButtonLeft,
-                top,
-                0,
-                0,
-                SKILLS_DIALOGUE_BUTTON_WIDTH,
-                SKILLS_DIALOGUE_BUTTON_HEIGHT,
-                SKILLS_DIALOGUE_BUTTON_WIDTH,
-                SKILLS_DIALOGUE_BUTTON_HEIGHT);
+        graphics.pose().popPose();
+    }
+
+    private void updateSkillsProfileCycleButtonScales(SkillsProfileCycleButton hovered) {
+        long now = Util.getMillis();
+        float elapsedMillis = this.lastSkillsProfileCycleButtonAnimationMillis < 0L
+                ? 16.0F
+                : Math.min(50.0F, Math.max(0.0F, now - this.lastSkillsProfileCycleButtonAnimationMillis));
+        this.lastSkillsProfileCycleButtonAnimationMillis = now;
+        float blend = 1.0F - (float) Math.exp(-elapsedMillis / SKILLS_DIALOGUE_BUTTON_RESPONSE_MILLIS);
+        for (SkillsProfileCycleButton button : SkillsProfileCycleButton.values()) {
+            float targetScale = button == hovered ? SKILLS_DIALOGUE_BUTTON_HOVER_SCALE : 1.0F;
+            float currentScale = this.skillsProfileCycleButtonScales.getOrDefault(button, 1.0F);
+            float scale = Mth.lerp(blend, currentScale, targetScale);
+            if (Math.abs(scale - targetScale) < 0.001F) {
+                scale = targetScale;
+            }
+            this.skillsProfileCycleButtonScales.put(button, scale);
+        }
     }
 
     private void renderSkillsProfileCycleButtonTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -4169,10 +4219,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         float centerX = (portraitLeft + portraitRight) / 2.0F;
         float centerY = (portraitTop + portraitBottom) / 2.0F;
         float renderY = portraitBottom + INTERACTION_PORTRAIT_RENDER_Y_OFFSET;
-        float mouseYaw = (float) Math.atan((centerX - this.lastMouseX) / 40.0F);
-        float mousePitch = (float) Math.atan((centerY - this.lastMouseY) / 40.0F);
+        float targetMouseYaw = (float) Math.atan((centerX - this.lastMouseX) / 40.0F);
+        float targetMousePitch = (float) Math.atan((centerY - this.lastMouseY) / 40.0F);
+        updateInteractionPortraitLook(targetMouseYaw, targetMousePitch);
         Quaternionf entityRotation = new Quaternionf().rotateZ((float) Math.PI);
-        Quaternionf cameraRotation = new Quaternionf().rotateX(mousePitch * 20.0F * ((float) Math.PI / 180.0F));
+        Quaternionf cameraRotation = new Quaternionf().rotateX(
+                this.interactionPortraitPitch * 20.0F * ((float) Math.PI / 180.0F));
         entityRotation.mul(cameraRotation);
 
         float previousBodyRot = livingEntity.yBodyRot;
@@ -4181,9 +4233,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         float previousHeadRotO = livingEntity.yHeadRotO;
         float previousHeadRot = livingEntity.yHeadRot;
         boolean previousSprinting = livingEntity.isSprinting();
-        livingEntity.yBodyRot = 180.0F + mouseYaw * 20.0F;
-        livingEntity.setYRot(180.0F + mouseYaw * 40.0F);
-        livingEntity.setXRot(-mousePitch * 20.0F);
+        livingEntity.yBodyRot = 180.0F + this.interactionPortraitYaw * 20.0F;
+        livingEntity.setYRot(180.0F + this.interactionPortraitYaw * 40.0F);
+        livingEntity.setXRot(-this.interactionPortraitPitch * 20.0F);
         livingEntity.yHeadRot = livingEntity.getYRot();
         livingEntity.yHeadRotO = livingEntity.getYRot();
         livingEntity.setSprinting(isDialogueMouthAnimationActive());
@@ -4219,6 +4271,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         renderInteractionQuestIndicator(graphics, left, top, livingEntity);
     }
 
+    private void updateInteractionPortraitLook(float targetYaw, float targetPitch) {
+        long now = Util.getMillis();
+        float elapsedMillis = this.lastInteractionPortraitAnimationMillis < 0L
+                ? 16.0F
+                : Math.min(50.0F, Math.max(0.0F, now - this.lastInteractionPortraitAnimationMillis));
+        this.lastInteractionPortraitAnimationMillis = now;
+        float blend = 1.0F - (float) Math.exp(-elapsedMillis / INTERACTION_PORTRAIT_LOOK_RESPONSE_MILLIS);
+        this.interactionPortraitYaw = Mth.lerp(blend, this.interactionPortraitYaw, targetYaw);
+        this.interactionPortraitPitch = Mth.lerp(blend, this.interactionPortraitPitch, targetPitch);
+    }
+
     private void renderInteractionQuestIndicator(
             GuiGraphics graphics,
             int containerLeft,
@@ -4229,13 +4292,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
 
-        int bounce = ((Util.getMillis() / 180L) & 1L) == 0L ? 0 : 2;
+        float bouncePhase = (Util.getMillis() % (long) INTERACTION_QUEST_INDICATOR_BOUNCE_PERIOD_MILLIS)
+                / INTERACTION_QUEST_INDICATOR_BOUNCE_PERIOD_MILLIS;
+        float bounce = 1.0F - (float) Math.cos(bouncePhase * Math.PI * 2.0F);
         int indicatorWidth = QUEST_INDICATOR_WIDTH * INTERACTION_QUEST_INDICATOR_SCALE;
         int indicatorHeight = QUEST_INDICATOR_HEIGHT * INTERACTION_QUEST_INDICATOR_SCALE;
         VillagerInteractionTextLayout.Nameplate nameplate = interactionNameplate();
         int nameplateCenterX = containerLeft + INTERACTION_NAMEPLATE_X + nameplate.width() / 2;
         int indicatorLeft = nameplateCenterX - indicatorWidth / 2;
-        int indicatorTop = containerTop
+        float indicatorTop = containerTop
                 + INTERACTION_NAMEPLATE_Y
                 - indicatorHeight
                 - INTERACTION_QUEST_INDICATOR_NAMEPLATE_GAP
