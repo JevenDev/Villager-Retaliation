@@ -10,7 +10,7 @@ Dialogue can live anywhere under:
 data/<namespace>/dialogue/<locale>/
 ```
 
-Beta.12 works best with typed folders:
+Beta.13 works best with typed folders:
 
 ```text
 data/my_pack/dialogue/en_us/global/options/00_rumor.json
@@ -169,10 +169,164 @@ data/my_pack/dialogue/en_us/professions/cartographer/lines/00_map_talk.json
 
 You can still include explicit `professions` filters when needed, but the path itself is already a good organizational hint.
 
+## Rich Text Variants
+
+A `lines` or `variants` array can contain objects instead of plain strings. This lets each wording have its own stable ID, eligibility conditions, priority, chance, weight, metadata, and durable usage policy:
+
+```json
+{
+  "id": "my_pack.line.market_rumor",
+  "request": "story",
+  "metadata": {
+    "topic": "market_rumors",
+    "tags": ["dialogue.ambient", "tone.friendly"],
+    "routing_tags": ["route.market"],
+    "anti_repeat_groups": ["rotation.market"]
+  },
+  "variants": [
+    {
+      "id": "rain",
+      "text": "Rain makes every market promise sound urgent.",
+      "priority": 10,
+      "weight": 3,
+      "chance": 0.75,
+      "conditions": [
+        { "type": "weather", "state": "rain" }
+      ],
+      "usage": {
+        "cooldown_days": 1,
+        "anti_repeat": true,
+        "scope": "player_villager"
+      }
+    },
+    {
+      "id": "clear",
+      "text_key": "my_pack.market_rumor.clear",
+      "weight": 1
+    }
+  ]
+}
+```
+
+Plain string arrays remain valid. Their generated stable IDs are the entry ID for a single line or `<entry-id>#line_<index>` for multiple lines. An explicit variant ID becomes `<entry-id>#<variant-id>`, which is safer when lines are reordered later.
+
+Variant selection uses the same contract across normal dialogue and dialogue-tree text:
+
+1. Remove variants whose conditions or usage policy do not match.
+2. Try higher `priority` tiers first.
+3. Apply each candidate's `chance`.
+4. Select among surviving candidates by `weight`.
+5. If every candidate in a priority tier misses its chance, try the next tier.
+
+`weight: 0` disables a candidate. `chance` is clamped from `0.0` to `1.0`.
+
+## Durable Usage Rules
+
+Use `usage` when a line should rest, run only a limited number of times, or avoid immediately repeating:
+
+```json
+{
+  "id": "my_pack.line.first_warning",
+  "request": "question",
+  "text": "I will explain this once.",
+  "usage": {
+    "once": true,
+    "cooldown_seconds": 30,
+    "anti_repeat": true,
+    "scope": "player_villager"
+  }
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `cooldown`, `cooldown_ticks`, `cooldown_seconds`, `cooldown_days` | Minimum saved time before the same stable text ID can be selected again |
+| `max_uses` | Lifetime use limit in the selected scope; `0` means unlimited |
+| `once` | Shorthand for `max_uses: 1` |
+| `anti_repeat` | Prefer a different recent variant when one is available; defaults to `true` |
+| `scope` | `player_villager` (default), `player`, `villager`, `village`, `dimension`, or `world` |
+
+Usage counts and timestamps are stored in world save data. Put `usage` on the parent entry to provide defaults to all variants, then override it on an individual variant when needed. The legacy top-level `cooldown*`, `max_uses`, and `once` fields on normal dialogue lines remain supported.
+
+## Dialogue Metadata And Tags
+
+`metadata` is inherited from the file root into entries and then into rich variants. It keeps classification, routing, and anti-repeat intent separate:
+
+| Field | Purpose |
+| --- | --- |
+| `topic` | Human-readable normalized topic; also the fallback anti-repeat group |
+| `tags` | General classification tags |
+| `routing_tags` | Tags used specifically to route candidates |
+| `anti_repeat_groups` | Groups whose recent use should discourage repetition |
+| `questline`, `quest`, `stage` | Optional quest ownership and stage context |
+| `notes` | Authoring notes |
+
+Tags are normalized to lowercase while preserving meaningful separators such as `:`, `/`, `.`, and `-`. When `routing_tags` is omitted, general tags beginning with `route.`, `route:`, `routing.`, or `routing:` act as routing tags.
+
+## Dialogue Frequency Tuning
+
+Built-in conversation probabilities are datapack values under:
+
+```text
+data/<namespace>/dialogue_tuning/<file>.json
+```
+
+```json
+{
+  "schema": "villagerretaliation:dialogue_tuning/v1",
+  "values": {
+    "story_hint.vague_chance": 0.2,
+    "reputation.joke.neutral_chance": 0.35
+  }
+}
+```
+
+Files are additive. When several resources define the same normalized key, the later loaded value wins. Values must be finite numbers; probability consumers clamp them to `0.0` through `1.0`.
+
+Current built-in keys and defaults:
+
+| Key | Default |
+| --- | ---: |
+| `opening.long_absence.minimum_days` | 3 |
+| `opening.long_absence.base_chance` | 0.4 |
+| `opening.long_absence.chance_per_day` | 0.1 |
+| `opening.long_absence.max_chance` | 0.85 |
+| `memory.gift.question_chance` | 0.45 |
+| `memory.gift.greeting_chance` | 0.35 |
+| `memory.gift.opening_chance` | 0.3 |
+| `memory.container_theft.question_chance` | 0.4 |
+| `memory.container_theft.greeting_chance` | 0.25 |
+| `memory.container_theft.opening_chance` | 0.25 |
+| `story_hint.vague_chance` | 0.12 |
+| `story_hint.biome_name_chance` | 0.24 |
+| `story_hint.precise_biome_chance` | 0.34 |
+| `story_hint.structure_rumor_chance` | 0.46 |
+| `story_hint.precise_structure_chance` | 0.58 |
+| `cartographer_map.royalty_chance` | 0.09 |
+| `cartographer_map.revered_chance` | 0.06 |
+| `cartographer_map.respected_chance` | 0.03 |
+| `raid.story_chance` | 0.35 |
+| `reputation.repeat_greeting_chance` | 0.15 |
+| `reputation.question.trusted_chance` | 0.55 |
+| `reputation.question.neutral_chance` | 0.3 |
+| `reputation.story.trusted_chance` | 0.65 |
+| `reputation.story.neutral_chance` | 0.4 |
+| `reputation.story.profession_bonus` | 0.15 |
+| `reputation.joke.royalty_chance` | 0.85 |
+| `reputation.joke.trusted_chance` | 0.7 |
+| `reputation.joke.neutral_chance` | 0.5 |
+| `reputation.joke.suspicious_chance` | 0.35 |
+| `reputation.joke.hostile_chance` | 0.25 |
+| `reputation.joke.despised_chance` | 0.15 |
+| `reputation.joke.nitwit_bonus` | 0.1 |
+| `reputation.joke.missed_response_chance` | 0.3333333333 |
+| `reputation.positive_response_chance` | 0.25 |
+
 ## Good Defaults
 
 - Keep one idea per file when possible.
 - Use stable `id` values.
+- Give rich variants explicit stable IDs before shipping a pack.
 - Prefer `conditions` once several helper flags are stacking up.
 
 For request-specific patterns, see [Dialogue Requests](Dialogue-Requests.md).

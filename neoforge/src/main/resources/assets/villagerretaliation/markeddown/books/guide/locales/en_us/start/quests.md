@@ -36,5 +36,9 @@ Quest content can include tracked coordinates, highlighted quest items, HUD noti
 If progress looks stuck, read the active tracker literally: check whether the objective requires carrying an item, surrendering it at turn-in, visiting a target, defeating a specific entity, or returning to the original giver.
 :::
 
+## Daily quest-board offers
+
+Built-in quest-board requests rotate separately for each tracked village once per Minecraft day. A village shows at most three currently eligible board quests, avoids its previous two rotations when enough alternatives exist, and limits how many combat, distant, expedition, hard, or extreme requests appear together. Another village can have a different board; story quests outside the board keep their normal availability.
+
 Quest completion can grant experience, personal and gossip reputation, loot, story facts, and access to later quests.
 

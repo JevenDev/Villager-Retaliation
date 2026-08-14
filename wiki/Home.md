@@ -33,8 +33,10 @@ Terms that matter only to advanced scene or Java extension work are explained on
 | Area | What it changes | Root path | Page |
 | --- | --- | --- | --- |
 | Dialogue | Talk menu options, replies, keyed text, openings, closings, pacify lines | `data/<namespace>/dialogue/<locale>/` | [Dialogue](Dialogue.md) |
+| Dialogue tuning | Built-in conversation frequency and memory-response chances | `data/<namespace>/dialogue_tuning/` | [Dialogue](Dialogue.md#dialogue-frequency-tuning) |
 | Dialogue trees | Branching scenes and authored conversations | `data/<namespace>/dialogue_trees/<locale>/` | [Dialogue Trees](Dialogue-Trees.md) |
 | Quests | Offers, objectives, rewards, tracker text, quest triggers, and inline quest scenes | `data/<namespace>/quests/` | [Quests](Quests.md) |
+| Quest pools | Rotating, scoped sets of quest offers | `data/<namespace>/quest_pools/` | [Quests](Quests.md#quest-pools) |
 | First quest | A complete beginner quest in one quest module v2 file | `data/<namespace>/quests/` | [First Quest Guide](First-Quest.md) |
 | Persistent quest scenes | Multi-actor cinematic graphs, recovery, and controlled encounters | `data/<namespace>/quest_scenes/` | [Persistent Quest Scenes](Quest-Scenes.md) |
 | Forced dialogue | Event-driven locked scenes and chat barks | `data/<namespace>/forced_dialogue/` | [Forced Dialogue](Forced-Dialogue.md) |

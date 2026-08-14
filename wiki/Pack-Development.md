@@ -23,11 +23,13 @@ Use a datapack for behavior and authored text:
     my_pack/
       builder_structures/
       dialogue/en_us/
+      dialogue_tuning/
       generated_containers/
       duel_kits/
       dialogue_trees/en_us/
       forced_dialogue/
       quest_encounters/
+      quest_pools/
       quest_scenes/
       quests/
       sell_prices/
@@ -79,8 +81,10 @@ These systems are intentionally fixed to the mod namespace:
 These systems can live in your own namespace:
 
 - Dialogue
+- Dialogue tuning
 - Dialogue trees
 - Quests
+- Quest pools
 - Forced dialogue
 - Skill trades
 - Builder structures
@@ -97,7 +101,9 @@ Example:
 
 ```text
 data/my_pack/dialogue/en_us/global/lines/rumors.json
+data/my_pack/dialogue_tuning/conversation_chances.json
 data/my_pack/quests/lost_civilization/echo_shard.json
+data/my_pack/quest_pools/daily_commissions.json
 data/my_pack/skill_trades/cartographer.json
 data/my_pack/builder_structures/custom_houses.json
 data/my_pack/loot_table/villager/profession/alchemist/common.json
@@ -118,6 +124,8 @@ Minecraft resolves exact resource paths first. Villager Retaliation then merges 
 | Dialogue | Yes | `replace: true` or `replace_sections` | Replace by same entry `id` |
 | Dialogue trees | Yes | `replace: true` | `remove: true` with `id` |
 | Quests | Yes | `replace: true` | `remove: true` with `id` |
+| Quest pools | Yes | No global clear flag | `remove: true` with `id` |
+| Dialogue tuning | Yes; later values replace the same key | No global clear flag | Redefine the numeric key |
 | Forced dialogue | Yes | `replace: true` | `remove: true` with `id` |
 | Notifications and gifts | Yes | `replace: true` | Replace or remove by entry `id` |
 | Pacification | Yes | Same-path file replacement only | No entry removal |
@@ -202,7 +210,9 @@ data/
   my_pack/
     dialogue/en_us/my_pack/options/00_rumor.json
     dialogue/en_us/my_pack/lines/00_rumor.json
+    dialogue_tuning/conversation_chances.json
     forced_dialogue/my_pack_events.json
+    quest_pools/daily_commissions.json
     quests/old_roads/road_ledger.json
     dialogue_trees/en_us/quests/old_roads/road_ledger.json
 ```

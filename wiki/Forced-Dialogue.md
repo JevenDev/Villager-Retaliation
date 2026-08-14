@@ -216,6 +216,40 @@ Proximity rules also accept `player_item_components`, `player_item_custom_data`,
 
 Trade-cost entries can use `{held_item}`, `{trade_cost}`, `{trade_cost_count}`, `{trade_result}`, `{trade_result_stack}`, and `{trade_offer_index}`. Trade-level filters use villager levels 1 through 5. `min_villager_trade_level` and `max_villager_trade_level` are accepted aliases for `min_trade_level` and `max_trade_level`.
 
+## Shared Conditions And Rich Variants
+
+A forced-dialogue file root and each entry can use `conditions`, `availability.conditions`, or `available_when.conditions`. Root conditions are inherited by entries. Options also accept `conditions`.
+
+Use rich objects in `lines` or response arrays when individual wordings need stable IDs and selection controls:
+
+```json
+{
+  "id": "my_pack.retaliation.warning",
+  "trigger": "retaliation_started",
+  "output": { "mode": "chat" },
+  "lines": [
+    {
+      "id": "storm",
+      "text": "Even the storm is quieter than your mistakes.",
+      "priority": 10,
+      "chance": 0.5,
+      "weight": 2
+    },
+    {
+      "id": "fallback",
+      "text_key": "my_pack.retaliation.warning",
+      "weight": 1
+    }
+  ],
+  "conditions": [
+    { "type": "reputation", "levels": ["hostile", "despised", "feared"] }
+  ]
+}
+```
+
+For rich forced-dialogue text, higher `priority` tiers are tried first, `chance` gates each candidate, and `weight` chooses among the survivors. Plain strings and the existing `line`, `lines`, `response`, and `responses` forms remain valid.
+
+
 ## Replacing Or Removing Built-Ins
 
 Use top-level `replace: true` when a pack wants to replace the built-in forced-dialogue set instead of adding to it:
@@ -225,6 +259,7 @@ Use top-level `replace: true` when a pack wants to replace the built-in forced-d
 ```
 
 When any forced-dialogue resource in the reload uses `replace: true`, VR skips its built-in forced-dialogue resources before add-on content is applied. This makes total conversion packs predictable even when the add-on namespace sorts before `villagerretaliation`.
+
 
 Use `remove: true` with an `id` to remove one definition:
 

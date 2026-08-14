@@ -203,7 +203,7 @@ Keep that tag aligned with your currency item so crafting recipes, payment boxes
 
 ## Conditions
 
-`conditions` are the preferred way to express complex logic in newer beta.12 content. A condition array usually means all listed conditions must pass.
+`conditions` are the preferred way to express complex logic in beta.13 content. A condition array usually means all listed conditions must pass.
 
 ```json
 {
@@ -216,6 +216,76 @@ Keep that tag aligned with your currency item so crafting recipes, payment boxes
   "text": "Storm nights make bad fences and worse promises."
 }
 ```
+### Condition Catalog
+
+These canonical condition types are shared by normal dialogue, dialogue trees, forced dialogue, quest availability and active gates, quest triggers, and context-aware quest pools where the surrounding system has the required live or saved context.
+
+| Canonical type | Accepted aliases | Use |
+| --- | --- | --- |
+| `all` | `all_of`, `and` | Every nested condition must match |
+| `any` | `any_of`, `or` | At least one nested condition must match |
+| `not` | - | Invert one nested `condition` |
+| `reputation` | - | Reputation tier or numeric range |
+| `memory` | - | Durable event tags or built-in memory kinds |
+| `family` | - | Known family relationship |
+| `relationship` | - | Current or past social relationship |
+| `recruitment_memory` | - | Saved recruitment journey details |
+| `villager_age` | - | Adult or baby state |
+| `social_attribute` | `attribute`, `stat` | Charm, Guts, Kindness, Knowledge, or Proficiency range |
+| `skill` | - | Villager skill value or rank |
+| `villager_level` | `trade_level` | Villager trade level 1 through 5 |
+| `quest` | - | Quest state |
+| `quest_fact` | `quest_tag`, `quest_variable`, `quest_counter`, `quest_stage`, `fact`, `stage` | Durable scoped quest fact |
+| `selected_choice` | `choice_selected`, `response_selected`, `quest_choice_selected` | Recorded dialogue response transition |
+| `stage_history` | `quest_stage_history`, `visited_stage` | Recorded quest stage transition |
+| `player_item` | `item`, `held_item` | Player inventory, slot, component, durability, or enchantment predicate |
+| `villager_equipment` | `equipment`, `armed` | Current villager armed or unarmed state |
+| `biome` | - | Exact biome or biome tag |
+| `dimension` | - | Current dimension |
+| `advancement` | `advancements` | Player advancement completion; `all` defaults to `true` |
+| `scoreboard` | `score` | Player scoreboard objective value or range |
+| `nearby_entity` | `nearby_entities`, `entity_nearby` | Entity type/tag count around villager or player |
+| `village` | `village_presence` | Tracked-village presence or key |
+| `trigger_payload` | `event_payload`, `quest_trigger_payload` | Values carried by the current quest trigger |
+| `mood` | `villager_mood` | Villager mood and intensity |
+| `weather` | - | Clear, rain, or thunder state |
+| `time` | `time_of_day` | Current time band |
+
+Malformed and unknown conditions fail closed and appear in datapack diagnostics. Conditions that require live player, provider, world, village, or trigger context also fail when that context is unavailable. This matters especially for active quests whose provider may be unloaded.
+
+World and inventory conditions can be combined directly:
+
+```json
+{
+  "conditions": [
+    { "type": "player_item", "item": "minecraft:diamond", "slot": "main_hand" },
+    { "type": "dimension", "dimension": "minecraft:overworld" },
+    { "type": "nearby_entity", "entity_tag": "minecraft:raiders", "radius": 24, "min_count": 1 },
+    { "type": "villager_equipment", "armed": true }
+  ]
+}
+```
+
+### Trigger Payload Conditions
+
+`trigger_payload` is meaningful only while a quest trigger is being dispatched. It can match the canonical event, common scalar fields, arbitrary `any`, `all`, and `not` value maps, criterion data, or reputation bounds:
+
+```json
+{
+  "type": "trigger_payload",
+  "events": ["criterion"],
+  "all": {
+    "criterion": ["villagerretaliation:crafted"],
+    "criterion_item": ["minecraft:iron_sword"]
+  },
+  "not": {
+    "dimension": ["minecraft:the_nether"]
+  }
+}
+```
+
+Common shorthand keys include `mob`, `entity`, `block`, `item`, `gift_reaction`, `event_villager`, `event_villager_type`, `trade_cost_a`, `trade_cost_b`, `trade_result`, `criterion`, and `memory_tag`. A primitive entry under `data` is matched as `criterion_<key>`. Payload keys and values are normalized to lowercase.
+
 
 Use conditions when the older one-off helper flags start to pile up.
 
@@ -350,9 +420,11 @@ Common optional fields:
 | Field | Meaning |
 | --- | --- |
 | `metadata` | `title`, `description`, `title_key`, `description_key`, `questline`, `tags`, `parent`, `show_locked_adventure_hint` |
-| `availability` | Repeat, cooldown, abandonment, locking, completion scope, and active gates |
+| `availability` | Selection weight, repeat and cooldown rules, active quest caps, abandonment, locking, completion scope, and active gates |
+| `lifecycle` | Actions, transitions, and optional dialogue attached to quest or stage lifecycle events |
+| `dialogue` | Root-level inline or extracted dialogue slots |
 | `target` | Structure target, dimension, search radius, discovery radius, and proof item |
-| `events` | Quest-level trigger actions |
+| `events` | Quest-level triggers with conditions, payload matching, priority, chance, weight, cooldown, and exclusivity |
 | `rewards` | XP, reputation, gossip, loot, memory event, or reward actions |
 | `ui` | Tracker text, icon, `color`, `outline_color`, progress, placeholders, priority, and hidden flag |
 | `external_scenes` | Resource ids for extracted dialogue tree scenes |
@@ -502,11 +574,57 @@ Use `action: "block"` when a dialogue choice or trigger should close a path imme
 }
 ```
 
+## Shared Text Variants And Usage
+
+Normal dialogue lines, keyed messages, openings, closings, pacify text, and dialogue-tree node or response text can use rich objects in `lines` or `variants`:
+
+```json
+{
+  "variants": [
+    {
+      "id": "storm",
+      "text": "The bridge is unsafe in this weather.",
+      "priority": 10,
+      "chance": 0.8,
+      "weight": 3,
+      "conditions": [
+        { "type": "weather", "state": "thunder" }
+      ],
+      "usage": {
+        "cooldown_days": 1,
+        "max_uses": 3,
+        "anti_repeat": true,
+        "scope": "player_villager"
+      },
+      "metadata": {
+        "topic": "bridge_warning",
+        "routing_tags": ["route.warning"],
+        "anti_repeat_groups": ["rotation.bridge"]
+      }
+    }
+  ]
+}
+```
+
+A variant supports `id`, `text` or `line`, `text_key` or `line_key`, `priority`, `chance`, `weight`, `conditions`, `metadata`, and `usage`. Parent metadata and usage values are inherited, then the variant adds or overrides them.
+
+Usage fields are `cooldown` or a duration suffix, `max_uses`, `once`, `anti_repeat`, and `scope`. Scopes are `player_villager`, `player`, `villager`, `village`, `dimension`, and `world`. Counts and timestamps are durable world save data, so stable IDs are part of save compatibility.
+
+Metadata fields are `topic`, `tags`, `routing_tags`, `anti_repeat_groups`, `questline`, `quest`, `stage`, and `notes`. General classification tags, routing tags, and anti-repeat groups are separate domains; do not use one as an accidental substitute for another.
+
+See [Dialogue](Dialogue.md#rich-text-variants) for the complete authoring example.
+
 ## Weights and Priority
 
-- `weight` changes the random odds between otherwise equivalent matches.
-- `weight: 0` disables normal lines, keyed messages, openings, closings, and pacify lines without removing their data.
-- `priority` is a stronger sort step used on normal dialogue lines before weighted selection.
+Candidate-based dialogue, rich text, forced-dialogue definitions, and quest triggers share this arbitration order:
+
+1. Discard ineligible candidates and candidates with `weight: 0`.
+2. Evaluate higher `priority` tiers first.
+3. Apply each candidate's `chance` independently.
+4. Use `weight` to choose an order among survivors in that tier.
+5. Fall through to lower priorities when the higher tier has no survivor.
+
+For normal dialogue lines, `specificity_weight` is an explicit opt-in bonus: the effective weight is the authored `weight` plus the matched line's specificity score multiplied by `specificity_weight`. Its default is `0`, so adding more filters does not silently make a line more likely.
 
 Example:
 
@@ -520,7 +638,7 @@ Example:
 }
 ```
 
-Use `priority` when one line should win reliably. Use `weight` when several matched lines should all stay in rotation.
+Use `priority` for precedence, `chance` for an independent probability gate, and `weight` for relative odds among candidates that reached the same tier.
 
 ## Message Keys
 

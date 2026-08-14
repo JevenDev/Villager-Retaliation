@@ -683,9 +683,10 @@
         <p>The party leader opens the quick-command wheel with <kbd>Left Alt</kbd> by default. Each recruited villager can be included in or excluded from quick commands.</p>
         ${pillList([
           "Attack", "Move To", "Stay Here", "Regroup", "Stand Guard", "Range", "Melee", "Heal",
-          "Pick Up Drops", "Loot Containers", "Ride Mount", "Dismount Mount"
+          "Pick Up Drops", "Loot Containers", "Unequip Weapons", "Re-equip Weapons", "Ride Mount", "Dismount Mount"
         ])}
         <p>Drop gathering searches nearby ground items, while Loot Containers uses the selected nearby area. Movement, regrouping, gathering, and looting orders can suppress ordinary combat targeting until the order is complete or replaced.</p>
+        <p><strong>Unequip Weapons</strong> deliberately stows each selected villager's weapons; combat loadouts and guard behavior respect that saved choice. <strong>Re-equip Weapons</strong> lets them choose usable carried weapons again.</p>
       `)}
       ${section("Combat Policies", `
         ${beta13Table(
@@ -907,6 +908,7 @@
           "The server has disabled that feature or uses different custom content.",
           "You recently asked the same question and must wait before asking again."
         ])}
+        <p>Villagers can choose different wording for weather, equipment, memories, quest history, and other live context. Some authored lines are one-time or have durable per-player, per-villager, village, dimension, or world cooldowns, so repeating the same interaction does not guarantee the same response.</p>
       `)}
       ${section("Quests And Tracking", `
         <p>Press <kbd>J</kbd> to review accepted quests and <kbd>K</kbd> to toggle the Tracker. Active quests can show objectives, coordinates, HUD notices, highlighted items, and story scenes. What appears depends on the villager, your progress, and earlier choices.</p>
@@ -943,6 +945,9 @@
           "Some objectives require a particular structure, dimension, character, or active encounter.",
           "Multiplayer servers can add or replace quests, so their available stories may differ from this built-in guide.",
         ])}
+      `)}
+      ${section("Daily Quest Board Rotation", `
+        <p>Built-in quest-board requests rotate separately for each tracked village once per Minecraft day. A village shows at most three currently eligible board quests, avoids its previous two rotations when enough alternatives exist, and limits how many combat, distant, expedition, hard, or extreme requests appear together. Another village can have a different board, and story quests outside the board keep their normal availability.</p>
       `)}
       ${beta13OriginalQuestRender()}
     `;
@@ -990,7 +995,7 @@
   function beta13RenderDuels() {
     return `
       ${section("Who Can Duel", `
-        <p>The Duel option appears only for an adult villager whose Guts meets the server threshold. The default minimum is 60. Open the villager interaction screen, choose Duel, review the available terms, and confirm the challenge.</p>
+        <p>The Duel option appears only when a duel can start now. The villager must be an adult whose Guts meets the server threshold, 60 by default, and every other current eligibility check must pass. When it appears, choose Duel, review the available terms, and confirm the challenge.</p>
         ${simpleList([
           "Creative or spectator players cannot start a normal duel.",
           "The villager must be alive, awake, nearby, out of combat, and not trading.",
