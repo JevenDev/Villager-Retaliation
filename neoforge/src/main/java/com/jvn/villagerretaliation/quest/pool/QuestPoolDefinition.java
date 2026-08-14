@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest.pool;
 
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.util.ContentTags;
 import java.util.Map;
 import java.util.List;
 import java.util.Set;
@@ -33,14 +34,14 @@ public record QuestPoolDefinition(
         antiRepeatRotations = Math.max(0, Math.min(16, antiRepeatRotations));
         defaultWeight = Math.max(1, Math.min(10_000, defaultWeight));
         quests = quests == null ? Set.of() : Set.copyOf(quests);
-        anyTags = anyTags == null ? Set.of() : Set.copyOf(anyTags);
-        allTags = allTags == null ? Set.of() : Set.copyOf(allTags);
+        anyTags = ContentTags.normalizeAll(anyTags);
+        allTags = ContentTags.normalizeAll(allTags);
         excludedQuests = excludedQuests == null ? Set.of() : Set.copyOf(excludedQuests);
-        excludedTags = excludedTags == null ? Set.of() : Set.copyOf(excludedTags);
+        excludedTags = ContentTags.normalizeAll(excludedTags);
         weights = weights == null ? Map.of() : Map.copyOf(weights);
         matchMode = matchMode == null ? MatchMode.ANY : matchMode;
         weightRules = weightRules == null ? List.of() : List.copyOf(weightRules);
-        tagQuotas = tagQuotas == null ? Map.of() : Map.copyOf(tagQuotas);
+        tagQuotas = ContentTags.normalizeKeys(tagQuotas);
     }
 
     public QuestPoolDefinition(
@@ -100,9 +101,9 @@ public record QuestPoolDefinition(
 
     public record WeightRule(Set<String> anyTags, Set<String> allTags, Set<String> excludeTags, int multiplier) {
         public WeightRule {
-            anyTags = anyTags == null ? Set.of() : Set.copyOf(anyTags);
-            allTags = allTags == null ? Set.of() : Set.copyOf(allTags);
-            excludeTags = excludeTags == null ? Set.of() : Set.copyOf(excludeTags);
+            anyTags = ContentTags.normalizeAll(anyTags);
+            allTags = ContentTags.normalizeAll(allTags);
+            excludeTags = ContentTags.normalizeAll(excludeTags);
             multiplier = Math.max(1, Math.min(100, multiplier));
         }
 

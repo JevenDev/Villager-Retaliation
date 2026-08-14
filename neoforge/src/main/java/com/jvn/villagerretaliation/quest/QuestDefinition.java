@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import com.jvn.villagerretaliation.util.ContentTags;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import java.util.List;
 import java.util.Locale;
@@ -53,12 +54,7 @@ public record QuestDefinition(
         titleKey = titleKey == null ? "" : titleKey;
         descriptionKey = descriptionKey == null ? "" : descriptionKey;
         questline = questline == null ? "" : questline;
-        tags = tags == null
-                ? Set.of()
-                : tags.stream()
-                        .filter(tag -> tag != null && !tag.isBlank())
-                        .map(String::trim)
-                        .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        tags = ContentTags.normalizeAll(tags);
         prerequisites = prerequisites == null
                 ? (parent == null ? List.of() : List.of(parent))
                 : prerequisites.stream().filter(java.util.Objects::nonNull).toList();
