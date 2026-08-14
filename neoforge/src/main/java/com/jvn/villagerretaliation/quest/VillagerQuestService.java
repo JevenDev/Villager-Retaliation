@@ -94,6 +94,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.Tag;
@@ -109,6 +111,7 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
@@ -184,8 +187,10 @@ public final class VillagerQuestService {
     private record InventoryObjectiveCountKey(
             ResourceLocation itemId,
             QuestDefinition.ItemRequirements requirements) {
-        private static InventoryObjectiveCountKey of(QuestDefinition.Objective objective) {
-            return new InventoryObjectiveCountKey(objective.item(), objective.itemRequirements());
+        private static InventoryObjectiveCountKey of(
+                QuestDefinition.Objective objective,
+                ResourceLocation resolvedItem) {
+            return new InventoryObjectiveCountKey(resolvedItem, objective.itemRequirements());
         }
     }
 
@@ -1337,7 +1342,8 @@ public final class VillagerQuestService {
                 return true;
             }
             for (QuestDefinition.Objective objective : requiredObjectivesForReadiness(definition, entry.getValue())) {
-                if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK && objective.item() != null) {
+                if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK
+                        && objectiveItem(objective, entry.getValue()) != null) {
                     return true;
                 }
             }
@@ -2295,6 +2301,7 @@ public final class VillagerQuestService {
         QuestLifecycleService.start(definition.id(), started, providerBinding, target,
                 context.level().getGameTime(), context.player().getUUID(), definitiveRunId, forceRestart);
         started.adoptDefinitionRevision(definition.revision().number());
+        ensureRandomItemSelections(definition, started);
         if (partyStart != null) {
             partyStart.shared().enroll(context.player().getUUID(), false);
             started.linkPartyQuest(definitiveRunId);
@@ -2503,6 +2510,7 @@ public final class VillagerQuestService {
         QuestLifecycleService.start(definition.id(), linked, providerBinding, target,
                 level.getGameTime(), member.getUUID(), shared.instanceId());
         linked.adoptDefinitionRevision(definition.revision().number());
+        ensureRandomItemSelections(definition, linked);
         shared.enroll(member.getUUID(), false);
         linked.linkPartyQuest(shared.instanceId());
         data.setDirty();
@@ -4302,7 +4310,8 @@ public final class VillagerQuestService {
                 return false;
             }
         }
-        return requiredItemHandIns.isEmpty() || previewObjectiveItemStacks(player, requiredItemHandIns).isPresent();
+        return requiredItemHandIns.isEmpty()
+                || previewObjectiveItemStacks(player, requiredItemHandIns, progress).isPresent();
     }
 
     private static boolean hasRequiredProof(ServerPlayer player, QuestDefinition definition) {
@@ -4350,21 +4359,25 @@ public final class VillagerQuestService {
         return total;
     }
 
-    private static int itemCount(ServerPlayer player, QuestDefinition.Objective objective) {
-        if (objective.item() == null) {
+    private static int itemCount(
+            ServerPlayer player,
+            QuestDefinition.Objective objective,
+            VillagerQuestSavedData.QuestProgress progress) {
+        ResourceLocation itemId = objectiveItem(objective, progress);
+        if (itemId == null) {
             return 0;
         }
         if (hasSimpleItemRequirements(objective.itemRequirements())) {
-            return itemCount(player, objective.item());
+            return itemCount(player, itemId);
         }
         InventoryItemCountCache cache = cachedInventoryCache(player);
         cache.recordExactLookup();
-        InventoryObjectiveCountKey cacheKey = InventoryObjectiveCountKey.of(objective);
+        InventoryObjectiveCountKey cacheKey = InventoryObjectiveCountKey.of(objective, itemId);
         Integer cached = cache.objectiveCounts().get(cacheKey);
         if (cached != null) {
             return cached;
         }
-        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
+        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
         if (item.isEmpty()) {
             cache.objectiveCounts().put(cacheKey, 0);
             cache.recordExactCacheMiss(0);
@@ -4671,9 +4684,9 @@ public final class VillagerQuestService {
                     player,
                     shared.get(),
                     requiredItemHandIns,
-                    VillagerQuestService::matchesObjectiveItemStack).isPresent();
+                    (objective, stack) -> matchesObjectiveItemStack(objective, stack, progress)).isPresent();
         }
-        return previewObjectiveItemStacks(player, requiredItemHandIns).isPresent();
+        return previewObjectiveItemStacks(player, requiredItemHandIns, progress).isPresent();
     }
 
     private static List<QuestDefinition.Objective> requiredObjectivesForReadiness(
@@ -4757,14 +4770,18 @@ public final class VillagerQuestService {
             ServerLevel level,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
+        if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && ensureRandomItemSelections(definition, progress)) {
+            VillagerQuestSavedData.get(level).setDirty();
+        }
         return new QuestObjectiveEvaluationContext(
                 player,
                 context,
                 level,
                 definition,
                 progress,
-                objective -> itemCount(player, objective),
-                VillagerQuestService::matchesObjectiveItemStack,
+                objective -> itemCount(player, objective, progress),
+                (objective, stack) -> matchesObjectiveItemStack(objective, stack, progress),
                 objective -> reputationForObjective(level, player, progress),
                 objective -> matchesFactObjective(level, player, definition, progress, objective),
                 objective -> objectiveConditionState(player, context, level, definition, progress, objective) == ConditionMatch.MET,
@@ -4918,7 +4935,7 @@ public final class VillagerQuestService {
                     context.player(),
                     shared.get(),
                     requiredItemHandIns,
-                    VillagerQuestService::matchesObjectiveItemStack);
+                    (objective, stack) -> matchesObjectiveItemStack(objective, stack, progress));
             if (planned.isEmpty()) {
                 return ItemHandInResult.MISSING_ITEMS;
             }
@@ -4949,7 +4966,7 @@ public final class VillagerQuestService {
             }
             return ItemHandInResult.SUCCESS;
         }
-        List<ItemStack> handInStacks = previewObjectiveItemStacks(context.player(), requiredItemHandIns)
+        List<ItemStack> handInStacks = previewObjectiveItemStacks(context.player(), requiredItemHandIns, progress)
                 .orElse(null);
         if (handInStacks == null) {
             return ItemHandInResult.MISSING_ITEMS;
@@ -4971,13 +4988,18 @@ public final class VillagerQuestService {
 
     private static Optional<List<ItemStack>> previewObjectiveItemStacks(
             ServerPlayer player,
-            List<QuestDefinition.Objective> requiredObjectives) {
+            List<QuestDefinition.Objective> requiredObjectives,
+            VillagerQuestSavedData.QuestProgress progress) {
         List<ItemStack> handInStacks = new ArrayList<>();
         List<ItemStack> availableStacks = removablePlayerStacks(player).stream()
                 .map(ItemStack::copy)
                 .toList();
         for (QuestDefinition.Objective objective : requiredObjectives) {
-            Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
+            ResourceLocation itemId = objectiveItem(objective, progress);
+            if (itemId == null) {
+                return Optional.empty();
+            }
+            Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
             if (item.isEmpty()) {
                 return Optional.empty();
             }
@@ -5003,11 +5025,13 @@ public final class VillagerQuestService {
 
     private static boolean matchesObjectiveItemStack(
             QuestDefinition.Objective objective,
-            ItemStack stack) {
-        if (objective == null || objective.item() == null || stack == null || stack.isEmpty()) {
+            ItemStack stack,
+            VillagerQuestSavedData.QuestProgress progress) {
+        ResourceLocation itemId = objectiveItem(objective, progress);
+        if (itemId == null || stack == null || stack.isEmpty()) {
             return false;
         }
-        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
+        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
         return item.isPresent() && matchesObjectiveItem(stack, objective, item.get());
     }
 
@@ -6096,7 +6120,7 @@ public final class VillagerQuestService {
                 List.of(),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements),
                 prerequisitePreviews(player, definition),
-                completedObjectiveSteps(player, definition),
+                completedObjectiveSteps(player, definition, null),
                 QuestTrackerPresenter.fallbackProgress("completed"),
                 false,
                 VillagerQuestSavedData.QuestState.COMPLETED))
@@ -6582,12 +6606,13 @@ public final class VillagerQuestService {
                         itemId -> itemId != null && itemId.equals(definition.target().proofItem())
                                 ? itemCount(player, itemId, definition.target().proofItemPredicate())
                                 : itemCount(player, itemId),
-                        objective -> itemCount(player, objective),
+                        objective -> itemCount(player, objective, progress),
+                        objective -> objectiveItem(objective, progress),
                         requiredObjectivesForReadiness(definition, progress)),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements),
                 prerequisitePreviews(player, definition),
                 progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
-                        ? completedObjectiveSteps(player, definition)
+                        ? completedObjectiveSteps(player, definition, progress)
                         : activeObjectiveSteps(player, context, definition, progress),
                 progressValue,
                 showProgress,
@@ -6809,7 +6834,7 @@ public final class VillagerQuestService {
             return 0;
         }
         if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK) {
-            return player == null ? 0 : itemCount(player, objective);
+            return player == null ? 0 : itemCount(player, objective, progress);
         }
         return progress == null ? 0 : progress.objectiveCounter(objective.id());
     }
@@ -6825,13 +6850,14 @@ public final class VillagerQuestService {
 
     private static List<QuestTrackerSyncPayload.ObjectiveStep> completedObjectiveSteps(
             ServerPlayer player,
-            QuestDefinition definition) {
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
         if (player == null || definition == null || definition.objectives().isEmpty()) {
             return List.of();
         }
         List<QuestTrackerSyncPayload.ObjectiveStep> steps = new ArrayList<>();
         for (QuestDefinition.Objective objective : definition.objectives()) {
-            String label = completedObjectiveStepLabel(player, definition, objective);
+            String label = completedObjectiveStepLabel(player, definition, progress, objective);
             if (!label.isBlank()) {
                 steps.add(new QuestTrackerSyncPayload.ObjectiveStep(label, true));
             }
@@ -6845,6 +6871,7 @@ public final class VillagerQuestService {
     private static String completedObjectiveStepLabel(
             ServerPlayer player,
             QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
         if (objective == null) {
             return "";
@@ -6859,12 +6886,13 @@ public final class VillagerQuestService {
         return QuestTrackerPresenter.resolveText(
                 player,
                 new QuestDefinition.SelectedText(step.text(), step.textKey()),
-                completedObjectiveReplacements(player, definition, objective));
+                completedObjectiveReplacements(player, definition, progress, objective));
     }
 
     private static Map<String, String> completedObjectiveReplacements(
             ServerPlayer player,
             QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("quest", questTitle(player, definition, Map.of()));
@@ -6879,8 +6907,9 @@ public final class VillagerQuestService {
         values.put("objective", objective.id());
         values.put("objective_id", objective.id());
         values.put("objective_type", objective.type().name().toLowerCase(Locale.ROOT));
-        values.put("objective_item", objective.item() == null ? questItemName(definition, null) : itemName(objective.item()));
-        values.put("objective_item_id", objective.item() == null ? "" : objective.item().toString());
+        ResourceLocation objectiveItem = objectiveItem(objective, progress);
+        values.put("objective_item", objectiveItem == null ? questItemName(definition, progress) : itemName(objectiveItem));
+        values.put("objective_item_id", objectiveItem == null ? "" : objectiveItem.toString());
         values.put("objective_count", Integer.toString(objective.count()));
         values.put("objective_progress_count", Integer.toString(objective.count()));
         values.put("objective_entity", objectiveEntityName(objective));
@@ -7175,6 +7204,10 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective,
             boolean activeConditionsMet) {
+        if (player != null && progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && ensureRandomItemSelections(definition, progress)) {
+            VillagerQuestSavedData.get(player.serverLevel()).setDirty();
+        }
         Map<String, String> values = new LinkedHashMap<>();
         values.put("quest", questTitle(player, definition, Map.of()));
         values.put("quest_id", definition.id().toString());
@@ -7376,8 +7409,9 @@ public final class VillagerQuestService {
         values.put("objective", objective.id());
         values.put("objective_id", objective.id());
         values.put("objective_type", objective.type().name().toLowerCase(Locale.ROOT));
-        values.put("objective_item", objective.item() == null ? questItemName(definition, progress) : itemName(objective.item()));
-        values.put("objective_item_id", objective.item() == null ? "" : objective.item().toString());
+        ResourceLocation objectiveItem = objectiveItem(objective, progress);
+        values.put("objective_item", objectiveItem == null ? questItemName(definition, progress) : itemName(objectiveItem));
+        values.put("objective_item_id", objectiveItem == null ? "" : objectiveItem.toString());
         values.put("objective_count", Integer.toString(objective.count()));
         values.put("objective_progress_count", Integer.toString(objectiveProgressCount(player, progress, objective)));
         values.put("objective_entity", objectiveEntityName(objective));
@@ -7550,7 +7584,7 @@ public final class VillagerQuestService {
             QuestObjectiveEvaluationContext evaluationContext = new QuestObjectiveEvaluationContext(
                     null, null, level, definition, canonical,
                     objective -> 0,
-                    VillagerQuestService::matchesObjectiveItemStack,
+                    (objective, stack) -> matchesObjectiveItemStack(objective, stack, canonical),
                     objective -> 0,
                     objective -> false,
                     objective -> false,
@@ -7711,20 +7745,110 @@ public final class VillagerQuestService {
         onObjectiveEvent(level, player, QuestObjectiveEvent.block(kind, pos, state));
     }
 
+    private static boolean ensureRandomItemSelections(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (definition == null || progress == null || progress.questRunId() == null) {
+            return false;
+        }
+        boolean changed = false;
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            if (!objective.usesRandomItemSelection()
+                    || progress.resolvedObjectiveItem(objective.id()) != null) {
+                continue;
+            }
+            ResourceLocation selected = selectRandomObjectiveItem(objective, progress.questRunId());
+            if (selected != null) {
+                changed |= progress.resolveObjectiveItem(objective.id(), selected);
+            }
+        }
+        return changed;
+    }
+
+    private static ResourceLocation selectRandomObjectiveItem(
+            QuestDefinition.Objective objective,
+            UUID runId) {
+        List<WeightedItemSelection> candidates = new ArrayList<>();
+        for (QuestDefinition.ItemSelectionEntry entry : objective.itemSelections()) {
+            if (entry.item() != null
+                    && BuiltInRegistries.ITEM.getOptional(entry.item()).filter(item -> item != Items.AIR).isPresent()) {
+                candidates.add(new WeightedItemSelection(List.of(entry.item()), entry.weight()));
+                continue;
+            }
+            if (entry.tag() == null) {
+                continue;
+            }
+            List<ResourceLocation> tagItems = BuiltInRegistries.ITEM
+                    .getTag(TagKey.create(Registries.ITEM, entry.tag()))
+                    .stream()
+                    .flatMap(holders -> holders.stream())
+                    .filter(holder -> holder.value() != Items.AIR)
+                    .map(holder -> BuiltInRegistries.ITEM.getKey(holder.value()))
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .sorted()
+                    .toList();
+            if (!tagItems.isEmpty()) {
+                candidates.add(new WeightedItemSelection(tagItems, entry.weight()));
+            }
+        }
+        if (candidates.isEmpty()) {
+            return null;
+        }
+        long totalWeight = candidates.stream()
+                .mapToLong(WeightedItemSelection::weight)
+                .reduce(0L, VillagerQuestService::saturatingAdd);
+        long seed = runId.getMostSignificantBits()
+                ^ Long.rotateLeft(runId.getLeastSignificantBits(), 19)
+                ^ ((long) objective.id().hashCode() * 0x9E3779B97F4A7C15L);
+        net.minecraft.util.RandomSource random = net.minecraft.util.RandomSource.create(seed);
+        double roll = random.nextDouble() * totalWeight;
+        WeightedItemSelection selected = candidates.getLast();
+        long cumulative = 0L;
+        for (WeightedItemSelection candidate : candidates) {
+            cumulative = saturatingAdd(cumulative, candidate.weight());
+            if (roll < cumulative) {
+                selected = candidate;
+                break;
+            }
+        }
+        return selected.items().get(random.nextInt(selected.items().size()));
+    }
+
+    private static long saturatingAdd(long left, long right) {
+        return Long.MAX_VALUE - left < right ? Long.MAX_VALUE : left + right;
+    }
+
+    private static ResourceLocation objectiveItem(
+            QuestDefinition.Objective objective,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (objective == null) {
+            return null;
+        }
+        return objective.usesRandomItemSelection()
+                ? progress == null ? null : progress.resolvedObjectiveItem(objective.id())
+                : objective.item();
+    }
+
+    private record WeightedItemSelection(List<ResourceLocation> items, int weight) {
+    }
+
     private static String questItemName(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
         if (definition.target().hasProofItem()) {
             return itemName(definition.target().proofItem());
         }
         for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
+            ResourceLocation itemId = objectiveItem(objective, progress);
             if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK
-                    && objective.item() != null
+                    && itemId != null
                     && (progress == null || !progress.objectiveComplete(objective.id()))) {
-                return itemName(objective.item());
+                return itemName(itemId);
             }
         }
         for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
-            if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK && objective.item() != null) {
-                return itemName(objective.item());
+            ResourceLocation itemId = objectiveItem(objective, progress);
+            if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK && itemId != null) {
+                return itemName(itemId);
             }
         }
         return "proof";
@@ -8094,7 +8218,8 @@ public final class VillagerQuestService {
                         complete,
                         counter,
                         registryDebug.itemCountOr(
-                                objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK ? itemCount(player, objective) : 0),
+                                objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK
+                                        ? itemCount(player, objective, progress) : 0),
                         objective.type() == QuestDefinition.ObjectiveType.REPUTATION
                                 ? reputationForObjective(level, player, progress)
                                 : 0,

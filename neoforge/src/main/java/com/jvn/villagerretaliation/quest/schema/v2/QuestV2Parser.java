@@ -179,6 +179,7 @@ public final class QuestV2Parser {
             "items",
             "item_tag",
             "item_tags",
+            "selection",
             "components",
             "durability",
             "min_durability",
@@ -628,6 +629,7 @@ public final class QuestV2Parser {
             readConditionObjects(validator, object.get("conditions"), objectivePointer + "/conditions");
             validateItemPredicateObjects(
                     validator, object, objectivePointer, "components", "durability", "custom_data", "nbt");
+            validateRandomItemSelection(validator, object, objectivePointer, type);
             objectives.add(new QuestV2Resource.Objective(
                     id,
                     QuestObjectiveRegistry.canonicalTypeId(type),
@@ -635,6 +637,79 @@ public final class QuestV2Parser {
                     object));
         }
         return List.copyOf(objectives);
+    }
+
+    private static void validateRandomItemSelection(
+            Validator validator,
+            JsonObject objective,
+            String pointer,
+            String type) {
+        JsonElement items = objective.get("items");
+        JsonElement rawSelection = objective.get("selection");
+        if (items == null && rawSelection == null) {
+            return;
+        }
+        String selection = readString(objective, "selection");
+        if (!"item_check".equals(QuestObjectiveRegistry.canonicalTypeId(type))) {
+            validator.error(pointer, "selection and items are only supported by item_check objectives.",
+                    "Remove the random item fields from this objective.", Set.of());
+            return;
+        }
+        if (!readString(objective, "item").isBlank()) {
+            validator.error(pointer, "random item_check objectives cannot combine item with items.",
+                    "Use either the fixed item field or selection with items.", Set.of());
+        }
+        if (!"random".equals(selection)) {
+            validator.error(pointer + "/selection", "items requires selection to be random.",
+                    "Set selection to random.", Set.of());
+        }
+        JsonArray entries = validator.array(items, pointer + "/items", "random item entries", true);
+        if (entries == null || entries.isEmpty()) {
+            validator.error(pointer + "/items", "random item entries must not be empty.",
+                    "Add at least one item or item tag.", Set.of());
+            return;
+        }
+        for (int index = 0; index < entries.size(); index++) {
+            JsonElement entry = entries.get(index);
+            String entryPointer = pointer + "/items/" + index;
+            if (entry.isJsonPrimitive() && entry.getAsJsonPrimitive().isString()) {
+                String value = entry.getAsString().trim();
+                String id = value.startsWith("#") ? value.substring(1) : value;
+                if (id.isBlank() || ResourceLocation.tryParse(id) == null) {
+                    validator.error(entryPointer, "invalid item selector: " + value,
+                            "Use a namespaced item id or prefix an item tag with #.", Set.of(value));
+                }
+                continue;
+            }
+            JsonObject weighted = validator.object(entry, entryPointer, "weighted item entry", true);
+            if (weighted == null) {
+                continue;
+            }
+            validator.expectKeys(weighted, entryPointer, Set.of("item", "tag", "weight"));
+            String item = readString(weighted, "item");
+            String tag = readString(weighted, "tag");
+            if (item.isBlank() == tag.isBlank()) {
+                validator.error(entryPointer, "weighted item entry must define exactly one of item or tag.",
+                        "Set one selector and remove the other.", Set.of());
+            }
+            String selector = item.isBlank() ? tag : item;
+            if (selector.startsWith("#")) {
+                selector = selector.substring(1);
+            }
+            if (!selector.isBlank() && ResourceLocation.tryParse(selector) == null) {
+                validator.error(entryPointer, "invalid item selector: " + selector,
+                        "Use a namespaced item or tag id.", Set.of(selector));
+            }
+            JsonElement weight = weighted.get("weight");
+            if (weight != null && (!weight.isJsonPrimitive()
+                    || !weight.getAsJsonPrimitive().isNumber()
+                    || weight.getAsDouble() < 1.0D
+                    || weight.getAsDouble() != Math.rint(weight.getAsDouble())
+                    || weight.getAsDouble() > Integer.MAX_VALUE)) {
+                validator.error(entryPointer + "/weight", "weight must be a positive integer.",
+                        "Use an integer of 1 or greater.", Set.of());
+            }
+        }
     }
 
     private static void validateItemPredicateObjects(

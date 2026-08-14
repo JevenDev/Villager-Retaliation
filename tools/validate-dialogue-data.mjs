@@ -869,7 +869,7 @@ const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stag
 const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "completion", "completion_mode", "completion_count", "bonuses", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
 const questV2CompletionKeys = new Set(["mode", "count"]);
 const questV2BonusKeys = new Set(["id", "when", "mode", "count", "actions"]);
-const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "criterion", "match", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "components", "durability", "min_durability", "max_durability", "min_durability_percent", "max_durability_percent", "enchantment", "enchantments", "min_enchantment_level", "max_enchantment_level", "custom_data", "nbt", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
+const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "criterion", "match", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "selection", "components", "durability", "min_durability", "max_durability", "min_durability_percent", "max_durability_percent", "enchantment", "enchantments", "min_enchantment_level", "max_enchantment_level", "custom_data", "nbt", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
 const questV2TrackerKeys = new Set(["text", "text_key", "complete_text", "complete_text_key", "show_progress", "progress", "metadata"]);
 const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
 const questV2SceneKeys = new Set(["id", "slot", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "external", "external_scene", "external_entry", "scene_ref", "metadata"]);
@@ -1946,6 +1946,7 @@ function checkQuestV2Objectives(file, objectives, pointer, location, questId) {
     checkQuestV2OptionalBoolean(file, objective, objectivePointer, objectiveLocation, "optional");
     checkQuestV2OptionalInteger(file, objective, objectivePointer, objectiveLocation, "count", { min: 1 });
     checkQuestV2OptionalBoolean(file, objective, objectivePointer, objectiveLocation, "consume");
+    checkQuestV2RandomItemSelection(file, objective, objectivePointer, objectiveLocation, type);
     checkQuestV2Tracker(file, objective.tracker, `${objectivePointer}/tracker`, `${objectiveLocation}.tracker`);
     checkQuestV2OptionalObject(file, objective.target, `${objectivePointer}/target`, `${objectiveLocation}.target`, "objective target");
     checkQuestV2OptionalObject(file, objective.location, `${objectivePointer}/location`, `${objectiveLocation}.location`, "objective location");
@@ -1957,6 +1958,58 @@ function checkQuestV2Objectives(file, objectives, pointer, location, questId) {
     checkQuestV2ObjectiveRuntimeRequirements(file, objective, objectivePointer, objectiveLocation, type);
   }
   return ids;
+}
+
+function checkQuestV2RandomItemSelection(file, objective, pointer, location, type) {
+  if (objective.selection === undefined && objective.items === undefined) return;
+  const canonical = questV2RegistryIndex.objectives.canonical.get(type) || type;
+  if (canonical !== "item_check") {
+    questV2Error(file, pointer, location, "selection and items are only supported by item_check objectives.", "Remove the random item fields.");
+    return;
+  }
+  if (stringValue(objective.item)) {
+    questV2Error(file, pointer, location, "random item_check objectives cannot combine item with items.", "Use either item or selection with items.");
+  }
+  if (normalizedString(objective.selection) !== "random") {
+    questV2Error(file, `${pointer}/selection`, `${location}.selection`, "items requires selection to be random.", "Set selection to random.");
+  }
+  validateRandomItemEntries(
+    objective.items,
+    (suffix, message) => questV2Error(file, `${pointer}/items${suffix}`, `${location}.items${suffix}`, message, "Use a namespaced item id, #tag string, or one weighted item/tag object.")
+  );
+}
+
+function validateRandomItemEntries(items, report) {
+  if (!Array.isArray(items) || items.length === 0) {
+    report("", "random item selection requires a non-empty items array.");
+    return;
+  }
+  items.forEach((entry, index) => {
+    const suffix = `[${index}]`;
+    if (typeof entry === "string") {
+      const selector = entry.trim();
+      const id = selector.startsWith("#") ? selector.slice(1) : selector;
+      if (!selector || !isResourceLocation(id)) report(suffix, `invalid item selector "${entry}".`);
+      return;
+    }
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      report(suffix, "random item entry must be a string or object.");
+      return;
+    }
+    for (const key of Object.keys(entry)) {
+      if (!["item", "tag", "weight"].includes(key)) report(`${suffix}.${key}`, `unsupported random item entry field "${key}".`);
+    }
+    const item = stringValue(entry.item);
+    const tag = stringValue(entry.tag);
+    if ((!item && !tag) || (item && tag)) {
+      report(suffix, "weighted random item entry must define exactly one of item or tag.");
+    }
+    const selector = (item || tag).replace(/^#/, "");
+    if (selector && !isResourceLocation(selector)) report(suffix, `invalid item selector "${selector}".`);
+    if (entry.weight !== undefined && (!Number.isInteger(entry.weight) || entry.weight < 1)) {
+      report(`${suffix}.weight`, "weight must be a positive integer.");
+    }
+  });
 }
 
 function checkQuestV2ObjectiveRuntimeRequirements(file, objective, pointer, location, type) {
@@ -1974,8 +2027,9 @@ function checkQuestV2ObjectiveRuntimeRequirements(file, objective, pointer, loca
   if (canonical === "structure_visit" && !hasStringValues(objective, ["structure"]) && !hasStringValues(objective.target, ["structure"])) {
     questV2Error(file, pointer, location, "structure_visit objective is missing structure.", "Set objective.structure or objective.target.structure.");
   }
-  if (canonical === "item_check" && !hasStringValues(objective, ["item", "items", "item_tag", "item_tags"])) {
-    questV2Error(file, pointer, location, "item_check objective is missing an item selector.", "Set item, items, item_tag, or item_tags.");
+  if (canonical === "item_check" && !stringValue(objective.item)
+      && !(normalizedString(objective.selection) === "random" && Array.isArray(objective.items) && objective.items.length > 0)) {
+    questV2Error(file, pointer, location, "item_check objective is missing an item selector.", "Set item, or set selection to random with a non-empty items array.");
   }
   if (["mob_kill"].includes(canonical) && !hasStringValues(objective, ["entity", "entities", "entity_tag", "entity_tags"])) {
     questV2Error(file, pointer, location, "mob_kill objective is missing an entity selector.", "Set entity, entities, entity_tag, or entity_tags.");
@@ -3085,6 +3139,24 @@ function checkQuestTarget(file, target, location) {
   }
 }
 
+function checkLegacyRandomItemSelection(file, objective, location, type) {
+  if (objective.selection === undefined && objective.items === undefined) return;
+  if (type !== "item_check") {
+    errors.push(`${relative(file)}: ${location}.selection and items are only supported by item_check objectives.`);
+    return;
+  }
+  if (stringValue(objective.item)) {
+    errors.push(`${relative(file)}: ${location} cannot combine fixed item with random items.`);
+  }
+  if (normalizedString(objective.selection) !== "random") {
+    errors.push(`${relative(file)}: ${location}.selection must be random when items is used.`);
+  }
+  validateRandomItemEntries(
+    objective.items,
+    (suffix, message) => errors.push(`${relative(file)}: ${location}.items${suffix}: ${message}`)
+  );
+}
+
 function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
   if (objectives === undefined) {
     return;
@@ -3115,6 +3187,8 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "search_radius",
       "discovery_radius",
       "item",
+      "items",
+      "selection",
       "entity",
       "entities",
       "entity_tag",
@@ -3192,6 +3266,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkOptionalInteger(file, objective, objectiveLocation, "search_radius", { min: 1 });
     checkOptionalInteger(file, objective, objectiveLocation, "discovery_radius", { min: 1 });
     checkOptionalString(file, objective, objectiveLocation, "item");
+    checkLegacyRandomItemSelection(file, objective, objectiveLocation, type);
     checkStringList(file, objective, objectiveLocation, ["entity", "entities"], "entity id or #entity tag");
     checkStringList(file, objective, objectiveLocation, ["entity_tag", "entity_tags"], "entity tag id");
     checkStringList(file, objective, objectiveLocation, ["block", "blocks"], "block id or #block tag");
@@ -3251,8 +3326,9 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     if (questLocationObjectiveTypes.has(type) && !hasQuestObjectivePosition(objective)) {
       errors.push(`${relative(file)}: ${objectiveLocation} must define x, y, and z, or pos for a location_visit objective.`);
     }
-    if (type === "item_check" && !stringValue(objective.item)) {
-      errors.push(`${relative(file)}: ${objectiveLocation}.item is required for an item_check objective.`);
+    if (type === "item_check" && !stringValue(objective.item)
+        && !(normalizedString(objective.selection) === "random" && Array.isArray(objective.items) && objective.items.length > 0)) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must define item, or selection random with a non-empty items array.`);
     }
     if (questMobKillObjectiveTypes.has(type) && readValues(objective, ["entity", "entities", "entity_tag", "entity_tags"]).length === 0) {
       errors.push(`${relative(file)}: ${objectiveLocation} must define entity, entities, entity_tag, or entity_tags for a mob_kill objective.`);

@@ -360,6 +360,19 @@ public final class QuestTrackerPresenter {
             Function<ResourceLocation, Integer> itemCounter,
             ToIntFunction<QuestDefinition.Objective> objectiveCounter,
             List<QuestDefinition.Objective> objectives) {
+        return questItems(
+                definition, progress, itemLabeler, itemCounter, objectiveCounter,
+                QuestDefinition.Objective::item, objectives);
+    }
+
+    public static List<QuestTrackerSyncPayload.QuestItem> questItems(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            Function<ResourceLocation, String> itemLabeler,
+            Function<ResourceLocation, Integer> itemCounter,
+            ToIntFunction<QuestDefinition.Objective> objectiveCounter,
+            Function<QuestDefinition.Objective, ResourceLocation> objectiveItemResolver,
+            List<QuestDefinition.Objective> objectives) {
         if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
             return List.of();
         }
@@ -375,12 +388,13 @@ public final class QuestTrackerPresenter {
                 itemLabeler,
                 currentItemCount(itemCounter, definition.target().proofItem()));
         for (QuestDefinition.Objective objective : objectives == null ? List.<QuestDefinition.Objective>of() : objectives) {
-            if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK || objective.item() == null) {
+            ResourceLocation itemId = objectiveItemResolver == null ? objective.item() : objectiveItemResolver.apply(objective);
+            if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK || itemId == null) {
                 continue;
             }
             addQuestItem(
                     items,
-                    objective.item(),
+                    itemId,
                     objective.itemRequirements().stackPredicate(),
                     objective.itemRequirements().enchantments().stream()
                             .map(requirement -> new QuestTrackerSyncPayload.QuestItemEnchantment(

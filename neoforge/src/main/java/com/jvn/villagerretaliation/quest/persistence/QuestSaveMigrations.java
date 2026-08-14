@@ -35,6 +35,9 @@ public final class QuestSaveMigrations {
             // Version 3 adds deterministic per-run quest identity. It is derived lazily from
             // quest id and the persisted start counter so legacy active quests remain stable.
             case 2 -> 3;
+            // Version 4 persists the concrete item selected for randomized objectives.
+            // Existing entries require no rewrite; legacy active runs derive it from their run id once.
+            case 3 -> 4;
             default -> throw new IllegalStateException("No quest save migration from version " + version);
         };
     }

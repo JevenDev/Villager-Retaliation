@@ -109,6 +109,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -624,7 +625,7 @@ public final class VillagerQuestGameTests {
                 true);
         helper.assertValueEqual(
                 QuestObjectiveRegistry.validationError(invalidItem).orElse(""),
-                "item_check objective must define item.",
+                "item_check objective must define item or a non-empty random items selection.",
                 "item objective validation message");
 
         helper.succeed();
@@ -2174,6 +2175,105 @@ public final class VillagerQuestGameTests {
                 "validated v2 fixture leaked into compiled quest listings before compiler pass");
         helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "valid v2 parser emitted diagnostics");
 
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void randomizedItemObjectiveResolvesOncePersistsAndTracks(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation location = VillagerRetaliation.id("quests/random_item_objective_fixture.json");
+        JsonObject root = randomizedItemQuestV2Fixture();
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("random item fixture did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException("random item fixture did not compile"));
+        QuestDefinition.Objective objective = compiled.asQuestDefinition().objectives().getFirst();
+        helper.assertTrue(objective.item() == null, "random objective unexpectedly compiled as a fixed item");
+        helper.assertTrue(objective.usesRandomItemSelection(), "random item selection mode was not retained");
+        helper.assertValueEqual(objective.itemSelections().size(), 3, "random selector entry count");
+        helper.assertValueEqual(objective.itemSelections().getFirst().weight(), 5, "explicit item weight");
+        helper.assertValueEqual(objective.itemSelections().get(1).weight(), 1, "default item weight");
+        helper.assertValueEqual(objective.itemSelections().get(2).weight(), 2, "tag entry weight");
+
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled));
+        VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+        try {
+            VillagerQuestService.DebugStartResult start =
+                    VillagerQuestService.debugStartQuest(player, villager, compiled.id(), true);
+            helper.assertTrue(start.started(), "random item quest did not start: " + start.message());
+            VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+            VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), compiled.id());
+            ResourceLocation selected = progress.resolvedObjectiveItem(objective.id());
+            helper.assertTrue(selected != null, "quest start did not resolve a concrete item");
+            helper.assertTrue(
+                    selected.equals(ResourceLocation.parse("minecraft:wheat"))
+                            || selected.equals(ResourceLocation.parse("minecraft:lava_bucket"))
+                            || new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(selected))
+                                    .is(net.minecraft.tags.ItemTags.PLANKS),
+                    "selection did not come from an explicit item or expanded tag");
+            ItemStack plainSelected = new ItemStack(BuiltInRegistries.ITEM.get(selected));
+            helper.assertFalse(objective.itemRequirements().stackPredicate().matches(plainSelected),
+                    "plain resolved item bypassed its custom-data predicate");
+            CompoundTag requiredData = new CompoundTag();
+            requiredData.putBoolean("vr_random_test", true);
+            ItemStack matchingSelected = plainSelected.copy();
+            matchingSelected.set(
+                    net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+                    net.minecraft.world.item.component.CustomData.of(requiredData));
+            helper.assertTrue(objective.itemRequirements().stackPredicate().matches(matchingSelected),
+                    "resolved item did not retain its custom-data predicate");
+
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            QuestTrackerSyncPayload.Entry first = VillagerQuestService.debugTrackerEntryForTests(
+                    player, context, compiled.asQuestDefinition(), progress, true);
+            QuestTrackerSyncPayload.Entry second = VillagerQuestService.debugTrackerEntryForTests(
+                    player, context, compiled.asQuestDefinition(), progress, true);
+            helper.assertValueEqual(progress.resolvedObjectiveItem(objective.id()), selected,
+                    "tracker refresh rerolled the item");
+            helper.assertValueEqual(first.questItems().getFirst().itemId(), selected.toString(),
+                    "tracker did not use the resolved item");
+            helper.assertTrue(first.objective().contains(
+                    new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(selected)).getHoverName().getString()),
+                    "objective_item placeholder did not display the resolved item name");
+            helper.assertValueEqual(second.questItems().getFirst().itemId(), selected.toString(),
+                    "repeated tracker render changed the resolved item");
+
+            CompoundTag saved = data.save(new CompoundTag(), level.registryAccess());
+            VillagerQuestSavedData.QuestProgress loaded = VillagerQuestSavedData
+                    .load(saved, level.registryAccess())
+                    .get(player.getUUID(), compiled.id());
+            helper.assertTrue(loaded != null, "random item quest progress did not reload");
+            helper.assertValueEqual(loaded.resolvedObjectiveItem(objective.id()), selected,
+                    "saved quest state did not preserve the resolved item");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            VillagerQuestResources.clearCache();
+        }
+
+        JsonObject invalid = randomizedItemQuestV2Fixture();
+        invalid.getAsJsonArray("stages")
+                .get(0).getAsJsonObject()
+                .getAsJsonArray("objectives")
+                .get(0).getAsJsonObject()
+                .add("items", new JsonArray());
+        helper.assertTrue(
+                QuestV2Parser.parse(VillagerRetaliation.id("quests/random_item_empty.json"), invalid).isEmpty(),
+                "empty random items array passed datapack validation");
+        JsonObject mixed = randomizedItemQuestV2Fixture();
+        mixed.getAsJsonArray("stages")
+                .get(0).getAsJsonObject()
+                .getAsJsonArray("objectives")
+                .get(0).getAsJsonObject()
+                .addProperty("item", "minecraft:bread");
+        helper.assertTrue(
+                QuestV2Parser.parse(VillagerRetaliation.id("quests/random_item_mixed.json"), mixed).isEmpty(),
+                "mixed fixed and random item selectors passed datapack validation");
         helper.succeed();
     }
 
@@ -5861,6 +5961,62 @@ public final class VillagerQuestGameTests {
                     "placeholders": {
                       "issuer": "provider.name"
                     }
+                  }
+                }
+                """).getAsJsonObject();
+    }
+
+    private static JsonObject randomizedItemQuestV2Fixture() {
+        return JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "id": "villagerretaliation:random_item_objective_fixture",
+                  "metadata": {
+                    "title": "Random Item Fixture",
+                    "questline": "tests"
+                  },
+                  "provider": {
+                    "type": "villagerretaliation:villager"
+                  },
+                  "entry_stage": "offer",
+                  "stages": [
+                    {
+                      "id": "offer",
+                      "objectives": [
+                        {
+                          "id": "supply",
+                          "type": "item_check",
+                          "items": [
+                            {
+                              "item": "minecraft:wheat",
+                              "weight": 5
+                            },
+                            {
+                              "item": "minecraft:lava_bucket"
+                            },
+                            {
+                              "tag": "minecraft:planks",
+                              "weight": 2
+                            }
+                          ],
+                          "selection": "random",
+                          "count": 8,
+                          "consume": false,
+                          "custom_data": {
+                            "vr_random_test": true
+                          },
+                          "tracker": {
+                            "text": "Collect {objective_item}."
+                          }
+                        }
+                      ],
+                      "complete_when": [
+                        "supply"
+                      ]
+                    }
+                  ],
+                  "ui": {
+                    "tracker_text": "Collect the requested item."
                   }
                 }
                 """).getAsJsonObject();
