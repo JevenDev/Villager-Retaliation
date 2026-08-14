@@ -13,6 +13,8 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -34,6 +36,9 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
         DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact,
         DialogueCondition.SelectedChoice, DialogueCondition.StageHistory,
+        DialogueCondition.PlayerItem, DialogueCondition.VillagerEquipment,
+        DialogueCondition.Biome, DialogueCondition.Dimension, DialogueCondition.Advancement,
+        DialogueCondition.Scoreboard, DialogueCondition.NearbyEntity, DialogueCondition.Village,
         DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time {
 
     boolean matches(DialogueContext context);
@@ -529,6 +534,117 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         return times.isEmpty() ? Optional.empty() : Optional.of(new Time(Set.copyOf(times)));
     }
 
+    private static Optional<DialogueCondition> readPlayerItem(
+            ResourceLocation location, String context, JsonObject condition) {
+        JsonObject normalized = condition.deepCopy();
+        copyAlias(normalized, "item", "player_item");
+        copyAlias(normalized, "items", "player_items");
+        copyAlias(normalized, "item_tag", "player_item_tag");
+        copyAlias(normalized, "item_tags", "player_item_tags");
+        copyAlias(normalized, "slot", "player_item_slot");
+        copyAlias(normalized, "slots", "player_item_slots");
+        copyAlias(normalized, "enchantment", "player_item_enchantment");
+        copyAlias(normalized, "enchantments", "player_item_enchantments");
+        VillagerPlayerItemCondition parsed = VillagerPlayerItemCondition.read(normalized);
+        if (parsed.isEmpty()) {
+            warnInvalid(location, context, "player_item condition must define an item predicate.");
+            return Optional.empty();
+        }
+        return Optional.of(new PlayerItem(parsed));
+    }
+
+    private static Optional<DialogueCondition> readVillagerEquipment(
+            ResourceLocation location, String context, JsonObject condition) {
+        Boolean armed = readNullableBoolean(condition, "armed");
+        Boolean unarmed = readNullableBoolean(condition, "unarmed");
+        VillagerEquipmentCondition parsed = armed != null || unarmed != null
+                ? new VillagerEquipmentCondition(Boolean.TRUE.equals(unarmed) || Boolean.FALSE.equals(armed),
+                        Boolean.TRUE.equals(armed) || Boolean.FALSE.equals(unarmed))
+                : VillagerEquipmentCondition.read(condition);
+        if (parsed.isEmpty()) {
+            warnInvalid(location, context, "villager_equipment condition must define armed or unarmed.");
+            return Optional.empty();
+        }
+        return Optional.of(new VillagerEquipment(parsed));
+    }
+
+    private static Optional<DialogueCondition> readBiome(
+            ResourceLocation location, String context, JsonObject condition) {
+        Set<ResourceLocation> biomes = readResourceLocationSet(location, context, condition, "biome", "biomes");
+        Set<ResourceLocation> tags = readResourceLocationSet(
+                location, context, condition, "tag", "tags", "biome_tag", "biome_tags");
+        if (biomes.isEmpty() && tags.isEmpty()) {
+            warnInvalid(location, context, "biome condition must define biome, biomes, biome_tag, or biome_tags.");
+            return Optional.empty();
+        }
+        return Optional.of(new Biome(biomes, tags));
+    }
+
+    private static Optional<DialogueCondition> readDimension(
+            ResourceLocation location, String context, JsonObject condition) {
+        Set<ResourceLocation> dimensions = readResourceLocationSet(
+                location, context, condition, "dimension", "dimensions", "value", "values");
+        if (dimensions.isEmpty()) {
+            warnInvalid(location, context, "dimension condition must define dimension or dimensions.");
+            return Optional.empty();
+        }
+        return Optional.of(new Dimension(dimensions));
+    }
+
+    private static Optional<DialogueCondition> readAdvancement(
+            ResourceLocation location, String context, JsonObject condition) {
+        Set<ResourceLocation> advancements = readResourceLocationSet(
+                location, context, condition, "advancement", "advancements", "id", "ids");
+        if (advancements.isEmpty()) {
+            warnInvalid(location, context, "advancement condition must define advancement or advancements.");
+            return Optional.empty();
+        }
+        return Optional.of(new Advancement(advancements, readBoolean(condition, "all", true)));
+    }
+
+    private static Optional<DialogueCondition> readScoreboard(
+            ResourceLocation location, String context, JsonObject condition) {
+        String objective = firstNonBlank(readString(condition, "objective"), readString(condition, "score"));
+        if (objective.isBlank()) {
+            warnInvalid(location, context, "scoreboard condition must define objective.");
+            return Optional.empty();
+        }
+        Integer exact = readNullableInt(condition, "value");
+        Integer min = exact == null ? readNullableInt(condition, "min") : exact;
+        Integer max = exact == null ? readNullableInt(condition, "max") : exact;
+        return Optional.of(new Scoreboard(objective, min, max));
+    }
+
+    private static Optional<DialogueCondition> readNearbyEntity(
+            ResourceLocation location, String context, JsonObject condition) {
+        Set<ResourceLocation> types = readResourceLocationSet(
+                location, context, condition, "entity", "entities", "entity_type", "entity_types");
+        Set<ResourceLocation> tags = readResourceLocationSet(
+                location, context, condition, "entity_tag", "entity_tags");
+        if (types.isEmpty() && tags.isEmpty()) {
+            warnInvalid(location, context, "nearby_entity condition must define entity types or tags.");
+            return Optional.empty();
+        }
+        Integer radiusValue = readNullableInt(condition, "radius");
+        double radius = Math.max(1.0D, Math.min(128.0D, radiusValue == null ? 16.0D : radiusValue.doubleValue()));
+        Integer min = readNullableInt(condition, "min_count");
+        Integer max = readNullableInt(condition, "max_count");
+        String origin = readString(condition, "origin").toLowerCase(Locale.ROOT);
+        return Optional.of(new NearbyEntity(types, tags, radius, min == null ? 1 : Math.max(0, min), max,
+                "player".equals(origin)));
+    }
+
+    private static Village readVillage(JsonObject condition) {
+        Set<String> keys = readNormalizedStrings(condition, "key", "keys", "village", "villages");
+        return new Village(readBoolean(condition, "present", true), keys);
+    }
+
+    private static void copyAlias(JsonObject object, String alias, String canonical) {
+        if (!object.has(canonical) && object.has(alias)) {
+            object.add(canonical, object.get(alias).deepCopy());
+        }
+    }
+
     private static void warnInvalid(ResourceLocation location, String context, String message) {
         DatapackDiagnostics.warnInvalidDialogueCondition(location, context, message);
     }
@@ -863,6 +979,54 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                         aliases("quest_stage_history", "visited_stage"),
                         capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
                         DialogueCondition::readStageHistory),
+                register(
+                        "player_item",
+                        PlayerItem.class,
+                        aliases("item", "held_item"),
+                        capabilities(ConditionCapability.PLAYER_LIVE),
+                        (location, context, condition, defaultQuestId) -> readPlayerItem(location, context, condition)),
+                register(
+                        "villager_equipment",
+                        VillagerEquipment.class,
+                        aliases("equipment", "armed"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE),
+                        (location, context, condition, defaultQuestId) -> readVillagerEquipment(location, context, condition)),
+                register(
+                        "biome",
+                        Biome.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readBiome(location, context, condition)),
+                register(
+                        "dimension",
+                        Dimension.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readDimension(location, context, condition)),
+                register(
+                        "advancement",
+                        Advancement.class,
+                        aliases("advancements"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readAdvancement(location, context, condition)),
+                register(
+                        "scoreboard",
+                        Scoreboard.class,
+                        aliases("score"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readScoreboard(location, context, condition)),
+                register(
+                        "nearby_entity",
+                        NearbyEntity.class,
+                        aliases("nearby_entities", "entity_nearby"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readNearbyEntity(location, context, condition)),
+                register(
+                        "village",
+                        Village.class,
+                        aliases("village_presence"),
+                        capabilities(ConditionCapability.VILLAGE_KNOWN),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readVillage(condition))),
                 register(
                         "mood",
                         Mood.class,
@@ -1562,6 +1726,142 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         @Override
         public int specificityScore() {
             return 9;
+        }
+    }
+
+    record PlayerItem(VillagerPlayerItemCondition condition) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            return this.condition.matches(context.player());
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5;
+        }
+    }
+
+    record VillagerEquipment(VillagerEquipmentCondition condition) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            return this.condition.matches(context.villager());
+        }
+
+        @Override
+        public int specificityScore() {
+            return 4;
+        }
+    }
+
+    record Biome(Set<ResourceLocation> biomes, Set<ResourceLocation> tags) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            var biome = context.level().getBiome(context.villager().blockPosition());
+            boolean idMatch = biome.unwrapKey().map(key -> this.biomes.contains(key.location())).orElse(false);
+            boolean tagMatch = this.tags.stream().anyMatch(id -> biome.is(
+                    net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BIOME, id)));
+            return idMatch || tagMatch;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 4;
+        }
+    }
+
+    record Dimension(Set<ResourceLocation> dimensions) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            return this.dimensions.contains(context.level().dimension().location());
+        }
+
+        @Override
+        public int specificityScore() {
+            return 3;
+        }
+    }
+
+    record Advancement(Set<ResourceLocation> advancements, boolean requireAll) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            java.util.function.Predicate<ResourceLocation> completed = id -> {
+                var advancement = context.level().getServer().getAdvancements().get(id);
+                return advancement != null && context.player().getAdvancements().getOrStartProgress(advancement).isDone();
+            };
+            return this.requireAll ? this.advancements.stream().allMatch(completed) : this.advancements.stream().anyMatch(completed);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 6;
+        }
+    }
+
+    record Scoreboard(String objective, Integer min, Integer max) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            net.minecraft.world.scores.Scoreboard scoreboard = context.level().getScoreboard();
+            net.minecraft.world.scores.Objective target = scoreboard.getObjective(this.objective);
+            if (target == null) {
+                return false;
+            }
+            net.minecraft.world.scores.ReadOnlyScoreInfo score = scoreboard.getPlayerScoreInfo(context.player(), target);
+            if (score == null) {
+                return false;
+            }
+            int value = score.value();
+            return (this.min == null || value >= this.min) && (this.max == null || value <= this.max);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5;
+        }
+    }
+
+    record NearbyEntity(
+            Set<ResourceLocation> entityTypes,
+            Set<ResourceLocation> entityTags,
+            double radius,
+            int minCount,
+            Integer maxCount,
+            boolean aroundPlayer) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            net.minecraft.world.entity.Entity origin = this.aroundPlayer ? context.player() : context.villager();
+            net.minecraft.world.phys.AABB bounds = origin.getBoundingBox().inflate(this.radius);
+            int count = context.level().getEntities(origin, bounds, entity -> {
+                ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+                if (this.entityTypes.contains(id)) {
+                    return true;
+                }
+                var holder = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(entity.getType());
+                return this.entityTags.stream().anyMatch(tag -> holder.is(
+                        net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, tag)));
+            }).size();
+            return count >= this.minCount && (this.maxCount == null || count <= this.maxCount);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5;
+        }
+    }
+
+    record Village(boolean present, Set<String> keys) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            String key = context.villageKey() == null ? "" : context.villageKey().trim().toLowerCase(Locale.ROOT);
+            boolean known = !key.isBlank();
+            if (known != this.present) {
+                return false;
+            }
+            return !known || this.keys.isEmpty() || this.keys.contains(key);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 3;
         }
     }
 
