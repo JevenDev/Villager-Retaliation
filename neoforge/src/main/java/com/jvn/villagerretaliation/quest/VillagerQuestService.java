@@ -4700,7 +4700,7 @@ public final class VillagerQuestService {
             boolean questProgressChanged = objectiveCandidate
                     && updateEventObjectiveProgress(level, player, event, definition, progress);
             if (triggerCandidate) {
-                changed |= dispatchQuestTriggers(player, definition, progress, objectiveTriggerEvent);
+                changed |= dispatchQuestTriggers(player, definition, progress, objectiveTriggerEvent, event);
             }
             if (questProgressChanged) {
                 questProgressChanged |= advanceStageAfterEvent(level, player, definition, progress);
@@ -5407,6 +5407,15 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.TriggerEvent event) {
+        return dispatchQuestTriggers(player, definition, progress, event, null);
+    }
+
+    private static boolean dispatchQuestTriggers(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.TriggerEvent event,
+            QuestObjectiveEvent objectiveEvent) {
         if (!(player.level() instanceof ServerLevel level)) {
             return false;
         }
@@ -5419,7 +5428,9 @@ public final class VillagerQuestService {
             return false;
         }
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
-        return dispatchQuestTriggers(context, compiled, progress, event);
+        QuestTriggerContext triggerContext = QuestTriggerContext.of(
+                context, event, level.getGameTime(), progress.currentStage(), objectiveEvent);
+        return dispatchQuestTriggers(triggerContext, compiled, progress);
     }
 
     private static boolean deferLifecycleEvent(
@@ -5517,6 +5528,31 @@ public final class VillagerQuestService {
         return result.dirty();
     }
 
+    private static boolean dispatchQuestTriggers(
+            QuestTriggerContext triggerContext,
+            CompiledQuest compiled,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (triggerContext == null || progress == null || compiled == null
+                || !compiled.triggerIndex().hasEvent(triggerContext.event())) {
+            return false;
+        }
+        QuestTriggerDispatchResult result = QuestTriggerDispatcher.dispatch(
+                triggerContext, compiled, progress, VillagerQuestService::runQuestTriggerActions);
+        DialogueContext context = triggerContext.dialogueContext();
+        if (context != null) {
+            QuestDebugTraceService.recordIfEnabled(context.player(), QuestDebugTraceService.EventType.TRIGGER, compiled.id(),
+                    "dispatch event=" + QuestTriggerRegistry.canonicalEventId(triggerContext.event())
+                            + " stage=" + triggerContext.stage()
+                            + " payload=" + triggerContext.payload().keySet()
+                            + " candidates=" + result.trace().candidateTriggers()
+                            + " evaluated=" + result.trace().evaluatedTriggers()
+                            + " matched=" + result.trace().matchedTriggers()
+                            + " ran=" + result.trace().ranTriggers()
+                            + " dirty=" + result.dirty());
+        }
+        return result.dirty();
+    }
+
     private static boolean dispatchStageChangedTriggers(
             DialogueContext context,
             QuestDefinition definition,
@@ -5547,14 +5583,20 @@ public final class VillagerQuestService {
     }
 
     private static boolean runQuestTriggerActions(
-            DialogueContext context,
+            QuestTriggerContext triggerContext,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Trigger trigger) {
+        DialogueContext context = triggerContext == null ? null : triggerContext.dialogueContext();
+        if (context == null) {
+            return false;
+        }
+        Map<String, String> actionReplacements = new LinkedHashMap<>(replacements(context, definition, progress));
+        actionReplacements.putAll(triggerContext.replacements());
         return QuestActionSequenceRunner.run(
                 context,
                 trigger.actions(),
-                replacements(context, definition, progress),
+                Map.copyOf(actionReplacements),
                 () -> sendTrackerSync(context.player(), true));
     }
 

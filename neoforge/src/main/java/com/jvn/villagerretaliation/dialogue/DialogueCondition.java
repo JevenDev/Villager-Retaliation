@@ -7,6 +7,8 @@ import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
+import com.jvn.villagerretaliation.quest.QuestTriggerContext;
+import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -39,14 +41,26 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.PlayerItem, DialogueCondition.VillagerEquipment,
         DialogueCondition.Biome, DialogueCondition.Dimension, DialogueCondition.Advancement,
         DialogueCondition.Scoreboard, DialogueCondition.NearbyEntity, DialogueCondition.Village,
-        DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time {
+        DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time,
+        DialogueCondition.TriggerPayload {
 
     boolean matches(DialogueContext context);
+
+    default boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+        return matches(context);
+    }
 
     int specificityScore();
 
     static boolean matchesAll(DialogueContext context, List<DialogueCondition> conditions) {
         return ConditionRegistry.matchesAll(context, conditions);
+    }
+
+    static boolean matchesAll(
+            DialogueContext context,
+            QuestTriggerContext triggerContext,
+            List<DialogueCondition> conditions) {
+        return ConditionRegistry.matchesAll(context, triggerContext, conditions);
     }
 
     static ConditionEvaluationTrace trace(DialogueContext context, DialogueCondition condition) {
@@ -639,6 +653,55 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         return new Village(readBoolean(condition, "present", true), keys);
     }
 
+    private static TriggerPayload readTriggerPayload(JsonObject condition) {
+        Set<String> events = readNormalizedStrings(condition, "event", "events");
+        Map<String, Set<String>> any = readPayloadQuery(condition, "any");
+        Map<String, Set<String>> all = new LinkedHashMap<>(readPayloadQuery(condition, "all"));
+        Map<String, Set<String>> not = readPayloadQuery(condition, "not");
+        for (String key : List.of(
+                "mob", "entity", "block", "item", "gift_reaction", "event_villager",
+                "event_villager_type", "trade_cost_a", "trade_cost_b", "trade_result",
+                "criterion", "memory_tag")) {
+            Set<String> values = readNormalizedStrings(condition, key, key + "s");
+            if (!values.isEmpty()) {
+                all.put(key, values);
+            }
+        }
+        JsonObject data = readObject(condition, "data");
+        if (data != null) {
+            for (Map.Entry<String, JsonElement> entry : data.entrySet()) {
+                if (entry.getValue().isJsonPrimitive()) {
+                    all.put("criterion_" + normalizePayloadKey(entry.getKey()),
+                            Set.of(entry.getValue().getAsString().toLowerCase(Locale.ROOT)));
+                }
+            }
+        }
+        return new TriggerPayload(events, any, all, not,
+                readNullableInt(condition, "min_reputation"),
+                readNullableInt(condition, "max_reputation"));
+    }
+
+    private static Map<String, Set<String>> readPayloadQuery(JsonObject condition, String key) {
+        JsonObject object = readObject(condition, key);
+        if (object == null) {
+            return Map.of();
+        }
+        Map<String, Set<String>> result = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            JsonObject wrapper = new JsonObject();
+            wrapper.add("values", entry.getValue());
+            Set<String> values = readNormalizedStrings(wrapper, "values");
+            if (!values.isEmpty()) {
+                result.put(normalizePayloadKey(entry.getKey()), values);
+            }
+        }
+        return Map.copyOf(result);
+    }
+
+    private static String normalizePayloadKey(String key) {
+        return key == null ? "" : key.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_.-]+", "_");
+    }
+
     private static void copyAlias(JsonObject object, String alias, String canonical) {
         if (!object.has(canonical) && object.has(alias)) {
             object.add(canonical, object.get(alias).deepCopy());
@@ -822,6 +885,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         PLAYER_LIVE,
         PROVIDER_LIVE,
         PROVIDER_SNAPSHOT,
+        TRIGGER_PAYLOAD,
         VILLAGE_KNOWN,
         WORLD_KNOWN
     }
@@ -1028,6 +1092,13 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                         capabilities(ConditionCapability.VILLAGE_KNOWN),
                         (location, context, condition, defaultQuestId) -> Optional.of(readVillage(condition))),
                 register(
+                        "trigger_payload",
+                        TriggerPayload.class,
+                        aliases("event_payload", "quest_trigger_payload"),
+                        capabilities(ConditionCapability.TRIGGER_PAYLOAD),
+                        (location, context, condition, defaultQuestId) ->
+                                Optional.of(readTriggerPayload(condition))),
+                register(
                         "mood",
                         Mood.class,
                         aliases("villager_mood"),
@@ -1068,14 +1139,18 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         }
 
         static boolean matchesAll(DialogueContext context, List<DialogueCondition> conditions) {
+            return matchesAll(context, null, conditions);
+        }
+
+        static boolean matchesAll(
+                DialogueContext context,
+                QuestTriggerContext triggerContext,
+                List<DialogueCondition> conditions) {
             if (conditions == null || conditions.isEmpty()) {
                 return true;
             }
-            if (context == null) {
-                return false;
-            }
             for (DialogueCondition condition : conditions) {
-                if (condition == null || !condition.matches(context)) {
+                if (condition == null || !condition.matches(context, triggerContext)) {
                     return false;
                 }
             }
@@ -1301,6 +1376,11 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         }
 
         @Override
+        public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+            return DialogueCondition.matchesAll(context, triggerContext, this.conditions);
+        }
+
+        @Override
         public int specificityScore() {
             return this.conditions.stream().mapToInt(DialogueCondition::specificityScore).sum();
         }
@@ -1314,6 +1394,16 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             }
             for (DialogueCondition condition : this.conditions) {
                 if (condition != null && condition.matches(context)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+            for (DialogueCondition condition : this.conditions) {
+                if (condition != null && condition.matches(context, triggerContext)) {
                     return true;
                 }
             }
@@ -1336,6 +1426,13 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                     && this.condition != null
                     && !(this.condition instanceof Invalid)
                     && !this.condition.matches(context);
+        }
+
+        @Override
+        public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+            return this.condition != null
+                    && !(this.condition instanceof Invalid)
+                    && !this.condition.matches(context, triggerContext);
         }
 
         @Override
@@ -1862,6 +1959,98 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         @Override
         public int specificityScore() {
             return 3;
+        }
+    }
+
+    record TriggerPayload(
+            Set<String> events,
+            Map<String, Set<String>> any,
+            Map<String, Set<String>> all,
+            Map<String, Set<String>> not,
+            Integer minReputation,
+            Integer maxReputation
+    ) implements DialogueCondition {
+        public TriggerPayload {
+            events = events == null ? Set.of() : Set.copyOf(events);
+            any = freezeQuery(any);
+            all = freezeQuery(all);
+            not = freezeQuery(not);
+        }
+
+        @Override
+        public boolean matches(DialogueContext context) {
+            return false;
+        }
+
+        @Override
+        public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+            if (triggerContext == null) {
+                return false;
+            }
+            String event = QuestTriggerRegistry.canonicalEventId(triggerContext.event());
+            if (!this.events.isEmpty() && !this.events.contains(event)) {
+                return false;
+            }
+            for (Map.Entry<String, Set<String>> expected : this.all.entrySet()) {
+                if (!matchesValue(triggerContext, expected)) {
+                    return false;
+                }
+            }
+            if (!this.any.isEmpty() && this.any.entrySet().stream()
+                    .noneMatch(expected -> matchesValue(triggerContext, expected))) {
+                return false;
+            }
+            if (this.not.entrySet().stream().anyMatch(expected -> matchesValue(triggerContext, expected))) {
+                return false;
+            }
+            if (this.minReputation != null || this.maxReputation != null) {
+                String value = triggerContext.value("reputation");
+                if (value.isBlank()) {
+                    return false;
+                }
+                try {
+                    int reputation = Integer.parseInt(value);
+                    if (this.minReputation != null && reputation < this.minReputation) {
+                        return false;
+                    }
+                    if (this.maxReputation != null && reputation > this.maxReputation) {
+                        return false;
+                    }
+                } catch (NumberFormatException ignored) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5 + this.all.size() * 2 + this.any.size() + this.not.size();
+        }
+
+        private static boolean matchesValue(
+                QuestTriggerContext triggerContext,
+                Map.Entry<String, Set<String>> expected) {
+            String actual = triggerContext.value(expected.getKey()).toLowerCase(Locale.ROOT);
+            return !actual.isBlank() && expected.getValue().contains(actual);
+        }
+
+        private static Map<String, Set<String>> freezeQuery(Map<String, Set<String>> query) {
+            if (query == null || query.isEmpty()) {
+                return Map.of();
+            }
+            Map<String, Set<String>> copy = new LinkedHashMap<>();
+            query.forEach((key, values) -> {
+                String normalized = normalizePayloadKey(key);
+                if (!normalized.isBlank() && values != null && !values.isEmpty()) {
+                    copy.put(normalized, values.stream()
+                            .filter(java.util.Objects::nonNull)
+                            .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                            .filter(value -> !value.isBlank())
+                            .collect(java.util.stream.Collectors.toUnmodifiableSet()));
+                }
+            });
+            return Map.copyOf(copy);
         }
     }
 
