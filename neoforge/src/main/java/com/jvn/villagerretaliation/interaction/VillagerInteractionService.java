@@ -136,6 +136,8 @@ public final class VillagerInteractionService {
     private static final String BLUEPRINT_START_OPTION_ID = "construction_blueprint_start";
     private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
     private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
+    private static final String BLUEPRINT_OPENING_KEY = "interaction.work.builder.blueprint_review";
+    private static final String BLUEPRINT_OPENING_FALLBACK = "Let me look over that blueprint. How would you like to proceed?";
     private static final ThreadLocal<TradeOpenPermit> VANILLA_TRADE_OPEN_PERMIT = new ThreadLocal<>();
     private static final ClassValue<Boolean> HAS_INNATE_RIGHT_CLICK_BEHAVIOR = new ClassValue<>() {
         @Override
@@ -395,13 +397,12 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
             return InteractionResult.SUCCESS;
         }
-        if (!VillagerConversationService.startForced(player, villager)) {
+        if (!openForcedDialogue(
+                player, villager, constructionBlueprintOpening(createDialogueContext(level, player, villager)),
+                constructionBlueprintOptions(), true)) {
             sendVillagerNotice(player, villager, "interaction.busy");
             return InteractionResult.FAIL;
         }
-        closeActiveContainer(player);
-        VillagerInteractionScreenOpener.openForced(player, villager, constructionBlueprintOptions(), true);
-        focusVillagerOnPlayer(villager, player);
         return InteractionResult.SUCCESS;
     }
 
@@ -414,6 +415,11 @@ public final class VillagerInteractionService {
                 DialogueOptionDefinition.simple(BLUEPRINT_CHANGE_OPTION_ID, "Change blueprint", DialogueRequestType.QUESTION, 1),
                 DialogueOptionDefinition.simple(BLUEPRINT_NEVERMIND_OPTION_ID, "Never mind", DialogueRequestType.QUESTION, 2));
     }
+    static String constructionBlueprintOpening(DialogueContext context) {
+        return VillagerDialogueResources.message(context, BLUEPRINT_OPENING_KEY)
+                .orElse(BLUEPRINT_OPENING_FALLBACK);
+    }
+
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager) {
         openInteractionScreen(player, villager, false);
