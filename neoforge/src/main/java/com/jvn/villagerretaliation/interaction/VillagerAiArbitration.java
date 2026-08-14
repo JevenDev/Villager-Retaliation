@@ -29,20 +29,33 @@ public final class VillagerAiArbitration {
         if (villager.isTrading() || VillagerConversationService.isConversing(villager)) {
             return Priority.TRADING_OR_CONVERSATION;
         }
-        if (villager.isSleeping() || brain.isActive(Activity.REST)) {
+
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentStore.snapshot(villager);
+        boolean hiredRoleTask = assignment.state() == VillagerAssignmentState.HIRED
+                && (assignment.command() == VillagerAssignmentCommand.WORK
+                || assignment.command() == VillagerAssignmentCommand.GUARD);
+        if (hiredRoleTask && HiredVillagerFocusService.isOnDutyGuard(level, villager)) {
+            return Priority.HIRED_ROLE_TASK;
+        }
+        if (villager.isSleeping()) {
             return Priority.SLEEP;
         }
         if (VillagerStudyService.isActivelyStudying(level, villager)) {
             return Priority.STUDY;
         }
-
-        VillagerAssignmentSnapshot assignment = VillagerAssignmentStore.snapshot(villager);
-        if (assignment.state() == VillagerAssignmentState.HIRED
-                && (assignment.command() == VillagerAssignmentCommand.WORK
-                || assignment.command() == VillagerAssignmentCommand.GUARD)) {
+        if (hiredRoleTask && !brain.isActive(Activity.REST)) {
             return Priority.HIRED_ROLE_TASK;
         }
-        if (VillagerAssignmentStore.commandOwner(villager).isPresent()) {
+        boolean commanded = VillagerAssignmentStore.commandOwner(villager).isPresent();
+        VillagerAssignmentCommand command = VillagerAssignmentStore.command(villager);
+        if (commanded && (command == VillagerAssignmentCommand.FOLLOW
+                || command == VillagerAssignmentCommand.RETURN_HOME)) {
+            return Priority.FOLLOW_OR_RETURN_MOVEMENT;
+        }
+        if (brain.isActive(Activity.REST)) {
+            return Priority.SLEEP;
+        }
+        if (commanded) {
             return Priority.FOLLOW_OR_RETURN_MOVEMENT;
         }
         return Priority.VANILLA_SCHEDULE_OR_IDLE;
@@ -54,8 +67,7 @@ public final class VillagerAiArbitration {
                 || isCombatOrSupportAction(villager)
                 || villager.isTrading()
                 || VillagerConversationService.isConversing(villager)
-                || villager.isSleeping()
-                || brain.isActive(Activity.REST);
+                || villager.isSleeping();
     }
 
     private static boolean isImmediateDanger(Villager villager, Brain<Villager> brain) {
