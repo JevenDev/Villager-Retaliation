@@ -124,7 +124,7 @@ public record DialogueEntryMetadata(
             return this.routingTags;
         }
         return this.tags.stream()
-                .filter(tag -> !ContentTags.isStructuralDialogueTag(tag))
+                .filter(ContentTags::isDialogueRoutingTag)
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 

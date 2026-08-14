@@ -64,6 +64,7 @@ public record DialogueOptionDefinition(
         boolean requiresKnownWidowedPartner,
         List<DialogueCondition> conditions,
         boolean requiresActiveSpecialOrders,
+        int priority,
         int order
 ) {
     public static final int MAX_NETWORK_ID_LENGTH = 128;
@@ -179,6 +180,7 @@ public record DialogueOptionDefinition(
                 false,
                 List.of(),
                 false,
+                0,
                 order
         );
     }
@@ -387,6 +389,7 @@ public record DialogueOptionDefinition(
                 false,
                 List.of(),
                 false,
+                0,
                 order
         );
     }
@@ -451,6 +454,7 @@ public record DialogueOptionDefinition(
                 false,
                 List.of(),
                 false,
+                0,
                 order
         );
     }

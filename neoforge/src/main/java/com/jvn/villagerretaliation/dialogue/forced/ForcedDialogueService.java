@@ -23,6 +23,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.normal.SocialAttributeCondition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.ContainerForcedDialogueTrigger;
@@ -430,7 +431,9 @@ public final class ForcedDialogueService {
                 0,
                 SIMPLE_LEAVE_OPTIONS,
                 SIMPLE_LEAVE_OPTION,
-                SIMPLE_LEAVE_OPTIONS);
+                SIMPLE_LEAVE_OPTIONS,
+                DialogueEntryMetadata.EMPTY,
+                List.of());
         return openProgrammaticForcedDialogue(player, villager, line, definition);
     }
 
@@ -466,7 +469,8 @@ public final class ForcedDialogueService {
                 0, 0, 1, 0L, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE,
                 Set.of(), Set.of(), Set.of(), 1, 5, false, false, false,
                 VillagerEquipmentCondition.empty(), VillagerPlayerItemCondition.empty(),
-                VillagerReputationCondition.empty(), 0, options, SIMPLE_LEAVE_OPTION, options);
+                VillagerReputationCondition.empty(), 0, options, SIMPLE_LEAVE_OPTION, options,
+                DialogueEntryMetadata.EMPTY, List.of());
         return openProgrammaticForcedDialogue(player, villager, line, definition);
     }
 
@@ -1429,7 +1433,9 @@ public final class ForcedDialogueService {
                 source.drawWeaponTicks(),
                 List.copyOf(options),
                 leaveOption,
-                List.of(leaveOption));
+                List.of(leaveOption),
+                source.metadata(),
+                source.conditions());
     }
 
     private static boolean rollChance(ServerLevel level, double chance) {
@@ -1544,7 +1550,9 @@ public final class ForcedDialogueService {
                 optionDefinition.drawWeaponTicks(),
                 options,
                 leaveOption,
-                leaveOptions);
+                leaveOptions,
+                optionDefinition.metadata(),
+                optionDefinition.conditions());
     }
 
     private static Optional<ForcedDialogueDefinition> tradeRefreshOptionDefinition(
@@ -2641,7 +2649,9 @@ public final class ForcedDialogueService {
                 source.drawWeaponTicks(),
                 options,
                 source.leaveOption(),
-                source.leaveOptions());
+                source.leaveOptions(),
+                source.metadata(),
+                source.conditions());
     }
 
     private static ContainerSnapshot containerSnapshot(ForcedDialogueSession session, ServerLevel level) {
@@ -2889,7 +2899,9 @@ public final class ForcedDialogueService {
                     || (definition.requiresLineOfSight() && !villager.hasLineOfSight(player))) {
                 continue;
             }
-            return triggerQuestDialogue(level, villager, player, definition, replacements);
+            if (triggerQuestDialogue(level, villager, player, definition, replacements)) {
+                return true;
+            }
         }
         return tryTriggerQuestDialogueTree(level, villager, player, forcedDialogueId, replacements);
     }
@@ -2909,7 +2921,7 @@ public final class ForcedDialogueService {
             ForcedDialogueDefinition definition,
             Map<String, String> replacements) {
         if (!rollChance(level, definition.chance())) {
-            return true;
+            return false;
         }
         Map<String, String> safeReplacements = replacements == null ? Map.of() : replacements;
         ForcedDialogueContext context = questDialogueContext(villager, player, safeReplacements);
@@ -3184,7 +3196,7 @@ public final class ForcedDialogueService {
             ForcedDialogueDefinition definition,
             ResourceLocation targetTypeId) {
         if (!rollChance(level, definition.chance())) {
-            return true;
+            return false;
         }
         String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
         String targetName = target.getDisplayName().getString();
@@ -3444,7 +3456,7 @@ public final class ForcedDialogueService {
             return false;
         }
         if (!rollChance(level, definition.chance())) {
-            return true;
+            return false;
         }
         Villager witness = findWitness(level, player, snapshot.pos(), definition).orElse(null);
         if (witness == null) {
@@ -3815,11 +3827,15 @@ public final class ForcedDialogueService {
             Villager witness,
             ServerPlayer player,
             ForcedDialogueDefinition definition) {
-        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
-            return true;
+        if (VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            ReputationSnapshot reputation =
+                    VillagerReputationManager.getReputationSnapshot(level, witness, player.getUUID());
+            if (!definition.matchesReputation(reputation.value(), reputation.level())) {
+                return false;
+            }
         }
-        ReputationSnapshot reputation = VillagerReputationManager.getReputationSnapshot(level, witness, player.getUUID());
-        return definition.matchesReputation(reputation.value(), reputation.level());
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, witness);
+        return DialogueCondition.matchesAll(context, definition.conditions());
     }
 
     private static boolean isRoyaltyFor(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -3839,7 +3855,7 @@ public final class ForcedDialogueService {
             int priorRetaliations,
             ResourceLocation targetTypeId) {
         if (!rollChance(level, definition.chance())) {
-            return true;
+            return false;
         }
         String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
         String targetName = player.getDisplayName().getString();
@@ -3917,7 +3933,7 @@ public final class ForcedDialogueService {
             ForcedDialogueDefinition definition,
             ResourceLocation targetTypeId) {
         if (!rollChance(level, definition.chance())) {
-            return true;
+            return false;
         }
 
         String witnessName = VillagerPresetNameRegistry.resolveDisplayName(witness).getString();
@@ -4031,7 +4047,7 @@ public final class ForcedDialogueService {
             int priorRetaliations,
             ResourceLocation targetTypeId) {
         if (!rollChance(level, definition.chance())) {
-            return true;
+            return false;
         }
         String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
         String targetName = player.getDisplayName().getString();

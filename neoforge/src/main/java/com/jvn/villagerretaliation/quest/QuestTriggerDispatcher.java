@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
+import java.util.Comparator;
 import java.util.List;
 
 public final class QuestTriggerDispatcher {
@@ -50,7 +51,10 @@ public final class QuestTriggerDispatcher {
             return QuestTriggerDispatchResult.empty();
         }
 
-        List<CompiledQuestTrigger> candidates = index.candidates(event, progress.currentStage());
+        List<CompiledQuestTrigger> candidates = index.candidates(event, progress.currentStage()).stream()
+                .sorted(Comparator.comparingInt((CompiledQuestTrigger candidate) -> candidate.definition().priority())
+                        .reversed().thenComparingInt(CompiledQuestTrigger::index))
+                .toList();
         int evaluated = 0;
         int matched = 0;
         int ran = 0;
@@ -61,11 +65,18 @@ public final class QuestTriggerDispatcher {
             if (!matches(context, gameTime, progress, trigger, event)) {
                 continue;
             }
+            if (trigger.chance() < 1.0D
+                    && (context == null || context.random().nextDouble() >= trigger.chance())) {
+                continue;
+            }
             matched++;
             if (actionRunner.run(context, definition, progress, trigger)) {
                 progress.markTriggerUsed(trigger.id(), gameTime);
                 dirty = true;
                 ran++;
+                if (trigger.exclusive()) {
+                    break;
+                }
             }
         }
         return new QuestTriggerDispatchResult(

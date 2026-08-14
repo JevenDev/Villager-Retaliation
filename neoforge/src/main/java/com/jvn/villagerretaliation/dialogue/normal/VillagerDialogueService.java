@@ -133,9 +133,10 @@ public final class VillagerDialogueService {
         }
 
         LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, requestedTags, recentDialogueIds);
-        List<DialogueLine> candidates = pool.candidates().stream()
+        List<DialogueLine> candidates = pool.weightedPool().stream()
                 .filter(line -> passesChance(line, context.random()))
                 .toList();
+        candidates = preferHighestPriority(candidates);
         if (candidates.isEmpty()) {
             String fallbackKey = feared ? "dialogue.feared_fallback" : "dialogue.fallback";
             return new DialogueResult("fallback", VillagerDialogueResources.message(context, fallbackKey).orElse(""));

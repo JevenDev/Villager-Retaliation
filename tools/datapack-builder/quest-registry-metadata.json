@@ -171,6 +171,89 @@
         "implementation": "StageHistory"
       },
       {
+        "id": "player_item",
+        "aliases": [
+          "held_item",
+          "item"
+        ],
+        "capabilities": [
+          "player_live"
+        ],
+        "implementation": "PlayerItem"
+      },
+      {
+        "id": "villager_equipment",
+        "aliases": [
+          "armed",
+          "equipment"
+        ],
+        "capabilities": [
+          "provider_live"
+        ],
+        "implementation": "VillagerEquipment"
+      },
+      {
+        "id": "biome",
+        "aliases": [],
+        "capabilities": [
+          "provider_live",
+          "world_known"
+        ],
+        "implementation": "Biome"
+      },
+      {
+        "id": "dimension",
+        "aliases": [],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "Dimension"
+      },
+      {
+        "id": "advancement",
+        "aliases": [
+          "advancements"
+        ],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "Advancement"
+      },
+      {
+        "id": "scoreboard",
+        "aliases": [
+          "score"
+        ],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "Scoreboard"
+      },
+      {
+        "id": "nearby_entity",
+        "aliases": [
+          "entity_nearby",
+          "nearby_entities"
+        ],
+        "capabilities": [
+          "provider_live",
+          "world_known"
+        ],
+        "implementation": "NearbyEntity"
+      },
+      {
+        "id": "village",
+        "aliases": [
+          "village_presence"
+        ],
+        "capabilities": [
+          "village_known"
+        ],
+        "implementation": "Village"
+      },
+      {
         "id": "mood",
         "aliases": [
           "villager_mood"
@@ -670,6 +753,89 @@
           "updated"
         ],
         "event": "progress",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "mob_kill",
+        "aliases": [
+          "entity_kill",
+          "kill"
+        ],
+        "event": "mob_kill",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "block_break",
+        "aliases": [
+          "break_block"
+        ],
+        "event": "block_break",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "block_place",
+        "aliases": [
+          "place_block"
+        ],
+        "event": "block_place",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "block_interact",
+        "aliases": [
+          "interact_block",
+          "use_block"
+        ],
+        "event": "block_interact",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "memory_event",
+        "aliases": [
+          "memory"
+        ],
+        "event": "memory_event",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "gift",
+        "aliases": [
+          "gift_given"
+        ],
+        "event": "gift",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "trade",
+        "aliases": [
+          "trade_completed"
+        ],
+        "event": "trade",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "reputation",
+        "aliases": [
+          "reputation_changed"
+        ],
+        "event": "reputation",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "criterion",
+        "aliases": [
+          "custom_criterion"
+        ],
+        "event": "criterion",
         "continuous": false,
         "default_cooldown_ticks": 0
       },
@@ -1894,19 +2060,31 @@
     "condition_type": {
       "type": "string",
       "enum": [
+        "advancement",
+        "advancements",
         "all",
         "all_of",
         "and",
         "any",
         "any_of",
+        "armed",
         "attribute",
+        "biome",
         "choice_selected",
+        "dimension",
+        "entity_nearby",
+        "equipment",
         "fact",
         "family",
+        "held_item",
+        "item",
         "memory",
         "mood",
+        "nearby_entities",
+        "nearby_entity",
         "not",
         "or",
+        "player_item",
         "quest",
         "quest_choice_selected",
         "quest_counter",
@@ -1919,6 +2097,8 @@
         "relationship",
         "reputation",
         "response_selected",
+        "score",
+        "scoreboard",
         "selected_choice",
         "skill",
         "social_attribute",
@@ -1928,7 +2108,10 @@
         "time",
         "time_of_day",
         "trade_level",
+        "village",
+        "village_presence",
         "villager_age",
+        "villager_equipment",
         "villager_level",
         "villager_mood",
         "visited_stage",
@@ -2055,14 +2238,29 @@
       "enum": [
         "abandon",
         "abandoned",
+        "block_break",
+        "block_interact",
+        "block_place",
+        "break_block",
         "complete",
         "completed",
+        "criterion",
+        "custom_criterion",
+        "entity_kill",
         "expire",
         "expired",
         "fail",
         "failed",
+        "gift",
+        "gift_given",
+        "interact_block",
+        "kill",
+        "memory",
+        "memory_event",
+        "mob_kill",
         "near_provider",
         "nearby",
+        "place_block",
         "player",
         "player_tick",
         "progress",
@@ -2073,6 +2271,8 @@
         "quest_failed",
         "quest_progress",
         "quest_started",
+        "reputation",
+        "reputation_changed",
         "stage",
         "stage_changed",
         "stage_entered",
@@ -2080,7 +2280,10 @@
         "start",
         "started",
         "tick",
-        "updated"
+        "trade",
+        "trade_completed",
+        "updated",
+        "use_block"
       ]
     },
     "provider_type": {

@@ -75,11 +75,13 @@ public record QuestPoolDefinition(
     }
 
     public int weight(QuestDefinition quest) {
-        long value = this.weights.getOrDefault(quest.id(), this.defaultWeight);
+        long value = this.weights.containsKey(quest.id())
+                ? Math.max(0, this.weights.get(quest.id()))
+                : (long) this.defaultWeight * quest.offer().weight();
         for (WeightRule rule : this.weightRules) {
             if (rule.matches(quest.tags())) value *= rule.multiplier();
         }
-        return (int) Math.max(1, Math.min(10_000, value));
+        return (int) Math.max(0, Math.min(10_000, value));
     }
 
     public boolean quotaAllows(QuestDefinition candidate, List<QuestDefinition> selected) {

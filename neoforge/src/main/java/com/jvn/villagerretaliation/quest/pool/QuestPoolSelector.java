@@ -19,6 +19,7 @@ public final class QuestPoolSelector {
             String scopeKey,
             long epoch) {
         List<QuestDefinition> candidates = quests.stream()
+                .filter(quest -> pool.weight(quest) > 0)
                 .filter(pool::claims)
                 .sorted(Comparator.comparing(quest -> quest.id().toString()))
                 .toList();

@@ -223,6 +223,16 @@
             "$ref": "#/$defs/condition"
           }
         },
+        "weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "selection_weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
         "active": {
           "$ref": "#/$defs/active_state"
         },
@@ -1738,14 +1748,29 @@
           "enum": [
             "abandon",
             "abandoned",
+            "block_break",
+            "block_interact",
+            "block_place",
+            "break_block",
             "complete",
             "completed",
+            "criterion",
+            "custom_criterion",
+            "entity_kill",
             "expire",
             "expired",
             "fail",
             "failed",
+            "gift",
+            "gift_given",
+            "interact_block",
+            "kill",
+            "memory",
+            "memory_event",
+            "mob_kill",
             "near_provider",
             "nearby",
+            "place_block",
             "player",
             "player_tick",
             "progress",
@@ -1756,6 +1781,8 @@
             "quest_failed",
             "quest_progress",
             "quest_started",
+            "reputation",
+            "reputation_changed",
             "stage",
             "stage_changed",
             "stage_entered",
@@ -1763,7 +1790,10 @@
             "start",
             "started",
             "tick",
-            "updated"
+            "trade",
+            "trade_completed",
+            "updated",
+            "use_block"
           ]
         },
         "trigger": {
@@ -1771,14 +1801,29 @@
           "enum": [
             "abandon",
             "abandoned",
+            "block_break",
+            "block_interact",
+            "block_place",
+            "break_block",
             "complete",
             "completed",
+            "criterion",
+            "custom_criterion",
+            "entity_kill",
             "expire",
             "expired",
             "fail",
             "failed",
+            "gift",
+            "gift_given",
+            "interact_block",
+            "kill",
+            "memory",
+            "memory_event",
+            "mob_kill",
             "near_provider",
             "nearby",
+            "place_block",
             "player",
             "player_tick",
             "progress",
@@ -1789,6 +1834,8 @@
             "quest_failed",
             "quest_progress",
             "quest_started",
+            "reputation",
+            "reputation_changed",
             "stage",
             "stage_changed",
             "stage_entered",
@@ -1796,7 +1843,10 @@
             "start",
             "started",
             "tick",
-            "updated"
+            "trade",
+            "trade_completed",
+            "updated",
+            "use_block"
           ]
         },
         "type": {
@@ -1804,14 +1854,29 @@
           "enum": [
             "abandon",
             "abandoned",
+            "block_break",
+            "block_interact",
+            "block_place",
+            "break_block",
             "complete",
             "completed",
+            "criterion",
+            "custom_criterion",
+            "entity_kill",
             "expire",
             "expired",
             "fail",
             "failed",
+            "gift",
+            "gift_given",
+            "interact_block",
+            "kill",
+            "memory",
+            "memory_event",
+            "mob_kill",
             "near_provider",
             "nearby",
+            "place_block",
             "player",
             "player_tick",
             "progress",
@@ -1822,6 +1887,8 @@
             "quest_failed",
             "quest_progress",
             "quest_started",
+            "reputation",
+            "reputation_changed",
             "stage",
             "stage_changed",
             "stage_entered",
@@ -1829,7 +1896,10 @@
             "start",
             "started",
             "tick",
-            "updated"
+            "trade",
+            "trade_completed",
+            "updated",
+            "use_block"
           ]
         },
         "stage": {
@@ -1881,6 +1951,17 @@
           "type": "number"
         },
         "repeatable": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "chance": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "exclusive": {
           "type": "boolean"
         },
         "metadata": {
@@ -1996,19 +2077,31 @@
         "type": {
           "type": "string",
           "enum": [
+            "advancement",
+            "advancements",
             "all",
             "all_of",
             "and",
             "any",
             "any_of",
+            "armed",
             "attribute",
+            "biome",
             "choice_selected",
+            "dimension",
+            "entity_nearby",
+            "equipment",
             "fact",
             "family",
+            "held_item",
+            "item",
             "memory",
             "mood",
+            "nearby_entities",
+            "nearby_entity",
             "not",
             "or",
+            "player_item",
             "quest",
             "quest_choice_selected",
             "quest_counter",
@@ -2021,6 +2114,8 @@
             "relationship",
             "reputation",
             "response_selected",
+            "score",
+            "scoreboard",
             "selected_choice",
             "skill",
             "social_attribute",
@@ -2030,7 +2125,10 @@
             "time",
             "time_of_day",
             "trade_level",
+            "village",
+            "village_presence",
             "villager_age",
+            "villager_equipment",
             "villager_level",
             "villager_mood",
             "visited_stage",

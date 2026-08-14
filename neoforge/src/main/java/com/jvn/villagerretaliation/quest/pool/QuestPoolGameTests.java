@@ -61,7 +61,7 @@ public final class QuestPoolGameTests {
                           "max_offers": 4,
                           "any_tags": ["pool.daily"],
                           "exclude_tags": ["difficulty.extreme"],
-                          "weights": {"test:special": 5}
+                          "weights": {"test:special": 5, "test:disabled": 0}
                         }
                         """).getAsJsonObject());
         helper.assertTrue(pool != null, "valid pool should parse");
@@ -69,6 +69,8 @@ public final class QuestPoolGameTests {
         helper.assertValueEqual(pool.refreshTicks(), 48_000L, "refresh duration");
         helper.assertValueEqual(pool.maxOffers(), 4, "max offers");
         helper.assertValueEqual(pool.weights().get(ResourceLocation.fromNamespaceAndPath("test", "special")), 5, "weight");
+        helper.assertValueEqual(pool.weights().get(ResourceLocation.fromNamespaceAndPath("test", "disabled")), 0,
+                "zero weight disables a pool entry");
         helper.succeed();
     }
 }

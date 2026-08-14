@@ -979,6 +979,53 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void triggerDispatcherHonorsPriorityChanceAndExclusivity(GameTestHelper helper) {
+        QuestDefinition.Trigger low = new QuestDefinition.Trigger(
+                "low", QuestDefinition.TriggerEvent.PROGRESS, List.of(), List.of(), Set.of(),
+                0L, 10.0D, true, 0, 1.0D, false);
+        QuestDefinition.Trigger high = new QuestDefinition.Trigger(
+                "high", QuestDefinition.TriggerEvent.PROGRESS, List.of(), List.of(), Set.of(),
+                0L, 10.0D, true, 10, 1.0D, true);
+        List<QuestDefinition.Trigger> triggers = List.of(low, high);
+        QuestDefinition quest = registryTriggerQuest(triggers);
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, BlockPos.ZERO, 0L);
+
+        List<String> ran = new ArrayList<>();
+        QuestTriggerDispatchResult exclusive = QuestTriggerDispatcher.dispatchAtGameTime(
+                null, 1L, quest, QuestTriggerRegistry.index(compiledTriggers(triggers)), progress,
+                QuestDefinition.TriggerEvent.PROGRESS,
+                (context, definition, activeProgress, trigger) -> {
+                    ran.add(trigger.id());
+                    return true;
+                });
+        helper.assertValueEqual(ran, List.of("high"), "exclusive high-priority trigger should run first and stop dispatch");
+        helper.assertValueEqual(exclusive.trace().evaluatedTriggers(), 1, "exclusive trigger should stop lower-priority evaluation");
+
+        QuestDefinition.Trigger missedHigh = new QuestDefinition.Trigger(
+                "missed_high", QuestDefinition.TriggerEvent.PROGRESS, List.of(), List.of(), Set.of(),
+                0L, 10.0D, true, 10, 0.0D, true);
+        List<QuestDefinition.Trigger> fallbackTriggers = List.of(low, missedHigh);
+        VillagerQuestSavedData.QuestProgress fallbackProgress = new VillagerQuestSavedData.QuestProgress();
+        fallbackProgress.start(UUID.randomUUID(), Level.OVERWORLD, BlockPos.ZERO, 0L);
+        ran.clear();
+        QuestTriggerDispatcher.dispatchAtGameTime(
+                null, 1L, registryTriggerQuest(fallbackTriggers),
+                QuestTriggerRegistry.index(compiledTriggers(fallbackTriggers)), fallbackProgress,
+                QuestDefinition.TriggerEvent.PROGRESS,
+                (context, definition, activeProgress, trigger) -> {
+                    ran.add(trigger.id());
+                    return true;
+                });
+        helper.assertValueEqual(ran, List.of("low"), "failed chance roll should fall through to the next trigger");
+        helper.assertValueEqual(
+                QuestTriggerRegistry.eventBySerializedName("mob_kill"),
+                QuestDefinition.TriggerEvent.MOB_KILL,
+                "objective event trigger registration");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void conditionRegistryNormalizesAliasesAndCapabilities(GameTestHelper helper) {
         helper.assertValueEqual(DialogueCondition.canonicalTypeId("all_of"), "all", "all_of condition alias");
         helper.assertValueEqual(DialogueCondition.canonicalTypeId("quest_stage"), "quest_fact", "quest_stage condition alias");
@@ -1059,7 +1106,7 @@ public final class VillagerQuestGameTests {
     public static void dialogueMetadataSeparatesRoutingAndRepetition(GameTestHelper helper) {
         DialogueEntryMetadata legacy = new DialogueEntryMetadata(
                 "market rumors",
-                Set.of("content.dialogue", "dialogue.ambient", "scope.global", "route:market"),
+                Set.of("content.dialogue", "dialogue.ambient", "scope.global", "tone.friendly", "route:market"),
                 "",
                 "",
                 "",

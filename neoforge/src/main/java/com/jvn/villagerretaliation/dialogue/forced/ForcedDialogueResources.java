@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.forced;
 
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.normal.SocialAttributeCondition;
 import com.google.gson.JsonArray;
@@ -42,7 +43,7 @@ public final class ForcedDialogueResources {
     private static final String LEAVE_OPTION_ID = "leave";
     private static final Set<String> ROOT_KEYS = Set.of(
             "entries", "notifications", "messages", "openings", "closings", "pacify",
-            "metadata",
+            "metadata", "conditions", "availability", "available_when",
             "id", "trigger", "event", "line", "lines", "priority", "weight", "chance", "witness_radius",
             "replace", "remove", "message_prefix", "text_prefix", "line_key", "line_keys", "text_key", "text_keys",
             "witness_profession", "witness_professions", "professions",
@@ -124,10 +125,12 @@ public final class ForcedDialogueResources {
     private static List<ForcedDialogueDefinition> weightedOrder(
             MinecraftServer server,
             List<ForcedDialogueDefinition> candidates) {
-        if (candidates.size() < 2 || server == null) {
-            return candidates;
+        List<ForcedDialogueDefinition> enabled = candidates.stream()
+                .filter(candidate -> candidate.weight() > 0).toList();
+        if (enabled.size() < 2 || server == null) {
+            return enabled;
         }
-        List<ForcedDialogueDefinition> remaining = new ArrayList<>(candidates);
+        List<ForcedDialogueDefinition> remaining = new ArrayList<>(enabled);
         remaining.sort(CANDIDATE_ORDER);
         List<ForcedDialogueDefinition> ordered = new ArrayList<>(remaining.size());
         RandomSource random = server.overworld().getRandom();
@@ -217,6 +220,9 @@ public final class ForcedDialogueResources {
         }
         ResourceLocation defaultQuestId = defaultQuestId(location, root, null);
         String rootMessagePrefix = readMessagePrefix(root, "");
+        DialogueEntryMetadata rootMetadata = DialogueEntryMetadata.read(location, "forced dialogue", "file root", root);
+        List<DialogueCondition> rootConditions =
+                DialogueCondition.readList(location, "forced dialogue file root", root, defaultQuestId);
         JsonArray entries = root.getAsJsonArray("entries");
         if (entries != null) {
             int index = 0;
@@ -227,7 +233,7 @@ public final class ForcedDialogueResources {
                         index++;
                         continue;
                     }
-                    readEntry(location, entry, index, defaultQuestId, rootMessagePrefix)
+                    readEntry(location, entry, index, defaultQuestId, rootMetadata, rootConditions, rootMessagePrefix)
                             .ifPresent(definition -> putDefinition(location, definitions, definition));
                 }
                 index++;
@@ -238,7 +244,7 @@ public final class ForcedDialogueResources {
         if (removeDefinition(location, root, 0, definitions)) {
             return;
         }
-        readEntry(location, root, 0, defaultQuestId, rootMessagePrefix)
+        readEntry(location, root, 0, defaultQuestId, DialogueEntryMetadata.EMPTY, List.of(), rootMessagePrefix)
                 .ifPresent(definition -> putDefinition(location, definitions, definition));
     }
 
@@ -291,6 +297,8 @@ public final class ForcedDialogueResources {
             JsonObject entry,
             int index,
             ResourceLocation defaultQuestId,
+            DialogueEntryMetadata rootMetadata,
+            List<DialogueCondition> rootConditions,
             String rootMessagePrefix) {
         DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue", entryContext(entry, index), entry, ENTRY_KEYS);
         DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext(entry, index), entry);
@@ -335,7 +343,7 @@ public final class ForcedDialogueResources {
                 clampChance(readDouble(entry, "chance", 1.0D)),
                 readInt(entry, "reputation", 0),
                 readInt(entry, "priority", 0),
-                Math.max(1, Math.min(10_000, readInt(entry, "weight", 1))),
+                Math.max(0, Math.min(10_000, readInt(entry, "weight", 1))),
                 DatapackJsonReader.readDurationTicks(entry, "cooldown", defaultCooldownTicks(trigger.get())),
                 readInt(entry, "min_recent_container_thefts", 0),
                 readInt(entry, "max_recent_container_thefts", Integer.MAX_VALUE),
@@ -355,8 +363,20 @@ public final class ForcedDialogueResources {
                 readDrawWeaponTicks(entry),
                 options,
                 leaveOption,
-                leaveOptions
+                leaveOptions,
+                rootMetadata.merge(DialogueEntryMetadata.read(location, "forced dialogue", entryContext(entry, index), entry)),
+                mergeConditions(rootConditions, DialogueCondition.readList(location, "forced dialogue", entry, entryQuestId))
         ));
+    }
+
+    private static List<DialogueCondition> mergeConditions(
+            List<DialogueCondition> inherited, List<DialogueCondition> own) {
+        if (inherited == null || inherited.isEmpty()) return own == null ? List.of() : List.copyOf(own);
+        if (own == null || own.isEmpty()) return List.copyOf(inherited);
+        List<DialogueCondition> merged = new ArrayList<>(inherited.size() + own.size());
+        merged.addAll(inherited);
+        merged.addAll(own);
+        return List.copyOf(merged);
     }
 
     private static long defaultCooldownTicks(ForcedDialogueTrigger trigger) {
@@ -1117,9 +1137,13 @@ public final class ForcedDialogueResources {
             int drawWeaponTicks,
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
-            List<ForcedDialogueOption> leaveOptions) {
+            List<ForcedDialogueOption> leaveOptions,
+            DialogueEntryMetadata metadata,
+            List<DialogueCondition> conditions) {
         public ForcedDialogueDefinition {
-            weight = Math.max(1, Math.min(10_000, weight));
+            weight = Math.max(0, Math.min(10_000, weight));
+            metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
         }
 
         public LocalizedText selectLine(RandomSource random) {
