@@ -219,9 +219,28 @@ public final class DialogueTreeService {
                     SceneSavedData data = SceneSavedData.get(context.level());
                     var scene = data.get(launch.instanceId()).orElse(null);
                     if (scene != null) {
+                        int nextActionIndex = index + 1;
+                        if (nextActionIndex < actions.size()
+                                && actions.get(nextActionIndex).kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION) {
+                            VillagerActionDefinition transition = actions.get(nextActionIndex);
+                            ActionResult transitionResult = VillagerActionRegistry.execute(
+                                    context, transition, replacements);
+                            VillagerActionResult result = transitionResult.legacyResult();
+                            replacements.putAll(result.replacements());
+                            if (result.flashTracker()) {
+                                VillagerQuestService.flashTracker(context.player(), true);
+                            }
+                            if (!result.text().isBlank()) {
+                                texts.add(result.text());
+                            }
+                            if (!result.lineId().isBlank()) {
+                                lineId = result.lineId();
+                            }
+                            nextActionIndex++;
+                        }
                         data.suspendContinuation(scene, context.player().getUUID(), context.villager().getUUID(),
                                 "dialogue_response/" + index + "/" + action.sceneOperationId(),
-                                actions, index + 1, replacements);
+                                actions, nextActionIndex, replacements);
                         suspended = true;
                     }
                 }

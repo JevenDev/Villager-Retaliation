@@ -465,6 +465,50 @@ public final class BuiltInQuestContentGameTests {
                 helper, definition.id(), catalog, "reminder", VillagerActionDefinition.QuestAction.REMIND);
         assertDialogueSlot(
                 helper, definition.id(), catalog, "turn_in", VillagerActionDefinition.QuestAction.TURN_IN);
+        for (QuestDialogueCatalog.Binding binding : catalog.bindings(definition.id())) {
+            DialogueTreeDefinition tree = catalog.tree(binding.treeId())
+                    .orElseThrow(() -> new GameTestAssertException(
+                            definition.id() + " binding points to missing tree " + binding.treeId()));
+            for (DialogueTreeDefinition.Node node : tree.nodes().values()) {
+                assertDialogueActionSafety(helper, definition, node.actions(), node.id());
+                for (DialogueTreeDefinition.Response response : node.responses()) {
+                    assertDialogueActionSafety(
+                            helper,
+                            definition,
+                            response.actions(),
+                            node.id() + "/" + response.id());
+                }
+            }
+        }
+    }
+
+    private static void assertDialogueActionSafety(
+            GameTestHelper helper,
+            QuestDefinition definition,
+            List<VillagerActionDefinition> actions,
+            String source) {
+        int firstBlockingScene = -1;
+        int firstTransition = -1;
+        for (int index = 0; index < actions.size(); index++) {
+            VillagerActionDefinition action = actions.get(index);
+            if (action.kind() == VillagerActionDefinition.Kind.NOTIFICATION) {
+                helper.assertTrue(action.questId() != null,
+                        definition.id() + " notification lacks quest placeholder context at " + source);
+            }
+            if (firstBlockingScene < 0
+                    && action.kind() == VillagerActionDefinition.Kind.START_SCENE
+                    && action.waitForScene()) {
+                firstBlockingScene = index;
+            }
+            if (firstTransition < 0
+                    && action.kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION) {
+                firstTransition = index;
+            }
+        }
+        if (firstBlockingScene >= 0 && firstTransition >= 0) {
+            helper.assertValueEqual(firstTransition, firstBlockingScene + 1,
+                    definition.id() + " does not commit immediately after launching its blocking scene at " + source);
+        }
     }
 
     private static void assertDialogueSlot(

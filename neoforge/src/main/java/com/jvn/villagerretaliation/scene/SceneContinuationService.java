@@ -48,8 +48,18 @@ public final class SceneContinuationService {
                     if (action.required()) return new RunResult(ran, false);
                     continue;
                 }
+                int nextActionIndex = index + 1;
+                if (nextActionIndex < actions.size()
+                        && actions.get(nextActionIndex).kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION) {
+                    VillagerActionResult transition = VillagerActionExecutor.execute(
+                            context, actions.get(nextActionIndex), replacements);
+                    replacements.putAll(transition.replacements());
+                    if (transition.flashTracker() && trackerFlashHandler != null) trackerFlashHandler.run();
+                    ran |= transition.ran();
+                    nextActionIndex++;
+                }
                 data.suspendContinuation(scene, context.player().getUUID(), context.villager().getUUID(),
-                        pointer(sourcePointer, action, index), actions, index + 1, replacements);
+                        pointer(sourcePointer, action, index), actions, nextActionIndex, replacements);
                 data.changed();
                 return new RunResult(true, true);
             }
@@ -109,6 +119,16 @@ public final class SceneContinuationService {
                         return;
                     }
                     continue;
+                }
+                if (continuation.nextActionIndex() < continuation.actions().size()
+                        && continuation.actions().get(continuation.nextActionIndex()).kind()
+                        == VillagerActionDefinition.Kind.QUEST_TRANSITION) {
+                    VillagerActionDefinition transition =
+                            continuation.actions().get(continuation.nextActionIndex());
+                    continuation.advance();
+                    VillagerActionResult result =
+                            VillagerActionExecutor.execute(context, transition, continuation.replacements());
+                    continuation.replacements().putAll(result.replacements());
                 }
                 continuation.waitOn(launch.instanceId());
                 data.changed();
