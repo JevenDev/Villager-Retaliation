@@ -20,8 +20,12 @@ try {
     ["branching", model.createBranchingQuest("builder_test")],
     ["failure", failureQuest]
   ]) {
-    const file = path.join(workspace, `${name}.json`);
-    await writeFile(file, JSON.stringify(quest, null, 2) + "\n", "utf8");
+    const bundle = model.questBundleFiles(quest);
+    const owner = path.join(workspace, name);
+    const file = path.join(owner, "quest.json");
+    await import("node:fs/promises").then(fs => fs.mkdir(path.join(owner, "locales"), { recursive: true }));
+    await writeFile(file, JSON.stringify(bundle.quest, null, 2) + "\n", "utf8");
+    await writeFile(path.join(owner, "locales", "en_us.json"), JSON.stringify(bundle.locale, null, 2) + "\n", "utf8");
     const result = spawnSync("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", file], {
       cwd: path.resolve(import.meta.dirname, ".."),
       encoding: "utf8",

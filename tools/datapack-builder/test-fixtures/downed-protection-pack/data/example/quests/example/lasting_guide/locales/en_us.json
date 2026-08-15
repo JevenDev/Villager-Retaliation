@@ -1,0 +1,15 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "example.quest.lasting_guide.metadata.title": {
+      "lines": [
+        "The Lasting Guide"
+      ]
+    },
+    "example.quest.lasting_guide.metadata.description": {
+      "lines": [
+        "Starting this quest permanently protects its exact provider."
+      ]
+    }
+  }
+}

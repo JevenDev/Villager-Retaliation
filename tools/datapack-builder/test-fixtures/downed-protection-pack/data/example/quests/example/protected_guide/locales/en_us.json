@@ -1,0 +1,15 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "example.quest.protected_guide.metadata.title": {
+      "lines": [
+        "The Protected Guide"
+      ]
+    },
+    "example.quest.protected_guide.metadata.description": {
+      "lines": [
+        "A guide who remains available throughout the expedition."
+      ]
+    }
+  }
+}

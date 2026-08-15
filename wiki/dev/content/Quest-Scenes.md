@@ -7,15 +7,19 @@ Use an inline quest scene for a short conversation or a few immediate actions. U
 Scene files use:
 
 ```text
-data/<namespace>/quest_scenes/<path>.json
+data/<namespace>/quests/<questline>/<quest-slug>/scenes/<scene>.json
+data/<namespace>/quests/_shared/scenes/<scene>.json
 ```
 
 Encounter files use:
 
 ```text
-data/<namespace>/quest_encounters/<path>.json
+data/<namespace>/quests/<questline>/<quest-slug>/encounters/<encounter>.json
+data/<namespace>/quests/_shared/encounters/<encounter>.json
 ```
 
+
+Use the private path when only one quest references a definition. Private companions may not be referenced across quest bundles. Put genuinely reusable definitions in `_shared`; every scene and encounter keeps its explicit stable `id` regardless of its file location.
 ## Terms Used On This Page
 
 | Term | Plain meaning |

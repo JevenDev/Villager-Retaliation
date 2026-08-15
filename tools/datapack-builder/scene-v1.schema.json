@@ -362,5 +362,21 @@
         ]
       }
     }
+  },
+  "$defs": {
+    "localized_reference": {
+      "type": "object",
+      "title": "Localized message reference",
+      "additionalProperties": false,
+      "required": [
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
   }
 }

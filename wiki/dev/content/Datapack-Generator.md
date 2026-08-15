@@ -19,11 +19,11 @@ Use the generator when you want to:
 
 ## Current Target
 
-The generator keeps structured authoring targets for `1.0.0-beta.11` and `1.0.0-beta.12`. Its quest editor also understands the current quest module v2 surface used by beta.13.
+The generator keeps structured targets for `1.0.0-beta.11`, `1.0.0-beta.12`, and `1.0.0-beta.13`. Beta.13 quest exports always use owner bundles with a localized `quest.json` and sibling English locale.
 
 - Use this live developer wiki as the source of truth for hand-authored `1.0.0-beta.13` packs.
 - For Minecraft 1.21.1, set `pack_format` to `48` before export.
-- Choose `1.0.0-beta.12` in the generator for the folderized dialogue, notification, gift, pacification, story, name, loot, and skill-trade surfaces it currently writes.
+- Choose `1.0.0-beta.13` for new packs and quest-bundle export. Frozen earlier targets remain available for non-quest maintenance.
 - Keep using the `1.0.0-beta.11` snapshot for older packs that have not been manually migrated.
 - The builder does not convert beta.11 packs to beta.12 for you.
 - For beta.13 persistent scenes and encounter orchestration, start from the repository example packs and [Persistent Quest Scenes](Quest-Scenes.md).
@@ -57,7 +57,7 @@ The generator keeps structured authoring targets for `1.0.0-beta.11` and `1.0.0-
 
 The `Preset` button is the fastest way to start:
 
-- `Starter Pack` gives you a small editable beta.12 pack.
+- `Starter Pack` gives you a small editable beta.13 pack.
 - `Dialogue Folder Template` gives you the full folderized template from `example-packs/dialogue-folder-template/`.
 
 That template already includes examples for quest module v2, dialogue, forced dialogue, notifications, gifts, pacification, profession loot, story discovery, and names.
@@ -90,7 +90,8 @@ If you want one simple quest:
 You should end up with output similar to:
 
 ```text
-data/my_pack/quests/first_steps.json
+data/my_pack/quests/my_pack/first_steps/quest.json
+data/my_pack/quests/my_pack/first_steps/locales/en_us.json
 ```
 
 ## Import Notes
@@ -99,15 +100,15 @@ Import works best when your pack already follows the documented folder layout.
 
 - Files under `dialogue/<locale>/` import as dialogue.
 - Files under `forced_dialogue/` import as forced dialogue.
-- Quest module v2 files under `quests/` import as editable Quests tab modules.
+- Exact `quests/<questline>/<quest-slug>/quest.json` files import as editable modules; locales and companions round-trip at their bundle paths.
 - Skill-trade files under `skill_trades/` import as editable Skill Trades entries and retain their namespace and nested source path.
-- Legacy v1 quest files under `quests/` are preserved as JSON pass-through files with migration suggestions.
+- Loose quest JSON and old quest companion roots are preserved only so the builder can show an unsupported-layout error; valid export requires conversion to bundles.
 - Files under `dialogue_trees/<locale>/` are recognized and preserved as JSON pass-through files.
 - Files under `notifications/<locale>/` import as notifications.
 
 If an older handwritten pack mixed several systems into one file, split those files first. The game itself also treats those paths as separate loaders.
 
-Legacy quest and dialogue-tree pass-through means the builder keeps those files in the pack and export zip without overwriting them. Use the migration suggestions as a prompt to run the v1-to-v2 tooling separately.
+Legacy quest pass-through never makes an export runtime-valid. Use the offline converter or rebuild the owner bundle, then resolve every unsupported-layout check before export.
 
 ## Good Safety Checks
 

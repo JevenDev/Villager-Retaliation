@@ -1,13 +1,13 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+
+const questModel = createRequire(import.meta.url)("./quest-builder/quest-model.js");
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataRoot = path.join(root, "neoforge", "src", "main", "resources", "data", "villagerretaliation");
 const questRoot = path.join(dataRoot, "quests");
-const lootRoot = path.join(dataRoot, "loot_table", "quest");
-const sceneRoot = path.join(dataRoot, "quest_scenes");
-const encounterRoot = path.join(dataRoot, "quest_encounters");
 
 const expectedExpansionRepeatables = new Set([
   "apiary_smoke",
@@ -34,23 +34,24 @@ const expectedBranchingQuestlines = new Set([
   "end_survey"
 ]);
 
-const questFiles = await jsonFiles(questRoot);
-const lootFiles = await jsonFiles(lootRoot);
-const sceneFiles = await jsonFiles(sceneRoot);
-const encounterFiles = await jsonFiles(encounterRoot);
-const lootIds = new Set(lootFiles.map((file) => `villagerretaliation:quest/${withoutJson(path.relative(lootRoot, file))}`));
+const bundleFiles = await jsonFiles(questRoot);
+const questFiles = bundleFiles.filter(file => path.basename(file) === "quest.json");
+const lootFiles = bundleFiles.filter(file => file.includes(`${path.sep}rewards${path.sep}`));
+const sceneFiles = bundleFiles.filter(file => file.includes(`${path.sep}scenes${path.sep}`));
+const encounterFiles = bundleFiles.filter(file => file.includes(`${path.sep}encounters${path.sep}`));
 const quests = new Map();
 const lootTables = new Map();
 const scenes = new Map();
 const encounters = new Map();
 const errors = [];
+const lootIds = new Set();
 let stageCount = 0;
 let choiceRouteCount = 0;
 let sceneReferenceCount = 0;
 const sceneQuestIds = new Set();
 
 for (const file of questFiles) {
-  const data = await readJson(file);
+  const data = await materialized(file, await readJson(file));
   if (!data || typeof data !== "object") {
     continue;
   }
@@ -60,16 +61,17 @@ for (const file of questFiles) {
 }
 
 for (const file of lootFiles) {
-  const data = await readJson(file);
-  if (!data || typeof data !== "object") {
+  const wrapper = await readJson(file);
+  if (!wrapper || typeof wrapper !== "object") {
     continue;
   }
-  const id = `villagerretaliation:quest/${withoutJson(path.relative(lootRoot, file))}`;
-  lootTables.set(id, { file, data });
+  assert(wrapper?.schema === "villagerretaliation:quest_reward/v1", file, "reward wrapper schema is missing");
+  lootIds.add(wrapper.id);
+  lootTables.set(wrapper.id, { file, data: wrapper.table });
 }
 
 for (const file of sceneFiles) {
-  const data = await readJson(file);
+  const data = await materialized(file, await readJson(file));
   if (!data || typeof data !== "object") continue;
   assert(data.schema === "villagerretaliation:scene/v1", file, "scene must use the scene/v1 schema");
   assert(typeof data.id === "string" && data.id.length > 0, file, "scene id is missing");
@@ -78,7 +80,7 @@ for (const file of sceneFiles) {
 }
 
 for (const file of encounterFiles) {
-  const data = await readJson(file);
+  const data = await materialized(file, await readJson(file));
   if (!data || typeof data !== "object") continue;
   assert(data.schema === "villagerretaliation:encounter/v1", file, "encounter must use the encounter/v1 schema");
   assert(typeof data.id === "string" && data.id.length > 0, file, "encounter id is missing");
@@ -377,7 +379,7 @@ function validateAuditContracts() {
   const patrol = encounters.get("villagerretaliation:atlas_risky_patrol");
   assert(
     patrol?.data.rewards?.completion?.some((reward) => reward.item === "minecraft:crossbow"),
-    patrol?.file ?? encounterRoot,
+    patrol?.file ?? questRoot,
     "the risky Atlas Test patrol must guarantee the crossbow promised by its dialogue"
   );
 
@@ -418,11 +420,11 @@ function validateAuditContracts() {
 
   const chorusItems = lootItemNames("villagerretaliation:quest/chorus_trail");
   const cityItems = lootItemNames("villagerretaliation:quest/city_lantern");
-  assert(!chorusItems.has("minecraft:elytra"), lootTables.get("villagerretaliation:quest/chorus_trail")?.file ?? lootRoot,
+  assert(!chorusItems.has("minecraft:elytra"), lootTables.get("villagerretaliation:quest/chorus_trail")?.file ?? questRoot,
     "the safer chorus branch must not share the city branch's signature Elytra");
-  assert(chorusItems.has("minecraft:ender_chest"), lootTables.get("villagerretaliation:quest/chorus_trail")?.file ?? lootRoot,
+  assert(chorusItems.has("minecraft:ender_chest"), lootTables.get("villagerretaliation:quest/chorus_trail")?.file ?? questRoot,
     "the chorus branch must retain its distinct Ender Chest reward");
-  assert(cityItems.has("minecraft:elytra"), lootTables.get("villagerretaliation:quest/city_lantern")?.file ?? lootRoot,
+  assert(cityItems.has("minecraft:elytra"), lootTables.get("villagerretaliation:quest/city_lantern")?.file ?? questRoot,
     "the harder city branch must retain its signature Elytra chance");
 }
 
@@ -760,6 +762,28 @@ async function readJson(file) {
     errors.push(`${relative(file)}: invalid JSON (${error.message}).`);
     return null;
   }
+}
+
+async function materialized(file, data) {
+  if (!data || typeof data !== "object") return data;
+  const parts = path.relative(questRoot, file).split(path.sep);
+  const ownerRoot = parts[0] === "_shared"
+    ? path.join(questRoot, "_shared")
+    : path.join(questRoot, parts[0], parts[1]);
+  const questFile = path.join(ownerRoot, "quest.json");
+  const ownerQuest = parts[0] === "_shared"
+    ? null
+    : path.resolve(file) === path.resolve(questFile)
+      ? data
+      : await readJson(questFile);
+  const prefix = ownerQuest?.localization_prefix || "";
+  const localeFile = path.join(ownerRoot, "locales", "en_us.json");
+  const locale = await readJson(localeFile);
+  return questModel.materializeLocalizedDefinition(
+    data,
+    prefix,
+    locale?.messages || locale || {}
+  );
 }
 
 function withoutJson(file) {

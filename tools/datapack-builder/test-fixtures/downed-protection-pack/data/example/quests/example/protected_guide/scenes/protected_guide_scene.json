@@ -19,8 +19,12 @@
     {
       "id": "wait_for_guide",
       "type": "villagerretaliation:wait_ticks",
-      "actors": ["guide"],
-      "data": {"ticks": 20},
+      "actors": [
+        "guide"
+      ],
+      "data": {
+        "ticks": 20
+      },
       "next": "complete"
     },
     {

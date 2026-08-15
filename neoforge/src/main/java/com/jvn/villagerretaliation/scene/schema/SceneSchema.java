@@ -35,6 +35,7 @@ public final class SceneSchema {
         properties.add("actors", array(actor(), 0));
         properties.add("steps", array(step(), 1));
         root.add("properties", properties);
+        root.add("$defs", localizedDefinitions());
         return root;
     }
 
@@ -88,7 +89,7 @@ public final class SceneSchema {
         properties.add("wave_interval_ticks", integer(0));
         properties.add("wave_trigger", enumValues(EncounterTemplate.WaveTrigger.values()));
         properties.add("boss_bar", bool());
-        properties.add("location_message", text());
+        properties.add("location_message", localizedReference());
         properties.add("area", encounterArea());
         properties.add("respawn_policy", enumValues(EncounterTemplate.RespawnPolicy.values()));
         properties.add("cleanup_policy", enumValues(EncounterTemplate.CleanupPolicy.values()));
@@ -96,6 +97,7 @@ public final class SceneSchema {
                 "completion_condition", enumValues(EncounterTemplate.CompletionCondition.values()));
         properties.add("completion_objectives", completionObjectives());
         root.add("properties", properties);
+        root.add("$defs", localizedDefinitions());
         JsonArray rules = new JsonArray();
         JsonObject selectionCondition = new JsonObject();
         selectionCondition.add("required", strings("spawn_selection"));
@@ -257,9 +259,7 @@ public final class SceneSchema {
         JsonObject properties = new JsonObject();
         properties.add("id", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
         properties.add("type", enumValues(EncounterTemplate.PhaseActionType.values()));
-        JsonObject text = text();
-        text.addProperty("maxLength", 512);
-        properties.add("text", text);
+        properties.add("text", localizedReference());
         properties.add("scope", enumValues(EncounterTemplate.FactScope.values()));
         properties.add("tag", resourceLocation());
         properties.add("key", patternedText("^[a-zA-Z0-9_.:-]{1,128}$"));
@@ -509,9 +509,7 @@ public final class SceneSchema {
         properties.add("actor", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
         properties.add("count", boundedInteger(1, 16));
         properties.add("equipment", equipment());
-        JsonObject customName = text();
-        customName.addProperty("maxLength", 128);
-        properties.add("custom_name", customName);
+        properties.add("custom_name", localizedReference());
         properties.add("name_visible", bool());
         properties.add("glowing", bool());
         properties.add("persistent", bool());
@@ -705,9 +703,7 @@ public final class SceneSchema {
         properties.add("loot_table", resourceLocation());
         properties.add("item", resourceLocation());
         properties.add("count", boundedInteger(1, 64));
-        JsonObject name = text();
-        name.addProperty("maxLength", 128);
-        properties.add("trophy_name", name);
+        properties.add("trophy_name", localizedReference());
         reward.add("properties", properties);
         JsonArray sources = new JsonArray();
         sources.add(
@@ -785,9 +781,7 @@ public final class SceneSchema {
         properties.add("members", memberArray());
         properties.add("delay_ticks", boundedInteger(0, 12000));
         properties.add("trigger", enumValues(EncounterTemplate.WaveTrigger.values()));
-        JsonObject title = text();
-        title.addProperty("maxLength", 128);
-        properties.add("boss_bar_title", title);
+        properties.add("boss_bar_title", localizedReference());
         properties.add("equipment", equipment());
         JsonObject hooks = array(waveHook(), 0);
         hooks.addProperty("maxItems", 32);
@@ -804,9 +798,7 @@ public final class SceneSchema {
         JsonObject properties = new JsonObject();
         properties.add("id", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
         properties.add("type", enumValues(EncounterTemplate.HookType.values()));
-        JsonObject text = text();
-        text.addProperty("maxLength", 512);
-        properties.add("text", text);
+        properties.add("text", localizedReference());
         hook.add("properties", properties);
         return hook;
     }
@@ -817,9 +809,7 @@ public final class SceneSchema {
         hook.add("required", strings("id", "text"));
         JsonObject properties = new JsonObject();
         properties.add("id", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
-        JsonObject text = text();
-        text.addProperty("maxLength", 512);
-        properties.add("text", text);
+        properties.add("text", localizedReference());
         hook.add("properties", properties);
         return hook;
     }
@@ -991,9 +981,7 @@ public final class SceneSchema {
         properties.add("entity", resourceLocation());
         properties.add("count", boundedInteger(1, 64));
         properties.add("equipment", equipment());
-        JsonObject customName = text();
-        customName.addProperty("maxLength", 128);
-        properties.add("custom_name", customName);
+        properties.add("custom_name", localizedReference());
         properties.add("name_visible", bool());
         properties.add("glowing", bool());
         properties.add("persistent", bool());
@@ -1122,6 +1110,23 @@ public final class SceneSchema {
         return value;
     }
 
+    private static JsonObject localizedDefinitions() {
+        JsonObject definitions = new JsonObject();
+        JsonObject reference = object("Localized message reference");
+        reference.addProperty("additionalProperties", false);
+        reference.add("required", strings("key"));
+        JsonObject properties = new JsonObject();
+        properties.add("key", text());
+        reference.add("properties", properties);
+        definitions.add("localized_reference", reference);
+        return definitions;
+    }
+
+    private static JsonObject localizedReference() {
+        JsonObject reference = new JsonObject();
+        reference.addProperty("$ref", "#/$defs/localized_reference");
+        return reference;
+    }
     private static JsonObject text() {
         JsonObject value = new JsonObject();
         value.addProperty("type", "string");

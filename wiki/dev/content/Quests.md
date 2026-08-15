@@ -1,23 +1,43 @@
 # Quests
 
-Quest module v2 is the preferred shape for new quest datapacks. A v2 module can define the provider, availability, lifecycle, stages, objectives, dialogue, responses, transitions, events, rewards, and tracker UI in one file.
+Quest module v2 is the structural definition inside a beta.13 quest bundle. A bundle owns its quest, English locale, and private scene, encounter, and reward companions as one transactional unit.
 
-Legacy v1 quest files are still supported. Keep existing v1 packs working, but use v2 for new simple quests and for migrations where you want dialogue and quest state to live together.
+Loose quest JSON and the old `quest_messages`, `quest_scenes`, `quest_encounters`, `quest_pools`, and `loot_table/quest` roots are unsupported at runtime. `/reload` reports them and never silently loads them.
 
 Each quest run receives a saved unique ID before its first actions run. A solo run belongs to one player. A party run uses one shared ID for the party. Persistent scenes use this saved ID so a reload resumes the same scene instead of starting a duplicate.
 
 ## Paths
 
 ```text
-data/<namespace>/quests/<quest>.json
-data/<namespace>/quests/<module>/<quest>.json
+data/<namespace>/quests/
+  _shared/
+    locales/en_us.json
+    pools/*.json
+    scenes/*.json
+    encounters/*.json
+    rewards/*.json
+  <questline>/<quest-slug>/
+    quest.json
+    locales/en_us.json
+    locales/<locale>.json
+    scenes/*.json
+    encounters/*.json
+    rewards/*.json
 ```
 
-The folder path is for organization and overrides. It does not create a questline by itself.
+Every definition still has an explicit stable `id`; file names and pack names never become persistent IDs. The quest ID path must be one segment, `<quest-slug>` must equal that path, `metadata.questline` must equal the directory, and the quest ID namespace must equal `data/<namespace>`. `_shared` is reserved.
 
-## One-File Quest
+`quest.json` keeps structural dialogue, but every schema-designated player-facing field uses a reference such as `{"key":"#metadata.title"}`. Relative keys expand from the required immutable `localization_prefix`; absolute message IDs remain supported. The sibling `locales/en_us.json` uses `schema: "villagerretaliation:quest_locale/v1"` and a `messages` object. English is exhaustive for a new bundle, other locales may be partial, and lookup falls back per message ID to effective English at the player boundary.
 
-This is a complete playable quest. It needs no external dialogue tree.
+Bundled rewards use `schema: "villagerretaliation:quest_reward/v1"`, an explicit stable `id`, and a registry-aware vanilla `table` whose type is `minecraft:generic`. Bundle rewards take precedence over external registry tables for both execution and roll-producing previews. Nested vanilla table references remain normal registry references.
+
+Each datapack layer replaces whole structural definitions by stable ID. The quest structure, companions, rewards, and effective English are one owner-bundle transaction: an invalid higher layer is rejected as a unit and the lower valid bundle remains active. Each optional non-English locale layer is independent. Duplicate IDs, cross-owner moves, duplicate message ownership, or private cross-bundle companion references are errors.
+
+File paths, JSON member ordering, pack names, and localized payloads do not change persistent structural identity. Behaviorally ordered arrays remain ordered, and migration-equivalence fingerprints additionally include localized variants. Removing an active definition makes saved content unresolved and dormant; progress is preserved and resumes unchanged when the definition returns.
+
+## Builder Authoring Input
+
+The browser builder accepts the convenient inline authoring form below, then exports localized `quest.json` and `locales/en_us.json` files. Do not copy the inline form directly into a beta.13 datapack.
 
 ```json
 {
@@ -232,7 +252,7 @@ Active quests with `availability.expiration.after_ticks` show a live remaining-t
 
 ## Quest Pools
 
-Quest pools turn quest tags or explicit quest IDs into bounded rotating offers. Put pool resources under `data/<namespace>/quest_pools/`. A pool only controls quests it claims; quests not claimed by any currently matching pool keep their normal availability.
+Quest pools turn quest tags or explicit quest IDs into bounded rotating offers. Put reusable pool resources under `data/<namespace>/quests/_shared/pools/`. A pool only controls quests it claims; quests not claimed by any currently matching pool keep their normal availability.
 
 ```json
 {
@@ -1065,28 +1085,22 @@ Available diagnostic commands:
 
 Use `inspect` for saved state, issuer context, target context, repeat rules, objective counters, current stage, and fact values. Use `trace` for indexed trigger dispatch, condition traces, action diagnostics, and bounded recent events.
 
-## Legacy V1 Compatibility
+## Unsupported Legacy Layout
 
-V1 quest JSON remains supported when the file has no `schema: "villagerretaliation:quest/v2"`. V1 fields such as `display`, `offer`, top-level `objectives`, `rules`, `tracker`, `triggers`, and separate dialogue trees still load through the compatibility adapter.
+Beta.13 does not run loose v1 or v2 quest JSON, old quest companions, or old private reward tables. The reload report names every unsupported path and the lower live catalog remains active if built-in content or a catalog-wide invariant fails. Use the optional offline converter or the browser builder to produce a bundle; there is no runtime fallback.
 
-Legacy override rules still apply:
-
-- a higher-priority datapack can replace a built-in quest by writing the same quest id
-- a v2 module can replace a v1 quest with the same id
-- old dialogue tree resources under `data/<namespace>/dialogue_trees/<locale>/quests/...` still work
-- `remove` and `replace` on dialogue trees still remove or replace legacy/extracted scenes
-
-Do not delete v1 resources just because v2 exists. Migrate intentionally, validate the generated v2 file, and keep any external dialogue tree only when it is still needed.
+Quest-to-quest prerequisites and follow-ups remain legal. Only private scene, encounter, and reward access is restricted to the owning quest.
 
 ## Extraction Guidance
 
 Start with one v2 quest file. Extract only when the file becomes hard to maintain:
 
 ```text
-data/<namespace>/quests/<module>/<quest>.json
-data/<namespace>/dialogue_trees/<locale>/quests/<module>/<quest>.json
-data/<namespace>/dialogue/<locale>/quests/<module>/<quest>/messages/*.json
-data/<namespace>/forced_dialogue/quests/<module>/<quest>.json
+data/<namespace>/quests/<questline>/<quest-slug>/quest.json
+data/<namespace>/quests/<questline>/<quest-slug>/locales/en_us.json
+data/<namespace>/quests/<questline>/<quest-slug>/scenes/<scene>.json
+data/<namespace>/quests/<questline>/<quest-slug>/encounters/<encounter>.json
+data/<namespace>/quests/<questline>/<quest-slug>/rewards/<reward>.json
 ```
 
 Use the quest module for quest state, stages, objective readiness, rewards, transitions, and short scenes. Use external dialogue trees for long authored branches or shared localization. Use forced dialogue only for event-driven locked scenes outside the normal Talk flow.

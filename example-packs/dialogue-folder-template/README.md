@@ -1,6 +1,6 @@
 # Villager Retaliation Dialogue Folder Template
 
-This beta.12 template gives pack developers a folder-first starting point.
+This beta.13 template gives pack developers a folder-first starting point.
 Every dialogue request has one custom option and one response line with the text `example`.
 Replace ids, labels, filters, and text as your pack grows.
 

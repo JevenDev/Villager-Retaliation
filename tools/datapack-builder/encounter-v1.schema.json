@@ -407,9 +407,7 @@
             }
           },
           "custom_name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
+            "$ref": "#/$defs/localized_reference"
           },
           "name_visible": {
             "type": "boolean"
@@ -885,9 +883,7 @@
                   }
                 },
                 "custom_name": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
+                  "$ref": "#/$defs/localized_reference"
                 },
                 "name_visible": {
                   "type": "boolean"
@@ -1053,9 +1049,7 @@
             ]
           },
           "boss_bar_title": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
+            "$ref": "#/$defs/localized_reference"
           },
           "equipment": {
             "type": "object",
@@ -1364,9 +1358,7 @@
                   ]
                 },
                 "text": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 512
+                  "$ref": "#/$defs/localized_reference"
                 }
               }
             },
@@ -1387,9 +1379,7 @@
                 "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
               },
               "text": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 512
+                "$ref": "#/$defs/localized_reference"
               }
             }
           }
@@ -1910,9 +1900,7 @@
                   ]
                 },
                 "text": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 512
+                  "$ref": "#/$defs/localized_reference"
                 },
                 "scope": {
                   "type": "string",
@@ -2534,9 +2522,7 @@
             }
           },
           "custom_name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
+            "$ref": "#/$defs/localized_reference"
           },
           "name_visible": {
             "type": "boolean"
@@ -3099,9 +3085,7 @@
                 "maximum": 64
               },
               "trophy_name": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 128
+                "$ref": "#/$defs/localized_reference"
               }
             },
             "oneOf": [
@@ -3193,9 +3177,7 @@
                 "maximum": 64
               },
               "trophy_name": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 128
+                "$ref": "#/$defs/localized_reference"
               }
             },
             "oneOf": [
@@ -3281,9 +3263,7 @@
                 "maximum": 64
               },
               "trophy_name": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 128
+                "$ref": "#/$defs/localized_reference"
               }
             },
             "oneOf": [
@@ -3412,8 +3392,7 @@
       "type": "boolean"
     },
     "location_message": {
-      "type": "string",
-      "minLength": 1
+      "$ref": "#/$defs/localized_reference"
     },
     "area": {
       "type": "object",
@@ -4438,6 +4417,22 @@
             ]
           },
           "maxItems": 32
+        }
+      }
+    }
+  },
+  "$defs": {
+    "localized_reference": {
+      "type": "object",
+      "title": "Localized message reference",
+      "additionalProperties": false,
+      "required": [
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }

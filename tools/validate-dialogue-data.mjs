@@ -921,7 +921,7 @@ const dialogueIdScopes = {
 const questV2SchemaId = "villagerretaliation:quest/v2";
 const resourceLocationPattern = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
 const questV2IdPattern = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
-const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]);
+const questV2RootKeys = new Set(["schema", "id", "localization_prefix", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]);
 const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "show_locked_adventure_hint", "author", "version", "revision", "migration"]);
 const questV2MigrationKeys = new Set(["active_policy", "on_active_change", "stage_aliases", "objective_aliases"]);
 const questV2TargetKeys = new Set(["structure", "dimension", "pieces", "search_radius", "discovery_radius", "proof_item", "proof_item_components", "proof_item_durability", "proof_item_custom_data", "proof_item_nbt"]);
@@ -1034,9 +1034,21 @@ async function validateBuiltInData() {
       if (data === undefined) {
         continue;
       }
-      if (!(kind === "quests" && isQuestModuleV2(data))) {
-        checkPlaceholders(file, data);
+      if (kind === "quests") {
+        if (isQuestModuleV2(data)) {
+          checkEquipmentPredicateFlags(file, data);
+          indexQuestResource(file, data);
+          checkQuestResource(file, data);
+        } else if (stringValue(data?.schema) === "villagerretaliation:quest_locale/v1") {
+          indexQuestBundleLocale(file, data);
+        } else if (stringValue(data?.schema) === "villagerretaliation:quest_reward/v1") {
+          indexBundledQuestReward(file, data);
+        } else if (!isQuestBundleCompanion(data)) {
+          errors.push(`${relative(file)}: unsupported resource in the public quests bundle layout.`);
+        }
+        continue;
       }
+      checkPlaceholders(file, data);
       checkEquipmentPredicateFlags(file, data);
       if (kind === "dialogue") {
         checkDialogue(file, data);
@@ -1050,9 +1062,6 @@ async function validateBuiltInData() {
         indexLootTable(file);
       } else if (kind === "notifications") {
         indexNotifications(file, data);
-      } else if (kind === "quests") {
-        indexQuestResource(file, data);
-        checkQuestResource(file, data);
       } else if (kind === "skillTrades") {
         checkSkillTrades(file, data);
       }
@@ -1063,6 +1072,15 @@ async function validateBuiltInData() {
 async function validateQuestFiles(files) {
   await indexBuiltInReferenceData();
   for (const file of files) {
+    if (path.basename(file).toLowerCase() === "quest.json") {
+      const localeFile = path.join(path.dirname(file), "locales", "en_us.json");
+      try {
+        const locale = JSON.parse(stripBom(await readFile(localeFile, "utf8")));
+        indexQuestBundleLocale(localeFile, locale);
+      } catch (error) {
+        errors.push(`${relative(file)}: bundle quest requires readable locales/en_us.json (${error.message}).`);
+      }
+    }
     const data = await parseJson(file);
     if (data === undefined) {
       continue;
@@ -1535,6 +1553,56 @@ function collectQuestMessageKeyReference(file, value, location) {
   });
 }
 
+function isLocalizedReference(value) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    && Object.keys(value).length === 1 && typeof value.key === "string" && value.key.trim();
+}
+
+function indexQuestBundleLocale(file, data) {
+  if (!data.messages || typeof data.messages !== "object" || Array.isArray(data.messages)) {
+    errors.push(`${relative(file)}: quest locale messages must be an object.`);
+    return;
+  }
+  for (const key of Object.keys(data.messages)) {
+    if (!key.trim()) errors.push(`${relative(file)}: quest locale contains a blank message id.`);
+    else if (!dialogueMessageKeys.has(key)) dialogueMessageKeys.set(key, relative(file));
+  }
+}
+
+function indexBundledQuestReward(file, data) {
+  const id = stringValue(data.id);
+  if (!isResourceLocation(id)) errors.push(`${relative(file)}: bundled reward requires a namespaced stable id.`);
+  else lootTableDefinitions.add(id);
+  if (!data.table || typeof data.table !== "object" || Array.isArray(data.table)) {
+    errors.push(`${relative(file)}: bundled reward table must be an object.`);
+  }
+}
+
+function isQuestBundleCompanion(data) {
+  return new Set([
+    "villagerretaliation:scene/v1",
+    "villagerretaliation:encounter/v1",
+    "villagerretaliation:quest_pool/v1"
+  ]).has(stringValue(data?.schema));
+}
+
+function collectQuestLocalizedReferences(file, value, prefix, location = "root") {
+  if (Array.isArray(value)) {
+    value.forEach((child, index) => collectQuestLocalizedReferences(file, child, prefix, `${location}[${index}]`));
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  if (isLocalizedReference(value)) {
+    const raw = value.key.trim();
+    const key = raw.startsWith("#") ? prefix + "." + raw.slice(1) : raw;
+    pendingDialogueMessageKeyReferences.push({ file, location, key });
+    return;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    collectQuestLocalizedReferences(file, child, prefix, `${location}.${key}`);
+  }
+}
+
 function indexQuestResource(file, data) {
   if (isQuestModuleV2(data)) {
     indexQuestV2(file, data);
@@ -1587,6 +1655,9 @@ function checkQuestV2(file, data) {
 
   const questId = stringValue(data.id);
   checkQuestV2UnknownKeys(file, data, "", "root", questV2RootKeys);
+  if (!stringValue(data.localization_prefix)) {
+    questV2Error(file, "/localization_prefix", "localization_prefix", "localization_prefix is required.", "Use an immutable globally unique prefix beginning with the datapack namespace.");
+  }
   if (stringValue(data.schema) !== questV2SchemaId) {
     questV2Error(file, "/schema", "schema", `schema must be "${questV2SchemaId}".`, "Use the quest module v2 schema marker.");
   }
@@ -1610,6 +1681,7 @@ function checkQuestV2(file, data) {
   validateQuestV2Graph(file, data, model, questId);
   warnQuestV2LifecycleCoverage(file, data, model);
   collectQuestMessageKeyReferences(file, data);
+  collectQuestLocalizedReferences(file, data, stringValue(data.localization_prefix));
 }
 
 function checkQuestV2Metadata(file, metadata, pointer, location, questId) {
@@ -2856,9 +2928,11 @@ function checkQuestV2Id(file, id, pointer, location, label) {
 }
 
 function checkQuestV2OptionalString(file, object, pointer, location, key) {
-  if (object?.[key] !== undefined && typeof object[key] !== "string") {
-    questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `${key} must be a string.`, "Use a string value or remove the field.");
-  }
+  const value = object?.[key];
+  if (value === undefined || typeof value === "string") return;
+  const localizedFields = new Set(["title", "description", "text", "label", "tracker_text", "tracker_complete_text", "complete_text"]);
+  if (localizedFields.has(key) && isLocalizedReference(value)) return;
+  questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `${key} must be a string${localizedFields.has(key) ? " or localized reference" : ""}.`, "Use a supported value or remove the field.");
 }
 
 function checkQuestV2StringArray(file, value, pointer, location, label) {
@@ -2872,7 +2946,8 @@ function checkQuestV2StringArray(file, value, pointer, location, label) {
     return;
   }
   if (!Array.isArray(value)) {
-    questV2Error(file, pointer, location, `${label} must be a string or array of strings.`, "Use string values.");
+    if (label.includes("line") && isLocalizedReference(value)) return;
+    questV2Error(file, pointer, location, `${label} must be a string, localized reference, or array of strings.`, "Use supported text values.");
     return;
   }
   value.forEach((entry, index) => {
@@ -5528,8 +5603,10 @@ function checkQuestReferenceList(file, entry, location, keys, reason) {
 
 function checkOptionalString(file, entry, location, key) {
   const value = entry[key];
-  if (value !== undefined && (typeof value !== "string" || !value.trim())) {
-    errors.push(`${relative(file)}: ${location}.${key} must be a nonblank string.`);
+  if (value !== undefined && (typeof value !== "string" || !value.trim())
+      && !(["title", "description", "text", "label", "tracker_text", "tracker_complete_text", "complete_text"].includes(key)
+        && isLocalizedReference(value))) {
+    errors.push(`${relative(file)}: ${location}.${key} must be a nonblank string or localized reference.`);
   }
 }
 

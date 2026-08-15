@@ -483,7 +483,7 @@
     const scene = currentScene();
     const sceneOptions = (project.scenes || []).map((item) => ({ value: item.id, label: model.titleFromId(item.id) }));
     if (!scene) {
-      els.editor.innerHTML = `<div class="editor-content">${pageHeader("Scenes", "Create persistent actor and step graphs exported under data/<namespace>/quest_scenes/.", `<button class="button button-primary" type="button" data-action="add-scene"><i data-lucide="plus"></i>Add scene</button>`)}<div class="empty-state"><p>No scene resources in this project.</p><button class="button button-primary" type="button" data-action="add-scene">Add scene</button></div></div>`;
+      els.editor.innerHTML = `<div class="editor-content">${pageHeader("Scenes", "Create reusable actor and step graphs exported under data/<namespace>/quests/_shared/scenes/.", `<button class="button button-primary" type="button" data-action="add-scene"><i data-lucide="plus"></i>Add scene</button>`)}<div class="empty-state"><p>No scene resources in this project.</p><button class="button button-primary" type="button" data-action="add-scene">Add scene</button></div></div>`;
       return;
     }
     const actorTypes = (registryMetadata.registries?.actor_types || []).filter((item) => item.browser_available !== false).map((item) => ({ value: item.id, label: item.title || model.titleFromId(item.id) }));
@@ -785,9 +785,9 @@
     } else if (action === "delete-quest") {
       deleteQuest();
     } else if (action === "copy-json") {
-      copyText(JSON.stringify(model.stripBuilderFields(quest), null, 2));
+      copyText(JSON.stringify(model.questBundleFiles(quest).quest, null, 2));
     } else if (action === "download-json") {
-      downloadText(JSON.stringify(model.stripBuilderFields(quest), null, 2) + "\n", model.questFilePath(quest).split("/").at(-1));
+      downloadText(JSON.stringify(model.questBundleFiles(quest).quest, null, 2) + "\n", "quest.json");
     } else if (action === "apply-json") {
       applyRawJson();
     } else if (action === "format-json") {
@@ -857,7 +857,8 @@
   function createBlankQuest(namespace) {
     const quest = model.createLinearQuest(namespace);
     quest.id = `${model.namespaceify(namespace)}:untitled_quest`;
-    quest.metadata = { title: "Untitled Quest", description: "", questline: "" };
+    quest.localization_prefix = `${model.namespaceify(namespace)}.quest.untitled_quest`;
+    quest.metadata = { title: "Untitled Quest", description: "", questline: "quests" };
     quest.entry_stage = "start";
     quest.stages = [model.createStage("start", { title: "Start", empty: true })];
     quest.rewards = {};
@@ -955,19 +956,33 @@
           description: project.name || "Villager Retaliation quest pack"
         },
         villagerretaliation: {
-          pack_version: "1.0.0-beta.12"
+          pack_version: "1.0.0-beta.13"
         }
       }, null, 2) + "\n"
     };
     for (const quest of project.quests) {
-      const path = model.questFilePath(quest);
-      if (Object.hasOwn(files, path)) throw new Error(`Two quests export to ${path}. Give them different ids.`);
-      files[path] = JSON.stringify(model.stripBuilderFields(quest), null, 2) + "\n";
+      const bundle = model.questBundleFiles(quest);
+      if (Object.hasOwn(files, bundle.questPath)) throw new Error(`Two quests export to ${bundle.questPath}. Give them different ids.`);
+      files[bundle.questPath] = JSON.stringify(bundle.quest, null, 2) + "\n";
+      files[bundle.localePath] = JSON.stringify(bundle.locale, null, 2) + "\n";
     }
+    const sharedMessages = {};
     for (const scene of project.scenes || []) {
-      const path = model.sceneFilePath(scene);
-      if (Object.hasOwn(files, path)) throw new Error(`Two resources export to ${path}. Give them different ids.`);
-      files[path] = JSON.stringify(model.stripBuilderFields(scene), null, 2) + "\n";
+      const bundle = model.sceneBundleFile(scene, project.namespace);
+      if (Object.hasOwn(files, bundle.path)) throw new Error(`Two resources export to ${bundle.path}. Give them different ids.`);
+      files[bundle.path] = JSON.stringify(bundle.scene, null, 2) + "\n";
+      for (const [key, payload] of Object.entries(bundle.messages)) {
+        if (Object.hasOwn(sharedMessages, key) && JSON.stringify(sharedMessages[key]) !== JSON.stringify(payload)) {
+          throw new Error(`Shared scene localization key collision at ${key}.`);
+        }
+        sharedMessages[key] = payload;
+      }
+    }
+    if (Object.keys(sharedMessages).length) {
+      files[model.sharedLocaleFilePath(project.namespace)] = JSON.stringify({
+        schema: "villagerretaliation:quest_locale/v1",
+        messages: sharedMessages
+      }, null, 2) + "\n";
     }
     return files;
   }
@@ -1156,7 +1171,7 @@
   els.exportDialogContent.addEventListener("click", (event) => {
     const button = event.target.closest("[data-export]");
     if (!button) return;
-    if (button.dataset.export === "quest") downloadText(JSON.stringify(model.stripBuilderFields(currentQuest()), null, 2) + "\n", model.questFilePath(currentQuest()).split("/").at(-1));
+    if (button.dataset.export === "quest") downloadText(JSON.stringify(model.questBundleFiles(currentQuest()).quest, null, 2) + "\n", "quest.json");
     if (button.dataset.export === "project") downloadText(JSON.stringify(project, null, 2) + "\n", `${model.slugify(project.name, "quest_project")}.vr-quests.json`);
     if (button.dataset.export === "datapack") exportDatapack();
   });
@@ -1171,12 +1186,27 @@
       try {
         if (/\.zip$/i.test(file.name)) {
           const packFiles = await zipUtils.readZip(new Uint8Array(await file.arrayBuffer()));
-          const questFiles = zipUtils.decodeJsonFiles(packFiles, (path) => /^data\/[a-z0-9_.-]+\/quests\/.+\.json$/i.test(path));
-          const quests = questFiles.map((entry) => entry.value).filter((value) => value?.schema === model.SCHEMA_ID);
-          const sceneFiles = zipUtils.decodeJsonFiles(packFiles, (path) => /^data\/[a-z0-9_.-]+\/quest_scenes\/.+\.json$/i.test(path));
-          importedScenes.push(...sceneFiles.map((entry) => entry.value).filter((value) => value?.schema === model.SCENE_SCHEMA_ID));
-          if (!quests.length && !importedScenes.length) throw new Error("No Quest v2 or scene v1 files were found in the datapack.");
-          imported.push(...quests);
+          if (!Object.hasOwn(packFiles, "pack.mcmeta") || !Object.keys(packFiles).some(path => path.startsWith("data/"))) {
+            throw new Error("A valid datapack ZIP must contain pack.mcmeta and data/.");
+          }
+          const jsonFiles = zipUtils.decodeJsonFiles(packFiles);
+          const jsonByPath = new Map(jsonFiles.map(entry => [entry.path, entry.value]));
+          const questFiles = jsonFiles.filter(entry => new RegExp("^data/[a-z0-9_.-]+/quests/[^/]+/[^/]+/quest\\.json$", "i").test(entry.path));
+          for (const entry of questFiles) {
+            if (entry.value?.schema !== model.SCHEMA_ID) continue;
+            const localePath = entry.path.slice(0, -"quest.json".length) + "locales/en_us.json";
+            const locale = jsonByPath.get(localePath);
+            if (!locale?.messages) throw new Error(`${entry.path} is missing its exhaustive locales/en_us.json.`);
+            imported.push(model.materializeLocalizedDefinition(entry.value, entry.value.localization_prefix || "", locale.messages));
+          }
+          const sceneFiles = jsonFiles.filter(entry => new RegExp("^data/[a-z0-9_.-]+/quests/(?:_shared|[^/]+/[^/]+)/scenes/[^/]+\\.json$", "i").test(entry.path));
+          for (const entry of sceneFiles) {
+            if (entry.value?.schema !== model.SCENE_SCHEMA_ID) continue;
+            const ownerRoot = entry.path.slice(0, entry.path.indexOf("/scenes/"));
+            const locale = jsonByPath.get(`${ownerRoot}/locales/en_us.json`);
+            importedScenes.push(model.materializeLocalizedDefinition(entry.value, "", locale?.messages || {}));
+          }
+          if (!questFiles.length && !sceneFiles.length) throw new Error("No bundled Quest v2 or scene v1 files were found in the datapack.");
         } else {
           const parsed = JSON.parse(await file.text());
           if (parsed?.version && Array.isArray(parsed.quests)) { imported.push(...parsed.quests); importedScenes.push(...(parsed.scenes || [])); }

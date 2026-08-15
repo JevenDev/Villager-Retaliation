@@ -10,11 +10,11 @@ If you are still maintaining a beta.11 pack, keep using the beta.11 snapshot in 
 
 ## Beta.12 To Beta.13 Checklist
 
-Beta.13 is primarily additive for pack authors. Existing beta.12 dialogue, notification, gift, pacification, loot, trade, name, story, and builder-structure files do not need a format-only rewrite.
+Beta.13 requires quest content to move into owner bundles. Non-quest beta.12 dialogue, notification, gift, pacification, loot, trade, name, story, and builder-structure files do not need a format-only rewrite.
 
-1. Quest runs now receive a persisted, repeat-safe UUID before entry actions and `STARTED` triggers execute.
-2. Persistent scene definitions live under `data/<namespace>/quest_scenes/` and use `schema: "villagerretaliation:scene/v1"`.
-3. Encounter definitions live under `data/<namespace>/quest_encounters/` and can coordinate scaling, phases, objectives, cleanup, retries, navigation guidance, and rewards.
+1. Put each quest at `data/<namespace>/quests/<questline>/<quest-slug>/quest.json` with required immutable `localization_prefix` and exhaustive sibling `locales/en_us.json`.
+2. Put private scenes, encounters, and wrapped rewards below the owning quest. Put reusable scenes, encounters, rewards, and pools below `quests/_shared/`.
+3. Replace schema-designated inline player text with localized reference objects. Other locales may be partial and fall back per message ID to effective English.
 4. Quest actions can launch or reuse a scene and optionally wait for its durable terminal result before continuing.
 5. Quest providers and scene actors can opt into the downed-state protection contract when the story requires a villager to survive ordinary lethal damage.
 6. New beta.13 examples live in `example-packs/cinematic-gate-ambush/` and `example-packs/repeatable-scene-run-id/`.
@@ -24,13 +24,13 @@ Beta.13 is primarily additive for pack authors. Existing beta.12 dialogue, notif
 10. Shared `conditions` now cover player items, villager equipment, biome, dimension, advancements, scoreboards, nearby entities, tracked villages, selected quest choices, stage history, and quest trigger payloads.
 11. Dialogue metadata separates general `tags`, `routing_tags`, and `anti_repeat_groups`; older topic and route-tag behavior remains compatible.
 12. Built-in conversation probabilities can be overridden under `data/<namespace>/dialogue_tuning/` with `schema: "villagerretaliation:dialogue_tuning/v1"`.
-13. Quest pools under `data/<namespace>/quest_pools/` support context conditions, selector match mode, priority/exclusivity, conditional weight rules, tag quotas, and dimension scope.
+13. Quest pools under `data/<namespace>/quests/_shared/pools/` support context conditions, selector match mode, priority/exclusivity, conditional weight rules, tag quotas, and dimension scope.
 14. Quest availability accepts `weight` or `selection_weight`, `max_active_quests`, and `max_active_by_tag`.
 15. Quest triggers accept `priority`, `chance`, `weight`, and `exclusive`; their dispatch payload can be queried with `trigger_payload`.
 
 Start with [Persistent Quest Scenes](Quest-Scenes.md) for the authoring surface. [Quest Scene Runtime](Quest-Scene-Runtime.md) defines the underlying ownership, continuation, recovery, and cleanup guarantees for developers who need the high-level runtime contract.
 
-Basic quest module v2 files remain valid without an extracted scene. Add `quest_scenes` and `quest_encounters` only when a sequence needs persistent actors, resumable timing, controlled combat, or recovery across unloads.
+Basic quest bundles remain valid without a companion scene. Add private `scenes/` and `encounters/` only when a sequence needs persistent actors, resumable timing, controlled combat, or recovery across unloads.
 
 ## Beta.11 To Beta.12 Checklist
 
@@ -40,7 +40,7 @@ Beta.12 is not a marker-only update. Review these areas before changing pack tar
 2. Dialogue requests: options use `request`, and typed option files can omit `type` entirely.
 3. Complex logic: newer content should prefer `conditions` over older one-off helper fields.
 4. Dialogue filtering: beta.12 adds temporary mood filters, Social Attribute score filters, `priority`, `category`, and `text_key`.
-5. Quests: quest module v2 is preferred for new quests. Legacy v1 quest JSON remains supported through the compatibility adapter.
+5. Quests: beta.12 quest module v2 was the migration target at that release; beta.13 requires the bundle layout described above.
 6. Skill trades: beta.12 adds trade refresh behavior, persistent trade pools, and targetable Special Orders.
 7. Builder structures: eligible hired-builder structures are now data driven through `data/<namespace>/builder_structures/`.
 8. Builder workflow: there is no automatic beta.11 to beta.12 conversion pass.

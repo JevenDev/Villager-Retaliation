@@ -28,10 +28,16 @@ Use a datapack for behavior and authored text:
       duel_kits/
       dialogue_trees/en_us/
       forced_dialogue/
-      quest_encounters/
-      quest_pools/
-      quest_scenes/
       quests/
+        _shared/
+          locales/
+          pools/
+          scenes/
+          encounters/
+          rewards/
+        <questline>/<quest-slug>/
+          quest.json
+          locales/
       sell_prices/
       skill_trades/
       story_structures/
@@ -102,8 +108,8 @@ Example:
 ```text
 data/my_pack/dialogue/en_us/global/lines/rumors.json
 data/my_pack/dialogue_tuning/conversation_chances.json
-data/my_pack/quests/lost_civilization/echo_shard.json
-data/my_pack/quest_pools/daily_commissions.json
+data/my_pack/quests/lost_civilization/echo_shard/quest.json
+data/my_pack/quests/_shared/pools/daily_commissions.json
 data/my_pack/skill_trades/cartographer.json
 data/my_pack/builder_structures/custom_houses.json
 data/my_pack/loot_table/villager/profession/alchemist/common.json
@@ -115,7 +121,7 @@ Minecraft resolves exact resource paths first. Villager Retaliation then merges 
 
 - A file at the same resource path as a built-in file replaces that built-in file before VR reads it.
 - Inside many systems, a later entry with the same `id` replaces an earlier entry without replacing the whole file.
-- For quests, dialogue trees, and forced dialogue, top-level `replace: true` puts that loader in replacement mode: VR skips built-in resources for that system, then applies add-on resources.
+- Quest bundle structural files are whole-definition replacements by stable ID. Companions, rewards, and English apply transactionally with their canonical owner.
 - For normal dialogue, top-level `replace: true` clears the current dialogue pool, and `replace_sections` can clear only selected sections.
 - Top-level `remove: true` removes one quest, dialogue tree, or forced-dialogue definition by `id`.
 
@@ -123,7 +129,7 @@ Minecraft resolves exact resource paths first. Villager Retaliation then merges 
 | --- | --- | --- | --- |
 | Dialogue | Yes | `replace: true` or `replace_sections` | Replace by same entry `id` |
 | Dialogue trees | Yes | `replace: true` | `remove: true` with `id` |
-| Quests | Yes | `replace: true` | `remove: true` with `id` |
+| Quest bundles | Yes | Replace the same stable ID in a higher layer | Remove the owning bundle from that layer |
 | Quest pools | Yes | No global clear flag | `remove: true` with `id` |
 | Dialogue tuning | Yes; later values replace the same key | No global clear flag | Redefine the numeric key |
 | Forced dialogue | Yes | `replace: true` | `remove: true` with `id` |
@@ -151,7 +157,7 @@ Use a small control file when you want a complete overhaul:
 { "replace": true }
 ```
 
-For quests, dialogue trees, and forced dialogue, a control-only `replace` file disables the built-ins without registering a dummy quest, tree, or forced-dialogue entry. Put your replacement content in the same file or any other add-on file for that system.
+For dialogue trees and forced dialogue, a control-only `replace` file disables the built-ins without registering a dummy entry. Quest bundles do not use loader-wide control files.
 
 ## Suggested Workflow
 
@@ -212,9 +218,9 @@ data/
     dialogue/en_us/my_pack/lines/00_rumor.json
     dialogue_tuning/conversation_chances.json
     forced_dialogue/my_pack_events.json
-    quest_pools/daily_commissions.json
-    quests/old_roads/road_ledger.json
-    dialogue_trees/en_us/quests/old_roads/road_ledger.json
+    quests/_shared/pools/daily_commissions.json
+    quests/old_roads/road_ledger/quest.json
+    quests/old_roads/road_ledger/locales/en_us.json
 ```
 
 That is usually easier to maintain than one giant file per system.

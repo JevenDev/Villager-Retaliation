@@ -118,11 +118,13 @@ function createAppHarness() {
   };
   context.globalThis = context;
 
-  const source = `${fs.readFileSync("tools/datapack-builder/backend.js", "utf8")}
+  const source = `${fs.readFileSync("tools/quest-builder/quest-model.js", "utf8")}
+${fs.readFileSync("tools/datapack-builder/backend.js", "utf8")}
 ${fs.readFileSync("tools/datapack-builder/app.js", "utf8")}
 globalThis.__test = {
   get state() { return state; },
   set state(value) { state = value; },
+  questModel: QuestBuilderModel,
   backend: datapackBackend,
   createInitialState,
   generatedFiles,
@@ -137,6 +139,25 @@ globalThis.__test = {
 };`;
   vm.runInNewContext(source, context, { filename: "tools/datapack-builder/app.js" });
   return context.__test;
+}
+
+function testQuestBundleSchemas() {
+  const read = name => JSON.parse(fs.readFileSync(`tools/datapack-builder/${name}`, "utf8"));
+  const quest = read("quest-v2.schema.json");
+  const locale = read("quest-locale-v1.schema.json");
+  const reward = read("quest-reward-v1.schema.json");
+  const scene = read("scene-v1.schema.json");
+  const encounter = read("encounter-v1.schema.json");
+  assert(quest.required.includes("localization_prefix"), "Quest schema does not require localization_prefix.");
+  assert(
+    !new RegExp(quest.properties.id.pattern).test("examplemod:nested/quest"),
+    "Quest schema accepts slash-containing quest IDs."
+  );
+  assert(locale.properties.schema.const === "villagerretaliation:quest_locale/v1", "Locale schema id changed.");
+  assert(reward.properties.table.properties.type.const === "minecraft:generic", "Reward schema accepts a non-generic loot type.");
+  assert(scene.$defs.localized_reference && encounter.$defs.localized_reference, "Companion schemas do not expose localized references.");
+  assert(encounter.properties.location_message.$ref === "#/$defs/localized_reference",
+    "Encounter schema accepts inline player-facing location messages.");
 }
 
 function assert(condition, message) {
@@ -340,11 +361,13 @@ function testSurfaceImportsAndEdits(app) {
 
 function testAdvancedQuestRoundTrip(app) {
   app.state = app.createInitialState();
-  const questPath = "data/storypack/quests/routes/old_road.json";
-  const poolPath = "data/storypack/quest_pools/daily_routes.json";
+  const questPath = "data/storypack/quests/routes/old_road/quest.json";
+  const localePath = "data/storypack/quests/routes/old_road/locales/en_us.json";
+  const poolPath = "data/storypack/quests/_shared/pools/daily_routes.json";
   const quest = {
     schema: "villagerretaliation:quest/v2",
     id: "storypack:old_road",
+    localization_prefix: "storypack.quest.old_road",
     metadata: {
       title: "The Old Road",
       tags: ["storypack:road", "storypack:daily"],
@@ -389,7 +412,10 @@ function testAdvancedQuestRoundTrip(app) {
   assert(app.ingestKnownJson(questPath, JSON.stringify(quest)), "Advanced quest import failed.");
   assert(app.ingestKnownJson(poolPath, JSON.stringify(pool)), "Quest pool import failed.");
   const files = app.generatedFiles();
-  assert(JSON.stringify(canonicalJson(jsonFile(files, questPath))) === JSON.stringify(canonicalJson(quest)), "Advanced quest fields changed during builder round trip.");
+  const exportedQuest = jsonFile(files, questPath);
+  const locale = jsonFile(files, localePath);
+  const materialized = app.questModel.materializeLocalizedDefinition(exportedQuest, exportedQuest.localization_prefix, locale.messages);
+  assert(JSON.stringify(canonicalJson(materialized)) === JSON.stringify(canonicalJson(quest)), "Advanced quest fields changed during builder round trip.");
   assert(JSON.stringify(canonicalJson(jsonFile(files, poolPath))) === JSON.stringify(canonicalJson(pool)), "Quest pool fields changed during builder round trip.");
   assert(app.applyEditedFile(questPath, JSON.stringify({ ...quest, metadata: { ...quest.metadata, revision: 4 } })), "Advanced quest edit failed.");
   assert(jsonFile(app.generatedFiles(), questPath).metadata.revision === 4, "Edited quest revision was not exported.");
@@ -416,8 +442,8 @@ function testBackendPathNormalization(app) {
 
 function testSceneResourceRoundTrip(app) {
   app.state = app.createInitialState();
-  const scenePath = "data/storypack/quest_scenes/gate_ambush.json";
-  const encounterPath = "data/storypack/quest_encounters/gate_ambush.json";
+  const scenePath = "data/storypack/quests/routes/gate_ambush/scenes/gate_ambush.json";
+  const encounterPath = "data/storypack/quests/routes/gate_ambush/encounters/gate_ambush.json";
   const scene = {
     schema: "villagerretaliation:scene/v1",
     id: "storypack:gate_ambush",
@@ -559,6 +585,7 @@ function testCheckedInSkillTradeExample(app) {
 }
 
 const app = createAppHarness();
+testQuestBundleSchemas();
 testTypedFolderOutput(app);
 testTypedImportAndProfessionDefaults(app);
 testBundleImport(app);

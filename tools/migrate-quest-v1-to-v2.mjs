@@ -1,6 +1,9 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+
+const questModel = createRequire(import.meta.url)("./quest-builder/quest-model.js");
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const questRoot = path.join(root, "neoforge/src/main/resources/data/villagerretaliation/quests");
@@ -139,6 +142,7 @@ function migrateQuest(questFile, quest, dialogueTreeFile, dialogueTree) {
   const candidate = {
     schema: schemaId,
     id: questId,
+    localization_prefix: localizationPrefix(questId),
     metadata: buildMetadata(quest),
     provider: buildProvider(quest),
     entry_stage: entryStageId(quest),
@@ -528,20 +532,33 @@ function semanticComparison(quest, candidate) {
     v2_trigger_count: v2TriggerIds.length
   };
 }
+function localizationPrefix(questId) {
+  const [namespace = "my_pack", questPath = "quest"] = String(questId || "").split(":");
+  const slug = questPath.replaceAll("/", ".").replace(/[^a-z0-9_.-]+/g, "_");
+  return `${namespace}.quest.${slug}`;
+}
+
 
 async function writeMigrationOutput(outDir, migration) {
   const resolved = path.resolve(outDir);
   if (!isSubpath(resolved, runMigrationRoot)) {
     throw new Error(`Refusing to write migrations outside ${relative(runMigrationRoot)}.`);
   }
-  await mkdir(resolved, { recursive: true });
-  const baseName = safeFileName(migration.candidate.id || "quest");
-  const candidatePath = path.join(resolved, `${baseName}.quest-v2.json`);
-  const reportPath = path.join(resolved, `${baseName}.migration-report.json`);
-  await writeFile(candidatePath, stableJson(migration.candidate) + "\n", "utf8");
+  const bundle = questModel.questBundleFiles(migration.candidate);
+  const candidatePath = path.join(resolved, ...bundle.questPath.split("/"));
+  const localePath = path.join(resolved, ...bundle.localePath.split("/"));
+  const reportPath = path.join(resolved, "migration-report.json");
+  const packMetaPath = path.join(resolved, "pack.mcmeta");
+  await mkdir(path.dirname(candidatePath), { recursive: true });
+  await mkdir(path.dirname(localePath), { recursive: true });
+  await writeFile(packMetaPath, stableJson({ pack: { pack_format: 48, description: "Converted Villager Retaliation quest bundle" }, villagerretaliation: { pack_version: "1.0.0-beta.13" } }) + "\n", "utf8");
+  await writeFile(candidatePath, stableJson(bundle.quest) + "\n", "utf8");
+  await writeFile(localePath, stableJson(bundle.locale) + "\n", "utf8");
   await writeFile(reportPath, stableJson(migration.report) + "\n", "utf8");
   return {
     candidate: relative(candidatePath),
+    locale: relative(localePath),
+    pack: relative(packMetaPath),
     report: relative(reportPath)
   };
 }

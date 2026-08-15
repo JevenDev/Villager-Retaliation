@@ -9,7 +9,6 @@ import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleRuntimeMaterializer;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.quest.content.reward.QuestRewardCatalog;
-import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import java.util.ArrayList;
@@ -26,11 +25,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.level.storage.loot.LootTable;
 
 public final class EncounterResources {
     public static final ResourceLocation SCHEMA = VillagerRetaliation.id("encounter/v1");
@@ -42,7 +39,7 @@ public final class EncounterResources {
                     ResourceLocation.parse("minecraft:armor"), new double[] {0.0D, 30.0D},
                     ResourceLocation.parse("minecraft:knockback_resistance"),
                             new double[] {0.0D, 1.0D});
-    private static volatile Cache cache = new Cache(null, Map.of(), Map.of());
+    private static volatile TestOverride testOverride = TestOverride.empty();
 
     private EncounterResources() {}
 
@@ -64,7 +61,7 @@ public final class EncounterResources {
     }
 
     public static void clearCache() {
-        cache = new Cache(null, Map.of(), Map.of());
+        testOverride = TestOverride.empty();
         QuestContentCatalogs.invalidate();
     }
 
@@ -74,7 +71,7 @@ public final class EncounterResources {
         templates.stream()
                 .sorted(Comparator.comparing(v -> v.id().toString()))
                 .forEach(v -> map.put(v.id(), v));
-        cache = new Cache(server, Map.copyOf(map), Map.of());
+        testOverride = new TestOverride(server, new ContentSnapshot(Map.copyOf(map), Map.of()));
         QuestContentCatalogs.invalidate();
     }
 
@@ -116,52 +113,40 @@ public final class EncounterResources {
             MinecraftServer server,
             QuestBundleTransactions.Result bundles,
             QuestRewardCatalog rewards) {
-        Cache snapshot = load(server, bundles, rewards);
-        return new ContentSnapshot(snapshot.templates(), snapshot.diagnostics());
+        return load(server, bundles, rewards);
     }
 
-    private static Cache load(
+    private static ContentSnapshot load(
             MinecraftServer server,
             QuestBundleTransactions.Result bundles,
             QuestRewardCatalog rewards) {
-        Cache value = cache;
-        if (value.server == server) return value;
-        synchronized (EncounterResources.class) {
-            if (cache.server == server) return cache;
-            Map<ResourceLocation, EncounterTemplate> templates = new LinkedHashMap<>();
-            Map<ResourceLocation, List<String>> diagnostics = new LinkedHashMap<>();
-            for (var resource : DatapackResourceLoader.jsonResources(server, "quest_encounters")) {
-                JsonObject root =
-                        DatapackResourceLoader.readObject(
-                                        resource.location(), "quest encounter", resource.resource())
-                                .orElse(null);
-                readDefinition(
-                        server, resource.location(), root, rewards,
-                        templates, diagnostics, List.of());
-            }
-            if (bundles != null) {
-                bundles.bundles().values().stream()
-                        .sorted(java.util.Comparator.comparing(bundle -> bundle.owner().key()))
-                        .forEach(bundle -> bundle.definitions()
-                                .getOrDefault(QuestBundlePath.Kind.ENCOUNTER, Map.of())
-                                .keySet().stream().sorted().forEach(id -> {
-                                    QuestBundleRuntimeMaterializer.DefinitionResult materialized =
-                                            QuestBundleRuntimeMaterializer.materializeDefinition(
-                                                    bundle, QuestBundlePath.Kind.ENCOUNTER, id);
-                                    readDefinition(
-                                            server,
-                                            bundleSource(bundle.owner(), "encounters", id),
-                                            materialized.definition(),
-                                            rewards,
-                                            templates,
-                                            diagnostics,
-                                            materialized.errors());
-                                }));
-            }
-            validateVariantGraph(templates, diagnostics);
-            cache = new Cache(server, Map.copyOf(templates), Map.copyOf(diagnostics));
-            return cache;
+        TestOverride override = testOverride;
+        if (override.server() == server) {
+            return override.snapshot();
         }
+        Map<ResourceLocation, EncounterTemplate> templates = new LinkedHashMap<>();
+        Map<ResourceLocation, List<String>> diagnostics = new LinkedHashMap<>();
+        if (bundles != null) {
+            bundles.bundles().values().stream()
+                    .sorted(java.util.Comparator.comparing(bundle -> bundle.owner().key()))
+                    .forEach(bundle -> bundle.definitions()
+                            .getOrDefault(QuestBundlePath.Kind.ENCOUNTER, Map.of())
+                            .keySet().stream().sorted().forEach(id -> {
+                                QuestBundleRuntimeMaterializer.DefinitionResult materialized =
+                                        QuestBundleRuntimeMaterializer.materializeDefinition(
+                                                bundle, QuestBundlePath.Kind.ENCOUNTER, id);
+                                readDefinition(
+                                        server,
+                                        bundleSource(bundle.owner(), "encounters", id),
+                                        materialized.definition(),
+                                        rewards,
+                                        templates,
+                                        diagnostics,
+                                        materialized.errors());
+                            }));
+        }
+        validateVariantGraph(templates, diagnostics);
+        return new ContentSnapshot(Map.copyOf(templates), Map.copyOf(diagnostics));
     }
 
     private static void readDefinition(
@@ -2161,8 +2146,9 @@ public final class EncounterResources {
             Map<ResourceLocation, List<String>> diagnostics) {
     }
 
-    private record Cache(
-            MinecraftServer server,
-            Map<ResourceLocation, EncounterTemplate> templates,
-            Map<ResourceLocation, List<String>> diagnostics) {}
+    private record TestOverride(MinecraftServer server, ContentSnapshot snapshot) {
+        private static TestOverride empty() {
+            return new TestOverride(null, new ContentSnapshot(Map.of(), Map.of()));
+        }
+    }
 }

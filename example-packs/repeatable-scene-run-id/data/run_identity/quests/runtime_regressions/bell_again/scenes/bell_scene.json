@@ -12,9 +12,16 @@
     {
       "id": "announce",
       "type": "villagerretaliation:dialogue",
-      "data": { "text": "A new quest run rings the bell." },
+      "data": {
+        "text": {
+          "key": "#scene.bell_scene.step.announce.data.text"
+        }
+      },
       "next": "done"
     },
-    { "id": "done", "type": "villagerretaliation:scene_complete" }
+    {
+      "id": "done",
+      "type": "villagerretaliation:scene_complete"
+    }
   ]
 }

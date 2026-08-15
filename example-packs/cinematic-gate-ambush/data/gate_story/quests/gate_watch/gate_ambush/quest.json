@@ -1,0 +1,180 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "gate_story:gate_ambush",
+  "metadata": {
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
+    },
+    "questline": "gate_watch",
+    "tags": [
+      "example",
+      "persistent_scene"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:armorer"
+      ]
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": true,
+    "cross_villager_compatible": true,
+    "abandonment": "allow_repickup"
+  },
+  "entry_stage": "briefing",
+  "stages": [
+    {
+      "id": "briefing",
+      "title": {
+        "key": "#stage.briefing.title"
+      },
+      "description": {
+        "key": "#stage.briefing.description"
+      },
+      "objectives": [],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.briefing.dialogue.offer.label"
+          },
+          "request": "question",
+          "lines": {
+            "key": "#stage.briefing.dialogue.offer.lines"
+          },
+          "responses": [
+            {
+              "id": "decide",
+              "label": {
+                "key": "#stage.briefing.dialogue.offer.response.decide.label"
+              },
+              "scene": "decision"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "decision",
+          "lines": {
+            "key": "#stage.briefing.scene.decision.lines"
+          },
+          "responses": [
+            {
+              "id": "bold",
+              "label": {
+                "key": "#stage.briefing.scene.decision.response.bold.label"
+              },
+              "scene": "bold_confirm",
+              "actions": [
+                {
+                  "type": "quest",
+                  "action": "start"
+                }
+              ]
+            },
+            {
+              "id": "cautious",
+              "label": {
+                "key": "#stage.briefing.scene.decision.response.cautious.label"
+              },
+              "scene": "cautious_confirm",
+              "actions": [
+                {
+                  "type": "quest",
+                  "action": "start"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bold_confirm",
+          "lines": {
+            "key": "#stage.briefing.scene.bold_confirm.lines"
+          },
+          "responses": [
+            {
+              "id": "bold",
+              "label": {
+                "key": "#stage.briefing.scene.bold_confirm.response.bold.label"
+              },
+              "stage": "defending",
+              "actions": [
+                {
+                  "type": "start_scene",
+                  "scene": "gate_story:gate_ambush",
+                  "operation_id": "gate_ambush_v1",
+                  "wait_for_result": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cautious_confirm",
+          "lines": {
+            "key": "#stage.briefing.scene.cautious_confirm.lines"
+          },
+          "responses": [
+            {
+              "id": "cautious",
+              "label": {
+                "key": "#stage.briefing.scene.cautious_confirm.response.cautious.label"
+              },
+              "stage": "defending",
+              "actions": [
+                {
+                  "type": "start_scene",
+                  "scene": "gate_story:gate_ambush",
+                  "operation_id": "gate_ambush_v1",
+                  "wait_for_result": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "defending",
+      "title": {
+        "key": "#stage.defending.title"
+      },
+      "description": {
+        "key": "#stage.defending.description"
+      },
+      "objectives": [],
+      "dialogue": {
+        "reminder": {
+          "lines": {
+            "key": "#stage.defending.dialogue.reminder.lines"
+          }
+        },
+        "turn_in": {
+          "lines": {
+            "key": "#stage.defending.dialogue.turn_in.lines"
+          }
+        }
+      }
+    }
+  ],
+  "ui": {
+    "title": {
+      "key": "#ui.title"
+    },
+    "tracker_text": {
+      "key": "#ui.tracker_text"
+    },
+    "icon": "minecraft:iron_sword",
+    "color": "#9b4f3f"
+  },
+  "localization_prefix": "gate_story.quest.gate_ambush"
+}

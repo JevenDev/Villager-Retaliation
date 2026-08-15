@@ -2,16 +2,25 @@
   "schema": "villagerretaliation:quest/v2",
   "id": "example:protected_guide",
   "metadata": {
-    "title": "The Protected Guide",
-    "description": "A guide who remains available throughout the expedition.",
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
+    },
     "questline": "example",
-    "tags": ["example", "protected_provider"]
+    "tags": [
+      "example",
+      "protected_provider"
+    ]
   },
   "provider": {
     "type": "villagerretaliation:villager",
     "death_protection": "while_active",
     "filters": {
-      "professions": ["minecraft:cartographer"]
+      "professions": [
+        "minecraft:cartographer"
+      ]
     }
   },
   "availability": {
@@ -24,5 +33,6 @@
       "id": "begin",
       "objectives": []
     }
-  ]
+  ],
+  "localization_prefix": "example.quest.protected_guide"
 }

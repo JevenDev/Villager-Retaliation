@@ -234,7 +234,7 @@ public final class QuestBundleLocalization {
         return switch (field) {
             case "title", "description", "label", "text", "lines",
                     "tracker_text", "tracker_complete_text", "complete_text",
-                    "custom_name", "trophy_name" -> true;
+                    "custom_name", "trophy_name", "boss_bar_title" -> true;
             default -> false;
         };
     }

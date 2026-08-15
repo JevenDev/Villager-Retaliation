@@ -1,0 +1,60 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "run_identity.quest.bell_again.metadata.title": {
+      "lines": [
+        "Run the Bell Again"
+      ]
+    },
+    "run_identity.quest.bell_again.metadata.description": {
+      "lines": [
+        "A repeatable fixture for quest-run scene identity."
+      ]
+    },
+    "run_identity.quest.bell_again.stage.ring.title": {
+      "lines": [
+        "Ring the bell"
+      ]
+    },
+    "run_identity.quest.bell_again.stage.ring.description": {
+      "lines": [
+        "Launch the same authored operation twice in this run."
+      ]
+    },
+    "run_identity.quest.bell_again.stage.ring.dialogue.offer.label": {
+      "lines": [
+        "Run the Bell Again"
+      ]
+    },
+    "run_identity.quest.bell_again.stage.ring.dialogue.offer.lines": {
+      "lines": [
+        "Each run should have one bell scene of its own."
+      ]
+    },
+    "run_identity.quest.bell_again.stage.ring.dialogue.offer.response.accept.label": {
+      "lines": [
+        "Ring it"
+      ]
+    },
+    "run_identity.quest.bell_again.stage.ring.dialogue.turn_in.lines": {
+      "lines": [
+        "The run is recorded. Start it again to receive a new run identity."
+      ]
+    },
+    "run_identity.quest.bell_again.ui.title": {
+      "lines": [
+        "Run the Bell Again"
+      ]
+    },
+    "run_identity.quest.bell_again.ui.tracker_text": {
+      "lines": [
+        "Return to the librarian to finish this run."
+      ]
+    },
+    "run_identity.quest.bell_again.scene.bell_scene.step.announce.data.text": {
+      "lines": [
+        "A new quest run rings the bell."
+      ]
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -7,14 +7,22 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workspace = await mkdtemp(path.join(tmpdir(), "vr-quest-v2-tools-"));
 
+const conversionParent = path.join(root, "run", "quest-migrations");
+await mkdir(conversionParent, { recursive: true });
+const conversionWorkspace = await mkdtemp(path.join(conversionParent, "tool-test-"));
 try {
-  const validQuest = path.join(workspace, "valid-quest-v2.json");
-  const invalidQuest = path.join(workspace, "invalid-quest-v2.json");
+  const validRoot = path.join(workspace, "valid");
+  const invalidRoot = path.join(workspace, "invalid");
+  const validQuest = path.join(validRoot, "quest.json");
+  const invalidQuest = path.join(invalidRoot, "quest.json");
   const v1Quest = path.join(workspace, "migration-source-v1.json");
+  await mkdir(validRoot, { recursive: true });
+  await mkdir(invalidRoot, { recursive: true });
 
   await writeJson(validQuest, {
     schema: "villagerretaliation:quest/v2",
     id: "villagerretaliation:tool_valid",
+    localization_prefix: "villagerretaliation.quest.tool_valid",
     metadata: {
       revision: 2,
       migration: {
@@ -50,16 +58,16 @@ try {
         ],
         dialogue: {
           offer: {
-            lines: ["Bring one paper."]
+            lines: { key: "#offer.lines" }
           },
           turn_in: {
-            lines: ["Thank you for the paper."]
+            lines: { key: "#turn_in.lines" }
           }
         }
       }
     ],
     ui: {
-      tracker_text: "Bring {item}.",
+      tracker_text: { key: "#ui.tracker_text" },
       color: "#ffffff",
       outline_color: "#000000",
       placeholders: {
@@ -69,6 +77,7 @@ try {
   });
 
   await writeJson(invalidQuest, {
+    localization_prefix: "villagerretaliation.quest.tool_invalid",
     schema: "villagerretaliation:quest/v2",
     id: "villagerretaliation:tool_invalid",
     provider: {
@@ -87,7 +96,7 @@ try {
         responses: [
           {
             id: "jump",
-            label: "Jump",
+            label: { key: "#response.jump.label" },
             transition: {
               stage: "missing"
             },
@@ -100,11 +109,29 @@ try {
           }
         ],
         ui: {
-          tracker_text: "Bring {missing}."
+          tracker_text: { key: "#ui.tracker_text" }
         }
       }
     ]
   });
+  await mkdir(path.join(validRoot, "locales"), { recursive: true });
+  await mkdir(path.join(invalidRoot, "locales"), { recursive: true });
+  await writeJson(path.join(validRoot, "locales", "en_us.json"), {
+    schema: "villagerretaliation:quest_locale/v1",
+    messages: {
+      "villagerretaliation.quest.tool_valid.offer.lines": { lines: ["Bring one paper."] },
+      "villagerretaliation.quest.tool_valid.turn_in.lines": { lines: ["Thank you for the paper."] },
+      "villagerretaliation.quest.tool_valid.ui.tracker_text": { lines: ["Bring {item}."] }
+    }
+  });
+  await writeJson(path.join(invalidRoot, "locales", "en_us.json"), {
+    schema: "villagerretaliation:quest_locale/v1",
+    messages: {
+      "villagerretaliation.quest.tool_invalid.response.jump.label": { lines: ["Jump"] },
+      "villagerretaliation.quest.tool_invalid.ui.tracker_text": { lines: ["Bring {missing}."] }
+    }
+  });
+
 
   await writeJson(v1Quest, {
     id: "villagerretaliation:tool_migrate",
@@ -179,9 +206,13 @@ try {
   assert(migrated.stages[0].objectives[0].tracker.complete_text === "Book delivered.", "Migration dropped objective completion text.");
   assert(migrated.stages[0].ui.tracker_text === "Bring the book.", "Migration dropped stage tracker text.");
 
-  const migratedQuest = path.join(workspace, "migrated-quest-v2.json");
-  await writeFile(migratedQuest, first.stdout, "utf8");
-  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", migratedQuest]);
+  const conversion = JSON.parse(run("node", [
+    "tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree",
+    "--out-dir", conversionWorkspace
+  ]).stdout);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", conversion.candidate]);
+  assert(conversion.locale.endsWith("/locales/en_us.json"), "Converter did not emit bundle English.");
+  assert(conversion.pack.endsWith("/pack.mcmeta"), "Converter did not emit pack.mcmeta.");
 
   const check = JSON.parse(run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree", "--check"]).stdout);
   assert(check.ok === true, "Migration check mode reported unsupported conversions for the simple fixture.");
@@ -190,6 +221,7 @@ try {
   console.log("Quest module v2 tooling smoke test passed.");
 } finally {
   await rm(workspace, { recursive: true, force: true });
+  await rm(conversionWorkspace, { recursive: true, force: true });
 }
 
 function run(command, args, options = {}) {

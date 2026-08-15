@@ -45,6 +45,18 @@ public final class QuestBundleArchitectureGameTests {
                 "nested companion accepted");
         helper.assertTrue(!classify(NS, "quests/_shared/alpha/quest.json").valid(),
                 "_shared accepted as questline");
+        helper.assertTrue(!classify(NS, "quests/road/alpha.json").valid(),
+                "loose legacy quest accepted");
+        helper.assertTrue(!classify(NS, "quest_messages/en_us.json").valid(),
+                "legacy quest messages accepted");
+        helper.assertTrue(!classify(NS, "quest_scenes/alpha.json").valid(),
+                "legacy scene accepted");
+        helper.assertTrue(!classify(NS, "quest_encounters/alpha.json").valid(),
+                "legacy encounter accepted");
+        helper.assertTrue(!classify(NS, "quest_pools/alpha.json").valid(),
+                "legacy pool accepted");
+        helper.assertTrue(!classify(NS, "loot_table/quest/alpha.json").valid(),
+                "legacy reward accepted");
 
         LocalizedReference relative = LocalizedReference.read(element("{\"key\":\"#title\"}")).orElseThrow();
         LocalizedReference absolute =

@@ -10,6 +10,10 @@
     const packVersionNamespace = options.packVersionNamespace;
     const packVersionStorageKey = options.packVersionStorageKey;
     const encoder = new TextEncoder();
+    const questModel = globalThis.QuestBuilderModel || window.QuestBuilderModel;
+    if (!questModel) {
+      throw new Error("Quest bundle support requires quest-builder/quest-model.js.");
+    }
 
     function createInitialState() {
       return {
@@ -437,7 +441,25 @@
     function generatedQuestFiles(state) {
       const files = {};
       for (const [index, entry] of state.quests.modules.entries()) {
-        files[questModulePath(state, entry, index)] = JSON.stringify(stripBuilderFields(entry), null, 2) + "\n";
+        const source = stripBuilderFields(entry);
+        const bundle = questModel.questBundleFiles(source);
+        const questPath = questModulePath(state, entry, index);
+        const localePath = questLocalePath(state, entry, index);
+        let locale = bundle.locale;
+        const existingSource = state.extraFiles[localePath];
+        if (typeof existingSource === "string") {
+          try {
+            const existing = JSON.parse(stripTextBom(existingSource));
+            if (existing?.schema === "villagerretaliation:quest_locale/v1"
+                && existing.messages && typeof existing.messages === "object") {
+              locale = { ...existing, messages: { ...existing.messages, ...bundle.locale.messages } };
+            }
+          } catch {
+            // The normal preview validator reports malformed preserved locale files.
+          }
+        }
+        files[questPath] = JSON.stringify(bundle.quest, null, 2) + "\n";
+        files[localePath] = JSON.stringify(locale, null, 2) + "\n";
       }
       return files;
     }
@@ -456,12 +478,48 @@
     }
 
     function questModulePath(state, entry, index = 0) {
-      if (entry?.__sourcePath) return entry.__sourcePath;
+      if (questBundlePathInfo(entry?.__sourcePath)) return entry.__sourcePath;
       const parts = resourceLocationParts(entry?.id);
       const namespace = namespaceify(parts.namespace || contentNamespace(state), contentNamespace(state));
       const fallbackName = `quest_${String(index + 1).padStart(2, "0")}`;
-      const fileName = normalizeFileName(entry?.__fileName || parts.path || fallbackName, fallbackName);
-      return `data/${namespace}/quests/${fileName}.json`;
+      const slug = normalizeFileName(entry?.__fileName || parts.path || fallbackName, fallbackName).replaceAll("/", "_");
+      const questline = normalizeFileName(entry?.metadata?.questline || "quests", "quests").replaceAll("/", "_");
+      return `data/${namespace}/quests/${questline}/${slug}/quest.json`;
+    }
+
+    function questLocalePath(state, entry, index = 0, locale = "en_us") {
+      return questModulePath(state, entry, index).replace(/\/quest\.json$/, `/locales/${locale}.json`);
+    }
+
+    function questBundlePathInfo(path) {
+      const match = String(path || "").match(/^data\/([^/]+)\/quests\/(?!_shared\/)([^/]+)\/([^/]+)\/quest\.json$/);
+      return match ? { namespace: match[1], questline: match[2], slug: match[3] } : null;
+    }
+
+    function questBundleResourceKind(path) {
+      if (questBundlePathInfo(path)) return "quests";
+      const shared = String(path || "").match(/^data\/[^/]+\/quests\/_shared\/(locales|pools|scenes|encounters|rewards)\/.+\.json$/);
+      const owned = String(path || "").match(/^data\/[^/]+\/quests\/[^/]+\/[^/]+\/(locales|scenes|encounters|rewards)\/.+\.json$/);
+      const kind = shared?.[1] || owned?.[1];
+      return kind ? `quest_${kind}` : "";
+    }
+
+    function isLegacyQuestResourcePath(path) {
+      const value = String(path || "");
+      if (/^data\/[^/]+\/(?:quest_messages|quest_scenes|quest_encounters|quest_pools)\/.+\.json$/.test(value)) {
+        return true;
+      }
+      if (/^data\/[^/]+\/loot_table\/quest\/.+\.json$/.test(value)) return true;
+      return /^data\/[^/]+\/quests\/.+\.json$/.test(value)
+        && !questBundleResourceKind(value);
+    }
+
+    function validBundleCompanion(kind, json) {
+      if (kind === "quest_scenes") return isSceneV1Resource(json);
+      if (kind === "quest_encounters") return isEncounterV1Resource(json);
+      if (kind === "quest_locales") return json?.schema === "villagerretaliation:quest_locale/v1" && json.messages && typeof json.messages === "object";
+      if (kind === "quest_rewards") return json?.schema === "villagerretaliation:quest_reward/v1" && typeof json.id === "string" && json.table && typeof json.table === "object";
+      return kind === "quest_pools";
     }
 
     function resourceLocationParts(id) {
@@ -579,9 +637,8 @@
       if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
       if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
       if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
-      if (/^data\/[^/]+\/quests\/.+\.json$/.test(path)) return "quests";
-      if (/^data\/[^/]+\/quest_scenes\/.+\.json$/.test(path)) return "quest_scenes";
-      if (/^data\/[^/]+\/quest_encounters\/.+\.json$/.test(path)) return "quest_encounters";
+      if (questBundleResourceKind(path)) return questBundleResourceKind(path);
+      if (isLegacyQuestResourcePath(path)) return "unsupported_legacy_quest";
       if (/^data\/[^/]+\/story_structures\/.+\.json$/.test(path)) return "story_structures";
       if (/^data\/[^/]+\/story_biomes\/.+\.json$/.test(path)) return "story_biomes";
       if (path === namesPath(state)) return "names";
@@ -600,6 +657,8 @@
         }
       }
       const paths = Object.keys(files).map((path) => path.replace(/^\/+/, ""));
+      const hasBeta13Path = paths.some((path) => Boolean(questBundleResourceKind(path)));
+      if (hasBeta13Path) return "1.0.0-beta.13";
       const hasBeta12DialogueField = Object.entries(files).some(([path, value]) => (
         /^data\/[^/]+\/dialogue\/.+\.json$/.test(path.replace(/^\/+/, ""))
         && typeof value === "string"
@@ -676,24 +735,26 @@
         return true;
       }
 
-      if (path.match(/^data\/[^/]+\/quests\/.+\.json$/)) {
+      if (questBundlePathInfo(path)) {
         const parsed = json();
-        if (!parsed) return false;
-        if (isQuestV2Module(parsed)) {
-          replaceQuestModuleFile(state, path, parsed);
-        } else {
-          state.extraFiles[path] = source;
-          if (isQuestV1Resource(parsed)) upsertQuestV1Import(state, parsed, path);
-        }
+        if (!isQuestV2Module(parsed)) return false;
+        replaceQuestModuleFile(state, path, parsed);
         return true;
       }
 
-      if (path.match(/^data\/[^/]+\/(?:quest_scenes|quest_encounters)\/.+\.json$/)) {
+      const bundleKind = questBundleResourceKind(path);
+      if (bundleKind) {
+        const parsed = json();
+        if (!parsed || !validBundleCompanion(bundleKind, parsed)) return false;
+        state.extraFiles[path] = source;
+        return true;
+      }
+
+      if (isLegacyQuestResourcePath(path)) {
         const parsed = json();
         if (!parsed) return false;
-        const valid = path.includes("/quest_scenes/") ? isSceneV1Resource(parsed) : isEncounterV1Resource(parsed);
-        if (!valid) return false;
         state.extraFiles[path] = source;
+        if (isQuestV1Resource(parsed)) upsertQuestV1Import(state, parsed, path);
         return true;
       }
 
@@ -906,30 +967,22 @@
         return true;
       }
 
-      if (/^data\/[^/]+\/quests\/.+\.json$/.test(path)) {
-        if (isQuestV2Module(json)) {
-          replaceQuestModuleFile(state, path, json);
-        } else {
-          state.extraFiles[path] = stripTextBom(source);
-          if (isQuestV1Resource(json)) upsertQuestV1Import(state, json, path);
-        }
+      if (questBundlePathInfo(path)) {
+        if (!isQuestV2Module(json)) return false;
+        replaceQuestModuleFile(state, path, json);
         return true;
       }
 
-      if (/^data\/[^/]+\/quest_pools\/.+\.json$/.test(path)) {
+      const bundleKind = questBundleResourceKind(path);
+      if (bundleKind) {
+        if (!validBundleCompanion(bundleKind, json)) return false;
         state.extraFiles[path] = stripTextBom(source);
         return true;
       }
 
-      if (/^data\/[^/]+\/quest_scenes\/.+\.json$/.test(path)) {
-        if (!isSceneV1Resource(json)) return false;
+      if (isLegacyQuestResourcePath(path)) {
         state.extraFiles[path] = stripTextBom(source);
-        return true;
-      }
-
-      if (/^data\/[^/]+\/quest_encounters\/.+\.json$/.test(path)) {
-        if (!isEncounterV1Resource(json)) return false;
-        state.extraFiles[path] = stripTextBom(source);
+        if (isQuestV1Resource(json)) upsertQuestV1Import(state, json, path);
         return true;
       }
 
@@ -1295,6 +1348,10 @@
       generatedForcedDialogueFiles,
       generatedQuestFiles,
       questModulePath,
+      questLocalePath,
+      questBundlePathInfo,
+      questBundleResourceKind,
+      isLegacyQuestResourcePath,
       isQuestV2Module,
       isQuestV1Resource,
       isSceneV1Resource,

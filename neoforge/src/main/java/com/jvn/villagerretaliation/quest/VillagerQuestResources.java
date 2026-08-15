@@ -7,7 +7,6 @@ import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEventKind;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonObject;
-import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
@@ -18,7 +17,6 @@ import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCompiler;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestCatalog;
 import com.jvn.villagerretaliation.quest.compiled.QuestSourcePointer;
-import com.jvn.villagerretaliation.quest.compiler.QuestV1Compiler;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalog;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
@@ -33,7 +31,6 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
-import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
@@ -76,7 +73,7 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_STRUCTURE_SEARCH_RADIUS = 256;
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
-    private static volatile CachedQuests cachedQuests = emptyCache();
+    private static volatile CachedQuests testOverride = emptyCache();
 
     private VillagerQuestResources() {
     }
@@ -99,7 +96,7 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = emptyCache();
+        testOverride = emptyCache();
         QuestContentCatalogs.invalidate();
     }
 
@@ -124,7 +121,7 @@ public final class VillagerQuestResources {
         }
         CompiledQuestCatalog catalog = new CompiledQuestCatalog(compiled);
         Map<ResourceLocation, QuestDefinition> frozenQuests = freezeOrderedResourceMap(quests);
-        cachedQuests = new CachedQuests(
+        testOverride = new CachedQuests(
                 server,
                 catalog,
                 dialogueCatalog == null ? QuestDialogueCatalog.empty() : dialogueCatalog,
@@ -265,32 +262,22 @@ public final class VillagerQuestResources {
             MinecraftServer server,
             QuestBundleTransactions.Result bundles) {
         VillagerRetaliationRegistries.freezeForDatapackCompilation();
-        CachedQuests current = cachedQuests;
-        if (current.server() == server) {
-            return current;
+        CachedQuests override = testOverride;
+        if (override.server() == server) {
+            return override;
         }
-
-        synchronized (VillagerQuestResources.class) {
-            current = cachedQuests;
-            if (current.server() == server) {
-                return current;
-            }
-
-            LoadedQuestCatalog catalog = read(server, bundles);
-            Map<ResourceLocation, QuestDefinition> quests = catalog.questDefinitions();
-            CachedQuests loaded = new CachedQuests(
-                    server,
-                    catalog.compiledCatalog(),
-                    catalog.dialogueCatalog(),
-                    quests,
-                    objectiveEventQuestIds(quests),
-                    objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
-                    memoryEventQuestIds(quests),
-                    exclusiveGroupQuestIds(quests),
-                    triggerEventQuestIds(catalog.compiledCatalog()));
-            cachedQuests = loaded;
-            return loaded;
-        }
+        LoadedQuestCatalog catalog = read(server, bundles);
+        Map<ResourceLocation, QuestDefinition> quests = catalog.questDefinitions();
+        return new CachedQuests(
+                server,
+                catalog.compiledCatalog(),
+                catalog.dialogueCatalog(),
+                quests,
+                objectiveEventQuestIds(quests),
+                objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
+                memoryEventQuestIds(quests),
+                exclusiveGroupQuestIds(quests),
+                triggerEventQuestIds(catalog.compiledCatalog()));
     }
 
     private static Set<ResourceLocation> objectiveQuestIds(
@@ -385,42 +372,12 @@ public final class VillagerQuestResources {
         Map<ResourceLocation, CompiledQuest> compiledQuests = new LinkedHashMap<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
         List<QuestDialogueCatalog> dialogueCatalogs = new ArrayList<>();
-        List<QuestResourceEnvelope> resources = DatapackResourceLoader
-                .jsonResources(server, RESOURCE_ROOT, VillagerQuestResources::isLooseQuestResource)
-                .stream()
-                .map(resource -> DatapackResourceLoader.readObject(resource.location(), "quest", resource.resource())
-                        .flatMap(root -> QuestResourceEnvelope.read(resource, root)))
-                .flatMap(Optional::stream)
-                .toList();
-        boolean replacementMode = resources.stream()
-                .filter(resource -> resource.schemaVersion() == QuestSchemaVersion.V1)
-                .anyMatch(resource -> DatapackJsonReader.readBoolean(resource.root(), "replace"));
-        for (QuestResourceEnvelope resource : resources) {
-            if (replacementMode
-                    && isBuiltInModResource(resource.source())
-                    && !DatapackJsonReader.readBoolean(resource.root(), "replace")) {
-                continue;
-            }
-            if (resource.schemaVersion() == QuestSchemaVersion.V2) {
-                readV2File(server.registryAccess(), resource, quests, compiledQuests, sources, dialogueCatalogs);
-                continue;
-            }
-            readFile(server.registryAccess(), resource, quests, compiledQuests, sources, replacementMode);
-        }
         readBundles(server.registryAccess(), bundles, quests, compiledQuests, sources, dialogueCatalogs);
         validatePrerequisiteReferences(quests, compiledQuests);
         return new LoadedQuestCatalog(
                 freezeOrderedResourceMap(quests),
                 new CompiledQuestCatalog(compiledQuests),
                 QuestDialogueCatalog.merge(dialogueCatalogs));
-    }
-
-    private static boolean isLooseQuestResource(ResourceLocation location) {
-        String path = location == null ? "" : location.getPath();
-        if (!path.startsWith(RESOURCE_ROOT + "/") || !path.endsWith(".json")) {
-            return false;
-        }
-        return path.substring((RESOURCE_ROOT + "/").length()).split("/").length == 2;
     }
 
     private static void readBundles(
@@ -477,47 +434,6 @@ public final class VillagerQuestResources {
         }
     }
 
-    private static void readFile(
-            HolderLookup.Provider registries,
-            QuestResourceEnvelope resource,
-            Map<ResourceLocation, QuestDefinition> quests,
-            Map<ResourceLocation, CompiledQuest> compiledQuests,
-            Map<ResourceLocation, ResourceLocation> sources,
-            boolean replacementMode) {
-        ResourceLocation location = resource.location();
-        JsonObject root = resource.root();
-        ResourceLocation fallbackId = fallbackQuestId(location);
-        if (DatapackJsonReader.readBoolean(root, "replace")) {
-            if (!replacementMode) {
-                quests.clear();
-                compiledQuests.clear();
-                sources.clear();
-            }
-            if (isControlOnly(root, "replace", "metadata")) {
-                return;
-            }
-        }
-        if (DatapackJsonReader.readBoolean(root, "remove")) {
-            ResourceLocation removeId = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
-            if (removeId != null) {
-                quests.remove(removeId);
-                compiledQuests.remove(removeId);
-                sources.remove(removeId);
-            }
-            return;
-        }
-        QuestDefinition definition = readQuest(location, root, fallbackId, registries);
-        if (definition == null) {
-            return;
-        }
-        ResourceLocation previous = sources.put(definition.id(), location);
-        if (previous != null) {
-            DatapackDiagnostics.warnDuplicateId(location, "quest", definition.id().toString(), previous);
-        }
-        quests.put(definition.id(), definition);
-        compiledQuests.put(definition.id(), QuestV1Compiler.compile(definition, resource));
-    }
-
     private static void readV2File(
             HolderLookup.Provider registries,
             QuestResourceEnvelope resource,
@@ -541,21 +457,6 @@ public final class VillagerQuestResources {
         quests.put(quest.id(), quest.asQuestDefinition());
         compiledQuests.put(quest.id(), quest);
         dialogueCatalogs.add(QuestDialogueCompiler.compile(parsed.get(), resource));
-    }
-
-    private static boolean isBuiltInModResource(QuestResourceSource source) {
-        return VillagerRetaliation.MOD_ID.equals(source.location().getNamespace())
-                && source.isFromPack(VillagerRetaliation.MOD_ID);
-    }
-
-    private static boolean isControlOnly(JsonObject root, String... allowedKeys) {
-        Set<String> allowed = new java.util.HashSet<>(List.of(allowedKeys));
-        for (String key : root.keySet()) {
-            if (!allowed.contains(key)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     static QuestDefinition readCanonicalQuest(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {

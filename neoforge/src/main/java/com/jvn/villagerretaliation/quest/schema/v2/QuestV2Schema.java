@@ -38,11 +38,11 @@ public final class QuestV2Schema {
         root.addProperty("title", "Villager Retaliation Quest Module v2");
         root.addProperty("type", "object");
         root.addProperty("additionalProperties", false);
-        root.add("required", strings("schema", "id", "provider", "entry_stage", "stages"));
+        root.add("required", strings("schema", "id", "localization_prefix", "provider", "entry_stage", "stages"));
 
         JsonObject properties = object();
         properties.add("schema", stringConst(QuestSchemaVersion.V2.schemaId()));
-        properties.add("id", resourceLocation());
+        properties.add("id", questId());
         properties.add("localization_prefix", localizationPrefix());
         properties.add("metadata", ref("#/$defs/metadata"));
         properties.add("provider", ref("#/$defs/provider"));
@@ -725,6 +725,12 @@ public final class QuestV2Schema {
     private static JsonObject ref(String ref) {
         JsonObject schema = object();
         schema.addProperty("$ref", ref);
+        return schema;
+    }
+
+    private static JsonObject questId() {
+        JsonObject schema = string();
+        schema.addProperty("pattern", "^[a-z0-9_.-]+:[a-z0-9_.-]+$");
         return schema;
     }
 

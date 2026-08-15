@@ -12,7 +12,7 @@
   const STORAGE_VERSION = 1;
   const SEVERITY_ORDER = { error: 0, warning: 1, info: 2 };
   const ALLOWED_FIELDS = {
-    quest: new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]),
+    quest: new Set(["schema", "id", "localization_prefix", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]),
     metadata: new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "show_locked_adventure_hint", "author", "version"]),
     provider: new Set(["type", "required_capabilities", "capabilities", "filters", "data"]),
     availability: new Set(["conditions", "active", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]),
@@ -150,6 +150,7 @@
     return {
       schema: SCHEMA_ID,
       id: `${safeNamespace}:a_helping_hand`,
+      localization_prefix: `${safeNamespace}.quest.a_helping_hand`,
       metadata: { title, description: "Bring a villager one loaf of bread.", questline: "village_errands", tags: ["example"] },
       provider: { type: "villagerretaliation:villager" },
       availability: { repeatable: false, max_completions: 1, locked_to_villager: true },
@@ -211,15 +212,134 @@
     project.scenes = Array.isArray(project.scenes) ? project.scenes.filter((scene) => scene && typeof scene === "object") : [];
     if (!project.quests.length) project.quests.push(createLinearQuest(project.namespace));
     project.selectedQuestId = project.quests.some((quest) => quest.id === project.selectedQuestId) ? project.selectedQuestId : project.quests[0].id;
+    for (const quest of project.quests) {
+      const parts = questBundleParts(quest);
+      quest.metadata = quest.metadata && typeof quest.metadata === "object" ? quest.metadata : {};
+      quest.metadata.questline = slugify(quest.metadata.questline, "quests").replaceAll("/", "_");
+      if (!quest.localization_prefix && parts.namespace && parts.slug) {
+        quest.localization_prefix = `${parts.namespace}.quest.${parts.slug}`;
+      }
+    }
     project.updatedAt = new Date().toISOString();
     return project;
   }
 
-  function questFilePath(quest) {
-    const match = String(quest?.id || "").match(/^([a-z0-9_.-]+):([a-z0-9_./-]+)$/);
-    if (!match) return "data/my_pack/quests/untitled.json";
-    return `data/${match[1]}/quests/${match[2]}.json`;
+  function questBundleParts(quest) {
+    const match = String(quest?.id || "").match(/^([a-z0-9_.-]+):([a-z0-9_.-]+)$/);
+    const namespace = match?.[1] || "my_pack";
+    const slug = match?.[2] || "untitled";
+    const questline = slugify(quest?.metadata?.questline, "quests").replaceAll("/", "_");
+    return { namespace, slug, questline };
   }
+
+  function questFilePath(quest) {
+    const { namespace, questline, slug } = questBundleParts(quest);
+    return `data/${namespace}/quests/${questline}/${slug}/quest.json`;
+  }
+
+  function questLocaleFilePath(quest, locale = "en_us") {
+    const { namespace, questline, slug } = questBundleParts(quest);
+    return `data/${namespace}/quests/${questline}/${slug}/locales/${locale}.json`;
+  }
+
+  function sharedLocaleFilePath(namespace, locale = "en_us") {
+    return `data/${namespaceify(namespace)}/quests/_shared/locales/${locale}.json`;
+  }
+
+  function localePayload(value) {
+    if (value && typeof value === "object" && !Array.isArray(value)) return clone(value);
+    const lines = Array.isArray(value) ? clone(value) : [String(value ?? "")];
+    return { lines };
+  }
+
+  function isLocalizedReference(value) {
+    return value && typeof value === "object" && !Array.isArray(value)
+      && Object.keys(value).length === 1 && typeof value.key === "string";
+  }
+
+  function semanticToken(value, field) {
+    for (const key of ["id", "alias", "operation_id", "action", "type", "event", "trigger", "key", "name", "template", "entity"]) {
+      if (typeof value?.[key] === "string" && value[key]) return slugify(value[key].replace(":", ".").replaceAll("/", "."));
+    }
+    if (["stages", "objectives", "events", "triggers", "scenes", "responses", "actors", "steps", "actions", "waves", "variants", "members", "phases"].includes(field)) {
+      throw new Error(`Player-facing ${field} entry needs a stable id, alias, action, type, event, trigger, key, name, template, or entity.`);
+    }
+    return slugify(field.replace(/s$/, ""), "entry");
+  }
+
+  function localizeDefinition(value, context) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+    const textFields = new Set(["title", "description", "label", "text", "lines", "tracker_text", "tracker_complete_text", "complete_text", "custom_name", "trophy_name", "boss_bar_title"]);
+    for (const [field, child] of Object.entries(value)) {
+      if (textFields.has(field) && child !== undefined && child !== null && !isLocalizedReference(child)) {
+        if (field === "lines" && child && typeof child === "object" && !Array.isArray(child)) {
+          for (const [status, payload] of Object.entries(child)) {
+            child[status] = localizedReference(context, [...context.segments, "lines"], status, payload);
+          }
+        } else {
+          value[field] = localizedReference(context, context.segments, field, child);
+        }
+        continue;
+      }
+      if (Array.isArray(child)) {
+        for (const element of child) {
+          if (!element || typeof element !== "object" || Array.isArray(element)) continue;
+          localizeDefinition(element, { ...context, segments: [...context.segments, field.replace(/s$/, ""), semanticToken(element, field)] });
+        }
+      } else if (child && typeof child === "object" && !isLocalizedReference(child)) {
+        localizeDefinition(child, { ...context, segments: [...context.segments, field] });
+      }
+    }
+    return value;
+  }
+
+  function localizedReference(context, segments, field, payload) {
+    const suffix = [...segments, field].map(part => slugify(part, "text").replaceAll("/", ".")).join(".");
+    const key = context.prefix ? `${context.prefix}.${suffix}` : `${context.namespace}.${suffix}`;
+    const next = localePayload(payload);
+    if (Object.hasOwn(context.messages, key) && JSON.stringify(context.messages[key]) !== JSON.stringify(next)) {
+      throw new Error(`Generated localization key collision at ${key}. Add stable semantic ids to the conflicting entries.`);
+    }
+    context.messages[key] = next;
+    return { key: context.prefix ? `#${suffix}` : key };
+  }
+
+  function questBundleFiles(quest) {
+    const clean = stripBuilderFields(quest);
+    const { namespace } = questBundleParts(clean);
+    const prefix = String(clean.localization_prefix || `${namespace}.quest.${questBundleParts(clean).slug}`);
+    clean.localization_prefix = prefix;
+    const messages = {};
+    localizeDefinition(clean, { namespace, prefix, messages, segments: [] });
+    return {
+      quest: clean,
+      locale: { schema: "villagerretaliation:quest_locale/v1", messages },
+      questPath: questFilePath(clean),
+      localePath: questLocaleFilePath(clean)
+    };
+  }
+
+  function sceneBundleFile(scene, namespace = "my_pack") {
+    const clean = stripBuilderFields(scene);
+    const safeNamespace = String(clean.id || "").split(":")[0] || namespaceify(namespace);
+    const messages = {};
+    localizeDefinition(clean, { namespace: safeNamespace, prefix: "", messages, segments: ["scene", slugify(clean.id || "new_scene").replace(":", ".")] });
+    return { scene: clean, messages, path: sceneFilePath(clean) };
+  }
+
+  function materializeLocalizedDefinition(value, prefix, messages) {
+    if (Array.isArray(value)) return value.map(child => materializeLocalizedDefinition(child, prefix, messages));
+    if (!value || typeof value !== "object") return clone(value);
+    if (isLocalizedReference(value)) {
+      const key = value.key.startsWith("#") ? `${prefix}.${value.key.slice(1)}` : value.key;
+      const payload = messages?.[key];
+      if (!payload) return clone(value);
+      if (Array.isArray(payload?.lines)) return payload.lines.length === 1 ? clone(payload.lines[0]) : clone(payload.lines);
+      return clone(payload?.text ?? payload);
+    }
+    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, materializeLocalizedDefinition(child, prefix, messages)]));
+  }
+
 
   function createScene(namespace = "my_pack") {
     const safe = namespaceify(namespace);
@@ -245,8 +365,8 @@
 
   function sceneFilePath(scene) {
     const match = String(scene?.id || "").match(/^([a-z0-9_.-]+):([a-z0-9_./-]+)$/);
-    if (!match) return "data/my_pack/quest_scenes/untitled.json";
-    return `data/${match[1]}/quest_scenes/${match[2]}.json`;
+    if (!match) return "data/my_pack/quests/_shared/scenes/untitled.json";
+    return `data/${match[1]}/quests/_shared/scenes/${match[2].split("/").at(-1)}.json`;
   }
 
   function validateScene(scene, registries = {}) {
@@ -412,6 +532,9 @@
     validateUnknownFields(quest.ui, ALLOWED_FIELDS.ui, "/ui", "quest UI", issue);
     if (quest.schema !== SCHEMA_ID) issue("error", "quest.schema", "/schema", `Schema must be ${SCHEMA_ID}.`, "Set the schema field to the supported Quest v2 id.");
     if (!RESOURCE_LOCATION.test(String(quest.id || ""))) issue("error", "quest.id", "/id", "Quest id must be a namespaced resource location.", "Use lowercase text such as my_pack:first_steps.");
+    else if (String(quest.id).split(":")[1].includes("/")) issue("error", "quest.id.segment", "/id", "New quest ids must use a single path segment.", "Use my_pack:first_steps and put questline ownership in metadata.questline.");
+    if (!String(quest.localization_prefix || "").startsWith(`${String(quest.id || "").split(":")[0]}.quest.`)) issue("error", "quest.localization_prefix", "/localization_prefix", "Localization prefix must begin with the quest namespace and .quest.", "Use a globally unique prefix such as my_pack.quest.first_steps.");
+    if (!String(quest.metadata?.questline || "").trim()) issue("error", "quest.questline", "/metadata/questline", "Questline is required for bundle ownership.", "Use a stable directory name such as village_errands.");
     if (!quest.provider || typeof quest.provider !== "object") issue("error", "provider.missing", "/provider", "A quest provider is required.", "Choose the Villager provider in Quest setup.");
     if (quest.provider?.type !== "villagerretaliation:villager") issue("error", "provider.type", "/provider/type", "Provider type is not supported by this version.", "Use villagerretaliation:villager.");
     const stages = Array.isArray(quest.stages) ? quest.stages : [];
@@ -631,6 +754,11 @@
     createScene,
     normalizeProject,
     questFilePath,
+    questLocaleFilePath,
+    sharedLocaleFilePath,
+    questBundleFiles,
+    sceneBundleFile,
+    materializeLocalizedDefinition,
     sceneFilePath,
     collectEdges,
     collectNamedArrays,
