@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.reputation;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.resources.BiomeStoryResources;
@@ -9,9 +10,12 @@ import com.jvn.villagerretaliation.item.OminousBannerRecognition;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.raid.PlayerRaidSavedData;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.mojang.logging.LogUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +27,7 @@ import java.util.UUID;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -32,6 +37,7 @@ import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import org.slf4j.Logger;
@@ -44,6 +50,9 @@ public final class VillagerReputationAdvancements {
     private static final int COMMUNITY_SUPPORT_VILLAGERS = 5;
     private static final int VILLAGE_ENEMY_HOSTILES = 5;
     private static final int MOB_JUSTICE_HOSTILES = 8;
+    private static final int MULTI_VILLAGE_THRESHOLD = 3;
+    private static final int PEOPLE_CHAMPION_VILLAGERS = 10;
+    private static final int LARGE_RAID_DEFENSE = 15;
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 40L;
     private static final double HOSTILITY_SCAN_RADIUS = 64.0D;
     private static final double DIALOGUE_MAP_FOUND_RADIUS = 64.0D;
@@ -59,6 +68,22 @@ public final class VillagerReputationAdvancements {
     private static final Map<UUID, Set<UUID>> HOSTILE_OR_WORSE_HISTORY = new HashMap<>();
     private static final Map<UUID, Long> NEXT_DISCOVERY_SCAN = new HashMap<>();
     private static final Map<UUID, Long> NEXT_BIOME_STORY_SCAN = new HashMap<>();
+
+    private static final Set<VillagerProfession> SUPPORTED_WORK_PROFESSIONS = Set.of(
+            VillagerProfession.ARMORER,
+            VillagerProfession.BUTCHER,
+            VillagerProfession.CARTOGRAPHER,
+            VillagerProfession.CLERIC,
+            VillagerProfession.FARMER,
+            VillagerProfession.FISHERMAN,
+            VillagerProfession.FLETCHER,
+            VillagerProfession.LEATHERWORKER,
+            VillagerProfession.LIBRARIAN,
+            VillagerProfession.MASON,
+            VillagerProfession.NITWIT,
+            VillagerProfession.SHEPHERD,
+            VillagerProfession.TOOLSMITH,
+            VillagerProfession.WEAPONSMITH);
 
     private static final ResourceLocation ROOT = advancementId("reputation/root");
     private static final ResourceLocation COMMONFOLK = advancementId("reputation/commonfolk");
@@ -97,6 +122,16 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation THE_MARK_YOU_CHOSE = advancementId("reputation/the_mark_you_chose");
     private static final ResourceLocation SOUND_THE_HORN = advancementId("reputation/sound_the_horn");
     private static final ResourceLocation THE_VILLAGE_FALLS = advancementId("reputation/the_village_falls");
+    private static final ResourceLocation QUARTER_GIVEN = advancementId("reputation/quarter_given");
+    private static final ResourceLocation ARMY_OF_ONE = advancementId("reputation/army_of_one");
+    private static final ResourceLocation ET_TU_BRUTE = advancementId("reputation/et_tu_brute");
+    private static final ResourceLocation WAR_PARTY = advancementId("reputation/war_party");
+    private static final ResourceLocation YOU_AND_WHAT_ARMY = advancementId("reputation/you_and_what_army");
+    private static final ResourceLocation HONEST_WORK = advancementId("reputation/honest_work");
+    private static final ResourceLocation FULL_EMPLOYMENT = advancementId("reputation/full_employment");
+    private static final ResourceLocation VILLAGE_HOPPER = advancementId("reputation/village_hopper");
+    private static final ResourceLocation PEOPLES_CHAMPION = advancementId("reputation/peoples_champion");
+    private static final ResourceLocation LIVING_LEGEND = advancementId("reputation/living_legend");
 
     private VillagerReputationAdvancements() {
     }
@@ -144,8 +179,67 @@ public final class VillagerReputationAdvancements {
         award(player, SOUND_THE_HORN);
     }
 
+    public static void onPlayerRaidDeclared(ServerPlayer player, PlayerRaidSavedData.RaidRecord raid) {
+        onPlayerRaidDeclared(player);
+        if (raid != null && !raid.defectors().isEmpty()) {
+            award(player, ET_TU_BRUTE);
+        }
+    }
+
     public static void onPlayerRaidWon(ServerPlayer player) {
         award(player, THE_VILLAGE_FALLS);
+    }
+
+    public static void onPlayerRaidWon(ServerPlayer player, PlayerRaidSavedData.RaidRecord raid) {
+        onPlayerRaidWon(player);
+        if (raid == null) {
+            return;
+        }
+        int defenseSize = raid.initialDefenderCount() + raid.initialMercyCandidateCount();
+        if (defenseSize >= LARGE_RAID_DEFENSE) {
+            award(player, YOU_AND_WHAT_ARMY);
+        }
+        if (defenseSize >= 20 && raid.raiderPlayers().size() == 1 && raid.raiderVillagers().isEmpty()) {
+            award(player, ARMY_OF_ONE);
+        }
+        if (raid.raiderPlayers().size() == 3 && raid.raiderVillagers().size() == 4) {
+            award(player, WAR_PARTY);
+        }
+    }
+
+    public static void onVillagerSparedDuringRaid(ServerPlayer player) {
+        award(player, QUARTER_GIVEN);
+    }
+
+    public static void onHiredAssignmentCompleted(ServerPlayer player, Villager villager) {
+        award(player, HONEST_WORK);
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        if (!SUPPORTED_WORK_PROFESSIONS.contains(profession)) {
+            return;
+        }
+        ResourceLocation professionId = BuiltInRegistries.VILLAGER_PROFESSION.getKey(profession);
+        if (professionId != null) {
+            awardCriterion(player, FULL_EMPLOYMENT, professionId.getPath());
+        }
+    }
+
+    public static void onQuestCompleted(ServerPlayer player) {
+        Map<String, Set<UUID>> villagersByVillage = new HashMap<>();
+        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry
+                : VillagerQuestSavedData.get(player.serverLevel()).progress(player.getUUID())) {
+            for (VillagerQuestSavedData.CompletionHistoryEntry completion : entry.getValue().completionHistory()) {
+                if (completion.issuerId() == null || !VillageScopeKeys.isVillageKey(completion.issuerVillageKey())) {
+                    continue;
+                }
+                Set<UUID> villagers = villagersByVillage.computeIfAbsent(
+                        completion.issuerVillageKey(), ignored -> new HashSet<>());
+                villagers.add(completion.issuerId());
+                if (villagers.size() >= PEOPLE_CHAMPION_VILLAGERS) {
+                    award(player, PEOPLES_CHAMPION);
+                    return;
+                }
+            }
+        }
     }
 
     public static void onSharedStory(ServerPlayer player, int sharedStoryCount) {
@@ -445,6 +539,10 @@ public final class VillagerReputationAdvancements {
             VillagerReputationLevel newLevel) {
         if (crossedInto(previousLevel, newLevel, VillagerReputationLevel.TRUSTED)) {
             award(player, FAMILIAR_FACE);
+            if (countTrackedVillagesAtOrAbove(level, player.getUUID(), VillagerReputationLevel.TRUSTED)
+                    >= MULTI_VILLAGE_THRESHOLD) {
+                award(player, VILLAGE_HOPPER);
+            }
             if (hasTradeHistory(player, villager)) {
                 award(player, PRICE_OF_TRUST);
             }
@@ -459,6 +557,10 @@ public final class VillagerReputationAdvancements {
         }
         if (crossedInto(previousLevel, newLevel, VillagerReputationLevel.REVERED)) {
             award(player, LOCAL_LEGEND);
+            if (countTrackedVillagesAtOrAbove(level, player.getUUID(), VillagerReputationLevel.REVERED)
+                    >= MULTI_VILLAGE_THRESHOLD) {
+                award(player, LIVING_LEGEND);
+            }
         }
         if (crossedInto(previousLevel, newLevel, VillagerReputationLevel.ROYALTY)) {
             award(player, CROWNED_BY_THE_VILLAGE);
@@ -513,6 +615,25 @@ public final class VillagerReputationAdvancements {
             VillagerReputationLevel threshold) {
         return previousLevel.trustRank() > threshold.trustRank()
                 && newLevel.trustRank() <= threshold.trustRank();
+    }
+
+    static int countTrackedVillagesAtOrAbove(
+            ServerLevel level,
+            UUID playerId,
+            VillagerReputationLevel threshold) {
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillagerReputationSavedData reputations = VillagerReputationSavedData.get(level);
+        return (int) registry.records().stream()
+                .filter(record -> registry.canonical(record.id())
+                        .map(record.id()::equals)
+                        .orElse(false))
+                .filter(record -> record.residents().keySet().stream().anyMatch(villagerId -> {
+                    VillagerReputationSavedData.ReputationEntry entry = reputations.get(villagerId, playerId);
+                    return entry != null
+                            && VillagerReputationLevel.fromReputation(entry.reputation()).trustRank()
+                            >= threshold.trustRank();
+                }))
+                .count();
     }
 
     private static boolean hasTrustedVillageCore(ServerLevel level, Villager anchor, ServerPlayer player) {
@@ -594,6 +715,20 @@ public final class VillagerReputationAdvancements {
             awardDirect(player, ROOT);
         }
         awardDirect(player, advancementId);
+    }
+
+    private static void awardCriterion(
+            ServerPlayer player,
+            ResourceLocation advancementId,
+            String criterion) {
+        if (!advancementId.equals(ROOT)) {
+            awardDirect(player, ROOT);
+        }
+        AdvancementHolder advancement = player.server.getAdvancements().get(advancementId);
+        if (advancement == null) {
+            return;
+        }
+        player.getAdvancements().award(advancement, criterion);
     }
 
     private static void awardDirect(ServerPlayer player, ResourceLocation advancementId) {

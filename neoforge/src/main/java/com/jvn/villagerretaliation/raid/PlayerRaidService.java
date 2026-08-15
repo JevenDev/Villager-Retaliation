@@ -233,7 +233,7 @@ public final class PlayerRaidService {
         initiator.sendSystemMessage(Component.translatable(
                 "villagerretaliation.player_raid.declared",
                 village.displayName(), defenders.size() + mercyCandidates.size()));
-        VillagerReputationAdvancements.onPlayerRaidDeclared(initiator);
+        VillagerReputationAdvancements.onPlayerRaidDeclared(initiator, raid);
         if (!PlayerRaidDialogueService.begin(initiator, raid)) {
             beginPreparation(level.getServer(), raid.id());
         }
@@ -617,7 +617,7 @@ public final class PlayerRaidService {
             for (UUID raiderId : raid.raiderPlayers()) {
                 ServerPlayer player = server.getPlayerList().getPlayer(raiderId);
                 if (player != null) {
-                    VillagerReputationAdvancements.onPlayerRaidWon(player);
+                    VillagerReputationAdvancements.onPlayerRaidWon(player, raid);
                 }
             }
             playRaiderVictorySound(server, raid);

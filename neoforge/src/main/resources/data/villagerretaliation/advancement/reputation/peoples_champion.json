@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/friend_of_the_village",
+  "display": {
+    "icon": {
+      "id": "minecraft:writable_book"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.peoples_champion.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.peoples_champion.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

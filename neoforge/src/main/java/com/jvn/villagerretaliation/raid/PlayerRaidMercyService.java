@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionScreenOpener;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.ArrayList;
@@ -174,6 +175,7 @@ public final class PlayerRaidMercyService {
                 VillagerReputationManager.setReputation(player.serverLevel(), villager, raiderId, SPARED_REPUTATION);
             }
             if (raid.removeMercyCandidate(villager.getUUID())) data.changed();
+            VillagerReputationAdvancements.onVillagerSparedDuringRaid(player);
             PlayerRaidService.releaseMercyCandidate(player.getServer(), villager);
             end(player);
             VillagerInteractionService.sendPersonalVillagerChat(player, villager, response);

@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/the_village_falls",
+  "display": {
+    "icon": {
+      "id": "minecraft:red_banner"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.war_party.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.war_party.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

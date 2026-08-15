@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/you_and_what_army",
+  "display": {
+    "icon": {
+      "id": "minecraft:diamond_sword"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.army_of_one.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.army_of_one.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

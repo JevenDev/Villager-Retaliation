@@ -31,6 +31,7 @@ import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.skill.HiredWorkSkillGrowthService;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
@@ -216,6 +217,7 @@ public final class HiredVillagerWorkService {
         HiredWorkSkillGrowthService.onPractice(
                 level, villager, hirer, session.role(), session.state(), result.practice());
         if (result.completed()) {
+            VillagerReputationAdvancements.onHiredAssignmentCompleted(hirer, villager);
             recordCompletedTask(session.state());
             session.state().putLong("NextWorkGameTime", level.getGameTime() + completedTaskCooldownTicks(session.efficiency()));
             HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());

@@ -69443,6 +69443,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/bad_first_impression"
     },
     {
+      "id": "army_of_one",
+      "title": "Army of One",
+      "description": "Win a solo raid against a defense of 20 or more.",
+      "frame": "Challenge",
+      "hidden": false,
+      "icon": "Diamond Sword",
+      "parent": "reputation/you_and_what_army"
+    },
+    {
       "id": "bad_first_impression",
       "title": "Bad First Impression",
       "description": "Make a villager suspicious of you.",
@@ -69506,6 +69515,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/local_legend"
     },
     {
+      "id": "et_tu_brute",
+      "title": "Et tu, Brute?",
+      "description": "Begin a raid where a recruited villager leaves your party to defend their home.",
+      "frame": "Challenge",
+      "hidden": true,
+      "icon": "Iron Axe",
+      "parent": "reputation/sound_the_horn"
+    },
+    {
       "id": "friend_of_the_village",
       "title": "Friend of the Village",
       "description": "Become trusted by multiple villagers in the same village.",
@@ -69513,6 +69531,15 @@ window.VR_WIKI_DATA = {
       "hidden": false,
       "icon": "Bell",
       "parent": "reputation/respect_is_earned"
+    },
+    {
+      "id": "full_employment",
+      "title": "Full Employment",
+      "description": "Complete hired-villager assignments for every supported profession.",
+      "frame": "Challenge",
+      "hidden": false,
+      "icon": "Crafting Table",
+      "parent": "reputation/honest_work"
     },
     {
       "id": "hands_off",
@@ -69533,6 +69560,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/refused_service"
     },
     {
+      "id": "honest_work",
+      "title": "Honest Work",
+      "description": "Complete your first hired-villager assignment.",
+      "frame": "Task",
+      "hidden": false,
+      "icon": "Iron Pickaxe",
+      "parent": "reputation/commonfolk"
+    },
+    {
       "id": "im_sorry",
       "title": "I'm Sorry!",
       "description": "Pacify a villager with a peace offering.",
@@ -69549,6 +69585,15 @@ window.VR_WIKI_DATA = {
       "hidden": false,
       "icon": "Recovery Compass",
       "parent": "reputation/village_chronicler"
+    },
+    {
+      "id": "living_legend",
+      "title": "Living Legend",
+      "description": "Become revered in three distinct tracked villages.",
+      "frame": "Challenge",
+      "hidden": false,
+      "icon": "Nether Star",
+      "parent": "reputation/local_legend"
     },
     {
       "id": "local_legend",
@@ -69612,6 +69657,15 @@ window.VR_WIKI_DATA = {
       "hidden": false,
       "icon": "Emerald Block",
       "parent": "reputation/regular_customer"
+    },
+    {
+      "id": "quarter_given",
+      "title": "Quarter Given",
+      "description": "Personally spare a villager during a raid's mercy stage.",
+      "frame": "Task",
+      "hidden": false,
+      "icon": "White Banner",
+      "parent": "reputation/sound_the_horn"
     },
     {
       "id": "refused_service",
@@ -69686,6 +69740,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/commonfolk"
     },
     {
+      "id": "peoples_champion",
+      "title": "The People's Champion",
+      "description": "Complete quests for 10 different villagers in the same village.",
+      "frame": "Challenge",
+      "hidden": false,
+      "icon": "Writable Book",
+      "parent": "reputation/friend_of_the_village"
+    },
+    {
       "id": "the_village_falls",
       "title": "The Village Falls",
       "description": "Win a player-led raid.",
@@ -69740,6 +69803,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/marked"
     },
     {
+      "id": "village_hopper",
+      "title": "Village Hopper",
+      "description": "Become trusted in three distinct tracked villages.",
+      "frame": "Goal",
+      "hidden": false,
+      "icon": "Leather Boots",
+      "parent": "reputation/familiar_face"
+    },
+    {
       "id": "root",
       "title": "Village Relations",
       "description": "How the village remembers you.",
@@ -69747,6 +69819,24 @@ window.VR_WIKI_DATA = {
       "hidden": false,
       "icon": "Bell",
       "parent": ""
+    },
+    {
+      "id": "war_party",
+      "title": "War Party",
+      "description": "Win a raid with three players and four recruited villagers.",
+      "frame": "Challenge",
+      "hidden": false,
+      "icon": "Red Banner",
+      "parent": "reputation/the_village_falls"
+    },
+    {
+      "id": "you_and_what_army",
+      "title": "You and What Army?",
+      "description": "Win a raid against a defense of 15 or more.",
+      "frame": "Goal",
+      "hidden": false,
+      "icon": "Shield",
+      "parent": "reputation/the_village_falls"
     }
   ],
   "stats": {

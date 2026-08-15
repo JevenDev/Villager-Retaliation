@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/sound_the_horn",
+  "display": {
+    "icon": {
+      "id": "minecraft:white_banner"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.quarter_given.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.quarter_given.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
