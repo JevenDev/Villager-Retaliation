@@ -121,9 +121,7 @@ public final class VillagerGiftRequestHandler {
                     villager,
                     player,
                     giftPreference.matched() ? giftPreference.categoryId().toString() : itemId(giftedStack),
-                    giftPreference.matched()
-                            ? giftPreference.name().component(giftPreference.categoryId()).getString()
-                            : VillagerItemText.dialogueName(level.getServer(), locale, giftedStack),
+                    VillagerItemText.dialogueName(level.getServer(), locale, giftedStack),
                     VillagerGiftKnowledgeService.professionKey(profession),
                     VillagerInteractionTextUtil.professionName(profession, "villager").toLowerCase(java.util.Locale.ROOT),
                     VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
