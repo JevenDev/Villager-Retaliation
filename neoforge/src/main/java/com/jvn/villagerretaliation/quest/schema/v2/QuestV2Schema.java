@@ -43,6 +43,7 @@ public final class QuestV2Schema {
         JsonObject properties = object();
         properties.add("schema", stringConst(QuestSchemaVersion.V2.schemaId()));
         properties.add("id", resourceLocation());
+        properties.add("localization_prefix", localizationPrefix());
         properties.add("metadata", ref("#/$defs/metadata"));
         properties.add("provider", ref("#/$defs/provider"));
         properties.add("availability", ref("#/$defs/availability"));
@@ -58,6 +59,7 @@ public final class QuestV2Schema {
         root.add("properties", properties);
 
         JsonObject defs = object();
+        defs.add("localized_reference", localizedReference());
         defs.add("metadata", metadata());
         defs.add("migration", migration());
         defs.add("provider", provider());
@@ -103,8 +105,8 @@ public final class QuestV2Schema {
     private static JsonObject metadata() {
         JsonObject schema = typedObject();
         JsonObject properties = object();
-        properties.add("title", string());
-        properties.add("description", string());
+        properties.add("title", localizedText());
+        properties.add("description", localizedText());
         properties.add("title_key", string());
         properties.add("description_key", string());
         properties.add("questline", string());
@@ -275,9 +277,9 @@ public final class QuestV2Schema {
         schema.add("required", strings("id", "objectives"));
         JsonObject properties = object();
         properties.add("id", idString());
-        properties.add("title", string());
+        properties.add("title", localizedText());
         properties.add("title_key", string());
-        properties.add("description", string());
+        properties.add("description", localizedText());
         properties.add("description_key", string());
         properties.add("objectives", arrayOf(ref("#/$defs/objective")));
         properties.add("complete_when", oneOrArray(ref("#/$defs/predicate")));
@@ -385,9 +387,9 @@ public final class QuestV2Schema {
     private static JsonObject tracker() {
         JsonObject schema = typedObject();
         JsonObject properties = object();
-        properties.add("text", string());
+        properties.add("text", localizedText());
         properties.add("text_key", string());
-        properties.add("complete_text", string());
+        properties.add("complete_text", localizedText());
         properties.add("complete_text_key", string());
         properties.add("show_progress", booleanSchema());
         properties.add("progress", number());
@@ -404,14 +406,14 @@ public final class QuestV2Schema {
         properties.add("external", externalSceneRef());
         properties.add("external_scene", externalSceneRef());
         properties.add("external_entry", idString());
-        properties.add("label", string());
+        properties.add("label", localizedText());
         properties.add("request", string());
         properties.add("show_for_babies", booleanSchema());
         properties.add("order", integer());
         properties.add("priority", integer());
-        properties.add("text", string());
+        properties.add("text", localizedText());
         properties.add("text_key", string());
-        properties.add("lines", arrayOf(string()));
+        properties.add("lines", localizedLines());
         properties.add("responses", arrayOf(ref("#/$defs/response")));
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
         properties.add("actions", arrayOf(ref("#/$defs/action")));
@@ -426,14 +428,14 @@ public final class QuestV2Schema {
         JsonObject properties = object();
         properties.add("id", idString());
         properties.add("slot", idString());
-        properties.add("label", string());
+        properties.add("label", localizedText());
         properties.add("request", string());
         properties.add("show_for_babies", booleanSchema());
         properties.add("order", integer());
         properties.add("priority", integer());
-        properties.add("text", string());
+        properties.add("text", localizedText());
         properties.add("text_key", string());
-        properties.add("lines", arrayOf(string()));
+        properties.add("lines", localizedLines());
         properties.add("responses", arrayOf(ref("#/$defs/response")));
         properties.add("actions", arrayOf(ref("#/$defs/action")));
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
@@ -454,11 +456,11 @@ public final class QuestV2Schema {
         schema.add("required", strings("id"));
         JsonObject properties = object();
         properties.add("id", idString());
-        properties.add("label", string());
+        properties.add("label", localizedText());
         properties.add("label_key", string());
-        properties.add("text", string());
+        properties.add("text", localizedText());
         properties.add("text_key", string());
-        properties.add("lines", arrayOf(string()));
+        properties.add("lines", localizedLines());
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
         properties.add("actions", arrayOf(ref("#/$defs/action")));
         properties.add("transition", ref("#/$defs/transition"));
@@ -536,13 +538,13 @@ public final class QuestV2Schema {
     private static JsonObject ui() {
         JsonObject schema = typedObject();
         JsonObject properties = object();
-        properties.add("title", string());
+        properties.add("title", localizedText());
         properties.add("title_key", string());
-        properties.add("description", string());
+        properties.add("description", localizedText());
         properties.add("description_key", string());
-        properties.add("tracker_text", string());
+        properties.add("tracker_text", localizedText());
         properties.add("tracker_text_key", string());
-        properties.add("tracker_complete_text", string());
+        properties.add("tracker_complete_text", localizedText());
         properties.add("tracker_complete_text_key", string());
         properties.add("show_progress", booleanSchema());
         properties.add("progress", number());
@@ -736,6 +738,32 @@ public final class QuestV2Schema {
         JsonObject schema = string();
         schema.addProperty("minLength", 1);
         schema.addProperty("pattern", "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$");
+        return schema;
+    }
+
+    private static JsonObject localizedReference() {
+        JsonObject schema = typedObject();
+        schema.add("required", strings("key"));
+        JsonObject properties = object();
+        JsonObject key = string();
+        key.addProperty("minLength", 1);
+        properties.add("key", key);
+        schema.add("properties", properties);
+        return schema;
+    }
+
+    private static JsonObject localizedText() {
+        return oneOf(string(), ref("#/$defs/localized_reference"));
+    }
+
+    private static JsonObject localizedLines() {
+        return oneOf(arrayOf(string()), ref("#/$defs/localized_reference"));
+    }
+
+    private static JsonObject localizationPrefix() {
+        JsonObject schema = string();
+        schema.addProperty("minLength", 1);
+        schema.addProperty("pattern", "^[a-z0-9_.-]+$");
         return schema;
     }
 

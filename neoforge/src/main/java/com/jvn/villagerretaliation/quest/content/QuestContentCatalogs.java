@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.quest.content;
 
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleDiscovery;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.quest.pool.QuestPoolResources;
 import com.jvn.villagerretaliation.scene.SceneResources;
 import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
@@ -76,6 +78,9 @@ public final class QuestContentCatalogs {
         EncounterResources.ContentSnapshot encounter = EncounterResources.snapshotForCatalog(server);
         SceneResources.ContentSnapshot scene = SceneResources.snapshotForCatalog(server);
         QuestPoolResources.ContentSnapshot pool = QuestPoolResources.snapshotForCatalog(server);
+        QuestBundleTransactions.Result bundles = QuestBundleTransactions.compile(
+                QuestBundleDiscovery.discover(server),
+                QuestBundleTransactions.CompatibilityRules.empty());
 
         QuestContentCatalog catalog = new QuestContentCatalog(
                 generation,
@@ -89,7 +94,9 @@ public final class QuestContentCatalogs {
                 quest.triggerEventQuestIds(),
                 scene.scenes(),
                 encounter.templates(),
-                pool.pools());
+                pool.pools(),
+                bundles.bundles(),
+                bundles.localization());
 
         QuestContentLoadReport.Builder report = QuestContentLoadReport.builder(generation);
         scene.diagnostics().forEach((source, entries) -> entries.forEach(diagnostic -> report.add(
@@ -106,6 +113,12 @@ public final class QuestContentCatalogs {
                 "encounter",
                 QuestContentLoadReport.Severity.ERROR,
                 message)));
+        bundles.diagnostics().forEach(diagnostic -> report.add(
+                diagnostic.location(),
+                "quest_bundle/" + diagnostic.code(),
+                QuestContentLoadReport.Severity.ERROR,
+                (diagnostic.packId().isBlank() ? "" : "[" + diagnostic.packId() + "] ")
+                        + diagnostic.message()));
         return new Published(server, catalog, report.build());
     }
 

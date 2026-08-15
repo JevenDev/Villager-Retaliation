@@ -5,8 +5,10 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
@@ -51,6 +53,29 @@ public final class DatapackResourceLoader {
                 .toList();
     }
 
+    /**
+     * Discovers every resource layer for each JSON location. Minecraft exposes stacks in
+     * low-to-high priority order; the returned layer index preserves that order.
+     */
+    public static List<JsonResourceStack> jsonResourceStacks(MinecraftServer server, String root) {
+        Map<ResourceLocation, List<Resource>> stacks = server.getResourceManager()
+                .listResourceStacks(root, location -> location.getPath().endsWith(".json"));
+        List<JsonResourceStack> result = new ArrayList<>();
+        stacks.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    List<JsonResource> layers = new ArrayList<>();
+                    for (Resource resource : entry.getValue()) {
+                        layers.add(new JsonResource(entry.getKey(), resource));
+                    }
+                    result.add(new JsonResourceStack(entry.getKey(), List.copyOf(layers)));
+                });
+        return List.copyOf(result);
+    }
+
+    public record JsonResourceStack(ResourceLocation location, List<JsonResource> layersLowToHigh) {
+        public JsonResourceStack { layersLowToHigh = layersLowToHigh == null ? List.of() : List.copyOf(layersLowToHigh); }
+    }
     public static Optional<JsonObject> readObject(
             ResourceLocation location,
             String systemName,
