@@ -477,8 +477,8 @@ final class VrAdminCommands {
                         .then(villagerArgument().executes(VillagerRetaliationCommands::debugHiredWork)));
     }
 
-    private static RequiredArgumentBuilder<CommandSourceStack, EntitySelector> villagerArgument() {
-        return argument("villager", EntityArgument.entity());
+    private static RequiredArgumentBuilder<CommandSourceStack, String> villagerArgument() {
+        return VillagerRetaliationCommands.namedVillagerArgument("villager");
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, EntitySelector> entityArgument() {

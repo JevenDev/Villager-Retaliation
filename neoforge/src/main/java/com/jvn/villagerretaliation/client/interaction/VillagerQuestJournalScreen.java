@@ -2122,7 +2122,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private void renderQuestlineTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
-        QuestTrackerSyncPayload.Entry entry = questTitleAt(mouseX, mouseY - slideOffset);
+        QuestTrackerSyncPayload.Entry entry = questEntryAt(mouseX, mouseY - slideOffset);
         if (entry == null || entry.journal().questline().isBlank()) {
             return;
         }
@@ -2146,21 +2146,9 @@ public final class VillagerQuestJournalScreen extends Screen {
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_TOOLTIP_PROGRESS_COLOR)));
     }
 
-    private QuestTrackerSyncPayload.Entry questTitleAt(double mouseX, double journalMouseY) {
+    private QuestTrackerSyncPayload.Entry questEntryAt(double mouseX, double journalMouseY) {
         int index = questOptionAt(mouseX, journalMouseY);
-        if (index < 0) {
-            return null;
-        }
-        int left = optionsLeft() + QUEST_OPTION_TEXT_LEFT_PADDING;
-        int top = Mth.floor(optionsTop() + optionOffset(index) - optionRenderScroll()) + QUEST_OPTION_TEXT_TOP_PADDING;
-        List<FormattedCharSequence> titleLines = questOptionTitleLines(index);
-        int width = titleLines.stream().mapToInt(this.font::width).max().orElse(0);
-        int height = titleLines.isEmpty()
-                ? 0
-                : this.font.lineHeight + (titleLines.size() - 1) * (this.font.lineHeight + QUEST_OPTION_TEXT_LINE_GAP);
-        return isPointInside(mouseX, journalMouseY, left, top, left + width, top + height)
-                ? visibleEntries().get(index)
-                : null;
+        return index < 0 ? null : visibleEntries().get(index);
     }
 
     private void renderPreviousStepTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {

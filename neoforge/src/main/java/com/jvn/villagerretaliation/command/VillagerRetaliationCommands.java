@@ -407,13 +407,14 @@ public final class VillagerRetaliationCommands {
         return namedVillagerArgument("entity");
     }
 
-    private static RequiredArgumentBuilder<CommandSourceStack, String> namedVillagerArgument(String argumentName) {
+    static RequiredArgumentBuilder<CommandSourceStack, String> namedVillagerArgument(String argumentName) {
         return argument(argumentName, StringArgumentType.string())
                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                         context.getSource().getLevel().getEntitiesOfClass(AbstractVillager.class, commandSuggestionArea(context.getSource()))
                                 .stream()
                                 .map(villager -> VillagerPresetNameRegistry.resolveDisplayName(villager).getString())
                                 .filter(name -> !name.isBlank())
+                                .map(StringArgumentType::escapeIfRequired)
                                 .distinct(),
                         builder
                 ));
@@ -2560,18 +2561,12 @@ public final class VillagerRetaliationCommands {
 
     private static AbstractVillager profileTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
+        String targetValue;
         try {
-            context.getArgument("villager", EntitySelector.class);
-            Entity entity = EntityArgument.getEntity(context, "villager");
-            if (entity instanceof AbstractVillager villager) {
-                return villager;
-            }
-            source.sendFailure(Component.literal("Target must be a villager or wandering trader."));
-            return null;
+            targetValue = StringArgumentType.getString(context, "villager");
         } catch (IllegalArgumentException ignored) {
-            // Legacy commands accept selectors and quoted preset names as strings.
+            targetValue = StringArgumentType.getString(context, "target");
         }
-        String targetValue = StringArgumentType.getString(context, "target");
         Entity target = parseEntityTarget(source, targetValue);
         if (target instanceof AbstractVillager villager) {
             return villager;

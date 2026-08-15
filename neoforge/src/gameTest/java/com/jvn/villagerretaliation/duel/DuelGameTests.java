@@ -760,10 +760,16 @@ public final class DuelGameTests {
         var dispatcher = participant.level().getServer().getCommands().getDispatcher();
         var source = player.createCommandSourceStack().withPermission(2);
 
+        var suggestions = dispatcher.getCompletionSuggestions(
+                dispatcher.parse("vr admin debug duel ", source)).join();
+        helper.assertTrue(suggestions.getList().stream()
+                        .anyMatch(suggestion -> suggestion.getText().equals("\"Debug Duelist\"")),
+                "debug duel suggestions should include nearby villager names");
+
         int defaultResult = dispatcher.execute(
-                "vr admin debug duel " + villager.getUUID(), source);
+                "vr admin debug duel \"Debug Duelist\"", source);
         helper.assertValueEqual(defaultResult, 1,
-                "canonical debug duel command should resolve an explicit villager entity");
+                "canonical debug duel command should resolve a nearby villager by name");
         helper.assertTrue(DuelService.isParticipant(player),
                 "default debug command should start a live duel");
         helper.assertTrue(DuelService.allowsInventoryClick(
