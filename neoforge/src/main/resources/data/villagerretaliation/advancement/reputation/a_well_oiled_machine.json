@@ -2,7 +2,7 @@
   "parent": "villagerretaliation:reputation/full_employment",
   "display": {
     "icon": {
-      "id": "minecraft:redstone"
+      "id": "villagerretaliation:clipboard"
     },
     "title": {
       "translate": "advancements.villagerretaliation.reputation.a_well_oiled_machine.title"

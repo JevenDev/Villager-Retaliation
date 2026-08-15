@@ -2,7 +2,7 @@
   "parent": "villagerretaliation:reputation/blueprint_for_success",
   "display": {
     "icon": {
-      "id": "minecraft:bricks"
+      "id": "villagerretaliation:blueprint_checklist"
     },
     "title": {
       "translate": "advancements.villagerretaliation.reputation.urban_planner.title"

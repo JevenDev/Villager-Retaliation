@@ -69430,7 +69430,7 @@ window.VR_WIKI_DATA = {
       "description": "Have ten villagers actively working in different roles with valid storage and payment.",
       "frame": "Challenge",
       "hidden": false,
-      "icon": "Redstone",
+      "icon": "Clipboard",
       "parent": "reputation/full_employment"
     },
     {
@@ -69502,7 +69502,7 @@ window.VR_WIKI_DATA = {
       "description": "Complete your first Builder blueprint.",
       "frame": "Task",
       "hidden": false,
-      "icon": "Paper",
+      "icon": "Construction Blueprint",
       "parent": "reputation/honest_work"
     },
     {
@@ -69763,7 +69763,7 @@ window.VR_WIKI_DATA = {
       "description": "Pay 100 emeralds' worth of wages through Payment Boxes.",
       "frame": "Task",
       "hidden": false,
-      "icon": "Emerald Block",
+      "icon": "Payment Box",
       "parent": "reputation/honest_work"
     },
     {
@@ -69862,7 +69862,7 @@ window.VR_WIKI_DATA = {
       "description": "Have a courier deliver materials that another hired villager subsequently uses.",
       "frame": "Goal",
       "hidden": false,
-      "icon": "Chest Minecart",
+      "icon": "Item Filter",
       "parent": "reputation/honest_work"
     },
     {
@@ -69925,7 +69925,7 @@ window.VR_WIKI_DATA = {
       "description": "Complete ten distinct blueprint structures.",
       "frame": "Goal",
       "hidden": false,
-      "icon": "Bricks",
+      "icon": "Blueprint Checklist",
       "parent": "reputation/blueprint_for_success"
     },
     {

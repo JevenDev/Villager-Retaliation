@@ -2,7 +2,7 @@
   "parent": "villagerretaliation:reputation/honest_work",
   "display": {
     "icon": {
-      "id": "minecraft:chest_minecart"
+      "id": "villagerretaliation:item_filter"
     },
     "title": {
       "translate": "advancements.villagerretaliation.reputation.supply_and_demand.title"

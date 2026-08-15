@@ -2,7 +2,7 @@
   "parent": "villagerretaliation:reputation/honest_work",
   "display": {
     "icon": {
-      "id": "minecraft:paper"
+      "id": "villagerretaliation:construction_blueprint"
     },
     "title": {
       "translate": "advancements.villagerretaliation.reputation.blueprint_for_success.title"
