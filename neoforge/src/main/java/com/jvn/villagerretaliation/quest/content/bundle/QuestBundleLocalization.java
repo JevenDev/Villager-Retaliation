@@ -65,14 +65,14 @@ public final class QuestBundleLocalization {
             }
         }
 
-        collectExplicitReferences(quest, prefix, references, errors, "");
+        collectExplicitReferences(quest, prefix, references, errors, "", false);
         return new Validation(Set.copyOf(references), List.copyOf(errors));
     }
 
     public static Validation collectCompanion(JsonObject companion, String prefix) {
         Set<String> references = new LinkedHashSet<>();
         List<String> errors = new ArrayList<>();
-        collectExplicitReferences(companion, prefix, references, errors, "");
+        collectExplicitReferences(companion, prefix, references, errors, "", false);
         return new Validation(Set.copyOf(references), List.copyOf(errors));
     }
 
@@ -196,11 +196,14 @@ public final class QuestBundleLocalization {
             String prefix,
             Set<String> references,
             List<String> errors,
-            String path) {
+            String path,
+            boolean localizedContext) {
         if (element == null || element.isJsonNull()) {
             return;
         }
-        LocalizedReference reference = LocalizedReference.read(element).orElse(null);
+        LocalizedReference reference = localizedContext
+                ? LocalizedReference.read(element).orElse(null)
+                : null;
         if (reference != null) {
             try {
                 references.add(reference.expand(prefix));
@@ -212,13 +215,28 @@ public final class QuestBundleLocalization {
         if (element.isJsonArray()) {
             JsonArray array = element.getAsJsonArray();
             for (int index = 0; index < array.size(); index++) {
-                collectExplicitReferences(array.get(index), prefix, references, errors, path + "/" + index);
+                collectExplicitReferences(
+                        array.get(index), prefix, references, errors,
+                        path + "/" + index, localizedContext);
             }
         } else if (element.isJsonObject()) {
             for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
-                collectExplicitReferences(entry.getValue(), prefix, references, errors, path + "/" + entry.getKey());
+                boolean localized = localizedContext
+                        || isPlayerFacingField(entry.getKey());
+                collectExplicitReferences(
+                        entry.getValue(), prefix, references, errors,
+                        path + "/" + entry.getKey(), localized);
             }
         }
+    }
+
+    private static boolean isPlayerFacingField(String field) {
+        return switch (field) {
+            case "title", "description", "label", "text", "lines",
+                    "tracker_text", "tracker_complete_text", "complete_text",
+                    "custom_name", "trophy_name" -> true;
+            default -> false;
+        };
     }
 
     private static JsonObject object(JsonObject parent, String field) {

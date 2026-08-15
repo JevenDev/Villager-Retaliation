@@ -1,9 +1,14 @@
 {
   "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:choose_the_horizon",
+  "localization_prefix": "quest.cartographers_atlas.choose_the_horizon",
   "metadata": {
-    "title": "Choose the Horizon",
-    "description": "Choose and prepare the atlas's first great Overworld route.",
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    },
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
@@ -74,8 +79,12 @@
             "dark_roof"
           ],
           "tracker": {
-            "text": "Choose the atlas's Overworld horizon with the cartographer.",
-            "complete_text": "You chose the {objective_choice_value} horizon.",
+            "text": {
+              "key": "#stage.started.objective.choose_route.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stage.started.objective.choose_route.tracker.complete_text"
+            },
             "show_progress": true,
             "progress": 0.45
           }
@@ -86,19 +95,24 @@
       ],
       "dialogue": {
         "offer": {
-          "label": "Choose the Horizon",
+          "label": {
+            "key": "#stage.started.dialogue.offer.label"
+          },
           "request": "question",
           "order": -24,
           "show_for_babies": false,
-          "lines": [
-            "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for its first great horizon.",
-            "This permanent choice closes the other Overworld route. The coast kit prepares for a monument survey; the dark roof kit prepares for a mansion survey."
-          ],
+          "lines": {
+            "key": "#stage.started.dialogue.offer.lines"
+          },
           "responses": [
             {
               "id": "coast",
-              "label": "Choose the drowned coast",
-              "text": "Then we choose the coast. Keep your eyes on drowned stone, and do not trust quiet water.",
+              "label": {
+                "key": "#stage.started.dialogue.offer.response.coast.label"
+              },
+              "text": {
+                "key": "#stage.started.dialogue.offer.response.coast.text"
+              },
               "actions": [
                 {
                   "type": "set_variable",
@@ -114,7 +128,9 @@
                 {
                   "type": "notification",
                   "trigger": "quest.updated",
-                  "text": "You chose the drowned coast. Assemble a spyglass, boat, and provisions before the monument survey."
+                  "text": {
+                    "key": "#stage.started.dialogue.offer.response.coast.action.notification.text"
+                  }
                 },
                 {
                   "type": "start_scene",
@@ -129,8 +145,12 @@
             },
             {
               "id": "dark_roof",
-              "label": "Choose the dark roof road",
-              "text": "Then we choose the dark roof road. If the house looks back, look back harder.",
+              "label": {
+                "key": "#stage.started.dialogue.offer.response.dark_roof.label"
+              },
+              "text": {
+                "key": "#stage.started.dialogue.offer.response.dark_roof.text"
+              },
               "actions": [
                 {
                   "type": "set_variable",
@@ -146,7 +166,9 @@
                 {
                   "type": "notification",
                   "trigger": "quest.updated",
-                  "text": "You chose the dark roof road. Assemble a shield, crossbow, and torches before the mansion survey."
+                  "text": {
+                    "key": "#stage.started.dialogue.offer.response.dark_roof.action.notification.text"
+                  }
                 },
                 {
                   "type": "start_scene",
@@ -161,29 +183,37 @@
             },
             {
               "id": "decline",
-              "label": "Another time",
+              "label": {
+                "key": "#stage.started.dialogue.offer.response.decline.label"
+              },
               "scene": "decline"
             }
           ]
         },
         "reminder": {
-          "label": "About the Horizon",
+          "label": {
+            "key": "#stage.started.dialogue.reminder.label"
+          },
           "request": "question",
           "order": -24,
           "show_for_babies": false,
-          "lines": [
-            "This permanent Overworld fork closes the other route: coast prepares for a monument survey; dark roof prepares for a mansion survey."
-          ],
+          "lines": {
+            "key": "#stage.started.dialogue.reminder.lines"
+          },
           "responses": [
             {
               "id": "details",
-              "label": "Repeat the fork",
+              "label": {
+                "key": "#stage.started.dialogue.reminder.response.details.label"
+              },
               "scene": "reminder_details",
               "order": 0
             },
             {
               "id": "leave",
-              "label": "I will choose",
+              "label": {
+                "key": "#stage.started.dialogue.reminder.response.leave.label"
+              },
               "scene": "leave",
               "order": 100
             }
@@ -198,31 +228,33 @@
               "type": "quest",
               "action": "remind",
               "lines": {
-                "reminder": [
-                  "This choice closes the other Overworld horizon. Coast needs a spyglass, boat, and provisions; dark roof needs a shield, crossbow, and torches."
-                ],
-                "unavailable": [
-                  "I do not have your horizon page open right now."
-                ]
+                "reminder": {
+                  "key": "#stage.started.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.started.scene.reminder_details.action.remind.lines.unavailable"
+                }
               }
             }
           ]
         },
         {
           "id": "decline",
-          "lines": [
-            "Then the horizon stays unchosen, which is a kind of answer but not a useful one."
-          ]
+          "lines": {
+            "key": "#stage.started.scene.decline.lines"
+          }
         },
         {
           "id": "leave",
-          "lines": [
-            "Choose with both eyes open."
-          ]
+          "lines": {
+            "key": "#stage.started.scene.leave.lines"
+          }
         }
       ],
       "ui": {
-        "tracker_text": "Choose the atlas's Overworld horizon from the cartographer's branch options.",
+        "tracker_text": {
+          "key": "#stage.started.ui.tracker_text"
+        },
         "show_progress": true,
         "progress": 0.45
       }
@@ -237,8 +269,12 @@
           "count": 1,
           "consume": false,
           "tracker": {
-            "text": "Carry 1 spyglass for the drowned-coast survey.",
-            "complete_text": "The survey spyglass is ready.",
+            "text": {
+              "key": "#stage.coast_final.objective.carry_spyglass.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stage.coast_final.objective.carry_spyglass.tracker.complete_text"
+            },
             "show_progress": true,
             "progress": 0.65
           }
@@ -250,8 +286,12 @@
           "count": 1,
           "consume": false,
           "tracker": {
-            "text": "Carry 1 oak boat for the drowned-coast route.",
-            "complete_text": "The coast boat is ready.",
+            "text": {
+              "key": "#stage.coast_final.objective.carry_boat.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stage.coast_final.objective.carry_boat.tracker.complete_text"
+            },
             "show_progress": true,
             "progress": 0.75
           }
@@ -262,8 +302,12 @@
           "item": "minecraft:cooked_cod",
           "count": 16,
           "tracker": {
-            "text": "Bring 16 cooked cod for the coast expedition.",
-            "complete_text": "The coast provisions are packed.",
+            "text": {
+              "key": "#stage.coast_final.objective.bring_provisions.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stage.coast_final.objective.bring_provisions.tracker.complete_text"
+            },
             "show_progress": true,
             "progress": 0.9
           }
@@ -277,23 +321,29 @@
       "next": "coast_chosen",
       "dialogue": {
         "reminder": {
-          "label": "About the Horizon",
+          "label": {
+            "key": "#stage.coast_final.dialogue.reminder.label"
+          },
           "request": "question",
           "order": -24,
           "show_for_babies": false,
-          "lines": [
-            "Before the drowned-coast page opens, assemble a spyglass, a boat, and enough provisions for the monument survey."
-          ],
+          "lines": {
+            "key": "#stage.coast_final.dialogue.reminder.lines"
+          },
           "responses": [
             {
               "id": "details",
-              "label": "Repeat the kit",
+              "label": {
+                "key": "#stage.coast_final.dialogue.reminder.response.details.label"
+              },
               "scene": "reminder_details",
               "order": 0
             },
             {
               "id": "leave",
-              "label": "Never mind",
+              "label": {
+                "key": "#stage.coast_final.dialogue.reminder.response.leave.label"
+              },
               "scene": "leave",
               "order": 100
             }
@@ -303,9 +353,9 @@
       "scenes": [
         {
           "id": "leave",
-          "lines": [
-            "The tide can wait, but it will not wait forever."
-          ]
+          "lines": {
+            "key": "#stage.coast_final.scene.leave.lines"
+          }
         },
         {
           "id": "reminder_details",
@@ -314,19 +364,21 @@
               "type": "quest",
               "action": "remind",
               "lines": {
-                "reminder": [
-                  "Carry 1 spyglass and 1 oak boat, then bring 16 cooked cod for the drowned-coast expedition."
-                ],
-                "unavailable": [
-                  "I do not have your horizon page open right now."
-                ]
+                "reminder": {
+                  "key": "#stage.coast_final.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.coast_final.scene.reminder_details.action.remind.lines.unavailable"
+                }
               }
             }
           ]
         }
       ],
       "ui": {
-        "tracker_text": "Prepare a spyglass, boat, and provisions for the drowned coast.",
+        "tracker_text": {
+          "key": "#stage.coast_final.ui.tracker_text"
+        },
         "show_progress": true,
         "progress": 0.85
       }
@@ -341,8 +393,12 @@
           "count": 1,
           "consume": false,
           "tracker": {
-            "text": "Carry 1 shield for the dark-roof survey.",
-            "complete_text": "The survey shield is ready.",
+            "text": {
+              "key": "#stage.dark_roof_final.objective.carry_shield.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stage.dark_roof_final.objective.carry_shield.tracker.complete_text"
+            },
             "show_progress": true,
             "progress": 0.65
           }
@@ -354,8 +410,12 @@
           "count": 1,
           "consume": false,
           "tracker": {
-            "text": "Carry 1 crossbow for the mansion road.",
-            "complete_text": "The road crossbow is ready.",
+            "text": {
+              "key": "#stage.dark_roof_final.objective.carry_crossbow.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stage.dark_roof_final.objective.carry_crossbow.tracker.complete_text"
+            },
             "show_progress": true,
             "progress": 0.75
           }
@@ -366,8 +426,12 @@
           "item": "minecraft:torch",
           "count": 32,
           "tracker": {
-            "text": "Bring 32 torches for the dark-roof expedition.",
-            "complete_text": "The dark-roof torches are packed.",
+            "text": {
+              "key": "#stage.dark_roof_final.objective.bring_torches.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stage.dark_roof_final.objective.bring_torches.tracker.complete_text"
+            },
             "show_progress": true,
             "progress": 0.9
           }
@@ -381,23 +445,29 @@
       "next": "dark_roof_chosen",
       "dialogue": {
         "reminder": {
-          "label": "About the Horizon",
+          "label": {
+            "key": "#stage.dark_roof_final.dialogue.reminder.label"
+          },
           "request": "question",
           "order": -24,
           "show_for_babies": false,
-          "lines": [
-            "Before the dark-roof page opens, assemble a shield, a crossbow, and enough torches for the mansion survey."
-          ],
+          "lines": {
+            "key": "#stage.dark_roof_final.dialogue.reminder.lines"
+          },
           "responses": [
             {
               "id": "details",
-              "label": "Repeat the kit",
+              "label": {
+                "key": "#stage.dark_roof_final.dialogue.reminder.response.details.label"
+              },
               "scene": "reminder_details",
               "order": 0
             },
             {
               "id": "leave",
-              "label": "Never mind",
+              "label": {
+                "key": "#stage.dark_roof_final.dialogue.reminder.response.leave.label"
+              },
               "scene": "leave",
               "order": 100
             }
@@ -407,9 +477,9 @@
       "scenes": [
         {
           "id": "leave",
-          "lines": [
-            "The roof will stay dark without our help."
-          ]
+          "lines": {
+            "key": "#stage.dark_roof_final.scene.leave.lines"
+          }
         },
         {
           "id": "reminder_details",
@@ -418,19 +488,21 @@
               "type": "quest",
               "action": "remind",
               "lines": {
-                "reminder": [
-                  "Carry 1 shield and 1 crossbow, then bring 32 torches for the dark-roof expedition."
-                ],
-                "unavailable": [
-                  "I do not have your horizon page open right now."
-                ]
+                "reminder": {
+                  "key": "#stage.dark_roof_final.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.dark_roof_final.scene.reminder_details.action.remind.lines.unavailable"
+                }
               }
             }
           ]
         }
       ],
       "ui": {
-        "tracker_text": "Prepare a shield, crossbow, and torches for the dark roof.",
+        "tracker_text": {
+          "key": "#stage.dark_roof_final.ui.tracker_text"
+        },
         "show_progress": true,
         "progress": 0.9
       }
@@ -440,22 +512,28 @@
       "objectives": [],
       "dialogue": {
         "turn_in": {
-          "label": "About the Horizon",
+          "label": {
+            "key": "#stage.coast_chosen.dialogue.turn_in.label"
+          },
           "request": "question",
           "order": -24,
           "show_for_babies": false,
-          "lines": [
-            "The drowned-coast kit is ready. The atlas can point toward its first great Overworld route."
-          ],
+          "lines": {
+            "key": "#stage.coast_chosen.dialogue.turn_in.lines"
+          },
           "responses": [
             {
               "id": "complete",
-              "label": "Set the drowned coast horizon",
+              "label": {
+                "key": "#stage.coast_chosen.dialogue.turn_in.response.complete.label"
+              },
               "scene": "complete_coast"
             },
             {
               "id": "leave",
-              "label": "Not yet",
+              "label": {
+                "key": "#stage.coast_chosen.dialogue.turn_in.response.leave.label"
+              },
               "scene": "leave"
             }
           ]
@@ -473,28 +551,30 @@
               "type": "quest",
               "action": "turn_in",
               "lines": {
-                "completed": [
-                  "Done. The atlas has chosen its first Overworld horizon. The monument survey comes next."
-                ],
-                "missing_objectives": [
-                  "The coast kit still needs its spyglass, boat, and provisions."
-                ],
-                "unavailable": [
-                  "I cannot set the coast horizon until the route kit is here."
-                ]
+                "completed": {
+                  "key": "#stage.coast_chosen.scene.complete_coast.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.coast_chosen.scene.complete_coast.action.turn_in.lines.missing_objectives"
+                },
+                "unavailable": {
+                  "key": "#stage.coast_chosen.scene.complete_coast.action.turn_in.lines.unavailable"
+                }
               }
             }
           ]
         },
         {
           "id": "leave",
-          "lines": [
-            "The coast will keep making noise until we finish."
-          ]
+          "lines": {
+            "key": "#stage.coast_chosen.scene.leave.lines"
+          }
         }
       ],
       "ui": {
-        "tracker_text": "Return to the cartographer to set the drowned coast horizon.",
+        "tracker_text": {
+          "key": "#stage.coast_chosen.ui.tracker_text"
+        },
         "show_progress": true,
         "progress": 1
       }
@@ -504,22 +584,28 @@
       "objectives": [],
       "dialogue": {
         "turn_in": {
-          "label": "About the Horizon",
+          "label": {
+            "key": "#stage.dark_roof_chosen.dialogue.turn_in.label"
+          },
           "request": "question",
           "order": -24,
           "show_for_babies": false,
-          "lines": [
-            "The dark-roof kit is ready. The atlas can point toward its first great Overworld route."
-          ],
+          "lines": {
+            "key": "#stage.dark_roof_chosen.dialogue.turn_in.lines"
+          },
           "responses": [
             {
               "id": "complete",
-              "label": "Set the dark roof horizon",
+              "label": {
+                "key": "#stage.dark_roof_chosen.dialogue.turn_in.response.complete.label"
+              },
               "scene": "complete_dark_roof"
             },
             {
               "id": "leave",
-              "label": "Not yet",
+              "label": {
+                "key": "#stage.dark_roof_chosen.dialogue.turn_in.response.leave.label"
+              },
               "scene": "leave"
             }
           ]
@@ -537,28 +623,30 @@
               "type": "quest",
               "action": "turn_in",
               "lines": {
-                "completed": [
-                  "Done. The atlas has chosen its first Overworld horizon. The mansion survey comes next."
-                ],
-                "missing_objectives": [
-                  "The dark-roof kit still needs its shield, crossbow, and torches."
-                ],
-                "unavailable": [
-                  "I cannot set the dark-roof horizon until the route kit is here."
-                ]
+                "completed": {
+                  "key": "#stage.dark_roof_chosen.scene.complete_dark_roof.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.dark_roof_chosen.scene.complete_dark_roof.action.turn_in.lines.missing_objectives"
+                },
+                "unavailable": {
+                  "key": "#stage.dark_roof_chosen.scene.complete_dark_roof.action.turn_in.lines.unavailable"
+                }
               }
             }
           ]
         },
         {
           "id": "leave",
-          "lines": [
-            "The roof will stay dark until we finish."
-          ]
+          "lines": {
+            "key": "#stage.dark_roof_chosen.scene.leave.lines"
+          }
         }
       ],
       "ui": {
-        "tracker_text": "Return to the cartographer to set the dark roof horizon.",
+        "tracker_text": {
+          "key": "#stage.dark_roof_chosen.ui.tracker_text"
+        },
         "show_progress": true,
         "progress": 1
       }
@@ -572,7 +660,9 @@
     "reputation": 14
   },
   "ui": {
-    "title": "Choose the Horizon",
+    "title": {
+      "key": "#tracker.title"
+    },
     "title_key": "quest.cartographers_atlas.choose_the_horizon.tracker.title"
   }
 }

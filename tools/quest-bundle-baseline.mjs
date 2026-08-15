@@ -20,7 +20,7 @@ const textFields = new Set(["title", "description", "label", "text", "lines", "t
 const stableArrays = new Set(["stages", "objectives", "events", "triggers", "scenes", "responses", "actors", "steps", "actions", "waves", "variants", "members", "phases"]);
 
 const [quests, scenes, encounters, pools, rewards, messageFiles] = await Promise.all([
-  loadIdentified(roots.quests),
+  loadQuests(roots.quests),
   loadIdentified(roots.scenes),
   loadIdentified(roots.encounters),
   loadIdentified(roots.pools),
@@ -449,6 +449,76 @@ class JavaRandom {
     } while (bits - value + bound - 1 > 0x7fffffff);
     return value;
   }
+}
+
+async function loadQuests(directory) {
+  const result = new Map();
+  for (const entry of await loadJsonFiles(directory)) {
+    const relativeFile = path.relative(directory, entry.file).replace(/\\/g, "/");
+    const parts = relativeFile.split("/");
+    let loaded = entry;
+    if (parts.length === 3 && parts[2] === "quest.json") {
+      const localeFile = path.join(path.dirname(entry.file), "locales", "en_us.json");
+      const localeRoot = JSON.parse(await readFile(localeFile, "utf8"));
+      const messages = localeRoot.messages ?? localeRoot;
+      const data = materializeBundle(entry.data, messages, entry.data.localization_prefix ?? "");
+      delete data.localization_prefix;
+      loaded = {
+        file: path.join(directory, parts[0], parts[1] + ".json"),
+        data
+      };
+    } else if (parts.length !== 2) {
+      continue;
+    }
+    const id = loaded.data?.id;
+    if (!id) throw new Error(relative(entry.file) + " has no stable quest id");
+    if (result.has(id)) throw new Error("Duplicate stable quest id " + id);
+    result.set(id, loaded);
+  }
+  return new Map(sortedEntries(result));
+}
+
+function materializeBundle(value, messages, prefix, field = "") {
+  if (Array.isArray(value)) {
+    return value.map(entry => materializeBundle(entry, messages, prefix, field));
+  }
+  if (!value || typeof value !== "object") return value;
+  if (typeof value.key === "string" && Object.keys(value).every(key => key === "key")) {
+    const id = value.key.startsWith("#")
+      ? prefix + (value.key.length === 1 ? "" : "." + value.key.slice(1))
+      : value.key;
+    const payload = messages[id];
+    if (payload === undefined) throw new Error("Missing effective English payload " + id);
+    return legacyLocalePayload(field, payload);
+  }
+  return Object.fromEntries(Object.entries(value)
+    .map(([key, child]) => [key, materializeBundle(child, messages, prefix, key)]));
+}
+
+function legacyLocalePayload(field, payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return structuredClone(payload);
+  }
+  if (Array.isArray(payload.lines)) {
+    return field === "lines" ? structuredClone(payload.lines) : firstLocaleText(payload.lines);
+  }
+  if (Array.isArray(payload.variants)) {
+    const values = payload.variants.map(entry => entry?.text ?? entry?.line ?? "")
+      .filter(Boolean);
+    return field === "lines" ? values : firstLocaleText(values);
+  }
+  if (typeof payload.text === "string") return payload.text;
+  if (typeof payload.line === "string") return payload.line;
+  return structuredClone(payload);
+}
+
+function firstLocaleText(values) {
+  for (const value of values ?? []) {
+    if (typeof value === "string") return value;
+    if (typeof value?.text === "string") return value.text;
+    if (typeof value?.line === "string") return value.line;
+  }
+  return "";
 }
 
 async function loadIdentified(directory) {

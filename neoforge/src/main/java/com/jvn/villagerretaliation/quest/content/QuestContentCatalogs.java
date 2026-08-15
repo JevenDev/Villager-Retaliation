@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest.content;
 
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import com.jvn.villagerretaliation.quest.content.bundle.BuiltInQuestBundleCompatibility;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleDiscovery;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.quest.content.reward.QuestRewardCatalog;
@@ -76,14 +77,14 @@ public final class QuestContentCatalogs {
 
     private static Published build(MinecraftServer server) {
         long generation = GENERATIONS.incrementAndGet();
-        VillagerQuestResources.ContentSnapshot quest = VillagerQuestResources.snapshotForCatalog(server);
+        QuestBundleTransactions.Result bundles = QuestBundleTransactions.compile(
+                QuestBundleDiscovery.discover(server),
+                BuiltInQuestBundleCompatibility.rules(),
+                QuestRewardRegistryContext.create(server));
+        VillagerQuestResources.ContentSnapshot quest = VillagerQuestResources.snapshotForCatalog(server, bundles);
         EncounterResources.ContentSnapshot encounter = EncounterResources.snapshotForCatalog(server);
         SceneResources.ContentSnapshot scene = SceneResources.snapshotForCatalog(server);
         QuestPoolResources.ContentSnapshot pool = QuestPoolResources.snapshotForCatalog(server);
-        QuestBundleTransactions.Result bundles = QuestBundleTransactions.compile(
-                QuestBundleDiscovery.discover(server),
-                QuestBundleTransactions.CompatibilityRules.empty(),
-                QuestRewardRegistryContext.create(server));
 
         QuestContentCatalog catalog = new QuestContentCatalog(
                 generation,
