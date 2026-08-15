@@ -2,7 +2,7 @@
   "parent": "villagerretaliation:reputation/honest_work",
   "display": {
     "icon": {
-      "id": "minecraft:emerald_block"
+      "id": "villagerretaliation:payment_box"
     },
     "title": {
       "translate": "advancements.villagerretaliation.reputation.payday.title"
