@@ -1,0 +1,635 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 1,
+    "repeatable": false
+  },
+  "entry_stage": "choose",
+  "id": "villagerretaliation:choose_the_soil",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "parent": "villagerretaliation:new_furrows",
+    "questline": "green_thumb",
+    "tags": [
+      "group.green_thumb",
+      "role.story",
+      "activity.build",
+      "activity.choice",
+      "activity.deliver",
+      "activity.gather",
+      "destination.village",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard",
+      "theme.community",
+      "feature.branching"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "apprentice",
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": {
+        "farming": {
+          "min": 18
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 125,
+    "gossip_reputation": 4,
+    "loot_table": "villagerretaliation:quest/choose_the_soil",
+    "memory_event": "player_completed_quest",
+    "reputation": 10
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "choose_route"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.choose.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.offer.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "canal"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.canal.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "canal",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.canal.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.canal.text"
+              },
+              "transition": {
+                "stage": "canal_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "compost"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.compost.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "compost",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.compost.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.compost.text"
+              },
+              "transition": {
+                "stage": "compost_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.choose.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.details.label"
+              },
+              "order": -10,
+              "scene": "reminder_details"
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "canal"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.canal.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "canal",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.canal.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.canal.text"
+              },
+              "transition": {
+                "stage": "canal_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "compost"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.compost.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "compost",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.compost.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.compost.text"
+              },
+              "transition": {
+                "stage": "compost_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "choose",
+      "objectives": [
+        {
+          "id": "choose_route",
+          "key": "choice",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.choose.objective.choose_route.tracker.complete_text"
+            },
+            "progress": 0.2,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.choose.objective.choose_route.tracker.text"
+            }
+          },
+          "type": "choice",
+          "values": [
+            "canal",
+            "compost"
+          ]
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.choose.scene.decline.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.2,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.choose.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "lay_canal",
+        "carry_water"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.canal_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.canal_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.canal_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.canal_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "canal_work",
+      "next": "canal_return",
+      "objectives": [
+        {
+          "block": "minecraft:stone_bricks",
+          "count": 12,
+          "id": "lay_canal",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.canal_work.objective.lay_canal.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.canal_work.objective.lay_canal.tracker.text"
+            }
+          },
+          "type": "block_place"
+        },
+        {
+          "consume": false,
+          "count": 1,
+          "id": "carry_water",
+          "item": "minecraft:water_bucket",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.canal_work.objective.carry_water.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.canal_work.objective.carry_water.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.canal_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.canal_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.canal_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.canal_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.canal_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.canal_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.canal_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.canal_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "canal_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.canal_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.canal_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.canal_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.canal_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.canal_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.canal_return.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "work_composter",
+        "bring_bone_meal"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.compost_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.compost_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.compost_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.compost_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "compost_work",
+      "next": "compost_return",
+      "objectives": [
+        {
+          "block": "minecraft:composter",
+          "count": 5,
+          "id": "work_composter",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.compost_work.objective.work_composter.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.compost_work.objective.work_composter.tracker.text"
+            }
+          },
+          "type": "block_interact"
+        },
+        {
+          "count": 16,
+          "id": "bring_bone_meal",
+          "item": "minecraft:bone_meal",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.compost_work.objective.bring_bone_meal.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.compost_work.objective.bring_bone_meal.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.compost_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.compost_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.compost_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.compost_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.compost_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.compost_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.compost_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.compost_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "compost_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.compost_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.compost_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.compost_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.compost_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.compost_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.compost_return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#B884E8",
+    "icon": "minecraft:farmland",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.green_thumb.choose_the_soil"
+}

@@ -1,0 +1,372 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.lost_civilization.end_city_survey.description": {
+      "lines": [
+        "Survey an End City to test whether an Ancient City record describes the same builders."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.dialogue.already_completed": {
+      "lines": [
+        "There is no second payment here. We already settled End City Survey.",
+        "The matter ended well enough. You already came back from the End City with what we needed.",
+        "That chapter is closed. End City Survey is closed. I am not sending you through shulkers and the void twice.",
+        "We settled this one already. Your route to the End City is already in the survey.",
+        "What was owed has been paid. I remember the day you returned with the Shulker Shell.",
+        "The matter ended well enough. You earned the reward for End City Survey, and it was paid.",
+        "Leave the old tally alone. We have a hard signature from the End because you finished the journey to the End City.",
+        "There is no second payment here. Nothing remains to be recovered from the city.",
+        "Your earlier work still stands. What you brought from the End City is still helping the village.",
+        "I remember your first return. You proved the city route once. That is enough.",
+        "What was owed has been paid. The survey carries your name beside the completed mark.",
+        "That chapter is closed. Leave End City Survey in the past where it belongs.",
+        "There is no second payment here. You settled every part of End City Survey on your first return.",
+        "What was owed has been paid. The End City was reached and the Shulker Shell evidence delivered.",
+        "Nothing remains to be earned from this. I will find you a road beyond the End City before sending you back there.",
+        "That chapter is closed. Nobody forgot what the journey to the End City cost you.",
+        "That chapter is closed. End City Survey at the End City needs no second visit from you.",
+        "I will not reopen a finished account. You gave us the Shulker Shell, not another rumor.",
+        "What was owed has been paid. End City Survey ended properly, and it stays ended.",
+        "There is no second payment here. We can look ahead now. End City Survey is done."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.dialogue.inactive": {
+      "lines": [
+        "The board can wait. The conditions for End City Survey are not right at the moment.",
+        "The board can wait. The mark for the End City is not open today.",
+        "Ask me after the stores change. I have no reason to risk you against shulkers and the void just now.",
+        "The time is wrong. The village is not ready to use a Shulker Shell and one Chorus Flower.",
+        "I will post it when it matters. Wait until the survey calls for the journey to the End City.",
+        "The board can wait. A trip to the End City without a need is only danger.",
+        "The village can wait on this one. The city route can stay folded until the timing improves.",
+        "Not today. I am holding End City Survey off the board for now.",
+        "For now, let the matter rest. Nothing at the End City needs our answer today.",
+        "Not today. Keep your gear ready for the End City, but do not leave yet.",
+        "I am keeping this off the board. End City Survey is real. The moment for it is not.",
+        "The board can wait. I will not send you toward shulkers and the void to satisfy an old note.",
+        "We have no need of it yet. The End City can wait until we have a use for the return.",
+        "I am keeping this off the board. Ask again after the village reviews the survey.",
+        "I am keeping this off the board. There is no active claim on the Shulker Shell today.",
+        "Leave that work alone for now. The road toward the End City is quiet, and I mean to leave it that way.",
+        "The board can wait. Starting End City Survey now would spend courage for no useful result.",
+        "Nothing calls for this work today. End City Survey has not been posted to any traveler.",
+        "The village can wait on this one. Give End City Survey time to become necessary.",
+        "Nothing calls for this work today. For the moment, stay on this side of the journey to the End City."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.dialogue.locate_failed": {
+      "lines": [
+        "A doubtful map is too much risk. <gradient:dark_purple:light_purple><pulse>The End</pulse></gradient> refuses a clean mark today. Even maps know when to hesitate.",
+        "The old directions no longer agree. I cannot put a trustworthy mark on the End City.",
+        "Until I know the way, you stay here. Every route I checked breaks down before the city.",
+        "Until I know the way, you stay here. The End City maps disagree, and shulkers and the <gradient:dark_purple:light_purple><pulse>void</pulse></gradient> leave no room for guessing.",
+        "The trail has gone cold. I found rumors of the End City, but no road I would hand you.",
+        "Something is wrong with the chart. The End City has slipped beyond my End City charts.",
+        "My map has failed us. Without a firm bearing, End City Survey would be wandering.",
+        "I found no safe bearing to give you. My best map is blank where the city should be.",
+        "The old directions no longer agree. I traced three routes toward the End City and trusted none.",
+        "My map has failed us. The old End City directions end before danger begins.",
+        "I found no safe bearing to give you. I will not pretend a guess can mark the End City.",
+        "A doubtful map is too much risk. No scout has confirmed the mark for the End City.",
+        "A doubtful map is too much risk. The trail to the End City went cold before I could mark it.",
+        "Until I know the way, you stay here. I need End City coordinates, not campfire stories.",
+        "I will not guess at a route. The End City may be there, but I cannot prove where.",
+        "The trail has gone cold. None of the End City bearings lead to the same ground.",
+        "The trail has gone cold. Let me find an honest city route before you prepare to leave.",
+        "We need a trustworthy route first. The survey offers warnings today, not directions.",
+        "I cannot send you out blind. The End City map gives me doubt when I need certainty.",
+        "I found no safe bearing to give you. Come back after the road to the End City gives us an answer."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.dialogue.missing_proof": {
+      "lines": [
+        "The proof has to reach my hands. Bring a Shulker Shell. The city has to leave a hard signature.",
+        "Show me what came back with you. The Shulker Shell is still missing from your return.",
+        "What you carried home decides this. I cannot close the survey without the agreed Shulker Shell evidence.",
+        "I need something I can hold. You faced the End City, but the village still needs the Shulker Shell.",
+        "The proof has to reach my hands. Bring back a Shulker Shell and one Chorus Flower before we settle End City Survey.",
+        "A story cannot close the ledger. Your story may be true. I still need the Shulker Shell.",
+        "Show me what came back with you. The journey to the End City ends here when the Shulker Shell changes hands.",
+        "The last requirement is still missing. Do not reach the End City and forget the Shulker Shell that verifies it.",
+        "What you carried home decides this. I know you traveled. I need a result from the End City.",
+        "The evidence still matters. The End City Survey reward waits on the Shulker Shell evidence, not the telling.",
+        "Your word is not the missing piece. Show me the Shulker Shell, and End City Survey can close.",
+        "Bring back something the village can verify. The empty place in the survey waits for what you recovered.",
+        "Bring back something the village can verify. Words cannot stand in for a hard signature from the End.",
+        "You returned without the one thing I asked for. Check your packs before you make the journey to the End City twice.",
+        "The last requirement is still missing. End City Survey named its proof from the beginning.",
+        "I need something I can hold. Bring the Shulker Shell evidence here rather than leaving it in storage.",
+        "I cannot sign off on an empty return. The village asked for a Shulker Shell and one Chorus Flower, and that remains unfinished.",
+        "Your word is not the missing piece. I can record the city route after I see what came from it.",
+        "What you carried home decides this. One Shulker Shell handoff separates End City Survey from completion.",
+        "The last requirement is still missing. Return when the Shulker Shell is in your hands."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.dialogue.missing_target": {
+      "lines": [
+        "The place itself must be reached. A shell alone is not a survey. Reach the End City itself.",
+        "The journey stopped too soon. You have not confirmed the End City itself.",
+        "Finish the outward journey first. The cargo means little if the End City was never reached.",
+        "The road must end where I sent you. End City Survey includes the road as well as the return.",
+        "The place itself must be reached. Set foot in the city before you bring me evidence.",
+        "I need the site confirmed. I asked for proof from the End City, not somewhere else.",
+        "The map still shows unfinished travel. The End City remains untouched in the survey.",
+        "Going near it does not count. Finish the outward journey before claiming the End City Survey reward.",
+        "Going near it does not count. A borrowed Shulker Shell cannot replace reaching the End City.",
+        "The place itself must be reached. The End City map still says you stopped short.",
+        "The place itself must be reached. Go to the marked place and see End City Survey through there.",
+        "The place itself must be reached. The city route must end at the End City, not near it.",
+        "You have not gone far enough yet. I need your eyes on the End City before I trust the report.",
+        "The journey stopped too soon. Do not skip the part that puts shulkers and the void in front of you.",
+        "The journey stopped too soon. The village asked you to confirm the city existed.",
+        "Reaching the mark is part of the promise. Your return is early. the End City still waits.",
+        "Finish the outward journey first. Reach the End City, then recover a Shulker Shell and one Chorus Flower.",
+        "This task was never only about the cargo. The journey to the End City is not complete while the final mark is unvisited.",
+        "Finish the outward journey first. The survey needs a confirmed place, not only an item.",
+        "Finish the outward journey first. Turn back toward the End City and finish what you began."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.dialogue.reminder": {
+      "lines": [
+        "The next step still matters. End City near {target_x}, {target_z}. Shulker Shell for proof, Chorus Flower for study. Try not to let the <gradient:dark_purple:light_purple><pulse>void</pulse></gradient> edit the report.",
+        "Do not lose the thread now. The End City is still near {target_x}, {target_z}.",
+        "Bring this to a proper finish. The mark remains near {target_x}, {target_z}, so keep to the planned city route.",
+        "Do not lose the thread now. Check the map again. End City is still near {target_x}, {target_z}.",
+        "Hold to the instructions I gave you. End City Survey still calls for a Shulker Shell and one Chorus Flower.",
+        "Hold to the instructions I gave you. Watch for shulkers and the <gradient:dark_purple:light_purple><pulse>void</pulse></gradient> on the way in.",
+        "Before you leave, hear this again. Do not leave the End City without the Shulker Shell.",
+        "Before you leave, hear this again. Your return should give us a hard signature from the End.",
+        "Remember what the village is waiting for. Check the End City bearing at {target_x}, {target_z} before landmarks blur.",
+        "Keep the return trip in your plans. Keep the Shulker Shell safe once you recover it.",
+        "Before you leave, hear this again. The survey stays open until you come home.",
+        "Before you leave, hear this again. Do not rush blind toward the End City. Follow the mark and return whole.",
+        "You are not finished yet. The End City has not moved from {target_x}, {target_z}.",
+        "Hold to the instructions I gave you. Remember why you are going. We need to bring evidence home from <gradient:dark_purple:light_purple><pulse>The End</pulse></gradient>.",
+        "Keep the whole task in mind. If the city route feels wrong, check your position against {target_x}, {target_z}.",
+        "Hold to the instructions I gave you. The hard part is reaching the city and leaving with evidence.",
+        "Bring this to a proper finish. End City still waits near {target_x}, {target_z}.",
+        "You are not finished yet. Bring every part of a Shulker Shell and one Chorus Flower back together.",
+        "Keep the whole task in mind. I would rather wait than receive half the agreed Shulker Shell.",
+        "Hold to the instructions I gave you. Find the End City, do End City Survey there, and return to me."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.dialogue.start": {
+      "lines": [
+        "I have a difficult request. The city mark is {direction}, about {distance} blocks from here, near {target_x}, {target_z}. Bring a Shulker Shell and one Chorus <green><wavy>Flower</wavy></green>.",
+        "Before you agree, hear all of it. I marked the End City near {target_x}, {target_z}.",
+        "Here is the work. Travel {direction} for about {distance} blocks and look for the city.",
+        "The village has work for you. The job is to bring evidence home from The End.",
+        "I have a difficult request. Come home with a Shulker Shell and one Chorus <green><wavy>Flower</wavy></green> so the village has more than rumors.",
+        "There is a reason I chose you. The road leads through shulkers and the void, so prepare before leaving.",
+        "I am trusting you with something important. I need someone willing to reach the End City and return with proof.",
+        "I need you to see this through. The End City sits near {target_x}, {target_z}, according to my map.",
+        "Take this seriously. Follow the {direction} bearing and keep the survey dry.",
+        "Here is the work. End City Survey begins at the End City and ends when the Shulker Shell reaches me.",
+        "Let us be clear about the job. The End City mark is about {distance} blocks away. Do not mistake speed for care.",
+        "I have a difficult request. Bring a Shulker Shell and one Chorus <green><wavy>Flower</wavy></green>, and I can turn this risk into something useful.",
+        "Take the task only if you are ready. The village needs a hard signature from the End, not boasting at the fire.",
+        "Before you agree, hear all of it. I trust you with the city route because it is not kind.",
+        "I am trusting you with something important. Make for {target_x}, {target_z} and confirm the End City yourself.",
+        "I need you to see this through. Prepare for shulkers and the void before crossing the last safe ground.",
+        "Take this seriously. The outward journey proves the End City map. The return proves you.",
+        "Take the task only if you are ready. Do not come back empty from the city.",
+        "The village has work for you. Take End City Survey only if you mean to finish the travel and recovery.",
+        "I am trusting you with something important. When you have a Shulker Shell and one Chorus <green><wavy>Flower</wavy></green>, bring it straight here."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.dialogue.turn_in": {
+      "lines": [
+        "I am glad to see you home. A shell and a Chorus <green><wavy>Flower</wavy></green>. The village has heard stories. Now it has evidence. Your name will travel farther than the road.",
+        "You brought the work to a proper end. You reached the End City and brought the Shulker Shell home.",
+        "That is the result I needed. The survey finally has a true ending.",
+        "Now I can close the ledger. This is a hard signature from the End, solid enough to hold.",
+        "This return was worth waiting for. The village can bring evidence home from The End because you took the risk.",
+        "The hard part is behind us. I asked for a Shulker Shell and one Chorus <green><wavy>Flower</wavy></green>, and you returned with every part.",
+        "You saw it through. You went through shulkers and the void and kept your head.",
+        "Now I can close the ledger. The city route is confirmed now, not merely drawn.",
+        "You saw it through. I can pay End City Survey without a doubt.",
+        "This will make a real difference. The Shulker Shell tells the story better than any boast.",
+        "The hard part is behind us. You made the dangerous road to the End City useful to everyone here.",
+        "Now I can close the ledger. The End City is no longer just a warning on a map.",
+        "Good, you made it back. I will put your End City findings where the village can study them.",
+        "This return was worth waiting for. End City Survey is clean, even if the journey to the End City was not.",
+        "Good, you made it back. That is the Shulker Shell evidence I hoped to see.",
+        "I am glad to see you home. You returned from the End City with more than survival. You brought an answer.",
+        "You saw it through. End City Survey closes with the village better prepared.",
+        "The hard part is behind us. The next traveler to the End City will have your route.",
+        "Now I can close the ledger. Take the End City Survey reward. You earned it beyond the safe roads.",
+        "The village can use this. I am glad to see both the Shulker Shell and person carrying it."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.dialogue.unavailable": {
+      "lines": [
+        "I will not place this burden on you. This survey waits for someone the village can trust with impossible directions.",
+        "I need proof of your judgment first. End City Survey demands trust I do not have in you yet.",
+        "This calls for someone we know better. I cannot hand you a route through shulkers and the void today.",
+        "The village needs a steadier hand. The End City is no ground for an untested ally.",
+        "I will not place this burden on you. Do steadier work here before asking for the End City map.",
+        "This calls for someone we know better. I need someone I can trust to return from the End City.",
+        "No, the risk is too high. The survey stays closed to you for now.",
+        "Some work must wait until trust catches up. End City Survey risks more than the traveler's life.",
+        "Earn our confidence before asking again. Earn our confidence, then ask about the city again.",
+        "This calls for someone we know better. I will not send a stranger after a hard signature from the End.",
+        "No, the risk is too high. The End City is dangerous enough without doubt between us.",
+        "The village needs a steadier hand. Your name has not reached the trusted page of the survey.",
+        "This calls for someone we know better. There are safer tasks than End City Survey that can show me how you work.",
+        "This work is not yours today. I need proof of judgment before offering the journey to the End City.",
+        "This work is not yours today. For now, the End City map remains folded.",
+        "Come back after you have earned more trust. The village is not ready to stake bring evidence home from The End on you.",
+        "The village needs a steadier hand. Ask about the End City after you have stood with us longer.",
+        "I will not place this burden on you. Courage may reach the End City. Reliability brings the Shulker Shell home.",
+        "I need proof of your judgment first. End City Survey stays with proven hands.",
+        "I need proof of your judgment first. I will tell you when we trust you with the road to the End City."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.complete_text": {
+      "lines": [
+        "The Chorus Flower sample is intact."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.text": {
+      "lines": [
+        "Bring 1 Chorus Flower as a living sample."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.stage.return.dialogue.turn_in.label": "About End City Survey",
+    "quest.lost_civilization.end_city_survey.stage.return.dialogue.turn_in.lines": [
+      "A shell from the towers and a flower from the stone. The record described the setting, but it still does not name the builders.",
+      "This may be a second city in the same story, or a different ruin under the same sky. The connection remains a hypothesis.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.lost_civilization.end_city_survey.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.lost_civilization.end_city_survey.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "A shell from the towers and a flower from the stone. The record described the setting, but it still does not name the builders.",
+      "This may be a second city in the same story, or a different ruin under the same sky. The connection remains a hypothesis."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "End City Survey is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.return.scene.turn_in_wait.lines": [
+      "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.lost_civilization.end_city_survey.stage.work.dialogue.offer.label": "End City Survey",
+    "quest.lost_civilization.end_city_survey.stage.work.dialogue.offer.lines": [
+      "An Ancient City record sketches towers beyond the dragon island, but resemblance is not proof of who built them.",
+      "Find an End City and bring back a shulker shell and something still growing there so we can test the record.",
+      "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.lost_civilization.end_city_survey.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.lost_civilization.end_city_survey.stage.work.dialogue.reminder.label": "About End City Survey",
+    "quest.lost_civilization.end_city_survey.stage.work.dialogue.reminder.lines": [
+      "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
+      "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
+      "Find an End City and bring back a shulker shell and something still growing there so we can test the record."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.lost_civilization.end_city_survey.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.lost_civilization.end_city_survey.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.lost_civilization.end_city_survey.stage.work.objective.bring_flower.tracker.complete_text": "The Chorus Flower is intact.",
+    "quest.lost_civilization.end_city_survey.stage.work.objective.bring_flower.tracker.text": "Bring 1 Chorus Flower as a living sample.",
+    "quest.lost_civilization.end_city_survey.stage.work.objective.carry_shell.tracker.complete_text": "The shulker shell is ready.",
+    "quest.lost_civilization.end_city_survey.stage.work.objective.carry_shell.tracker.text": "Carry 1 shulker shell as proof.",
+    "quest.lost_civilization.end_city_survey.stage.work.objective.visit_city.tracker.complete_text": "The End City has been surveyed.",
+    "quest.lost_civilization.end_city_survey.stage.work.objective.visit_city.tracker.text": "Reach the marked End City.",
+    "quest.lost_civilization.end_city_survey.stage.work.scene.abandon_confirm.lines": [
+      "Put End City Survey aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.lost_civilization.end_city_survey.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.lost_civilization.end_city_survey.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "End City Survey is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.decline.lines": [
+      "The End is not going anywhere. Its islands barely know how."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.leave.lines": [
+      "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
+      "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
+      "Find an End City and bring back a shulker shell and something still growing there so we can test the record."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "End City Survey is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "End City Survey is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.start_quest.action.start.lines.started": [
+      "Take pearls, slow falling, and one clear memory of where the gateway was.",
+      "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "End City Survey is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.lost_civilization.end_city_survey.stage.work.ui.tracker_text": "Survey the End City and return with a shulker shell and Chorus Flower.",
+    "quest.lost_civilization.end_city_survey.title": {
+      "lines": [
+        "End City Survey"
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.tracker.bring_chorus_flower.text": {
+      "lines": [
+        "Keep 1 Chorus Flower sample intact."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.tracker.proof.text": {
+      "lines": [
+        "Bring a Shulker Shell and 1 Chorus Flower."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with proof from the End City."
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.tracker.title": {
+      "lines": [
+        "End City Survey"
+      ]
+    },
+    "quest.lost_civilization.end_city_survey.tracker.travel.text": {
+      "lines": [
+        "Reach the End City near {target_x}, {target_z}."
+      ]
+    }
+  }
+}

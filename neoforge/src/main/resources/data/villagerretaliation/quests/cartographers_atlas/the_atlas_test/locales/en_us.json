@@ -1,0 +1,134 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.the_atlas_test.description": {
+      "lines": [
+        "Choose a safer supply route or a riskier combat route to prove the atlas can guide real decisions."
+      ]
+    },
+    "quest.cartographers_atlas.the_atlas_test.scene.atlas_risky_patrol.metadata.title": "Risky atlas patrol",
+    "quest.cartographers_atlas.the_atlas_test.scene.atlas_risky_patrol.step.patrol_cleared.data.text": "That was the patrol. Keep one of their crossbows and the risky route has its proof.",
+    "quest.cartographers_atlas.the_atlas_test.scene.atlas_risky_patrol.step.patrol_warning.data.text": "The risky road has answered already. A pillager patrol is moving on this map table.",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.offer.label": "The Atlas Test",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.offer.lines": [
+      "The atlas has pages, markers, and memory. Now it needs judgment.",
+      "Choose the permanent test route: safe asks for four lanterns and eight bread; risky begins a three-pillager ambush and guarantees a crossbow proof item with the larger combat bonus."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.offer.response.risky.action.notification.text": "You chose the risky atlas test. Defeat the patrol and carry back a crossbow.",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.offer.response.risky.label": "Take the risky road",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.offer.response.risky.text": "Risky road it is. Come back with proof the danger was real, not just imagined from a warm room.",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.offer.response.safe.action.notification.text": "You chose the safer atlas test. Bring the lanterns and bread for the road kit.",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.offer.response.safe.label": "Take the safer road",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.offer.response.safe.text": "Good. A safer road is not a weaker test; it just asks whether the atlas can keep people fed and lit.",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.reminder.label": "About The Atlas Test",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.reminder.lines": [
+      "This test choice is permanent. Safe is a supply hand-in; risky is an immediate three-pillager ambush with a guaranteed crossbow and larger bonus."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.reminder.response.details.label": "Repeat the test",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.dialogue.reminder.response.leave.label": "I will choose",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.objective.choose_test_route.tracker.complete_text": "You chose the {objective_choice_value} atlas test.",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.objective.choose_test_route.tracker.text": "Choose the atlas test route with the cartographer.",
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.scene.decline.lines": [
+      "Then the atlas keeps studying instead of deciding."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.scene.leave.lines": [
+      "A test is only useful if you choose it honestly."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.scene.reminder_details.action.remind.lines.reminder": [
+      "This choice is permanent: safe needs four lanterns and eight bread; risky launches three pillagers, guarantees the proof crossbow, and pays the larger bonus."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.scene.reminder_details.action.remind.lines.unavailable": [
+      "We are not carrying that test right now."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.choose_test.ui.tracker_text": "Choose the safer or riskier atlas test route.",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.dialogue.reminder.label": "About The Atlas Test",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.dialogue.reminder.lines": [
+      "The riskier road needs proof that danger was not just guessed at from a safe table."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.dialogue.reminder.response.details.label": "Repeat the patrol",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.objective.bring_crossbow.tracker.complete_text": "The patrol proof is ready.",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.objective.bring_crossbow.tracker.text": "Carry 1 crossbow as proof of the risky patrol.",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.objective.kill_pillagers.tracker.complete_text": "The risky road has been defended.",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.objective.kill_pillagers.tracker.text": "Defeat 3 pillagers to prove the riskier road can be defended.",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.scene.leave.lines": [
+      "Risk is not courage until someone returns with the account."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.scene.reminder_details.action.remind.lines.reminder": [
+      "Defeat 3 pillagers and carry a crossbow as proof of the riskier route test."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.scene.reminder_details.action.remind.lines.unavailable": [
+      "We are not carrying that test right now."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_patrol.ui.tracker_text": "Defeat 3 pillagers and carry a crossbow for the riskier route test.",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_return.dialogue.turn_in.label": "About The Atlas Test",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_return.dialogue.turn_in.lines": [
+      "You chose the riskier road and came back with proof. That is the part an atlas cannot fake."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_return.dialogue.turn_in.response.complete.label": "Finish the risky test",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_return.scene.complete_risky.action.turn_in.lines.completed": [
+      "The riskier test is passed. The atlas now knows that danger can be measured without being worshiped."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_return.scene.complete_risky.action.turn_in.lines.missing_objectives": [
+      "The risky patrol still needs proof."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_return.scene.complete_risky.action.turn_in.lines.unavailable": [
+      "I still need the patrol proof before we call this passed."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_return.scene.leave.lines": [
+      "Bring the proof when the road is ready."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.risky_return.ui.tracker_text": "Return to the cartographer after the risky patrol.",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_return.dialogue.turn_in.label": "About The Atlas Test",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_return.dialogue.turn_in.lines": [
+      "A safe road with light and food. That is not glamorous, which is why it is useful."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_return.dialogue.turn_in.response.complete.label": "Finish the safer test",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_return.scene.complete_safe.action.turn_in.lines.completed": [
+      "The safer test is passed. The atlas now knows that mercy is also a route."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_return.scene.complete_safe.action.turn_in.lines.missing_objectives": [
+      "The safe road kit is still missing pieces."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_return.scene.complete_safe.action.turn_in.lines.unavailable": [
+      "I still need the safer road kit before we call this passed."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_return.scene.leave.lines": [
+      "Bring the kit when the road is ready."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_return.ui.tracker_text": "Return to the cartographer with the safer road kit.",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.dialogue.reminder.label": "About The Atlas Test",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.dialogue.reminder.lines": [
+      "A safe road still needs proof. Bring lanterns and bread, the things a traveler notices only when they are missing."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.dialogue.reminder.response.details.label": "Repeat the kit",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.objective.bring_bread.tracker.complete_text": "The food kit is ready.",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.objective.bring_bread.tracker.text": "Bring 8 bread for the safer road kit.",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.objective.bring_lanterns.tracker.complete_text": "The lanterns are ready.",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.objective.bring_lanterns.tracker.text": "Bring 4 lanterns to light a repeatable road.",
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.scene.leave.lines": [
+      "The safer road still deserves respect."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 4 lanterns and 8 bread for the safer route test."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.scene.reminder_details.action.remind.lines.unavailable": [
+      "We are not carrying that test right now."
+    ],
+    "quest.cartographers_atlas.the_atlas_test.stage.safe_supplies.ui.tracker_text": "Bring 4 lanterns and 8 bread for the safer route test.",
+    "quest.cartographers_atlas.the_atlas_test.title": {
+      "lines": [
+        "The Atlas Test"
+      ]
+    },
+    "quest.cartographers_atlas.the_atlas_test.tracker.title": {
+      "lines": [
+        "The Atlas Test"
+      ]
+    }
+  }
+}

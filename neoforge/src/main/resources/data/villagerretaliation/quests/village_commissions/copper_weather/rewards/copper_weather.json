@@ -1,0 +1,65 @@
+{
+  "schema": "villagerretaliation:quest_reward/v1",
+  "id": "villagerretaliation:quest/copper_weather",
+  "table": {
+    "pools": [
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 21,
+                  "min": 14,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:emerald",
+            "type": "minecraft:item"
+          }
+        ],
+        "rolls": 1
+      },
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 8,
+                  "min": 4,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:honeycomb",
+            "type": "minecraft:item",
+            "weight": 2
+          },
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 7,
+                  "min": 4,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:iron_ingot",
+            "type": "minecraft:item",
+            "weight": 1
+          }
+        ],
+        "rolls": 1
+      }
+    ],
+    "type": "minecraft:generic"
+  }
+}

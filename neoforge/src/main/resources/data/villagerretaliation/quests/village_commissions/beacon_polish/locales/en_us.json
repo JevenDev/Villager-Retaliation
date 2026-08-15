@@ -1,0 +1,115 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_commissions.beacon_polish.description": "Defeat a Wither and surrender its Nether Star for another village beacon.",
+    "quest.village_commissions.beacon_polish.stage.return.dialogue.turn_in.label": "About A Star for Home",
+    "quest.village_commissions.beacon_polish.stage.return.dialogue.turn_in.lines": [
+      "This star will extend the village light across another stretch of fields.",
+      "The Wither is gone. Another village district gets the light, and you get the honor and the pay.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_commissions.beacon_polish.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_commissions.beacon_polish.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_commissions.beacon_polish.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "This star will extend the village light across another stretch of fields.",
+      "The Wither is gone. Another village district gets the light, and you get the honor and the pay.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_commissions.beacon_polish.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_commissions.beacon_polish.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_commissions.beacon_polish.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_commissions.beacon_polish.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "A Star for Home is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.beacon_polish.stage.return.scene.turn_in_wait.lines": [
+      "One Wither, one Nether Star. There is no smaller way to say it.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_commissions.beacon_polish.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_commissions.beacon_polish.stage.work.dialogue.offer.label": "A Star for Home",
+    "quest.village_commissions.beacon_polish.stage.work.dialogue.offer.lines": [
+      "The village can build another beacon base. The outer fields still lie beyond the light.",
+      "Bring down a Wither and surrender its Nether Star. Another village district will stand in that light.",
+      "Defeat a Wither and bring back its Nether Star. I will make the reward worth the trouble."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_commissions.beacon_polish.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_commissions.beacon_polish.stage.work.dialogue.reminder.label": "About A Star for Home",
+    "quest.village_commissions.beacon_polish.stage.work.dialogue.reminder.lines": [
+      "One Wither, one Nether Star. There is no smaller way to say it.",
+      "Defeat a Wither and bring back its Nether Star.",
+      "Bring down a Wither and surrender its Nether Star. Another village district will stand in that light."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_commissions.beacon_polish.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_commissions.beacon_polish.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_commissions.beacon_polish.stage.work.objective.bring_star.tracker.complete_text": "The Nether Star is ready.",
+    "quest.village_commissions.beacon_polish.stage.work.objective.bring_star.tracker.text": "Bring 1 Nether Star.",
+    "quest.village_commissions.beacon_polish.stage.work.objective.defeat_wither.tracker.complete_text": "The Wither has been defeated.",
+    "quest.village_commissions.beacon_polish.stage.work.objective.defeat_wither.tracker.text": "Defeat 1 Wither.",
+    "quest.village_commissions.beacon_polish.stage.work.scene.abandon_confirm.lines": [
+      "Put A Star for Home aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_commissions.beacon_polish.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_commissions.beacon_polish.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "A Star for Home is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.decline.lines": [
+      "That is not cowardice. A Wither deserves a carefully chosen day.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.leave.lines": [
+      "One Wither, one Nether Star. There is no smaller way to say it.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "One Wither, one Nether Star. There is no smaller way to say it.",
+      "Defeat a Wither and bring back its Nether Star.",
+      "Bring down a Wither and surrender its Nether Star. Another village district will stand in that light."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "A Star for Home is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "A Star for Home is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.start_quest.action.start.lines.started": [
+      "Fight it far from every roof, bell, bed, animal, and thing you would miss.",
+      "Defeat a Wither and bring back its Nether Star.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "A Star for Home is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.beacon_polish.stage.work.ui.tracker_text": "Defeat a Wither and bring back its Nether Star.",
+    "quest.village_commissions.beacon_polish.title": "A Star for Home"
+  }
+}

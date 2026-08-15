@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.feather_fletching.description": {
+      "lines": [
+        "Bring feathers so arrows and message shafts can be finished in proper batches."
+      ]
+    },
+    "quest.village_supply.feather_fletching.dialogue.already_completed": {
+      "lines": [
+        "That chapter is closed. We already settled Feather Fletching.",
+        "You finished what I asked. The fletching bench has the feathers you brought.",
+        "I remember your first return. I counted your 16 feathers. We are square.",
+        "Nothing remains to be earned from this. The fletchers already put that delivery to work.",
+        "There is no second payment here. You solved the problem of bare arrow shafts piling up.",
+        "I will not reopen a finished account. There is no reason to gather another load of feathers.",
+        "That chapter is closed. Feather Fletching is crossed off the feathers work list.",
+        "That chapter is closed. Your part in helping us finish arrows and message shafts is finished.",
+        "No one needs this done twice. The last feathers batch is still serving the village.",
+        "That chapter is closed. I remember who filled the feathers order, and it was you.",
+        "Nothing remains to be earned from this. The reward was paid when the feathers delivery came in.",
+        "That chapter is closed. You did enough the first time. I will leave the old entry filed under Feather Fletching.",
+        "What was owed has been paid. We can make every shot fly straighter because you answered Feather Fletching.",
+        "What was owed has been paid. The full feathers count reached the fletching bench. Nothing is missing.",
+        "You finished what I asked. The fletchers would object if I asked you twice.",
+        "Leave the old tally alone. Your feathers delivery passed inspection and went into use.",
+        "The matter ended well enough. That empty spot in the fletching bench belongs to yesterday.",
+        "The matter ended well enough. The record shows 16 feathers received from you.",
+        "Your earlier work still stands. You did the quiet feathers work that keeps everyone going.",
+        "No one needs this done twice. The first ending was good enough for Feather Fletching."
+      ]
+    },
+    "quest.village_supply.feather_fletching.dialogue.inactive": {
+      "lines": [
+        "The village can wait on this one. The fletching bench is not counting feathers right now.",
+        "Ask me after the stores change. There is no open order for feathers today.",
+        "For now, let the matter rest. The fletching bench is being counted before I ask for more.",
+        "For now, let the matter rest. The fletchers have not posted a fresh request.",
+        "Nothing calls for this work today. Hold off on the feathers. We have nowhere useful to put them.",
+        "Not today. The need to finish arrows and message shafts will return, but not today.",
+        "I will post it when it matters. I am waiting for the next tally before opening Feather Fletching.",
+        "There is no reason to begin yet. Bringing 16 feathers now would crowd the stores.",
+        "The village can wait on this one. The last feathers batch has not been used up yet.",
+        "Ask me after the stores change. Ask again after the fletchers check what remains.",
+        "I am keeping this off the board. I will not invent an urgent need for feathers.",
+        "For now, let the matter rest. The fletching bench is quiet, so this can wait.",
+        "For now, let the matter rest. We are between work orders for feathers.",
+        "Leave that work alone for now. Nothing is wrong at the fletching bench. The timing is simply off.",
+        "Not today. Save your effort until we actually need feathers.",
+        "I will post it when it matters. The board has no current mark beside Feather Fletching.",
+        "The village can wait on this one. Today is not the day for another feathers run.",
+        "For now, let the matter rest. Once bare arrow shafts piling up becomes a concern, I will reopen this.",
+        "We have no need of it yet. I would rather delay than waste good feathers.",
+        "Not today. Wait for the stores to change before asking me about Feather Fletching."
+      ]
+    },
+    "quest.village_supply.feather_fletching.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current feather order. Ask again after the fletching bench has been checked.",
+        "The fletching bench tally is missing, so I will not ask you to gather feathers yet.",
+        "No one has confirmed how much feathers the fletching bench needs today.",
+        "The work note is incomplete. Let me settle the feather count first.",
+        "I will not send you after feathers until the village confirms the order.",
+        "The fletching bench has not posted a trustworthy feather count.",
+        "I checked the work slate twice; the feather request is not ready.",
+        "This order can wait until I have a current feather tally.",
+        "Someone needs to check the fletching bench before I hand you this order.",
+        "The village has not agreed on the feather count yet.",
+        "I have an old feather tally and no current one.",
+        "The fletching bench may need feathers, but I will not turn a guess into work.",
+        "Come back after the fletching bench finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the fletching bench tally.",
+        "Let me confirm who needs the feathers before you start gathering.",
+        "No work yet. The village has not approved this feather request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the feather order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.feather_fletching.dialogue.missing_proof": {
+      "lines": [
+        "The proof has to reach my hands. Bring the feathers before I tie the shafts.",
+        "The proof has to reach my hands. I need the feathers here before I sign this off.",
+        "Bring back something the village can verify. A promise does not fill the fletching bench. Bring the feathers delivery.",
+        "Bring back something the village can verify. You may have gathered them, but the fletchers have not received them.",
+        "I cannot sign off on an empty return. Set the 16 feathers down here and I can close the feathers order.",
+        "The last requirement is still missing. Handing over the feathers is the proof on this supply job.",
+        "The evidence still matters. I cannot inspect clean full feathers while your hands are empty.",
+        "I believe you went, but that is not enough. Your report sounds fine. I still need the actual feathers.",
+        "You returned without the one thing I asked for. Nothing has reached the fletching bench yet.",
+        "The last requirement is still missing. Bring what you collected before we discuss the Feather Fletching reward.",
+        "The proof has to reach my hands. The fletching bench needs usable feathers, not a story about them.",
+        "The evidence still matters. I will count the feathers as soon as you place them here.",
+        "What you carried home decides this. Do not leave the feathers delivery in another chest.",
+        "Show me what came back with you. The fletchers are waiting on the feathers bundle itself.",
+        "The evidence still matters. The last step is simple. Hand over the feathers.",
+        "The last requirement is still missing. I cannot finish arrows and message shafts with an empty counter.",
+        "What you carried home decides this. Come back carrying the feathers order, and we will be done.",
+        "Your word is not the missing piece. The feathers work counts once the fletching bench receives it.",
+        "I believe you went, but that is not enough. You are one handoff away from finishing Feather Fletching.",
+        "The proof has to reach my hands. Let me see the feathers before I call this complete."
+      ]
+    },
+    "quest.village_supply.feather_fletching.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the feathers.",
+        "I counted twice; the full order of 16 feathers is not here yet.",
+        "This helps, but the fletching bench still needs the remaining feathers.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 16 feathers; the pile is still short.",
+        "Bring the missing feathers, and then I can settle the order.",
+        "The fletching bench has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The fletching bench is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 16 feathers.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the fletching bench short.",
+        "The order stays open until all 16 feathers are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The fletching bench is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.feather_fletching.dialogue.reminder": {
+      "lines": [
+        "Before you leave, hear this again. Sixteen feathers for fletching. Straight arrows are easier when the back half agrees with the front.",
+        "Do not let one finished step distract you. I am still waiting on 16 feathers for the fletching bench.",
+        "Do not let one finished step distract you. Look for clean full feathers. Bad supplies only move the problem.",
+        "Before you leave, hear this again. The fletchers need those feathers to finish arrows and message shafts.",
+        "The job still has loose ends. The count is 16 feathers. Check it before returning.",
+        "Hold to the instructions I gave you. This feathers delivery means we can make every shot fly straighter.",
+        "Do not let one finished step distract you. If you are choosing between loads, bring the feathers first.",
+        "Hold to the instructions I gave you. Keep the feathers order together so the feathers tally stays easy.",
+        "Before you leave, hear this again. The fletching bench has space waiting for the full bundle.",
+        "Do not let one finished step distract you. Do not let a simple request turn into bare arrow shafts piling up.",
+        "Stay with the work you accepted. There is no hidden part to Feather Fletching. Bring the agreed feathers count.",
+        "Hold to the instructions I gave you. Handle them carefully. I want clean full feathers.",
+        "Do not lose the thread now. Bring all the feathers at once if you can manage it.",
+        "Do not lose the thread now. The fletchers are planning their next work around your return.",
+        "You are not finished yet. I wrote 16 feathers on the feathers slate so neither of us has to guess.",
+        "Stay with the work you accepted. The sooner these arrive, the sooner we can finish arrows and message shafts.",
+        "Before you leave, hear this again. Nothing else is missing from the feathers order.",
+        "Keep the whole task in mind. Return when the feathers are ready to hand over.",
+        "Keep the whole task in mind. You know how many feathers the fletching bench needs. The rest is gathering.",
+        "Keep the whole task in mind. A complete feathers bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.feather_fletching.dialogue.start": {
+      "lines": [
+        "I have a difficult request. Bring 16 feathers. A village with arrows walks differently at dusk.",
+        "This needs a careful hand. The feathers order needs 16 feathers. Can you handle that?",
+        "The village has work for you. The fletchers are trying to finish arrows and message shafts, and supplies are thin.",
+        "I need you to see this through. Bring me 16 feathers. I want clean full feathers.",
+        "Here is the work. I have a plain job with a useful result. Find 16 feathers.",
+        "I need you to see this through. We can make every shot fly straighter if you fill the feathers order.",
+        "There is a reason I chose you. Bare arrow shafts piling up is a small problem until everyone needs the same thing.",
+        "I have a difficult request. The count on the feathers slate is 16 feathers.",
+        "Take this seriously. Gather the feathers and bring the whole delivery here.",
+        "There is a reason I chose you. Stocking the fletching bench is not glory, but it matters.",
+        "Here is the work. The fletchers asked me to find someone reliable for this run.",
+        "The village has work for you. I need a clean delivery for the fletching bench.",
+        "I need you to see this through. If you can spare the time, 16 feathers would settle the feathers shortage.",
+        "This needs a careful hand. The need is real, which makes the instructions for Feather Fletching simple.",
+        "Take this seriously. Bring the feathers when you have the complete count.",
+        "Listen closely. Good feathers will let us finish arrows and message shafts.",
+        "Take this seriously. The village should not reach bare arrow shafts piling up before we act.",
+        "I have a difficult request. Take care with the feathers bundle. We need clean full feathers.",
+        "Let us be clear about the job. I will pay when the fletching bench receives the full order.",
+        "The village has work for you. Find 16 feathers, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.feather_fletching.dialogue.turn_in": {
+      "lines": [
+        "Good, you made it back. Good. Feathers make the difference between warning shots and expensive guesses.",
+        "Good, you made it back. The count is right. I will get these to the fletching bench.",
+        "Good, you made it back. The fletchers can finish arrows and message shafts now.",
+        "You delivered exactly what was needed. These are clean full feathers. You chose well.",
+        "This will make a real difference. That delivery keeps us from bare arrow shafts piling up.",
+        "That settles what I asked of you. Good work. All the feathers arrived together.",
+        "That is the result I needed. I have your feathers, and you earned the Feather Fletching reward.",
+        "That is the result I needed. The fletching bench looks less bare already.",
+        "Now I can close the ledger. This will help us make every shot fly straighter.",
+        "The village can use this. You saved the fletchers from making do with scraps.",
+        "This return was worth waiting for. Everything on the feathers slate is here.",
+        "You brought the work to a proper end. A useful feathers job, done without fuss. Thank you.",
+        "You saw it through. I will put the feathers away before someone borrows them.",
+        "The village can use this. The village is better stocked because you completed Feather Fletching.",
+        "You saw it through. You brought exactly the feathers I asked for.",
+        "This return was worth waiting for. The feathers delivery is sound from top to bottom.",
+        "You delivered exactly what was needed. The fletching bench has one less shortage waiting to surprise us.",
+        "That settles what I asked of you. The village may not cheer for feathers, but it would notice their absence.",
+        "The hard part is behind us. Take your payment. The feathers count gives me no complaint.",
+        "You delivered exactly what was needed. I can hand the feathers order to the fletchers with confidence."
+      ]
+    },
+    "quest.village_supply.feather_fletching.dialogue.unavailable": {
+      "lines": [
+        "Earn our confidence before asking again. The feather request is closed for now.",
+        "The answer is no for now. I cannot hand you the work filed under Feather Fletching yet.",
+        "This calls for someone we know better. The feathers order is for someone the fletching bench already knows.",
+        "Some work must wait until trust catches up. The fletchers need a delivery they can count on.",
+        "I need proof of your judgment first. Show the village steadier work before taking Feather Fletching.",
+        "I need proof of your judgment first. The feathers matter too much to gamble on a stranger.",
+        "You are not ready for this request. I am not opening the feathers slate to you today.",
+        "No, the risk is too high. Build some trust, then ask about Feather Fletching again.",
+        "I cannot trust you with this yet. I need someone who will return with the whole 16 feathers.",
+        "No, the risk is too high. Gathering feathers is simple, but reliability is not optional.",
+        "You are not ready for this request. For now, the feathers order stays with regular hands.",
+        "The answer is no for now. I cannot promise the fletching bench a delivery from you yet.",
+        "This calls for someone we know better. There will be other work before we trust you with the fletching bench.",
+        "I need proof of your judgment first. The village has not cleared you for this feathers run.",
+        "This calls for someone we know better. I would rather wait than risk bare arrow shafts piling up.",
+        "This work is not yours today. This is not punishment. Show better judgment before I open Feather Fletching.",
+        "I need proof of your judgment first. The fletchers asked for a familiar runner this time.",
+        "Some work must wait until trust catches up. Come back for the feathers order after your name carries more weight.",
+        "Earn our confidence before asking again. I am not taking new help for Feather Fletching.",
+        "The answer is no for now. Earn some confidence here, and we can revisit Feather Fletching."
+      ]
+    },
+    "quest.village_supply.feather_fletching.objective.bring_feathers.complete_text": {
+      "lines": [
+        "The fletching bundle is ready."
+      ]
+    },
+    "quest.village_supply.feather_fletching.objective.bring_feathers.text": {
+      "lines": [
+        "Bring 16 feathers for the fletching bench."
+      ]
+    },
+    "quest.village_supply.feather_fletching.stage.return.dialogue.turn_in.label": "About Feather Fletching",
+    "quest.village_supply.feather_fletching.stage.return.dialogue.turn_in.lines": [
+      "These are straight enough for good arrows. The crooked ones can dust shelves.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.feather_fletching.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.feather_fletching.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.feather_fletching.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "These are straight enough for good arrows. The crooked ones can dust shelves.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.feather_fletching.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.feather_fletching.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.feather_fletching.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.feather_fletching.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Feather Fletching is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.feather_fletching.stage.return.scene.turn_in_wait.lines": [
+      "Bring 16 feathers for the fletching table",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.feather_fletching.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.feather_fletching.stage.work.dialogue.offer.label": "Feather Fletching",
+    "quest.village_supply.feather_fletching.stage.work.dialogue.offer.lines": [
+      "Arrow shafts are waiting for feathers, and waiting does not make them fly.",
+      "Bring 16 feathers for the fletching table, and the shelves will look less worried.",
+      "Bring 16 feathers for the fletching table. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.feather_fletching.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.feather_fletching.stage.work.dialogue.reminder.label": "About Feather Fletching",
+    "quest.village_supply.feather_fletching.stage.work.dialogue.reminder.lines": [
+      "Bring 16 feathers for the fletching table",
+      "Bring 16 feathers for the fletching table.",
+      "Bring 16 feathers for the fletching table, and the shelves will look less worried."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.feather_fletching.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.feather_fletching.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.feather_fletching.stage.work.scene.abandon_confirm.lines": [
+      "Put Feather Fletching aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.feather_fletching.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.feather_fletching.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Feather Fletching is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.leave.lines": [
+      "Bring 16 feathers for the fletching table",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 16 feathers for the fletching table",
+      "Bring 16 feathers for the fletching table.",
+      "Bring 16 feathers for the fletching table, and the shelves will look less worried."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Feather Fletching is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Feather Fletching is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 16 feathers for the fletching table. Keep the full count together on the road back.",
+      "Bring 16 feathers for the fletching table.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Feather Fletching is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.feather_fletching.stage.work.ui.tracker_text": "Bring 16 feathers for the fletching table.",
+    "quest.village_supply.feather_fletching.title": {
+      "lines": [
+        "Feather Fletching"
+      ]
+    },
+    "quest.village_supply.feather_fletching.tracker.proof.text": {
+      "lines": [
+        "Bring 16 feathers for the fletching bench."
+      ]
+    },
+    "quest.village_supply.feather_fletching.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the feathers."
+      ]
+    },
+    "quest.village_supply.feather_fletching.tracker.title": {
+      "lines": [
+        "Feather Fletching"
+      ]
+    }
+  }
+}

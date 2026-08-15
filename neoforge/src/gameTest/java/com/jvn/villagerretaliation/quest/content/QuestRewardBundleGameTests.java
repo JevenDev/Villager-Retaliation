@@ -141,34 +141,23 @@ public final class QuestRewardBundleGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 200, batch = "quest_reward_bundle")
-    public static void allLegacyGenericRewardsCompileAndRetainSeededBehavior(GameTestHelper helper) {
+    public static void allMigratedGenericRewardsCompileAndResolveFromBundles(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        List<DatapackResourceLoader.JsonResource> resources =
-                DatapackResourceLoader.jsonResources(server, "loot_table/quest").stream()
-                        .filter(resource -> !resource.location().equals(locationFor(PROBE_ID)))
-                        .toList();
-        helper.assertValueEqual(resources.size(), 91, "legacy reward resource set changed");
+        QuestContentCatalogs.invalidate();
+        QuestRewardCatalog rewards = QuestContentCatalogs.current(server).rewards();
+        helper.assertValueEqual(rewards.bundled().size(), 91, "migrated reward ID set changed");
 
-        for (DatapackResourceLoader.JsonResource resource : resources) {
-            JsonObject tableJson = DatapackResourceLoader
-                    .readObject(resource.location(), "legacy quest reward baseline", resource.resource())
-                    .orElseThrow();
-            helper.assertValueEqual(tableJson.get("type").getAsString(), "minecraft:generic",
-                    resource.location() + " changed loot context type");
-            ResourceLocation rewardId = rewardId(resource.location());
-            BundledQuestReward.ParseResult parsed = BundledQuestReward.parse(
-                    wrapper(rewardId, tableJson), QuestRewardRegistryContext.create(helper.getLevel().getServer()));
-            helper.assertTrue(parsed.valid(), rewardId + " wrapper failed: " + parsed.errors());
-
-            ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE, rewardId);
-            LootTable original = server.reloadableRegistries().getLootTable(key);
-            LootParams params = new LootParams.Builder(helper.getLevel())
-                    .withLuck(1.75F)
-                    .create(LootContextParamSets.EMPTY);
-            long seed = 0x5eedL ^ Integer.toUnsignedLong(rewardId.hashCode());
-            List<ItemStack> before = original.getRandomItems(params, RandomSource.create(seed));
-            List<ItemStack> after = parsed.reward().table().getRandomItems(params, RandomSource.create(seed));
-            assertStacksEqual(helper, before, after, rewardId + " seeded roll changed");
+        for (Map.Entry<ResourceLocation, BundledQuestReward> entry : rewards.bundled().entrySet()) {
+            ResourceLocation rewardId = entry.getKey();
+            BundledQuestReward reward = entry.getValue();
+            helper.assertValueEqual(reward.tableJson().get("type").getAsString(), "minecraft:generic",
+                    rewardId + " changed loot context type");
+            helper.assertValueEqual(reward.table().getLootTableId(), rewardId,
+                    rewardId + " lost its stable loot-table ID");
+            QuestRewardResolver.Resolution resolution = QuestRewardResolver.resolve(server, rewardId);
+            helper.assertTrue(
+                    resolution.resolved() && resolution.source() == QuestRewardResolver.Source.BUNDLED,
+                    rewardId + " did not resolve from the bundled catalog");
         }
         helper.succeed();
     }

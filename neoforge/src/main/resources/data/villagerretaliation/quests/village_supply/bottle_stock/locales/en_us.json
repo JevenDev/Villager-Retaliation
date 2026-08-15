@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.bottle_stock.description": {
+      "lines": [
+        "Bring glass bottles for tonics, inks, and careful measuring."
+      ]
+    },
+    "quest.village_supply.bottle_stock.dialogue.already_completed": {
+      "lines": [
+        "We settled this one already. We already settled Bottle Stock.",
+        "The matter ended well enough. The apothecary shelf has the glass bottles you brought.",
+        "That chapter is closed. I counted your 12 glass bottles. We are square.",
+        "Leave the old tally alone. The brewers already put that delivery to work.",
+        "What was owed has been paid. You solved the problem of medicine with nowhere to go.",
+        "I remember your first return. There is no reason to gather another load of glass bottles.",
+        "There is no second payment here. Bottle Stock is crossed off the glass bottles work list.",
+        "What was owed has been paid. Your part in helping us hold tonics and careful measures is finished.",
+        "What was owed has been paid. The last glass bottles batch is still serving the village.",
+        "No one needs this done twice. I remember who filled the glass bottles order, and it was you.",
+        "The matter ended well enough. The reward was paid when the glass bottles delivery came in.",
+        "There is no second payment here. You did enough the first time. I will leave the old entry filed under Bottle Stock.",
+        "We settled this one already. We can keep remedies sorted because you answered Bottle Stock.",
+        "What was owed has been paid. The full glass bottles count reached the apothecary shelf. Nothing is missing.",
+        "What was owed has been paid. The brewerss would object if I asked you twice.",
+        "The matter ended well enough. Your glass bottles delivery passed inspection and went into use.",
+        "There is no second payment here. That empty spot in the apothecary shelf belongs to yesterday.",
+        "No one needs this done twice. The record shows 12 glass bottles received from you.",
+        "We settled this one already. You did the quiet glass bottles work that keeps everyone going.",
+        "What was owed has been paid. The first ending was good enough for Bottle Stock."
+      ]
+    },
+    "quest.village_supply.bottle_stock.dialogue.inactive": {
+      "lines": [
+        "Leave that work alone for now. The apothecary shelf is not taking bottles right now.",
+        "Nothing calls for this work today. There is no open order for glass bottles today.",
+        "We have no need of it yet. The apothecary shelf is being counted before I ask for more.",
+        "Not today. The brewerss have not posted a fresh request.",
+        "The village can wait on this one. Hold off on the glass bottles. We have nowhere useful to put them.",
+        "The village can wait on this one. The need to hold tonics and careful measures will return, but not today.",
+        "Not today. I am waiting for the next tally before opening Bottle Stock.",
+        "Nothing calls for this work today. Bringing 12 glass bottles now would crowd the stores.",
+        "I will post it when it matters. The last glass bottles batch has not been used up yet.",
+        "The board can wait. Ask again after the brewers check what remains.",
+        "There is no reason to begin yet. I will not invent an urgent need for glass bottles.",
+        "There is no reason to begin yet. The apothecary shelf is quiet, so this can wait.",
+        "Leave that work alone for now. We are between work orders for glass bottles.",
+        "Not today. Nothing is wrong at the apothecary shelf. The timing is simply off.",
+        "I will post it when it matters. Save your effort until we actually need glass bottles.",
+        "For now, let the matter rest. The board has no current mark beside Bottle Stock.",
+        "There is no reason to begin yet. Today is not the day for another glass bottles run.",
+        "For now, let the matter rest. Once medicine with nowhere to go becomes a concern, I will reopen this.",
+        "Nothing calls for this work today. I would rather delay than waste good glass bottles.",
+        "We have no need of it yet. Wait for the stores to change before asking me about Bottle Stock."
+      ]
+    },
+    "quest.village_supply.bottle_stock.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current bottle order. Ask again after the brewing shelf has been checked.",
+        "The brewing shelf tally is missing, so I will not ask you to gather glass bottles yet.",
+        "No one has confirmed how much glass bottles the brewing shelf needs today.",
+        "The work note is incomplete. Let me settle the bottle count first.",
+        "I will not send you after glass bottles until the village confirms the order.",
+        "The brewing shelf has not posted a trustworthy bottle count.",
+        "I checked the work slate twice; the bottle request is not ready.",
+        "This order can wait until I have a current bottle tally.",
+        "Someone needs to check the brewing shelf before I hand you this order.",
+        "The village has not agreed on the bottle count yet.",
+        "I have an old bottle tally and no current one.",
+        "The brewing shelf may need glass bottles, but I will not turn a guess into work.",
+        "Come back after the brewing shelf finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the brewing shelf tally.",
+        "Let me confirm who needs the glass bottles before you start gathering.",
+        "No work yet. The village has not approved this bottle request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the bottle order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.bottle_stock.dialogue.missing_proof": {
+      "lines": [
+        "You returned without the one thing I asked for. Bring the bottles before I restock the shelf.",
+        "A story cannot close the ledger. I need the glass bottles here before I sign this off.",
+        "Bring back something the village can verify. A promise does not fill the apothecary shelf. Bring the glass bottles delivery.",
+        "What you carried home decides this. You may have gathered them, but the brewers have not received them.",
+        "You returned without the one thing I asked for. Set the 12 glass bottles down here and I can close the glass bottles order.",
+        "Bring back something the village can verify. Handing over the glass bottles is the proof on this supply job.",
+        "What you carried home decides this. I cannot inspect clean bottles without cracks while your hands are empty.",
+        "You returned without the one thing I asked for. Your report sounds fine. I still need the actual glass bottles.",
+        "The evidence still matters. Nothing has reached the apothecary shelf yet.",
+        "You returned without the one thing I asked for. Bring what you collected before we discuss the Bottle Stock reward.",
+        "The proof has to reach my hands. The apothecary shelf needs usable glass bottles, not a story about them.",
+        "I believe you went, but that is not enough. I will count the glass bottles as soon as you place them here.",
+        "The proof has to reach my hands. Do not leave the glass bottles delivery in another chest.",
+        "You returned without the one thing I asked for. The brewerss are waiting on the glass bottles bundle itself.",
+        "I need something I can hold. The last step is simple. Hand over the glass bottles.",
+        "Show me what came back with you. I cannot hold tonics and careful measures with an empty counter.",
+        "Show me what came back with you. Come back carrying the glass bottles order, and we will be done.",
+        "I believe you went, but that is not enough. The glass bottles work counts once the apothecary shelf receives it.",
+        "What you carried home decides this. You are one handoff away from finishing Bottle Stock.",
+        "The proof has to reach my hands. Let me see the glass bottles before I call this complete."
+      ]
+    },
+    "quest.village_supply.bottle_stock.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the glass bottles.",
+        "I counted twice; the full order of 12 glass bottles is not here yet.",
+        "This helps, but the brewing shelf still needs the remaining glass bottles.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 12 glass bottles; the pile is still short.",
+        "Bring the missing glass bottles, and then I can settle the order.",
+        "The brewing shelf has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The brewing shelf is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 12 glass bottles.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the brewing shelf short.",
+        "The order stays open until all 12 glass bottles are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The brewing shelf is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.bottle_stock.dialogue.reminder": {
+      "lines": [
+        "Do not lose the thread now. Twelve glass bottles. It is hard to keep remedies organized when they keep being liquid-shaped.",
+        "The next step still matters. I am still waiting on 12 glass bottles for the apothecary shelf.",
+        "Remember what the village is waiting for. Look for clean bottles without cracks. Bad supplies only move the problem.",
+        "You are not finished yet. The brewerss need those glass bottles to hold tonics and careful measures.",
+        "Do not let one finished step distract you. The count is 12 glass bottles. Check it before returning.",
+        "The job still has loose ends. This glass bottles delivery means we can keep remedies sorted.",
+        "Keep the whole task in mind. If you are choosing between loads, bring the glass bottles first.",
+        "Keep the return trip in your plans. Keep the glass bottles order together so the glass bottles tally stays easy.",
+        "Hold to the instructions I gave you. The apothecary shelf has space waiting for the full bundle.",
+        "Before you leave, hear this again. Do not let a simple request turn into medicine with nowhere to go.",
+        "Bring this to a proper finish. There is no hidden part to Bottle Stock. Bring the agreed glass bottles count.",
+        "Hold to the instructions I gave you. Handle them carefully. I want clean bottles without cracks.",
+        "Keep the return trip in your plans. Bring all the glass bottles at once if you can manage it.",
+        "Stay with the work you accepted. The brewerss are planning their next work around your return.",
+        "Stay with the work you accepted. I wrote 12 glass bottles on the glass bottles slate so neither of us has to guess.",
+        "Remember what the village is waiting for. The sooner these arrive, the sooner we can hold tonics and careful measures.",
+        "Bring this to a proper finish. Nothing else is missing from the glass bottles order.",
+        "Keep the return trip in your plans. Return when the glass bottles are ready to hand over.",
+        "Hold to the instructions I gave you. You know how many glass bottles the apothecary shelf needs. The rest is gathering.",
+        "The next step still matters. A complete glass bottles bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.bottle_stock.dialogue.start": {
+      "lines": [
+        "I need you to see this through. Bring 12 glass bottles. I can manage without drama. I would prefer not to manage without containers.",
+        "I need you to see this through. The glass bottles order needs 12 glass bottles. Can you handle that?",
+        "This needs a careful hand. The brewerss are trying to hold tonics and careful measures, and supplies are thin.",
+        "Take the task only if you are ready. Bring me 12 glass bottles. I want clean bottles without cracks.",
+        "This needs a careful hand. I have a plain job with a useful result. Find 12 glass bottles.",
+        "Before you agree, hear all of it. We can keep remedies sorted if you fill the glass bottles order.",
+        "Here is the work. Medicine with nowhere to go is a small problem until everyone needs the same thing.",
+        "There is a reason I chose you. The count on the glass bottles slate is 12 glass bottles.",
+        "This needs a careful hand. Gather the glass bottles and bring the whole delivery here.",
+        "Take this seriously. Stocking the apothecary shelf is not glory, but it matters.",
+        "I have a difficult request. The brewers asked me to find someone reliable for this run.",
+        "Before you agree, hear all of it. I need a clean delivery for the apothecary shelf.",
+        "Take this seriously. If you can spare the time, 12 glass bottles would settle the glass bottles shortage.",
+        "Listen closely. The need is real, which makes the instructions for Bottle Stock simple.",
+        "There is a reason I chose you. Bring the glass bottles when you have the complete count.",
+        "Before you agree, hear all of it. Good glass bottles will let us hold tonics and careful measures.",
+        "I am trusting you with something important. The village should not reach medicine with nowhere to go before we act.",
+        "Take the task only if you are ready. Take care with the glass bottles bundle. We need clean bottles without cracks.",
+        "This needs a careful hand. I will pay when the apothecary shelf receives the full order.",
+        "The village has work for you. Find 12 glass bottles, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.bottle_stock.dialogue.turn_in": {
+      "lines": [
+        "Good, you made it back. Good. Empty bottles are only boring until the village runs out of them.",
+        "Now I can close the ledger. The count is right. I will get these to the apothecary shelf.",
+        "Now I can close the ledger. The brewers can hold tonics and careful measures now.",
+        "You brought the work to a proper end. These are clean bottles without cracks. You chose well.",
+        "I am glad to see you home. That delivery keeps us from medicine with nowhere to go.",
+        "I am glad to see you home. Good work. All the glass bottles arrived together.",
+        "The hard part is behind us. I have your glass bottles, and you earned the Bottle Stock reward.",
+        "That is the result I needed. The apothecary shelf looks less bare already.",
+        "This will make a real difference. This will help us keep remedies sorted.",
+        "Good, you made it back. You saved the brewers from making do with scraps.",
+        "This return was worth waiting for. Everything on the glass bottles slate is here.",
+        "You delivered exactly what was needed. A useful glass bottles job, done without fuss. Thank you.",
+        "That is the result I needed. I will put the glass bottles away before someone borrows them.",
+        "The village can use this. The village is better stocked because you completed Bottle Stock.",
+        "The hard part is behind us. You brought exactly the glass bottles I asked for.",
+        "The hard part is behind us. The glass bottles delivery is sound from top to bottom.",
+        "Good, you made it back. The apothecary shelf has one less shortage waiting to surprise us.",
+        "This return was worth waiting for. The village may not cheer for glass bottles, but it would notice their absence.",
+        "You brought the work to a proper end. Take your payment. The glass bottles count gives me no complaint.",
+        "This will make a real difference. I can hand the glass bottles order to the brewers with confidence."
+      ]
+    },
+    "quest.village_supply.bottle_stock.dialogue.unavailable": {
+      "lines": [
+        "This calls for someone we know better. The bottle request is closed for now.",
+        "This calls for someone we know better. I cannot hand you the work filed under Bottle Stock yet.",
+        "You are not ready for this request. The glass bottles order is for someone the apothecary shelf already knows.",
+        "The answer is no for now. The brewerss need a delivery they can count on.",
+        "No, the risk is too high. Show the village steadier work before taking Bottle Stock.",
+        "The answer is no for now. The glass bottles matter too much to gamble on a stranger.",
+        "Earn our confidence before asking again. I am not opening the glass bottles slate to you today.",
+        "Come back after you have earned more trust. Build some trust, then ask about Bottle Stock again.",
+        "The village needs a steadier hand. I need someone who will return with the whole 12 glass bottles.",
+        "I will not place this burden on you. Gathering glass bottles is simple, but reliability is not optional.",
+        "This work is not yours today. For now, the glass bottles order stays with regular hands.",
+        "I need proof of your judgment first. I cannot promise the apothecary shelf a delivery from you yet.",
+        "I will not place this burden on you. There will be other work before we trust you with the apothecary shelf.",
+        "Come back after you have earned more trust. The village has not cleared you for this glass bottles run.",
+        "You are not ready for this request. I would rather wait than risk medicine with nowhere to go.",
+        "The answer is no for now. This is not punishment. Show better judgment before I open Bottle Stock.",
+        "I cannot trust you with this yet. The brewers asked for a familiar runner this time.",
+        "I need proof of your judgment first. Come back for the glass bottles order after your name carries more weight.",
+        "This work is not yours today. I am not taking new help for Bottle Stock.",
+        "I need proof of your judgment first. Earn some confidence here, and we can revisit Bottle Stock."
+      ]
+    },
+    "quest.village_supply.bottle_stock.objective.bring_bottles.complete_text": {
+      "lines": [
+        "The bottle shelf is stocked and ready."
+      ]
+    },
+    "quest.village_supply.bottle_stock.objective.bring_bottles.text": {
+      "lines": [
+        "Bring 12 glass bottles for the shelf."
+      ]
+    },
+    "quest.village_supply.bottle_stock.stage.return.dialogue.turn_in.label": "About Bottle Stock",
+    "quest.village_supply.bottle_stock.stage.return.dialogue.turn_in.lines": [
+      "Clear glass and no cracks. The brewing stand can work again.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.bottle_stock.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.bottle_stock.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.bottle_stock.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Clear glass and no cracks. The brewing stand can work again.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.bottle_stock.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.bottle_stock.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.bottle_stock.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.bottle_stock.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Bottle Stock is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.bottle_stock.stage.return.scene.turn_in_wait.lines": [
+      "Bring 12 glass bottles for the brewing stand",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.bottle_stock.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.bottle_stock.stage.work.dialogue.offer.label": "Bottle Stock",
+    "quest.village_supply.bottle_stock.stage.work.dialogue.offer.lines": [
+      "A cleric with an empty bottle shelf is only waving at the brewing stand.",
+      "Bring 12 glass bottles for the brewing stand, and the shelves will look less worried.",
+      "Bring 12 glass bottles for the brewing stand. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.bottle_stock.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.bottle_stock.stage.work.dialogue.reminder.label": "About Bottle Stock",
+    "quest.village_supply.bottle_stock.stage.work.dialogue.reminder.lines": [
+      "Bring 12 glass bottles for the brewing stand",
+      "Bring 12 glass bottles for the brewing stand.",
+      "Bring 12 glass bottles for the brewing stand, and the shelves will look less worried."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.bottle_stock.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.bottle_stock.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.bottle_stock.stage.work.scene.abandon_confirm.lines": [
+      "Put Bottle Stock aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.bottle_stock.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.bottle_stock.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Bottle Stock is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.leave.lines": [
+      "Bring 12 glass bottles for the brewing stand",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 12 glass bottles for the brewing stand",
+      "Bring 12 glass bottles for the brewing stand.",
+      "Bring 12 glass bottles for the brewing stand, and the shelves will look less worried."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Bottle Stock is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Bottle Stock is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 12 glass bottles for the brewing stand. Keep the full count together on the road back.",
+      "Bring 12 glass bottles for the brewing stand.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Bottle Stock is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.bottle_stock.stage.work.ui.tracker_text": "Bring 12 glass bottles for the brewing stand.",
+    "quest.village_supply.bottle_stock.title": {
+      "lines": [
+        "Bottle Stock"
+      ]
+    },
+    "quest.village_supply.bottle_stock.tracker.proof.text": {
+      "lines": [
+        "Bring 12 glass bottles for the shelf."
+      ]
+    },
+    "quest.village_supply.bottle_stock.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the glass bottles."
+      ]
+    },
+    "quest.village_supply.bottle_stock.tracker.title": {
+      "lines": [
+        "Bottle Stock"
+      ]
+    }
+  }
+}

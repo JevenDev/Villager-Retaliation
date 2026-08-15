@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.kiln_fuel.description": {
+      "lines": [
+        "Bring coal to keep the kiln and forge work moving."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.dialogue.already_completed": {
+      "lines": [
+        "We settled this one already. We already settled Kiln Fuel.",
+        "I will not reopen a finished account. The firebox has the coal you brought.",
+        "You finished what I asked. I counted your 12 coal. We are square.",
+        "The matter ended well enough. The smiths already put that delivery to work.",
+        "Leave the old tally alone. You solved the problem of a cold kiln during working hours.",
+        "I will not reopen a finished account. There is no reason to gather another load of coal.",
+        "No one needs this done twice. Kiln Fuel is crossed off the coal work list.",
+        "I remember your first return. Your part in helping us keep the kiln and forge hot is finished.",
+        "Your earlier work still stands. The last coal batch is still serving the village.",
+        "No one needs this done twice. I remember who filled the coal order, and it was you.",
+        "There is no second payment here. The reward was paid when the coal delivery came in.",
+        "That chapter is closed. You did enough the first time. I will leave the old entry filed under Kiln Fuel.",
+        "Leave the old tally alone. We can stop workshop jobs from going cold because you answered Kiln Fuel.",
+        "No one needs this done twice. The full coal count reached the firebox. Nothing is missing.",
+        "What was owed has been paid. The smiths would object if I asked you twice.",
+        "Your earlier work still stands. Your coal delivery passed inspection and went into use.",
+        "What was owed has been paid. That empty spot in the firebox belongs to yesterday.",
+        "That chapter is closed. The record shows 12 coal received from you.",
+        "There is no second payment here. You did the quiet coal work that keeps everyone going.",
+        "Nothing remains to be earned from this. The first ending was good enough for Kiln Fuel."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.dialogue.inactive": {
+      "lines": [
+        "The time is wrong. The kiln is not taking fuel right now.",
+        "I am keeping this off the board. There is no open order for coal today.",
+        "The board can wait. The firebox is being counted before I ask for more.",
+        "I am keeping this off the board. The smiths have not posted a fresh request.",
+        "There is no reason to begin yet. Hold off on the coal. We have nowhere useful to put it.",
+        "I am keeping this off the board. The need to keep the kiln and forge hot will return, but not today.",
+        "Leave that work alone for now. I am waiting for the next tally before opening Kiln Fuel.",
+        "For now, let the matter rest. Bringing 12 coal now would crowd the stores.",
+        "Not today. The last coal batch has not been used up yet.",
+        "The time is wrong. Ask again after the smiths check what remains.",
+        "Ask me after the stores change. I will not invent an urgent need for coal.",
+        "Nothing calls for this work today. The firebox is quiet, so this can wait.",
+        "Not today. We are between work orders for coal.",
+        "Ask me after the stores change. Nothing is wrong at the firebox. The timing is simply off.",
+        "Nothing calls for this work today. Save your effort until we actually need coal.",
+        "For now, let the matter rest. The board has no current mark beside Kiln Fuel.",
+        "There is no reason to begin yet. Today is not the day for another coal run.",
+        "We have no need of it yet. Once a cold kiln during working hours becomes a concern, I will reopen this.",
+        "For now, let the matter rest. I would rather delay than waste good coal.",
+        "For now, let the matter rest. Wait for the stores to change before asking me about Kiln Fuel."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current coal order. Ask again after the kiln firebox has been checked.",
+        "The kiln firebox tally is missing, so I will not ask you to gather coal yet.",
+        "No one has confirmed how much coal the kiln firebox needs today.",
+        "The work note is incomplete. Let me settle the coal count first.",
+        "I will not send you after coal until the village confirms the order.",
+        "The kiln firebox has not posted a trustworthy coal count.",
+        "I checked the work slate twice; the coal request is not ready.",
+        "This order can wait until I have a current coal tally.",
+        "Someone needs to check the kiln firebox before I hand you this order.",
+        "The village has not agreed on the coal count yet.",
+        "I have an old coal tally and no current one.",
+        "The kiln firebox may need coal, but I will not turn a guess into work.",
+        "Come back after the kiln firebox finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the kiln firebox tally.",
+        "Let me confirm who needs the coal before you start gathering.",
+        "No work yet. The village has not approved this coal request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the coal order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.dialogue.missing_proof": {
+      "lines": [
+        "I cannot sign off on an empty return. Bring the coal before I stoke the firebox.",
+        "The evidence still matters. I need the coal here before I sign this off.",
+        "Bring back something the village can verify. A promise does not fill the firebox. Bring the coal delivery.",
+        "Your word is not the missing piece. You may have gathered it, but the smiths have not received it.",
+        "The last requirement is still missing. Set the 12 coal down here and I can close the coal order.",
+        "I believe you went, but that is not enough. Handing over the coal is the proof on this supply job.",
+        "I believe you went, but that is not enough. I cannot inspect dry coal that burns cleanly while your hands are empty.",
+        "A story cannot close the ledger. Your report sounds fine. I still need the actual coal.",
+        "A story cannot close the ledger. Nothing has reached the firebox yet.",
+        "What you carried home decides this. Bring what you collected before we discuss the Kiln Fuel reward.",
+        "The proof has to reach my hands. The firebox needs usable coal, not a story about it.",
+        "A story cannot close the ledger. I will count the coal as soon as you place it here.",
+        "I cannot sign off on an empty return. Do not leave the coal delivery in another chest.",
+        "I believe you went, but that is not enough. The smiths are waiting on the coal bundle itself.",
+        "Bring back something the village can verify. The last step is simple. Hand over the coal.",
+        "Show me what came back with you. I cannot keep the kiln and forge hot with an empty counter.",
+        "Show me what came back with you. Come back carrying the coal order, and we will be done.",
+        "I cannot sign off on an empty return. The coal work counts once the firebox receives it.",
+        "I cannot sign off on an empty return. You are one handoff away from finishing Kiln Fuel.",
+        "I cannot sign off on an empty return. Let me see the coal before I call this complete."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the coal.",
+        "I counted twice; the full order of 12 pieces of coal is not here yet.",
+        "This helps, but the kiln firebox still needs the remaining coal.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 12 pieces of coal; the pile is still short.",
+        "Bring the missing coal, and then I can settle the order.",
+        "The kiln firebox has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The kiln firebox is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 12 pieces of coal.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the kiln firebox short.",
+        "The order stays open until all 12 pieces of coal are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The kiln firebox is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.dialogue.reminder": {
+      "lines": [
+        "Bring this to a proper finish. Twelve coal for the firebox. The work stops quickly when the heat does.",
+        "Stay with the work you accepted. I am still waiting on 12 coal for the firebox.",
+        "Bring this to a proper finish. Look for dry coal that burns cleanly. Bad supplies only move the problem.",
+        "Remember what the village is waiting for. The smiths need those coal to keep the kiln and forge hot.",
+        "Bring this to a proper finish. The count is 12 coal. Check it before returning.",
+        "Do not let one finished step distract you. This coal delivery means we can stop workshop jobs from going cold.",
+        "Remember what the village is waiting for. If you are choosing between loads, bring the coal first.",
+        "Remember what the village is waiting for. Keep the coal order together so the coal tally stays easy.",
+        "Bring this to a proper finish. The firebox has space waiting for the full bundle.",
+        "The job still has loose ends. Do not let a simple request turn into a cold kiln during working hours.",
+        "Keep the whole task in mind. There is no hidden part to Kiln Fuel. Bring the agreed coal count.",
+        "Do not let one finished step distract you. Handle it carefully. I want dry coal that burns cleanly.",
+        "Hold to the instructions I gave you. Bring all the coal at once if you can manage it.",
+        "Do not lose the thread now. The smiths are planning their next work around your return.",
+        "Hold to the instructions I gave you. I wrote 12 coal on the coal slate so neither of us has to guess.",
+        "The next step still matters. The sooner this arrive, the sooner we can keep the kiln and forge hot.",
+        "Before you leave, hear this again. Nothing else is missing from the coal order.",
+        "Hold to the instructions I gave you. Return when the coal is ready to hand over.",
+        "Remember what the village is waiting for. You know how many coal the firebox needs. The rest is gathering.",
+        "Remember what the village is waiting for. A complete coal bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.dialogue.start": {
+      "lines": [
+        "Take this seriously. Bring 12 coal. The kiln is hungry, and hungry kilns become cold workshops.",
+        "I need you to see this through. The coal order needs 12 coal. Can you handle that?",
+        "The village has work for you. The smiths are trying to keep the kiln and forge hot, and supplies are thin.",
+        "Listen closely. Bring me 12 coal. I want dry coal that burns cleanly.",
+        "This needs a careful hand. I have a plain job with a useful result. Find 12 coal.",
+        "Take the task only if you are ready. We can stop workshop jobs from going cold if you fill the coal order.",
+        "Listen closely. A cold kiln during working hours is a small problem until everyone needs the same thing.",
+        "The village has work for you. The count on the coal slate is 12 coal.",
+        "I have a difficult request. Gather the coal and bring the whole delivery here.",
+        "Here is the work. Stocking the firebox is not glory, but it matters.",
+        "Take the task only if you are ready. The smiths asked me to find someone reliable for this run.",
+        "Here is the work. I need a clean delivery for the firebox.",
+        "Take this seriously. If you can spare the time, 12 coal would settle the coal shortage.",
+        "Listen closely. The need is real, which makes the instructions for Kiln Fuel simple.",
+        "This needs a careful hand. Bring the coal when you have the complete count.",
+        "I need you to see this through. Good coal will let us keep the kiln and forge hot.",
+        "I have a difficult request. The village should not reach a cold kiln during working hours before we act.",
+        "There is a reason I chose you. Take care with the coal bundle. We need dry coal that burns cleanly.",
+        "Here is the work. I will pay when the firebox receives the full order.",
+        "Take the task only if you are ready. Find 12 coal, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.dialogue.turn_in": {
+      "lines": [
+        "Now I can close the ledger. Good fuel. We can make useful things instead of excuses.",
+        "You saw it through. The count is right. I will get this to the firebox.",
+        "Now I can close the ledger. The smiths can keep the kiln and forge hot now.",
+        "This return was worth waiting for. This is dry coal that burns cleanly. You chose well.",
+        "You saw it through. That delivery keeps us from a cold kiln during working hours.",
+        "Good, you made it back. Good work. All the coal arrived together.",
+        "You delivered exactly what was needed. I have your coal, and you earned the Kiln Fuel reward.",
+        "I am glad to see you home. The firebox looks less bare already.",
+        "I am glad to see you home. This will help us stop workshop jobs from going cold.",
+        "I am glad to see you home. You saved the smiths from making do with scraps.",
+        "This will make a real difference. Everything on the coal slate is here.",
+        "Now I can close the ledger. A useful coal job, done without fuss. Thank you.",
+        "You brought the work to a proper end. I will put the coal away before someone borrows it.",
+        "This return was worth waiting for. The village is better stocked because you completed Kiln Fuel.",
+        "Good, you made it back. You brought exactly the coal I asked for.",
+        "The village can use this. The coal delivery is sound from top to bottom.",
+        "Good, you made it back. The firebox has one less shortage waiting to surprise us.",
+        "This will make a real difference. The village may not cheer for coal, but it would notice their absence.",
+        "You delivered exactly what was needed. Take your payment. The coal count gives me no complaint.",
+        "That is the result I needed. I can hand the coal order to the smiths with confidence."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.dialogue.unavailable": {
+      "lines": [
+        "Some work must wait until trust catches up. The kiln fuel request is closed for now.",
+        "The village needs a steadier hand. I cannot hand you the work filed under Kiln Fuel yet.",
+        "No, the risk is too high. The coal order is for someone the firebox already knows.",
+        "I need proof of your judgment first. The smiths need a delivery they can count on.",
+        "This calls for someone we know better. Show the village steadier work before taking Kiln Fuel.",
+        "This work is not yours today. The coal matters too much to gamble on a stranger.",
+        "You are not ready for this request. I am not opening the coal slate to you today.",
+        "This calls for someone we know better. Build some trust, then ask about Kiln Fuel again.",
+        "No, the risk is too high. I need someone who will return with the whole 12 coal.",
+        "I will not place this burden on you. Gathering coal is simple, but reliability is not optional.",
+        "I cannot trust you with this yet. For now, the coal order stays with regular hands.",
+        "This work is not yours today. I cannot promise the firebox a delivery from you yet.",
+        "This work is not yours today. There will be other work before we trust you with the firebox.",
+        "Come back after you have earned more trust. The village has not cleared you for this coal run.",
+        "I need proof of your judgment first. I would rather wait than risk a cold kiln during working hours.",
+        "I cannot trust you with this yet. This is not punishment. Show better judgment before I open Kiln Fuel.",
+        "Some work must wait until trust catches up. The smiths asked for a familiar runner this time.",
+        "Some work must wait until trust catches up. Come back for the coal order after your name carries more weight.",
+        "I cannot trust you with this yet. I am not taking new help for Kiln Fuel.",
+        "Some work must wait until trust catches up. Earn some confidence here, and we can revisit Kiln Fuel."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.objective.bring_coal.complete_text": {
+      "lines": [
+        "The coal is stacked by the firebox."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.objective.bring_coal.text": {
+      "lines": [
+        "Bring 12 coal for the kiln and forge fires."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.stage.return.dialogue.turn_in.label": "About Kiln Fuel",
+    "quest.village_supply.kiln_fuel.stage.return.dialogue.turn_in.lines": [
+      "That coal will keep the kiln hot through a proper firing.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.kiln_fuel.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.kiln_fuel.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.kiln_fuel.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "That coal will keep the kiln hot through a proper firing.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.kiln_fuel.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.kiln_fuel.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.kiln_fuel.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.kiln_fuel.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Kiln Fuel is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.kiln_fuel.stage.return.scene.turn_in_wait.lines": [
+      "Bring 12 coal for the mason's kiln",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.kiln_fuel.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.kiln_fuel.stage.work.dialogue.offer.label": "Kiln Fuel",
+    "quest.village_supply.kiln_fuel.stage.work.dialogue.offer.lines": [
+      "Cold stone does not become brick because a mason glares at it.",
+      "Bring 12 coal for the mason's kiln, and the shelves will look less worried.",
+      "Bring 12 coal for the mason's kiln. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.kiln_fuel.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.kiln_fuel.stage.work.dialogue.reminder.label": "About Kiln Fuel",
+    "quest.village_supply.kiln_fuel.stage.work.dialogue.reminder.lines": [
+      "Bring 12 coal for the mason's kiln",
+      "Bring 12 coal for the mason's kiln.",
+      "Bring 12 coal for the mason's kiln, and the shelves will look less worried."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.kiln_fuel.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.kiln_fuel.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.kiln_fuel.stage.work.scene.abandon_confirm.lines": [
+      "Put Kiln Fuel aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.kiln_fuel.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.kiln_fuel.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Kiln Fuel is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.leave.lines": [
+      "Bring 12 coal for the mason's kiln",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 12 coal for the mason's kiln",
+      "Bring 12 coal for the mason's kiln.",
+      "Bring 12 coal for the mason's kiln, and the shelves will look less worried."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Kiln Fuel is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Kiln Fuel is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 12 coal for the mason's kiln. Keep the full count together on the road back.",
+      "Bring 12 coal for the mason's kiln.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Kiln Fuel is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.kiln_fuel.stage.work.ui.tracker_text": "Bring 12 coal for the mason's kiln.",
+    "quest.village_supply.kiln_fuel.title": {
+      "lines": [
+        "Kiln Fuel"
+      ]
+    },
+    "quest.village_supply.kiln_fuel.tracker.proof.text": {
+      "lines": [
+        "Bring 12 coal for the kiln and forge fires."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the coal."
+      ]
+    },
+    "quest.village_supply.kiln_fuel.tracker.title": {
+      "lines": [
+        "Kiln Fuel"
+      ]
+    }
+  }
+}

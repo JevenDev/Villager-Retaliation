@@ -1,0 +1,365 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.village_lanterns.description": {
+      "lines": [
+        "Bring lanterns before the watch loses the edges of the village to darkness."
+      ]
+    },
+    "quest.village_supply.village_lanterns.dialogue.already_completed": {
+      "lines": [
+        "Nothing remains to be earned from this. We already settled Village Lanterns.",
+        "Your earlier work still stands. The lantern rack has the lanterns you brought.",
+        "I remember your first return. I counted your 6 lanterns. We are square.",
+        "There is no second payment here. The night guards already put that delivery to work.",
+        "Your earlier work still stands. You solved the problem of blind corners near the walls.",
+        "I remember your first return. There is no reason to gather another load of lanterns.",
+        "Nothing remains to be earned from this. Village Lanterns is crossed off the lanterns work list.",
+        "I remember your first return. Your part in helping us mark the village edges is finished.",
+        "Nothing remains to be earned from this. The last lanterns batch is still serving the village.",
+        "Nothing remains to be earned from this. I remember who filled the lanterns order, and it was you.",
+        "I remember your first return. The reward was paid when the lanterns delivery came in.",
+        "Nothing remains to be earned from this. You did enough the first time. I will leave the old entry filed under Village Lanterns.",
+        "Leave the old tally alone. We can hold darkness beyond the paths because you answered Village Lanterns.",
+        "Nothing remains to be earned from this. The full lanterns count reached the lantern rack. Nothing is missing.",
+        "The matter ended well enough. The night guards would object if I asked you twice.",
+        "Leave the old tally alone. Your lanterns delivery passed inspection and went into use.",
+        "No one needs this done twice. That empty spot in the lantern rack belongs to yesterday.",
+        "Leave the old tally alone. The record shows 6 lanterns received from you.",
+        "You finished what I asked. You did the quiet lanterns work that keeps everyone going.",
+        "You finished what I asked. The first ending was good enough for Village Lanterns."
+      ]
+    },
+    "quest.village_supply.village_lanterns.dialogue.inactive": {
+      "lines": [
+        "The village can wait on this one. The watch is not posting a lantern request right now.",
+        "For now, let the matter rest. There is no open order for lanterns today.",
+        "There is no reason to begin yet. The lantern rack is being counted before I ask for more.",
+        "Leave that work alone for now. The night guards have not posted a fresh request.",
+        "Ask me after the stores change. Hold off on the lanterns. We have nowhere useful to put them.",
+        "There is no reason to begin yet. The need to mark the village edges will return, but not today.",
+        "I am keeping this off the board. I am waiting for the next tally before opening Village Lanterns.",
+        "Not today. Bringing 6 lanterns now would crowd the stores.",
+        "We have no need of it yet. The last lanterns batch has not been used up yet.",
+        "For now, let the matter rest. Ask again after the night guards check what remains.",
+        "For now, let the matter rest. I will not invent an urgent need for lanterns.",
+        "We have no need of it yet. The lantern rack is quiet, so this can wait.",
+        "For now, let the matter rest. We are between work orders for lanterns.",
+        "The village can wait on this one. Nothing is wrong at the lantern rack. The timing is simply off.",
+        "Leave that work alone for now. Save your effort until we actually need lanterns.",
+        "Ask me after the stores change. The board has no current mark beside Village Lanterns.",
+        "I am keeping this off the board. Today is not the day for another lanterns run.",
+        "Ask me after the stores change. Once blind corners near the walls becomes a concern, I will reopen this.",
+        "Leave that work alone for now. I would rather delay than waste good lanterns.",
+        "We have no need of it yet. Wait for the stores to change before asking me about Village Lanterns."
+      ]
+    },
+    "quest.village_supply.village_lanterns.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current lantern order. Ask again after the lantern rack has been checked.",
+        "The lantern rack tally is missing, so I will not ask you to gather lanterns yet.",
+        "No one has confirmed how much lanterns the lantern rack needs today.",
+        "The work note is incomplete. Let me settle the lantern count first.",
+        "I will not send you after lanterns until the village confirms the order.",
+        "The lantern rack has not posted a trustworthy lantern count.",
+        "I checked the work slate twice; the lantern request is not ready.",
+        "This order can wait until I have a current lantern tally.",
+        "Someone needs to check the lantern rack before I hand you this order.",
+        "The village has not agreed on the lantern count yet.",
+        "I have an old lantern tally and no current one.",
+        "The lantern rack may need lanterns, but I will not turn a guess into work.",
+        "Come back after the lantern rack finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the lantern rack tally.",
+        "Let me confirm who needs the lanterns before you start gathering.",
+        "No work yet. The village has not approved this lantern request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the lantern order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.village_lanterns.dialogue.missing_proof": {
+      "lines": [
+        "Your word is not the missing piece. Bring the lanterns before we close this.",
+        "I believe you went, but that is not enough. I need the lanterns here before I sign this off.",
+        "Bring back something the village can verify. A promise does not fill the lantern rack. Bring the lanterns delivery.",
+        "Bring back something the village can verify. You may have gathered them, but the night guards have not received them.",
+        "What you carried home decides this. Set the 6 lanterns down here and I can close the lanterns order.",
+        "I need something I can hold. Handing over the lanterns is the proof on this supply job.",
+        "You returned without the one thing I asked for. I cannot inspect sound lanterns ready to hang while your hands are empty.",
+        "Your word is not the missing piece. Your report sounds fine. I still need the actual lanterns.",
+        "A story cannot close the ledger. Nothing has reached the lantern rack yet.",
+        "The proof has to reach my hands. Bring what you collected before we discuss the Village Lanterns reward.",
+        "Your word is not the missing piece. The lantern rack needs usable lanterns, not a story about them.",
+        "I believe you went, but that is not enough. I will count the lanterns as soon as you place them here.",
+        "You returned without the one thing I asked for. Do not leave the lanterns delivery in another chest.",
+        "The proof has to reach my hands. The night guards are waiting on the lanterns bundle itself.",
+        "The last requirement is still missing. The last step is simple. Hand over the lanterns.",
+        "Your word is not the missing piece. I cannot mark the village edges with an empty counter.",
+        "You returned without the one thing I asked for. Come back carrying the lanterns order, and we will be done.",
+        "I believe you went, but that is not enough. The lanterns work counts once the lantern rack receives it.",
+        "Your word is not the missing piece. You are one handoff away from finishing Village Lanterns.",
+        "What you carried home decides this. Let me see the lanterns before I call this complete."
+      ]
+    },
+    "quest.village_supply.village_lanterns.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the lanterns.",
+        "I counted twice; the full order of 6 lanterns is not here yet.",
+        "This helps, but the lantern rack still needs the remaining lanterns.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 6 lanterns; the pile is still short.",
+        "Bring the missing lanterns, and then I can settle the order.",
+        "The lantern rack has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The lantern rack is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 6 lanterns.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the lantern rack short.",
+        "The order stays open until all 6 lanterns are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The lantern rack is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.village_lanterns.dialogue.reminder": {
+      "lines": [
+        "You are not finished yet. Six lanterns, and sooner is better. Darkness will not wait.",
+        "Hold to the instructions I gave you. I am still waiting on 6 lanterns for the lantern rack.",
+        "Do not lose the thread now. Look for sound lanterns ready to hang. Bad supplies only move the problem.",
+        "Remember what the village is waiting for. The night guards need those lanterns to mark the village edges.",
+        "The next step still matters. The count is 6 lanterns. Check it before returning.",
+        "Do not lose the thread now. This lanterns delivery means we can hold darkness beyond the paths.",
+        "Before you leave, hear this again. If you are choosing between loads, bring the lanterns first.",
+        "Before you leave, hear this again. Keep the lanterns order together so the lanterns tally stays easy.",
+        "The job still has loose ends. The lantern rack has space waiting for the full bundle.",
+        "Keep the return trip in your plans. Do not let a simple request turn into blind corners near the walls.",
+        "Do not lose the thread now. There is no hidden part to Village Lanterns. Bring the agreed lanterns count.",
+        "Do not let one finished step distract you. Handle them carefully. I want sound lanterns ready to hang.",
+        "You are not finished yet. Bring all the lanterns at once if you can manage it.",
+        "Before you leave, hear this again. The night guards are planning their next work around your return.",
+        "Hold to the instructions I gave you. I wrote 6 lanterns on the lanterns slate so neither of us has to guess.",
+        "Before you leave, hear this again. The sooner these arrive, the sooner we can mark the village edges.",
+        "Stay with the work you accepted. Nothing else is missing from the lanterns order.",
+        "You are not finished yet. Return when the lanterns are ready to hand over.",
+        "Remember what the village is waiting for. You know how many lanterns the lantern rack needs. The rest is gathering.",
+        "Bring this to a proper finish. A complete lanterns bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.village_lanterns.dialogue.start": {
+      "lines": [
+        "Here is the work. Bring 6 lanterns soon. This request matters less after a couple of days.",
+        "I have a difficult request. The lanterns order needs 6 lanterns. Can you handle that?",
+        "I need you to see this through. The night guards are trying to mark the village edges, and supplies are thin.",
+        "Take the task only if you are ready. Bring me 6 lanterns. I want sound lanterns ready to hang.",
+        "This needs a careful hand. I have a plain job with a useful result. Find 6 lanterns.",
+        "Take the task only if you are ready. We can hold darkness beyond the paths if you fill the lanterns order.",
+        "Here is the work. Blind corners near the walls is a small problem until everyone needs the same thing.",
+        "Listen closely. The count on the lanterns slate is 6 lanterns.",
+        "I need you to see this through. Gather the lanterns and bring the whole delivery here.",
+        "Here is the work. Stocking the lantern rack is not glory, but it matters.",
+        "I am trusting you with something important. The night guards asked me to find someone reliable for this run.",
+        "I have a difficult request. I need a clean delivery for the lantern rack.",
+        "This needs a careful hand. If you can spare the time, 6 lanterns would settle the lanterns shortage.",
+        "Let us be clear about the job. The need is real, which makes the instructions for Village Lanterns simple.",
+        "There is a reason I chose you. Bring the lanterns when you have the complete count.",
+        "There is a reason I chose you. Good lanterns will let us mark the village edges.",
+        "Listen closely. The village should not reach blind corners near the walls before we act.",
+        "I am trusting you with something important. Take care with the lanterns bundle. We need sound lanterns ready to hang.",
+        "Listen closely. I will pay when the lantern rack receives the full order.",
+        "Before you agree, hear all of it. Find 6 lanterns, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.village_lanterns.dialogue.turn_in": {
+      "lines": [
+        "That is the result I needed. That will hold the corners of the village a little brighter. Good work.",
+        "The hard part is behind us. The count is right. I will get these to the lantern rack.",
+        "That is the result I needed. The night guards can mark the village edges now.",
+        "You brought the work to a proper end. These are sound lanterns ready to hang. You chose well.",
+        "This will make a real difference. That delivery keeps us from blind corners near the walls.",
+        "You delivered exactly what was needed. Good work. All the lanterns arrived together.",
+        "The village can use this. I have your lanterns, and you earned the Village Lanterns reward.",
+        "This return was worth waiting for. The lantern rack looks less bare already.",
+        "The hard part is behind us. This will help us hold darkness beyond the paths.",
+        "You saw it through. You saved the night guards from making do with scraps.",
+        "You delivered exactly what was needed. Everything on the lanterns slate is here.",
+        "You brought the work to a proper end. A useful lanterns job, done without fuss. Thank you.",
+        "This will make a real difference. I will put the lanterns away before someone borrows them.",
+        "Now I can close the ledger. The village is better stocked because you completed Village Lanterns.",
+        "You delivered exactly what was needed. You brought exactly the lanterns I asked for.",
+        "The village can use this. The lanterns delivery is sound from top to bottom.",
+        "The hard part is behind us. The lantern rack has one less shortage waiting to surprise us.",
+        "The village can use this. The village may not cheer for lanterns, but it would notice their absence.",
+        "You brought the work to a proper end. Take your payment. The lanterns count gives me no complaint.",
+        "The village can use this. I can hand the lanterns order to the night guards with confidence."
+      ]
+    },
+    "quest.village_supply.village_lanterns.dialogue.unavailable": {
+      "lines": [
+        "Some work must wait until trust catches up. The watch is not ready to post that request right now.",
+        "You are not ready for this request. I cannot hand you the work filed under Village Lanterns yet.",
+        "I will not place this burden on you. The lanterns order is for someone the lantern rack already knows.",
+        "I will not place this burden on you. The night guards need a delivery they can count on.",
+        "Earn our confidence before asking again. Show the village steadier work before taking Village Lanterns.",
+        "Some work must wait until trust catches up. The lanterns matter too much to gamble on a stranger.",
+        "The answer is no for now. I am not opening the lanterns slate to you today.",
+        "This work is not yours today. Build some trust, then ask about Village Lanterns again.",
+        "No, the risk is too high. I need someone who will return with the whole 6 lanterns.",
+        "I need proof of your judgment first. Gathering lanterns is simple, but reliability is not optional.",
+        "Come back after you have earned more trust. For now, the lanterns order stays with regular hands.",
+        "The village needs a steadier hand. I cannot promise the lantern rack a delivery from you yet.",
+        "I need proof of your judgment first. There will be other work before we trust you with the lantern rack.",
+        "I will not place this burden on you. The village has not cleared you for this lanterns run.",
+        "Some work must wait until trust catches up. I would rather wait than risk blind corners near the walls.",
+        "I will not place this burden on you. This is not punishment. Show better judgment before I open Village Lanterns.",
+        "The village needs a steadier hand. The night guards asked for a familiar runner this time.",
+        "This work is not yours today. Come back for the lanterns order after your name carries more weight.",
+        "Earn our confidence before asking again. I am not taking new help for Village Lanterns.",
+        "I need proof of your judgment first. Earn some confidence here, and we can revisit Village Lanterns."
+      ]
+    },
+    "quest.village_supply.village_lanterns.expiration.text": {
+      "lines": [
+        "Quest expired. {quest}"
+      ]
+    },
+    "quest.village_supply.village_lanterns.objective.bring_lanterns.complete_text": {
+      "lines": [
+        "The lanterns are ready for hanging."
+      ]
+    },
+    "quest.village_supply.village_lanterns.objective.bring_lanterns.text": {
+      "lines": [
+        "Bring 6 lanterns for the village watch."
+      ]
+    },
+    "quest.village_supply.village_lanterns.stage.return.dialogue.turn_in.label": "About Village Lanterns",
+    "quest.village_supply.village_lanterns.stage.return.dialogue.turn_in.lines": [
+      "These will hold the edge of the village bright through the night.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.village_lanterns.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.village_lanterns.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.village_lanterns.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "These will hold the edge of the village bright through the night.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.village_lanterns.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.village_lanterns.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.village_lanterns.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.village_lanterns.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Village Lanterns is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.village_lanterns.stage.return.scene.turn_in_wait.lines": [
+      "Bring 6 lanterns for the village boundary",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.village_lanterns.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.village_lanterns.stage.work.dialogue.offer.label": "Village Lanterns",
+    "quest.village_supply.village_lanterns.stage.work.dialogue.offer.lines": [
+      "The paths fade before the houses do, and that is where trouble likes to walk.",
+      "Bring 6 lanterns for the village boundary, and the shelves will look less worried.",
+      "Bring 6 lanterns for the village boundary. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.village_lanterns.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.village_lanterns.stage.work.dialogue.reminder.label": "About Village Lanterns",
+    "quest.village_supply.village_lanterns.stage.work.dialogue.reminder.lines": [
+      "Bring 6 lanterns for the village boundary",
+      "Bring 6 lanterns for the village boundary.",
+      "Bring 6 lanterns for the village boundary, and the shelves will look less worried."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.village_lanterns.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.village_lanterns.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.village_lanterns.stage.work.scene.abandon_confirm.lines": [
+      "Put Village Lanterns aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.village_lanterns.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.village_lanterns.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Village Lanterns is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.leave.lines": [
+      "Bring 6 lanterns for the village boundary",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 6 lanterns for the village boundary",
+      "Bring 6 lanterns for the village boundary.",
+      "Bring 6 lanterns for the village boundary, and the shelves will look less worried."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Village Lanterns is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Village Lanterns is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 6 lanterns for the village boundary. Keep the full count together on the road back.",
+      "Bring 6 lanterns for the village boundary.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Village Lanterns is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.village_lanterns.stage.work.ui.tracker_text": "Bring 6 lanterns for the village boundary.",
+    "quest.village_supply.village_lanterns.title": {
+      "lines": [
+        "Village Lanterns"
+      ]
+    },
+    "quest.village_supply.village_lanterns.tracker.proof.text": {
+      "lines": [
+        "Bring 6 lanterns before the request goes stale."
+      ]
+    },
+    "quest.village_supply.village_lanterns.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the lanterns."
+      ]
+    },
+    "quest.village_supply.village_lanterns.tracker.title": {
+      "lines": [
+        "Village Lanterns"
+      ]
+    }
+  }
+}

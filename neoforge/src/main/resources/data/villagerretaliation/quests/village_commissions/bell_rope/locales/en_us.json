@@ -1,0 +1,115 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_commissions.bell_rope.description": "Supply cord and leads for the village bell and animal pens.",
+    "quest.village_commissions.bell_rope.stage.return.dialogue.turn_in.label": "About Frayed Ropes",
+    "quest.village_commissions.bell_rope.stage.return.dialogue.turn_in.lines": [
+      "The braid will hold, and so will the animals. That is two fewer worries.",
+      "Strong cord, sound knots. The bell can speak again.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_commissions.bell_rope.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_commissions.bell_rope.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_commissions.bell_rope.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The braid will hold, and so will the animals. That is two fewer worries.",
+      "Strong cord, sound knots. The bell can speak again.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_commissions.bell_rope.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_commissions.bell_rope.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_commissions.bell_rope.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_commissions.bell_rope.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Frayed Ropes is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.bell_rope.stage.return.scene.turn_in_wait.lines": [
+      "Sixteen string for the bell braid, and two leads for the pens.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_commissions.bell_rope.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_commissions.bell_rope.stage.work.dialogue.offer.label": "Frayed Ropes",
+    "quest.village_commissions.bell_rope.stage.work.dialogue.offer.lines": [
+      "The bell rope is fraying, and two pen leads vanished in the same suspicious week.",
+      "Bring string for a new braid and two leads before anything else wanders off.",
+      "Bring 16 string and 2 leads. I will make the reward worth the trouble."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_commissions.bell_rope.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_commissions.bell_rope.stage.work.dialogue.reminder.label": "About Frayed Ropes",
+    "quest.village_commissions.bell_rope.stage.work.dialogue.reminder.lines": [
+      "Sixteen string for the bell braid, and two leads for the pens.",
+      "Bring 16 string and 2 leads.",
+      "Bring string for a new braid and two leads before anything else wanders off."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_commissions.bell_rope.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_commissions.bell_rope.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_commissions.bell_rope.stage.work.objective.bring_leads.tracker.complete_text": "The leads are ready.",
+    "quest.village_commissions.bell_rope.stage.work.objective.bring_leads.tracker.text": "Bring 2 leads for the pens.",
+    "quest.village_commissions.bell_rope.stage.work.objective.bring_string.tracker.complete_text": "The string is ready.",
+    "quest.village_commissions.bell_rope.stage.work.objective.bring_string.tracker.text": "Bring 16 string for braided cord.",
+    "quest.village_commissions.bell_rope.stage.work.scene.abandon_confirm.lines": [
+      "Put Frayed Ropes aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_commissions.bell_rope.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_commissions.bell_rope.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Frayed Ropes is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.decline.lines": [
+      "Then we will ring carefully and tie better knots.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.leave.lines": [
+      "Sixteen string for the bell braid, and two leads for the pens.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Sixteen string for the bell braid, and two leads for the pens.",
+      "Bring 16 string and 2 leads.",
+      "Bring string for a new braid and two leads before anything else wanders off."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Frayed Ropes is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Frayed Ropes is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.start_quest.action.start.lines.started": [
+      "A bell only warns us if someone can pull it. Make the cord stout.",
+      "Bring 16 string and 2 leads.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Frayed Ropes is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.bell_rope.stage.work.ui.tracker_text": "Bring 16 string and 2 leads.",
+    "quest.village_commissions.bell_rope.title": "Frayed Ropes"
+  }
+}

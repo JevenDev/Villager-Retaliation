@@ -1,0 +1,91 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.field_medicine.night_ward.description": "Help the village prepare medicine and proof against the wounds that arrive after sunset.",
+    "quest.field_medicine.night_ward.scene.night_ward_attack.metadata.title": "Night Ward attack",
+    "quest.field_medicine.night_ward.scene.night_ward_attack.step.samples_reminder.data.text": "The ward is quiet again. Gather six samples from the dead before the evidence spoils.",
+    "quest.field_medicine.night_ward.scene.night_ward_attack.step.ward_warning.data.text": "The ward doors are barred. Three dead are pushing in from the dark-meet them outside.",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.dialogue.offer.label": "The Night Ward",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.dialogue.offer.lines": [
+      "Bandages are useful after a wound. A good ward tries to meet trouble before the door breaks.",
+      "Clear the dead that press too close and bring samples. Then we will make the stronger medicine no one asks about politely."
+    ],
+    "quest.field_medicine.night_ward.stage.clear_sickroom.dialogue.offer.response.accept.label": "I will keep the ward quiet.",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.dialogue.offer.response.decline.label": "Not tonight.",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.dialogue.reminder.label": "About the Night Ward",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.dialogue.reminder.lines": [
+      "Zombies do not wait for clean rooms. Thin them out and bring the samples."
+    ],
+    "quest.field_medicine.night_ward.stage.clear_sickroom.dialogue.reminder.response.details.label": "Repeat the ward work.",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.dialogue.reminder.response.leave.label": "I will handle it.",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.objective.bring_rotten_flesh.tracker.complete_text": "The samples are ready.",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.objective.bring_rotten_flesh.tracker.text": "Bring 6 rotten flesh samples so the ward knows what bit first.",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.objective.defeat_zombies.tracker.complete_text": "The night pressure has eased.",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.objective.defeat_zombies.tracker.text": "Defeat 3 zombies before they become patients or memories.",
+    "quest.field_medicine.night_ward.stage.clear_sickroom.scene.decline.lines": [
+      "Then light a window if you pass one. It is not nothing."
+    ],
+    "quest.field_medicine.night_ward.stage.clear_sickroom.scene.leave.lines": [
+      "Come back before your own hands need wrapping."
+    ],
+    "quest.field_medicine.night_ward.stage.clear_sickroom.scene.reminder_details.action.remind.lines.reminder": [
+      "Defeat 3 zombies and bring 6 rotten flesh samples for the night ward."
+    ],
+    "quest.field_medicine.night_ward.stage.clear_sickroom.scene.reminder_details.action.remind.lines.unavailable": [
+      "The sickroom is not ready for that work right now."
+    ],
+    "quest.field_medicine.night_ward.stage.clear_sickroom.scene.start_quest.action.start.lines.already_completed": [
+      "The night ward is already stocked and written down."
+    ],
+    "quest.field_medicine.night_ward.stage.clear_sickroom.scene.start_quest.action.start.lines.started": [
+      "Defeat 3 zombies and bring 6 rotten flesh. Grim counting, but useful counting."
+    ],
+    "quest.field_medicine.night_ward.stage.clear_sickroom.scene.start_quest.action.start.lines.unavailable": [
+      "The ward is not ready to ask this of you right now."
+    ],
+    "quest.field_medicine.night_ward.stage.clear_sickroom.ui.tracker_text": "Defeat 3 zombies and bring 6 rotten flesh.",
+    "quest.field_medicine.night_ward.stage.return.dialogue.turn_in.label": "About the Night Ward",
+    "quest.field_medicine.night_ward.stage.return.dialogue.turn_in.lines": [
+      "This is enough for a bad night to become a story instead of a grave."
+    ],
+    "quest.field_medicine.night_ward.stage.return.dialogue.turn_in.response.complete.label": "Stock the night ward.",
+    "quest.field_medicine.night_ward.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.field_medicine.night_ward.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good. I hope the ward gathers dust. Preparing for pain does not mean inviting it in."
+    ],
+    "quest.field_medicine.night_ward.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The ward still needs its patrol cleared or its apple and sugar before we lock the chest."
+    ],
+    "quest.field_medicine.night_ward.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the ward supplies here so I can set them aside."
+    ],
+    "quest.field_medicine.night_ward.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the night ward right now."
+    ],
+    "quest.field_medicine.night_ward.stage.return.scene.leave.lines": [
+      "The chest stays open until the list is finished."
+    ],
+    "quest.field_medicine.night_ward.stage.return.ui.tracker_text": "Return with the night ward supplies.",
+    "quest.field_medicine.night_ward.stage.strong_medicine.dialogue.reminder.label": "About the Night Ward",
+    "quest.field_medicine.night_ward.stage.strong_medicine.dialogue.reminder.lines": [
+      "Now the ward needs medicine with a little hope in it. Bring a golden apple and sugar."
+    ],
+    "quest.field_medicine.night_ward.stage.strong_medicine.dialogue.reminder.response.details.label": "Repeat the medicine.",
+    "quest.field_medicine.night_ward.stage.strong_medicine.dialogue.reminder.response.leave.label": "I will bring it.",
+    "quest.field_medicine.night_ward.stage.strong_medicine.objective.bring_golden_apple.tracker.complete_text": "The golden apple is ready.",
+    "quest.field_medicine.night_ward.stage.strong_medicine.objective.bring_golden_apple.tracker.text": "Bring 1 golden apple for the ward chest.",
+    "quest.field_medicine.night_ward.stage.strong_medicine.objective.bring_sugar.tracker.complete_text": "The sugar is ready.",
+    "quest.field_medicine.night_ward.stage.strong_medicine.objective.bring_sugar.tracker.text": "Bring 8 sugar for harsh medicine that goes down easier.",
+    "quest.field_medicine.night_ward.stage.strong_medicine.scene.leave.lines": [
+      "The best cure is the one no one needs today."
+    ],
+    "quest.field_medicine.night_ward.stage.strong_medicine.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 1 golden apple and 8 sugar for the night ward chest."
+    ],
+    "quest.field_medicine.night_ward.stage.strong_medicine.scene.reminder_details.action.remind.lines.unavailable": [
+      "The stronger medicine can wait until the sickroom is clear."
+    ],
+    "quest.field_medicine.night_ward.stage.strong_medicine.ui.tracker_text": "Bring 1 golden apple and 8 sugar.",
+    "quest.field_medicine.night_ward.title": "The Night Ward"
+  }
+}

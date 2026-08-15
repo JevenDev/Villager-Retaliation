@@ -1,0 +1,91 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.courier_roads.night_run.description": "Prove the courier road can survive the dangers that wait between houses and villages.",
+    "quest.courier_roads.night_run.scene.night_run_attack.metadata.title": "Night Run attack",
+    "quest.courier_roads.night_run.scene.night_run_attack.step.mark_the_road.data.text": "The dangerous stretch is clear. Bring lanterns and signs so the next courier needs less courage.",
+    "quest.courier_roads.night_run.scene.night_run_attack.step.route_warning.data.text": "I marked the blocked stretch beyond the lamps: webs in the hedges and skeletons watching the road.",
+    "quest.courier_roads.night_run.stage.clear_road.dialogue.offer.label": "The Night Run",
+    "quest.courier_roads.night_run.stage.clear_road.dialogue.offer.lines": [
+      "A route is not real until someone can take it when the sun is gone.",
+      "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful; a visible road is kinder."
+    ],
+    "quest.courier_roads.night_run.stage.clear_road.dialogue.offer.response.accept.label": "I will test the night road.",
+    "quest.courier_roads.night_run.stage.clear_road.dialogue.offer.response.decline.label": "Not tonight.",
+    "quest.courier_roads.night_run.stage.clear_road.dialogue.reminder.label": "About the Night Run",
+    "quest.courier_roads.night_run.stage.clear_road.dialogue.reminder.lines": [
+      "Clear spiders and skeletons from the route. Messages should not need armor to arrive."
+    ],
+    "quest.courier_roads.night_run.stage.clear_road.dialogue.reminder.response.details.label": "Repeat the danger.",
+    "quest.courier_roads.night_run.stage.clear_road.dialogue.reminder.response.leave.label": "I will handle it.",
+    "quest.courier_roads.night_run.stage.clear_road.objective.defeat_skeletons.tracker.complete_text": "The arrow line is safer.",
+    "quest.courier_roads.night_run.stage.clear_road.objective.defeat_skeletons.tracker.text": "Defeat 2 skeletons before couriers have to cross their aim.",
+    "quest.courier_roads.night_run.stage.clear_road.objective.defeat_spiders.tracker.complete_text": "The webbed stretch is safer.",
+    "quest.courier_roads.night_run.stage.clear_road.objective.defeat_spiders.tracker.text": "Defeat 3 spiders along the night route.",
+    "quest.courier_roads.night_run.stage.clear_road.scene.decline.lines": [
+      "Then the sealed packets stay in daylight a while longer."
+    ],
+    "quest.courier_roads.night_run.stage.clear_road.scene.leave.lines": [
+      "Do not race the dark just to impress it."
+    ],
+    "quest.courier_roads.night_run.stage.clear_road.scene.reminder_details.action.remind.lines.reminder": [
+      "Defeat 3 spiders and 2 skeletons along the night route."
+    ],
+    "quest.courier_roads.night_run.stage.clear_road.scene.reminder_details.action.remind.lines.unavailable": [
+      "The night road is not ready for that work right now."
+    ],
+    "quest.courier_roads.night_run.stage.clear_road.scene.start_quest.action.start.lines.already_completed": [
+      "The night run has already been proven."
+    ],
+    "quest.courier_roads.night_run.stage.clear_road.scene.start_quest.action.start.lines.started": [
+      "Defeat 3 spiders and 2 skeletons. Bring back a road that feels less hungry."
+    ],
+    "quest.courier_roads.night_run.stage.clear_road.scene.start_quest.action.start.lines.unavailable": [
+      "The night route is not ready to ask for help right now."
+    ],
+    "quest.courier_roads.night_run.stage.clear_road.ui.tracker_text": "Defeat 3 spiders and 2 skeletons.",
+    "quest.courier_roads.night_run.stage.mark_way.dialogue.reminder.label": "About the Night Run",
+    "quest.courier_roads.night_run.stage.mark_way.dialogue.reminder.lines": [
+      "The dangerous stretch is quieter. Now mark it so the next person does not need your luck."
+    ],
+    "quest.courier_roads.night_run.stage.mark_way.dialogue.reminder.response.details.label": "Repeat the markers.",
+    "quest.courier_roads.night_run.stage.mark_way.dialogue.reminder.response.leave.label": "I will bring them.",
+    "quest.courier_roads.night_run.stage.mark_way.objective.bring_lanterns.tracker.complete_text": "The road lights are ready.",
+    "quest.courier_roads.night_run.stage.mark_way.objective.bring_lanterns.tracker.text": "Bring 3 lanterns to mark the night road.",
+    "quest.courier_roads.night_run.stage.mark_way.objective.bring_oak_signs.tracker.complete_text": "The route signs are ready.",
+    "quest.courier_roads.night_run.stage.mark_way.objective.bring_oak_signs.tracker.text": "Bring 3 oak signs so tired couriers do not guess at turns.",
+    "quest.courier_roads.night_run.stage.mark_way.scene.leave.lines": [
+      "A marked road is a promise to strangers."
+    ],
+    "quest.courier_roads.night_run.stage.mark_way.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 3 lanterns and 3 oak signs for the night road."
+    ],
+    "quest.courier_roads.night_run.stage.mark_way.scene.reminder_details.action.remind.lines.unavailable": [
+      "The road markers can wait until the dangerous stretch is clear."
+    ],
+    "quest.courier_roads.night_run.stage.mark_way.ui.tracker_text": "Bring 3 lanterns and 3 oak signs.",
+    "quest.courier_roads.night_run.stage.return.dialogue.turn_in.label": "About the Night Run",
+    "quest.courier_roads.night_run.stage.return.dialogue.turn_in.lines": [
+      "You brought back proof and markers. That is the difference between a stunt and a road."
+    ],
+    "quest.courier_roads.night_run.stage.return.dialogue.turn_in.response.complete.label": "Mark the night route.",
+    "quest.courier_roads.night_run.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.courier_roads.night_run.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good. The first night courier will still be nervous, but now nervous has lanterns to follow."
+    ],
+    "quest.courier_roads.night_run.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The night road still needs its patrol cleared and its lanterns and signs placed."
+    ],
+    "quest.courier_roads.night_run.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the road markers here so the route can be written down."
+    ],
+    "quest.courier_roads.night_run.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the night route right now."
+    ],
+    "quest.courier_roads.night_run.stage.return.scene.leave.lines": [
+      "A road half-marked can be worse than no road at all."
+    ],
+    "quest.courier_roads.night_run.stage.return.ui.tracker_text": "Return with proof and road markers.",
+    "quest.courier_roads.night_run.title": "The Night Run"
+  }
+}

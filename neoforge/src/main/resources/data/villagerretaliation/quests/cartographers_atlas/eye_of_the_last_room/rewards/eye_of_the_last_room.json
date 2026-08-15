@@ -1,0 +1,80 @@
+{
+  "schema": "villagerretaliation:quest_reward/v1",
+  "id": "villagerretaliation:quest/eye_of_the_last_room",
+  "table": {
+    "pools": [
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 54,
+                  "min": 36,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:emerald",
+            "type": "minecraft:item"
+          }
+        ],
+        "rolls": 1
+      },
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 4,
+                  "min": 2,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:ender_eye",
+            "type": "minecraft:item",
+            "weight": 2
+          },
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 5,
+                  "min": 2,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:diamond",
+            "type": "minecraft:item",
+            "weight": 1
+          },
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 28,
+                  "min": 18,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:experience_bottle",
+            "type": "minecraft:item",
+            "weight": 2
+          }
+        ],
+        "rolls": 1
+      }
+    ],
+    "type": "minecraft:generic"
+  }
+}

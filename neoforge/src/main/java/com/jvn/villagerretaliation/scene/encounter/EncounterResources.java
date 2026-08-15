@@ -5,6 +5,10 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleRuntimeMaterializer;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardCatalog;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
@@ -76,6 +80,14 @@ public final class EncounterResources {
 
     public static void validateRewardLootTables(
             MinecraftServer server, EncounterTemplate template, List<String> errors) {
+        validateRewardLootTables(server, template, errors, QuestRewardCatalog.empty());
+    }
+
+    private static void validateRewardLootTables(
+            MinecraftServer server,
+            EncounterTemplate template,
+            List<String> errors,
+            QuestRewardCatalog rewards) {
         if (template == null || template.rewards() == null) return;
         java.util.stream.Stream.of(
                         template.rewards().waves(),
@@ -85,22 +97,33 @@ public final class EncounterResources {
                 .map(EncounterTemplate.Reward::lootTable)
                 .filter(java.util.Objects::nonNull)
                 .distinct()
-                .forEach(
-                        id -> {
-                            if (server.reloadableRegistries()
-                                            .getLootTable(
-                                                    ResourceKey.create(Registries.LOOT_TABLE, id))
-                                    == LootTable.EMPTY)
-                                errors.add("unknown encounter reward loot table " + id);
-                        });
+                .forEach(id -> {
+                    if (rewards.bundled(id).isEmpty()
+                            && !server.reloadableRegistries().getKeys(Registries.LOOT_TABLE).contains(id)) {
+                        errors.add("unknown encounter reward loot table " + id);
+                    }
+                });
     }
 
     public static ContentSnapshot snapshotForCatalog(MinecraftServer server) {
-        Cache snapshot = load(server);
+        return snapshotForCatalog(
+                server,
+                new QuestBundleTransactions.Result(Map.of(), List.of()),
+                QuestRewardCatalog.empty());
+    }
+
+    public static ContentSnapshot snapshotForCatalog(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles,
+            QuestRewardCatalog rewards) {
+        Cache snapshot = load(server, bundles, rewards);
         return new ContentSnapshot(snapshot.templates(), snapshot.diagnostics());
     }
 
-    private static Cache load(MinecraftServer server) {
+    private static Cache load(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles,
+            QuestRewardCatalog rewards) {
         Cache value = cache;
         if (value.server == server) return value;
         synchronized (EncounterResources.class) {
@@ -112,18 +135,60 @@ public final class EncounterResources {
                         DatapackResourceLoader.readObject(
                                         resource.location(), "quest encounter", resource.resource())
                                 .orElse(null);
-                List<String> errors = new ArrayList<>();
-                EncounterTemplate template =
-                        parse(resource.location(), root, errors, server.registryAccess());
-                validateRewardLootTables(server, template, errors);
-                ResourceLocation key = template == null ? resource.location() : template.id();
-                diagnostics.put(key, List.copyOf(errors));
-                if (template != null && errors.isEmpty()) templates.put(template.id(), template);
+                readDefinition(
+                        server, resource.location(), root, rewards,
+                        templates, diagnostics, List.of());
+            }
+            if (bundles != null) {
+                bundles.bundles().values().stream()
+                        .sorted(java.util.Comparator.comparing(bundle -> bundle.owner().key()))
+                        .forEach(bundle -> bundle.definitions()
+                                .getOrDefault(QuestBundlePath.Kind.ENCOUNTER, Map.of())
+                                .keySet().stream().sorted().forEach(id -> {
+                                    QuestBundleRuntimeMaterializer.DefinitionResult materialized =
+                                            QuestBundleRuntimeMaterializer.materializeDefinition(
+                                                    bundle, QuestBundlePath.Kind.ENCOUNTER, id);
+                                    readDefinition(
+                                            server,
+                                            bundleSource(bundle.owner(), "encounters", id),
+                                            materialized.definition(),
+                                            rewards,
+                                            templates,
+                                            diagnostics,
+                                            materialized.errors());
+                                }));
             }
             validateVariantGraph(templates, diagnostics);
             cache = new Cache(server, Map.copyOf(templates), Map.copyOf(diagnostics));
             return cache;
         }
+    }
+
+    private static void readDefinition(
+            MinecraftServer server,
+            ResourceLocation source,
+            JsonObject root,
+            QuestRewardCatalog rewards,
+            Map<ResourceLocation, EncounterTemplate> templates,
+            Map<ResourceLocation, List<String>> diagnostics,
+            List<String> materializationErrors) {
+        List<String> errors = new ArrayList<>(materializationErrors);
+        EncounterTemplate template = parse(source, root, errors, server.registryAccess());
+        validateRewardLootTables(server, template, errors, rewards);
+        ResourceLocation key = template == null ? source : template.id();
+        diagnostics.put(key, List.copyOf(errors));
+        if (template != null && errors.isEmpty()) templates.put(template.id(), template);
+    }
+
+    private static ResourceLocation bundleSource(
+            QuestBundlePath.Owner owner, String directory, ResourceLocation id) {
+        String idPath = id.getPath();
+        int separator = idPath.lastIndexOf('/');
+        String file = (separator < 0 ? idPath : idPath.substring(separator + 1)) + ".json";
+        String path = owner.shared()
+                ? "quests/_shared/" + directory + "/" + file
+                : "quests/" + owner.questline() + "/" + owner.slug() + "/" + directory + "/" + file;
+        return ResourceLocation.fromNamespaceAndPath(owner.namespace(), path);
     }
 
     public static EncounterTemplate parse(

@@ -1,0 +1,115 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.first_far_marker.description": {
+      "lines": [
+        "Follow the first atlas mark to Trail Ruins and plate the route with copper."
+      ]
+    },
+    "quest.cartographers_atlas.first_far_marker.event.roads_principle_kit.action.notification.text": "Road principle: the first expedition adds a compass and iron route kit.",
+    "quest.cartographers_atlas.first_far_marker.event.wonders_principle_kit.action.notification.text": "Wonder principle: the first expedition adds a spyglass and amethyst survey kit.",
+    "quest.cartographers_atlas.first_far_marker.stage.return.dialogue.reminder.label": "About First Far Marker",
+    "quest.cartographers_atlas.first_far_marker.stage.return.dialogue.reminder.lines": [
+      "Trail Ruins near {target_x}, {target_z}. Bring the brush and copper so the atlas can stop guessing."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.dialogue.reminder.response.details.label": "Remind me where",
+    "quest.cartographers_atlas.first_far_marker.stage.return.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.first_far_marker.stage.return.dialogue.turn_in.label": "About First Far Marker",
+    "quest.cartographers_atlas.first_far_marker.stage.return.dialogue.turn_in.lines": [
+      "You reached the old mark? Then show me what the road left behind."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.dialogue.turn_in.response.complete.label": "Hand over the field notes",
+    "quest.cartographers_atlas.first_far_marker.stage.return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.first_far_marker.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The first far marker is inked. Now the atlas has proof that its roads touch real dust."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The route still needs the ruins visited, the brush ready, and its copper marker plates."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Carry the brush and bring the copper before I mark the route."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "Reach the Trail Ruins first. A brush without dust is just a tool."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "This marker still needs its field proof before I can close it."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.scene.leave.lines": [
+      "Mind the margins."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.scene.reminder_details.action.remind.lines.reminder": [
+      "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have that marker open for you right now."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.return.ui.tracker_text": "Return to the cartographer with the field notes and copper.",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.dialogue.offer.label": "First Far Marker",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.dialogue.offer.lines": [
+      "The first folio found an old road under the ink. Trail Ruins, if the table is reading true.",
+      "Reach the ruins, carry a brush, and bring copper for marker plates. The atlas must learn that travel is more than a straight line."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.dialogue.offer.response.accept.label": "Mark the route",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.dialogue.reminder.label": "About First Far Marker",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.dialogue.reminder.lines": [
+      "The first marker is still waiting in the field."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.dialogue.reminder.response.abandon.label": "Abandon quest",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.dialogue.reminder.response.details.label": "Remind me where",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.objective.bring_copper.tracker.complete_text": "The copper marker plates are ready.",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.objective.bring_copper.tracker.text": "Bring 8 copper ingots for marker plates.",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.objective.carry_brush.tracker.complete_text": "A brush is ready for the field notes.",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.objective.carry_brush.tracker.text": "Carry a brush so the ruins can be read without breaking them.",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.objective.visit_ruins.tracker.complete_text": "The first far marker has been visited.",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.objective.visit_ruins.tracker.text": "Reach the Trail Ruins near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.abandon_confirm.lines": [
+      "Fold away the first far marker?"
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.abandon_confirm.response.cancel.label": "Keep the quest",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.abandon_confirm.response.confirm.label": "Abandon quest",
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "I will fold the marker away for now."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "There is no marker route to fold away."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.decline.lines": [
+      "Old roads are patient. Usually."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.leave.lines": [
+      "Mind the margins."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.reminder_details.action.remind.lines.reminder": [
+      "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have that marker open for you right now."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.start_quest.action.start.lines.already_completed": [
+      "The first far marker is already inked."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.start_quest.action.start.lines.locate_failed": [
+      "The old road will not hold still on the table today."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.start_quest.action.start.lines.started": [
+      "The ruins sit about {distance} blocks {direction}, near {target_x}, {target_z}. Reach them, carry a brush, and bring 8 copper ingots back."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.scene.start_quest.action.start.lines.unavailable": [
+      "The atlas needs its paper and bearings before that marker makes sense."
+    ],
+    "quest.cartographers_atlas.first_far_marker.stage.survey.ui.tracker_text": "Reach the Trail Ruins near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.first_far_marker.title": {
+      "lines": [
+        "First Far Marker"
+      ]
+    },
+    "quest.cartographers_atlas.first_far_marker.tracker.title": {
+      "lines": [
+        "First Far Marker"
+      ]
+    }
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.deep_delvers.mark_the_shaft.description": "Choose rails or timber braces for the new village mine.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.offer.label": "Mark the Shaft",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.offer.lines": [
+      "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
+      "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware; timber continues into spider-clearing and returns emergency supplies."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.offer.response.decline.label": "Not yet.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.offer.response.rail.action.notification.text": "You chose rails for the village mine.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.offer.response.rail.label": "Lay the rails",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.offer.response.rail.text": "Rails, then. Give every slope a level thought before you set iron on it.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.offer.response.timber.action.notification.text": "You chose timber braces for the village mine.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.offer.response.timber.label": "Brace the roof",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.offer.response.timber.text": "Timber, then. A slower mine is still better than a buried one.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.label": "About Mark the Shaft",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.lines": [
+      "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
+      "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware; timber continues into spider-clearing and returns emergency supplies."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.response.decline.label": "Not yet.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.response.details.label": "Repeat the choice.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.response.rail.action.notification.text": "You chose rails for the village mine.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.response.rail.label": "Lay the rails",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.response.rail.text": "Rails, then. Give every slope a level thought before you set iron on it.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.response.timber.action.notification.text": "You chose timber braces for the village mine.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.response.timber.label": "Brace the roof",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.dialogue.reminder.response.timber.text": "Timber, then. A slower mine is still better than a buried one.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.objective.choose_route.tracker.complete_text": "Route chosen: {objective_choice_value}.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.objective.choose_route.tracker.text": "Choose the route with the quest giver.",
+    "quest.deep_delvers.mark_the_shaft.stage.choose.scene.decline.lines": [
+      "An unmarked shaft is only a hole with ambitions."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.choose.scene.reminder_details.action.remind.lines.reminder": [
+      "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
+      "This choice closes the other shaft plan. Rails continue into powered freight and return transport hardware; timber continues into spider-clearing and returns emergency supplies."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.choose.scene.reminder_details.action.remind.lines.unavailable": [
+      "That choice is not open right now."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.choose.ui.tracker_text": "Choose a route.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.dialogue.turn_in.label": "About Mark the Shaft",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.dialogue.turn_in.lines": [
+      "The cart rolls cleanly from the face to the daylight.",
+      "The first mine road is open. The deeper work will follow iron."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The first mine road is open. The deeper work will follow iron.",
+      "The cart rolls cleanly from the face to the daylight."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Lay twenty-four rails and bring a minecart to test the line."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.dialogue.reminder.label": "About Mark the Shaft",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.dialogue.reminder.lines": [
+      "Lay twenty-four rails and bring a minecart to test the line.",
+      "Rails, then. Give every slope a level thought before you set iron on it."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.objective.bring_minecart.tracker.complete_text": "The minecart is ready.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.objective.bring_minecart.tracker.text": "Bring 1 minecart for the line.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.objective.lay_rails.tracker.complete_text": "The first rail line is laid.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.objective.lay_rails.tracker.text": "Place 24 rails in the mine.",
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Lay twenty-four rails and bring a minecart to test the line.",
+      "Rails, then. Give every slope a level thought before you set iron on it."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.rail_work.ui.tracker_text": "Lay twenty-four rails and bring a minecart to test the line.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.dialogue.turn_in.label": "About Mark the Shaft",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.dialogue.turn_in.lines": [
+      "The roof is quiet and the braces are straight. That is the sound we wanted.",
+      "The first mine road is safe. The deeper work will follow timber."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The first mine road is safe. The deeper work will follow timber.",
+      "The roof is quiet and the braces are straight. That is the sound we wanted."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Set sixteen log braces and hang four lanterns through the first stretch."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.dialogue.reminder.label": "About Mark the Shaft",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.dialogue.reminder.lines": [
+      "Set sixteen log braces and hang four lanterns through the first stretch.",
+      "Timber, then. A slower mine is still better than a buried one."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.objective.bring_lanterns.tracker.complete_text": "The lanterns are ready.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.objective.bring_lanterns.tracker.text": "Bring 4 lanterns for the braced shaft.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.objective.place_braces.tracker.complete_text": "The first braces are set.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.objective.place_braces.tracker.text": "Place 16 logs as mine braces.",
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Set sixteen log braces and hang four lanterns through the first stretch.",
+      "Timber, then. A slower mine is still better than a buried one."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.deep_delvers.mark_the_shaft.stage.timber_work.ui.tracker_text": "Set sixteen log braces and hang four lanterns through the first stretch.",
+    "quest.deep_delvers.mark_the_shaft.title": "Mark the Shaft"
+  }
+}

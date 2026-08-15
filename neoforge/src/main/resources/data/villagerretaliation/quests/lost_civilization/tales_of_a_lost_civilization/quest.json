@@ -1,0 +1,542 @@
+{
+  "availability": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 1,
+    "consume_on_abandonment": false,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "survey",
+  "events": [
+    {
+      "actions": [
+        {
+          "flash_tracker": true,
+          "type": "tracker"
+        },
+        {
+          "forced_dialogue": "quest.lost_civilization.storm_reminder",
+          "type": "forced_dialogue"
+        }
+      ],
+      "conditions": [
+        {
+          "state": "active",
+          "type": "quest"
+        },
+        {
+          "type": "time",
+          "value": "night"
+        },
+        {
+          "state": "thunder",
+          "type": "weather"
+        }
+      ],
+      "cooldown_seconds": 120,
+      "event": "proximity",
+      "id": "storm_reminder",
+      "radius": 10,
+      "repeatable": false
+    }
+  ],
+  "id": "villagerretaliation:tales_of_a_lost_civilization",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "description_key": "quest.lost_civilization.tales_of_a_lost_civilization.description",
+    "questline": "lost_civilization",
+    "tags": [
+      "group.lost_civilization",
+      "role.side",
+      "activity.deliver",
+      "activity.explore",
+      "activity.gather",
+      "destination.overworld",
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition",
+      "theme.exploration",
+      "theme.mystery"
+    ],
+    "title": {
+      "key": "#title"
+    },
+    "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.title"
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "journeyman",
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": {
+        "cartography": {
+          "min": 50
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 430,
+    "gossip_reputation": 10,
+    "loot_table": "villagerretaliation:quest/tales_of_a_lost_civilization",
+    "memory_event": "player_completed_quest",
+    "reputation": 22
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "visit_city_center",
+        "recover_echo_shard"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.survey.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.survey.dialogue.offer.lines"
+          },
+          "order": -20,
+          "request": "story",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.survey.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.survey.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.survey.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.survey.dialogue.reminder.lines"
+          },
+          "order": -20,
+          "request": "story",
+          "responses": [
+            {
+              "id": "directions",
+              "label": {
+                "key": "#stage.survey.dialogue.reminder.response.directions.label"
+              },
+              "order": 0,
+              "scene": "reminder_details"
+            },
+            {
+              "id": "abandon",
+              "label": {
+                "key": "#stage.survey.dialogue.reminder.response.abandon.label"
+              },
+              "order": 90,
+              "scene": "abandon_confirm"
+            },
+            {
+              "id": "never_mind",
+              "label": {
+                "key": "#stage.survey.dialogue.reminder.response.never_mind.label"
+              },
+              "order": 100,
+              "scene": "active_cancel"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "survey",
+      "next": "return",
+      "objectives": [
+        {
+          "discovery_radius": 128,
+          "id": "visit_city_center",
+          "search_radius": 256,
+          "structure": "minecraft:ancient_city",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.survey.objective.visit_city_center.tracker.complete_text"
+            },
+            "progress": 0.45,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.survey.objective.visit_city_center.tracker.text"
+            }
+          },
+          "type": "structure_visit"
+        },
+        {
+          "count": 1,
+          "id": "recover_echo_shard",
+          "item": "minecraft:echo_shard",
+          "tracker": {
+            "complete_text": {
+              "key": "#objective.recover_echo_shard.complete_text"
+            },
+            "complete_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.complete_text",
+            "metadata": {
+              "hint": "City center visited"
+            },
+            "progress": 0.66,
+            "show_progress": true,
+            "text": {
+              "key": "#objective.recover_echo_shard.text"
+            },
+            "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.text"
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "id": "abandon_cancel",
+          "lines": {
+            "key": "#stage.survey.scene.abandon_cancel.lines"
+          }
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": {
+            "key": "#stage.survey.scene.abandon_confirm.lines"
+          },
+          "responses": [
+            {
+              "id": "confirm",
+              "label": {
+                "key": "#stage.survey.scene.abandon_confirm.response.confirm.label"
+              },
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": {
+                "key": "#stage.survey.scene.abandon_confirm.response.cancel.label"
+              },
+              "scene": "abandon_cancel"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "action": "abandon",
+              "lines": {
+                "abandoned": {
+                  "key": "#stage.survey.scene.abandon_quest.action.abandon.lines.abandoned"
+                },
+                "abandoned_cooldown": {
+                  "key": "#stage.survey.scene.abandon_quest.action.abandon.lines.abandoned_cooldown"
+                },
+                "abandoned_forever": {
+                  "key": "#stage.survey.scene.abandon_quest.action.abandon.lines.abandoned_forever"
+                },
+                "unavailable": {
+                  "key": "#stage.survey.scene.abandon_quest.action.abandon.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "abandon_quest"
+        },
+        {
+          "id": "active_cancel",
+          "lines": {
+            "key": "#stage.survey.scene.active_cancel.lines"
+          }
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.survey.scene.decline.lines"
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.survey.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.survey.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.survey.scene.start_quest.action.start.lines.already_completed"
+                },
+                "locate_failed": {
+                  "key": "#stage.survey.scene.start_quest.action.start.lines.locate_failed"
+                },
+                "started": {
+                  "key": "#stage.survey.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.survey.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        }
+      ],
+      "ui": {
+        "placeholders": {
+          "target_x": "target.x",
+          "target_z": "target.z"
+        },
+        "progress": 0.25,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#tracker.travel.text"
+        },
+        "tracker_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.travel.text"
+      }
+    },
+    {
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.return.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.reminder.lines"
+          },
+          "order": -20,
+          "request": "story",
+          "responses": [
+            {
+              "id": "directions",
+              "label": {
+                "key": "#stage.return.dialogue.reminder.response.directions.label"
+              },
+              "order": 0,
+              "scene": "reminder_details"
+            },
+            {
+              "id": "abandon",
+              "label": {
+                "key": "#stage.return.dialogue.reminder.response.abandon.label"
+              },
+              "order": 90,
+              "scene": "abandon_confirm"
+            },
+            {
+              "id": "never_mind",
+              "label": {
+                "key": "#stage.return.dialogue.reminder.response.never_mind.label"
+              },
+              "order": 100,
+              "scene": "active_cancel"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -20,
+          "request": "story",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "order": 0,
+              "scene": "complete_quest"
+            },
+            {
+              "id": "abandon",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.abandon.label"
+              },
+              "order": 90,
+              "scene": "abandon_confirm"
+            },
+            {
+              "id": "never_mind",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.never_mind.label"
+              },
+              "order": 100,
+              "scene": "turn_in_wait"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "id": "abandon_cancel",
+          "lines": {
+            "key": "#stage.return.scene.abandon_cancel.lines"
+          }
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": {
+            "key": "#stage.return.scene.abandon_confirm.lines"
+          },
+          "responses": [
+            {
+              "id": "confirm",
+              "label": {
+                "key": "#stage.return.scene.abandon_confirm.response.confirm.label"
+              },
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": {
+                "key": "#stage.return.scene.abandon_confirm.response.cancel.label"
+              },
+              "scene": "abandon_cancel"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "action": "abandon",
+              "lines": {
+                "abandoned": {
+                  "key": "#stage.return.scene.abandon_quest.action.abandon.lines.abandoned"
+                },
+                "abandoned_cooldown": {
+                  "key": "#stage.return.scene.abandon_quest.action.abandon.lines.abandoned_cooldown"
+                },
+                "abandoned_forever": {
+                  "key": "#stage.return.scene.abandon_quest.action.abandon.lines.abandoned_forever"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.abandon_quest.action.abandon.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "abandon_quest"
+        },
+        {
+          "id": "active_cancel",
+          "lines": {
+            "key": "#stage.return.scene.active_cancel.lines"
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "missing_target": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_target"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.return.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": {
+            "key": "#stage.return.scene.turn_in_wait.lines"
+          }
+        }
+      ],
+      "ui": {
+        "placeholders": {
+          "proof_item": "target.proof_item"
+        },
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#tracker.return.text"
+        },
+        "tracker_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.return.text"
+      }
+    }
+  ],
+  "target": {
+    "discovery_radius": 128,
+    "pieces": [
+      "ancient_city/city_center/city_center_1",
+      "ancient_city/city_center/city_center_2",
+      "ancient_city/city_center/city_center_3"
+    ],
+    "proof_item": "minecraft:echo_shard",
+    "search_radius": 256,
+    "structure": "minecraft:ancient_city"
+  },
+  "ui": {
+    "title": {
+      "key": "#tracker.title"
+    },
+    "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title"
+  },
+  "localization_prefix": "quest.lost_civilization.tales_of_a_lost_civilization"
+}

@@ -1,0 +1,385 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "heat_stock",
+  "id": "villagerretaliation:temper_and_tally",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "parent": "villagerretaliation:honed_handles",
+    "questline": "workshop_oaths",
+    "tags": [
+      "group.workshop_oaths",
+      "role.side",
+      "activity.deliver",
+      "activity.gather",
+      "destination.village",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard",
+      "theme.community",
+      "theme.craftsmanship"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "apprentice",
+      "professions": [
+        "minecraft:toolsmith",
+        "minecraft:armorer",
+        "minecraft:weaponsmith"
+      ],
+      "skills": {
+        "crafting": {
+          "min": 12
+        },
+        "smithing": {
+          "min": 18
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 155,
+    "gossip_reputation": 5,
+    "loot_table": "villagerretaliation:quest/temper_and_tally",
+    "memory_event": "player_completed_quest",
+    "reputation": 12
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "bring_iron",
+        "bring_coal"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.heat_stock.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.heat_stock.dialogue.offer.lines"
+          },
+          "order": -21,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.heat_stock.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.heat_stock.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.heat_stock.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.heat_stock.dialogue.reminder.lines"
+          },
+          "order": -21,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.heat_stock.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.heat_stock.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "heat_stock",
+      "next": "finish_edge",
+      "objectives": [
+        {
+          "count": 8,
+          "id": "bring_iron",
+          "item": "minecraft:iron_ingot",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.heat_stock.objective.bring_iron.tracker.complete_text"
+            },
+            "progress": 0.5,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.heat_stock.objective.bring_iron.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 12,
+          "id": "bring_coal",
+          "item": "minecraft:coal",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.heat_stock.objective.bring_coal.tracker.complete_text"
+            },
+            "progress": 0.65,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.heat_stock.objective.bring_coal.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.heat_stock.scene.start_quest.action.start.lines.already_completed"
+                },
+                "started": {
+                  "key": "#stage.heat_stock.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.heat_stock.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.heat_stock.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.heat_stock.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.heat_stock.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.heat_stock.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.65,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.heat_stock.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "bring_grindstone"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.finish_edge.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.finish_edge.dialogue.reminder.lines"
+          },
+          "order": -21,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.finish_edge.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.finish_edge.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "finish_edge",
+      "next": "return",
+      "objectives": [
+        {
+          "count": 1,
+          "id": "bring_grindstone",
+          "item": "minecraft:grindstone",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.finish_edge.objective.bring_grindstone.tracker.complete_text"
+            },
+            "progress": 0.9,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.finish_edge.objective.bring_grindstone.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.finish_edge.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.finish_edge.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.finish_edge.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.9,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.finish_edge.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -21,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#B0A48E",
+    "icon": "minecraft:grindstone",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.workshop_oaths.temper_and_tally"
+}

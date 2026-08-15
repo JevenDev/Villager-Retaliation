@@ -1,0 +1,88 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.last_ember.nether_candle.description": "Carry the Last Ember study into Nether materials and learn which fires deserve respect.",
+    "quest.last_ember.nether_candle.stage.bottle_heat.dialogue.reminder.label": "About the Nether Candle",
+    "quest.last_ember.nether_candle.stage.bottle_heat.dialogue.reminder.lines": [
+      "The rods prove the fire. Now bring powder and glowstone dust so the lesson can be held without burning the page."
+    ],
+    "quest.last_ember.nether_candle.stage.bottle_heat.dialogue.reminder.response.details.label": "Repeat the bottle work.",
+    "quest.last_ember.nether_candle.stage.bottle_heat.dialogue.reminder.response.leave.label": "I will bring it.",
+    "quest.last_ember.nether_candle.stage.bottle_heat.objective.bring_blaze_powder.tracker.complete_text": "The blaze powder is ready.",
+    "quest.last_ember.nether_candle.stage.bottle_heat.objective.bring_blaze_powder.tracker.text": "Bring 4 blaze powder for controlled flame.",
+    "quest.last_ember.nether_candle.stage.bottle_heat.objective.bring_glowstone.tracker.complete_text": "The glowstone dust is ready.",
+    "quest.last_ember.nether_candle.stage.bottle_heat.objective.bring_glowstone.tracker.text": "Bring 8 glowstone dust so the lesson keeps its light.",
+    "quest.last_ember.nether_candle.stage.bottle_heat.scene.leave.lines": [
+      "Powder in a bottle is still fire with patience."
+    ],
+    "quest.last_ember.nether_candle.stage.bottle_heat.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 4 blaze powder and 8 glowstone dust for the Nether candle."
+    ],
+    "quest.last_ember.nether_candle.stage.bottle_heat.scene.reminder_details.action.remind.lines.unavailable": [
+      "The bottled flame can wait until the blaze work is done."
+    ],
+    "quest.last_ember.nether_candle.stage.bottle_heat.ui.tracker_text": "Bring 4 blaze powder and 8 glowstone dust.",
+    "quest.last_ember.nether_candle.stage.bright_heat.dialogue.offer.label": "The Nether Candle",
+    "quest.last_ember.nether_candle.stage.bright_heat.dialogue.offer.lines": [
+      "Pearls taught us the shape of looking away. Fire teaches something less polite.",
+      "Bring blaze rods, and proof you faced the thing that made them. After that, we bottle the lesson carefully."
+    ],
+    "quest.last_ember.nether_candle.stage.bright_heat.dialogue.offer.response.accept.label": "I will bring Nether fire.",
+    "quest.last_ember.nether_candle.stage.bright_heat.dialogue.offer.response.decline.label": "Not yet.",
+    "quest.last_ember.nether_candle.stage.bright_heat.dialogue.reminder.label": "About the Nether Candle",
+    "quest.last_ember.nether_candle.stage.bright_heat.dialogue.reminder.lines": [
+      "Defeat blazes and bring rods. The lesson needs heat that was earned, not stolen from a chest."
+    ],
+    "quest.last_ember.nether_candle.stage.bright_heat.dialogue.reminder.response.details.label": "Repeat the fire work.",
+    "quest.last_ember.nether_candle.stage.bright_heat.dialogue.reminder.response.leave.label": "I will handle it.",
+    "quest.last_ember.nether_candle.stage.bright_heat.objective.bring_blaze_rods.tracker.complete_text": "The blaze rods are ready.",
+    "quest.last_ember.nether_candle.stage.bright_heat.objective.bring_blaze_rods.tracker.text": "Bring 2 blaze rods as heat that can be counted.",
+    "quest.last_ember.nether_candle.stage.bright_heat.objective.defeat_blazes.tracker.complete_text": "The blaze threat has been measured.",
+    "quest.last_ember.nether_candle.stage.bright_heat.objective.defeat_blazes.tracker.text": "Defeat 3 blazes for the Nether candle study.",
+    "quest.last_ember.nether_candle.stage.bright_heat.scene.decline.lines": [
+      "Good. Nether work should never begin because someone felt hurried."
+    ],
+    "quest.last_ember.nether_candle.stage.bright_heat.scene.leave.lines": [
+      "Come back with your eyebrows, if you can."
+    ],
+    "quest.last_ember.nether_candle.stage.bright_heat.scene.reminder_details.action.remind.lines.reminder": [
+      "Defeat 3 blazes and bring 2 blaze rods for the Nether candle."
+    ],
+    "quest.last_ember.nether_candle.stage.bright_heat.scene.reminder_details.action.remind.lines.unavailable": [
+      "The Nether candle lesson is not open right now."
+    ],
+    "quest.last_ember.nether_candle.stage.bright_heat.scene.start_quest.action.start.lines.already_completed": [
+      "The Nether candle has already been written."
+    ],
+    "quest.last_ember.nether_candle.stage.bright_heat.scene.start_quest.action.start.lines.started": [
+      "Defeat 3 blazes and bring 2 blaze rods. Respect the fire, but do not flatter it."
+    ],
+    "quest.last_ember.nether_candle.stage.bright_heat.scene.start_quest.action.start.lines.unavailable": [
+      "The Nether candle lesson is not ready right now."
+    ],
+    "quest.last_ember.nether_candle.stage.bright_heat.ui.tracker_text": "Defeat 3 blazes and bring 2 blaze rods.",
+    "quest.last_ember.nether_candle.stage.return.dialogue.turn_in.label": "About the Nether Candle",
+    "quest.last_ember.nether_candle.stage.return.dialogue.turn_in.lines": [
+      "This is flame that can be named. Dangerous, but named."
+    ],
+    "quest.last_ember.nether_candle.stage.return.dialogue.turn_in.response.complete.label": "Write the Nether candle.",
+    "quest.last_ember.nether_candle.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.last_ember.nether_candle.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good. The second note says this: some fires guide, some fires consume, and wisdom starts by knowing the difference."
+    ],
+    "quest.last_ember.nether_candle.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The Nether candle lesson is still missing something."
+    ],
+    "quest.last_ember.nether_candle.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the Nether materials here before we seal the lesson."
+    ],
+    "quest.last_ember.nether_candle.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the Nether candle right now."
+    ],
+    "quest.last_ember.nether_candle.stage.return.scene.leave.lines": [
+      "Keep the powder sealed. Lessons are better when they do not escape."
+    ],
+    "quest.last_ember.nether_candle.stage.return.ui.tracker_text": "Return with the Nether candle materials.",
+    "quest.last_ember.nether_candle.title": "The Nether Candle"
+  }
+}

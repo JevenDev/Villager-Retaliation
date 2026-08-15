@@ -1,6 +1,9 @@
 package com.jvn.villagerretaliation.scene;
 
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleRuntimeMaterializer;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.scene.compiler.SceneCompiler;
 import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
 import com.jvn.villagerretaliation.scene.compiler.SceneParser;
@@ -78,11 +81,27 @@ public final class SceneResources {
     }
 
     public static ContentSnapshot snapshotForCatalog(MinecraftServer server) {
-        Cache snapshot = load(server);
+        EncounterResources.ContentSnapshot encounters = EncounterResources.snapshotForCatalog(server);
+        return snapshotForCatalog(
+                server,
+                new QuestBundleTransactions.Result(Map.of(), List.of()),
+                encounters);
+    }
+
+    public static ContentSnapshot snapshotForCatalog(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles,
+            EncounterResources.ContentSnapshot encounters) {
+        Set<ResourceLocation> encounterTemplates = encounters.templates().values().stream()
+                .map(template -> template.id()).collect(Collectors.toUnmodifiableSet());
+        Cache snapshot = load(server, bundles, encounterTemplates);
         return new ContentSnapshot(snapshot.scenes(), snapshot.diagnostics());
     }
 
-    private static Cache load(MinecraftServer server) {
+    private static Cache load(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles,
+            Set<ResourceLocation> encounterTemplates) {
         Cache current = cache;
         if (current.server() == server) return current;
         synchronized (SceneResources.class) {
@@ -90,27 +109,73 @@ public final class SceneResources {
             if (current.server() == server) return current;
             Map<ResourceLocation, CompiledScene> scenes = new LinkedHashMap<>();
             Map<ResourceLocation, List<SceneDiagnostic>> diagnostics = new LinkedHashMap<>();
-            Set<ResourceLocation> encounterTemplates = EncounterResources.snapshotForCatalog(server).templates().values().stream()
-                    .map(template -> template.id()).collect(Collectors.toUnmodifiableSet());
             for (DatapackResourceLoader.JsonResource resource : DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT)) {
                 ResourceLocation source = resource.location();
                 var root = DatapackResourceLoader.readObject(source, "quest scene", resource.resource()).orElse(null);
-                SceneParser.ParseResult parsed = SceneParser.parse(source, root);
-                List<SceneDiagnostic> combined = parsed.diagnostics().stream()
-                        .map(diagnostic -> diagnostic.atSource(source)).collect(Collectors.toCollection(ArrayList::new));
-                if (parsed.valid()) {
-                    SceneCompiler.CompileResult compiled = SceneCompiler.compile(parsed.resource(), encounterTemplates);
-                    combined.addAll(compiled.diagnostics().stream().map(diagnostic -> diagnostic.atSource(source)).toList());
-                    boolean fatal = combined.stream().anyMatch(diagnostic -> diagnostic.severity() == SceneDiagnostic.Severity.ERROR);
-                    if (!fatal && compiled.scene() != null) scenes.put(compiled.scene().id(), compiled.scene());
-                    diagnostics.put(parsed.resource().id(), List.copyOf(combined));
-                } else {
-                    diagnostics.put(source, List.copyOf(combined));
-                }
+                readDefinition(source, root, encounterTemplates, scenes, diagnostics, List.of());
+            }
+            if (bundles != null) {
+                bundles.bundles().values().stream()
+                        .sorted(Comparator.comparing(bundle -> bundle.owner().key()))
+                        .forEach(bundle -> bundle.definitions()
+                                .getOrDefault(QuestBundlePath.Kind.SCENE, Map.of())
+                                .keySet().stream().sorted().forEach(id -> {
+                                    QuestBundleRuntimeMaterializer.DefinitionResult materialized =
+                                            QuestBundleRuntimeMaterializer.materializeDefinition(
+                                                    bundle, QuestBundlePath.Kind.SCENE, id);
+                                    readDefinition(
+                                            bundleSource(bundle.owner(), "scenes", id),
+                                            materialized.definition(),
+                                            encounterTemplates,
+                                            scenes,
+                                            diagnostics,
+                                            materialized.errors());
+                                }));
             }
             cache = new Cache(server, Map.copyOf(scenes), Map.copyOf(diagnostics));
             return cache;
         }
+    }
+
+    private static void readDefinition(
+            ResourceLocation source,
+            com.google.gson.JsonObject root,
+            Set<ResourceLocation> encounterTemplates,
+            Map<ResourceLocation, CompiledScene> scenes,
+            Map<ResourceLocation, List<SceneDiagnostic>> diagnostics,
+            List<String> materializationErrors) {
+        List<SceneDiagnostic> combined = materializationErrors.stream()
+                .map(message -> new SceneDiagnostic(
+                        SceneDiagnostic.Severity.ERROR,
+                        "scene.localization",
+                        "",
+                        message).atSource(source))
+                .collect(Collectors.toCollection(ArrayList::new));
+        SceneParser.ParseResult parsed = SceneParser.parse(source, root);
+        combined.addAll(parsed.diagnostics().stream()
+                .map(diagnostic -> diagnostic.atSource(source)).toList());
+        if (parsed.valid()) {
+            SceneCompiler.CompileResult compiled = SceneCompiler.compile(parsed.resource(), encounterTemplates);
+            combined.addAll(compiled.diagnostics().stream()
+                    .map(diagnostic -> diagnostic.atSource(source)).toList());
+            boolean fatal = combined.stream()
+                    .anyMatch(diagnostic -> diagnostic.severity() == SceneDiagnostic.Severity.ERROR);
+            if (!fatal && compiled.scene() != null) scenes.put(compiled.scene().id(), compiled.scene());
+            diagnostics.put(parsed.resource().id(), List.copyOf(combined));
+        } else {
+            diagnostics.put(source, List.copyOf(combined));
+        }
+    }
+
+    private static ResourceLocation bundleSource(
+            QuestBundlePath.Owner owner, String directory, ResourceLocation id) {
+        String idPath = id.getPath();
+        int separator = idPath.lastIndexOf('/');
+        String file = (separator < 0 ? idPath : idPath.substring(separator + 1)) + ".json";
+        String path = owner.shared()
+                ? "quests/_shared/" + directory + "/" + file
+                : "quests/" + owner.questline() + "/" + owner.slug() + "/" + directory + "/" + file;
+        return ResourceLocation.fromNamespaceAndPath(owner.namespace(), path);
     }
 
     public record ContentSnapshot(

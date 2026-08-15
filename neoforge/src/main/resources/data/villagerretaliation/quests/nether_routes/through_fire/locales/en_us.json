@@ -1,0 +1,113 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.nether_routes.through_fire.description": "Prepare the supplies for a permanent village route through the Nether.",
+    "quest.nether_routes.through_fire.stage.return.dialogue.turn_in.label": "About Through Fire",
+    "quest.nether_routes.through_fire.stage.return.dialogue.turn_in.lines": [
+      "The frame is complete and the fire supplies are sealed. The road can cross worlds.",
+      "We have a doorway. Next we decide where the hot road leads.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.nether_routes.through_fire.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.nether_routes.through_fire.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.nether_routes.through_fire.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The frame is complete and the fire supplies are sealed. The road can cross worlds.",
+      "We have a doorway. Next we decide where the hot road leads."
+    ],
+    "quest.nether_routes.through_fire.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.nether_routes.through_fire.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.nether_routes.through_fire.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.nether_routes.through_fire.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Through Fire is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.through_fire.stage.return.scene.turn_in_wait.lines": [
+      "Ten obsidian, two fire charges, four magma cream for the route chest.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.nether_routes.through_fire.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.nether_routes.through_fire.stage.work.dialogue.offer.label": "Through Fire",
+    "quest.nether_routes.through_fire.stage.work.dialogue.offer.lines": [
+      "One portal is an escape. A marked portal with supplies can become a road.",
+      "Bring the frame, a way to light it, and enough magma cream to survive the first mistake.",
+      "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
+    ],
+    "quest.nether_routes.through_fire.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.nether_routes.through_fire.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.nether_routes.through_fire.stage.work.dialogue.reminder.label": "About Through Fire",
+    "quest.nether_routes.through_fire.stage.work.dialogue.reminder.lines": [
+      "Ten obsidian, two fire charges, four magma cream for the route chest.",
+      "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
+      "Bring the frame, a way to light it, and enough magma cream to survive the first mistake."
+    ],
+    "quest.nether_routes.through_fire.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.nether_routes.through_fire.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.nether_routes.through_fire.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.nether_routes.through_fire.stage.work.objective.bring_fire_charges.tracker.complete_text": "The fire charges are ready.",
+    "quest.nether_routes.through_fire.stage.work.objective.bring_fire_charges.tracker.text": "Bring 2 fire charges.",
+    "quest.nether_routes.through_fire.stage.work.objective.bring_magma_cream.tracker.complete_text": "The magma cream is ready.",
+    "quest.nether_routes.through_fire.stage.work.objective.bring_magma_cream.tracker.text": "Bring 4 magma cream for fire resistance.",
+    "quest.nether_routes.through_fire.stage.work.objective.bring_obsidian.tracker.complete_text": "The portal obsidian is ready.",
+    "quest.nether_routes.through_fire.stage.work.objective.bring_obsidian.tracker.text": "Bring 10 obsidian for a route portal.",
+    "quest.nether_routes.through_fire.stage.work.scene.abandon_confirm.lines": [
+      "Put Through Fire aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.nether_routes.through_fire.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.nether_routes.through_fire.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Through Fire is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.decline.lines": [
+      "The Nether will not cool while we think."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.leave.lines": [
+      "Ten obsidian, two fire charges, four magma cream for the route chest.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Ten obsidian, two fire charges, four magma cream for the route chest.",
+      "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
+      "Bring the frame, a way to light it, and enough magma cream to survive the first mistake."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Through Fire is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Through Fire is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.start_quest.action.start.lines.started": [
+      "Count the obsidian twice. A nine-block portal is only a heavy doorway to nowhere.",
+      "Bring 10 obsidian, 2 fire charges, and 4 magma cream."
+    ],
+    "quest.nether_routes.through_fire.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Through Fire is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.through_fire.stage.work.ui.tracker_text": "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
+    "quest.nether_routes.through_fire.title": "Through Fire"
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "actors": [
+    {
+      "alias": "player",
+      "binding_source": "owner_player",
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "death_policy": "block",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 1200,
+      "type": "villagerretaliation:player"
+    },
+    {
+      "alias": "healer",
+      "binding_source": "quest_provider",
+      "capabilities": [
+        "villagerretaliation:capability/dialogue"
+      ],
+      "death_policy": "continue_with_snapshot",
+      "missing_actor_policy": "skip",
+      "replacement_policy": "compatible_replacement",
+      "required": false,
+      "timeout_ticks": 1200,
+      "type": "villagerretaliation:villager"
+    }
+  ],
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "all_owned",
+  "definition_version": 1,
+  "entry_step": "ward_warning",
+  "failure_policy": "block_for_repair",
+  "id": "villagerretaliation:night_ward_attack",
+  "metadata": {
+    "quest": "villagerretaliation:night_ward",
+    "title": {
+      "key": "#scene.night_ward_attack.metadata.title"
+    }
+  },
+  "ownership": "quest_instance",
+  "schema": "villagerretaliation:scene/v1",
+  "steps": [
+    {
+      "actors": [
+        "healer"
+      ],
+      "data": {
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20,
+        "text": {
+          "key": "#scene.night_ward_attack.step.ward_warning.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "ward_warning",
+      "next": "ready_the_ward",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "data": {
+        "ticks": 30
+      },
+      "id": "ready_the_ward",
+      "next": "start_attack",
+      "type": "villagerretaliation:wait_ticks"
+    },
+    {
+      "data": {
+        "anchor_actor": "healer",
+        "difficulty": "normal",
+        "template": "villagerretaliation:night_ward_attack"
+      },
+      "failure_step": "failed",
+      "id": "start_attack",
+      "next": "defend_ward",
+      "type": "villagerretaliation:start_encounter"
+    },
+    {
+      "data": {
+        "encounter_step": "start_attack"
+      },
+      "failure_step": "failed",
+      "id": "defend_ward",
+      "next": "clean_up",
+      "type": "villagerretaliation:wait_encounter"
+    },
+    {
+      "data": {
+        "encounter_step": "start_attack",
+        "force_remove": false
+      },
+      "failure_step": "failed",
+      "id": "clean_up",
+      "next": "samples_reminder",
+      "type": "villagerretaliation:cleanup_encounter"
+    },
+    {
+      "actors": [
+        "healer"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.night_ward_attack.step.samples_reminder.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "samples_reminder",
+      "next": "completed",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ],
+  "timeout_ticks": 3600
+}

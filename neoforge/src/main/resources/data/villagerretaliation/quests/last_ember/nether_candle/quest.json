@@ -1,0 +1,404 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "bright_heat",
+  "id": "villagerretaliation:nether_candle",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "parent": "villagerretaliation:pearl_lessons",
+    "questline": "last_ember",
+    "tags": [
+      "group.last_ember",
+      "role.story",
+      "activity.combat",
+      "activity.deliver",
+      "activity.gather",
+      "destination.nether",
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition",
+      "theme.exploration",
+      "theme.mystery",
+      "party.recommended"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "expert",
+      "professions": [
+        "minecraft:cleric",
+        "minecraft:librarian"
+      ],
+      "skills": {
+        "scholarship": {
+          "min": 26
+        },
+        "survival": {
+          "min": 20
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 240,
+    "gossip_reputation": 5,
+    "loot_table": "villagerretaliation:quest/nether_candle",
+    "memory_event": "player_completed_quest",
+    "reputation": 14
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "defeat_blazes",
+        "bring_blaze_rods"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.bright_heat.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.bright_heat.dialogue.offer.lines"
+          },
+          "order": -19,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.bright_heat.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.bright_heat.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.bright_heat.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.bright_heat.dialogue.reminder.lines"
+          },
+          "order": -19,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.bright_heat.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.bright_heat.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "bright_heat",
+      "next": "bottle_heat",
+      "objectives": [
+        {
+          "count": 3,
+          "entity": "minecraft:blaze",
+          "id": "defeat_blazes",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.bright_heat.objective.defeat_blazes.tracker.complete_text"
+            },
+            "progress": 0.5,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.bright_heat.objective.defeat_blazes.tracker.text"
+            }
+          },
+          "type": "mob_kill"
+        },
+        {
+          "count": 2,
+          "id": "bring_blaze_rods",
+          "item": "minecraft:blaze_rod",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.bright_heat.objective.bring_blaze_rods.tracker.complete_text"
+            },
+            "progress": 0.7,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.bright_heat.objective.bring_blaze_rods.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.bright_heat.scene.start_quest.action.start.lines.already_completed"
+                },
+                "started": {
+                  "key": "#stage.bright_heat.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.bright_heat.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.bright_heat.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.bright_heat.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.bright_heat.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.bright_heat.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.7,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.bright_heat.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "bring_blaze_powder",
+        "bring_glowstone"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.bottle_heat.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.bottle_heat.dialogue.reminder.lines"
+          },
+          "order": -19,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.bottle_heat.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.bottle_heat.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "bottle_heat",
+      "next": "return",
+      "objectives": [
+        {
+          "count": 4,
+          "id": "bring_blaze_powder",
+          "item": "minecraft:blaze_powder",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.bottle_heat.objective.bring_blaze_powder.tracker.complete_text"
+            },
+            "progress": 0.85,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.bottle_heat.objective.bring_blaze_powder.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 8,
+          "id": "bring_glowstone",
+          "item": "minecraft:glowstone_dust",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.bottle_heat.objective.bring_glowstone.tracker.complete_text"
+            },
+            "progress": 0.9,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.bottle_heat.objective.bring_glowstone.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.bottle_heat.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.bottle_heat.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.bottle_heat.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.9,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.bottle_heat.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -19,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#F07F3C",
+    "icon": "minecraft:blaze_rod",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.last_ember.nether_candle"
+}

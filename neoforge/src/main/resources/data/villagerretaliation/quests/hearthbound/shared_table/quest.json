@@ -1,0 +1,333 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "prerequisite_cooldown_days": 1,
+    "repeatable": false
+  },
+  "entry_stage": "stock_table",
+  "id": "villagerretaliation:shared_table",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "parent": "villagerretaliation:first_fire",
+    "questline": "hearthbound",
+    "tags": [
+      "group.hearthbound",
+      "role.side",
+      "activity.deliver",
+      "activity.gather",
+      "destination.village",
+      "tier.early",
+      "difficulty.easy",
+      "commitment.standard",
+      "theme.community"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "apprentice",
+      "professions": [
+        "minecraft:farmer",
+        "minecraft:butcher"
+      ],
+      "skills": {
+        "cooking": {
+          "min": 14
+        },
+        "farming": {
+          "min": 10
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 120,
+    "gossip_reputation": 4,
+    "loot_table": "villagerretaliation:quest/shared_table",
+    "memory_event": "player_completed_quest",
+    "reputation": 10
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "bring_bread",
+        "bring_baked_potatoes",
+        "bring_cookies",
+        "bring_milk"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.stock_table.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.stock_table.dialogue.offer.lines"
+          },
+          "order": -23,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.stock_table.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.stock_table.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.stock_table.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.stock_table.dialogue.reminder.lines"
+          },
+          "order": -23,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.stock_table.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.stock_table.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "stock_table",
+      "next": "return",
+      "objectives": [
+        {
+          "count": 12,
+          "id": "bring_bread",
+          "item": "minecraft:bread",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.stock_table.objective.bring_bread.tracker.complete_text"
+            },
+            "progress": 0.5,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.stock_table.objective.bring_bread.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 12,
+          "id": "bring_baked_potatoes",
+          "item": "minecraft:baked_potato",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.stock_table.objective.bring_baked_potatoes.tracker.complete_text"
+            },
+            "progress": 0.65,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.stock_table.objective.bring_baked_potatoes.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 8,
+          "id": "bring_cookies",
+          "item": "minecraft:cookie",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.stock_table.objective.bring_cookies.tracker.complete_text"
+            },
+            "progress": 0.85,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.stock_table.objective.bring_cookies.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "consume": false,
+          "count": 1,
+          "id": "bring_milk",
+          "item": "minecraft:milk_bucket",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.stock_table.objective.bring_milk.tracker.complete_text"
+            },
+            "progress": 0.9,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.stock_table.objective.bring_milk.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.stock_table.scene.start_quest.action.start.lines.already_completed"
+                },
+                "started": {
+                  "key": "#stage.stock_table.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.stock_table.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.stock_table.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.stock_table.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.stock_table.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.stock_table.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.9,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.stock_table.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -23,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#D8B95C",
+    "icon": "minecraft:bread",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.hearthbound.shared_table"
+}

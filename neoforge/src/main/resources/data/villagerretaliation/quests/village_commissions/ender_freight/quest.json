@@ -1,0 +1,387 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 7,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "entry_stage": "work",
+  "id": "villagerretaliation:ender_freight",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "questline": "village_commissions",
+    "tags": [
+      "group.village_commissions",
+      "role.request",
+      "activity.combat",
+      "activity.deliver",
+      "activity.explore",
+      "activity.gather",
+      "destination.end",
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition",
+      "theme.community",
+      "theme.defense",
+      "theme.exploration",
+      "party.recommended",
+      "pool.commission",
+      "pool.quest_board"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "master",
+      "professions": [
+        "minecraft:cartographer",
+        "minecraft:leatherworker"
+      ],
+      "skills": {
+        "cartography": {
+          "min": 48
+        },
+        "survival": {
+          "min": 45
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 500,
+    "gossip_reputation": 10,
+    "loot_table": "villagerretaliation:quest/ender_freight",
+    "memory_event": "player_completed_quest",
+    "reputation": 26
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "visit_city",
+        "clear_shulkers",
+        "bring_shells"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.work.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.work.dialogue.offer.lines"
+          },
+          "order": -20,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.work.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.work.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.work.dialogue.reminder.lines"
+          },
+          "order": -20,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.work.dialogue.reminder.response.details.label"
+              },
+              "order": 0,
+              "scene": "reminder_details"
+            },
+            {
+              "id": "abandon",
+              "label": {
+                "key": "#stage.work.dialogue.reminder.response.abandon.label"
+              },
+              "order": 90,
+              "scene": "abandon_confirm"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.work.dialogue.reminder.response.leave.label"
+              },
+              "order": 100,
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "work",
+      "next": "return",
+      "objectives": [
+        {
+          "discovery_radius": 160,
+          "id": "visit_city",
+          "search_radius": 640,
+          "structure": "minecraft:end_city",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.work.objective.visit_city.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.work.objective.visit_city.tracker.text"
+            }
+          },
+          "type": "structure_visit"
+        },
+        {
+          "count": 4,
+          "entity": "minecraft:shulker",
+          "id": "clear_shulkers",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.work.objective.clear_shulkers.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.work.objective.clear_shulkers.tracker.text"
+            }
+          },
+          "type": "mob_kill"
+        },
+        {
+          "count": 2,
+          "id": "bring_shells",
+          "item": "minecraft:shulker_shell",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.work.objective.bring_shells.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.work.objective.bring_shells.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.work.scene.start_quest.action.start.lines.already_completed"
+                },
+                "locate_failed": {
+                  "key": "#stage.work.scene.start_quest.action.start.lines.locate_failed"
+                },
+                "started": {
+                  "key": "#stage.work.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.work.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.work.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.work.scene.leave.lines"
+          }
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": {
+            "key": "#stage.work.scene.abandon_confirm.lines"
+          },
+          "responses": [
+            {
+              "id": "confirm",
+              "label": {
+                "key": "#stage.work.scene.abandon_confirm.response.confirm.label"
+              },
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": {
+                "key": "#stage.work.scene.abandon_confirm.response.cancel.label"
+              },
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "action": "abandon",
+              "lines": {
+                "abandoned": {
+                  "key": "#stage.work.scene.abandon_quest.action.abandon.lines.abandoned"
+                },
+                "abandoned_cooldown": {
+                  "key": "#stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown"
+                },
+                "unavailable": {
+                  "key": "#stage.work.scene.abandon_quest.action.abandon.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "abandon_quest"
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -20,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "turn_in_wait"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "missing_target": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_target"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": {
+            "key": "#stage.return.scene.turn_in_wait.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "target": {
+    "dimension": "minecraft:the_end",
+    "discovery_radius": 160,
+    "search_radius": 640,
+    "structure": "minecraft:end_city"
+  },
+  "ui": {
+    "color": "#8E67C7",
+    "icon": "minecraft:shulker_shell",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.village_commissions.ender_freight"
+}

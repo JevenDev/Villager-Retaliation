@@ -1,0 +1,89 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.eye_of_the_last_room.description": {
+      "lines": [
+        "Follow the atlas to a Stronghold and return with Ender Eye bearings."
+      ]
+    },
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.dialogue.turn_in.label": "About the Last Room",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.dialogue.turn_in.lines": [
+      "You found the room that keeps the End behind a circle. Show me the bearing."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.dialogue.turn_in.response.complete.label": "Hand over the last room bearing",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The last room bearing is drawn. The atlas can now point at a threshold without mistaking it for an ending."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The page still needs the Stronghold bearing, Eye, and Ender Pearls."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Carry the Eye of Ender before I trust the last room mark."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The Eye needs the Stronghold bearing behind it."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The last room bearing still needs its proof before I can close it."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.scene.leave.lines": [
+      "The circle can wait until you are ready."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.return.ui.tracker_text": "Return to the cartographer with the last room bearing.",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.dialogue.offer.label": "Stronghold Eye",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.dialogue.offer.lines": [
+      "The Nether line cooled into an arrow. It points toward a room people usually find by throwing eyes and hoping.",
+      "Find the Stronghold, carry an Eye of Ender, and bring pearls so the atlas can learn the last room without losing itself."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.dialogue.offer.response.accept.label": "Find the last room",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.dialogue.reminder.label": "About the Last Room",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.dialogue.reminder.lines": [
+      "The last room page still needs a Stronghold bearing, an Eye of Ender, and Ender Pearls."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.dialogue.reminder.response.details.label": "Remind me where",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.objective.bring_pearls.tracker.complete_text": "The Ender Pearls are ready.",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.objective.bring_pearls.tracker.text": "Bring 4 Ender Pearls to stabilize the bearing.",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.objective.carry_eye.tracker.complete_text": "The Eye bearing is ready.",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.objective.carry_eye.tracker.text": "Carry 1 Eye of Ender as proof of the last room.",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.objective.visit_stronghold.tracker.complete_text": "The last room bearing is recorded.",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.objective.visit_stronghold.tracker.text": "Reach the Stronghold near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.scene.decline.lines": [
+      "The last room is patient in a way I do not like."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.scene.leave.lines": [
+      "Do not throw every eye at once."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.scene.reminder_details.action.remind.lines.reminder": [
+      "Stronghold near {target_x}, {target_z}, about {distance} blocks {direction}. Reach it, carry an Eye of Ender, and bring 4 Ender Pearls."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have the last room page open for you right now."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.scene.start_quest.action.start.lines.already_completed": [
+      "The last room bearing is already drawn."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.scene.start_quest.action.start.lines.locate_failed": [
+      "The last room turns away from the table today."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.scene.start_quest.action.start.lines.started": [
+      "The Stronghold mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Carry an Eye of Ender and bring 4 Ender Pearls."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.scene.start_quest.action.start.lines.unavailable": [
+      "The atlas needs the Nether meridian before it can read the last room."
+    ],
+    "quest.cartographers_atlas.eye_of_the_last_room.stage.survey.ui.tracker_text": "Reach the Stronghold near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.eye_of_the_last_room.title": {
+      "lines": [
+        "Stronghold Eye"
+      ]
+    },
+    "quest.cartographers_atlas.eye_of_the_last_room.tracker.title": {
+      "lines": [
+        "Stronghold Eye"
+      ]
+    }
+  }
+}

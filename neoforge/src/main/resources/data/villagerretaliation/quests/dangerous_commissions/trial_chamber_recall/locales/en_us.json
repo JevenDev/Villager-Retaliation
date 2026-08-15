@@ -1,0 +1,379 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.dangerous_commissions.trial_chamber_recall.description": {
+      "lines": [
+        "Survey a Trial Chamber and return with a Trial Key and Breeze Rod."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.dialogue.already_completed": {
+      "lines": [
+        "No one needs this done twice. We already settled Trial Chamber Recall.",
+        "You finished what I asked. You already came back from the Trial Chamber with what we needed.",
+        "We settled this one already. Trial Chamber Recall is closed. I am not sending you through breezes and trial spawners twice.",
+        "The matter ended well enough. Your route to the Trial Chamber is already in the survey notes.",
+        "There is no second payment here. I remember the day you returned with the Trial Key.",
+        "Nothing remains to be earned from this. You earned the reward for Trial Chamber Recall, and it was paid.",
+        "We settled this one already. We have the chamber's answer because you finished the journey to the Trial Chamber.",
+        "The matter ended well enough. Nothing remains to be recovered from the chamber.",
+        "I remember your first return. What you brought from the Trial Chamber is still helping the village.",
+        "We settled this one already. You proved the chamber route once. That is enough.",
+        "There is no second payment here. The survey notes carries your name beside the completed mark.",
+        "What was owed has been paid. Leave Trial Chamber Recall in the past where it belongs.",
+        "I remember your first return. You settled every part of Trial Chamber Recall on your first return.",
+        "What was owed has been paid. The Trial Chamber was reached and the Trial Key evidence delivered.",
+        "I remember your first return. I will find you a road beyond the Trial Chamber before sending you back there.",
+        "Nothing remains to be earned from this. Nobody forgot what the journey to the Trial Chamber cost you.",
+        "Your earlier work still stands. Trial Chamber Recall at the Trial Chamber needs no second visit from you.",
+        "There is no second payment here. You gave us the Trial Key, not another rumor.",
+        "We settled this one already. Trial Chamber Recall ended properly, and it stays ended.",
+        "I will not reopen a finished account. We can look ahead now. Trial Chamber Recall is done."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.dialogue.inactive": {
+      "lines": [
+        "Not today. The conditions for Trial Chamber Recall are not right at the moment.",
+        "Ask me after the stores change. The mark for the Trial Chamber is not open today.",
+        "Leave that work alone for now. I have no reason to risk you against breezes and trial spawners just now.",
+        "Nothing calls for this work today. The village is not ready to use a Trial Key and one Breeze Rod.",
+        "I will post it when it matters. Wait until the survey notes calls for the journey to the Trial Chamber.",
+        "For now, let the matter rest. A trip to the Trial Chamber without a need is only danger.",
+        "There is no reason to begin yet. The chamber route can stay folded until the timing improves.",
+        "I am keeping this off the board. I am holding Trial Chamber Recall off the board for now.",
+        "For now, let the matter rest. Nothing at the Trial Chamber needs our answer today.",
+        "The village can wait on this one. Keep your gear ready for the Trial Chamber, but do not leave yet.",
+        "We have no need of it yet. Trial Chamber Recall is real. The moment for it is not.",
+        "The board can wait. I will not send you toward breezes and trial spawners to satisfy an old note.",
+        "Leave that work alone for now. The Trial Chamber can wait until we have a use for the return.",
+        "I am keeping this off the board. Ask again after the village reviews the survey notes.",
+        "We have no need of it yet. There is no active claim on the Trial Key today.",
+        "The village can wait on this one. The road toward the Trial Chamber is quiet, and I mean to leave it that way.",
+        "There is no reason to begin yet. Starting Trial Chamber Recall now would spend courage for no useful result.",
+        "Leave that work alone for now. Trial Chamber Recall has not been posted to any traveler.",
+        "The time is wrong. Give Trial Chamber Recall time to become necessary.",
+        "Nothing calls for this work today. For the moment, stay on this side of the journey to the Trial Chamber."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.dialogue.locate_failed": {
+      "lines": [
+        "I will not guess at a route. No chamber answers the map today. Maybe that is mercy.",
+        "The old directions no longer agree. I cannot put a trustworthy mark on the Trial Chamber.",
+        "I cannot send you out blind. Every route I checked breaks down before the chamber.",
+        "The old directions no longer agree. The Trial Chamber maps disagree, and breezes and trial spawners leave no room for guessing.",
+        "Until I know the way, you stay here. I found rumors of the Trial Chamber, but no road I would hand you.",
+        "We need a trustworthy route first. The Trial Chamber has slipped beyond my Trial Chamber charts.",
+        "The trail has gone cold. Without a firm bearing, Trial Chamber Recall would be wandering.",
+        "I cannot send you out blind. My best map is blank where the chamber should be.",
+        "I found no safe bearing to give you. I traced three routes toward the Trial Chamber and trusted none.",
+        "The search turned up nothing solid. The old Trial Chamber directions end before danger begins.",
+        "Something is wrong with the chart. I will not pretend a guess can mark the Trial Chamber.",
+        "I found no safe bearing to give you. No scout has confirmed the mark for the Trial Chamber.",
+        "We need a trustworthy route first. The trail to the Trial Chamber went cold before I could mark it.",
+        "The old directions no longer agree. I need Trial Chamber coordinates, not campfire stories.",
+        "A doubtful map is too much risk. The Trial Chamber may be there, but I cannot prove where.",
+        "I cannot send you out blind. None of the Trial Chamber bearings lead to the same ground.",
+        "The trail has gone cold. Let me find an honest chamber route before you prepare to leave.",
+        "Until I know the way, you stay here. The survey notes offers warnings today, not directions.",
+        "The trail has gone cold. The Trial Chamber map gives me doubt when I need certainty.",
+        "I found no safe bearing to give you. Come back after the road to the Trial Chamber gives us an answer."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_proof": {
+      "lines": [
+        "A story cannot close the ledger. Bring a Trial Key. It is the chamber admitting you were there.",
+        "What you carried home decides this. The Trial Key is still missing from your return.",
+        "Your word is not the missing piece. I cannot close the survey notes without the agreed Trial Key evidence.",
+        "The last requirement is still missing. You faced the Trial Chamber, but the village still needs the Trial Key.",
+        "I cannot sign off on an empty return. Bring back a Trial Key and one Breeze Rod before we settle Trial Chamber Recall.",
+        "The proof has to reach my hands. Your story may be true. I still need the Trial Key.",
+        "I believe you went, but that is not enough. The journey to the Trial Chamber ends here when the Trial Key changes hands.",
+        "I cannot sign off on an empty return. Do not reach the Trial Chamber and forget the Trial Key that verifies it.",
+        "A story cannot close the ledger. I know you traveled. I need a result from the Trial Chamber.",
+        "Your word is not the missing piece. The Trial Chamber Recall reward waits on the Trial Key evidence, not the telling.",
+        "The last requirement is still missing. Show me the Trial Key, and Trial Chamber Recall can close.",
+        "A story cannot close the ledger. The empty place in the survey notes waits for what you recovered.",
+        "Your word is not the missing piece. Words cannot stand in for the chamber's answer.",
+        "A story cannot close the ledger. Check your packs before you make the journey to the Trial Chamber twice.",
+        "Show me what came back with you. Trial Chamber Recall named its proof from the beginning.",
+        "You returned without the one thing I asked for. Bring the Trial Key evidence here rather than leaving it in storage.",
+        "I cannot sign off on an empty return. The village asked for a Trial Key and one Breeze Rod, and that remains unfinished.",
+        "I believe you went, but that is not enough. I can record the chamber route after I see what came from it.",
+        "What you carried home decides this. One Trial Key handoff separates Trial Chamber Recall from completion.",
+        "I believe you went, but that is not enough. Return when the Trial Key is in your hands."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_target": {
+      "lines": [
+        "Reaching the mark is part of the promise. The items matter after you set foot in the chamber itself.",
+        "The journey stopped too soon. You have not confirmed the Trial Chamber itself.",
+        "You have not gone far enough yet. The cargo means little if the Trial Chamber was never reached.",
+        "The journey stopped too soon. Trial Chamber Recall includes the road as well as the return.",
+        "You have not gone far enough yet. Set foot in the chamber before you bring me evidence.",
+        "You have not gone far enough yet. I asked for proof from the Trial Chamber, not somewhere else.",
+        "The map still shows unfinished travel. The Trial Chamber remains untouched in the survey notes.",
+        "Reaching the mark is part of the promise. Finish the outward journey before claiming the Trial Chamber Recall reward.",
+        "This task was never only about the cargo. A borrowed Trial Key cannot replace reaching the Trial Chamber.",
+        "Reaching the mark is part of the promise. The Trial Chamber map still says you stopped short.",
+        "You have not gone far enough yet. Go to the marked place and see Trial Chamber Recall through there.",
+        "You have not gone far enough yet. The chamber route must end at the Trial Chamber, not near it.",
+        "You still owe the road its last mile. I need your eyes on the Trial Chamber before I trust the report.",
+        "The place itself must be reached. Do not skip the part that puts breezes and trial spawners in front of you.",
+        "You have not gone far enough yet. The village asked you to confirm the chamber existed.",
+        "You cannot skip the heart of the task. Your return is early. the Trial Chamber still waits.",
+        "You have not gone far enough yet. Reach the Trial Chamber, then recover a Trial Key and one Breeze Rod.",
+        "The place itself must be reached. The journey to the Trial Chamber is not complete while the final mark is unvisited.",
+        "The place itself must be reached. The survey notes needs a confirmed place, not only an item.",
+        "The journey stopped too soon. Turn back toward the Trial Chamber and finish what you began."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.dialogue.reminder": {
+      "lines": [
+        "Do not lose the thread now. Trial Chamber near {target_x}, {target_z}. Key, Breeze Rod, return alive enough to explain both.",
+        "Do not lose the thread now. The Trial Chamber is still near {target_x}, {target_z}.",
+        "Remember what the village is waiting for. The mark remains near {target_x}, {target_z}, so keep to the planned chamber route.",
+        "Remember what the village is waiting for. Check the map again. Trial Chamber is still near {target_x}, {target_z}.",
+        "Hold to the instructions I gave you. Trial Chamber Recall still calls for a Trial Key and one Breeze Rod.",
+        "Bring this to a proper finish. Watch for breezes and trial spawners on the way in.",
+        "Before you leave, hear this again. Do not leave the Trial Chamber without the Trial Key.",
+        "Hold to the instructions I gave you. Your return should give us the chamber's answer.",
+        "The next step still matters. Check the Trial Chamber bearing at {target_x}, {target_z} before landmarks blur.",
+        "Keep the whole task in mind. Keep the Trial Key safe once you recover it.",
+        "Bring this to a proper finish. The survey notes stays open until you come home.",
+        "The next step still matters. Do not rush blind toward the Trial Chamber. Follow the mark and return whole.",
+        "Remember what the village is waiting for. The Trial Chamber has not moved from {target_x}, {target_z}.",
+        "Hold to the instructions I gave you. Remember why you are going. We need to measure what waits below.",
+        "Keep the whole task in mind. If the chamber route feels wrong, check your position against {target_x}, {target_z}.",
+        "Hold to the instructions I gave you. The hard part is reaching the chamber and leaving with evidence.",
+        "Stay with the work you accepted. Trial Chamber still waits near {target_x}, {target_z}.",
+        "Do not let one finished step distract you. Bring every part of a Trial Key and one Breeze Rod back together.",
+        "The next step still matters. I would rather wait than receive half the agreed Trial Key.",
+        "Do not let one finished step distract you. Find the Trial Chamber, do Trial Chamber Recall there, and return to me."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.dialogue.start": {
+      "lines": [
+        "Let us be clear about the job. The chamber is {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod.",
+        "I am trusting you with something important. I marked the Trial Chamber near {target_x}, {target_z}.",
+        "Take the task only if you are ready. Travel {direction} for about {distance} blocks and look for the chamber.",
+        "Before you agree, hear all of it. The job is to measure what waits below.",
+        "Here is the work. Come home with a Trial Key and one Breeze Rod so the village has more than rumors.",
+        "Let us be clear about the job. The road leads through breezes and trial spawners, so prepare before leaving.",
+        "I need you to see this through. I need someone willing to reach the Trial Chamber and return with proof.",
+        "This needs a careful hand. The Trial Chamber sits near {target_x}, {target_z}, according to my map.",
+        "I have a difficult request. Follow the {direction} bearing and keep the survey notes dry.",
+        "The village has work for you. Trial Chamber Recall begins at the Trial Chamber and ends when the Trial Key reaches me.",
+        "I am trusting you with something important. The Trial Chamber mark is about {distance} blocks away. Do not mistake speed for care.",
+        "Take this seriously. Bring a Trial Key and one Breeze Rod, and I can turn this risk into something useful.",
+        "The village has work for you. The village needs the chamber's answer, not boasting at the fire.",
+        "Let us be clear about the job. I trust you with the chamber route because it is not kind.",
+        "Listen closely. Make for {target_x}, {target_z} and confirm the Trial Chamber yourself.",
+        "Let us be clear about the job. Prepare for breezes and trial spawners before crossing the last safe ground.",
+        "Let us be clear about the job. The outward journey proves the Trial Chamber map. The return proves you.",
+        "Listen closely. Do not come back empty from the chamber.",
+        "Here is the work. Take Trial Chamber Recall only if you mean to finish the travel and recovery.",
+        "Here is the work. When you have a Trial Key and one Breeze Rod, bring it straight here."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.dialogue.turn_in": {
+      "lines": [
+        "This will make a real difference. A key and a Breeze Rod. Good. That chamber can stay mysterious, but not unmeasured.",
+        "Good, you made it back. You reached the Trial Chamber and brought the Trial Key home.",
+        "Now I can close the ledger. The survey notes finally has a true ending.",
+        "That settles what I asked of you. This is the chamber's answer, solid enough to hold.",
+        "This return was worth waiting for. The village can measure what waits below because you took the risk.",
+        "Good, you made it back. I asked for a Trial Key and one Breeze Rod, and you returned with every part.",
+        "I am glad to see you home. You went through breezes and trial spawners and kept your head.",
+        "Good, you made it back. The chamber route is confirmed now, not merely drawn.",
+        "That is the result I needed. I can pay Trial Chamber Recall without a doubt.",
+        "This will make a real difference. The Trial Key tells the story better than any boast.",
+        "This will make a real difference. You made the dangerous road to the Trial Chamber useful to everyone here.",
+        "The village can use this. The Trial Chamber is no longer just a warning on a map.",
+        "You delivered exactly what was needed. I will put your Trial Chamber findings where the village can study them.",
+        "That settles what I asked of you. Trial Chamber Recall is clean, even if the journey to the Trial Chamber was not.",
+        "The village can use this. That is the Trial Key evidence I hoped to see.",
+        "You saw it through. You returned from the Trial Chamber with more than survival. You brought an answer.",
+        "You saw it through. Trial Chamber Recall closes with the village better prepared.",
+        "This return was worth waiting for. The next traveler to the Trial Chamber will have your route.",
+        "This return was worth waiting for. Take the Trial Chamber Recall reward. You earned it beyond the safe roads.",
+        "This will make a real difference. I am glad to see both the Trial Key and person carrying it."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.dialogue.unavailable": {
+      "lines": [
+        "I need proof of your judgment first. This request needs a better equipped ally.",
+        "I will not place this burden on you. Trial Chamber Recall demands trust I do not have in you yet.",
+        "The answer is no for now. I cannot hand you a route through breezes and trial spawners today.",
+        "This calls for someone we know better. The Trial Chamber is no ground for an untested ally.",
+        "I need proof of your judgment first. Do steadier work here before asking for the Trial Chamber map.",
+        "I need proof of your judgment first. I need someone I can trust to return from the Trial Chamber.",
+        "No, the risk is too high. The survey notes stays closed to you for now.",
+        "Some work must wait until trust catches up. Trial Chamber Recall risks more than the traveler's life.",
+        "This work is not yours today. Earn our confidence, then ask about the chamber again.",
+        "This calls for someone we know better. I will not send a stranger after the chamber's answer.",
+        "Earn our confidence before asking again. The Trial Chamber is dangerous enough without doubt between us.",
+        "I will not place this burden on you. Your name has not reached the trusted page of the survey notes.",
+        "This calls for someone we know better. There are safer tasks than Trial Chamber Recall that can show me how you work.",
+        "I cannot trust you with this yet. I need proof of judgment before offering the journey to the Trial Chamber.",
+        "You are not ready for this request. For now, the Trial Chamber map remains folded.",
+        "I cannot trust you with this yet. The village is not ready to stake measure what waits below on you.",
+        "Earn our confidence before asking again. Ask about the Trial Chamber after you have stood with us longer.",
+        "The village needs a steadier hand. Courage may reach the Trial Chamber. Reliability brings the Trial Key home.",
+        "I need proof of your judgment first. Trial Chamber Recall stays with proven hands.",
+        "I need proof of your judgment first. I will tell you when we trust you with the road to the Trial Chamber."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.complete_text": {
+      "lines": [
+        "The chamber hazard has been proven."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.text": {
+      "lines": [
+        "Bring 1 breeze rod from the chamber."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.scene.trial_chamber_briefing.metadata.title": "Trial Chamber briefing",
+    "quest.dangerous_commissions.trial_chamber_recall.scene.trial_chamber_briefing.step.name_the_proof.data.text": "Return with a Trial Key and a Breeze Rod. Both will be consumed when the survey is closed.",
+    "quest.dangerous_commissions.trial_chamber_recall.scene.trial_chamber_briefing.step.read_the_mark.data.text": "Copper and tuff mark the chamber, but the wind inside it is the part that hunts back.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.dialogue.turn_in.label": "About Trial Chamber Recall",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.dialogue.turn_in.lines": [
+      "Key, rod, and a true chamber mark. That is a report I can trust.",
+      "You came back with the chamber's own wind in your pack. Take what we promised.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Key, rod, and a true chamber mark. That is a report I can trust.",
+      "You came back with the chamber's own wind in your pack. Take what we promised.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Trial Chamber Recall is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.scene.turn_in_wait.lines": [
+      "The chamber itself matters as much as the proof. Step inside before you turn back.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.dialogue.offer.label": "Trial Chamber Recall",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.dialogue.offer.lines": [
+      "A Trial Chamber has started humming under the stone again. I need someone to learn what woke up down there.",
+      "Bring back a Trial Key and a Breeze Rod so we know the vaults and wind traps are real.",
+      "Enter the marked Trial Chamber, then return with a Trial Key and Breeze Rod. I will make the reward worth the trouble."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.dialogue.reminder.label": "About Trial Chamber Recall",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.dialogue.reminder.lines": [
+      "The chamber itself matters as much as the proof. Step inside before you turn back.",
+      "Enter the marked Trial Chamber, then return with a Trial Key and Breeze Rod.",
+      "Bring back a Trial Key and a Breeze Rod so we know the vaults and wind traps are real."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.objective.bring_breeze_rod.tracker.complete_text": "The Breeze Rod is ready.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.objective.bring_breeze_rod.tracker.text": "Bring back 1 Breeze Rod.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.objective.bring_trial_key.tracker.complete_text": "The Trial Key is ready.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.objective.bring_trial_key.tracker.text": "Bring back 1 Trial Key.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.objective.enter_chamber.tracker.complete_text": "The chamber has been surveyed.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.objective.enter_chamber.tracker.text": "Enter the marked Trial Chamber.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.abandon_confirm.lines": [
+      "Put Trial Chamber Recall aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Trial Chamber Recall is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.decline.lines": [
+      "Wise enough. Trial spawners do not care how brave a story sounds.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.leave.lines": [
+      "The chamber itself matters as much as the proof. Step inside before you turn back.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "The chamber itself matters as much as the proof. Step inside before you turn back.",
+      "Enter the marked Trial Chamber, then return with a Trial Key and Breeze Rod.",
+      "Bring back a Trial Key and a Breeze Rod so we know the vaults and wind traps are real."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Trial Chamber Recall is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Trial Chamber Recall is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.start_quest.action.start.lines.started": [
+      "The mark is set. Listen for copper, tuff, and anything that sounds like wind where wind should not be.",
+      "Enter the marked Trial Chamber, then return with a Trial Key and Breeze Rod.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Trial Chamber Recall is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.trial_chamber_recall.stage.work.ui.tracker_text": "Survey a Trial Chamber and return with a Trial Key and Breeze Rod.",
+    "quest.dangerous_commissions.trial_chamber_recall.title": {
+      "lines": [
+        "Trial Chamber Recall"
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.tracker.bring_breeze_rod.text": {
+      "lines": [
+        "Recover 1 Breeze Rod from the chamber."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.tracker.proof.text": {
+      "lines": [
+        "Bring back a Trial Key and Breeze Rod."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the Trial Chamber proof."
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.tracker.title": {
+      "lines": [
+        "Trial Chamber Recall"
+      ]
+    },
+    "quest.dangerous_commissions.trial_chamber_recall.tracker.travel.text": {
+      "lines": [
+        "Enter the Trial Chamber near {target_x}, {target_z}."
+      ]
+    }
+  }
+}

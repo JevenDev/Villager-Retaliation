@@ -1,0 +1,155 @@
+{
+  "actors": [
+    {
+      "alias": "player",
+      "binding_source": "owner_player",
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "death_policy": "block",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 1200,
+      "type": "villagerretaliation:player"
+    },
+    {
+      "alias": "watch_captain",
+      "binding_source": "quest_provider",
+      "capabilities": [
+        "villagerretaliation:capability/dialogue",
+        "villagerretaliation:capability/living"
+      ],
+      "death_policy": "continue_with_snapshot",
+      "missing_actor_policy": "skip",
+      "replacement_policy": "compatible_replacement",
+      "required": false,
+      "timeout_ticks": 1200,
+      "type": "villagerretaliation:villager"
+    }
+  ],
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "all_owned",
+  "definition_version": 3,
+  "entry_step": "sound_the_watch",
+  "failure_policy": "block_for_repair",
+  "id": "villagerretaliation:standing_watch",
+  "metadata": {
+    "quest": "villagerretaliation:standing_watch",
+    "title": {
+      "key": "#scene.standing_watch.metadata.title"
+    }
+  },
+  "ownership": "quest_instance",
+  "schema": "villagerretaliation:scene/v1",
+  "steps": [
+    {
+      "actors": [
+        "watch_captain"
+      ],
+      "data": {
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20,
+        "text": {
+          "key": "#scene.standing_watch.step.sound_the_watch.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "sound_the_watch",
+      "next": "face_defender",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "actors": [
+        "watch_captain",
+        "player"
+      ],
+      "data": {
+        "actor": "watch_captain",
+        "target_actor": "player"
+      },
+      "id": "face_defender",
+      "next": "brace",
+      "type": "villagerretaliation:face_actor"
+    },
+    {
+      "data": {
+        "ticks": 40
+      },
+      "id": "brace",
+      "next": "start_attack",
+      "type": "villagerretaliation:wait_ticks"
+    },
+    {
+      "data": {
+        "anchor_actor": "watch_captain",
+        "difficulty": "normal",
+        "template": "villagerretaliation:standing_watch_variants"
+      },
+      "failure_step": "failed",
+      "id": "start_attack",
+      "next": "hold_the_line",
+      "type": "villagerretaliation:start_encounter"
+    },
+    {
+      "data": {
+        "encounter_step": "start_attack"
+      },
+      "failure_step": "failed",
+      "id": "hold_the_line",
+      "next": "clean_up",
+      "type": "villagerretaliation:wait_encounter"
+    },
+    {
+      "data": {
+        "encounter_step": "start_attack",
+        "force_remove": false
+      },
+      "failure_step": "failed",
+      "id": "clean_up",
+      "next": "record_defense",
+      "type": "villagerretaliation:cleanup_encounter"
+    },
+    {
+      "actors": [
+        "watch_captain"
+      ],
+      "data": {
+        "actions": [
+          {
+            "id": "remember_standing_watch_defense",
+            "memory_event": "villagerretaliation:player_defended_village",
+            "type": "memory"
+          }
+        ]
+      },
+      "failure_step": "failed",
+      "id": "record_defense",
+      "next": "after_action",
+      "type": "villagerretaliation:action_batch"
+    },
+    {
+      "actors": [
+        "watch_captain"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.standing_watch.step.after_action.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "after_action",
+      "next": "completed",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ],
+  "timeout_ticks": 3600
+}

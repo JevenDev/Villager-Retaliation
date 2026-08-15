@@ -1,0 +1,30 @@
+{
+  "cleanup_policy": "remove_survivors",
+  "completion_condition": "all_defeated",
+  "controller": "villagerretaliation:controlled",
+  "extra_per_player": 1,
+  "id": "villagerretaliation:atlas_risky_patrol",
+  "max_party_size": 4,
+  "members": [
+    {
+      "count": 3,
+      "entity": "minecraft:pillager"
+    }
+  ],
+  "placement_attempts": 24,
+  "respawn_policy": "missing_if_loaded",
+  "rewards": {
+    "completion": [
+      {
+        "count": 1,
+        "id": "patrol_crossbow",
+        "item": "minecraft:crossbow"
+      }
+    ],
+    "drop_policy": "normal"
+  },
+  "schema": "villagerretaliation:encounter/v1",
+  "spawn_mode": "group",
+  "spawn_radius": 12,
+  "version": 2
+}

@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_defense.watch_arrows.description": {
+      "lines": [
+        "Bring arrows so the village watch can answer trouble before it reaches the doors."
+      ]
+    },
+    "quest.village_defense.watch_arrows.dialogue.already_completed": {
+      "lines": [
+        "We settled this one already. We already settled Watch Arrows.",
+        "I will not reopen a finished account. The guards rack has the arrows you brought.",
+        "The matter ended well enough. I counted your 16 arrows. We are square.",
+        "That chapter is closed. The guards already put that delivery to work.",
+        "There is no second payment here. You solved the problem of a bare quiver at dusk.",
+        "There is no second payment here. There is no reason to gather another load of arrows.",
+        "I will not reopen a finished account. Watch Arrows is crossed off the arrows work list.",
+        "No one needs this done twice. Your part in helping us fill the quivers is finished.",
+        "Leave the old tally alone. The last arrows batch is still serving the village.",
+        "There is no second payment here. I remember who filled the arrows order, and it was you.",
+        "The matter ended well enough. The reward was paid when the arrows delivery came in.",
+        "There is no second payment here. You did enough the first time. I will leave the old entry filed under Watch Arrows.",
+        "Leave the old tally alone. We can keep trouble from the doors because you answered Watch Arrows.",
+        "I remember your first return. The full arrows count reached the guards rack. Nothing is missing.",
+        "I will not reopen a finished account. The guards would object if I asked you twice.",
+        "Your earlier work still stands. Your arrows delivery passed inspection and went into use.",
+        "The matter ended well enough. That empty spot in the guards rack belongs to yesterday.",
+        "We settled this one already. The record shows 16 arrows received from you.",
+        "The matter ended well enough. You did the quiet arrows work that keeps everyone going.",
+        "I remember your first return. The first ending was good enough for Watch Arrows."
+      ]
+    },
+    "quest.village_defense.watch_arrows.dialogue.inactive": {
+      "lines": [
+        "I will post it when it matters. The watch is not counting arrows right now.",
+        "Not today. There is no open order for arrows today.",
+        "The board can wait. The guards rack is being counted before I ask for more.",
+        "The time is wrong. The guards have not posted a fresh request.",
+        "The time is wrong. Hold off on the arrows. We have nowhere useful to put them.",
+        "Ask me after the stores change. The need to fill the quivers will return, but not today.",
+        "I will post it when it matters. I am waiting for the next tally before opening Watch Arrows.",
+        "The village can wait on this one. Bringing 16 arrows now would crowd the stores.",
+        "We have no need of it yet. The last arrows batch has not been used up yet.",
+        "Nothing calls for this work today. Ask again after the guards check what remains.",
+        "There is no reason to begin yet. I will not invent an urgent need for arrows.",
+        "I will post it when it matters. The guards rack is quiet, so this can wait.",
+        "The time is wrong. We are between work orders for arrows.",
+        "The time is wrong. Nothing is wrong at the guards rack. The timing is simply off.",
+        "The time is wrong. Save your effort until we actually need arrows.",
+        "The board can wait. The board has no current mark beside Watch Arrows.",
+        "The board can wait. Today is not the day for another arrows run.",
+        "I am keeping this off the board. Once a bare quiver at dusk becomes a concern, I will reopen this.",
+        "The village can wait on this one. I would rather delay than waste good arrows.",
+        "We have no need of it yet. Wait for the stores to change before asking me about Watch Arrows."
+      ]
+    },
+    "quest.village_defense.watch_arrows.dialogue.locate_failed": {
+      "lines": [
+        "The old directions no longer agree. No watch post is ready for another arrow request.",
+        "I cannot send you out blind. I cannot find a current tally from the guards rack.",
+        "I cannot send you out blind. The guards have not left me a usable work order.",
+        "We need a trustworthy route first. The supply slate for arrows is missing today.",
+        "A doubtful map is too much risk. I will not send you gathering arrows until I know where it belongs.",
+        "The old directions no longer agree. No one can confirm the guards rack is ready for 16 arrows.",
+        "I will not guess at a route. The note moved before I could check where to begin Watch Arrows.",
+        "I found no safe bearing to give you. I checked with the guards, and nobody owns the arrows order.",
+        "Something is wrong with the chart. There is no marked drop point for the arrows.",
+        "I will not guess at a route. Without the missing list, I have no way to begin Watch Arrows.",
+        "My map has failed us. The count from the guards rack never reached me.",
+        "Something is wrong with the chart. I cannot post an open village job under Watch Arrows.",
+        "I found no safe bearing to give you. Someone misplaced the arrows slate that called for arrows.",
+        "Something is wrong with the chart. The arrows order is a rumor, not work I can hand you.",
+        "Until I know the way, you stay here. I need a receiving place before you carry 16 arrows here.",
+        "The search turned up nothing solid. The guards rack has no space marked for this delivery.",
+        "The old directions no longer agree. I found three old arrows counts and no current one.",
+        "My map has failed us. Let me settle where the arrows should go first.",
+        "The trail has gone cold. I cannot tell whether the guards rack needs arrows from old ink.",
+        "Until I know the way, you stay here. Come back after I trace Watch Arrows to the guards."
+      ]
+    },
+    "quest.village_defense.watch_arrows.dialogue.missing_proof": {
+      "lines": [
+        "I cannot sign off on an empty return. Bring the arrows before I restock the watch.",
+        "I believe you went, but that is not enough. I need the arrows here before I sign this off.",
+        "A story cannot close the ledger. A promise does not fill the guards rack. Bring the arrows delivery.",
+        "The evidence still matters. You may have gathered them, but the guards have not received them.",
+        "I cannot sign off on an empty return. Set the 16 arrows down here and I can close the arrows order.",
+        "You returned without the one thing I asked for. Handing over the arrows is the proof on this supply job.",
+        "Your word is not the missing piece. I cannot inspect straight shafts with sound points while your hands are empty.",
+        "The evidence still matters. Your report sounds fine. I still need the actual arrows.",
+        "I believe you went, but that is not enough. Nothing has reached the guards rack yet.",
+        "I believe you went, but that is not enough. Bring what you collected before we discuss the Watch Arrows reward.",
+        "A story cannot close the ledger. The guards rack needs usable arrows, not a story about them.",
+        "The proof has to reach my hands. I will count the arrows as soon as you place them here.",
+        "Your word is not the missing piece. Do not leave the arrows delivery in another chest.",
+        "The proof has to reach my hands. The guards are waiting on the arrows bundle itself.",
+        "Bring back something the village can verify. The last step is simple. Hand over the arrows.",
+        "A story cannot close the ledger. I cannot fill the quivers with an empty counter.",
+        "Show me what came back with you. Come back carrying the arrows order, and we will be done.",
+        "I need something I can hold. The arrows work counts once the guards rack receives it.",
+        "Your word is not the missing piece. You are one handoff away from finishing Watch Arrows.",
+        "I need something I can hold. Let me see the arrows before I call this complete."
+      ]
+    },
+    "quest.village_defense.watch_arrows.dialogue.missing_target": {
+      "lines": [
+        "The map still shows unfinished travel. The watch still needs 16 arrows.",
+        "Finish the outward journey first. The arrows order calls for 16 arrows, and the full arrows count is not here.",
+        "You have not gone far enough yet. Count them again. The guards rack is still short.",
+        "This task was never only about the cargo. The guards cannot fill the quivers with part of Watch Arrows.",
+        "I need the site confirmed. You brought the right arrows, but the pile is short.",
+        "You have not gone far enough yet. The missing portion still leaves us with a bare quiver at dusk.",
+        "Going near it does not count. Bring the rest of the arrows and settle the arrows tally.",
+        "You have not gone far enough yet. I counted the arrows twice. The order is not complete.",
+        "The place itself must be reached. The village needs the whole 16 arrows, not a convenient number.",
+        "You have not gone far enough yet. A partial stack does not clear Watch Arrows.",
+        "Reaching the mark is part of the promise. Keep gathering until the count reaches 16 arrows.",
+        "The map still shows unfinished travel. What you brought helps, but it does not finish the arrows job.",
+        "This task was never only about the cargo. The guards rack still has space waiting for the remainder.",
+        "I need the site confirmed. Your arrows count is close. Bring the rest.",
+        "You have not gone far enough yet. There is no trick here. We are simply short on arrows.",
+        "You cannot skip the heart of the task. The arrows slate and pile disagree, and the arrows slate says 16 arrows.",
+        "You still owe the road its last mile. Bring one complete delivery rather than making the guards improvise.",
+        "The map still shows unfinished travel. I cannot lower the count without bringing back a bare quiver at dusk.",
+        "Reaching the mark is part of the promise. The rest of the arrows are still out there.",
+        "You cannot skip the heart of the task. Come back when the arrows order matches the agreed arrows count."
+      ]
+    },
+    "quest.village_defense.watch_arrows.dialogue.reminder": {
+      "lines": [
+        "Do not let one finished step distract you. Sixteen arrows for the watch. Straight shafts, sharp points, no speeches needed.",
+        "Do not let one finished step distract you. I am still waiting on 16 arrows for the guards rack.",
+        "Before you leave, hear this again. Look for straight shafts with sound points. Bad supplies only move the problem.",
+        "Keep the return trip in your plans. The guards need those arrows to fill the quivers.",
+        "Do not let one finished step distract you. The count is 16 arrows. Check it before returning.",
+        "Stay with the work you accepted. This arrows delivery means we can keep trouble from the doors.",
+        "Keep the return trip in your plans. If you are choosing between loads, bring the arrows first.",
+        "The job still has loose ends. Keep the arrows order together so the arrows tally stays easy.",
+        "Do not let one finished step distract you. The guards rack has space waiting for the full bundle.",
+        "Stay with the work you accepted. Do not let a simple request turn into a bare quiver at dusk.",
+        "Keep the return trip in your plans. There is no hidden part to Watch Arrows. Bring the agreed arrows count.",
+        "Keep the whole task in mind. Handle them carefully. I want straight shafts with sound points.",
+        "Do not let one finished step distract you. Bring all the arrows at once if you can manage it.",
+        "Do not lose the thread now. The guards are planning their next work around your return.",
+        "You are not finished yet. I wrote 16 arrows on the arrows slate so neither of us has to guess.",
+        "The job still has loose ends. The sooner these arrive, the sooner we can fill the quivers.",
+        "The job still has loose ends. Nothing else is missing from the arrows order.",
+        "Before you leave, hear this again. Return when the arrows are ready to hand over.",
+        "Keep the whole task in mind. You know how many arrows the guards rack needs. The rest is gathering.",
+        "Do not let one finished step distract you. A complete arrows bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_defense.watch_arrows.dialogue.start": {
+      "lines": [
+        "Here is the work. Bring 16 arrows. The watch sleeps better when the quiver has weight.",
+        "Take this seriously. The arrows order needs 16 arrows. Can you handle that?",
+        "Take the task only if you are ready. The guards are trying to fill the quivers, and supplies are thin.",
+        "This needs a careful hand. Bring me 16 arrows. I want straight shafts with sound points.",
+        "Let us be clear about the job. I have a plain job with a useful result. Find 16 arrows.",
+        "Here is the work. We can keep trouble from the doors if you fill the arrows order.",
+        "There is a reason I chose you. A bare quiver at dusk is a small problem until everyone needs the same thing.",
+        "Before you agree, hear all of it. The count on the arrows slate is 16 arrows.",
+        "The village has work for you. Gather the arrows and bring the whole delivery here.",
+        "Before you agree, hear all of it. Stocking the guards rack is not glory, but it matters.",
+        "Take this seriously. The guards asked me to find someone reliable for this run.",
+        "Listen closely. I need a clean delivery for the guards rack.",
+        "This needs a careful hand. If you can spare the time, 16 arrows would settle the arrows shortage.",
+        "Take the task only if you are ready. The need is real, which makes the instructions for Watch Arrows simple.",
+        "There is a reason I chose you. Bring the arrows when you have the complete count.",
+        "Here is the work. Good arrows will let us fill the quivers.",
+        "The village has work for you. The village should not reach a bare quiver at dusk before we act.",
+        "Let us be clear about the job. Take care with the arrows bundle. We need straight shafts with sound points.",
+        "There is a reason I chose you. I will pay when the guards rack receives the full order.",
+        "Before you agree, hear all of it. Find 16 arrows, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_defense.watch_arrows.dialogue.turn_in": {
+      "lines": [
+        "The hard part is behind us. Good. That is a little distance between danger and the doors.",
+        "This return was worth waiting for. The count is right. I will get these to the guards rack.",
+        "You delivered exactly what was needed. The guards can fill the quivers now.",
+        "The hard part is behind us. These are straight shafts with sound points. You chose well.",
+        "This return was worth waiting for. That delivery keeps us from a bare quiver at dusk.",
+        "That settles what I asked of you. Good work. All the arrows arrived together.",
+        "This return was worth waiting for. I have your arrows, and you earned the Watch Arrows reward.",
+        "That settles what I asked of you. The guards rack looks less bare already.",
+        "Good, you made it back. This will help us keep trouble from the doors.",
+        "That is the result I needed. You saved the guards from making do with scraps.",
+        "That settles what I asked of you. Everything on the arrows slate is here.",
+        "The hard part is behind us. A useful arrows job, done without fuss. Thank you.",
+        "This will make a real difference. I will put the arrows away before someone borrows them.",
+        "Good, you made it back. The village is better stocked because you completed Watch Arrows.",
+        "You saw it through. You brought exactly the arrows I asked for.",
+        "This return was worth waiting for. The arrows delivery is sound from top to bottom.",
+        "You brought the work to a proper end. The guards rack has one less shortage waiting to surprise us.",
+        "Now I can close the ledger. The village may not cheer for arrows, but it would notice their absence.",
+        "That settles what I asked of you. Take your payment. The arrows count gives me no complaint.",
+        "This return was worth waiting for. I can hand the arrows order to the guards with confidence."
+      ]
+    },
+    "quest.village_defense.watch_arrows.dialogue.unavailable": {
+      "lines": [
+        "This calls for someone we know better. The arrow request is closed for now.",
+        "I will not place this burden on you. I cannot hand you the work filed under Watch Arrows yet.",
+        "No, the risk is too high. The arrows order is for someone the guards rack already knows.",
+        "Earn our confidence before asking again. The guards need a delivery they can count on.",
+        "This work is not yours today. Show the village steadier work before taking Watch Arrows.",
+        "Some work must wait until trust catches up. The arrows matter too much to gamble on a stranger.",
+        "The village needs a steadier hand. I am not opening the arrows slate to you today.",
+        "No, the risk is too high. Build some trust, then ask about Watch Arrows again.",
+        "The answer is no for now. I need someone who will return with the whole 16 arrows.",
+        "I will not place this burden on you. Gathering arrows is simple, but reliability is not optional.",
+        "No, the risk is too high. For now, the arrows order stays with regular hands.",
+        "The answer is no for now. I cannot promise the guards rack a delivery from you yet.",
+        "Some work must wait until trust catches up. There will be other work before we trust you with the guards rack.",
+        "The village needs a steadier hand. The village has not cleared you for this arrows run.",
+        "I will not place this burden on you. I would rather wait than risk a bare quiver at dusk.",
+        "I will not place this burden on you. This is not punishment. Show better judgment before I open Watch Arrows.",
+        "Come back after you have earned more trust. The guards asked for a familiar runner this time.",
+        "You are not ready for this request. Come back for the arrows order after your name carries more weight.",
+        "Some work must wait until trust catches up. I am not taking new help for Watch Arrows.",
+        "The village needs a steadier hand. Earn some confidence here, and we can revisit Watch Arrows."
+      ]
+    },
+    "quest.village_defense.watch_arrows.objective.bring_arrows.complete_text": {
+      "lines": [
+        "The watch arrows are bundled."
+      ]
+    },
+    "quest.village_defense.watch_arrows.objective.bring_arrows.text": {
+      "lines": [
+        "Bring 16 arrows for the village watch."
+      ]
+    },
+    "quest.village_defense.watch_arrows.stage.return.dialogue.turn_in.label": "About Watch Arrows",
+    "quest.village_defense.watch_arrows.stage.return.dialogue.turn_in.lines": [
+      "These will reach trouble before trouble reaches the bell.",
+      "Full quivers make for a quieter night. Well done.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_defense.watch_arrows.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_defense.watch_arrows.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_defense.watch_arrows.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "These will reach trouble before trouble reaches the bell.",
+      "Full quivers make for a quieter night. Well done.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_defense.watch_arrows.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_defense.watch_arrows.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_defense.watch_arrows.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_defense.watch_arrows.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Watch Arrows is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_defense.watch_arrows.stage.return.scene.turn_in_wait.lines": [
+      "The watch still needs sixteen arrows before the next bad omen wanders close.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_defense.watch_arrows.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_defense.watch_arrows.stage.work.dialogue.offer.label": "Watch Arrows",
+    "quest.village_defense.watch_arrows.stage.work.dialogue.offer.lines": [
+      "The watch has bows and too many empty quivers. Sixteen arrows would put some distance between trouble and our doors.",
+      "A pillager is easier to answer from the wall than from the wheat field.",
+      "Bring 16 arrows for the village watch. I will make the reward worth the trouble."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_defense.watch_arrows.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_defense.watch_arrows.stage.work.dialogue.reminder.label": "About Watch Arrows",
+    "quest.village_defense.watch_arrows.stage.work.dialogue.reminder.lines": [
+      "The watch still needs sixteen arrows before the next bad omen wanders close.",
+      "Bring 16 arrows for the village watch.",
+      "A pillager is easier to answer from the wall than from the wheat field."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_defense.watch_arrows.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_defense.watch_arrows.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_defense.watch_arrows.stage.work.scene.abandon_confirm.lines": [
+      "Put Watch Arrows aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_defense.watch_arrows.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_defense.watch_arrows.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Watch Arrows is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.decline.lines": [
+      "Then the watch will make every shot count.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.leave.lines": [
+      "The watch still needs sixteen arrows before the next bad omen wanders close.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "The watch still needs sixteen arrows before the next bad omen wanders close.",
+      "Bring 16 arrows for the village watch.",
+      "A pillager is easier to answer from the wall than from the wheat field."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Watch Arrows is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Watch Arrows is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.start_quest.action.start.lines.started": [
+      "Good. Straight shafts, sharp points, and no bent fletching.",
+      "Bring 16 arrows for the village watch.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Watch Arrows is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_defense.watch_arrows.stage.work.ui.tracker_text": "Bring 16 arrows for the village watch.",
+    "quest.village_defense.watch_arrows.title": {
+      "lines": [
+        "Watch Arrows"
+      ]
+    },
+    "quest.village_defense.watch_arrows.tracker.proof.text": {
+      "lines": [
+        "Bring 16 arrows for the village watch."
+      ]
+    },
+    "quest.village_defense.watch_arrows.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the arrow."
+      ]
+    },
+    "quest.village_defense.watch_arrows.tracker.title": {
+      "lines": [
+        "Watch Arrows"
+      ]
+    }
+  }
+}

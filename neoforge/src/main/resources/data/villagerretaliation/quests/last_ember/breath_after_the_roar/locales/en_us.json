@@ -1,0 +1,89 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.last_ember.breath_after_the_roar.description": "Complete the Last Ember line by returning from the End with proof that the village can survive hearing about the dragon.",
+    "quest.last_ember.breath_after_the_roar.scene.last_ember_charge.metadata.title": "The Last Ember charge",
+    "quest.last_ember.breath_after_the_roar.scene.last_ember_charge.step.final_charge.data.text": "Bottle the dragon's breath while the roar still sounds. Then come home with stone and a story that still belongs to you.",
+    "quest.last_ember.breath_after_the_roar.scene.last_ember_charge.step.first_charge.data.text": "The Last Ember ends beyond the gate, but the village's part does not.",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.dialogue.offer.label": "After the Roar",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.dialogue.offer.lines": [
+      "The Last Ember notes end at a place I cannot make sound harmless.",
+      "If you go through the gate, bottle the dragon's breath while it still falls, end the roar, and return with proof that the silence belongs to the living."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.dialogue.offer.response.accept.label": "I will face the dragon.",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.dialogue.offer.response.decline.label": "Not yet.",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.dialogue.reminder.label": "About After the Roar",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.dialogue.reminder.lines": [
+      "There is no gentle wording for this stage. Bottle the dragon's breath while it still falls, face the dragon, and come back alive enough to argue about the notes."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.dialogue.reminder.response.details.label": "Repeat the charge.",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.dialogue.reminder.response.leave.label": "I will return.",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.objective.bring_dragon_breath.tracker.complete_text": "The dragon breath is ready.",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.objective.bring_dragon_breath.tracker.text": "Bring 1 dragon breath as proof of the roar.",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.objective.defeat_dragon.tracker.complete_text": "The roar has ended.",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.objective.defeat_dragon.tracker.text": "Bottle 1 dragon breath while the dragon is alive, then defeat the Ender Dragon.",
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.scene.decline.lines": [
+      "Good. The End has waited longer than any of us. It can wait until you choose."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.scene.leave.lines": [
+      "Return with your story still yours."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.scene.reminder_details.action.remind.lines.reminder": [
+      "Bottle 1 dragon breath while the Ender Dragon is alive, defeat it, then bring 16 end stone back to the village."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.scene.reminder_details.action.remind.lines.unavailable": [
+      "The dragon answer is not open right now."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.scene.start_quest.action.start.lines.already_completed": [
+      "The Last Ember has already been carried home."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.scene.start_quest.action.start.lines.started": [
+      "Bottle the dragon's breath while it still falls, then defeat the Ender Dragon. Plain words leave more room for careful choices."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.scene.start_quest.action.start.lines.unavailable": [
+      "The Last Ember is not ready to ask this of you right now."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.answer_roar.ui.tracker_text": "Bottle 1 dragon breath while the dragon is alive, then defeat the Ender Dragon.",
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.dialogue.reminder.label": "About After the Roar",
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.dialogue.reminder.lines": [
+      "The roar has ended. Bring end stone so the village can set something solid beside the bottled breath."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.dialogue.reminder.response.details.label": "Repeat the proof.",
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.dialogue.reminder.response.leave.label": "I will bring it.",
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.objective.bring_end_stone.tracker.complete_text": "The end stone is ready.",
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.objective.bring_end_stone.tracker.text": "Bring 16 end stone so the lesson has something solid under it.",
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.scene.leave.lines": [
+      "Proof is heavy in stranger ways than stone."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 16 end stone now that the dragon is defeated; the bottled breath is already accounted for."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.scene.reminder_details.action.remind.lines.unavailable": [
+      "The proof can wait until the dragon has fallen."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.carry_proof.ui.tracker_text": "Bring 16 end stone to complete the proof.",
+    "quest.last_ember.breath_after_the_roar.stage.return.dialogue.turn_in.label": "About After the Roar",
+    "quest.last_ember.breath_after_the_roar.stage.return.dialogue.turn_in.lines": [
+      "You are here. That is the first proof. The rest can go on the table."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.return.dialogue.turn_in.response.complete.label": "Finish the Last Ember.",
+    "quest.last_ember.breath_after_the_roar.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.last_ember.breath_after_the_roar.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The final note says this: the world can be vast, cruel, and still return someone home. The village will remember that without making it smaller."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The Last Ember still needs its proof."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the dragon breath and end stone here before we finish the notes."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the Last Ember right now."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.return.scene.leave.lines": [
+      "The last page waits. It has earned patience."
+    ],
+    "quest.last_ember.breath_after_the_roar.stage.return.ui.tracker_text": "Return with the Last Ember proof.",
+    "quest.last_ember.breath_after_the_roar.title": "After the Roar"
+  }
+}

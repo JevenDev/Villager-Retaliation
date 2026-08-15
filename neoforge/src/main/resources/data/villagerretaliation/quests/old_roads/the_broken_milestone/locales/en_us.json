@@ -1,0 +1,372 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.old_roads.the_broken_milestone.description": {
+      "lines": [
+        "Find nearby Trail Ruins and bring a brush and stone to restore the road marker."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.already_completed": {
+      "lines": [
+        "That chapter is closed. We already settled The Broken Milestone.",
+        "No one needs this done twice. You already came back from the Trail Ruins with what we needed.",
+        "What was owed has been paid. The Broken Milestone is closed. I am not sending you through buried stone and old dust twice.",
+        "The matter ended well enough. Your route to the Trail Ruins is already in the road record.",
+        "I will not reopen a finished account. I remember the day you returned with the brush.",
+        "I remember your first return. You earned the reward for The Broken Milestone, and it was paid.",
+        "The matter ended well enough. We have the forgotten road because you finished the journey to the Trail Ruins.",
+        "Leave the old tally alone. Nothing remains to be recovered from the ruins.",
+        "Leave the old tally alone. What you brought from the Trail Ruins is still helping the village.",
+        "Your earlier work still stands. You proved the ruins route once. That is enough.",
+        "No one needs this done twice. The road record carries your name beside the completed mark.",
+        "I remember your first return. Leave The Broken Milestone in the past where it belongs.",
+        "The matter ended well enough. You settled every part of The Broken Milestone on your first return.",
+        "Leave the old tally alone. The Trail Ruins was reached and the brush evidence delivered.",
+        "Nothing remains to be earned from this. I will find you a road beyond the Trail Ruins before sending you back there.",
+        "We settled this one already. Nobody forgot what the journey to the Trail Ruins cost you.",
+        "I remember your first return. The Broken Milestone at the Trail Ruins needs no second visit from you.",
+        "I remember your first return. You gave us the brush, not another rumor.",
+        "That chapter is closed. The Broken Milestone ended properly, and it stays ended.",
+        "I will not reopen a finished account. We can look ahead now. The Broken Milestone is done."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.inactive": {
+      "lines": [
+        "For now, let the matter rest. The conditions for The Broken Milestone are not right at the moment.",
+        "Nothing calls for this work today. The mark for the Trail Ruins is not open today.",
+        "Ask me after the stores change. I have no reason to risk you against buried stone and old dust just now.",
+        "For now, let the matter rest. The village is not ready to use a brush and 12 smooth stone.",
+        "The time is wrong. Wait until the road record calls for the journey to the Trail Ruins.",
+        "We have no need of it yet. A trip to the Trail Ruins without a need is only danger.",
+        "The time is wrong. The ruins route can stay folded until the timing improves.",
+        "The village can wait on this one. I am holding The Broken Milestone off the board for now.",
+        "Ask me after the stores change. Nothing at the Trail Ruins needs our answer today.",
+        "Not today. Keep your gear ready for the Trail Ruins, but do not leave yet.",
+        "The board can wait. The Broken Milestone is real. The moment for it is not.",
+        "The board can wait. I will not send you toward buried stone and old dust to satisfy an old note.",
+        "Not today. The Trail Ruins can wait until we have a use for the return.",
+        "Leave that work alone for now. Ask again after the village reviews the road record.",
+        "There is no reason to begin yet. There is no active claim on the brush today.",
+        "Ask me after the stores change. The road toward the Trail Ruins is quiet, and I mean to leave it that way.",
+        "For now, let the matter rest. Starting The Broken Milestone now would spend courage for no useful result.",
+        "For now, let the matter rest. The Broken Milestone has not been posted to any traveler.",
+        "We have no need of it yet. Give The Broken Milestone time to become necessary.",
+        "Ask me after the stores change. For the moment, stay on this side of the journey to the Trail Ruins."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.locate_failed": {
+      "lines": [
+        "I cannot send you out blind. The road is too quiet today. I cannot find the broken marker from here.",
+        "The old directions no longer agree. I cannot put a trustworthy mark on the Trail Ruins.",
+        "No mark is better than a false one. Every route I checked breaks down before the ruins.",
+        "I cannot send you out blind. The Trail Ruins maps disagree, and buried stone and old dust leave no room for guessing.",
+        "A doubtful map is too much risk. I found rumors of the Trail Ruins, but no road I would hand you.",
+        "The old directions no longer agree. The Trail Ruins has slipped beyond my Trail Ruins charts.",
+        "I found no safe bearing to give you. Without a firm bearing, The Broken Milestone would be wandering.",
+        "Until I know the way, you stay here. My best map is blank where the ruins should be.",
+        "Something is wrong with the chart. I traced three routes toward the Trail Ruins and trusted none.",
+        "Something is wrong with the chart. The old Trail Ruins directions end before danger begins.",
+        "Something is wrong with the chart. I will not pretend a guess can mark the Trail Ruins.",
+        "I cannot send you out blind. No scout has confirmed the mark for the Trail Ruins.",
+        "The old directions no longer agree. The trail to the Trail Ruins went cold before I could mark it.",
+        "We need a trustworthy route first. I need Trail Ruins coordinates, not campfire stories.",
+        "I found no safe bearing to give you. The Trail Ruins may be there, but I cannot prove where.",
+        "A doubtful map is too much risk. None of the Trail Ruins bearings lead to the same ground.",
+        "We need a trustworthy route first. Let me find an honest ruins route before you prepare to leave.",
+        "No mark is better than a false one. The road record offers warnings today, not directions.",
+        "I cannot send you out blind. The Trail Ruins map gives me doubt when I need certainty.",
+        "The trail has gone cold. Come back after the road to the Trail Ruins gives us an answer."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.missing_proof": {
+      "lines": [
+        "Bring back something the village can verify. Bring a brush from the work. A clean story needs its dust on it.",
+        "The evidence still matters. The brush is still missing from your return.",
+        "A story cannot close the ledger. I cannot close the road record without the agreed brush evidence.",
+        "I believe you went, but that is not enough. You faced the Trail Ruins, but the village still needs the brush.",
+        "Show me what came back with you. Bring back a brush and 12 smooth stone before we settle The Broken Milestone.",
+        "A story cannot close the ledger. Your story may be true. I still need the brush.",
+        "What you carried home decides this. The journey to the Trail Ruins ends here when the brush changes hands.",
+        "Show me what came back with you. Do not reach the Trail Ruins and forget the brush that verifies it.",
+        "What you carried home decides this. I know you traveled. I need a result from the Trail Ruins.",
+        "Your word is not the missing piece. The Broken Milestone reward waits on the brush evidence, not the telling.",
+        "Bring back something the village can verify. Show me the brush, and The Broken Milestone can close.",
+        "I cannot sign off on an empty return. The empty place in the road record waits for what you recovered.",
+        "Bring back something the village can verify. Words cannot stand in for the forgotten road.",
+        "A story cannot close the ledger. Check your packs before you make the journey to the Trail Ruins twice.",
+        "The last requirement is still missing. The Broken Milestone named its proof from the beginning.",
+        "Show me what came back with you. Bring the brush evidence here rather than leaving it in storage.",
+        "What you carried home decides this. The village asked for a brush and 12 smooth stone, and that remains unfinished.",
+        "Show me what came back with you. I can record the ruins route after I see what came from it.",
+        "Bring back something the village can verify. One brush handoff separates The Broken Milestone from completion.",
+        "The last requirement is still missing. Return when the brush is in your hands."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.missing_target": {
+      "lines": [
+        "You have not gone far enough yet. The stone is useful, but I need you to reach the ruins near the marker first.",
+        "You still owe the road its last mile. You have not confirmed the Trail Ruins itself.",
+        "The place itself must be reached. The cargo means little if the Trail Ruins was never reached.",
+        "You still owe the road its last mile. The Broken Milestone includes the road as well as the return.",
+        "I need the site confirmed. Set foot in the ruins before you bring me evidence.",
+        "The journey stopped too soon. I asked for proof from the Trail Ruins, not somewhere else.",
+        "The map still shows unfinished travel. The Trail Ruins remains untouched in the road record.",
+        "The journey stopped too soon. Finish the outward journey before claiming The Broken Milestone reward.",
+        "The place itself must be reached. A borrowed brush cannot replace reaching the Trail Ruins.",
+        "You have not gone far enough yet. The Trail Ruins map still says you stopped short.",
+        "This task was never only about the cargo. Go to the marked place and see The Broken Milestone through there.",
+        "You have not gone far enough yet. The ruins route must end at the Trail Ruins, not near it.",
+        "You still owe the road its last mile. I need your eyes on the Trail Ruins before I trust the report.",
+        "You have not gone far enough yet. Do not skip the part that puts buried stone and old dust in front of you.",
+        "You have not gone far enough yet. The village asked you to confirm the ruins existed.",
+        "Going near it does not count. Your return is early. the Trail Ruins still waits.",
+        "The place itself must be reached. Reach the Trail Ruins, then recover a brush and 12 smooth stone.",
+        "You have not gone far enough yet. The journey to the Trail Ruins is not complete while the final mark is unvisited.",
+        "This task was never only about the cargo. The road record needs a confirmed place, not only an item.",
+        "You still owe the road its last mile. Turn back toward the Trail Ruins and finish what you began."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.reminder": {
+      "lines": [
+        "You are not finished yet. Trail ruins near {target_x}, {target_z}. I need a brush for the old dust and 12 smooth stone for the new face.",
+        "The job still has loose ends. The Trail Ruins is still near {target_x}, {target_z}.",
+        "The next step still matters. The mark remains near {target_x}, {target_z}, so keep to the planned ruins route.",
+        "Remember what the village is waiting for. Check the map again. Trail Ruins is still near {target_x}, {target_z}.",
+        "Remember what the village is waiting for. The Broken Milestone still calls for a brush and 12 smooth stone.",
+        "Keep the return trip in your plans. Watch for buried stone and old dust on the way in.",
+        "Do not let one finished step distract you. Do not leave the Trail Ruins without the brush.",
+        "Keep the return trip in your plans. Your return should give us the forgotten road.",
+        "The next step still matters. Check the Trail Ruins bearing at {target_x}, {target_z} before landmarks blur.",
+        "Do not let one finished step distract you. Keep the brush safe once you recover it.",
+        "You are not finished yet. The road record stays open until you come home.",
+        "Do not let one finished step distract you. Do not rush blind toward the Trail Ruins. Follow the mark and return whole.",
+        "Do not let one finished step distract you. The Trail Ruins has not moved from {target_x}, {target_z}.",
+        "Remember what the village is waiting for. Remember why you are going. We need to restore the old road marker.",
+        "Keep the whole task in mind. If the ruins route feels wrong, check your position against {target_x}, {target_z}.",
+        "The next step still matters. The hard part is reaching the ruins and leaving with evidence.",
+        "Remember what the village is waiting for. Trail Ruins still waits near {target_x}, {target_z}.",
+        "Before you leave, hear this again. Bring every part of a brush and 12 smooth stone back together.",
+        "Keep the whole task in mind. I would rather wait than receive half the agreed brush.",
+        "Remember what the village is waiting for. Find the Trail Ruins, do The Broken Milestone there, and return to me."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.start": {
+      "lines": [
+        "Let us be clear about the job. The old mark is about {distance} blocks {direction}, near {target_x}, {target_z}. Bring a brush and 12 smooth stone so we can set the route right.",
+        "Here is the work. I marked the Trail Ruins near {target_x}, {target_z}.",
+        "Listen closely. Travel {direction} for about {distance} blocks and look for the ruins.",
+        "I am trusting you with something important. The job is to restore the old road marker.",
+        "Let us be clear about the job. Come home with a brush and 12 smooth stone so the village has more than rumors.",
+        "Listen closely. The road leads through buried stone and old dust, so prepare before leaving.",
+        "I need you to see this through. I need someone willing to reach the Trail Ruins and return with proof.",
+        "The village has work for you. The Trail Ruins sits near {target_x}, {target_z}, according to my map.",
+        "I am trusting you with something important. Follow the {direction} bearing and keep the road record dry.",
+        "There is a reason I chose you. The Broken Milestone begins at the Trail Ruins and ends when the brush reaches me.",
+        "Listen closely. The Trail Ruins mark is about {distance} blocks away. Do not mistake speed for care.",
+        "Let us be clear about the job. Bring a brush and 12 smooth stone, and I can turn this risk into something useful.",
+        "Here is the work. The village needs the forgotten road, not boasting at the fire.",
+        "Take the task only if you are ready. I trust you with the ruins route because it is not kind.",
+        "I am trusting you with something important. Make for {target_x}, {target_z} and confirm the Trail Ruins yourself.",
+        "I am trusting you with something important. Prepare for buried stone and old dust before crossing the last safe ground.",
+        "I need you to see this through. The outward journey proves the Trail Ruins map. The return proves you.",
+        "Before you agree, hear all of it. Do not come back empty from the ruins.",
+        "Take this seriously. Take The Broken Milestone only if you mean to finish the travel and recovery.",
+        "I have a difficult request. When you have a brush and 12 smooth stone, bring it straight here."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.turn_in": {
+      "lines": [
+        "This return was worth waiting for. Good. A repaired road is a quiet promise that someone can still come home.",
+        "This will make a real difference. You reached the Trail Ruins and brought the brush home.",
+        "You delivered exactly what was needed. The road record finally has a true ending.",
+        "Good, you made it back. This is the forgotten road, solid enough to hold.",
+        "This will make a real difference. The village can restore the old road marker because you took the risk.",
+        "That settles what I asked of you. I asked for a brush and 12 smooth stone, and you returned with every part.",
+        "The hard part is behind us. You went through buried stone and old dust and kept your head.",
+        "You delivered exactly what was needed. The ruins route is confirmed now, not merely drawn.",
+        "Now I can close the ledger. I can pay The Broken Milestone without a doubt.",
+        "You saw it through. The brush tells the story better than any boast.",
+        "I am glad to see you home. You made the dangerous road to the Trail Ruins useful to everyone here.",
+        "The village can use this. The Trail Ruins is no longer just a warning on a map.",
+        "That is the result I needed. I will put your Trail Ruins findings where the village can study them.",
+        "Now I can close the ledger. The Broken Milestone is clean, even if the journey to the Trail Ruins was not.",
+        "You brought the work to a proper end. That is the brush evidence I hoped to see.",
+        "That is the result I needed. You returned from the Trail Ruins with more than survival. You brought an answer.",
+        "I am glad to see you home. The Broken Milestone closes with the village better prepared.",
+        "I am glad to see you home. The next traveler to the Trail Ruins will have your route.",
+        "The hard part is behind us. Take The Broken Milestone reward. You earned it beyond the safe roads.",
+        "That settles what I asked of you. I am glad to see both the brush and person carrying it."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.dialogue.unavailable": {
+      "lines": [
+        "This work is not yours today. That route is not ready for your hands yet.",
+        "The village needs a steadier hand. The Broken Milestone demands trust I do not have in you yet.",
+        "No, the risk is too high. I cannot hand you a route through buried stone and old dust today.",
+        "Earn our confidence before asking again. The Trail Ruins is no ground for an untested ally.",
+        "This calls for someone we know better. Do steadier work here before asking for the Trail Ruins map.",
+        "The village needs a steadier hand. I need someone I can trust to return from the Trail Ruins.",
+        "I will not place this burden on you. The road record stays closed to you for now.",
+        "Come back after you have earned more trust. The Broken Milestone risks more than the traveler's life.",
+        "The answer is no for now. Earn our confidence, then ask about the ruins again.",
+        "This calls for someone we know better. I will not send a stranger after the forgotten road.",
+        "This work is not yours today. The Trail Ruins is dangerous enough without doubt between us.",
+        "You are not ready for this request. Your name has not reached the trusted page of the road record.",
+        "Come back after you have earned more trust. There are safer tasks than The Broken Milestone that can show me how you work.",
+        "I cannot trust you with this yet. I need proof of judgment before offering the journey to the Trail Ruins.",
+        "Earn our confidence before asking again. For now, the Trail Ruins map remains folded.",
+        "The village needs a steadier hand. The village is not ready to stake restore the old road marker on you.",
+        "I cannot trust you with this yet. Ask about the Trail Ruins after you have stood with us longer.",
+        "This work is not yours today. Courage may reach the Trail Ruins. Reliability brings the brush home.",
+        "I cannot trust you with this yet. The Broken Milestone stays with proven hands.",
+        "The village needs a steadier hand. I will tell you when we trust you with the road to the Trail Ruins."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.complete_text": {
+      "lines": [
+        "The replacement stone is ready."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.text": {
+      "lines": [
+        "Bring 12 smooth stone for the repaired marker."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.stage.return.dialogue.turn_in.label": "About The Broken Milestone",
+    "quest.old_roads.the_broken_milestone.stage.return.dialogue.turn_in.lines": [
+      "The old number is visible again. Someone once measured this road, and now we can too.",
+      "A broken marker stands again. The road has one memory back.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.old_roads.the_broken_milestone.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.old_roads.the_broken_milestone.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The old number is visible again. Someone once measured this road, and now we can too.",
+      "A broken marker stands again. The road has one memory back."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The Broken Milestone is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.return.scene.turn_in_wait.lines": [
+      "The trail-ruin mark, one brush, and twelve smooth stone for the milestone.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.old_roads.the_broken_milestone.stage.work.dialogue.offer.label": "The Broken Milestone",
+    "quest.old_roads.the_broken_milestone.stage.work.dialogue.offer.lines": [
+      "An old milestone is buried near the trail ruins, broken where the road forgot its own name.",
+      "Brush the marker clear and bring smooth stone so we can raise it again.",
+      "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.old_roads.the_broken_milestone.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.old_roads.the_broken_milestone.stage.work.dialogue.reminder.label": "About The Broken Milestone",
+    "quest.old_roads.the_broken_milestone.stage.work.dialogue.reminder.lines": [
+      "The trail-ruin mark, one brush, and twelve smooth stone for the milestone.",
+      "Reach the marked Trail Ruins and return with a brush and 12 smooth stone.",
+      "Brush the marker clear and bring smooth stone so we can raise it again."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.old_roads.the_broken_milestone.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.old_roads.the_broken_milestone.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.old_roads.the_broken_milestone.stage.work.objective.bring_stone.tracker.complete_text": "The replacement stone is ready.",
+    "quest.old_roads.the_broken_milestone.stage.work.objective.bring_stone.tracker.text": "Bring 12 smooth stone for the repair.",
+    "quest.old_roads.the_broken_milestone.stage.work.objective.carry_brush.tracker.complete_text": "The brush is ready.",
+    "quest.old_roads.the_broken_milestone.stage.work.objective.carry_brush.tracker.text": "Carry 1 brush for the buried marker.",
+    "quest.old_roads.the_broken_milestone.stage.work.objective.visit_ruins.tracker.complete_text": "The old road marker has been found.",
+    "quest.old_roads.the_broken_milestone.stage.work.objective.visit_ruins.tracker.text": "Reach the marked Trail Ruins.",
+    "quest.old_roads.the_broken_milestone.stage.work.scene.abandon_confirm.lines": [
+      "Put The Broken Milestone aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.old_roads.the_broken_milestone.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.old_roads.the_broken_milestone.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "The Broken Milestone is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.decline.lines": [
+      "The milestone has spent years underground. One more day will not offend it."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.leave.lines": [
+      "The trail-ruin mark, one brush, and twelve smooth stone for the milestone.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "The trail-ruin mark, one brush, and twelve smooth stone for the milestone.",
+      "Reach the marked Trail Ruins and return with a brush and 12 smooth stone.",
+      "Brush the marker clear and bring smooth stone so we can raise it again."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "The Broken Milestone is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "The Broken Milestone is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.start_quest.action.start.lines.started": [
+      "Brush gently. Old roads leave smaller signs than new travelers expect.",
+      "Reach the marked Trail Ruins and return with a brush and 12 smooth stone."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "The Broken Milestone is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.old_roads.the_broken_milestone.stage.work.ui.tracker_text": "Find the Trail Ruins and return with a brush and 12 smooth stone.",
+    "quest.old_roads.the_broken_milestone.title": {
+      "lines": [
+        "The Broken Milestone"
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.tracker.bring_smooth_stone.text": {
+      "lines": [
+        "Gather 12 smooth stone for the repair."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.tracker.proof.text": {
+      "lines": [
+        "Bring a brush and 12 smooth stone."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the brush and stone."
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.tracker.title": {
+      "lines": [
+        "The Broken Milestone"
+      ]
+    },
+    "quest.old_roads.the_broken_milestone.tracker.travel.text": {
+      "lines": [
+        "Reach the old road mark near {target_x}, {target_z}."
+      ]
+    }
+  }
+}

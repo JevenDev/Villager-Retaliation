@@ -1,0 +1,369 @@
+{
+  "availability": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "survey",
+  "events": [
+    {
+      "actions": [
+        {
+          "scope": "player",
+          "tag": "villagerretaliation:cartographers_atlas_finished",
+          "type": "set_tag"
+        },
+        {
+          "text": {
+            "key": "#event.atlas_finished.action.notification.text"
+          },
+          "trigger": "quest.completed",
+          "type": "notification"
+        }
+      ],
+      "event": "completed",
+      "id": "atlas_finished",
+      "repeatable": false
+    }
+  ],
+  "id": "villagerretaliation:end_city_margin",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "description_key": "quest.cartographers_atlas.end_city_margin.description",
+    "parent": "villagerretaliation:eye_of_the_last_room",
+    "questline": "cartographers_atlas",
+    "tags": [
+      "group.exploration",
+      "role.story",
+      "activity.combat",
+      "activity.deliver",
+      "activity.explore",
+      "activity.gather",
+      "destination.end",
+      "destination.remote",
+      "tier.endgame",
+      "difficulty.hard",
+      "commitment.expedition",
+      "theme.exploration",
+      "party.recommended"
+    ],
+    "title": {
+      "key": "#title"
+    },
+    "title_key": "quest.cartographers_atlas.end_city_margin.title"
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "master",
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": {
+        "cartography": {
+          "min": 72
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 900,
+    "gossip_reputation": 18,
+    "loot_table": "villagerretaliation:quest/end_city_margin",
+    "memory_event": "player_completed_quest",
+    "reputation": 38
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "visit_end_city",
+        "defeat_shulkers",
+        "bring_shulker_shells",
+        "bring_chorus_fruit"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.survey.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.survey.dialogue.offer.lines"
+          },
+          "order": -24,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.survey.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.survey.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.survey.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.survey.dialogue.reminder.lines"
+          },
+          "order": -24,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.survey.dialogue.reminder.response.details.label"
+              },
+              "order": 0,
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.survey.dialogue.reminder.response.leave.label"
+              },
+              "order": 100,
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "survey",
+      "next": "return",
+      "objectives": [
+        {
+          "dimension": "minecraft:the_end",
+          "discovery_radius": 192,
+          "id": "visit_end_city",
+          "search_radius": 1024,
+          "structure": "minecraft:end_city",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.survey.objective.visit_end_city.tracker.complete_text"
+            },
+            "progress": 0.35,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.survey.objective.visit_end_city.tracker.text"
+            }
+          },
+          "type": "structure_visit"
+        },
+        {
+          "count": 2,
+          "entity": "minecraft:shulker",
+          "id": "defeat_shulkers",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.survey.objective.defeat_shulkers.tracker.complete_text"
+            },
+            "progress": 0.65,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.survey.objective.defeat_shulkers.tracker.text"
+            }
+          },
+          "type": "mob_kill"
+        },
+        {
+          "count": 2,
+          "id": "bring_shulker_shells",
+          "item": "minecraft:shulker_shell",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.survey.objective.bring_shulker_shells.tracker.complete_text"
+            },
+            "progress": 0.8,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.survey.objective.bring_shulker_shells.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 16,
+          "id": "bring_chorus_fruit",
+          "item": "minecraft:chorus_fruit",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.survey.objective.bring_chorus_fruit.tracker.complete_text"
+            },
+            "progress": 0.9,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.survey.objective.bring_chorus_fruit.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.survey.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.survey.scene.leave.lines"
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.survey.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.survey.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.survey.scene.start_quest.action.start.lines.already_completed"
+                },
+                "locate_failed": {
+                  "key": "#stage.survey.scene.start_quest.action.start.lines.locate_failed"
+                },
+                "started": {
+                  "key": "#stage.survey.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.survey.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        }
+      ],
+      "ui": {
+        "placeholders": {
+          "target_dimension": "target.dimension",
+          "target_x": "target.x",
+          "target_z": "target.z"
+        },
+        "progress": 0.35,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.survey.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -24,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "missing_target": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_target"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "title": {
+      "key": "#tracker.title"
+    },
+    "title_key": "quest.cartographers_atlas.end_city_margin.tracker.title"
+  },
+  "localization_prefix": "quest.cartographers_atlas.end_city_margin"
+}

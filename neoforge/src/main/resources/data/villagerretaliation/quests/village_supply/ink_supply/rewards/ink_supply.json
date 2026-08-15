@@ -1,0 +1,80 @@
+{
+  "schema": "villagerretaliation:quest_reward/v1",
+  "id": "villagerretaliation:quest/ink_supply",
+  "table": {
+    "pools": [
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 14,
+                  "min": 9,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:emerald",
+            "type": "minecraft:item"
+          }
+        ],
+        "rolls": 1
+      },
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 12,
+                  "min": 6,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:paper",
+            "type": "minecraft:item",
+            "weight": 2
+          },
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 2,
+                  "min": 1,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:glow_ink_sac",
+            "type": "minecraft:item",
+            "weight": 1
+          },
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 7,
+                  "min": 4,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:experience_bottle",
+            "type": "minecraft:item",
+            "weight": 1
+          }
+        ],
+        "rolls": 1
+      }
+    ],
+    "type": "minecraft:generic"
+  }
+}

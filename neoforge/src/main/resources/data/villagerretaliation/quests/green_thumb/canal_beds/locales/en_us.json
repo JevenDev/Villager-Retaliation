@@ -1,0 +1,111 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.green_thumb.canal_beds.description": "Finish the canal route with stone, reeds, and sheltered water edges.",
+    "quest.green_thumb.canal_beds.stage.return.dialogue.turn_in.label": "About Irrigation",
+    "quest.green_thumb.canal_beds.stage.return.dialogue.turn_in.lines": [
+      "The water reaches every bed and stays off the road. That is a proper canal.",
+      "Stone below, green shade above. The canal field is finished.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.green_thumb.canal_beds.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.green_thumb.canal_beds.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.green_thumb.canal_beds.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The water reaches every bed and stays off the road. That is a proper canal.",
+      "Stone below, green shade above. The canal field is finished."
+    ],
+    "quest.green_thumb.canal_beds.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.green_thumb.canal_beds.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.green_thumb.canal_beds.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.green_thumb.canal_beds.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Irrigation is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.green_thumb.canal_beds.stage.return.scene.turn_in_wait.lines": [
+      "Twenty-four stone bricks along the channels, eight lily pads for cover.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.green_thumb.canal_beds.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.green_thumb.canal_beds.stage.work.dialogue.offer.label": "Irrigation",
+    "quest.green_thumb.canal_beds.stage.work.dialogue.offer.lines": [
+      "The first channel works. Now it needs walls that will survive boots, rain, and curious sheep.",
+      "Finish the stone edges and bring lily pads to shade the still corners.",
+      "Place 24 stone bricks and bring 8 lily pads."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.green_thumb.canal_beds.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.green_thumb.canal_beds.stage.work.dialogue.reminder.label": "About Irrigation",
+    "quest.green_thumb.canal_beds.stage.work.dialogue.reminder.lines": [
+      "Twenty-four stone bricks along the channels, eight lily pads for cover.",
+      "Place 24 stone bricks and bring 8 lily pads.",
+      "Finish the stone edges and bring lily pads to shade the still corners."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.green_thumb.canal_beds.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.green_thumb.canal_beds.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.green_thumb.canal_beds.stage.work.objective.bring_lilies.tracker.complete_text": "The lily pads are ready.",
+    "quest.green_thumb.canal_beds.stage.work.objective.bring_lilies.tracker.text": "Bring 8 lily pads for sheltered water.",
+    "quest.green_thumb.canal_beds.stage.work.objective.finish_walls.tracker.complete_text": "The canal walls are finished.",
+    "quest.green_thumb.canal_beds.stage.work.objective.finish_walls.tracker.text": "Place 24 stone bricks along the field canals.",
+    "quest.green_thumb.canal_beds.stage.work.scene.abandon_confirm.lines": [
+      "Put Irrigation aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.green_thumb.canal_beds.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.green_thumb.canal_beds.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Irrigation is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.decline.lines": [
+      "Then keep the sheep away from the wet edge."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.leave.lines": [
+      "Twenty-four stone bricks along the channels, eight lily pads for cover.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Twenty-four stone bricks along the channels, eight lily pads for cover.",
+      "Place 24 stone bricks and bring 8 lily pads.",
+      "Finish the stone edges and bring lily pads to shade the still corners."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Irrigation is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Irrigation is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.start_quest.action.start.lines.started": [
+      "Keep the corners square. Water finds every lazy gap.",
+      "Place 24 stone bricks and bring 8 lily pads."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Irrigation is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.green_thumb.canal_beds.stage.work.ui.tracker_text": "Place 24 stone bricks and bring 8 lily pads.",
+    "quest.green_thumb.canal_beds.title": "Irrigation"
+  }
+}

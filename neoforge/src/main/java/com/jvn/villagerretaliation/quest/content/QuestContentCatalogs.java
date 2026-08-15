@@ -81,10 +81,15 @@ public final class QuestContentCatalogs {
                 QuestBundleDiscovery.discover(server),
                 BuiltInQuestBundleCompatibility.rules(),
                 QuestRewardRegistryContext.create(server));
-        VillagerQuestResources.ContentSnapshot quest = VillagerQuestResources.snapshotForCatalog(server, bundles);
-        EncounterResources.ContentSnapshot encounter = EncounterResources.snapshotForCatalog(server);
-        SceneResources.ContentSnapshot scene = SceneResources.snapshotForCatalog(server);
-        QuestPoolResources.ContentSnapshot pool = QuestPoolResources.snapshotForCatalog(server);
+        QuestRewardCatalog rewards = QuestRewardCatalog.fromBundles(bundles.bundles());
+        EncounterResources.ContentSnapshot encounter =
+                EncounterResources.snapshotForCatalog(server, bundles, rewards);
+        SceneResources.ContentSnapshot scene =
+                SceneResources.snapshotForCatalog(server, bundles, encounter);
+        VillagerQuestResources.ContentSnapshot quest =
+                VillagerQuestResources.snapshotForCatalog(server, bundles);
+        QuestPoolResources.ContentSnapshot pool =
+                QuestPoolResources.snapshotForCatalog(server, bundles);
 
         QuestContentCatalog catalog = new QuestContentCatalog(
                 generation,
@@ -101,7 +106,7 @@ public final class QuestContentCatalogs {
                 pool.pools(),
                 bundles.bundles(),
                 bundles.localization(),
-                QuestRewardCatalog.fromBundles(bundles.bundles()));
+                rewards);
 
         QuestContentLoadReport.Builder report = QuestContentLoadReport.builder(generation);
         scene.diagnostics().forEach((source, entries) -> entries.forEach(diagnostic -> report.add(

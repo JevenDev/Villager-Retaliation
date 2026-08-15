@@ -1,0 +1,566 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "prepare_index",
+  "id": "villagerretaliation:ink_and_bearings",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "description_key": "quest.cartographers_atlas.ink_and_bearings.description",
+    "parent": "villagerretaliation:blank_map_promise",
+    "questline": "cartographers_atlas",
+    "tags": [
+      "group.exploration",
+      "role.story",
+      "activity.choice",
+      "activity.deliver",
+      "activity.gather",
+      "destination.overworld",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard",
+      "theme.exploration",
+      "feature.branching"
+    ],
+    "title": {
+      "key": "#title"
+    },
+    "title_key": "quest.cartographers_atlas.ink_and_bearings.title"
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "apprentice",
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": {
+        "cartography": {
+          "min": 10
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 115,
+    "gossip_reputation": 3,
+    "loot_table": "villagerretaliation:quest/ink_and_bearings",
+    "memory_event": "player_completed_quest",
+    "reputation": 8
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "bring_feathers",
+        "bring_glass"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.prepare_index.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.prepare_index.dialogue.offer.lines"
+          },
+          "order": -24,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.prepare_index.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.prepare_index.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.prepare_index.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.prepare_index.dialogue.reminder.lines"
+          },
+          "order": -24,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.prepare_index.dialogue.reminder.response.details.label"
+              },
+              "order": 0,
+              "scene": "reminder_details"
+            },
+            {
+              "id": "abandon",
+              "label": {
+                "key": "#stage.prepare_index.dialogue.reminder.response.abandon.label"
+              },
+              "order": 90,
+              "scene": "abandon_confirm"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.prepare_index.dialogue.reminder.response.leave.label"
+              },
+              "order": 100,
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "prepare_index",
+      "next": "choose_principle",
+      "objectives": [
+        {
+          "count": 2,
+          "id": "bring_feathers",
+          "item": "minecraft:feather",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.prepare_index.objective.bring_feathers.tracker.complete_text"
+            },
+            "progress": 0.45,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.prepare_index.objective.bring_feathers.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 6,
+          "id": "bring_glass",
+          "item": "minecraft:glass_pane",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.prepare_index.objective.bring_glass.tracker.complete_text"
+            },
+            "progress": 0.55,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.prepare_index.objective.bring_glass.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "id": "abandon_confirm",
+          "lines": {
+            "key": "#stage.prepare_index.scene.abandon_confirm.lines"
+          },
+          "responses": [
+            {
+              "id": "confirm",
+              "label": {
+                "key": "#stage.prepare_index.scene.abandon_confirm.response.confirm.label"
+              },
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": {
+                "key": "#stage.prepare_index.scene.abandon_confirm.response.cancel.label"
+              },
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "action": "abandon",
+              "lines": {
+                "abandoned": {
+                  "key": "#stage.prepare_index.scene.abandon_quest.action.abandon.lines.abandoned"
+                },
+                "unavailable": {
+                  "key": "#stage.prepare_index.scene.abandon_quest.action.abandon.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "abandon_quest"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.prepare_index.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.prepare_index.scene.leave.lines"
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.prepare_index.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.prepare_index.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.prepare_index.scene.start_quest.action.start.lines.already_completed"
+                },
+                "started": {
+                  "key": "#stage.prepare_index.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.prepare_index.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        }
+      ],
+      "ui": {
+        "progress": 0.55,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.prepare_index.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "choose_principle"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.choose_principle.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.choose_principle.dialogue.reminder.lines"
+          },
+          "order": -24,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.choose_principle.dialogue.reminder.response.details.label"
+              },
+              "order": 0,
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.choose_principle.dialogue.reminder.response.leave.label"
+              },
+              "order": 100,
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "choose_principle",
+      "objectives": [
+        {
+          "id": "choose_principle",
+          "key": "principle",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.choose_principle.objective.choose_principle.tracker.complete_text"
+            },
+            "progress": 0.85,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.choose_principle.objective.choose_principle.tracker.text"
+            }
+          },
+          "type": "choice",
+          "values": [
+            "roads",
+            "wonders"
+          ]
+        }
+      ],
+      "responses": [
+        {
+          "actions": [
+            {
+              "key": "principle",
+              "scope": "quest",
+              "type": "set_variable",
+              "value": "roads"
+            },
+            {
+              "scope": "player",
+              "tag": "villagerretaliation:atlas_principle_roads",
+              "type": "set_tag"
+            },
+            {
+              "text": {
+                "key": "#stage.choose_principle.response.roads.action.notification.text"
+              },
+              "trigger": "quest.updated",
+              "type": "notification"
+            }
+          ],
+          "id": "roads",
+          "label": {
+            "key": "#stage.choose_principle.response.roads.label"
+          },
+          "text": {
+            "key": "#stage.choose_principle.response.roads.text"
+          },
+          "transition": {
+            "stage": "roads_ready"
+          }
+        },
+        {
+          "actions": [
+            {
+              "key": "principle",
+              "scope": "quest",
+              "type": "set_variable",
+              "value": "wonders"
+            },
+            {
+              "scope": "player",
+              "tag": "villagerretaliation:atlas_principle_wonders",
+              "type": "set_tag"
+            },
+            {
+              "text": {
+                "key": "#stage.choose_principle.response.wonders.action.notification.text"
+              },
+              "trigger": "quest.updated",
+              "type": "notification"
+            }
+          ],
+          "id": "wonders",
+          "label": {
+            "key": "#stage.choose_principle.response.wonders.label"
+          },
+          "text": {
+            "key": "#stage.choose_principle.response.wonders.text"
+          },
+          "transition": {
+            "stage": "wonders_ready"
+          }
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.choose_principle.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.choose_principle.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.choose_principle.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.85,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.choose_principle.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.roads_ready.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.roads_ready.dialogue.turn_in.lines"
+          },
+          "order": -24,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.roads_ready.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.roads_ready.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "roads_ready",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.roads_ready.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.roads_ready.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "unavailable": {
+                  "key": "#stage.roads_ready.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.roads_ready.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.roads_ready.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.wonders_ready.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.wonders_ready.dialogue.turn_in.lines"
+          },
+          "order": -24,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.wonders_ready.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.wonders_ready.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "wonders_ready",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.wonders_ready.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.wonders_ready.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "unavailable": {
+                  "key": "#stage.wonders_ready.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.wonders_ready.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.wonders_ready.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "title": {
+      "key": "#tracker.title"
+    },
+    "title_key": "quest.cartographers_atlas.ink_and_bearings.tracker.title"
+  },
+  "localization_prefix": "quest.cartographers_atlas.ink_and_bearings"
+}

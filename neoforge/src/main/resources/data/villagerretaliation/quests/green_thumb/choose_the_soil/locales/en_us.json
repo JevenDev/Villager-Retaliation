@@ -1,0 +1,137 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.green_thumb.choose_the_soil.description": "Choose whether the new field will rely on canals or compost.",
+    "quest.green_thumb.choose_the_soil.stage.canal_return.dialogue.turn_in.label": "About Choose the Soil",
+    "quest.green_thumb.choose_the_soil.stage.canal_return.dialogue.turn_in.lines": [
+      "The canal edges hold. Water can reach every row without taking the path with it.",
+      "The first channel is open. From here, the field follows water."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.green_thumb.choose_the_soil.stage.canal_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.green_thumb.choose_the_soil.stage.canal_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The first channel is open. From here, the field follows water.",
+      "The canal edges hold. Water can reach every row without taking the path with it."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Twelve stone bricks laid for the canal, then bring the water bucket back to the field."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.green_thumb.choose_the_soil.stage.canal_work.dialogue.reminder.label": "About Choose the Soil",
+    "quest.green_thumb.choose_the_soil.stage.canal_work.dialogue.reminder.lines": [
+      "Twelve stone bricks laid for the canal, then bring the water bucket back to the field.",
+      "Canals, then. Give the water clean stone edges and no place to wander."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.green_thumb.choose_the_soil.stage.canal_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.green_thumb.choose_the_soil.stage.canal_work.objective.carry_water.tracker.complete_text": "The water bucket is ready.",
+    "quest.green_thumb.choose_the_soil.stage.canal_work.objective.carry_water.tracker.text": "Carry a water bucket to fill the canal.",
+    "quest.green_thumb.choose_the_soil.stage.canal_work.objective.lay_canal.tracker.complete_text": "The canal walls are laid.",
+    "quest.green_thumb.choose_the_soil.stage.canal_work.objective.lay_canal.tracker.text": "Place 12 stone bricks for canal walls.",
+    "quest.green_thumb.choose_the_soil.stage.canal_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Twelve stone bricks laid for the canal, then bring the water bucket back to the field.",
+      "Canals, then. Give the water clean stone edges and no place to wander."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.canal_work.ui.tracker_text": "Twelve stone bricks laid for the canal, then bring the water bucket back to the field.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.offer.label": "Choose the Soil",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.offer.lines": [
+      "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+      "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.offer.response.canal.action.notification.text": "You chose canals for the new field.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.offer.response.canal.label": "Build the canals",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.offer.response.canal.text": "Canals, then. Give the water clean stone edges and no place to wander.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.offer.response.compost.action.notification.text": "You chose compost for the new field.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.offer.response.compost.label": "Feed the soil",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.offer.response.compost.text": "Compost, then. We will make the field rich before asking it for anything.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.offer.response.decline.label": "Not yet.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.label": "About Choose the Soil",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.lines": [
+      "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+      "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.response.canal.action.notification.text": "You chose canals for the new field.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.response.canal.label": "Build the canals",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.response.canal.text": "Canals, then. Give the water clean stone edges and no place to wander.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.response.compost.action.notification.text": "You chose compost for the new field.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.response.compost.label": "Feed the soil",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.response.compost.text": "Compost, then. We will make the field rich before asking it for anything.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.response.decline.label": "Not yet.",
+    "quest.green_thumb.choose_the_soil.stage.choose.dialogue.reminder.response.details.label": "Repeat the choice.",
+    "quest.green_thumb.choose_the_soil.stage.choose.objective.choose_route.tracker.complete_text": "Route chosen: {objective_choice_value}.",
+    "quest.green_thumb.choose_the_soil.stage.choose.objective.choose_route.tracker.text": "Choose the route with the quest giver.",
+    "quest.green_thumb.choose_the_soil.stage.choose.scene.decline.lines": [
+      "Then the soil remains undecided, and undecided soil grows mostly weeds."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.choose.scene.reminder_details.action.remind.lines.reminder": [
+      "The field can follow one permanent plan: canal work returns irrigation hardware, while compost work returns restorative food.",
+      "Canals are material-heavy but steady. Compost is renewable, but demands more repeated labor. This choice closes the other field plan."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.choose.scene.reminder_details.action.remind.lines.unavailable": [
+      "That choice is not open right now."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.choose.ui.tracker_text": "Choose a route.",
+    "quest.green_thumb.choose_the_soil.stage.compost_return.dialogue.turn_in.label": "About Choose the Soil",
+    "quest.green_thumb.choose_the_soil.stage.compost_return.dialogue.turn_in.lines": [
+      "The soil is dark, loose, and ready. It smells terrible, which is encouraging.",
+      "The first bed is fed. From here, the field follows compost."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.green_thumb.choose_the_soil.stage.compost_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.green_thumb.choose_the_soil.stage.compost_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The first bed is fed. From here, the field follows compost.",
+      "The soil is dark, loose, and ready. It smells terrible, which is encouraging."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Work the composter five times and bring sixteen bone meal for the first rows."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.green_thumb.choose_the_soil.stage.compost_work.dialogue.reminder.label": "About Choose the Soil",
+    "quest.green_thumb.choose_the_soil.stage.compost_work.dialogue.reminder.lines": [
+      "Work the composter five times and bring sixteen bone meal for the first rows.",
+      "Compost, then. We will make the field rich before asking it for anything."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.green_thumb.choose_the_soil.stage.compost_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.green_thumb.choose_the_soil.stage.compost_work.objective.bring_bone_meal.tracker.complete_text": "The bone meal is ready.",
+    "quest.green_thumb.choose_the_soil.stage.compost_work.objective.bring_bone_meal.tracker.text": "Bring 16 bone meal for the first rows.",
+    "quest.green_thumb.choose_the_soil.stage.compost_work.objective.work_composter.tracker.complete_text": "The compost has been worked.",
+    "quest.green_thumb.choose_the_soil.stage.compost_work.objective.work_composter.tracker.text": "Work a composter 5 times.",
+    "quest.green_thumb.choose_the_soil.stage.compost_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Work the composter five times and bring sixteen bone meal for the first rows.",
+      "Compost, then. We will make the field rich before asking it for anything."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.green_thumb.choose_the_soil.stage.compost_work.ui.tracker_text": "Work the composter five times and bring sixteen bone meal for the first rows.",
+    "quest.green_thumb.choose_the_soil.title": "Choose the Soil"
+  }
+}
