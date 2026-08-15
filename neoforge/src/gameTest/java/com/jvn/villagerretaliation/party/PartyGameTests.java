@@ -42,6 +42,7 @@ import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.raid.PlayerRaidSavedData;
@@ -619,14 +620,14 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void partyTrackedQuestsRequireLeaderOrAdminAndPreservePersonalTracking(GameTestHelper helper) {
+    public static void partyTrackingKeepsPersonalAndSharedQuestScopesIndependent(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_quest_leader"));
         ServerPlayer member = fakePlayer(level, uniqueName("party_quest_member"));
         PartySavedData partyData = PartySavedData.get(level);
         PartyRecord party = partyData.createParty(leader.getUUID(), level.getGameTime());
-        ResourceLocation partyQuestId = VillagerRetaliation.id("party_tracking_authority_fixture");
-        ResourceLocation personalQuestId = VillagerRetaliation.id("personal_tracking_preserved_fixture");
+        ResourceLocation partyQuestId = VillagerRetaliation.id("blank_map_promise");
+        ResourceLocation personalQuestId = VillagerRetaliation.id("tales_of_a_lost_civilization");
         PartySharedQuestRecord shared = new PartySharedQuestRecord(
                 partyQuestId,
                 UUID.randomUUID(),
@@ -636,11 +637,25 @@ public final class PartyGameTests {
             helper.assertTrue(partyData.addPlayer(party, member.getUUID()), "fixture member should join party");
             shared.enroll(leader.getUUID(), false);
             shared.enroll(member.getUUID(), false);
+            QuestDefinition partyQuest = VillagerQuestResources.quest(level.getServer(), partyQuestId).orElseThrow();
+            QuestDefinition personalQuest = VillagerQuestResources.quest(level.getServer(), personalQuestId).orElseThrow();
+            helper.assertTrue(PartyQuestService.isShareable(partyQuest),
+                    "party tracker fixture must be shareable");
+            helper.assertFalse(PartyQuestService.isShareable(personalQuest),
+                    "structure-visit quest must remain personal");
+            questData.getOrCreate(member.getUUID(), partyQuestId).start(
+                    shared.sourceVillagerId(), level.dimension(), helper.absolutePos(BlockPos.ZERO), level.getGameTime());
+            questData.getOrCreate(member.getUUID(), personalQuestId).start(
+                    UUID.randomUUID(), level.dimension(), helper.absolutePos(BlockPos.ZERO), level.getGameTime());
             party.addSharedQuest(shared);
             party.setTrackedQuest(partyQuestId);
             questData.setTrackedQuest(member.getUUID(), personalQuestId);
             VillagerQuestService.setClientEffectsSuppressedForTests(leader, true);
             VillagerQuestService.setClientEffectsSuppressedForTests(member, true);
+            helper.assertValueEqual(
+                    VillagerQuestService.debugTrackedQuestIdsForTests(member),
+                    List.of(personalQuestId, partyQuestId),
+                    "personal and shared party quests should both reach the member tracker");
 
             VillagerQuestService.handleTrackerRequest(
                     member,
@@ -649,7 +664,26 @@ public final class PartyGameTests {
             helper.assertValueEqual(party.trackedQuests(), List.of(partyQuestId),
                     "ordinary members must not change party tracked quests");
             helper.assertValueEqual(questData.getTrackedQuests(member.getUUID()), List.of(personalQuestId),
-                    "rejected party tracking changes must preserve personal tracking");
+                    "rejected party tracking changes must not alter personal tracking");
+
+            VillagerQuestService.handleTrackerRequest(
+                    member,
+                    personalQuestId.toString(),
+                    QuestTrackerRequestPayload.Action.UNTRACK);
+            helper.assertTrue(questData.getTrackedQuests(member.getUUID()).isEmpty(),
+                    "ordinary members should be able to untrack personal quests");
+            helper.assertValueEqual(party.trackedQuests(), List.of(partyQuestId),
+                    "personal tracking changes must not alter the party tracker");
+            VillagerQuestService.handleTrackerRequest(
+                    member,
+                    personalQuestId.toString(),
+                    QuestTrackerRequestPayload.Action.TRACK);
+            helper.assertValueEqual(questData.getTrackedQuests(member.getUUID()), List.of(personalQuestId),
+                    "ordinary members should be able to track personal quests");
+            helper.assertValueEqual(
+                    VillagerQuestService.debugTrackedQuestIdsForTests(member),
+                    List.of(personalQuestId, partyQuestId),
+                    "personal tracking should remain visible beside the party tracker");
 
             helper.assertTrue(party.setAdminPrivileges(member.getUUID(), true),
                     "fixture member should receive party admin privileges");
@@ -660,7 +694,7 @@ public final class PartyGameTests {
             helper.assertTrue(party.trackedQuests().isEmpty(),
                     "party admins should be able to clear the party tracked quest");
             helper.assertValueEqual(questData.getTrackedQuests(member.getUUID()), List.of(personalQuestId),
-                    "clearing the party override must keep personal tracked quests for fallback");
+                    "clearing party tracking must preserve personal tracked quests");
 
             helper.assertTrue(party.setAdminPrivileges(member.getUUID(), false),
                     "fixture member should lose party admin privileges");
@@ -668,8 +702,8 @@ public final class PartyGameTests {
                     member,
                     personalQuestId.toString(),
                     QuestTrackerRequestPayload.Action.UNTRACK);
-            helper.assertValueEqual(questData.getTrackedQuests(member.getUUID()), List.of(personalQuestId),
-                    "ordinary members cannot replace the personal fallback while the party has no tracked quests");
+            helper.assertTrue(questData.getTrackedQuests(member.getUUID()).isEmpty(),
+                    "personal tracking must remain editable without party admin privileges");
 
             party.setTrackedQuest(partyQuestId);
             VillagerQuestService.handleTrackerRequest(
@@ -680,6 +714,7 @@ public final class PartyGameTests {
                     "the party leader should be able to clear the party tracked quest");
         } finally {
             questData.remove(member.getUUID(), personalQuestId);
+            questData.remove(member.getUUID(), partyQuestId);
             VillagerQuestService.setClientEffectsSuppressedForTests(leader, false);
             VillagerQuestService.setClientEffectsSuppressedForTests(member, false);
             PartyService.deleteParty(level, party.id());
