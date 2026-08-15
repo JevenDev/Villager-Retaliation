@@ -722,11 +722,17 @@ public final class VillagerGameplayGameTests {
                 "serialized villager should preserve its selected downed pose");
         float downedWidth = loaded.getBbWidth();
         float downedHeight = loaded.getBbHeight();
+        loaded.getLookControl().setLookAt(
+                loaded.getX(), loaded.getEyeY() - 8.0D, loaded.getZ() + 1.0D, 360.0F, 360.0F);
+        loaded.getLookControl().tick();
 
         VillagerDownedService.recover(loaded);
         helper.assertFalse(VillagerDownedService.isDowned(loaded), "recovery should clear persisted state");
         helper.assertFalse(loaded.isNoAi(), "recovery should restore the prior AI flag");
         helper.assertTrue(loaded.canPickUpLoot(), "recovery should restore the prior pickup flag");
+        loaded.getLookControl().tick();
+        helper.assertTrue(Math.abs(loaded.getXRot()) < 1.0E-4F,
+                "recovery should clear the retained LookControl pitch target");
         helper.assertTrue(loaded.getBbWidth() < downedWidth, "recovery should restore the standing hitbox width");
         helper.assertTrue(loaded.getBbHeight() > downedHeight, "recovery should restore the standing hitbox height");
         helper.succeed();

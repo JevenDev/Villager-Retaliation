@@ -48,25 +48,7 @@ public final class VillagerSecondWindCompat {
                         default -> null;
                     };
                 }
-                LivingEntity entity = null;
-                if (args != null) {
-                    for (Object argument : args) {
-                        if (argument instanceof LivingEntity living) {
-                            entity = living;
-                            break;
-                        }
-                    }
-                }
-                return switch (method.getName()) {
-                    case "isDowned" -> entity instanceof Villager villager && VillagerDownedService.isDowned(villager);
-                    case "canRevive" -> entity instanceof Villager villager && VillagerDownedService.isDowned(villager);
-                    case "revive" -> revive(entity);
-                    case "reviveHealthOverride" -> entity instanceof Villager villager
-                            ? VillagerDownedService.recoveryHealth(villager)
-                            : OptionalDouble.empty();
-                    case "applyConfiguredRegeneration" -> false;
-                    default -> throw new UnsupportedOperationException("Unknown Second Wind adapter method " + method.getName());
-                };
+                return dispatchAdapterCall(method.getName(), args);
             });
             api.getMethod("registerExternalAdapter", ResourceLocation.class, adapterType).invoke(null, ADAPTER_ID, adapter);
             notifyStateChanged = api.getMethod("notifyExternalStateChanged", LivingEntity.class);
@@ -104,8 +86,29 @@ public final class VillagerSecondWindCompat {
         return active;
     }
 
-    private static boolean revive(LivingEntity entity) {
-        if (!(entity instanceof Villager villager) || !VillagerDownedService.isDowned(villager)) return false;
+    static Object dispatchAdapterCall(String methodName, Object[] args) {
+        Villager villager = villagerArgument(args);
+        return switch (methodName) {
+            case "isDowned", "canRevive" -> villager != null && VillagerDownedService.isDowned(villager);
+            case "revive" -> revive(villager);
+            case "reviveHealthOverride" -> villager == null
+                    ? OptionalDouble.empty()
+                    : VillagerDownedService.recoveryHealth(villager);
+            case "applyConfiguredRegeneration" -> false;
+            default -> throw new UnsupportedOperationException("Unknown Second Wind adapter method " + methodName);
+        };
+    }
+
+    private static Villager villagerArgument(Object[] args) {
+        if (args == null) return null;
+        for (Object argument : args) {
+            if (argument instanceof Villager villager) return villager;
+        }
+        return null;
+    }
+
+    private static boolean revive(Villager villager) {
+        if (villager == null || !VillagerDownedService.isDowned(villager)) return false;
         VillagerDownedService.recover(villager);
         return !VillagerDownedService.isDowned(villager);
     }

@@ -381,6 +381,12 @@ public final class VillagerDownedService {
     }
 
     private static void neutralizePitch(Villager villager) {
+        double yawRadians = Math.toRadians(villager.getYHeadRot());
+        villager.getLookControl().setLookAt(
+                villager.getX() - Math.sin(yawRadians) * 2.0D,
+                villager.getEyeY(),
+                villager.getZ() + Math.cos(yawRadians) * 2.0D,
+                360.0F, 360.0F);
         villager.setXRot(0.0F);
         villager.xRotO = 0.0F;
     }
