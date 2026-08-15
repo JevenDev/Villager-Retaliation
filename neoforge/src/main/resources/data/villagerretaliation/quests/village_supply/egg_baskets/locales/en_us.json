@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.egg_baskets.description": {
+      "lines": [
+        "Bring eggs so the kitchens can stretch breakfast and broth."
+      ]
+    },
+    "quest.village_supply.egg_baskets.dialogue.already_completed": {
+      "lines": [
+        "Leave the old tally alone. We already settled Egg Baskets.",
+        "No one needs this done twice. The kitchen shelf has the eggs you brought.",
+        "Your earlier work still stands. I counted your 12 eggs. We are square.",
+        "There is no second payment here. The cooks already put that delivery to work.",
+        "Nothing remains to be earned from this. You solved the problem of breakfast running short.",
+        "I will not reopen a finished account. There is no reason to gather another load of eggs.",
+        "What was owed has been paid. Egg Baskets is crossed off the eggs work list.",
+        "There is no second payment here. Your part in helping us make breakfast and enrich broth is finished.",
+        "You finished what I asked. The last eggs batch is still serving the village.",
+        "I remember your first return. I remember who filled the eggs order, and it was you.",
+        "There is no second payment here. The reward was paid when the eggs delivery came in.",
+        "That chapter is closed. You did enough the first time. I will leave the old entry filed under Egg Baskets.",
+        "Your earlier work still stands. We can give the morning shift a proper meal because you answered Egg Baskets.",
+        "Nothing remains to be earned from this. The full eggs count reached the kitchen shelf. Nothing is missing.",
+        "The matter ended well enough. The cooks would object if I asked you twice.",
+        "You finished what I asked. Your eggs delivery passed inspection and went into use.",
+        "Leave the old tally alone. That empty spot in the kitchen shelf belongs to yesterday.",
+        "No one needs this done twice. The record shows 12 eggs received from you.",
+        "You finished what I asked. You did the quiet eggs work that keeps everyone going.",
+        "Leave the old tally alone. The first ending was good enough for Egg Baskets."
+      ]
+    },
+    "quest.village_supply.egg_baskets.dialogue.inactive": {
+      "lines": [
+        "The time is wrong. The breakfast baskets are not being counted right now.",
+        "Nothing calls for this work today. There is no open order for eggs today.",
+        "Nothing calls for this work today. The kitchen shelf is being counted before I ask for more.",
+        "Leave that work alone for now. The cooks have not posted a fresh request.",
+        "I will post it when it matters. Hold off on the eggs. We have nowhere useful to put them.",
+        "Ask me after the stores change. The need to make breakfast and enrich broth will return, but not today.",
+        "We have no need of it yet. I am waiting for the next tally before opening Egg Baskets.",
+        "For now, let the matter rest. Bringing 12 eggs now would crowd the stores.",
+        "Nothing calls for this work today. The last eggs batch has not been used up yet.",
+        "We have no need of it yet. Ask again after the cooks check what remains.",
+        "The time is wrong. I will not invent an urgent need for eggs.",
+        "I will post it when it matters. The kitchen shelf is quiet, so this can wait.",
+        "The village can wait on this one. We are between work orders for eggs.",
+        "We have no need of it yet. Nothing is wrong at the kitchen shelf. The timing is simply off.",
+        "We have no need of it yet. Save your effort until we actually need eggs.",
+        "Leave that work alone for now. The board has no current mark beside Egg Baskets.",
+        "I will post it when it matters. Today is not the day for another eggs run.",
+        "I am keeping this off the board. Once breakfast running short becomes a concern, I will reopen this.",
+        "We have no need of it yet. I would rather delay than waste good eggs.",
+        "I am keeping this off the board. Wait for the stores to change before asking me about Egg Baskets."
+      ]
+    },
+    "quest.village_supply.egg_baskets.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current egg order. Ask again after the kitchen shelf has been checked.",
+        "The kitchen shelf tally is missing, so I will not ask you to gather eggs yet.",
+        "No one has confirmed how much eggs the kitchen shelf needs today.",
+        "The work note is incomplete. Let me settle the egg count first.",
+        "I will not send you after eggs until the village confirms the order.",
+        "The kitchen shelf has not posted a trustworthy egg count.",
+        "I checked the work slate twice; the egg request is not ready.",
+        "This order can wait until I have a current egg tally.",
+        "Someone needs to check the kitchen shelf before I hand you this order.",
+        "The village has not agreed on the egg count yet.",
+        "I have an old egg tally and no current one.",
+        "The kitchen shelf may need eggs, but I will not turn a guess into work.",
+        "Come back after the kitchen shelf finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the kitchen shelf tally.",
+        "Let me confirm who needs the eggs before you start gathering.",
+        "No work yet. The village has not approved this egg request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the egg order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.egg_baskets.dialogue.missing_proof": {
+      "lines": [
+        "You returned without the one thing I asked for. Bring the eggs before I call the baskets full.",
+        "The evidence still matters. I need the eggs here before I sign this off.",
+        "I believe you went, but that is not enough. A promise does not fill the kitchen shelf. Bring the eggs delivery.",
+        "The evidence still matters. You may have gathered them, but the cooks have not received them.",
+        "You returned without the one thing I asked for. Set the 12 eggs down here and I can close the eggs order.",
+        "A story cannot close the ledger. Handing over the eggs is the proof on this supply job.",
+        "I believe you went, but that is not enough. I cannot inspect whole eggs carried gently while your hands are empty.",
+        "The evidence still matters. Your report sounds fine. I still need the actual eggs.",
+        "I believe you went, but that is not enough. Nothing has reached the kitchen shelf yet.",
+        "I believe you went, but that is not enough. Bring what you collected before we discuss the Egg Baskets reward.",
+        "A story cannot close the ledger. The kitchen shelf needs usable eggs, not a story about them.",
+        "The evidence still matters. I will count the eggs as soon as you place them here.",
+        "What you carried home decides this. Do not leave the eggs delivery in another chest.",
+        "The evidence still matters. The cooks are waiting on the eggs bundle itself.",
+        "Bring back something the village can verify. The last step is simple. Hand over the eggs.",
+        "I believe you went, but that is not enough. I cannot make breakfast and enrich broth with an empty counter.",
+        "The evidence still matters. Come back carrying the eggs order, and we will be done.",
+        "I need something I can hold. The eggs work counts once the kitchen shelf receives it.",
+        "The evidence still matters. You are one handoff away from finishing Egg Baskets.",
+        "The proof has to reach my hands. Let me see the eggs before I call this complete."
+      ]
+    },
+    "quest.village_supply.egg_baskets.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the eggs.",
+        "I counted twice; the full order of 12 eggs is not here yet.",
+        "This helps, but the kitchen shelf still needs the remaining eggs.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 12 eggs; the pile is still short.",
+        "Bring the missing eggs, and then I can settle the order.",
+        "The kitchen shelf has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The kitchen shelf is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 12 eggs.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the kitchen shelf short.",
+        "The order stays open until all 12 eggs are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The kitchen shelf is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.egg_baskets.dialogue.reminder": {
+      "lines": [
+        "You are not finished yet. Twelve eggs for the kitchen. Fragile, useful, and always somehow more urgent than they sound.",
+        "You are not finished yet. I am still waiting on 12 eggs for the kitchen shelf.",
+        "Keep the return trip in your plans. Look for whole eggs carried gently. Bad supplies only move the problem.",
+        "Keep the return trip in your plans. The cooks need those eggs to make breakfast and enrich broth.",
+        "Before you leave, hear this again. The count is 12 eggs. Check it before returning.",
+        "The job still has loose ends. This eggs delivery means we can give the morning shift a proper meal.",
+        "The job still has loose ends. If you are choosing between loads, bring the eggs first.",
+        "Before you leave, hear this again. Keep the eggs order together so the eggs tally stays easy.",
+        "Before you leave, hear this again. The kitchen shelf has space waiting for the full bundle.",
+        "Remember what the village is waiting for. Do not let a simple request turn into breakfast running short.",
+        "The job still has loose ends. There is no hidden part to Egg Baskets. Bring the agreed eggs count.",
+        "Do not lose the thread now. Handle them carefully. I want whole eggs carried gently.",
+        "You are not finished yet. Bring all the eggs at once if you can manage it.",
+        "Keep the whole task in mind. The cooks are planning their next work around your return.",
+        "Stay with the work you accepted. I wrote 12 eggs on the eggs slate so neither of us has to guess.",
+        "Do not let one finished step distract you. The sooner these arrive, the sooner we can make breakfast and enrich broth.",
+        "Before you leave, hear this again. Nothing else is missing from the eggs order.",
+        "Bring this to a proper finish. Return when the eggs are ready to hand over.",
+        "Do not let one finished step distract you. You know how many eggs the kitchen shelf needs. The rest is gathering.",
+        "Keep the return trip in your plans. A complete eggs bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.egg_baskets.dialogue.start": {
+      "lines": [
+        "The village has work for you. Bring 12 eggs. A quiet morning starts with full baskets.",
+        "This needs a careful hand. The eggs order needs 12 eggs. Can you handle that?",
+        "Take this seriously. The cooks are trying to make breakfast and enrich broth, and supplies are thin.",
+        "I am trusting you with something important. Bring me 12 eggs. I want whole eggs carried gently.",
+        "Here is the work. I have a plain job with a useful result. Find 12 eggs.",
+        "I have a difficult request. We can give the morning shift a proper meal if you fill the eggs order.",
+        "Before you agree, hear all of it. Breakfast running short is a small problem until everyone needs the same thing.",
+        "Take this seriously. The count on the eggs slate is 12 eggs.",
+        "Take the task only if you are ready. Gather the eggs and bring the whole delivery here.",
+        "Listen closely. Stocking the kitchen shelf is not glory, but it matters.",
+        "Let us be clear about the job. The cooks asked me to find someone reliable for this run.",
+        "Let us be clear about the job. I need a clean delivery for the kitchen shelf.",
+        "Before you agree, hear all of it. If you can spare the time, 12 eggs would settle the eggs shortage.",
+        "There is a reason I chose you. The need is real, which makes the instructions for Egg Baskets simple.",
+        "There is a reason I chose you. Bring the eggs when you have the complete count.",
+        "I have a difficult request. Good eggs will let us make breakfast and enrich broth.",
+        "Take the task only if you are ready. The village should not reach breakfast running short before we act.",
+        "Let us be clear about the job. Take care with the eggs bundle. We need whole eggs carried gently.",
+        "Take this seriously. I will pay when the kitchen shelf receives the full order.",
+        "Let us be clear about the job. Find 12 eggs, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.egg_baskets.dialogue.turn_in": {
+      "lines": [
+        "You brought the work to a proper end. Good. That is breakfast, broth, and one less complaint before dawn.",
+        "That is the result I needed. The count is right. I will get these to the kitchen shelf.",
+        "Good, you made it back. The cooks can make breakfast and enrich broth now.",
+        "You saw it through. These are whole eggs carried gently. You chose well.",
+        "That is the result I needed. That delivery keeps us from breakfast running short.",
+        "You saw it through. Good work. All the eggs arrived together.",
+        "That settles what I asked of you. I have your eggs, and you earned the Egg Baskets reward.",
+        "The hard part is behind us. The kitchen shelf looks less bare already.",
+        "The village can use this. This will help us give the morning shift a proper meal.",
+        "That settles what I asked of you. You saved the cooks from making do with scraps.",
+        "You brought the work to a proper end. Everything on the eggs slate is here.",
+        "The hard part is behind us. A useful eggs job, done without fuss. Thank you.",
+        "The hard part is behind us. I will put the eggs away before someone borrows them.",
+        "That is the result I needed. The village is better stocked because you completed Egg Baskets.",
+        "I am glad to see you home. You brought exactly the eggs I asked for.",
+        "That settles what I asked of you. The eggs delivery is sound from top to bottom.",
+        "You saw it through. The kitchen shelf has one less shortage waiting to surprise us.",
+        "The village can use this. The village may not cheer for eggs, but it would notice their absence.",
+        "Now I can close the ledger. Take your payment. The eggs count gives me no complaint.",
+        "Now I can close the ledger. I can hand the eggs order to the cooks with confidence."
+      ]
+    },
+    "quest.village_supply.egg_baskets.dialogue.unavailable": {
+      "lines": [
+        "I will not place this burden on you. The egg request is closed for now.",
+        "The village needs a steadier hand. I cannot hand you the work filed under Egg Baskets yet.",
+        "No, the risk is too high. The eggs order is for someone the kitchen shelf already knows.",
+        "You are not ready for this request. The cooks need a delivery they can count on.",
+        "Come back after you have earned more trust. Show the village steadier work before taking Egg Baskets.",
+        "I will not place this burden on you. The eggs matter too much to gamble on a stranger.",
+        "You are not ready for this request. I am not opening the eggs slate to you today.",
+        "This calls for someone we know better. Build some trust, then ask about Egg Baskets again.",
+        "The village needs a steadier hand. I need someone who will return with the whole 12 eggs.",
+        "No, the risk is too high. Gathering eggs is simple, but reliability is not optional.",
+        "Come back after you have earned more trust. For now, the eggs order stays with regular hands.",
+        "No, the risk is too high. I cannot promise the kitchen shelf a delivery from you yet.",
+        "No, the risk is too high. There will be other work before we trust you with the kitchen shelf.",
+        "I cannot trust you with this yet. The village has not cleared you for this eggs run.",
+        "You are not ready for this request. I would rather wait than risk breakfast running short.",
+        "Some work must wait until trust catches up. This is not punishment. Show better judgment before I open Egg Baskets.",
+        "The village needs a steadier hand. The cooks asked for a familiar runner this time.",
+        "Earn our confidence before asking again. Come back for the eggs order after your name carries more weight.",
+        "I need proof of your judgment first. I am not taking new help for Egg Baskets.",
+        "Earn our confidence before asking again. Earn some confidence here, and we can revisit Egg Baskets."
+      ]
+    },
+    "quest.village_supply.egg_baskets.objective.bring_eggs.complete_text": {
+      "lines": [
+        "The egg baskets are full and ready."
+      ]
+    },
+    "quest.village_supply.egg_baskets.objective.bring_eggs.text": {
+      "lines": [
+        "Bring 12 eggs for the kitchen baskets."
+      ]
+    },
+    "quest.village_supply.egg_baskets.stage.return.dialogue.turn_in.label": "About Egg Baskets",
+    "quest.village_supply.egg_baskets.stage.return.dialogue.turn_in.lines": [
+      "Not one cracked on the road. The cook will call that a small miracle.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.egg_baskets.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.egg_baskets.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.egg_baskets.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Not one cracked on the road. The cook will call that a small miracle.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.egg_baskets.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.egg_baskets.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.egg_baskets.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.egg_baskets.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Egg Baskets is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.egg_baskets.stage.return.scene.turn_in_wait.lines": [
+      "Bring 12 eggs for the village kitchen",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.egg_baskets.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.egg_baskets.stage.work.dialogue.offer.label": "Egg Baskets",
+    "quest.village_supply.egg_baskets.stage.work.dialogue.offer.lines": [
+      "The hens are busy arguing and the kitchen has nothing to show for it.",
+      "Bring 12 eggs for the village kitchen, and the shelves will look less worried.",
+      "Bring 12 eggs for the village kitchen. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.egg_baskets.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.egg_baskets.stage.work.dialogue.reminder.label": "About Egg Baskets",
+    "quest.village_supply.egg_baskets.stage.work.dialogue.reminder.lines": [
+      "Bring 12 eggs for the village kitchen",
+      "Bring 12 eggs for the village kitchen.",
+      "Bring 12 eggs for the village kitchen, and the shelves will look less worried."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.egg_baskets.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.egg_baskets.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.egg_baskets.stage.work.scene.abandon_confirm.lines": [
+      "Put Egg Baskets aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.egg_baskets.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.egg_baskets.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Egg Baskets is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.leave.lines": [
+      "Bring 12 eggs for the village kitchen",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 12 eggs for the village kitchen",
+      "Bring 12 eggs for the village kitchen.",
+      "Bring 12 eggs for the village kitchen, and the shelves will look less worried."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Egg Baskets is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Egg Baskets is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 12 eggs for the village kitchen. Keep the full count together on the road back.",
+      "Bring 12 eggs for the village kitchen.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Egg Baskets is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.egg_baskets.stage.work.ui.tracker_text": "Bring 12 eggs for the village kitchen.",
+    "quest.village_supply.egg_baskets.title": {
+      "lines": [
+        "Egg Baskets"
+      ]
+    },
+    "quest.village_supply.egg_baskets.tracker.proof.text": {
+      "lines": [
+        "Bring 12 eggs for the kitchen baskets."
+      ]
+    },
+    "quest.village_supply.egg_baskets.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the eggs."
+      ]
+    },
+    "quest.village_supply.egg_baskets.tracker.title": {
+      "lines": [
+        "Egg Baskets"
+      ]
+    }
+  }
+}

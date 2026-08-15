@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveDebugState;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEvaluationContext;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
@@ -33,16 +34,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestGenerator;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.gametest.framework.TestFunction;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.level.storage.loot.LootTable;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 
 /**
@@ -131,10 +129,9 @@ public final class BuiltInQuestContentGameTests {
     private static void assertQuestWorks(GameTestHelper helper, String expectedQuestline, String questPath) {
         MinecraftServer server = helper.getLevel().getServer();
         ResourceLocation questId = VillagerRetaliation.id(questPath);
-        Set<ResourceLocation> expectedSources = Set.of(
-                VillagerRetaliation.id("quests/" + expectedQuestline + "/" + questPath + ".json"),
+        ResourceLocation expectedSource =
                 VillagerRetaliation.id(
-                        "quests/" + expectedQuestline + "/" + questPath + "/quest.json"));
+                        "quests/" + expectedQuestline + "/" + questPath + "/quest.json");
         CompiledQuest compiled = VillagerQuestResources.compiledQuest(server, questId)
                 .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
         QuestDefinition definition = compiled.asQuestDefinition();
@@ -143,8 +140,8 @@ public final class BuiltInQuestContentGameTests {
         helper.assertValueEqual(definition.id(), questId, questId + " runtime id");
         helper.assertValueEqual(definition.questline(), expectedQuestline, questId + " questline");
         helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, questId + " schema");
-        helper.assertTrue(expectedSources.contains(compiled.source().resource()),
-                questId + " source resource was " + compiled.source().resource());
+        helper.assertValueEqual(
+                compiled.source().resource(), expectedSource, questId + " source resource");
         helper.assertFalse(definition.title().isBlank(), questId + " title is blank");
         helper.assertFalse(definition.description().isBlank(), questId + " description is blank");
         helper.assertFalse(definition.tags().isEmpty(), questId + " has no grouping tags");
@@ -212,15 +209,10 @@ public final class BuiltInQuestContentGameTests {
         helper.assertTrue(rewards.gossipReputation() != 0, definition.id() + " has no gossip reward");
         helper.assertTrue(lootTable != null, definition.id() + " has no loot-table reward");
         helper.assertTrue(rewards.memoryEvent() != null, definition.id() + " has no memory-event reward");
-        ResourceLocation lootResource = ResourceLocation.fromNamespaceAndPath(
-                lootTable.getNamespace(), "loot_table/" + lootTable.getPath() + ".json");
+        QuestRewardResolver.Resolution resolved = QuestRewardResolver.resolve(server, lootTable);
         helper.assertTrue(
-                server.getResourceManager().getResource(lootResource).isPresent(),
-                definition.id() + " references missing reward resource " + lootResource);
-        ResourceKey<LootTable> lootKey = ResourceKey.create(Registries.LOOT_TABLE, lootTable);
-        helper.assertTrue(
-                server.reloadableRegistries().getLootTable(lootKey) != LootTable.EMPTY,
-                definition.id() + " reward loot table did not load: " + lootTable);
+                resolved.resolved() && resolved.source() == QuestRewardResolver.Source.BUNDLED,
+                definition.id() + " bundled reward did not resolve: " + resolved.diagnostic());
     }
 
     private static void assertObjectivesWork(

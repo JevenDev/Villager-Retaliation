@@ -61,6 +61,7 @@ import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.quest.VillagerQuestDeathProtectionService;
 import com.jvn.villagerretaliation.quest.QuestV2Compiler;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestStage;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
@@ -394,11 +395,11 @@ public final class VillagerQuestGameTests {
             helper.assertTrue(rewards.gossipReputation() != 0, quest.id() + " has no gossip reward");
             helper.assertTrue(rewards.lootTable() != null, quest.id() + " has no loot-table reward");
             helper.assertTrue(rewards.memoryEvent() != null, quest.id() + " has no memory-event reward");
-            assertResourceExists(helper, quest.id(), rewards.lootTable(), "loot_table");
-            ResourceKey<LootTable> rewardLootKey = ResourceKey.create(Registries.LOOT_TABLE, rewards.lootTable());
+            QuestRewardResolver.Resolution reward =
+                    QuestRewardResolver.resolve(server, rewards.lootTable());
             helper.assertTrue(
-                    server.reloadableRegistries().getLootTable(rewardLootKey) != LootTable.EMPTY,
-                    quest.id() + " reward loot table did not load: " + rewards.lootTable());
+                    reward.resolved() && reward.source() == QuestRewardResolver.Source.BUNDLED,
+                    quest.id() + " bundled reward did not resolve: " + reward.diagnostic());
             if (rewards.gossipReputation() > 0) {
                 positiveGossip++;
             }
@@ -7072,19 +7073,6 @@ public final class VillagerQuestGameTests {
                         .anyMatch(definition -> definition.id().equals(normalized)
                                 || definition.source().toString().equals(normalized)),
                 questId + " references missing quest forced dialogue " + forcedDialogue);
-    }
-
-    private static void assertResourceExists(
-            GameTestHelper helper,
-            ResourceLocation questId,
-            ResourceLocation id,
-            String root) {
-        ResourceLocation resource = ResourceLocation.fromNamespaceAndPath(
-                id.getNamespace(),
-                root + "/" + id.getPath() + ".json");
-        helper.assertTrue(
-                helper.getLevel().getServer().getResourceManager().getResource(resource).isPresent(),
-                questId + " references missing resource " + resource);
     }
 
     private static <T> void assertContainsAll(

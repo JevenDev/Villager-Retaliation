@@ -1,0 +1,88 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.workshop_oaths.honed_handles.description": "Help a village workshop rebuild the handles, grips, and lashings tools depend on.",
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.dialogue.reminder.label": "About Handlework",
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.dialogue.reminder.lines": [
+      "The grips are covered. Bring flint and copper next, small pieces for small failures before they become large ones."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.dialogue.reminder.response.details.label": "Repeat the fittings.",
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.dialogue.reminder.response.leave.label": "I will bring them.",
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.objective.bring_copper.tracker.complete_text": "The copper fittings are ready.",
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.objective.bring_copper.tracker.text": "Bring 4 copper ingots for pins and fittings.",
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.objective.bring_flint.tracker.complete_text": "The flint is ready.",
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.objective.bring_flint.tracker.text": "Bring 6 flint for spare edges and scrapers.",
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.scene.leave.lines": [
+      "The smallest fitting is always the one everyone blames when it fails."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 6 flint and 4 copper ingots for workshop edges and fittings."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.scene.reminder_details.action.remind.lines.unavailable": [
+      "The edge fittings can wait until the grips are ready."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.edge_bits.ui.tracker_text": "Bring 6 flint and 4 copper ingots.",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.dialogue.offer.label": "Handlework",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.dialogue.offer.lines": [
+      "Everyone asks for sharp iron. Fewer people notice the handle until it snaps.",
+      "Help me restock the plain parts first: sticks for grips, string for lashings, and flint for edges that do not deserve iron."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.dialogue.offer.response.accept.label": "I will help the workshop.",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.dialogue.offer.response.decline.label": "Not now.",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.dialogue.reminder.label": "About Handlework",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.dialogue.reminder.lines": [
+      "The workshop still needs the parts nobody writes songs about."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.dialogue.reminder.response.details.label": "Repeat the handle list.",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.dialogue.reminder.response.leave.label": "I will bring them.",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.objective.bring_sticks.tracker.complete_text": "The handle stock is ready.",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.objective.bring_sticks.tracker.text": "Bring 24 sticks for handles and tool grips.",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.objective.bring_string.tracker.complete_text": "The lashings are ready.",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.objective.bring_string.tracker.text": "Bring 8 string for lashings and wraps.",
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.scene.decline.lines": [
+      "Then I will keep sanding split handles and pretending the pile is getting smaller."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.scene.leave.lines": [
+      "Dry sticks. Clean string. It sounds simple because it matters."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 24 sticks and 8 string for workshop handles and lashings."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.scene.reminder_details.action.remind.lines.unavailable": [
+      "The workshop is not ready for that work right now."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.scene.start_quest.action.start.lines.already_completed": [
+      "The handle rack is already restocked."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.scene.start_quest.action.start.lines.started": [
+      "Bring 24 sticks and 8 string first. A good tool starts where the hand meets it."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.scene.start_quest.action.start.lines.unavailable": [
+      "The workshop is not ready to ask for that help right now."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.raw_handles.ui.tracker_text": "Bring 24 sticks and 8 string.",
+    "quest.workshop_oaths.honed_handles.stage.return.dialogue.turn_in.label": "About Handlework",
+    "quest.workshop_oaths.honed_handles.stage.return.dialogue.turn_in.lines": [
+      "That is a shelf of plain things that will stop plenty of unplain disasters."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.return.dialogue.turn_in.response.complete.label": "Restock the workshop.",
+    "quest.workshop_oaths.honed_handles.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.workshop_oaths.honed_handles.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good. The next tool that holds together will owe you more than the person swinging it knows."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The workshop order still needs its handles, bindings, flint, or copper fittings."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the workshop stock here before I mark it in the ledger."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the handle order right now."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.return.scene.leave.lines": [
+      "The rack has gaps. Gaps have consequences."
+    ],
+    "quest.workshop_oaths.honed_handles.stage.return.ui.tracker_text": "Return with the workshop handle supplies.",
+    "quest.workshop_oaths.honed_handles.title": "Handlework"
+  }
+}

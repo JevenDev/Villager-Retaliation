@@ -1,0 +1,88 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.courier_roads.wax_sealed_route.description": "Prepare the paper, leather, and wax a village courier needs before messages can travel safely.",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.dialogue.offer.label": "The Courier Packet",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.dialogue.offer.lines": [
+      "A message is small until it fails to arrive. Then it becomes a rumor, a panic, or a fight.",
+      "Help me prepare a courier route: leather for the satchel, paper for clean copies, honeycomb for seals that show if someone has been nosy."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.dialogue.offer.response.accept.label": "I will prepare the route.",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.dialogue.offer.response.decline.label": "Not now.",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.dialogue.reminder.label": "About the Courier Packet",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.dialogue.reminder.lines": [
+      "The courier needs a satchel and paper before the seals matter."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.dialogue.reminder.response.details.label": "Repeat the satchel list.",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.dialogue.reminder.response.leave.label": "I will bring it.",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.objective.bring_leather.tracker.complete_text": "The satchel leather is ready.",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.objective.bring_leather.tracker.text": "Bring 4 leather for a courier satchel.",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.objective.bring_paper.tracker.complete_text": "The route paper is ready.",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.objective.bring_paper.tracker.text": "Bring 12 paper for route notes and copies.",
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.scene.decline.lines": [
+      "Then the messages stay folded here and everyone pretends waiting is a plan."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.scene.leave.lines": [
+      "Keep the paper dry. Bad news runs fast enough without ink helping it blur."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 4 leather and 12 paper for the courier route."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.scene.reminder_details.action.remind.lines.unavailable": [
+      "The courier packet is not ready for that work right now."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.scene.start_quest.action.start.lines.already_completed": [
+      "The wax-sealed route is already prepared."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.scene.start_quest.action.start.lines.started": [
+      "Bring 4 leather and 12 paper first. A courier with loose pages is just a breeze with legs."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.scene.start_quest.action.start.lines.unavailable": [
+      "The courier route is not ready to ask for help right now."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.make_satchel.ui.tracker_text": "Bring 4 leather and 12 paper.",
+    "quest.courier_roads.wax_sealed_route.stage.return.dialogue.turn_in.label": "About the Courier Packet",
+    "quest.courier_roads.wax_sealed_route.stage.return.dialogue.turn_in.lines": [
+      "This will let news arrive as news, not gossip with a limp."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.return.dialogue.turn_in.response.complete.label": "Seal the route.",
+    "quest.courier_roads.wax_sealed_route.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.courier_roads.wax_sealed_route.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good. A proper route is a quiet bridge. You helped build one."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The courier packet still needs leather, paper, honeycomb, or its compass."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the route supplies here before I seal the packet."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the courier route right now."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.return.scene.leave.lines": [
+      "The packet stays open until the route is ready."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.return.ui.tracker_text": "Return with the courier route supplies.",
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.dialogue.reminder.label": "About the Courier Packet",
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.dialogue.reminder.lines": [
+      "The satchel is possible now. Bring honeycomb and carry a compass so the route has both privacy and direction."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.dialogue.reminder.response.details.label": "Repeat the seal list.",
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.dialogue.reminder.response.leave.label": "I will bring it.",
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.objective.bring_compass.tracker.complete_text": "The route compass is ready.",
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.objective.bring_compass.tracker.text": "Carry 1 compass to set the courier route.",
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.objective.bring_honeycomb.tracker.complete_text": "The wax seals are ready.",
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.objective.bring_honeycomb.tracker.text": "Bring 3 honeycomb for wax seals.",
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.scene.leave.lines": [
+      "A sealed message lets trust travel farther than a shout."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 3 honeycomb and carry 1 compass for the courier route."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.scene.reminder_details.action.remind.lines.unavailable": [
+      "The letters cannot be sealed until the satchel is finished."
+    ],
+    "quest.courier_roads.wax_sealed_route.stage.seal_letters.ui.tracker_text": "Bring 3 honeycomb and carry 1 compass.",
+    "quest.courier_roads.wax_sealed_route.title": "The Courier Packet"
+  }
+}

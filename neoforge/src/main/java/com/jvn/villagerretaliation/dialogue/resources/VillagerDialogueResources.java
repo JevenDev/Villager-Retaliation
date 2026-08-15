@@ -30,6 +30,7 @@ import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
@@ -280,18 +281,30 @@ public final class VillagerDialogueResources {
 
     public static Optional<String> message(DialogueContext context, String key, Map<String, String> replacements) {
         DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
-        List<KeyedMessageLine> candidates = load(context.level().getServer(), context.locale()).messages().stream()
+        List<KeyedMessageLine> candidates = bundleMessageLines(
+                context.level().getServer(), context.locale(), key).stream()
                 .filter(line -> line.matches(context, key, disposition))
                 .toList();
+        if (candidates.isEmpty()) {
+            candidates = load(context.level().getServer(), context.locale()).messages().stream()
+                    .filter(line -> line.matches(context, key, disposition))
+                    .toList();
+        }
         return selectMessage(candidates, context.random())
                 .map(line -> resolveTemplate(line.selectText(context, context.random()), replacements));
     }
 
     public static Optional<String> professionPriorityMessage(DialogueContext context, String key, Map<String, String> replacements) {
         DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
-        List<KeyedMessageLine> matches = load(context.level().getServer(), context.locale()).messages().stream()
+        List<KeyedMessageLine> matches = bundleMessageLines(
+                context.level().getServer(), context.locale(), key).stream()
                 .filter(line -> line.matches(context, key, disposition))
                 .toList();
+        if (matches.isEmpty()) {
+            matches = load(context.level().getServer(), context.locale()).messages().stream()
+                    .filter(line -> line.matches(context, key, disposition))
+                    .toList();
+        }
         boolean hasProfessionSpecificMatch = matches.stream().anyMatch(KeyedMessageLine::professionSpecific);
         List<KeyedMessageLine> candidates = matches.stream()
                 .filter(line -> !hasProfessionSpecificMatch || line.professionSpecific())
@@ -326,11 +339,62 @@ public final class VillagerDialogueResources {
             String key,
             String locale,
             Map<String, String> replacements) {
-        List<KeyedMessageLine> candidates = load(server, locale).messages().stream()
+        List<KeyedMessageLine> candidates = bundleMessageLines(server, locale, key).stream()
                 .filter(line -> line.matches(key))
                 .toList();
+        if (candidates.isEmpty()) {
+            candidates = load(server, locale).messages().stream()
+                    .filter(line -> line.matches(key))
+                    .toList();
+        }
         return selectMessage(candidates, random)
                 .map(line -> resolveTemplate(line.selectText(null, random), replacements));
+    }
+
+    private static List<KeyedMessageLine> bundleMessageLines(
+            MinecraftServer server,
+            String locale,
+            String key) {
+        if (server == null || key == null || key.isBlank()) {
+            return List.of();
+        }
+        JsonElement payload = QuestContentCatalogs.current(server)
+                .localization()
+                .payload(locale, key)
+                .orElse(null);
+        if (payload == null) {
+            return List.of();
+        }
+
+        JsonObject entry = new JsonObject();
+        if (payload.isJsonObject()) {
+            payload.getAsJsonObject().entrySet().forEach(value ->
+                    entry.add(value.getKey(), value.getValue().deepCopy()));
+        } else if (payload.isJsonArray()) {
+            entry.add("lines", payload.deepCopy());
+        } else if (payload.isJsonPrimitive() && payload.getAsJsonPrimitive().isString()) {
+            JsonArray lines = new JsonArray();
+            lines.add(payload.getAsString());
+            entry.add("lines", lines);
+        } else {
+            return List.of();
+        }
+        entry.addProperty("id", key);
+        entry.addProperty("key", key);
+        JsonArray entries = new JsonArray();
+        entries.add(entry);
+        JsonObject root = new JsonObject();
+        root.add("messages", entries);
+        Map<String, KeyedMessageLine> messages = new LinkedHashMap<>();
+        readKeyedMessages(
+                ResourceLocation.fromNamespaceAndPath(
+                        "villagerretaliation", "quests/_catalog/locales/" + VillagerLocale.normalize(locale) + ".json"),
+                root,
+                DialogueEntryMetadata.EMPTY,
+                Set.of(),
+                messages,
+                new LinkedHashMap<>());
+        return List.copyOf(messages.values());
     }
 
     public static List<DialogueOptionDefinition> dialogueOptions(DialogueContext context, DialogueDisposition disposition) {

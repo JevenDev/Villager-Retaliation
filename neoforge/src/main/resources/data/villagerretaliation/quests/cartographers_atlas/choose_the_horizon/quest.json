@@ -1,14 +1,35 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "started",
+  "events": [
+    {
+      "actions": [
+        {
+          "scope": "player",
+          "tag": "villagerretaliation:cartographers_atlas_horizon_chosen",
+          "type": "set_tag"
+        }
+      ],
+      "event": "completed",
+      "id": "horizon_chosen",
+      "repeatable": false
+    }
+  ],
   "id": "villagerretaliation:choose_the_horizon",
-  "localization_prefix": "quest.cartographers_atlas.choose_the_horizon",
   "metadata": {
-    "title": {
-      "key": "#title"
-    },
     "description": {
       "key": "#description"
     },
+    "description_key": "quest.cartographers_atlas.choose_the_horizon.description",
+    "parent": "villagerretaliation:the_atlas_test",
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
@@ -24,12 +45,12 @@
       "feature.branching",
       "feature.scene"
     ],
-    "parent": "villagerretaliation:the_atlas_test",
-    "title_key": "quest.cartographers_atlas.choose_the_horizon.title",
-    "description_key": "quest.cartographers_atlas.choose_the_horizon.description"
+    "title": {
+      "key": "#title"
+    },
+    "title_key": "quest.cartographers_atlas.choose_the_horizon.title"
   },
   "provider": {
-    "type": "villagerretaliation:villager",
     "filters": {
       "min_villager_level": "master",
       "professions": [
@@ -40,56 +61,19 @@
           "min": 48
         }
       }
-    }
+    },
+    "type": "villagerretaliation:villager"
   },
-  "availability": {
-    "abandonment": "allow_repickup",
-    "consume_on_completion": true,
-    "cross_villager_compatible": false,
-    "locked_to_villager": true,
-    "max_completions": 1,
-    "max_starts": 0,
-    "repeatable": false
+  "rewards": {
+    "experience": 220,
+    "gossip_reputation": 6,
+    "loot_table": "villagerretaliation:quest/choose_the_horizon",
+    "memory_event": "player_completed_quest",
+    "reputation": 14
   },
-  "events": [
-    {
-      "id": "horizon_chosen",
-      "event": "completed",
-      "repeatable": false,
-      "actions": [
-        {
-          "type": "set_tag",
-          "scope": "player",
-          "tag": "villagerretaliation:cartographers_atlas_horizon_chosen"
-        }
-      ]
-    }
-  ],
-  "entry_stage": "started",
+  "schema": "villagerretaliation:quest/v2",
   "stages": [
     {
-      "id": "started",
-      "objectives": [
-        {
-          "id": "choose_route",
-          "type": "choice",
-          "key": "choice",
-          "values": [
-            "coast",
-            "dark_roof"
-          ],
-          "tracker": {
-            "text": {
-              "key": "#stage.started.objective.choose_route.tracker.text"
-            },
-            "complete_text": {
-              "key": "#stage.started.objective.choose_route.tracker.complete_text"
-            },
-            "show_progress": true,
-            "progress": 0.45
-          }
-        }
-      ],
       "complete_when": [
         "choose_route"
       ],
@@ -98,14 +82,39 @@
           "label": {
             "key": "#stage.started.dialogue.offer.label"
           },
-          "request": "question",
-          "order": -24,
-          "show_for_babies": false,
           "lines": {
             "key": "#stage.started.dialogue.offer.lines"
           },
+          "order": -24,
+          "request": "question",
           "responses": [
             {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "coast"
+                },
+                {
+                  "scope": "player",
+                  "tag": "villagerretaliation:atlas_coast_route",
+                  "type": "set_tag"
+                },
+                {
+                  "text": {
+                    "key": "#stage.started.dialogue.offer.response.coast.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "atlas_horizon_choice_v1",
+                  "scene": "villagerretaliation:atlas_horizon_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
               "id": "coast",
               "label": {
                 "key": "#stage.started.dialogue.offer.response.coast.label"
@@ -113,37 +122,37 @@
               "text": {
                 "key": "#stage.started.dialogue.offer.response.coast.text"
               },
-              "actions": [
-                {
-                  "type": "set_variable",
-                  "scope": "quest",
-                  "key": "choice",
-                  "value": "coast"
-                },
-                {
-                  "type": "set_tag",
-                  "scope": "player",
-                  "tag": "villagerretaliation:atlas_coast_route"
-                },
-                {
-                  "type": "notification",
-                  "trigger": "quest.updated",
-                  "text": {
-                    "key": "#stage.started.dialogue.offer.response.coast.action.notification.text"
-                  }
-                },
-                {
-                  "type": "start_scene",
-                  "scene": "villagerretaliation:atlas_horizon_choice",
-                  "operation_id": "atlas_horizon_choice_v1",
-                  "wait_for_result": true
-                }
-              ],
               "transition": {
                 "stage": "coast_final"
               }
             },
             {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "dark_roof"
+                },
+                {
+                  "scope": "player",
+                  "tag": "villagerretaliation:atlas_dark_roof_route",
+                  "type": "set_tag"
+                },
+                {
+                  "text": {
+                    "key": "#stage.started.dialogue.offer.response.dark_roof.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "atlas_horizon_choice_v1",
+                  "scene": "villagerretaliation:atlas_horizon_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
               "id": "dark_roof",
               "label": {
                 "key": "#stage.started.dialogue.offer.response.dark_roof.label"
@@ -151,32 +160,6 @@
               "text": {
                 "key": "#stage.started.dialogue.offer.response.dark_roof.text"
               },
-              "actions": [
-                {
-                  "type": "set_variable",
-                  "scope": "quest",
-                  "key": "choice",
-                  "value": "dark_roof"
-                },
-                {
-                  "type": "set_tag",
-                  "scope": "player",
-                  "tag": "villagerretaliation:atlas_dark_roof_route"
-                },
-                {
-                  "type": "notification",
-                  "trigger": "quest.updated",
-                  "text": {
-                    "key": "#stage.started.dialogue.offer.response.dark_roof.action.notification.text"
-                  }
-                },
-                {
-                  "type": "start_scene",
-                  "scene": "villagerretaliation:atlas_horizon_choice",
-                  "operation_id": "atlas_horizon_choice_v1",
-                  "wait_for_result": true
-                }
-              ],
               "transition": {
                 "stage": "dark_roof_final"
               }
@@ -188,44 +171,65 @@
               },
               "scene": "decline"
             }
-          ]
+          ],
+          "show_for_babies": false
         },
         "reminder": {
           "label": {
             "key": "#stage.started.dialogue.reminder.label"
           },
-          "request": "question",
-          "order": -24,
-          "show_for_babies": false,
           "lines": {
             "key": "#stage.started.dialogue.reminder.lines"
           },
+          "order": -24,
+          "request": "question",
           "responses": [
             {
               "id": "details",
               "label": {
                 "key": "#stage.started.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
-              "order": 0
+              "order": 0,
+              "scene": "reminder_details"
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.started.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
-              "order": 100
+              "order": 100,
+              "scene": "leave"
             }
-          ]
+          ],
+          "show_for_babies": false
         }
       },
+      "id": "started",
+      "objectives": [
+        {
+          "id": "choose_route",
+          "key": "choice",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.started.objective.choose_route.tracker.complete_text"
+            },
+            "progress": 0.45,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.started.objective.choose_route.tracker.text"
+            }
+          },
+          "type": "choice",
+          "values": [
+            "coast",
+            "dark_roof"
+          ]
+        }
+      ],
       "scenes": [
         {
-          "id": "reminder_details",
           "actions": [
             {
-              "type": "quest",
               "action": "remind",
               "lines": {
                 "reminder": {
@@ -234,9 +238,11 @@
                 "unavailable": {
                   "key": "#stage.started.scene.reminder_details.action.remind.lines.unavailable"
                 }
-              }
+              },
+              "type": "quest"
             }
-          ]
+          ],
+          "id": "reminder_details"
         },
         {
           "id": "decline",
@@ -252,104 +258,104 @@
         }
       ],
       "ui": {
+        "progress": 0.45,
+        "show_progress": true,
         "tracker_text": {
           "key": "#stage.started.ui.tracker_text"
-        },
-        "show_progress": true,
-        "progress": 0.45
+        }
       }
     },
     {
-      "id": "coast_final",
-      "objectives": [
-        {
-          "id": "carry_spyglass",
-          "type": "item_check",
-          "item": "minecraft:spyglass",
-          "count": 1,
-          "consume": false,
-          "tracker": {
-            "text": {
-              "key": "#stage.coast_final.objective.carry_spyglass.tracker.text"
-            },
-            "complete_text": {
-              "key": "#stage.coast_final.objective.carry_spyglass.tracker.complete_text"
-            },
-            "show_progress": true,
-            "progress": 0.65
-          }
-        },
-        {
-          "id": "carry_boat",
-          "type": "item_check",
-          "item": "minecraft:oak_boat",
-          "count": 1,
-          "consume": false,
-          "tracker": {
-            "text": {
-              "key": "#stage.coast_final.objective.carry_boat.tracker.text"
-            },
-            "complete_text": {
-              "key": "#stage.coast_final.objective.carry_boat.tracker.complete_text"
-            },
-            "show_progress": true,
-            "progress": 0.75
-          }
-        },
-        {
-          "id": "bring_provisions",
-          "type": "item_check",
-          "item": "minecraft:cooked_cod",
-          "count": 16,
-          "tracker": {
-            "text": {
-              "key": "#stage.coast_final.objective.bring_provisions.tracker.text"
-            },
-            "complete_text": {
-              "key": "#stage.coast_final.objective.bring_provisions.tracker.complete_text"
-            },
-            "show_progress": true,
-            "progress": 0.9
-          }
-        }
-      ],
       "complete_when": [
         "carry_spyglass",
         "carry_boat",
         "bring_provisions"
       ],
-      "next": "coast_chosen",
       "dialogue": {
         "reminder": {
           "label": {
             "key": "#stage.coast_final.dialogue.reminder.label"
           },
-          "request": "question",
-          "order": -24,
-          "show_for_babies": false,
           "lines": {
             "key": "#stage.coast_final.dialogue.reminder.lines"
           },
+          "order": -24,
+          "request": "question",
           "responses": [
             {
               "id": "details",
               "label": {
                 "key": "#stage.coast_final.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
-              "order": 0
+              "order": 0,
+              "scene": "reminder_details"
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.coast_final.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
-              "order": 100
+              "order": 100,
+              "scene": "leave"
             }
-          ]
+          ],
+          "show_for_babies": false
         }
       },
+      "id": "coast_final",
+      "next": "coast_chosen",
+      "objectives": [
+        {
+          "consume": false,
+          "count": 1,
+          "id": "carry_spyglass",
+          "item": "minecraft:spyglass",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.coast_final.objective.carry_spyglass.tracker.complete_text"
+            },
+            "progress": 0.65,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.coast_final.objective.carry_spyglass.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "consume": false,
+          "count": 1,
+          "id": "carry_boat",
+          "item": "minecraft:oak_boat",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.coast_final.objective.carry_boat.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.coast_final.objective.carry_boat.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 16,
+          "id": "bring_provisions",
+          "item": "minecraft:cooked_cod",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.coast_final.objective.bring_provisions.tracker.complete_text"
+            },
+            "progress": 0.9,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.coast_final.objective.bring_provisions.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
       "scenes": [
         {
           "id": "leave",
@@ -358,10 +364,8 @@
           }
         },
         {
-          "id": "reminder_details",
           "actions": [
             {
-              "type": "quest",
               "action": "remind",
               "lines": {
                 "reminder": {
@@ -370,110 +374,112 @@
                 "unavailable": {
                   "key": "#stage.coast_final.scene.reminder_details.action.remind.lines.unavailable"
                 }
-              }
+              },
+              "type": "quest"
             }
-          ]
+          ],
+          "id": "reminder_details"
         }
       ],
       "ui": {
+        "progress": 0.85,
+        "show_progress": true,
         "tracker_text": {
           "key": "#stage.coast_final.ui.tracker_text"
-        },
-        "show_progress": true,
-        "progress": 0.85
+        }
       }
     },
     {
-      "id": "dark_roof_final",
-      "objectives": [
-        {
-          "id": "carry_shield",
-          "type": "item_check",
-          "item": "minecraft:shield",
-          "count": 1,
-          "consume": false,
-          "tracker": {
-            "text": {
-              "key": "#stage.dark_roof_final.objective.carry_shield.tracker.text"
-            },
-            "complete_text": {
-              "key": "#stage.dark_roof_final.objective.carry_shield.tracker.complete_text"
-            },
-            "show_progress": true,
-            "progress": 0.65
-          }
-        },
-        {
-          "id": "carry_crossbow",
-          "type": "item_check",
-          "item": "minecraft:crossbow",
-          "count": 1,
-          "consume": false,
-          "tracker": {
-            "text": {
-              "key": "#stage.dark_roof_final.objective.carry_crossbow.tracker.text"
-            },
-            "complete_text": {
-              "key": "#stage.dark_roof_final.objective.carry_crossbow.tracker.complete_text"
-            },
-            "show_progress": true,
-            "progress": 0.75
-          }
-        },
-        {
-          "id": "bring_torches",
-          "type": "item_check",
-          "item": "minecraft:torch",
-          "count": 32,
-          "tracker": {
-            "text": {
-              "key": "#stage.dark_roof_final.objective.bring_torches.tracker.text"
-            },
-            "complete_text": {
-              "key": "#stage.dark_roof_final.objective.bring_torches.tracker.complete_text"
-            },
-            "show_progress": true,
-            "progress": 0.9
-          }
-        }
-      ],
       "complete_when": [
         "carry_shield",
         "carry_crossbow",
         "bring_torches"
       ],
-      "next": "dark_roof_chosen",
       "dialogue": {
         "reminder": {
           "label": {
             "key": "#stage.dark_roof_final.dialogue.reminder.label"
           },
-          "request": "question",
-          "order": -24,
-          "show_for_babies": false,
           "lines": {
             "key": "#stage.dark_roof_final.dialogue.reminder.lines"
           },
+          "order": -24,
+          "request": "question",
           "responses": [
             {
               "id": "details",
               "label": {
                 "key": "#stage.dark_roof_final.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
-              "order": 0
+              "order": 0,
+              "scene": "reminder_details"
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.dark_roof_final.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
-              "order": 100
+              "order": 100,
+              "scene": "leave"
             }
-          ]
+          ],
+          "show_for_babies": false
         }
       },
+      "id": "dark_roof_final",
+      "next": "dark_roof_chosen",
+      "objectives": [
+        {
+          "consume": false,
+          "count": 1,
+          "id": "carry_shield",
+          "item": "minecraft:shield",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.dark_roof_final.objective.carry_shield.tracker.complete_text"
+            },
+            "progress": 0.65,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.dark_roof_final.objective.carry_shield.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "consume": false,
+          "count": 1,
+          "id": "carry_crossbow",
+          "item": "minecraft:crossbow",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.dark_roof_final.objective.carry_crossbow.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.dark_roof_final.objective.carry_crossbow.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 32,
+          "id": "bring_torches",
+          "item": "minecraft:torch",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.dark_roof_final.objective.bring_torches.tracker.complete_text"
+            },
+            "progress": 0.9,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.dark_roof_final.objective.bring_torches.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
       "scenes": [
         {
           "id": "leave",
@@ -482,10 +488,8 @@
           }
         },
         {
-          "id": "reminder_details",
           "actions": [
             {
-              "type": "quest",
               "action": "remind",
               "lines": {
                 "reminder": {
@@ -494,33 +498,32 @@
                 "unavailable": {
                   "key": "#stage.dark_roof_final.scene.reminder_details.action.remind.lines.unavailable"
                 }
-              }
+              },
+              "type": "quest"
             }
-          ]
+          ],
+          "id": "reminder_details"
         }
       ],
       "ui": {
+        "progress": 0.9,
+        "show_progress": true,
         "tracker_text": {
           "key": "#stage.dark_roof_final.ui.tracker_text"
-        },
-        "show_progress": true,
-        "progress": 0.9
+        }
       }
     },
     {
-      "id": "coast_chosen",
-      "objectives": [],
       "dialogue": {
         "turn_in": {
           "label": {
             "key": "#stage.coast_chosen.dialogue.turn_in.label"
           },
-          "request": "question",
-          "order": -24,
-          "show_for_babies": false,
           "lines": {
             "key": "#stage.coast_chosen.dialogue.turn_in.lines"
           },
+          "order": -24,
+          "request": "question",
           "responses": [
             {
               "id": "complete",
@@ -536,19 +539,20 @@
               },
               "scene": "leave"
             }
-          ]
+          ],
+          "show_for_babies": false
         }
       },
+      "id": "coast_chosen",
+      "objectives": [],
       "scenes": [
         {
-          "id": "complete_coast",
           "actions": [
             {
-              "type": "loot",
-              "loot_table": "villagerretaliation:quest/choose_the_horizon_coast_bonus"
+              "loot_table": "villagerretaliation:quest/choose_the_horizon_coast_bonus",
+              "type": "loot"
             },
             {
-              "type": "quest",
               "action": "turn_in",
               "lines": {
                 "completed": {
@@ -560,9 +564,11 @@
                 "unavailable": {
                   "key": "#stage.coast_chosen.scene.complete_coast.action.turn_in.lines.unavailable"
                 }
-              }
+              },
+              "type": "quest"
             }
-          ]
+          ],
+          "id": "complete_coast"
         },
         {
           "id": "leave",
@@ -572,27 +578,24 @@
         }
       ],
       "ui": {
+        "progress": 1,
+        "show_progress": true,
         "tracker_text": {
           "key": "#stage.coast_chosen.ui.tracker_text"
-        },
-        "show_progress": true,
-        "progress": 1
+        }
       }
     },
     {
-      "id": "dark_roof_chosen",
-      "objectives": [],
       "dialogue": {
         "turn_in": {
           "label": {
             "key": "#stage.dark_roof_chosen.dialogue.turn_in.label"
           },
-          "request": "question",
-          "order": -24,
-          "show_for_babies": false,
           "lines": {
             "key": "#stage.dark_roof_chosen.dialogue.turn_in.lines"
           },
+          "order": -24,
+          "request": "question",
           "responses": [
             {
               "id": "complete",
@@ -608,19 +611,20 @@
               },
               "scene": "leave"
             }
-          ]
+          ],
+          "show_for_babies": false
         }
       },
+      "id": "dark_roof_chosen",
+      "objectives": [],
       "scenes": [
         {
-          "id": "complete_dark_roof",
           "actions": [
             {
-              "type": "loot",
-              "loot_table": "villagerretaliation:quest/choose_the_horizon_dark_roof_bonus"
+              "loot_table": "villagerretaliation:quest/choose_the_horizon_dark_roof_bonus",
+              "type": "loot"
             },
             {
-              "type": "quest",
               "action": "turn_in",
               "lines": {
                 "completed": {
@@ -632,9 +636,11 @@
                 "unavailable": {
                   "key": "#stage.dark_roof_chosen.scene.complete_dark_roof.action.turn_in.lines.unavailable"
                 }
-              }
+              },
+              "type": "quest"
             }
-          ]
+          ],
+          "id": "complete_dark_roof"
         },
         {
           "id": "leave",
@@ -644,25 +650,19 @@
         }
       ],
       "ui": {
+        "progress": 1,
+        "show_progress": true,
         "tracker_text": {
           "key": "#stage.dark_roof_chosen.ui.tracker_text"
-        },
-        "show_progress": true,
-        "progress": 1
+        }
       }
     }
   ],
-  "rewards": {
-    "experience": 220,
-    "gossip_reputation": 6,
-    "loot_table": "villagerretaliation:quest/choose_the_horizon",
-    "memory_event": "player_completed_quest",
-    "reputation": 14
-  },
   "ui": {
     "title": {
       "key": "#tracker.title"
     },
     "title_key": "quest.cartographers_atlas.choose_the_horizon.tracker.title"
-  }
+  },
+  "localization_prefix": "quest.cartographers_atlas.choose_the_horizon"
 }

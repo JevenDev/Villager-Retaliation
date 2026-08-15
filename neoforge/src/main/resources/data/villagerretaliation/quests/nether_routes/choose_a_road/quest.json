@@ -1,0 +1,704 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 1,
+    "repeatable": false
+  },
+  "entry_stage": "choose",
+  "id": "villagerretaliation:choose_a_road",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "parent": "villagerretaliation:through_fire",
+    "questline": "nether_routes",
+    "tags": [
+      "group.nether_routes",
+      "role.story",
+      "activity.choice",
+      "activity.combat",
+      "activity.deliver",
+      "activity.explore",
+      "activity.gather",
+      "destination.nether",
+      "destination.remote",
+      "tier.late",
+      "difficulty.hard",
+      "commitment.expedition",
+      "theme.exploration",
+      "feature.branching",
+      "feature.scene",
+      "party.recommended"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "master",
+      "professions": [
+        "minecraft:cartographer",
+        "minecraft:cleric"
+      ],
+      "skills": {
+        "cartography": {
+          "min": 42
+        },
+        "survival": {
+          "min": 40
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 360,
+    "gossip_reputation": 8,
+    "loot_table": "villagerretaliation:quest/choose_a_road",
+    "memory_event": "player_completed_quest",
+    "reputation": 20
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "choose_route"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.choose.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.offer.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "fortress"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.fortress.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "nether_road_choice_v1",
+                  "scene": "villagerretaliation:nether_road_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
+              "id": "fortress",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.fortress.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.fortress.text"
+              },
+              "transition": {
+                "stage": "fortress_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "bastion"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.bastion.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "nether_road_choice_v1",
+                  "scene": "villagerretaliation:nether_road_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
+              "id": "bastion",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.bastion.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.bastion.text"
+              },
+              "transition": {
+                "stage": "bastion_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.choose.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.details.label"
+              },
+              "order": -10,
+              "scene": "reminder_details"
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "fortress"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.fortress.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "nether_road_choice_v1",
+                  "scene": "villagerretaliation:nether_road_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
+              "id": "fortress",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.fortress.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.fortress.text"
+              },
+              "transition": {
+                "stage": "fortress_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "bastion"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.bastion.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "nether_road_choice_v1",
+                  "scene": "villagerretaliation:nether_road_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
+              "id": "bastion",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.bastion.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.bastion.text"
+              },
+              "transition": {
+                "stage": "bastion_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "choose",
+      "objectives": [
+        {
+          "id": "choose_route",
+          "key": "choice",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.choose.objective.choose_route.tracker.complete_text"
+            },
+            "progress": 0.2,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.choose.objective.choose_route.tracker.text"
+            }
+          },
+          "type": "choice",
+          "values": [
+            "fortress",
+            "bastion"
+          ]
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.choose.scene.decline.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.2,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.choose.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "visit_fortress",
+        "defeat_blazes",
+        "bring_rods"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.fortress_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.fortress_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.fortress_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.fortress_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "fortress_work",
+      "next": "fortress_return",
+      "objectives": [
+        {
+          "dimension": "minecraft:the_nether",
+          "discovery_radius": 128,
+          "id": "visit_fortress",
+          "search_radius": 384,
+          "structure": "minecraft:fortress",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.fortress_work.objective.visit_fortress.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.fortress_work.objective.visit_fortress.tracker.text"
+            }
+          },
+          "type": "structure_visit"
+        },
+        {
+          "count": 4,
+          "entity": "minecraft:blaze",
+          "id": "defeat_blazes",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.fortress_work.objective.defeat_blazes.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.fortress_work.objective.defeat_blazes.tracker.text"
+            }
+          },
+          "type": "mob_kill"
+        },
+        {
+          "count": 2,
+          "id": "bring_rods",
+          "item": "minecraft:blaze_rod",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.fortress_work.objective.bring_rods.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.fortress_work.objective.bring_rods.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.fortress_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.fortress_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.fortress_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.fortress_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.fortress_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.fortress_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.fortress_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.fortress_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "fortress_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.fortress_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.fortress_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.fortress_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.fortress_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.fortress_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.fortress_return.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "visit_bastion",
+        "defeat_brutes",
+        "bring_gilded_stone"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.bastion_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.bastion_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.bastion_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.bastion_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "bastion_work",
+      "next": "bastion_return",
+      "objectives": [
+        {
+          "dimension": "minecraft:the_nether",
+          "discovery_radius": 160,
+          "id": "visit_bastion",
+          "search_radius": 512,
+          "structure": "minecraft:bastion_remnant",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.bastion_work.objective.visit_bastion.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.bastion_work.objective.visit_bastion.tracker.text"
+            }
+          },
+          "type": "structure_visit"
+        },
+        {
+          "count": 2,
+          "entity": "minecraft:piglin_brute",
+          "id": "defeat_brutes",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.bastion_work.objective.defeat_brutes.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.bastion_work.objective.defeat_brutes.tracker.text"
+            }
+          },
+          "type": "mob_kill"
+        },
+        {
+          "count": 4,
+          "id": "bring_gilded_stone",
+          "item": "minecraft:gilded_blackstone",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.bastion_work.objective.bring_gilded_stone.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.bastion_work.objective.bring_gilded_stone.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.bastion_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.bastion_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.bastion_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.bastion_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.bastion_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.bastion_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.bastion_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.bastion_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "bastion_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.bastion_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.bastion_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.bastion_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.bastion_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.bastion_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.bastion_return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#B884E8",
+    "icon": "minecraft:lodestone",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.nether_routes.choose_a_road"
+}

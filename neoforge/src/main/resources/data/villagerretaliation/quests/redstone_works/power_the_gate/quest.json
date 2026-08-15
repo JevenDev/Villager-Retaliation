@@ -1,0 +1,637 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 1,
+    "repeatable": false
+  },
+  "entry_stage": "choose",
+  "id": "villagerretaliation:power_the_gate",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "parent": "villagerretaliation:small_spark",
+    "questline": "redstone_works",
+    "tags": [
+      "group.redstone_works",
+      "role.story",
+      "activity.choice",
+      "activity.deliver",
+      "activity.gather",
+      "destination.village",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard",
+      "theme.craftsmanship",
+      "feature.branching"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "expert",
+      "professions": [
+        "minecraft:toolsmith",
+        "minecraft:librarian"
+      ],
+      "skills": {
+        "crafting": {
+          "min": 30
+        },
+        "scholarship": {
+          "min": 24
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 240,
+    "gossip_reputation": 6,
+    "loot_table": "villagerretaliation:quest/power_the_gate",
+    "memory_event": "player_completed_quest",
+    "reputation": 15
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "choose_route"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.choose.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.offer.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "sunlight"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.sunlight.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "sunlight",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.sunlight.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.sunlight.text"
+              },
+              "transition": {
+                "stage": "sunlight_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "whisper"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.whisper.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "whisper",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.whisper.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.whisper.text"
+              },
+              "transition": {
+                "stage": "whisper_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.choose.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.details.label"
+              },
+              "order": -10,
+              "scene": "reminder_details"
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "sunlight"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.sunlight.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "sunlight",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.sunlight.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.sunlight.text"
+              },
+              "transition": {
+                "stage": "sunlight_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "whisper"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.whisper.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "whisper",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.whisper.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.whisper.text"
+              },
+              "transition": {
+                "stage": "whisper_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "choose",
+      "objectives": [
+        {
+          "id": "choose_route",
+          "key": "choice",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.choose.objective.choose_route.tracker.complete_text"
+            },
+            "progress": 0.2,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.choose.objective.choose_route.tracker.text"
+            }
+          },
+          "type": "choice",
+          "values": [
+            "sunlight",
+            "whisper"
+          ]
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.choose.scene.decline.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.2,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.choose.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "bring_detectors",
+        "bring_lamps"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.sunlight_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.sunlight_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.sunlight_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.sunlight_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "sunlight_work",
+      "next": "sunlight_return",
+      "objectives": [
+        {
+          "count": 2,
+          "id": "bring_detectors",
+          "item": "minecraft:daylight_detector",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.sunlight_work.objective.bring_detectors.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.sunlight_work.objective.bring_detectors.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 4,
+          "id": "bring_lamps",
+          "item": "minecraft:redstone_lamp",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.sunlight_work.objective.bring_lamps.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.sunlight_work.objective.bring_lamps.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.sunlight_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.sunlight_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.sunlight_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.sunlight_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.sunlight_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.sunlight_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.sunlight_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.sunlight_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "sunlight_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.sunlight_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.sunlight_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.sunlight_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.sunlight_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.sunlight_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.sunlight_return.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "bring_sensors",
+        "bring_wool"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.whisper_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.whisper_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.whisper_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.whisper_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "whisper_work",
+      "next": "whisper_return",
+      "objectives": [
+        {
+          "count": 2,
+          "id": "bring_sensors",
+          "item": "minecraft:sculk_sensor",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.whisper_work.objective.bring_sensors.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.whisper_work.objective.bring_sensors.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 16,
+          "id": "bring_wool",
+          "item": "minecraft:white_wool",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.whisper_work.objective.bring_wool.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.whisper_work.objective.bring_wool.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.whisper_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.whisper_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.whisper_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.whisper_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.whisper_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.whisper_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.whisper_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.whisper_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "whisper_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.whisper_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.whisper_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.whisper_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.whisper_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.whisper_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.whisper_return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#B884E8",
+    "icon": "minecraft:redstone_lamp",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.redstone_works.power_the_gate"
+}

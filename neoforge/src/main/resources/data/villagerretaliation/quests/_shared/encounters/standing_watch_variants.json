@@ -1,0 +1,18 @@
+{
+  "controller": "villagerretaliation:controlled",
+  "id": "villagerretaliation:standing_watch_variants",
+  "schema": "villagerretaliation:encounter/v1",
+  "variants": [
+    {
+      "id": "captain_assault",
+      "template": "villagerretaliation:standing_watch",
+      "weight": 3
+    },
+    {
+      "id": "night_raid",
+      "template": "villagerretaliation:night_ward_attack",
+      "weight": 1
+    }
+  ],
+  "version": 1
+}

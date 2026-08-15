@@ -1,0 +1,113 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.deep_delvers.iron_road.description": "Drive the rail branch deeper with powered track and a freight cart.",
+    "quest.deep_delvers.iron_road.stage.return.dialogue.turn_in.label": "About Iron Road",
+    "quest.deep_delvers.iron_road.stage.return.dialogue.turn_in.lines": [
+      "The iron road climbs under its own power. The mine can reach deeper now.",
+      "Full carts out, empty carts in. That is a mine beginning to breathe.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.deep_delvers.iron_road.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.deep_delvers.iron_road.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.deep_delvers.iron_road.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The iron road climbs under its own power. The mine can reach deeper now.",
+      "Full carts out, empty carts in. That is a mine beginning to breathe."
+    ],
+    "quest.deep_delvers.iron_road.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.deep_delvers.iron_road.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.deep_delvers.iron_road.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.deep_delvers.iron_road.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Iron Road is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.deep_delvers.iron_road.stage.return.scene.turn_in_wait.lines": [
+      "Eight powered rails, eight redstone torches, one freight cart.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.deep_delvers.iron_road.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.deep_delvers.iron_road.stage.work.dialogue.offer.label": "Iron Road",
+    "quest.deep_delvers.iron_road.stage.work.dialogue.offer.lines": [
+      "The first rails work, but the deeper slope sends full carts backward and empty carts nowhere.",
+      "Power the steep run and give the mine a cart built for freight.",
+      "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.deep_delvers.iron_road.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.deep_delvers.iron_road.stage.work.dialogue.reminder.label": "About Iron Road",
+    "quest.deep_delvers.iron_road.stage.work.dialogue.reminder.lines": [
+      "Eight powered rails, eight redstone torches, one freight cart.",
+      "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
+      "Power the steep run and give the mine a cart built for freight."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.deep_delvers.iron_road.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.deep_delvers.iron_road.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.deep_delvers.iron_road.stage.work.objective.bring_freight_cart.tracker.complete_text": "The freight cart is ready.",
+    "quest.deep_delvers.iron_road.stage.work.objective.bring_freight_cart.tracker.text": "Bring 1 minecart with chest.",
+    "quest.deep_delvers.iron_road.stage.work.objective.bring_torches.tracker.complete_text": "The redstone torches are ready.",
+    "quest.deep_delvers.iron_road.stage.work.objective.bring_torches.tracker.text": "Bring 8 redstone torches.",
+    "quest.deep_delvers.iron_road.stage.work.objective.power_line.tracker.complete_text": "The powered rails are set.",
+    "quest.deep_delvers.iron_road.stage.work.objective.power_line.tracker.text": "Place 8 powered rails.",
+    "quest.deep_delvers.iron_road.stage.work.scene.abandon_confirm.lines": [
+      "Put Iron Road aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.deep_delvers.iron_road.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.deep_delvers.iron_road.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Iron Road is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.decline.lines": [
+      "Then push carefully. The slope has already chosen a favorite direction."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.leave.lines": [
+      "Eight powered rails, eight redstone torches, one freight cart.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Eight powered rails, eight redstone torches, one freight cart.",
+      "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
+      "Power the steep run and give the mine a cart built for freight."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Iron Road is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Iron Road is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.start_quest.action.start.lines.started": [
+      "Test the brake before the load. Ore is patient; minecarts are not.",
+      "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Iron Road is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.deep_delvers.iron_road.stage.work.ui.tracker_text": "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
+    "quest.deep_delvers.iron_road.title": "Iron Road"
+  }
+}

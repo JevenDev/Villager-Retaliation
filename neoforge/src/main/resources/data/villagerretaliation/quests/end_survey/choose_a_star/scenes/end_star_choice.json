@@ -1,0 +1,133 @@
+{
+  "actors": [
+    {
+      "alias": "player",
+      "binding_source": "owner_player",
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "death_policy": "block",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 600,
+      "type": "villagerretaliation:player"
+    },
+    {
+      "alias": "surveyor",
+      "binding_source": "quest_provider",
+      "capabilities": [
+        "villagerretaliation:capability/dialogue"
+      ],
+      "death_policy": "continue_with_snapshot",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 600,
+      "type": "villagerretaliation:villager"
+    }
+  ],
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "none",
+  "definition_version": 1,
+  "entry_step": "mark_the_star",
+  "failure_policy": "block_for_repair",
+  "id": "villagerretaliation:end_star_choice",
+  "metadata": {
+    "quest": "villagerretaliation:choose_a_star",
+    "title": {
+      "key": "#scene.end_star_choice.metadata.title"
+    }
+  },
+  "ownership": "quest_instance",
+  "schema": "villagerretaliation:scene/v1",
+  "steps": [
+    {
+      "actors": [
+        "surveyor"
+      ],
+      "data": {
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20,
+        "text": {
+          "key": "#scene.end_star_choice.step.mark_the_star.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "mark_the_star",
+      "next": "watch_the_ink",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "data": {
+        "ticks": 35
+      },
+      "id": "watch_the_ink",
+      "next": "read_star",
+      "type": "villagerretaliation:wait_ticks"
+    },
+    {
+      "data": {
+        "branches": [
+          {
+            "conditions": [
+              {
+                "key": "choice",
+                "quest": "villagerretaliation:choose_a_star",
+                "scope": "quest",
+                "type": "quest_fact",
+                "value": "chorus"
+              }
+            ],
+            "transition": "chorus"
+          }
+        ],
+        "default_transition": "city"
+      },
+      "failure_step": "failed",
+      "id": "read_star",
+      "transitions": {
+        "chorus": "chorus_charge",
+        "city": "city_charge"
+      },
+      "type": "villagerretaliation:scene_branch"
+    },
+    {
+      "actors": [
+        "surveyor"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.end_star_choice.step.chorus_charge.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "chorus_charge",
+      "next": "completed",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "actors": [
+        "surveyor"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.end_star_choice.step.city_charge.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "city_charge",
+      "next": "completed",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ],
+  "timeout_ticks": 1200
+}

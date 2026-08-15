@@ -1,0 +1,685 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 1,
+    "repeatable": false
+  },
+  "entry_stage": "choose",
+  "id": "villagerretaliation:choose_a_star",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "parent": "villagerretaliation:empty_sky",
+    "questline": "end_survey",
+    "tags": [
+      "group.end_survey",
+      "role.story",
+      "activity.choice",
+      "activity.combat",
+      "activity.deliver",
+      "activity.explore",
+      "activity.gather",
+      "destination.end",
+      "destination.remote",
+      "tier.endgame",
+      "difficulty.hard",
+      "commitment.expedition",
+      "theme.exploration",
+      "feature.branching",
+      "feature.scene",
+      "party.recommended"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "master",
+      "professions": [
+        "minecraft:cartographer",
+        "minecraft:librarian"
+      ],
+      "skills": {
+        "cartography": {
+          "min": 50
+        },
+        "scholarship": {
+          "min": 44
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 460,
+    "gossip_reputation": 9,
+    "loot_table": "villagerretaliation:quest/choose_a_star",
+    "memory_event": "player_completed_quest",
+    "reputation": 24
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "choose_route"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.choose.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.offer.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "chorus"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.chorus.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "end_star_choice_v1",
+                  "scene": "villagerretaliation:end_star_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
+              "id": "chorus",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.chorus.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.chorus.text"
+              },
+              "transition": {
+                "stage": "chorus_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "city"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.city.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "end_star_choice_v1",
+                  "scene": "villagerretaliation:end_star_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
+              "id": "city",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.city.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.city.text"
+              },
+              "transition": {
+                "stage": "city_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.choose.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.details.label"
+              },
+              "order": -10,
+              "scene": "reminder_details"
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "chorus"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.chorus.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "end_star_choice_v1",
+                  "scene": "villagerretaliation:end_star_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
+              "id": "chorus",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.chorus.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.chorus.text"
+              },
+              "transition": {
+                "stage": "chorus_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "city"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.city.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                },
+                {
+                  "operation_id": "end_star_choice_v1",
+                  "scene": "villagerretaliation:end_star_choice",
+                  "type": "start_scene",
+                  "wait_for_result": true
+                }
+              ],
+              "id": "city",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.city.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.city.text"
+              },
+              "transition": {
+                "stage": "city_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "choose",
+      "objectives": [
+        {
+          "id": "choose_route",
+          "key": "choice",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.choose.objective.choose_route.tracker.complete_text"
+            },
+            "progress": 0.2,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.choose.objective.choose_route.tracker.text"
+            }
+          },
+          "type": "choice",
+          "values": [
+            "chorus",
+            "city"
+          ]
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.choose.scene.decline.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.2,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.choose.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "clear_endermen",
+        "bring_chorus"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.chorus_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.chorus_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.chorus_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.chorus_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "chorus_work",
+      "next": "chorus_return",
+      "objectives": [
+        {
+          "count": 5,
+          "entity": "minecraft:enderman",
+          "id": "clear_endermen",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.chorus_work.objective.clear_endermen.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.chorus_work.objective.clear_endermen.tracker.text"
+            }
+          },
+          "type": "mob_kill"
+        },
+        {
+          "count": 32,
+          "id": "bring_chorus",
+          "item": "minecraft:chorus_fruit",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.chorus_work.objective.bring_chorus.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.chorus_work.objective.bring_chorus.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.chorus_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.chorus_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.chorus_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.chorus_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.chorus_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.chorus_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.chorus_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.chorus_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "chorus_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.chorus_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.chorus_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.chorus_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.chorus_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.chorus_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.chorus_return.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "visit_city",
+        "clear_shulkers",
+        "bring_shell"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.city_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.city_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.city_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.city_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "city_work",
+      "next": "city_return",
+      "objectives": [
+        {
+          "dimension": "minecraft:the_end",
+          "discovery_radius": 160,
+          "id": "visit_city",
+          "search_radius": 640,
+          "structure": "minecraft:end_city",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.city_work.objective.visit_city.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.city_work.objective.visit_city.tracker.text"
+            }
+          },
+          "type": "structure_visit"
+        },
+        {
+          "count": 3,
+          "entity": "minecraft:shulker",
+          "id": "clear_shulkers",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.city_work.objective.clear_shulkers.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.city_work.objective.clear_shulkers.tracker.text"
+            }
+          },
+          "type": "mob_kill"
+        },
+        {
+          "count": 1,
+          "id": "bring_shell",
+          "item": "minecraft:shulker_shell",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.city_work.objective.bring_shell.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.city_work.objective.bring_shell.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.city_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.city_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.city_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.city_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.city_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.city_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.city_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.city_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "city_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.city_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.city_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.city_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.city_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.city_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.city_return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#B884E8",
+    "icon": "minecraft:end_rod",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.end_survey.choose_a_star"
+}

@@ -1,0 +1,115 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_commissions.copper_weather.description": "Mine copper for the workshop and return finished blocks for roofs.",
+    "quest.village_commissions.copper_weather.stage.return.dialogue.turn_in.label": "About Copper Roofs",
+    "quest.village_commissions.copper_weather.stage.return.dialogue.turn_in.lines": [
+      "Good weight, clean corners. Rain will give these blocks their color.",
+      "This copper will still be changing when today's repairs are old stories.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_commissions.copper_weather.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_commissions.copper_weather.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_commissions.copper_weather.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good weight, clean corners. Rain will give these blocks their color.",
+      "This copper will still be changing when today's repairs are old stories.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_commissions.copper_weather.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_commissions.copper_weather.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_commissions.copper_weather.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_commissions.copper_weather.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Copper Roofs is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.copper_weather.stage.return.scene.turn_in_wait.lines": [
+      "Twelve copper ore broken, two full copper blocks returned.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_commissions.copper_weather.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_commissions.copper_weather.stage.work.dialogue.offer.label": "Copper Roofs",
+    "quest.village_commissions.copper_weather.stage.work.dialogue.offer.lines": [
+      "The new roofs need copper that can age with the village instead of rusting away from it.",
+      "Work a proper seam, then press part of the haul into solid blocks.",
+      "Mine 12 copper ore blocks and bring 2 copper blocks. I will make the reward worth the trouble."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_commissions.copper_weather.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_commissions.copper_weather.stage.work.dialogue.reminder.label": "About Copper Roofs",
+    "quest.village_commissions.copper_weather.stage.work.dialogue.reminder.lines": [
+      "Twelve copper ore broken, two full copper blocks returned.",
+      "Mine 12 copper ore blocks and bring 2 copper blocks.",
+      "Work a proper seam, then press part of the haul into solid blocks."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_commissions.copper_weather.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_commissions.copper_weather.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_commissions.copper_weather.stage.work.objective.bring_copper.tracker.complete_text": "The copper blocks are ready.",
+    "quest.village_commissions.copper_weather.stage.work.objective.bring_copper.tracker.text": "Bring 2 copper blocks.",
+    "quest.village_commissions.copper_weather.stage.work.objective.mine_copper.tracker.complete_text": "The copper seam has been worked.",
+    "quest.village_commissions.copper_weather.stage.work.objective.mine_copper.tracker.text": "Mine 12 copper ore blocks.",
+    "quest.village_commissions.copper_weather.stage.work.scene.abandon_confirm.lines": [
+      "Put Copper Roofs aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_commissions.copper_weather.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_commissions.copper_weather.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Copper Roofs is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.decline.lines": [
+      "Then the roofs can keep their plain stone a little longer.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.leave.lines": [
+      "Twelve copper ore broken, two full copper blocks returned.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Twelve copper ore broken, two full copper blocks returned.",
+      "Mine 12 copper ore blocks and bring 2 copper blocks.",
+      "Work a proper seam, then press part of the haul into solid blocks."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Copper Roofs is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Copper Roofs is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.start_quest.action.start.lines.started": [
+      "Follow the green flecks. Stone rarely advertises anything else so brightly.",
+      "Mine 12 copper ore blocks and bring 2 copper blocks.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Copper Roofs is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_commissions.copper_weather.stage.work.ui.tracker_text": "Mine 12 copper ore blocks and bring 2 copper blocks.",
+    "quest.village_commissions.copper_weather.title": "Copper Roofs"
+  }
+}

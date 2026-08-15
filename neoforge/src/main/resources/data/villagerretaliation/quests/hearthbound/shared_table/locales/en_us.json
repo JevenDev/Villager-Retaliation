@@ -1,0 +1,72 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.hearthbound.shared_table.description": "Turn the new hearth into a dependable evening table for the village.",
+    "quest.hearthbound.shared_table.stage.return.dialogue.turn_in.label": "About Supper for Everyone",
+    "quest.hearthbound.shared_table.stage.return.dialogue.turn_in.lines": [
+      "This is enough for people to sit down without wondering who is allowed to stay."
+    ],
+    "quest.hearthbound.shared_table.stage.return.dialogue.turn_in.response.complete.label": "Set the table.",
+    "quest.hearthbound.shared_table.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.hearthbound.shared_table.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good. A shared table does not solve every trouble, but it makes fewer people face trouble hungry."
+    ],
+    "quest.hearthbound.shared_table.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The table still needs bread, potatoes, cookies, or milk before we call people in."
+    ],
+    "quest.hearthbound.shared_table.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the food here before we set the table."
+    ],
+    "quest.hearthbound.shared_table.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the table note right now."
+    ],
+    "quest.hearthbound.shared_table.stage.return.scene.leave.lines": [
+      "A half-set table makes people hover in doorways. Bring the rest when you can."
+    ],
+    "quest.hearthbound.shared_table.stage.return.ui.tracker_text": "Return with the table supplies.",
+    "quest.hearthbound.shared_table.stage.stock_table.dialogue.offer.label": "Supper for Everyone",
+    "quest.hearthbound.shared_table.stage.stock_table.dialogue.offer.lines": [
+      "The hearth worked. Now people are pretending they only stop by for the smoke.",
+      "Help me make it a table instead of a novelty. Bring 12 bread, 12 baked potatoes, 8 cookies, and a milk bucket. That is the whole supper list."
+    ],
+    "quest.hearthbound.shared_table.stage.stock_table.dialogue.offer.response.accept.label": "I will help stock the table.",
+    "quest.hearthbound.shared_table.stage.stock_table.dialogue.offer.response.decline.label": "Not today.",
+    "quest.hearthbound.shared_table.stage.stock_table.dialogue.reminder.label": "About Supper for Everyone",
+    "quest.hearthbound.shared_table.stage.stock_table.dialogue.reminder.lines": [
+      "The shared table still needs bread, baked potatoes, cookies, and a milk bucket. The supper list will not change."
+    ],
+    "quest.hearthbound.shared_table.stage.stock_table.dialogue.reminder.response.details.label": "Repeat the supper list.",
+    "quest.hearthbound.shared_table.stage.stock_table.dialogue.reminder.response.leave.label": "I will bring it.",
+    "quest.hearthbound.shared_table.stage.stock_table.objective.bring_baked_potatoes.tracker.complete_text": "The potatoes are ready.",
+    "quest.hearthbound.shared_table.stage.stock_table.objective.bring_baked_potatoes.tracker.text": "Bring 12 baked potatoes for a meal that keeps well.",
+    "quest.hearthbound.shared_table.stage.stock_table.objective.bring_bread.tracker.complete_text": "The bread is ready.",
+    "quest.hearthbound.shared_table.stage.stock_table.objective.bring_bread.tracker.text": "Bring 12 bread for the shared table.",
+    "quest.hearthbound.shared_table.stage.stock_table.objective.bring_cookies.tracker.complete_text": "The sweet end is ready.",
+    "quest.hearthbound.shared_table.stage.stock_table.objective.bring_cookies.tracker.text": "Bring 8 cookies so the meal ends warmly.",
+    "quest.hearthbound.shared_table.stage.stock_table.objective.bring_milk.tracker.complete_text": "The milk bucket is ready.",
+    "quest.hearthbound.shared_table.stage.stock_table.objective.bring_milk.tracker.text": "Carry 1 milk bucket for the cooking pot.",
+    "quest.hearthbound.shared_table.stage.stock_table.scene.decline.lines": [
+      "Another day, then. Good habits are patient until they are ignored too long."
+    ],
+    "quest.hearthbound.shared_table.stage.stock_table.scene.leave.lines": [
+      "Food that keeps is food that forgives bad timing."
+    ],
+    "quest.hearthbound.shared_table.stage.stock_table.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket for the shared table."
+    ],
+    "quest.hearthbound.shared_table.stage.stock_table.scene.reminder_details.action.remind.lines.unavailable": [
+      "The supper table is not ready for that work right now."
+    ],
+    "quest.hearthbound.shared_table.stage.stock_table.scene.start_quest.action.start.lines.already_completed": [
+      "The shared table is already set."
+    ],
+    "quest.hearthbound.shared_table.stage.stock_table.scene.start_quest.action.start.lines.started": [
+      "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket. That is the complete list for this supper."
+    ],
+    "quest.hearthbound.shared_table.stage.stock_table.scene.start_quest.action.start.lines.unavailable": [
+      "The table is not ready to ask for more help right now."
+    ],
+    "quest.hearthbound.shared_table.stage.stock_table.ui.tracker_text": "Bring 12 bread, 12 baked potatoes, 8 cookies, and carry 1 milk bucket.",
+    "quest.hearthbound.shared_table.title": "Supper for Everyone"
+  }
+}

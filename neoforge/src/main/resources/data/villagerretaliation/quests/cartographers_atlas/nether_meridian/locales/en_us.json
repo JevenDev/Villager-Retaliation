@@ -1,0 +1,89 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.nether_meridian.description": {
+      "lines": [
+        "Carry the atlas beyond the Overworld and chart a Nether Fortress bearing."
+      ]
+    },
+    "quest.cartographers_atlas.nether_meridian.stage.return.dialogue.turn_in.label": "About Nether Meridian",
+    "quest.cartographers_atlas.nether_meridian.stage.return.dialogue.turn_in.lines": [
+      "The ink warped, but the line held. Let me see the meridian proof."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.return.dialogue.turn_in.response.complete.label": "Hand over the Nether meridian",
+    "quest.cartographers_atlas.nether_meridian.stage.return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.nether_meridian.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The Nether meridian is drawn. We have a road through heat now."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The meridian still needs the fortress bearing, blaze rods, and Nether Wart."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring blaze rods from the fortress route before I trust the meridian."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a fortress bearing behind them."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The Nether meridian still needs its proof before I can close it."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.return.scene.leave.lines": [
+      "Keep the hot ink away from the folio edge."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.return.ui.tracker_text": "Return to the cartographer with the Nether meridian.",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.dialogue.offer.label": "Nether Meridian",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.dialogue.offer.lines": [
+      "The atlas survived an Overworld horizon. Now we find out if its lines can cross fire.",
+      "Find a Nether Fortress, bring blaze rods and Nether Wart, and do not let the map learn to burn."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.dialogue.offer.response.accept.label": "Chart the Nether meridian",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.dialogue.reminder.label": "About Nether Meridian",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.dialogue.reminder.lines": [
+      "The Nether page still needs a fortress bearing, blaze rods, and Nether Wart."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.dialogue.reminder.response.details.label": "Remind me where",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.objective.bring_blaze_rods.tracker.complete_text": "The blaze rods are ready for the meridian.",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.objective.bring_blaze_rods.tracker.text": "Bring 3 blaze rods for heat-proof bearings.",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.objective.bring_nether_wart.tracker.complete_text": "The Nether Wart is sealed for study.",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.objective.bring_nether_wart.tracker.text": "Bring 8 Nether Wart from the fortress route.",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.objective.visit_fortress.tracker.complete_text": "The Nether fortress bearing is recorded.",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.objective.visit_fortress.tracker.text": "Reach the Nether Fortress near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.nether_meridian.stage.survey.scene.decline.lines": [
+      "Reasonable. The Nether punishes casual curiosity."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.scene.leave.lines": [
+      "Keep the page away from sparks."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.scene.reminder_details.action.remind.lines.reminder": [
+      "Nether Fortress near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring 3 blaze rods and 8 Nether Wart."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have your Nether meridian open right now."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.scene.start_quest.action.start.lines.already_completed": [
+      "The Nether meridian is already drawn."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.scene.start_quest.action.start.lines.locate_failed": [
+      "The Nether mark refuses to settle from here."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.scene.start_quest.action.start.lines.started": [
+      "The fortress mark is near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring blaze rods and Nether Wart."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.scene.start_quest.action.start.lines.unavailable": [
+      "The atlas needs one finished horizon page before its ink can survive the Nether."
+    ],
+    "quest.cartographers_atlas.nether_meridian.stage.survey.ui.tracker_text": "Reach the Nether Fortress near {target_x}, {target_z} in {target_dimension}.",
+    "quest.cartographers_atlas.nether_meridian.title": {
+      "lines": [
+        "Nether Meridian"
+      ]
+    },
+    "quest.cartographers_atlas.nether_meridian.tracker.title": {
+      "lines": [
+        "Nether Meridian"
+      ]
+    }
+  }
+}

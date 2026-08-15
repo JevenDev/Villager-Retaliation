@@ -1,0 +1,143 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.end_survey.choose_a_star.description": "Choose a chorus trail or an End City light for the survey.",
+    "quest.end_survey.choose_a_star.scene.end_star_choice.metadata.title": "End star choice",
+    "quest.end_survey.choose_a_star.scene.end_star_choice.step.chorus_charge.data.text": "Chorus trail. Map the living purple route, even when its fruit disagrees with distance.",
+    "quest.end_survey.choose_a_star.scene.end_star_choice.step.city_charge.data.text": "City light. Map the pale towers, the void between them, and every shell pretending to be stone.",
+    "quest.end_survey.choose_a_star.scene.end_star_choice.step.mark_the_star.data.text": "One point of End light is circled in the survey ledger. The route now belongs to your choice.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.offer.label": "Choose a Star",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.offer.lines": [
+      "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
+      "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance; city is harder and offers this route's only, stronger Elytra chance."
+    ],
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.offer.response.chorus.action.notification.text": "You chose the chorus trail through the outer End.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.offer.response.chorus.label": "Follow the chorus",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.offer.response.chorus.text": "Chorus trail. Keep your feet ready for the fruit to change its mind about where you belong.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.offer.response.city.action.notification.text": "You chose the End City lights.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.offer.response.city.label": "Follow the city lights",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.offer.response.city.text": "City light. Watch the towers, the void between them, and every shell pretending to be a block.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.offer.response.decline.label": "Not yet.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.label": "About Choose a Star",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.lines": [
+      "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
+      "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance; city is harder and offers this route's only, stronger Elytra chance."
+    ],
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.response.chorus.action.notification.text": "You chose the chorus trail through the outer End.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.response.chorus.label": "Follow the chorus",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.response.chorus.text": "Chorus trail. Keep your feet ready for the fruit to change its mind about where you belong.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.response.city.action.notification.text": "You chose the End City lights.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.response.city.label": "Follow the city lights",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.response.city.text": "City light. Watch the towers, the void between them, and every shell pretending to be a block.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.response.decline.label": "Not yet.",
+    "quest.end_survey.choose_a_star.stage.choose.dialogue.reminder.response.details.label": "Repeat the choice.",
+    "quest.end_survey.choose_a_star.stage.choose.objective.choose_route.tracker.complete_text": "Route chosen: {objective_choice_value}.",
+    "quest.end_survey.choose_a_star.stage.choose.objective.choose_route.tracker.text": "Choose the route with the quest giver.",
+    "quest.end_survey.choose_a_star.stage.choose.scene.decline.lines": [
+      "Then the End keeps both lights beyond our map."
+    ],
+    "quest.end_survey.choose_a_star.stage.choose.scene.reminder_details.action.remind.lines.reminder": [
+      "The outer islands offer two lights: chorus groves close to the ground, or End rods high in a city.",
+      "This choice closes the other survey. Chorus is safer and offers a rare Ender Chest chance; city is harder and offers this route's only, stronger Elytra chance."
+    ],
+    "quest.end_survey.choose_a_star.stage.choose.scene.reminder_details.action.remind.lines.unavailable": [
+      "That choice is not open right now."
+    ],
+    "quest.end_survey.choose_a_star.stage.choose.ui.tracker_text": "Choose a route.",
+    "quest.end_survey.choose_a_star.stage.chorus_return.dialogue.turn_in.label": "About Choose a Star",
+    "quest.end_survey.choose_a_star.stage.chorus_return.dialogue.turn_in.lines": [
+      "The fruit all came from one route, though none of it agrees where that route was.",
+      "The chorus trail is marked. The concluding survey for this expedition will follow living purple branches."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.end_survey.choose_a_star.stage.chorus_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.end_survey.choose_a_star.stage.chorus_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The chorus trail is marked. The concluding survey for this expedition will follow living purple branches.",
+      "The fruit all came from one route, though none of it agrees where that route was."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Clear five Endermen from the trail and bring thirty-two chorus fruit."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.end_survey.choose_a_star.stage.chorus_work.dialogue.reminder.label": "About Choose a Star",
+    "quest.end_survey.choose_a_star.stage.chorus_work.dialogue.reminder.lines": [
+      "Clear five Endermen from the trail and bring thirty-two chorus fruit.",
+      "Chorus trail. Keep your feet ready for the fruit to change its mind about where you belong."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.end_survey.choose_a_star.stage.chorus_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.end_survey.choose_a_star.stage.chorus_work.objective.bring_chorus.tracker.complete_text": "The chorus fruit samples are ready.",
+    "quest.end_survey.choose_a_star.stage.chorus_work.objective.bring_chorus.tracker.text": "Bring 32 chorus fruit.",
+    "quest.end_survey.choose_a_star.stage.chorus_work.objective.clear_endermen.tracker.complete_text": "The chorus trail is clear.",
+    "quest.end_survey.choose_a_star.stage.chorus_work.objective.clear_endermen.tracker.text": "Defeat 5 Endermen along the chorus trail.",
+    "quest.end_survey.choose_a_star.stage.chorus_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Clear five Endermen from the trail and bring thirty-two chorus fruit.",
+      "Chorus trail. Keep your feet ready for the fruit to change its mind about where you belong."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.end_survey.choose_a_star.stage.chorus_work.ui.tracker_text": "Clear five Endermen from the trail and bring thirty-two chorus fruit.",
+    "quest.end_survey.choose_a_star.stage.city_return.dialogue.turn_in.label": "About Choose a Star",
+    "quest.end_survey.choose_a_star.stage.city_return.dialogue.turn_in.lines": [
+      "The city bearing holds, even if its stairways seem to resent the ground.",
+      "The city light is marked. The concluding survey for this expedition will follow pale towers."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.end_survey.choose_a_star.stage.city_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.end_survey.choose_a_star.stage.city_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The city light is marked. The concluding survey for this expedition will follow pale towers.",
+      "The city bearing holds, even if its stairways seem to resent the ground."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Reach the city light, clear three shulkers, and bring one shell."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.end_survey.choose_a_star.stage.city_work.dialogue.reminder.label": "About Choose a Star",
+    "quest.end_survey.choose_a_star.stage.city_work.dialogue.reminder.lines": [
+      "Reach the city light, clear three shulkers, and bring one shell.",
+      "City light. Watch the towers, the void between them, and every shell pretending to be a block."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.end_survey.choose_a_star.stage.city_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.end_survey.choose_a_star.stage.city_work.objective.bring_shell.tracker.complete_text": "The shulker shell is ready.",
+    "quest.end_survey.choose_a_star.stage.city_work.objective.bring_shell.tracker.text": "Bring 1 shulker shell.",
+    "quest.end_survey.choose_a_star.stage.city_work.objective.clear_shulkers.tracker.complete_text": "Three shulkers have been cleared.",
+    "quest.end_survey.choose_a_star.stage.city_work.objective.clear_shulkers.tracker.text": "Defeat 3 shulkers.",
+    "quest.end_survey.choose_a_star.stage.city_work.objective.visit_city.tracker.complete_text": "The End City light is marked.",
+    "quest.end_survey.choose_a_star.stage.city_work.objective.visit_city.tracker.text": "Reach the marked End City.",
+    "quest.end_survey.choose_a_star.stage.city_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Reach the city light, clear three shulkers, and bring one shell.",
+      "City light. Watch the towers, the void between them, and every shell pretending to be a block."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.end_survey.choose_a_star.stage.city_work.ui.tracker_text": "Reach the city light, clear three shulkers, and bring one shell.",
+    "quest.end_survey.choose_a_star.title": "Choose a Star"
+  }
+}

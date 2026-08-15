@@ -1,0 +1,643 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 1,
+    "repeatable": false
+  },
+  "entry_stage": "choose",
+  "id": "villagerretaliation:mark_the_shaft",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "parent": "villagerretaliation:below_the_bell",
+    "questline": "deep_delvers",
+    "tags": [
+      "group.deep_delvers",
+      "role.story",
+      "activity.build",
+      "activity.choice",
+      "activity.deliver",
+      "activity.gather",
+      "destination.village",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard",
+      "theme.craftsmanship",
+      "theme.exploration",
+      "feature.branching"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "journeyman",
+      "professions": [
+        "minecraft:toolsmith",
+        "minecraft:armorer"
+      ],
+      "skills": {
+        "mining": {
+          "min": 25
+        },
+        "smithing": {
+          "min": 20
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 210,
+    "gossip_reputation": 6,
+    "loot_table": "villagerretaliation:quest/mark_the_shaft",
+    "memory_event": "player_completed_quest",
+    "reputation": 14
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "choose_route"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.choose.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.offer.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "rail"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.rail.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "rail",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.rail.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.rail.text"
+              },
+              "transition": {
+                "stage": "rail_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "timber"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.offer.response.timber.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "timber",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.timber.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.offer.response.timber.text"
+              },
+              "transition": {
+                "stage": "timber_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.choose.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.choose.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.details.label"
+              },
+              "order": -10,
+              "scene": "reminder_details"
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "rail"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.rail.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "rail",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.rail.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.rail.text"
+              },
+              "transition": {
+                "stage": "rail_work"
+              }
+            },
+            {
+              "actions": [
+                {
+                  "key": "choice",
+                  "scope": "quest",
+                  "type": "set_variable",
+                  "value": "timber"
+                },
+                {
+                  "text": {
+                    "key": "#stage.choose.dialogue.reminder.response.timber.action.notification.text"
+                  },
+                  "trigger": "quest.updated",
+                  "type": "notification"
+                }
+              ],
+              "id": "timber",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.timber.label"
+              },
+              "text": {
+                "key": "#stage.choose.dialogue.reminder.response.timber.text"
+              },
+              "transition": {
+                "stage": "timber_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.choose.dialogue.reminder.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "choose",
+      "objectives": [
+        {
+          "id": "choose_route",
+          "key": "choice",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.choose.objective.choose_route.tracker.complete_text"
+            },
+            "progress": 0.2,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.choose.objective.choose_route.tracker.text"
+            }
+          },
+          "type": "choice",
+          "values": [
+            "rail",
+            "timber"
+          ]
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.choose.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.choose.scene.decline.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.2,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.choose.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "lay_rails",
+        "bring_minecart"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.rail_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.rail_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.rail_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.rail_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "rail_work",
+      "next": "rail_return",
+      "objectives": [
+        {
+          "block": "minecraft:rail",
+          "count": 24,
+          "id": "lay_rails",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.rail_work.objective.lay_rails.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.rail_work.objective.lay_rails.tracker.text"
+            }
+          },
+          "type": "block_place"
+        },
+        {
+          "consume": false,
+          "count": 1,
+          "id": "bring_minecart",
+          "item": "minecraft:minecart",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.rail_work.objective.bring_minecart.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.rail_work.objective.bring_minecart.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.rail_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.rail_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.rail_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.rail_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.rail_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.rail_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.rail_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.rail_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "rail_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.rail_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.rail_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.rail_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.rail_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.rail_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.rail_return.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "place_braces",
+        "bring_lanterns"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.timber_work.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.timber_work.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.timber_work.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.timber_work.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "timber_work",
+      "next": "timber_return",
+      "objectives": [
+        {
+          "blocks": [
+            "minecraft:oak_log",
+            "minecraft:spruce_log"
+          ],
+          "count": 16,
+          "id": "place_braces",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.timber_work.objective.place_braces.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.timber_work.objective.place_braces.tracker.text"
+            }
+          },
+          "type": "block_place"
+        },
+        {
+          "count": 4,
+          "id": "bring_lanterns",
+          "item": "minecraft:lantern",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.timber_work.objective.bring_lanterns.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.timber_work.objective.bring_lanterns.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.timber_work.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.timber_work.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.timber_work.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.timber_work.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.timber_return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.timber_return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.timber_return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.timber_return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "timber_return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.timber_return.scene.complete_route.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.timber_return.scene.complete_route.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.timber_return.scene.complete_route.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.timber_return.scene.complete_route.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_route"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.timber_return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.timber_return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#B884E8",
+    "icon": "minecraft:minecart",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.deep_delvers.mark_the_shaft"
+}

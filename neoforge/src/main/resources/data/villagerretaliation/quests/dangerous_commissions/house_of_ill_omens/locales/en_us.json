@@ -1,0 +1,392 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.dangerous_commissions.house_of_ill_omens.description": {
+      "lines": [
+        "Enter a Woodland Mansion, defeat an evoker, and return with a Totem of Undying."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.dialogue.already_completed": {
+      "lines": [
+        "That chapter is closed. We already settled House of Ill Omens.",
+        "No one needs this done twice. You already came back from the Woodland Mansion with what we needed.",
+        "What was owed has been paid. House of Ill Omens is closed. I am not sending you through illagers in dark halls twice.",
+        "There is no second payment here. Your route to the Woodland Mansion is already in the informant record.",
+        "There is no second payment here. I remember the day you returned with the Totem of Undying.",
+        "That chapter is closed. You earned the reward for House of Ill Omens, and it was paid.",
+        "Your earlier work still stands. We have the stolen charm because you finished the journey to the Woodland Mansion.",
+        "I remember your first return. Nothing remains to be recovered from the mansion.",
+        "What was owed has been paid. What you brought from the Woodland Mansion is still helping the village.",
+        "We settled this one already. You proved the mansion route once. That is enough.",
+        "What was owed has been paid. The informant record carries your name beside the completed mark.",
+        "Your earlier work still stands. Leave House of Ill Omens in the past where it belongs.",
+        "What was owed has been paid. You settled every part of House of Ill Omens on your first return.",
+        "I will not reopen a finished account. The Woodland Mansion was reached and the Totem of Undying evidence delivered.",
+        "The matter ended well enough. I will find you a road beyond the Woodland Mansion before sending you back there.",
+        "The matter ended well enough. Nobody forgot what the journey to the Woodland Mansion cost you.",
+        "I remember your first return. House of Ill Omens at the Woodland Mansion needs no second visit from you.",
+        "There is no second payment here. You gave us the Totem of Undying, not another rumor.",
+        "Your earlier work still stands. House of Ill Omens ended properly, and it stays ended.",
+        "The matter ended well enough. We can look ahead now. House of Ill Omens is done."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.dialogue.inactive": {
+      "lines": [
+        "I will post it when it matters. The conditions for House of Ill Omens are not right at the moment.",
+        "Not today. The mark for the Woodland Mansion is not open today.",
+        "The time is wrong. I have no reason to risk you against illagers in dark halls just now.",
+        "Nothing calls for this work today. The village is not ready to use a Totem of Undying and 12 emeralds.",
+        "The village can wait on this one. Wait until the informant record calls for the journey to the Woodland Mansion.",
+        "The village can wait on this one. A trip to the Woodland Mansion without a need is only danger.",
+        "The village can wait on this one. The mansion route can stay folded until the timing improves.",
+        "The time is wrong. I am holding House of Ill Omens off the board for now.",
+        "Not today. Nothing at the Woodland Mansion needs our answer today.",
+        "Nothing calls for this work today. Keep your gear ready for the Woodland Mansion, but do not leave yet.",
+        "Nothing calls for this work today. House of Ill Omens is real. The moment for it is not.",
+        "The board can wait. I will not send you toward illagers in dark halls to satisfy an old note.",
+        "Nothing calls for this work today. The Woodland Mansion can wait until we have a use for the return.",
+        "The village can wait on this one. Ask again after the village reviews the informant record.",
+        "The time is wrong. There is no active claim on the Totem of Undying today.",
+        "Leave that work alone for now. The road toward the Woodland Mansion is quiet, and I mean to leave it that way.",
+        "I am keeping this off the board. Starting House of Ill Omens now would spend courage for no useful result.",
+        "For now, let the matter rest. House of Ill Omens has not been posted to any traveler.",
+        "Ask me after the stores change. Give House of Ill Omens time to become necessary.",
+        "There is no reason to begin yet. For the moment, stay on this side of the journey to the Woodland Mansion."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.dialogue.locate_failed": {
+      "lines": [
+        "I cannot send you out blind. The mansion is beyond my reach today. The woods are keeping their mouth shut.",
+        "I will not guess at a route. I cannot put a trustworthy mark on the Woodland Mansion.",
+        "Until I know the way, you stay here. Every route I checked breaks down before the mansion.",
+        "No mark is better than a false one. The Woodland Mansion maps disagree, and illagers in dark halls leave no room for guessing.",
+        "The search turned up nothing solid. I found rumors of the Woodland Mansion, but no road I would hand you.",
+        "My map has failed us. The Woodland Mansion has slipped beyond my Woodland Mansion charts.",
+        "I will not guess at a route. Without a firm bearing, House of Ill Omens would be wandering.",
+        "The search turned up nothing solid. My best map is blank where the mansion should be.",
+        "The search turned up nothing solid. I traced three routes toward the Woodland Mansion and trusted none.",
+        "I cannot send you out blind. The old Woodland Mansion directions end before danger begins.",
+        "The trail has gone cold. I will not pretend a guess can mark the Woodland Mansion.",
+        "Until I know the way, you stay here. No scout has confirmed the mark for the Woodland Mansion.",
+        "I found no safe bearing to give you. The trail to the Woodland Mansion went cold before I could mark it.",
+        "A doubtful map is too much risk. I need Woodland Mansion coordinates, not campfire stories.",
+        "The trail has gone cold. The Woodland Mansion may be there, but I cannot prove where.",
+        "I found no safe bearing to give you. None of the Woodland Mansion bearings lead to the same ground.",
+        "We need a trustworthy route first. Let me find an honest mansion route before you prepare to leave.",
+        "The search turned up nothing solid. The informant record offers warnings today, not directions.",
+        "I cannot send you out blind. The Woodland Mansion map gives me doubt when I need certainty.",
+        "Something is wrong with the chart. Come back after the road to the Woodland Mansion gives us an answer."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_proof": {
+      "lines": [
+        "I cannot sign off on an empty return. Bring the Totem. Nothing else carries enough of that house on it.",
+        "You returned without the one thing I asked for. The Totem of Undying is still missing from your return.",
+        "I cannot sign off on an empty return. I cannot close the informant record without the agreed Totem of Undying evidence.",
+        "The evidence still matters. You faced the Woodland Mansion, but the village still needs the Totem of Undying.",
+        "The last requirement is still missing. Bring back a Totem of Undying and 12 emeralds before we settle House of Ill Omens.",
+        "I need something I can hold. Your story may be true. I still need the Totem of Undying.",
+        "A story cannot close the ledger. The journey to the Woodland Mansion ends here when the Totem of Undying changes hands.",
+        "The proof has to reach my hands. Do not reach the Woodland Mansion and forget the Totem of Undying that verifies it.",
+        "The proof has to reach my hands. I know you traveled. I need a result from the Woodland Mansion.",
+        "I cannot sign off on an empty return. The House of Ill Omens reward waits on the Totem of Undying evidence, not the telling.",
+        "The evidence still matters. Show me the Totem of Undying, and House of Ill Omens can close.",
+        "The proof has to reach my hands. The empty place in the informant record waits for what you recovered.",
+        "I need something I can hold. Words cannot stand in for the stolen charm.",
+        "Bring back something the village can verify. Check your packs before you make the journey to the Woodland Mansion twice.",
+        "Bring back something the village can verify. House of Ill Omens named its proof from the beginning.",
+        "Show me what came back with you. Bring the Totem of Undying evidence here rather than leaving it in storage.",
+        "I need something I can hold. The village asked for a Totem of Undying and 12 emeralds, and that remains unfinished.",
+        "Bring back something the village can verify. I can record the mansion route after I see what came from it.",
+        "The evidence still matters. One Totem of Undying handoff separates House of Ill Omens from completion.",
+        "Bring back something the village can verify. Return when the Totem of Undying is in your hands."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_target": {
+      "lines": [
+        "The journey stopped too soon. The totem needs the mansion behind it. I need the place confirmed.",
+        "Finish the outward journey first. You have not confirmed the Woodland Mansion itself.",
+        "The road must end where I sent you. The cargo means little if the Woodland Mansion was never reached.",
+        "Going near it does not count. House of Ill Omens includes the road as well as the return.",
+        "This task was never only about the cargo. Set foot in the mansion before you bring me evidence.",
+        "Reaching the mark is part of the promise. I asked for proof from the Woodland Mansion, not somewhere else.",
+        "You have not gone far enough yet. The Woodland Mansion remains untouched in the informant record.",
+        "You cannot skip the heart of the task. Finish the outward journey before claiming the House of Ill Omens reward.",
+        "The map still shows unfinished travel. A borrowed Totem of Undying cannot replace reaching the Woodland Mansion.",
+        "The place itself must be reached. The Woodland Mansion map still says you stopped short.",
+        "Reaching the mark is part of the promise. Go to the marked place and see House of Ill Omens through there.",
+        "This task was never only about the cargo. The mansion route must end at the Woodland Mansion, not near it.",
+        "Going near it does not count. I need your eyes on the Woodland Mansion before I trust the report.",
+        "Reaching the mark is part of the promise. Do not skip the part that puts illagers in dark halls in front of you.",
+        "The place itself must be reached. The village asked you to confirm the mansion existed.",
+        "This task was never only about the cargo. Your return is early. the Woodland Mansion still waits.",
+        "You still owe the road its last mile. Reach the Woodland Mansion, then recover a Totem of Undying and 12 emeralds.",
+        "Finish the outward journey first. The journey to the Woodland Mansion is not complete while the final mark is unvisited.",
+        "This task was never only about the cargo. The informant record needs a confirmed place, not only an item.",
+        "I need the site confirmed. Turn back toward the Woodland Mansion and finish what you began."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.dialogue.reminder": {
+      "lines": [
+        "Hold to the instructions I gave you. Woodland Mansion near {target_x}, {target_z}. Bring down the evoker, bring the Totem, then 12 emeralds for the informants.",
+        "Keep the whole task in mind. The Woodland Mansion is still near {target_x}, {target_z}.",
+        "Stay with the work you accepted. The mark remains near {target_x}, {target_z}, so keep to the planned mansion route.",
+        "The next step still matters. Check the map again. Woodland Mansion is still near {target_x}, {target_z}.",
+        "Stay with the work you accepted. House of Ill Omens still calls for a Totem of Undying and 12 emeralds.",
+        "Stay with the work you accepted. Watch for illagers in dark halls on the way in.",
+        "Keep the return trip in your plans. Do not leave the Woodland Mansion without the Totem of Undying.",
+        "Hold to the instructions I gave you. Your return should give us the stolen charm.",
+        "Remember what the village is waiting for. Check the Woodland Mansion bearing at {target_x}, {target_z} before landmarks blur.",
+        "Hold to the instructions I gave you. Keep the Totem of Undying safe once you recover it.",
+        "The next step still matters. The informant record stays open until you come home.",
+        "Keep the return trip in your plans. Do not rush blind toward the Woodland Mansion. Follow the mark and return whole.",
+        "Do not lose the thread now. The Woodland Mansion has not moved from {target_x}, {target_z}.",
+        "Bring this to a proper finish. Remember why you are going. We need to defeat the evoker and pay the informants.",
+        "Keep the return trip in your plans. If the mansion route feels wrong, check your position against {target_x}, {target_z}.",
+        "Hold to the instructions I gave you. The hard part is reaching the mansion and leaving with evidence.",
+        "Do not let one finished step distract you. Woodland Mansion still waits near {target_x}, {target_z}.",
+        "Stay with the work you accepted. Bring every part of a Totem of Undying and 12 emeralds back together.",
+        "Stay with the work you accepted. I would rather wait than receive half the agreed Totem of Undying.",
+        "Stay with the work you accepted. Find the Woodland Mansion, do House of Ill Omens there, and return to me."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.dialogue.start": {
+      "lines": [
+        "Here is the work. The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Defeat its evoker, bring a Totem of Undying, and set aside 12 emeralds for informants.",
+        "I have a difficult request. I marked the Woodland Mansion near {target_x}, {target_z}.",
+        "Take the task only if you are ready. Travel {direction} for about {distance} blocks and look for the mansion.",
+        "There is a reason I chose you. The job is to defeat the evoker and pay the informants.",
+        "Listen closely. Come home with a Totem of Undying and 12 emeralds so the village has more than rumors.",
+        "Take this seriously. The road leads through illagers in dark halls, so prepare before leaving.",
+        "I have a difficult request. I need someone willing to reach the Woodland Mansion and return with proof.",
+        "I have a difficult request. The Woodland Mansion sits near {target_x}, {target_z}, according to my map.",
+        "Take the task only if you are ready. Follow the {direction} bearing and keep the informant record dry.",
+        "I have a difficult request. House of Ill Omens begins at the Woodland Mansion and ends when the Totem of Undying reaches me.",
+        "Before you agree, hear all of it. The Woodland Mansion mark is about {distance} blocks away. Do not mistake speed for care.",
+        "There is a reason I chose you. Bring a Totem of Undying and 12 emeralds, and I can turn this risk into something useful.",
+        "Take the task only if you are ready. The village needs the stolen charm, not boasting at the fire.",
+        "Listen closely. I trust you with the mansion route because it is not kind.",
+        "Before you agree, hear all of it. Make for {target_x}, {target_z} and confirm the Woodland Mansion yourself.",
+        "Take this seriously. Prepare for illagers in dark halls before crossing the last safe ground.",
+        "This needs a careful hand. The outward journey proves the Woodland Mansion map. The return proves you.",
+        "This needs a careful hand. Do not come back empty from the mansion.",
+        "Take the task only if you are ready. Take House of Ill Omens only if you mean to finish the travel and recovery.",
+        "I need you to see this through. When you have a Totem of Undying and 12 emeralds, bring it straight here."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.dialogue.turn_in": {
+      "lines": [
+        "That is the result I needed. A Totem of Undying. That is not proof of safety, but it is proof the village has a shield with a name.",
+        "You saw it through. You reached the Woodland Mansion and brought the Totem of Undying home.",
+        "Good, you made it back. The informant record finally has a true ending.",
+        "Good, you made it back. This is the stolen charm, solid enough to hold.",
+        "You brought the work to a proper end. The village can defeat the evoker and pay the informants because you took the risk.",
+        "This return was worth waiting for. I asked for a Totem of Undying and 12 emeralds, and you returned with every part.",
+        "You saw it through. You went through illagers in dark halls and kept your head.",
+        "That settles what I asked of you. The mansion route is confirmed now, not merely drawn.",
+        "You delivered exactly what was needed. I can pay House of Ill Omens without a doubt.",
+        "You delivered exactly what was needed. The Totem of Undying tells the story better than any boast.",
+        "This return was worth waiting for. You made the dangerous road to the Woodland Mansion useful to everyone here.",
+        "Good, you made it back. The Woodland Mansion is no longer just a warning on a map.",
+        "Now I can close the ledger. I will put your Woodland Mansion findings where the village can study them.",
+        "You delivered exactly what was needed. House of Ill Omens is clean, even if the journey to the Woodland Mansion was not.",
+        "That is the result I needed. That is the Totem of Undying evidence I hoped to see.",
+        "You brought the work to a proper end. You returned from the Woodland Mansion with more than survival. You brought an answer.",
+        "That settles what I asked of you. House of Ill Omens closes with the village better prepared.",
+        "The hard part is behind us. The next traveler to the Woodland Mansion will have your route.",
+        "You saw it through. Take the House of Ill Omens reward. You earned it beyond the safe roads.",
+        "This return was worth waiting for. I am glad to see both the Totem of Undying and person carrying it."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.dialogue.unavailable": {
+      "lines": [
+        "I cannot trust you with this yet. This is not a request for someone the village only half trusts.",
+        "I need proof of your judgment first. House of Ill Omens demands trust I do not have in you yet.",
+        "The village needs a steadier hand. I cannot hand you a route through illagers in dark halls today.",
+        "This calls for someone we know better. The Woodland Mansion is no ground for an untested ally.",
+        "Come back after you have earned more trust. Do steadier work here before asking for the Woodland Mansion map.",
+        "Come back after you have earned more trust. I need someone I can trust to return from the Woodland Mansion.",
+        "I need proof of your judgment first. The informant record stays closed to you for now.",
+        "Come back after you have earned more trust. House of Ill Omens risks more than the traveler's life.",
+        "The answer is no for now. Earn our confidence, then ask about the mansion again.",
+        "Some work must wait until trust catches up. I will not send a stranger after the stolen charm.",
+        "The answer is no for now. The Woodland Mansion is dangerous enough without doubt between us.",
+        "This calls for someone we know better. Your name has not reached the trusted page of the informant record.",
+        "I cannot trust you with this yet. There are safer tasks than House of Ill Omens that can show me how you work.",
+        "The answer is no for now. I need proof of judgment before offering the journey to the Woodland Mansion.",
+        "Come back after you have earned more trust. For now, the Woodland Mansion map remains folded.",
+        "The village needs a steadier hand. The village is not ready to stake defeat the evoker and pay the informants on you.",
+        "Come back after you have earned more trust. Ask about the Woodland Mansion after you have stood with us longer.",
+        "Some work must wait until trust catches up. Courage may reach the Woodland Mansion. Reliability brings the Totem of Undying home.",
+        "I cannot trust you with this yet. House of Ill Omens stays with proven hands.",
+        "You are not ready for this request. I will tell you when we trust you with the road to the Woodland Mansion."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.objective.bring_emeralds.complete_text": {
+      "lines": [
+        "The informant payment is ready."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.objective.bring_emeralds.text": {
+      "lines": [
+        "Bring 12 emeralds to repay informants after the evoker falls."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.objective.defeat_evoker.complete_text": {
+      "lines": [
+        "The mansion's evoker is down."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.objective.defeat_evoker.text": {
+      "lines": [
+        "Defeat 1 evoker inside the Woodland Mansion."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.scene.mansion_warning.metadata.title": "Mansion warning",
+    "quest.dangerous_commissions.house_of_ill_omens.scene.mansion_warning.step.final_warning.data.text": "Bring back its evoker's totem. The village needs proof strong enough to silence comfortable doubt.",
+    "quest.dangerous_commissions.house_of_ill_omens.scene.mansion_warning.step.first_warning.data.text": "The mansion mark is true. Its patrols have already learned the quiet roads around us.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.dialogue.turn_in.label": "About House of Ill Omens",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.dialogue.turn_in.lines": [
+      "The house still stands, but its omen is broken and its patrol road is known.",
+      "A totem on the table is proof enough. The village will remember who carried it home.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The house still stands, but its omen is broken and its patrol road is known.",
+      "A totem on the table is proof enough. The village will remember who carried it home."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "House of Ill Omens is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.scene.turn_in_wait.lines": [
+      "The mansion mark, one evoker, a totem in hand, and twelve emeralds for the informants.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.dialogue.offer.label": "House of Ill Omens",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.dialogue.offer.lines": [
+      "A Woodland Mansion is sending patrols toward roads that used to be quiet.",
+      "Find the house, bring down its evoker, and return with a totem so no one can dismiss the warning.",
+      "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.dialogue.reminder.label": "About House of Ill Omens",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.dialogue.reminder.lines": [
+      "The mansion mark, one evoker, a totem in hand, and twelve emeralds for the informants.",
+      "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds.",
+      "Find the house, bring down its evoker, and return with a totem so no one can dismiss the warning."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.objective.bring_emeralds.tracker.complete_text": "The informant payment is ready.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.objective.bring_emeralds.tracker.text": "Bring 12 emeralds for the village informants.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.objective.carry_totem.tracker.complete_text": "The totem proof is ready.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.objective.carry_totem.tracker.text": "Carry 1 Totem of Undying as proof.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.objective.defeat_evoker.tracker.complete_text": "The mansion's evoker is down.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.objective.defeat_evoker.tracker.text": "Defeat 1 evoker inside the mansion.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.objective.visit_mansion.tracker.complete_text": "The mansion has been found.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.objective.visit_mansion.tracker.text": "Reach the marked Woodland Mansion.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.abandon_confirm.lines": [
+      "Put House of Ill Omens aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "House of Ill Omens is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.decline.lines": [
+      "Then keep clear of dark-oak roads until the patrols thin."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.leave.lines": [
+      "The mansion mark, one evoker, a totem in hand, and twelve emeralds for the informants.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "The mansion mark, one evoker, a totem in hand, and twelve emeralds for the informants.",
+      "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds.",
+      "Find the house, bring down its evoker, and return with a totem so no one can dismiss the warning."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "House of Ill Omens is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "House of Ill Omens is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.start_quest.action.start.lines.started": [
+      "Do not mistake carpet for safety. Every quiet room in that house is waiting for a reason.",
+      "Reach the marked Woodland Mansion, defeat 1 evoker, and return with a totem and 12 emeralds."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "House of Ill Omens is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.house_of_ill_omens.stage.work.ui.tracker_text": "Reach the Woodland Mansion, defeat an evoker, and return with a totem and 12 emeralds.",
+    "quest.dangerous_commissions.house_of_ill_omens.title": {
+      "lines": [
+        "House of Ill Omens"
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.tracker.bring_emeralds.text": {
+      "lines": [
+        "Set aside 12 emeralds for informants after the evoker falls."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.tracker.defeat_evoker.text": {
+      "lines": [
+        "Defeat the mansion's evoker."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.tracker.proof.text": {
+      "lines": [
+        "Bring a Totem of Undying after entering the mansion."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the mansion proof."
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.tracker.title": {
+      "lines": [
+        "House of Ill Omens"
+      ]
+    },
+    "quest.dangerous_commissions.house_of_ill_omens.tracker.travel.text": {
+      "lines": [
+        "Enter the Woodland Mansion near {target_x}, {target_z}."
+      ]
+    }
+  }
+}

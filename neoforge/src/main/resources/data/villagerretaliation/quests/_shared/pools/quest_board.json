@@ -1,0 +1,31 @@
+{
+  "anti_repeat_rotations": 2,
+  "any_tags": [
+    "pool.quest_board"
+  ],
+  "default_weight": 10,
+  "enabled": true,
+  "id": "villagerretaliation:quest_board",
+  "max_offers": 3,
+  "refresh_days": 1,
+  "schema": "villagerretaliation:quest_pool/v1",
+  "scope": "village",
+  "seed_salt": 16411,
+  "tag_quotas": {
+    "activity.combat": 1,
+    "commitment.expedition": 1,
+    "destination.remote": 1,
+    "difficulty.extreme": 1,
+    "difficulty.hard": 1
+  },
+  "weight_rules": [
+    {
+      "any_tags": [
+        "activity.build",
+        "activity.trade",
+        "activity.explore"
+      ],
+      "multiplier": 2
+    }
+  ]
+}

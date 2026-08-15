@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.fresh_cod.description": {
+      "lines": [
+        "Bring cod for a simple village supper."
+      ]
+    },
+    "quest.village_supply.fresh_cod.dialogue.already_completed": {
+      "lines": [
+        "There is no second payment here. We already settled Fresh Cod.",
+        "We settled this one already. The supper table has the cod you brought.",
+        "I will not reopen a finished account. I counted your 10 cod. We are square.",
+        "The matter ended well enough. The cooks already put that delivery to work.",
+        "No one needs this done twice. You solved the problem of an empty supper pot.",
+        "We settled this one already. There is no reason to gather another load of cod.",
+        "What was owed has been paid. Fresh Cod is crossed off the cod work list.",
+        "You finished what I asked. Your part in helping us make a hot village supper is finished.",
+        "Nothing remains to be earned from this. The last cod batch is still serving the village.",
+        "I will not reopen a finished account. I remember who filled the cod order, and it was you.",
+        "Leave the old tally alone. The reward was paid when the cod delivery came in.",
+        "Leave the old tally alone. You did enough the first time. I will leave the old entry filed under Fresh Cod.",
+        "You finished what I asked. We can turn a cold evening kinder because you answered Fresh Cod.",
+        "The matter ended well enough. The full cod count reached the supper table. Nothing is missing.",
+        "Nothing remains to be earned from this. The cooks would object if I asked you twice.",
+        "The matter ended well enough. Your cod delivery passed inspection and went into use.",
+        "That chapter is closed. That empty spot in the supper table belongs to yesterday.",
+        "That chapter is closed. The record shows 10 cod received from you.",
+        "You finished what I asked. You did the quiet cod work that keeps everyone going.",
+        "No one needs this done twice. The first ending was good enough for Fresh Cod."
+      ]
+    },
+    "quest.village_supply.fresh_cod.dialogue.inactive": {
+      "lines": [
+        "I am keeping this off the board. The supper pot is not asking for fish right now.",
+        "There is no reason to begin yet. There is no open order for cod today.",
+        "We have no need of it yet. The supper table is being counted before I ask for more.",
+        "For now, let the matter rest. The cooks have not posted a fresh request.",
+        "The board can wait. Hold off on the cod. We have nowhere useful to put them.",
+        "We have no need of it yet. The need to make a hot village supper will return, but not today.",
+        "I will post it when it matters. I am waiting for the next tally before opening Fresh Cod.",
+        "Nothing calls for this work today. Bringing 10 cod now would crowd the stores.",
+        "There is no reason to begin yet. The last cod batch has not been used up yet.",
+        "I will post it when it matters. Ask again after the cooks check what remains.",
+        "Not today. I will not invent an urgent need for cod.",
+        "The time is wrong. The supper table is quiet, so this can wait.",
+        "Nothing calls for this work today. We are between work orders for cod.",
+        "Nothing calls for this work today. Nothing is wrong at the supper table. The timing is simply off.",
+        "The time is wrong. Save your effort until we actually need cod.",
+        "I will post it when it matters. The board has no current mark beside Fresh Cod.",
+        "Not today. Today is not the day for another cod run.",
+        "The village can wait on this one. Once an empty supper pot becomes a concern, I will reopen this.",
+        "Nothing calls for this work today. I would rather delay than waste good cod.",
+        "The board can wait. Wait for the stores to change before asking me about Fresh Cod."
+      ]
+    },
+    "quest.village_supply.fresh_cod.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current cod order. Ask again after the supper table has been checked.",
+        "The supper table tally is missing, so I will not ask you to gather cod yet.",
+        "No one has confirmed how much cod the supper table needs today.",
+        "The work note is incomplete. Let me settle the cod count first.",
+        "I will not send you after cod until the village confirms the order.",
+        "The supper table has not posted a trustworthy cod count.",
+        "I checked the work slate twice; the cod request is not ready.",
+        "This order can wait until I have a current cod tally.",
+        "Someone needs to check the supper table before I hand you this order.",
+        "The village has not agreed on the cod count yet.",
+        "I have an old cod tally and no current one.",
+        "The supper table may need cod, but I will not turn a guess into work.",
+        "Come back after the supper table finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the supper table tally.",
+        "Let me confirm who needs the cod before you start gathering.",
+        "No work yet. The village has not approved this cod request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the cod order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.fresh_cod.dialogue.missing_proof": {
+      "lines": [
+        "Bring back something the village can verify. Bring the cod before I call supper handled.",
+        "Show me what came back with you. I need the cod here before I sign this off.",
+        "I need something I can hold. A promise does not fill the supper table. Bring the cod delivery.",
+        "A story cannot close the ledger. You may have gathered them, but the cooks have not received them.",
+        "Show me what came back with you. Set the 10 cod down here and I can close the cod order.",
+        "What you carried home decides this. Handing over the cod is the proof on this supply job.",
+        "Your word is not the missing piece. I cannot inspect fresh fish fit for the pan while your hands are empty.",
+        "I cannot sign off on an empty return. Your report sounds fine. I still need the actual cod.",
+        "I believe you went, but that is not enough. Nothing has reached the supper table yet.",
+        "You returned without the one thing I asked for. Bring what you collected before we discuss the Fresh Cod reward.",
+        "Show me what came back with you. The supper table needs usable cod, not a story about them.",
+        "Show me what came back with you. I will count the cod as soon as you place them here.",
+        "A story cannot close the ledger. Do not leave the cod delivery in another chest.",
+        "I believe you went, but that is not enough. The cooks are waiting on the cod bundle itself.",
+        "I need something I can hold. The last step is simple. Hand over the cod.",
+        "Your word is not the missing piece. I cannot make a hot village supper with an empty counter.",
+        "What you carried home decides this. Come back carrying the cod order, and we will be done.",
+        "Your word is not the missing piece. The cod work counts once the supper table receives it.",
+        "The last requirement is still missing. You are one handoff away from finishing Fresh Cod.",
+        "I need something I can hold. Let me see the cod before I call this complete."
+      ]
+    },
+    "quest.village_supply.fresh_cod.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the cod.",
+        "I counted twice; the full order of 10 cod is not here yet.",
+        "This helps, but the supper table still needs the remaining cod.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 10 cod; the pile is still short.",
+        "Bring the missing cod, and then I can settle the order.",
+        "The supper table has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The supper table is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 10 cod.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the supper table short.",
+        "The order stays open until all 10 cod are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The supper table is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.fresh_cod.dialogue.reminder": {
+      "lines": [
+        "Do not lose the thread now. Ten cod for supper. Fresh is best. Recognizable is required.",
+        "Keep the whole task in mind. I am still waiting on 10 cod for the supper table.",
+        "Bring this to a proper finish. Look for fresh fish fit for the pan. Bad supplies only move the problem.",
+        "Stay with the work you accepted. The cooks need those cod to make a hot village supper.",
+        "Stay with the work you accepted. The count is 10 cod. Check it before returning.",
+        "Hold to the instructions I gave you. This cod delivery means we can turn a cold evening kinder.",
+        "Stay with the work you accepted. If you are choosing between loads, bring the cod first.",
+        "The next step still matters. Keep the cod order together so the cod tally stays easy.",
+        "Bring this to a proper finish. The supper table has space waiting for the full bundle.",
+        "Remember what the village is waiting for. Do not let a simple request turn into an empty supper pot.",
+        "You are not finished yet. There is no hidden part to Fresh Cod. Bring the agreed cod count.",
+        "Remember what the village is waiting for. Handle them carefully. I want fresh fish fit for the pan.",
+        "Do not let one finished step distract you. Bring all the cod at once if you can manage it.",
+        "Stay with the work you accepted. The cooks are planning their next work around your return.",
+        "Before you leave, hear this again. I wrote 10 cod on the cod slate so neither of us has to guess.",
+        "Do not lose the thread now. The sooner these arrive, the sooner we can make a hot village supper.",
+        "Before you leave, hear this again. Nothing else is missing from the cod order.",
+        "Before you leave, hear this again. Return when the cod are ready to hand over.",
+        "Hold to the instructions I gave you. You know how many cod the supper table needs. The rest is gathering.",
+        "Keep the return trip in your plans. A complete cod bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.fresh_cod.dialogue.start": {
+      "lines": [
+        "I have a difficult request. Bring 10 cod. Not a feast, just enough to make the evening kinder.",
+        "I am trusting you with something important. The cod order needs 10 cod. Can you handle that?",
+        "Take the task only if you are ready. The cooks are trying to make a hot village supper, and supplies are thin.",
+        "Take this seriously. Bring me 10 cod. I want fresh fish fit for the pan.",
+        "Listen closely. I have a plain job with a useful result. Find 10 cod.",
+        "Listen closely. We can turn a cold evening kinder if you fill the cod order.",
+        "There is a reason I chose you. An empty supper pot is a small problem until everyone needs the same thing.",
+        "I have a difficult request. The count on the cod slate is 10 cod.",
+        "I have a difficult request. Gather the cod and bring the whole delivery here.",
+        "This needs a careful hand. Stocking the supper table is not glory, but it matters.",
+        "Take the task only if you are ready. The cooks asked me to find someone reliable for this run.",
+        "I am trusting you with something important. I need a clean delivery for the supper table.",
+        "I have a difficult request. If you can spare the time, 10 cod would settle the cod shortage.",
+        "Before you agree, hear all of it. The need is real, which makes the instructions for Fresh Cod simple.",
+        "There is a reason I chose you. Bring the cod when you have the complete count.",
+        "Take this seriously. Good cod will let us make a hot village supper.",
+        "Here is the work. The village should not reach an empty supper pot before we act.",
+        "This needs a careful hand. Take care with the cod bundle. We need fresh fish fit for the pan.",
+        "Let us be clear about the job. I will pay when the supper table receives the full order.",
+        "Take the task only if you are ready. Find 10 cod, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.fresh_cod.dialogue.turn_in": {
+      "lines": [
+        "That is the result I needed. That will do nicely. A hot pan can make morale out of fish.",
+        "Good, you made it back. The count is right. I will get these to the supper table.",
+        "Good, you made it back. The cooks can make a hot village supper now.",
+        "That is the result I needed. These are fresh fish fit for the pan. You chose well.",
+        "You saw it through. That delivery keeps us from an empty supper pot.",
+        "That is the result I needed. Good work. All the cod arrived together.",
+        "I am glad to see you home. I have your cod, and you earned the Fresh Cod reward.",
+        "You delivered exactly what was needed. The supper table looks less bare already.",
+        "The hard part is behind us. This will help us turn a cold evening kinder.",
+        "That is the result I needed. You saved the cooks from making do with scraps.",
+        "That is the result I needed. Everything on the cod slate is here.",
+        "The hard part is behind us. A useful cod job, done without fuss. Thank you.",
+        "Now I can close the ledger. I will put the cod away before someone borrows them.",
+        "That is the result I needed. The village is better stocked because you completed Fresh Cod.",
+        "The hard part is behind us. You brought exactly the cod I asked for.",
+        "Now I can close the ledger. The cod delivery is sound from top to bottom.",
+        "That is the result I needed. The supper table has one less shortage waiting to surprise us.",
+        "You saw it through. The village may not cheer for cod, but it would notice their absence.",
+        "This return was worth waiting for. Take your payment. The cod count gives me no complaint.",
+        "You brought the work to a proper end. I can hand the cod order to the cooks with confidence."
+      ]
+    },
+    "quest.village_supply.fresh_cod.dialogue.unavailable": {
+      "lines": [
+        "Some work must wait until trust catches up. The cod request is closed for now.",
+        "You are not ready for this request. I cannot hand you the work filed under Fresh Cod yet.",
+        "Earn our confidence before asking again. The cod order is for someone the supper table already knows.",
+        "I cannot trust you with this yet. The cooks need a delivery they can count on.",
+        "No, the risk is too high. Show the village steadier work before taking Fresh Cod.",
+        "The answer is no for now. The cod matter too much to gamble on a stranger.",
+        "No, the risk is too high. I am not opening the cod slate to you today.",
+        "I cannot trust you with this yet. Build some trust, then ask about Fresh Cod again.",
+        "Some work must wait until trust catches up. I need someone who will return with the whole 10 cod.",
+        "I cannot trust you with this yet. Gathering cod is simple, but reliability is not optional.",
+        "I need proof of your judgment first. For now, the cod order stays with regular hands.",
+        "The village needs a steadier hand. I cannot promise the supper table a delivery from you yet.",
+        "This calls for someone we know better. There will be other work before we trust you with the supper table.",
+        "No, the risk is too high. The village has not cleared you for this cod run.",
+        "Some work must wait until trust catches up. I would rather wait than risk an empty supper pot.",
+        "You are not ready for this request. This is not punishment. Show better judgment before I open Fresh Cod.",
+        "The answer is no for now. The cooks asked for a familiar runner this time.",
+        "This calls for someone we know better. Come back for the cod order after your name carries more weight.",
+        "I will not place this burden on you. I am not taking new help for Fresh Cod.",
+        "Earn our confidence before asking again. Earn some confidence here, and we can revisit Fresh Cod."
+      ]
+    },
+    "quest.village_supply.fresh_cod.objective.bring_cod.complete_text": {
+      "lines": [
+        "The supper fish is ready."
+      ]
+    },
+    "quest.village_supply.fresh_cod.objective.bring_cod.text": {
+      "lines": [
+        "Bring 10 cod for supper."
+      ]
+    },
+    "quest.village_supply.fresh_cod.stage.return.dialogue.turn_in.label": "About Fresh Cod",
+    "quest.village_supply.fresh_cod.stage.return.dialogue.turn_in.lines": [
+      "Fresh enough to make the cats follow you. That will feed us well.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.fresh_cod.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.fresh_cod.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.fresh_cod.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Fresh enough to make the cats follow you. That will feed us well.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.fresh_cod.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.fresh_cod.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.fresh_cod.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.fresh_cod.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Fresh Cod is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.fresh_cod.stage.return.scene.turn_in_wait.lines": [
+      "Bring 10 cod for the village kitchen",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.fresh_cod.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.fresh_cod.stage.work.dialogue.offer.label": "Fresh Cod",
+    "quest.village_supply.fresh_cod.stage.work.dialogue.offer.lines": [
+      "The smoker is warm, but the fish rack is bare.",
+      "Bring 10 cod for the village kitchen, and the shelves will look less worried.",
+      "Bring 10 cod for the village kitchen. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.fresh_cod.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.fresh_cod.stage.work.dialogue.reminder.label": "About Fresh Cod",
+    "quest.village_supply.fresh_cod.stage.work.dialogue.reminder.lines": [
+      "Bring 10 cod for the village kitchen",
+      "Bring 10 cod for the village kitchen.",
+      "Bring 10 cod for the village kitchen, and the shelves will look less worried."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.fresh_cod.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.fresh_cod.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.fresh_cod.stage.work.scene.abandon_confirm.lines": [
+      "Put Fresh Cod aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.fresh_cod.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.fresh_cod.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Fresh Cod is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.leave.lines": [
+      "Bring 10 cod for the village kitchen",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 10 cod for the village kitchen",
+      "Bring 10 cod for the village kitchen.",
+      "Bring 10 cod for the village kitchen, and the shelves will look less worried."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Fresh Cod is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Fresh Cod is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 10 cod for the village kitchen. Keep the full count together on the road back.",
+      "Bring 10 cod for the village kitchen.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Fresh Cod is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.fresh_cod.stage.work.ui.tracker_text": "Bring 10 cod for the village kitchen.",
+    "quest.village_supply.fresh_cod.title": {
+      "lines": [
+        "Fresh Cod"
+      ]
+    },
+    "quest.village_supply.fresh_cod.tracker.proof.text": {
+      "lines": [
+        "Bring 10 cod for supper."
+      ]
+    },
+    "quest.village_supply.fresh_cod.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the cod."
+      ]
+    },
+    "quest.village_supply.fresh_cod.tracker.title": {
+      "lines": [
+        "Fresh Cod"
+      ]
+    }
+  }
+}

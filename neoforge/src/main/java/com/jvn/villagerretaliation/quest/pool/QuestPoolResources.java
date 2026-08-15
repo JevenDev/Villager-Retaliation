@@ -6,6 +6,8 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -45,10 +47,19 @@ public final class QuestPoolResources {
     }
 
     public static ContentSnapshot snapshotForCatalog(MinecraftServer server) {
-        return new ContentSnapshot(load(server));
+        return snapshotForCatalog(
+                server, new QuestBundleTransactions.Result(Map.of(), List.of()));
     }
 
-    private static List<QuestPoolDefinition> load(MinecraftServer server) {
+    public static ContentSnapshot snapshotForCatalog(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles) {
+        return new ContentSnapshot(load(server, bundles));
+    }
+
+    private static List<QuestPoolDefinition> load(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles) {
         Cache current = cache;
         if (current.server() == server) {
             return current.pools();
@@ -56,7 +67,7 @@ public final class QuestPoolResources {
         synchronized (QuestPoolResources.class) {
             current = cache;
             if (current.server() != server) {
-                current = new Cache(server, read(server));
+                current = new Cache(server, read(server, bundles));
                 cache = current;
             }
             return current.pools();
@@ -117,29 +128,62 @@ public final class QuestPoolResources {
         };
     }
 
-    private static List<QuestPoolDefinition> read(MinecraftServer server) {
+    private static List<QuestPoolDefinition> read(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles) {
         List<QuestPoolDefinition> pools = new ArrayList<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
         DatapackResourceLoader.forEachJsonResource(server, RESOURCE_ROOT, (location, resource) ->
-                DatapackResourceLoader.readObject(location, "quest pool", resource).ifPresent(root -> {
-                    ResourceLocation requestedId = poolId(location, root);
-                    if (DatapackJsonReader.readBoolean(root, "remove", false)) {
-                        pools.removeIf(existing -> existing.id().equals(requestedId));
-                        sources.remove(requestedId);
-                        return;
-                    }
-                    QuestPoolDefinition pool = parse(location, root);
-                    if (pool == null) {
-                        return;
-                    }
-                    ResourceLocation previous = sources.put(pool.id(), location);
-                    if (previous != null) {
-                        DatapackDiagnostics.warnDuplicateId(location, "quest pool", pool.id().toString(), previous);
-                        pools.removeIf(existing -> existing.id().equals(pool.id()));
-                    }
-                    pools.add(pool);
-                }));
+                DatapackResourceLoader.readObject(location, "quest pool", resource).ifPresent(root ->
+                        readDefinition(location, root, pools, sources)));
+        if (bundles != null) {
+            bundles.bundles().values().stream()
+                    .sorted(java.util.Comparator.comparing(bundle -> bundle.owner().key()))
+                    .forEach(bundle -> bundle.definitions()
+                            .getOrDefault(QuestBundlePath.Kind.POOL, Map.of())
+                            .entrySet().stream().sorted(Map.Entry.comparingByKey())
+                            .forEach(entry -> readDefinition(
+                                    bundleSource(bundle.owner(), entry.getKey()),
+                                    entry.getValue(),
+                                    pools,
+                                    sources)));
+        }
         return List.copyOf(pools);
+    }
+
+    private static void readDefinition(
+            ResourceLocation location,
+            JsonObject root,
+            List<QuestPoolDefinition> pools,
+            Map<ResourceLocation, ResourceLocation> sources) {
+        ResourceLocation requestedId = poolId(location, root);
+        if (DatapackJsonReader.readBoolean(root, "remove", false)) {
+            pools.removeIf(existing -> existing.id().equals(requestedId));
+            sources.remove(requestedId);
+            return;
+        }
+        QuestPoolDefinition pool = parse(location, root);
+        if (pool == null) {
+            return;
+        }
+        ResourceLocation previous = sources.put(pool.id(), location);
+        if (previous != null) {
+            DatapackDiagnostics.warnDuplicateId(
+                    location, "quest pool", pool.id().toString(), previous);
+            pools.removeIf(existing -> existing.id().equals(pool.id()));
+        }
+        pools.add(pool);
+    }
+
+    private static ResourceLocation bundleSource(
+            QuestBundlePath.Owner owner, ResourceLocation id) {
+        String idPath = id.getPath();
+        int separator = idPath.lastIndexOf('/');
+        String file = (separator < 0 ? idPath : idPath.substring(separator + 1)) + ".json";
+        String path = owner.shared()
+                ? "quests/_shared/pools/" + file
+                : "quests/" + owner.questline() + "/" + owner.slug() + "/pools/" + file;
+        return ResourceLocation.fromNamespaceAndPath(owner.namespace(), path);
     }
 
     static QuestPoolDefinition parse(ResourceLocation location, JsonObject root) {

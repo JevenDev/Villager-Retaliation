@@ -1,0 +1,398 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "clean_cloth",
+  "id": "villagerretaliation:clean_bandages",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "questline": "field_medicine",
+    "tags": [
+      "group.field_medicine",
+      "role.side",
+      "activity.deliver",
+      "activity.gather",
+      "destination.village",
+      "tier.early",
+      "difficulty.easy",
+      "commitment.standard",
+      "theme.community",
+      "theme.defense"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "novice",
+      "professions": [
+        "minecraft:cleric",
+        "minecraft:shepherd",
+        "minecraft:leatherworker"
+      ],
+      "skills": {
+        "medicine": {
+          "min": 5
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 90,
+    "gossip_reputation": 3,
+    "loot_table": "villagerretaliation:quest/clean_bandages",
+    "memory_event": "player_completed_quest",
+    "reputation": 8
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "bring_wool",
+        "bring_string"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.clean_cloth.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.clean_cloth.dialogue.offer.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.clean_cloth.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.clean_cloth.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.clean_cloth.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.clean_cloth.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.clean_cloth.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.clean_cloth.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "clean_cloth",
+      "next": "seal_jars",
+      "objectives": [
+        {
+          "count": 8,
+          "id": "bring_wool",
+          "item": "minecraft:white_wool",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.clean_cloth.objective.bring_wool.tracker.complete_text"
+            },
+            "progress": 0.45,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.clean_cloth.objective.bring_wool.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 6,
+          "id": "bring_string",
+          "item": "minecraft:string",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.clean_cloth.objective.bring_string.tracker.complete_text"
+            },
+            "progress": 0.6,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.clean_cloth.objective.bring_string.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.clean_cloth.scene.start_quest.action.start.lines.already_completed"
+                },
+                "started": {
+                  "key": "#stage.clean_cloth.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.clean_cloth.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.clean_cloth.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.clean_cloth.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.clean_cloth.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.clean_cloth.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.6,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.clean_cloth.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "bring_honey",
+        "bring_glass_bottles"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.seal_jars.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.seal_jars.dialogue.reminder.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.seal_jars.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.seal_jars.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "seal_jars",
+      "next": "return",
+      "objectives": [
+        {
+          "count": 2,
+          "id": "bring_honey",
+          "item": "minecraft:honey_bottle",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.seal_jars.objective.bring_honey.tracker.complete_text"
+            },
+            "progress": 0.8,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.seal_jars.objective.bring_honey.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 4,
+          "id": "bring_glass_bottles",
+          "item": "minecraft:glass_bottle",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.seal_jars.objective.bring_glass_bottles.tracker.complete_text"
+            },
+            "progress": 0.9,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.seal_jars.objective.bring_glass_bottles.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.seal_jars.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.seal_jars.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.seal_jars.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.9,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.seal_jars.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -22,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#F2D37A",
+    "icon": "minecraft:honey_bottle",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.field_medicine.clean_bandages"
+}

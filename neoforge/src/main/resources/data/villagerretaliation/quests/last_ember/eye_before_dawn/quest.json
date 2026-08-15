@@ -1,0 +1,385 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "answer_the_eye",
+  "id": "villagerretaliation:eye_before_dawn",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "parent": "villagerretaliation:nether_candle",
+    "questline": "last_ember",
+    "tags": [
+      "group.last_ember",
+      "role.story",
+      "activity.combat",
+      "activity.deliver",
+      "activity.gather",
+      "destination.overworld",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard",
+      "theme.exploration",
+      "theme.mystery"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "expert",
+      "professions": [
+        "minecraft:cleric",
+        "minecraft:librarian"
+      ],
+      "skills": {
+        "scholarship": {
+          "min": 32
+        },
+        "survival": {
+          "min": 26
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 320,
+    "gossip_reputation": 6,
+    "loot_table": "villagerretaliation:quest/eye_before_dawn",
+    "memory_event": "player_completed_quest",
+    "reputation": 16
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "defeat_endermen",
+        "bring_eyes"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.answer_the_eye.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.answer_the_eye.dialogue.offer.lines"
+          },
+          "order": -19,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.answer_the_eye.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.answer_the_eye.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.answer_the_eye.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.answer_the_eye.dialogue.reminder.lines"
+          },
+          "order": -19,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.answer_the_eye.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.answer_the_eye.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "answer_the_eye",
+      "next": "steady_hands",
+      "objectives": [
+        {
+          "count": 3,
+          "entity": "minecraft:enderman",
+          "id": "defeat_endermen",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.answer_the_eye.objective.defeat_endermen.tracker.complete_text"
+            },
+            "progress": 0.55,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.answer_the_eye.objective.defeat_endermen.tracker.text"
+            }
+          },
+          "type": "mob_kill"
+        },
+        {
+          "count": 3,
+          "id": "bring_eyes",
+          "item": "minecraft:ender_eye",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.answer_the_eye.objective.bring_eyes.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.answer_the_eye.objective.bring_eyes.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.answer_the_eye.scene.start_quest.action.start.lines.already_completed"
+                },
+                "started": {
+                  "key": "#stage.answer_the_eye.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.answer_the_eye.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.answer_the_eye.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.answer_the_eye.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.answer_the_eye.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.answer_the_eye.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.75,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.answer_the_eye.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "bring_ender_chest"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.steady_hands.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.steady_hands.dialogue.reminder.lines"
+          },
+          "order": -19,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.steady_hands.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.steady_hands.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "steady_hands",
+      "next": "return",
+      "objectives": [
+        {
+          "count": 1,
+          "id": "bring_ender_chest",
+          "item": "minecraft:ender_chest",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.steady_hands.objective.bring_ender_chest.tracker.complete_text"
+            },
+            "progress": 0.9,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.steady_hands.objective.bring_ender_chest.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.steady_hands.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.steady_hands.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.steady_hands.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.9,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.steady_hands.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -19,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#7B4AB0",
+    "icon": "minecraft:ender_eye",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.last_ember.eye_before_dawn"
+}

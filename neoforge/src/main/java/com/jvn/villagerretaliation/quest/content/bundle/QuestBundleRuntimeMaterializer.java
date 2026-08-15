@@ -7,6 +7,7 @@ import com.google.gson.JsonPrimitive;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import net.minecraft.resources.ResourceLocation;
 
 /** Rehydrates localized bundle references for the unchanged v2 runtime compiler. */
 public final class QuestBundleRuntimeMaterializer {
@@ -14,19 +15,32 @@ public final class QuestBundleRuntimeMaterializer {
     }
 
     public static Result materialize(QuestBundleTransactions.EffectiveBundle bundle) {
-        if (bundle == null || bundle.questId() == null) {
+        if (bundle == null) {
             return new Result(null, List.of("bundle has no quest definition"));
         }
-        JsonObject quest = bundle.definitions()
-                .getOrDefault(QuestBundlePath.Kind.QUEST, Map.of())
-                .get(bundle.questId());
-        if (quest == null) {
-            return new Result(null, List.of("bundle has no quest.json for " + bundle.questId()));
+        DefinitionResult definition = materializeDefinition(
+                bundle, QuestBundlePath.Kind.QUEST, bundle.questId());
+        return new Result(definition.definition(), definition.errors());
+    }
+
+    public static DefinitionResult materializeDefinition(
+            QuestBundleTransactions.EffectiveBundle bundle,
+            QuestBundlePath.Kind kind,
+            ResourceLocation id) {
+        if (bundle == null || kind == null || id == null) {
+            return new DefinitionResult(null, List.of("bundle definition identity is incomplete"));
+        }
+        JsonObject source = bundle.definitions()
+                .getOrDefault(kind, Map.of())
+                .get(id);
+        if (source == null) {
+            return new DefinitionResult(
+                    null, List.of("bundle has no " + kind + " definition for " + id));
         }
         List<String> errors = new ArrayList<>();
         JsonElement materialized = materialize(
-                quest, "", bundle.localizationPrefix(), bundle.locales(), "", false, errors);
-        return new Result(
+                source, "", bundle.localizationPrefix(), bundle.locales(), "", false, errors);
+        return new DefinitionResult(
                 materialized != null && materialized.isJsonObject() ? materialized.getAsJsonObject() : null,
                 List.copyOf(errors));
     }
@@ -146,6 +160,21 @@ public final class QuestBundleRuntimeMaterializer {
 
     private static String location(String path) {
         return path == null || path.isBlank() ? "/" : path;
+    }
+
+    public record DefinitionResult(JsonObject definition, List<String> errors) {
+        public DefinitionResult {
+            definition = definition == null ? null : definition.deepCopy();
+            errors = errors == null ? List.of() : List.copyOf(errors);
+        }
+
+        public boolean valid() {
+            return this.definition != null && this.errors.isEmpty();
+        }
+
+        public JsonObject definition() {
+            return this.definition == null ? null : this.definition.deepCopy();
+        }
     }
 
     public record Result(JsonObject quest, List<String> errors) {

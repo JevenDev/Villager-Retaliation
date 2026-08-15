@@ -1,0 +1,123 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.blank_map_promise.description": {
+      "lines": [
+        "Bind the first blank atlas folio with paper, ink, and a compass bearing."
+      ]
+    },
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.dialogue.reminder.label": "About Blank Map Promise",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.dialogue.reminder.lines": [
+      "The paper is enough. Now the folio needs a compass and ink so the blank page knows which way to face."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.dialogue.reminder.response.abandon.label": "Abandon quest",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.dialogue.reminder.response.details.label": "Repeat the list",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.objective.bring_compass.tracker.complete_text": "The compass bearing is ready.",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.objective.bring_compass.tracker.text": "Bring 1 compass to give the atlas a north.",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.objective.bring_ink.tracker.complete_text": "The binding ink is ready.",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.objective.bring_ink.tracker.text": "Bring 3 ink sacs to bind the first folio.",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.scene.abandon_confirm.lines": [
+      "Fold the blank folio away for now?"
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.scene.abandon_confirm.response.cancel.label": "Keep the folio",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.scene.abandon_confirm.response.confirm.label": "Abandon quest",
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "I will keep the covers flat until you are ready to start again."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "There is no atlas folio in your hands right now."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.scene.leave.lines": [
+      "Blank space keeps its patience."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.scene.reminder_details.action.remind.lines.reminder": [
+      "The folio still needs 1 compass and 3 ink sacs."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have your blank folio open right now."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.bind_bearing.ui.tracker_text": "Bring 1 compass and 3 ink sacs for the folio binding.",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.offer.label": "Blank Map Promise",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.offer.lines": [
+      "Every atlas begins as a promise: enough paper to hold the world, enough ink to admit where we do not know it yet.",
+      "Bring me paper, a compass, and ink sacs. I will bind the first folio, and you can decide whether the blank space becomes a road."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.offer.response.accept.label": "Start the atlas",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.reminder.label": "About Blank Map Promise",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.reminder.lines": [
+      "The blank folio still needs its paper before the compass can mean anything."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.reminder.response.abandon.label": "Abandon quest",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.reminder.response.details.label": "Repeat the list",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.objective.bring_paper.tracker.complete_text": "The folio paper is ready.",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.objective.bring_paper.tracker.text": "Bring 24 paper for the first atlas folio.",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.abandon_confirm.lines": [
+      "Fold the blank folio away for now?"
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.abandon_confirm.response.cancel.label": "Keep the folio",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.abandon_confirm.response.confirm.label": "Abandon quest",
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "I will keep the covers flat until you are ready to start again."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "There is no atlas folio in your hands right now."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.decline.lines": [
+      "Then the map stays blank, which is safer but much less useful."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.leave.lines": [
+      "Blank space keeps its patience."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.reminder_details.action.remind.lines.reminder": [
+      "First bring 24 paper. After that, bind the bearing with 1 compass and 3 ink sacs."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have your blank folio open right now."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.start_quest.action.start.lines.already_completed": [
+      "The first folio is already bound."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.start_quest.action.start.lines.started": [
+      "Good. Start with 24 paper; a thin atlas lies before the first rain."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.scene.start_quest.action.start.lines.unavailable": [
+      "The map table needs a little time before it can take another promise."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.gather_paper.ui.tracker_text": "Bring 24 paper for the first atlas folio.",
+    "quest.cartographers_atlas.blank_map_promise.stage.return.dialogue.turn_in.label": "About Blank Map Promise",
+    "quest.cartographers_atlas.blank_map_promise.stage.return.dialogue.turn_in.lines": [
+      "Paper, compass, ink. That is enough for a beginning."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.return.dialogue.turn_in.response.complete.label": "Bind the first folio",
+    "quest.cartographers_atlas.blank_map_promise.stage.return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.blank_map_promise.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "There. The first folio is bound. The atlas is still mostly empty, but now it knows how to begin."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The binding is still short. Bring the missing paper, compass, or ink before I stitch the cover."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the materials here, and I can bind them properly."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The folio still needs its paper, compass, and ink before I can close it."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.return.scene.leave.lines": [
+      "Do not crease the paper before it has a road."
+    ],
+    "quest.cartographers_atlas.blank_map_promise.stage.return.ui.tracker_text": "Return to the cartographer with the folio materials.",
+    "quest.cartographers_atlas.blank_map_promise.title": {
+      "lines": [
+        "Blank Map Promise"
+      ]
+    },
+    "quest.cartographers_atlas.blank_map_promise.tracker.title": {
+      "lines": [
+        "Blank Map Promise"
+      ]
+    }
+  }
+}

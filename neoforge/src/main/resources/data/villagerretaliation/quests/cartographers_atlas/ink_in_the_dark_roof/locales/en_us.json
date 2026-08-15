@@ -1,0 +1,106 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.ink_in_the_dark_roof.description": {
+      "lines": [
+        "Follow the dark roof horizon to a Woodland Mansion and return with its stolen records."
+      ]
+    },
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.dialogue.turn_in.label": "About the Dark Roof Road",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.dialogue.turn_in.lines": [
+      "The dark roof left ink on you. Let me see what you carried out."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.dialogue.turn_in.response.complete.label": "Hand over the mansion records",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The dark roof road is charted. The atlas now knows that some houses are warnings pretending to be destinations."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The dark roof page still needs its mansion, patrol count, and records."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the mansion proof before I trust the dark roof mark."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The books need the mansion bearing behind them."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The dark roof road still needs its proof before I can close the page."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.scene.leave.lines": [
+      "Keep the records closed until we can read them safely."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.return.ui.tracker_text": "Return to the cartographer with the mansion records.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.dialogue.offer.label": "Dark Roof Road",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.dialogue.offer.lines": [
+      "You chose the dark roof, so the atlas is listening for timber where old trouble nests.",
+      "A Woodland Mansion is dragging ink off the edge of the page. Chart it, break the patrol, and bring back the books they kept from better hands."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.dialogue.offer.response.accept.label": "Chart the dark roof",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.dialogue.reminder.label": "About the Dark Roof Road",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.dialogue.reminder.lines": [
+      "The dark roof road still needs a mansion bearing, illager proof, and stolen records."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.dialogue.reminder.response.abandon.label": "Abandon quest",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.dialogue.reminder.response.details.label": "Remind me where",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.objective.bring_books.tracker.complete_text": "The dark roof records are ready.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.objective.bring_books.tracker.text": "Bring 12 books from the mansion shelves.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.objective.carry_totem.tracker.complete_text": "The totem proof is ready.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.objective.carry_totem.tracker.text": "Carry 1 Totem of Undying as proof from the dark roof road.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.objective.defeat_illagers.tracker.complete_text": "The dark roof patrol is recorded.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.objective.defeat_illagers.tracker.text": "Defeat 4 mansion illagers on the dark roof road.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.objective.visit_mansion.tracker.complete_text": "The dark roof road has been charted.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.objective.visit_mansion.tracker.text": "Reach the Woodland Mansion near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.abandon_confirm.lines": [
+      "Let the dark roof road close for now?"
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.abandon_confirm.response.cancel.label": "Keep charting",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.abandon_confirm.response.confirm.label": "Abandon quest",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "I will shutter the dark roof page for now."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will shutter the dark roof page for a day. Let the ink stop watching us."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "There is no dark roof route active right now."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.decline.lines": [
+      "Reasonable. Some roofs are darker for good cause."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.leave.lines": [
+      "Do not trust a quiet hallway."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.reminder_details.action.remind.lines.reminder": [
+      "Woodland Mansion near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, defeat 4 vindicators or evokers, and bring 12 books."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have the dark roof page open for you right now."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.start_quest.action.start.lines.already_completed": [
+      "The dark roof road is already charted."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.start_quest.action.start.lines.locate_failed": [
+      "The mansion is hiding too well today. I would rather wait than send you chasing a bad mark."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.start_quest.action.start.lines.started": [
+      "The mansion mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, break the patrol, and bring the books."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.scene.start_quest.action.start.lines.unavailable": [
+      "The atlas must choose the dark roof horizon before this route opens."
+    ],
+    "quest.cartographers_atlas.ink_in_the_dark_roof.stage.survey.ui.tracker_text": "Reach the Woodland Mansion near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.ink_in_the_dark_roof.title": {
+      "lines": [
+        "Dark Roof Ink"
+      ]
+    },
+    "quest.cartographers_atlas.ink_in_the_dark_roof.tracker.title": {
+      "lines": [
+        "Dark Roof Ink"
+      ]
+    }
+  }
+}

@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.quest.content.bundle.LocalizedReference;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleLocalization;
@@ -19,6 +20,7 @@ import java.util.Set;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -157,6 +159,48 @@ public final class QuestBundleArchitectureGameTests {
                 "English description", "partial locale fallback missing");
         helper.assertValueEqual(catalog.plainText("en_us", PREFIX + ".title").orElse(""), "English title",
                 "one player locale lookup altered another");
+
+        QuestContentCatalog base = QuestContentCatalogs.current(helper.getLevel().getServer());
+        QuestContentCatalog localized = new QuestContentCatalog(
+                base.generation(),
+                base.compiledQuestCatalog(),
+                base.dialogueCatalog(),
+                base.quests(),
+                base.objectiveEventQuestIds(),
+                base.factQuestIds(),
+                base.memoryEventQuestIds(),
+                base.exclusiveGroupQuestIds(),
+                base.triggerEventQuestIds(),
+                base.scenes(),
+                base.encounters(),
+                base.pools(),
+                base.bundles(),
+                catalog,
+                base.rewards());
+        QuestContentCatalogs.installForTests(
+                helper.getLevel().getServer(),
+                localized,
+                QuestContentCatalogs.loadReport(helper.getLevel().getServer()));
+        try {
+            helper.assertValueEqual(
+                    VillagerDialogueResources.globalMessage(
+                            helper.getLevel().getServer(),
+                            RandomSource.create(41L),
+                            PREFIX + ".title",
+                            "fr_fr").orElse(""),
+                    "Titre",
+                    "French player boundary did not use the locale overlay");
+            helper.assertValueEqual(
+                    VillagerDialogueResources.globalMessage(
+                            helper.getLevel().getServer(),
+                            RandomSource.create(41L),
+                            PREFIX + ".title",
+                            "en_us").orElse(""),
+                    "English title",
+                    "English player boundary was contaminated by another locale");
+        } finally {
+            QuestContentCatalogs.invalidate();
+        }
         helper.succeed();
     }
 

@@ -7,6 +7,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataRoot = path.join(root, "neoforge", "src", "main", "resources", "data", "villagerretaliation");
 const fixtureRoot = path.join(root, "tools", "quest-bundle-baseline");
 const sourceCommit = "6e5913766bc93eede34185e0b87eaa428e53b0e6";
+const frozenManifest = JSON.parse(
+  await readFile(path.join(fixtureRoot, "compatibility-manifest.json"), "utf8"));
+const frozenAuthoredMessages = new Set(frozenManifest.ids.messages);
+const frozenLocaleKeys = new Set(frozenManifest.locale_keys.map(entry => entry.key));
 const roots = {
   quests: path.join(dataRoot, "quests"),
   scenes: path.join(dataRoot, "quest_scenes"),
@@ -16,18 +20,17 @@ const roots = {
   messages: path.join(dataRoot, "dialogue", "en_us", "quests", "messages")
 };
 
-const textFields = new Set(["title", "description", "label", "text", "lines", "tracker_text", "complete_text", "custom_name", "trophy_name"]);
+const textFields = new Set(["title", "description", "label", "text", "lines", "tracker_text", "tracker_complete_text", "complete_text", "custom_name", "trophy_name"]);
 const stableArrays = new Set(["stages", "objectives", "events", "triggers", "scenes", "responses", "actors", "steps", "actions", "waves", "variants", "members", "phases"]);
 
-const [quests, scenes, encounters, pools, rewards, messageFiles] = await Promise.all([
+const [quests, scenes, encounters, pools, rewards, messages] = await Promise.all([
   loadQuests(roots.quests),
-  loadIdentified(roots.scenes),
-  loadIdentified(roots.encounters),
-  loadIdentified(roots.pools),
-  loadRewards(roots.rewards),
-  loadJsonFiles(roots.messages)
+  loadBundleDefinitions(roots.quests, "scenes"),
+  loadBundleDefinitions(roots.quests, "encounters"),
+  loadBundleDefinitions(roots.quests, "pools"),
+  loadBundleRewards(roots.quests),
+  loadBundleMessages(roots.quests)
 ]);
-const messages = loadMessages(messageFiles);
 const ownership = inferOwnership();
 const localeKeys = collectLocaleKeys();
 function manifest() {
@@ -451,6 +454,69 @@ class JavaRandom {
   }
 }
 
+async function loadBundleDefinitions(directory, definitionDirectory) {
+  const result = new Map();
+  for (const entry of await loadJsonFiles(directory)) {
+    const relativeFile = path.relative(directory, entry.file).replace(/\\/g, "/");
+    const parts = relativeFile.split("/");
+    if (parts.at(-2) !== definitionDirectory) continue;
+    const id = entry.data?.id;
+    if (!id) throw new Error(relative(entry.file) + " has no stable " + definitionDirectory + " id");
+    if (result.has(id)) throw new Error("Duplicate stable " + definitionDirectory + " id " + id);
+    const ownerDirectory = path.dirname(path.dirname(entry.file));
+    const shared = parts[0] === "_shared";
+    const localeRoot = JSON.parse(await readFile(
+      path.join(ownerDirectory, "locales", "en_us.json"), "utf8"));
+    const messages = localeRoot.messages ?? localeRoot;
+    let prefix = "";
+    if (!shared) {
+      const quest = JSON.parse(await readFile(path.join(ownerDirectory, "quest.json"), "utf8"));
+      prefix = quest.localization_prefix ?? "";
+    }
+    result.set(id, {
+      file: entry.file,
+      data: materializeBundle(entry.data, messages, prefix)
+    });
+  }
+  return new Map(sortedEntries(result));
+}
+
+async function loadBundleRewards(directory) {
+  const result = new Map();
+  for (const entry of await loadJsonFiles(directory)) {
+    const relativeFile = path.relative(directory, entry.file).replace(/\\/g, "/");
+    if (!relativeFile.split("/").includes("rewards")) continue;
+    const id = entry.data?.id;
+    if (!id || !entry.data?.table) throw new Error(relative(entry.file) + " is not a bundled reward");
+    if (result.has(id)) throw new Error("Duplicate stable reward id " + id);
+    result.set(id, { file: entry.file, data: entry.data.table });
+  }
+  return new Map(sortedEntries(result));
+}
+
+async function loadBundleMessages(directory) {
+  const result = new Map();
+  for (const entry of await loadJsonFiles(directory)) {
+    const relativeFile = path.relative(directory, entry.file).replace(/\\/g, "/");
+    const parts = relativeFile.split("/");
+    if (parts.at(-2) !== "locales" || parts.at(-1) !== "en_us.json") continue;
+    for (const [key, payload] of Object.entries(entry.data.messages ?? entry.data)) {
+      if (key === "schema") continue;
+      if (result.has(key)) throw new Error("Duplicate English message owner " + key);
+      result.set(key, canonical(payload));
+    }
+  }
+  const actualKeys = new Set(result.keys());
+  const missing = [...frozenLocaleKeys].filter(key => !actualKeys.has(key));
+  const unexpected = [...actualKeys].filter(key => !frozenLocaleKeys.has(key));
+  if (missing.length || unexpected.length) {
+    throw new Error("Effective English locale key set changed: missing="
+      + missing.join(",") + "; unexpected=" + unexpected.join(","));
+  }
+  return new Map(sortedEntries(new Map(
+    [...result].filter(([key]) => frozenAuthoredMessages.has(key)))));
+}
+
 async function loadQuests(directory) {
   const result = new Map();
   for (const entry of await loadJsonFiles(directory)) {
@@ -478,12 +544,13 @@ async function loadQuests(directory) {
   return new Map(sortedEntries(result));
 }
 
-function materializeBundle(value, messages, prefix, field = "") {
+function materializeBundle(value, messages, prefix, field = "", localized = false) {
   if (Array.isArray(value)) {
-    return value.map(entry => materializeBundle(entry, messages, prefix, field));
+    return value.map(entry => materializeBundle(entry, messages, prefix, field, localized));
   }
   if (!value || typeof value !== "object") return value;
-  if (typeof value.key === "string" && Object.keys(value).every(key => key === "key")) {
+  if (localized && typeof value.key === "string"
+      && Object.keys(value).every(key => key === "key")) {
     const id = value.key.startsWith("#")
       ? prefix + (value.key.length === 1 ? "" : "." + value.key.slice(1))
       : value.key;
@@ -492,7 +559,8 @@ function materializeBundle(value, messages, prefix, field = "") {
     return legacyLocalePayload(field, payload);
   }
   return Object.fromEntries(Object.entries(value)
-    .map(([key, child]) => [key, materializeBundle(child, messages, prefix, key)]));
+    .map(([key, child]) => [key, materializeBundle(
+      child, messages, prefix, key, localized || textFields.has(key))]));
 }
 
 function legacyLocalePayload(field, payload) {
