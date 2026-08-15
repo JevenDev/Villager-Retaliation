@@ -1066,7 +1066,7 @@ const summary = `${data.quests.length} quests, ${data.advancements.length} advan
 if (checkOnly) {
   const current = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "";
   if (normalizeLineEndings(current) !== output) {
-    console.error("tools/player-wiki/site-data.js is out of date. Run node tools/player-wiki/build-data.mjs.");
+    console.error("wiki/player/site-data.js is out of date. Run node wiki/player/build-data.mjs.");
     process.exitCode = 1;
   } else {
     console.log(`Player wiki data is up to date: ${summary}.`);

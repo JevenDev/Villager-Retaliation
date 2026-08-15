@@ -28,7 +28,7 @@ Beta.13 is primarily additive for pack authors. Existing beta.12 dialogue, notif
 14. Quest availability accepts `weight` or `selection_weight`, `max_active_quests`, and `max_active_by_tag`.
 15. Quest triggers accept `priority`, `chance`, `weight`, and `exclusive`; their dispatch payload can be queried with `trigger_payload`.
 
-Start with [Persistent Quest Scenes](Quest-Scenes.md) for the authoring surface. [Quest Scene Runtime](../docs/quest-scene-runtime.md) defines the underlying ownership, continuation, recovery, and cleanup guarantees for developers who need the high-level runtime contract.
+Start with [Persistent Quest Scenes](Quest-Scenes.md) for the authoring surface. [Quest Scene Runtime](quest-scene-runtime.md) defines the underlying ownership, continuation, recovery, and cleanup guarantees for developers who need the high-level runtime contract.
 
 Basic quest module v2 files remain valid without an extracted scene. Add `quest_scenes` and `quest_encounters` only when a sequence needs persistent actors, resumable timing, controlled combat, or recovery across unloads.
 

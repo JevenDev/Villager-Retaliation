@@ -19,7 +19,7 @@ let copyStatusTimer = 0;
 let paletteActiveIndex = -1;
 let cachedSearchItems = null;
 
-if (location.protocol === "file:") els.playerWikiLink.href = "../player-wiki/index.html";
+if (location.protocol === "file:") els.playerWikiLink.href = "../player/index.html";
 
 function escapeHtml(value) {
   return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;")

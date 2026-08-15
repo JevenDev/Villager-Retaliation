@@ -260,17 +260,17 @@ Resource packs can translate the interaction GUI and reputation UI, replace norm
 
 The browser-based [datapack generator](https://jevendev.github.io/Villager-Retaliation/datapack-builder/) can create, import, preview, validate, and export Villager Retaliation datapacks.
 
-For full pack-author documentation, examples, JSON references, and model notes, use the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki) rather than this CurseForge page.
+For full pack-author documentation, examples, JSON references, and model notes, use the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki/dev/content) rather than this CurseForge page.
 
 ## Documentation
 
 * [Changelog](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/CHANGELOG.md)
 * [Player Wiki](https://jevendev.github.io/Villager-Retaliation/)
-* [Pack Wiki Home](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki)
+* [Pack Wiki Home](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki/dev/content)
 * [Datapack Generator](https://jevendev.github.io/Villager-Retaliation/datapack-builder/)
-* [Quest JSON](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Quests.md)
-* [Dialogue Trees](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Dialogue-Trees.md)
-* [Skill Trades](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Skill-Trades.md)
+* [Quest JSON](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/dev/content/Quests.md)
+* [Dialogue Trees](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/dev/content/Dialogue-Trees.md)
+* [Skill Trades](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/dev/content/Skill-Trades.md)
 
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 
@@ -291,7 +291,7 @@ Compatibility may vary with mods that heavily replace villager AI, trading, comb
 
 Texture-only villager packs should generally work, but hostile/combat villagers use separate Villager Retaliation texture paths so they can animate weapons, shields, bows, potions, and throwing poses cleanly.
 
-Resource packs can also override the combat villager model, opt into a custom non-combat model, and use EMF's normal entity model workflow when Entity Model Features is installed. Full texture paths and model notes are in the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki).
+Resource packs can also override the combat villager model, opt into a custom non-combat model, and use EMF's normal entity model workflow when Entity Model Features is installed. Full texture paths and model notes are in the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki/dev/content).
 
 ![roadmap](https://cdn.modrinth.com/data/cached_images/04825ea0e2e5462ffa075e783ca38b0c63a36d34.png)
 

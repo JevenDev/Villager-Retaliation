@@ -1795,7 +1795,7 @@ window.addEventListener("pagehide", () => saveRouteScroll());
 
 const developerWikiLink = document.querySelector("#developer-wiki-link");
 if (developerWikiLink && location.protocol === "file:") {
-  developerWikiLink.href = "../developer-wiki/index.html";
+  developerWikiLink.href = "../dev/index.html";
 }
 
 if (!location.hash) location.hash = "#/home";
