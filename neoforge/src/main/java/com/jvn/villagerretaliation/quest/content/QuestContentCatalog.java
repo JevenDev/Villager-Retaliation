@@ -7,6 +7,9 @@ import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestCatalog;
 import com.jvn.villagerretaliation.quest.compiled.QuestSourcePointer;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEventKind;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestLocaleCatalog;
 import com.jvn.villagerretaliation.quest.pool.QuestPoolDefinition;
 import com.jvn.villagerretaliation.scene.encounter.EncounterTemplate;
 import com.jvn.villagerretaliation.scene.model.CompiledScene;
@@ -33,7 +36,9 @@ public record QuestContentCatalog(
         Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds,
         Map<ResourceLocation, CompiledScene> scenes,
         Map<ResourceLocation, EncounterTemplate> encounters,
-        List<QuestPoolDefinition> pools) {
+        List<QuestPoolDefinition> pools,
+        Map<QuestBundlePath.Owner, QuestBundleTransactions.EffectiveBundle> bundles,
+        QuestLocaleCatalog localization) {
     public QuestContentCatalog {
         compiledQuestCatalog = compiledQuestCatalog == null
                 ? new CompiledQuestCatalog(Map.of())
@@ -48,6 +53,8 @@ public record QuestContentCatalog(
         scenes = freezeMap(scenes);
         encounters = freezeMap(encounters);
         pools = pools == null ? List.of() : List.copyOf(pools);
+        bundles = freezeMap(bundles);
+        localization = localization == null ? QuestLocaleCatalog.empty() : localization;
     }
 
     public static QuestContentCatalog empty() {
@@ -63,7 +70,9 @@ public record QuestContentCatalog(
                 Map.of(),
                 Map.of(),
                 Map.of(),
-                List.of());
+                List.of(),
+                Map.of(),
+                QuestLocaleCatalog.empty());
     }
 
     public Collection<QuestDefinition> questDefinitions() {

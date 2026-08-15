@@ -20,6 +20,11 @@
       "type": "string",
       "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
     },
+    "localization_prefix": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_.-]+$"
+    },
     "metadata": {
       "$ref": "#/$defs/metadata"
     },
@@ -73,15 +78,42 @@
     }
   },
   "$defs": {
+    "localized_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "metadata": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "title": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "description": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "title_key": {
           "type": "string"
@@ -601,13 +633,27 @@
           "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
         },
         "title": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "title_key": {
           "type": "string"
         },
         "description": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "description_key": {
           "type": "string"
@@ -1272,13 +1318,27 @@
       "additionalProperties": false,
       "properties": {
         "text": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "text_key": {
           "type": "string"
         },
         "complete_text": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "complete_text_key": {
           "type": "string"
@@ -1392,7 +1452,14 @@
           "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
         },
         "label": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "request": {
           "type": "string"
@@ -1407,16 +1474,30 @@
           "type": "integer"
         },
         "text": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "text_key": {
           "type": "string"
         },
         "lines": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "responses": {
           "type": "array",
@@ -1459,7 +1540,14 @@
           "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
         },
         "label": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "request": {
           "type": "string"
@@ -1474,16 +1562,30 @@
           "type": "integer"
         },
         "text": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "text_key": {
           "type": "string"
         },
         "lines": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "responses": {
           "type": "array",
@@ -1626,22 +1728,43 @@
           "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
         },
         "label": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "label_key": {
           "type": "string"
         },
         "text": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "text_key": {
           "type": "string"
         },
         "lines": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "conditions": {
           "type": "array",
@@ -2015,25 +2138,53 @@
       "additionalProperties": false,
       "properties": {
         "title": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "title_key": {
           "type": "string"
         },
         "description": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "description_key": {
           "type": "string"
         },
         "tracker_text": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "tracker_text_key": {
           "type": "string"
         },
         "tracker_complete_text": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
         },
         "tracker_complete_text_key": {
           "type": "string"
