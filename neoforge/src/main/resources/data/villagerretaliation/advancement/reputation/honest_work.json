@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/commonfolk",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_pickaxe"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.honest_work.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.honest_work.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

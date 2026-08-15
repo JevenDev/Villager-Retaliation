@@ -64,6 +64,7 @@ import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
@@ -2724,6 +2725,7 @@ public final class VillagerQuestService {
         clearTrackedQuestIf(data, context.player(), definition.id());
         awardRewards(context, definition);
         completeSharedQuest(context, definition, progress);
+        VillagerReputationAdvancements.onQuestCompleted(context.player());
         sendQuestNotification(context, "quest.completed", definition, progress, "Quest completed: {quest}");
         if (dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.COMPLETED)) {
             data.setDirty();
@@ -2856,6 +2858,7 @@ public final class VillagerQuestService {
         VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
         clearTrackedQuestIf(data, context.player(), definition.id());
         awardRewards(context, definition);
+        VillagerReputationAdvancements.onQuestCompleted(context.player());
         sendQuestNotification(context, "quest.completed", definition, progress, "Quest completed: {quest}");
         dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.COMPLETED);
         data.setDirty();

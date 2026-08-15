@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/sound_the_horn",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_axe"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.et_tu_brute.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.et_tu_brute.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "parent": "villagerretaliation:reputation/honest_work",
+  "display": {
+    "icon": {
+      "id": "minecraft:crafting_table"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.full_employment.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.full_employment.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "armorer": {
+      "trigger": "minecraft:impossible"
+    },
+    "butcher": {
+      "trigger": "minecraft:impossible"
+    },
+    "cartographer": {
+      "trigger": "minecraft:impossible"
+    },
+    "cleric": {
+      "trigger": "minecraft:impossible"
+    },
+    "farmer": {
+      "trigger": "minecraft:impossible"
+    },
+    "fisherman": {
+      "trigger": "minecraft:impossible"
+    },
+    "fletcher": {
+      "trigger": "minecraft:impossible"
+    },
+    "leatherworker": {
+      "trigger": "minecraft:impossible"
+    },
+    "librarian": {
+      "trigger": "minecraft:impossible"
+    },
+    "mason": {
+      "trigger": "minecraft:impossible"
+    },
+    "nitwit": {
+      "trigger": "minecraft:impossible"
+    },
+    "shepherd": {
+      "trigger": "minecraft:impossible"
+    },
+    "toolsmith": {
+      "trigger": "minecraft:impossible"
+    },
+    "weaponsmith": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

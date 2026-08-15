@@ -82,7 +82,8 @@ Beta.13 is the Hired Help and Village Life update! It adds complete worker logis
 - Added optional Curios and Accessories compatibility for assigned duel loadouts and recovery, accessory-aware dialogue item conditions, and ominous-banner recognition.
 - Added villager hunger, visible hunger status, hunger-driven natural recovery, Hunger-effect drain, difficulty-scaled starvation damage, food recovery behavior, and healing after completed sleep, all with balance controls.
 - Added natural data-driven profession armor, per-piece mixing, armor scavenging and upgrade ranking, shields and guard loadouts, charged-crossbow preservation, arrow recovery, automatic Totem of Undying use, and Mending for armor and held equipment.
-- Added ominous banners as wearable player and villager head attachments and four advancements: Sound the Horn, Steady Gaze, The Mark You Chose, and The Village Falls.
+- Added ominous banners as wearable player and villager head attachments and four related advancements: Sound the Horn, Steady Gaze, The Mark You Chose, and The Village Falls.
+- Added ten advancements for raids, hired work, quests, and village reputation: Quarter Given, Army of One, Et tu, Brute?, War Party, You and What Army?, Honest Work, Full Employment, Village Hopper, The People's Champion, and Living Legend.
 - Added in-game MarkedDown guide content covering reputation, interaction, quests, hiring, jobs, Clipboard storage, Builder work, parties, mounts, villages, gifts, watched property, downed villagers, Player Raids, controls, and advancements.
 
 #### Quests, Scenes, Dialogue, And Interfaces
