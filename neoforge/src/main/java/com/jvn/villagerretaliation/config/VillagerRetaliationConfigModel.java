@@ -156,7 +156,7 @@ public final class VillagerRetaliationConfigModel {
         public boolean enableDialogueBlipAudio = true;
 
         @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
-        public double dialogueBlipVolume = 0.5D;
+        public double dialogueBlipVolume = 0.3D;
 
         @RangeConstraint(min = 0.5D, max = 2.0D, decimalPlaces = 2)
         public double dialogueBlipMinPitch = 0.55D;

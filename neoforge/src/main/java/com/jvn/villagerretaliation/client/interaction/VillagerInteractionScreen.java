@@ -284,8 +284,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_TOOLTIP_MAX_WIDTH = 220;
     private static final ResourceLocation DIALOGUE_BLIP_SOUND_ID = VillagerRetaliation.id("dialogue");
     private static final SoundEvent DIALOGUE_BLIP_SOUND = SoundEvent.createVariableRangeEvent(DIALOGUE_BLIP_SOUND_ID);
-    private static final int DIALOGUE_BLIP_MIN_VISIBLE_CHARACTERS = 1;
-    private static final int DIALOGUE_BLIP_MAX_VISIBLE_CHARACTERS = 3;
+    private static final int DIALOGUE_BLIP_MIN_VISIBLE_CHARACTERS = 3;
+    private static final int DIALOGUE_BLIP_MAX_VISIBLE_CHARACTERS = 5;
     private static final int INTERACTION_NAME_COLOR = 0xFFFFFFFF;
     private static final int INTERACTION_DIALOGUE_COLOR = 0xFFFFFFFF;
     private static final int INTERACTION_MOOD_COLOR = 0xFF5FCDE4;
@@ -429,7 +429,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int cachedInteractionOptionWidth = INTERACTION_OPTION_WIDTH;
     private final VillagerInteractionOptionList.LayoutCache optionLayout = new VillagerInteractionOptionList.LayoutCache();
     private final Random dialogueBlipRandom = new Random();
-    private float dialogueBlipPitch = 1.0F;
     private int nextDialogueBlipVisibleCharacter = Integer.MAX_VALUE;
     private int lastDialogueBlipVisibleCharacters;
     private final GiftPageContext giftPageContext = new GiftPageContext();
@@ -713,7 +712,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.dialogueLineScroll = 0;
         this.dialogueTextAnimationStartMillis = Util.getMillis();
         this.dialogueTextAnimationSkipped = dialogueTextSpeed().instant();
-        this.dialogueBlipPitch = randomDialogueBlipPitch();
         this.lastDialogueBlipVisibleCharacters = 0;
         this.nextDialogueBlipVisibleCharacter = this.dialogueTextAnimationSkipped
                 ? Integer.MAX_VALUE
@@ -4334,19 +4332,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
 
-        String displayedDialogue = displayedDialogueText();
-        if (displayedDialogue.isBlank()) {
+        int visibleDialogueEnd = displayedDialogueText().length();
+        if (visibleDialogueEnd <= 0) {
             return;
         }
         maybePlayDialogueBlip();
 
-        List<String> lines = wrappedInteractionDialogueLines(displayedDialogue);
+        List<String> lines = wrappedInteractionDialogueLines(this.villagerDialogueText);
         if (lines.isEmpty()) {
             return;
         }
-        List<List<DialogueTextSegment>> styledLines = interactionDialogueLineSegments(
-                displayedDialogue,
-                displayedDialogueSegments(),
+        List<InteractionDialogueLine> dialogueLines = interactionDialogueLines(
+                this.villagerDialogueText,
+                this.villagerDialogueTextSegments,
                 lines);
 
         int visibleLines = interactionDialogueVisibleLineCount();
@@ -4359,6 +4357,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         for (int row = 0; row < linesToDraw; row++) {
             int lineIndex = this.dialogueLineScroll + row;
             int lineTop = drawTop + row * lineStep;
+            InteractionDialogueLine dialogueLine = dialogueLines.get(lineIndex);
             int lineRight = left + (row == visibleLines - 1
                     ? INTERACTION_DIALOGUE_RIGHT
                     : INTERACTION_DIALOGUE_EXTENDED_RIGHT);
@@ -4369,14 +4368,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     Math.min(
                             top + INTERACTION_DIALOGUE_BOTTOM + this.renderSlideOffsetY,
                             top + INTERACTION_DIALOGUE_TOP + (row + 1) * lineStep + 2 + this.renderSlideOffsetY));
-            drawOutlinedDialogueLine(
-                    graphics,
-                    lines.get(lineIndex),
-                    styledLines.get(lineIndex),
-                    drawLeft,
-                    lineTop,
-                    INTERACTION_DIALOGUE_COLOR
-            );
+            String visibleText = dialogueLine.visibleText(visibleDialogueEnd);
+            if (!visibleText.isEmpty()) {
+                drawOutlinedDialogueLine(
+                        graphics,
+                        visibleText,
+                        dialogueLine.visibleSegments(visibleDialogueEnd),
+                        drawLeft,
+                        lineTop,
+                        INTERACTION_DIALOGUE_COLOR
+                );
+            }
             graphics.disableScissor();
         }
 
@@ -4478,20 +4480,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return VillagerRetaliationClientAssets.INTERACTION_SCROLL_ICON_DOWN_TEXTURE;
     }
 
-    private List<DialogueTextSegment> displayedDialogueSegments() {
-        String displayedDialogue = displayedDialogueText();
-        if (displayedDialogue.isBlank()) {
-            return List.of();
-        }
-        if (VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get()) {
-            return DialogueTextSegment.plain(displayedDialogue, DialogueTextEffects.NONE);
-        }
-        if (isDialogueTextAnimationComplete()) {
-            return this.villagerDialogueTextSegments;
-        }
-        return DialogueTextSegment.slice(this.villagerDialogueTextSegments, 0, displayedDialogue.length());
-    }
-
     private String displayedDialogueText() {
         if (isDialogueTextAnimationComplete()) {
             return this.villagerDialogueText;
@@ -4553,24 +4541,30 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return start >= 0 ? start : text.indexOf(lineText);
     }
 
-    private static List<List<DialogueTextSegment>> interactionDialogueLineSegments(
+    private static List<InteractionDialogueLine> interactionDialogueLines(
             String dialogue,
             List<DialogueTextSegment> segments,
             List<String> lines) {
-        List<List<DialogueTextSegment>> styledLines = new ArrayList<>(lines.size());
+        List<InteractionDialogueLine> dialogueLines = new ArrayList<>(lines.size());
         int cursor = 0;
         for (String line : lines) {
             int lineStart = findDisplayedLineStart(dialogue, line, cursor);
             if (lineStart < 0) {
-                styledLines.add(DialogueTextSegment.plain(line, DialogueTextEffects.NONE));
+                dialogueLines.add(new InteractionDialogueLine(
+                        line,
+                        DialogueTextSegment.plain(line, DialogueTextEffects.NONE),
+                        cursor));
                 continue;
             }
 
             int lineEnd = lineStart + line.length();
-            styledLines.add(DialogueTextSegment.slice(segments, lineStart, lineEnd));
+            List<DialogueTextSegment> lineSegments = VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get()
+                    ? DialogueTextSegment.plain(line, DialogueTextEffects.NONE)
+                    : DialogueTextSegment.slice(segments, lineStart, lineEnd);
+            dialogueLines.add(new InteractionDialogueLine(line, lineSegments, lineStart));
             cursor = lineEnd;
         }
-        return List.copyOf(styledLines);
+        return List.copyOf(dialogueLines);
     }
 
     private boolean trySkipDialogueTextAnimation() {
@@ -4601,8 +4595,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (!isPointInsideInteractionDialogueScrollArea(mouseX, mouseY) || scrollY == 0.0D) {
             return false;
         }
+        if (!isDialogueTextAnimationComplete()) {
+            return true;
+        }
 
-        List<String> lines = wrappedInteractionDialogueLines(displayedDialogueText());
+        List<String> lines = wrappedInteractionDialogueLines(this.villagerDialogueText);
         int maxScroll = maxInteractionDialogueLineScroll(lines);
         if (maxScroll <= 0) {
             return true;
@@ -4662,7 +4659,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (volume > 0.0F && hasAudibleDialogueCharacter(this.lastDialogueBlipVisibleCharacters, visibleCharacters)) {
             Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(
                     DIALOGUE_BLIP_SOUND,
-                    this.dialogueBlipPitch,
+                    randomDialogueBlipPitch(),
                     volume
             ));
         }
@@ -4677,7 +4674,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         for (int index = safeStart; index < safeEnd; index++) {
             int charIndex = this.villagerDialogueText.offsetByCodePoints(0, index);
             int codePoint = this.villagerDialogueText.codePointAt(charIndex);
-            if (!Character.isWhitespace(codePoint)) {
+            if (Character.isLetterOrDigit(codePoint)) {
                 return true;
             }
         }
@@ -6143,6 +6140,21 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private enum SkillsProfileCycleButton {
         LEFT,
         RIGHT
+    }
+
+    private record InteractionDialogueLine(
+            String text,
+            List<DialogueTextSegment> segments,
+            int start) {
+        private String visibleText(int visibleDialogueEnd) {
+            int visibleLength = Mth.clamp(visibleDialogueEnd - this.start, 0, this.text.length());
+            return this.text.substring(0, visibleLength);
+        }
+
+        private List<DialogueTextSegment> visibleSegments(int visibleDialogueEnd) {
+            int visibleLength = Mth.clamp(visibleDialogueEnd - this.start, 0, this.text.length());
+            return DialogueTextSegment.slice(this.segments, 0, visibleLength);
+        }
     }
 
     private record DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked) {
