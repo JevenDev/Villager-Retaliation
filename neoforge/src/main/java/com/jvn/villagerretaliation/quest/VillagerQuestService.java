@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets;
+import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerPresenter;
 import com.jvn.villagerretaliation.quest.tracking.QuestStageReadiness;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveResult;
@@ -1434,7 +1435,7 @@ public final class VillagerQuestService {
         QuestTrackerRequestPayload.Action requestedAction =
                 action == null ? QuestTrackerRequestPayload.Action.TOGGLE : action;
         PartyRecord party = PartyService.getPartyForPlayer(level, player.getUUID()).orElse(null);
-        if (party != null) {
+        if (isEnrolledPartyQuest(party, player.getUUID(), questId)) {
             if (!party.hasAdminPrivileges(player.getUUID())) {
                 player.sendSystemMessage(Component.translatable(
                         "villagerretaliation.party.error.admin_privileges_required"));
@@ -1448,6 +1449,7 @@ public final class VillagerQuestService {
                 sendTrackerSync(player, false, true);
                 return;
             }
+            data.removeTrackedQuest(player.getUUID(), questId);
             boolean changed = switch (requestedAction) {
                 case TRACK -> party.setTrackedQuest(questId);
                 case UNTRACK -> party.removeTrackedQuest(questId);
@@ -5788,14 +5790,14 @@ public final class VillagerQuestService {
         }
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         PartyRecord party = PartyService.getPartyForPlayer(level, player.getUUID()).orElse(null);
-        boolean partyOverride = party != null && !party.trackedQuests().isEmpty();
-        List<ResourceLocation> trackedQuestIds = new ArrayList<>(partyOverride
-                ? party.trackedQuests()
-                : data.getTrackedQuests(player.getUUID()));
+        List<ResourceLocation> personalTrackedQuestIds = new ArrayList<>(data.getTrackedQuests(player.getUUID()));
+        personalTrackedQuestIds.removeIf(questId -> isEnrolledPartyQuest(party, player.getUUID(), questId));
+        List<ResourceLocation> trackedQuestIds = combinedTrackedQuestIds(
+                player.getUUID(), personalTrackedQuestIds, party);
         boolean personalTrackedChanged = false;
         for (ResourceLocation trackedQuestId : List.copyOf(trackedQuestIds)) {
             if (!canTrackQuest(level, player, trackedQuestId)) {
-                if (!partyOverride) {
+                if (personalTrackedQuestIds.contains(trackedQuestId)) {
                     data.removeTrackedQuest(player.getUUID(), trackedQuestId);
                     personalTrackedChanged = true;
                 }
@@ -5803,7 +5805,13 @@ public final class VillagerQuestService {
             }
         }
         if (personalTrackedChanged) {
-            trackedQuestIds = new ArrayList<>(data.getTrackedQuests(player.getUUID()));
+            personalTrackedQuestIds = new ArrayList<>(data.getTrackedQuests(player.getUUID()));
+            personalTrackedQuestIds.removeIf(questId -> isEnrolledPartyQuest(party, player.getUUID(), questId));
+            trackedQuestIds = combinedTrackedQuestIds(player.getUUID(), personalTrackedQuestIds, party);
+            trackedQuestIds.removeIf(questId -> !canTrackQuest(level, player, questId));
+        }
+        if (trackedQuestIds.size() > QuestTrackerLimits.MAX_TRACKED_QUESTS) {
+            trackedQuestIds = new ArrayList<>(trackedQuestIds.subList(0, QuestTrackerLimits.MAX_TRACKED_QUESTS));
         }
         ResourceLocation trackedQuestId = trackedQuestIds.isEmpty() ? null : trackedQuestIds.getFirst();
         List<Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress>> visible =
@@ -6431,11 +6439,49 @@ public final class VillagerQuestService {
             ServerPlayer player,
             PartyRecord party,
             ResourceLocation questId) {
+        return canTrackQuest(level, player, questId)
+                && isEnrolledPartyQuest(party, player.getUUID(), questId);
+    }
+
+    private static boolean isEnrolledPartyQuest(
+            PartyRecord party,
+            UUID playerId,
+            ResourceLocation questId) {
         return party != null
-                && canTrackQuest(level, player, questId)
+                && playerId != null
+                && questId != null
                 && party.sharedQuests().stream().anyMatch(shared -> !shared.completed()
                         && shared.questId().equals(questId)
-                        && shared.enrollment(player.getUUID()) != null);
+                        && shared.enrollment(playerId) != null);
+    }
+
+    private static List<ResourceLocation> combinedTrackedQuestIds(
+            UUID playerId,
+            List<ResourceLocation> personalQuestIds,
+            PartyRecord party) {
+        LinkedHashSet<ResourceLocation> combined = new LinkedHashSet<>();
+        if (personalQuestIds != null) {
+            combined.addAll(personalQuestIds);
+        }
+        if (party != null) {
+            party.trackedQuests().stream()
+                    .filter(questId -> isEnrolledPartyQuest(party, playerId, questId))
+                    .forEach(combined::add);
+        }
+        return new ArrayList<>(combined);
+    }
+
+    public static List<ResourceLocation> debugTrackedQuestIdsForTests(ServerPlayer player) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return List.of();
+        }
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        PartyRecord party = PartyService.getPartyForPlayer(level, player.getUUID()).orElse(null);
+        List<ResourceLocation> personalQuestIds = new ArrayList<>(data.getTrackedQuests(player.getUUID()));
+        personalQuestIds.removeIf(questId -> isEnrolledPartyQuest(party, player.getUUID(), questId));
+        List<ResourceLocation> combined = combinedTrackedQuestIds(player.getUUID(), personalQuestIds, party);
+        combined.removeIf(questId -> !canTrackQuest(level, player, questId));
+        return List.copyOf(combined.stream().limit(QuestTrackerLimits.MAX_TRACKED_QUESTS).toList());
     }
 
     private static void clearTrackedQuestIf(
