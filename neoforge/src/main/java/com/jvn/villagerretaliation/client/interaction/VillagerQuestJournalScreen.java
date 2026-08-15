@@ -1671,6 +1671,11 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private int questOptionAt(double mouseX, double mouseY) {
+        int selectedIndex = this.state.selectedOption();
+        if (selectedIndex >= 0 && selectedIndex < visibleEntries().size()
+                && isPointInsideSelectedQuestOption(mouseX, mouseY, selectedIndex)) {
+            return selectedIndex;
+        }
         if (!isPointInsideOptionScrollArea(mouseX, mouseY)) {
             return -1;
         }
@@ -1682,6 +1687,26 @@ public final class VillagerQuestJournalScreen extends Screen {
             }
         }
         return -1;
+    }
+
+    private boolean isPointInsideSelectedQuestOption(double mouseX, double mouseY, int index) {
+        int viewportTop = optionsTop();
+        int viewportBottom = viewportTop + optionViewportHeight();
+        float optionTop = viewportTop + optionOffset(index) - optionRenderScroll();
+        float optionBottom = optionTop + questOptionHeight(index);
+        double hitTop = Math.max(optionTop - QUEST_OPTION_SELECTED_OVERHANG_Y,
+                viewportTop - QUEST_OPTION_SELECTED_OVERHANG_Y);
+        double hitBottom = Math.min(optionBottom + QUEST_OPTION_SELECTED_OVERHANG_Y,
+                viewportBottom + QUEST_OPTION_SELECTED_OVERHANG_Y);
+        int left = optionsLeft() - QUEST_OPTION_SELECTED_OVERHANG_X;
+        int right = optionsLeft() + QUEST_OPTION_WIDTH + QUEST_OPTION_SELECTED_OVERHANG_X;
+        return isPointInside(
+                mouseX,
+                mouseY,
+                left,
+                (int) Math.floor(hitTop),
+                right,
+                (int) Math.ceil(hitBottom));
     }
 
     private void clampSelectedOption() {

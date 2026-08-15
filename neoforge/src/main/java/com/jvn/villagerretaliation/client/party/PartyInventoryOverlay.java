@@ -83,7 +83,8 @@ public final class PartyInventoryOverlay {
     private static final int LEADER_ICON_Y = 8;
     private static final int LEADER_ICON_SIZE = 16;
     private static final int PARTY_TITLE_X = 101;
-    private static final int PARTY_TITLE_Y = 12;
+    private static final int PARTY_TITLE_Y = 7;
+    private static final int PARTY_TITLE_LINE_STEP = 10;
     private static final int ROSTER_SUMMARY_X = 98;
     private static final int ROSTER_SUMMARY_RIGHT = 170;
     private static final int ROSTER_PLAYERS_Y = 61;
@@ -302,7 +303,8 @@ public final class PartyInventoryOverlay {
         if (emptyVillagerIconAt(screen, mouseX, mouseY)) {
             graphics.renderTooltip(
                     Minecraft.getInstance().font,
-                    Component.translatable("villagerretaliation.gui.party.available_villager_slot"),
+                    Component.translatable("villagerretaliation.gui.party.available_villager_slot")
+                            .withStyle(ChatFormatting.GRAY),
                     mouseX,
                     mouseY);
             return;
@@ -652,13 +654,21 @@ public final class PartyInventoryOverlay {
                     screen.getGuiTop() + LEADER_ICON_Y,
                     LEADER_ICON_SIZE);
         }
+        var font = Minecraft.getInstance().font;
         graphics.drawString(
-                Minecraft.getInstance().font,
+                font,
                 Component.translatable(
-                        "villagerretaliation.gui.party.title",
+                        "villagerretaliation.gui.party.title.owner",
                         PartyRosterClient.roster().leaderName()),
                 screen.getGuiLeft() + PARTY_TITLE_X,
                 screen.getGuiTop() + PARTY_TITLE_Y,
+                0x404040,
+                false);
+        graphics.drawString(
+                font,
+                Component.translatable("villagerretaliation.gui.party.title"),
+                screen.getGuiLeft() + PARTY_TITLE_X,
+                screen.getGuiTop() + PARTY_TITLE_Y + PARTY_TITLE_LINE_STEP,
                 0x404040,
                 false);
     }
