@@ -21,6 +21,7 @@ const syntaxFiles = [
 ];
 
 const validationScripts = [
+  "tools/quest-bundle-baseline.mjs",
   "tools/validate-dialogue-data.mjs",
   "tools/test-built-in-quest-content.mjs",
   "tools/test-quest-v2-tools.mjs",
