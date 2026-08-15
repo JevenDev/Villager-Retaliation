@@ -1,15 +1,15 @@
 # Changelog
 
-## 1.0.0-beta.13 - Unreleased
+## 1.0.0-beta.13 - 2026-06-06
 
-Beta.13 is the Hired Help and Village Life update. It adds complete worker logistics, player parties, persistent village allegiance, Player Raids, protected villagers, duels, quest scenes and encounters, and a much larger quest catalog.
+Beta.13 is the Hired Help and Village Life update! It adds complete worker logistics, player parties, persistent village allegiance, player raids, protected villagers, duels, quest scenes and encounters, and a much larger quest catalog.
 
 
 ### Added
 
 #### Hiring, Contracts, And Progression
 
-- Added renewable hired-villager contracts with role and duration selection, reputation- and aptitude-aware prices, daily wages, extension limits, early-cancellation refunds, payment grace, automatic renewal, and live contract countdowns.
+- Added renewable hired-villager contracts with role and duration selection, reputation and aptitude-aware prices, daily wages, extension limits, early-cancellation refunds, payment grace, automatic renewal, and live contract countdowns.
 - Added thirteen contract roles: Combat, Hunting, Mining, Logging, Farming, Fishing, Brewing, Craftsman, Animal Handling, Nitwit, Cook, Smelter, and Courier. Builder is offered separately as a paid one-off construction service.
 - Added role qualification through primary and support skills. Canonical professions qualify automatically, Courier is available to every adult, Nitwit remains profession-restricted, and only masons, toolsmiths, and weaponsmiths can provide blueprints or perform Builder work.
 - Added a Job Stats view with role readiness, profession overrides, the two contributing skills, weighted aptitude, work speed, transfer capacity, and role-specific job icons and explanations.
@@ -87,8 +87,8 @@ Beta.13 is the Hired Help and Village Life update. It adds complete worker logis
 
 #### Quests, Scenes, Dialogue, And Interfaces
 
-- Added 64 built-in quests, expanding the exact beta.12 catalog from 21 to 85 quests, including 33 repeatable requests and Cartographer's Atlas, Green Thumb, Deep Delvers, Redstone Works, Nether Routes, End Survey, Hearthbound, Field Medicine, Workshop Oaths, Courier Roads, and Last Ember.
-- Added five four-quest branching adventure lines with two choice-gated endings apiece, plus connected quest prerequisites, restart rules, provider policies, and end-game progression.
+- Added 59 built-in quests since beta.12-hotfix.2, expanding the catalog from 26 to 85 quests. The full catalog includes 33 repeatable requests.
+- Added 5 four-quest branching adventure lines with 2 choice-gated endings for both, plus connected quest prerequisites, restart rules, provider policies, and end-game progression.
 - Added quest module v2 with one-file modules, declarative stages and aliases, branches and choice history, facts and scopes, availability rules, completion limits, provider binding, lifecycle hooks, shared actions and conditions, and v1 compatibility.
 - Added objective and trigger support for locations, structures, mob kills, block breaking, placing and interaction, trades, gifts, reputation, inventory, memory events, choices, facts, quest-state changes, and composite requirements.
 - Added failed and recoverable quest states, missing-provider rebind rules, provider death protection, deferred lifecycle work, deterministic transition evaluation, and traceable blocker reasons.
@@ -127,6 +127,8 @@ Beta.13 is the Hired Help and Village Life update. It adds complete worker logis
 - Normal villager conversation now accepts occupied hands when their items have no entity or air right-click behavior. Consumables, shields, equippable armor, projectiles, and modded use items keep their native action, while the beta.12 Clipboard plus beta.13 purpose-built items retain dedicated interaction handlers.
 - Blanket rejection of baby-villager interaction was removed, babies can now use the conversation surfaces appropriate to them while adult-only trading, hiring, inventory, and combat actions remain gated.
 - Profile and skill descriptions were rewritten to explain practical effects, practice gains, profession overrides, job aptitude, and progression more clearly.
+- The project remains on Minecraft 1.21.1 while updating NeoForge from 21.1.219 to 21.1.238 and ToucanLib from 0.3.1 to 0.5.0.
+- Added development and compatibility dependencies for EMI, JEI, REI, Curios, and Accessories to support recipe-viewer integration, duel equipment recovery, accessory-aware dialogue conditions, and ominous-banner recognition.
 
 ### Fixed
 
@@ -141,6 +143,14 @@ Beta.13 is the Hired Help and Village Life update. It adds complete worker logis
 - Fixed Bread Delivery, Village Lanterns, and Trial Chamber Recall allowing repeat turn-ins without consuming their required hand-in items.
 - Fixed quest abandonment and expiration hooks being lost while their original provider was unavailable, deferred lifecycle work now survives saves and replays only after a valid provider return or explicit compatible rebind.
 - Fixed beta.12 shared-story dialogue replacing the story's `{target}` structure placeholder with an unrelated remembered-retaliation target.
+
+### Removed
+
+- Removed registration of the legacy `/villagerretaliation` command root. Use `/vr` for player commands and `/vr admin` for operator tools; command blocks, scripts, and documentation that invoke the old root must be updated.
+- Removed the built-in beta.12 per-quest `dialogue_trees` resources after migrating their content to self-contained quest module v2 files. Stable quest ids are preserved, and external beta.12 v1 quest packs remain supported through the compatibility adapter.
+- Removed the experimental interaction chrome, veil and skill shaders, overlay textures, and profession-color resource used by the beta.12 screen in favor of the redesigned interaction interface.
+- Removed the bundled vanilla villager texture override in favor of the beta.13 resource-pack model and overlay hooks.
+- Removed the old dialogue-and-quest normalization scripts; the maintained Datapack Generator and Quest Builder now provide the supported authoring, validation, migration-guidance, and export workflows.
 
 ### Technical / Pack Development
 
