@@ -253,7 +253,7 @@ public final class VillagerQuestGameTests {
         Set<ResourceLocation> v2Ids = new LinkedHashSet<>();
         server.getResourceManager()
                 .listResources("quests", location -> VillagerRetaliation.MOD_ID.equals(location.getNamespace())
-                        && location.getPath().endsWith(".json"))
+                        && isQuestDefinitionResource(location))
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
@@ -306,6 +306,12 @@ public final class VillagerQuestGameTests {
                 "v1 explicit ids must not be replaced by path-inferred questline ids");
 
         helper.succeed();
+    }
+
+    private static boolean isQuestDefinitionResource(ResourceLocation location) {
+        String[] parts = location.getPath().split("/");
+        return parts.length == 3 && parts[2].endsWith(".json")
+                || parts.length == 4 && "quest.json".equals(parts[3]);
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

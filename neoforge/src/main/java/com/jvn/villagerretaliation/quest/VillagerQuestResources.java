@@ -21,6 +21,9 @@ import com.jvn.villagerretaliation.quest.compiled.QuestSourcePointer;
 import com.jvn.villagerretaliation.quest.compiler.QuestV1Compiler;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalog;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleRuntimeMaterializer;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
@@ -232,7 +235,13 @@ public final class VillagerQuestResources {
     }
 
     public static ContentSnapshot snapshotForCatalog(MinecraftServer server) {
-        CachedQuests snapshot = loadCache(server);
+        return snapshotForCatalog(server, new QuestBundleTransactions.Result(Map.of(), List.of()));
+    }
+
+    public static ContentSnapshot snapshotForCatalog(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles) {
+        CachedQuests snapshot = loadCache(server, bundles);
         return new ContentSnapshot(
                 snapshot.compiledCatalog(),
                 snapshot.dialogueCatalog(),
@@ -252,7 +261,9 @@ public final class VillagerQuestResources {
                 && QuestContentCatalogs.current(server).questIdsForObjectiveEvent(kind).contains(id);
     }
 
-    private static CachedQuests loadCache(MinecraftServer server) {
+    private static CachedQuests loadCache(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles) {
         VillagerRetaliationRegistries.freezeForDatapackCompilation();
         CachedQuests current = cachedQuests;
         if (current.server() == server) {
@@ -265,7 +276,7 @@ public final class VillagerQuestResources {
                 return current;
             }
 
-            LoadedQuestCatalog catalog = read(server);
+            LoadedQuestCatalog catalog = read(server, bundles);
             Map<ResourceLocation, QuestDefinition> quests = catalog.questDefinitions();
             CachedQuests loaded = new CachedQuests(
                     server,
@@ -367,12 +378,16 @@ public final class VillagerQuestResources {
         return Map.copyOf(frozen);
     }
 
-    private static LoadedQuestCatalog read(MinecraftServer server) {
+    private static LoadedQuestCatalog read(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles) {
         Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
         Map<ResourceLocation, CompiledQuest> compiledQuests = new LinkedHashMap<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
         List<QuestDialogueCatalog> dialogueCatalogs = new ArrayList<>();
-        List<QuestResourceEnvelope> resources = DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT).stream()
+        List<QuestResourceEnvelope> resources = DatapackResourceLoader
+                .jsonResources(server, RESOURCE_ROOT, VillagerQuestResources::isLooseQuestResource)
+                .stream()
                 .map(resource -> DatapackResourceLoader.readObject(resource.location(), "quest", resource.resource())
                         .flatMap(root -> QuestResourceEnvelope.read(resource, root)))
                 .flatMap(Optional::stream)
@@ -392,11 +407,53 @@ public final class VillagerQuestResources {
             }
             readFile(server.registryAccess(), resource, quests, compiledQuests, sources, replacementMode);
         }
+        readBundles(server.registryAccess(), bundles, quests, compiledQuests, sources, dialogueCatalogs);
         validatePrerequisiteReferences(quests, compiledQuests);
         return new LoadedQuestCatalog(
                 freezeOrderedResourceMap(quests),
                 new CompiledQuestCatalog(compiledQuests),
                 QuestDialogueCatalog.merge(dialogueCatalogs));
+    }
+
+    private static boolean isLooseQuestResource(ResourceLocation location) {
+        String path = location == null ? "" : location.getPath();
+        if (!path.startsWith(RESOURCE_ROOT + "/") || !path.endsWith(".json")) {
+            return false;
+        }
+        return path.substring((RESOURCE_ROOT + "/").length()).split("/").length == 2;
+    }
+
+    private static void readBundles(
+            HolderLookup.Provider registries,
+            QuestBundleTransactions.Result bundles,
+            Map<ResourceLocation, QuestDefinition> quests,
+            Map<ResourceLocation, CompiledQuest> compiledQuests,
+            Map<ResourceLocation, ResourceLocation> sources,
+            List<QuestDialogueCatalog> dialogueCatalogs) {
+        if (bundles == null) {
+            return;
+        }
+        for (QuestBundleTransactions.EffectiveBundle bundle : bundles.bundles().values()) {
+            if (bundle.owner().shared() || bundle.questId() == null) {
+                continue;
+            }
+            QuestBundleRuntimeMaterializer.Result materialized = QuestBundleRuntimeMaterializer.materialize(bundle);
+            ResourceLocation source = ResourceLocation.fromNamespaceAndPath(
+                    bundle.owner().namespace(),
+                    RESOURCE_ROOT + "/" + bundle.owner().questline() + "/"
+                            + bundle.owner().slug() + "/quest.json");
+            if (!materialized.valid()) {
+                materialized.errors().forEach(error -> DatapackDiagnostics.warnSkippedEntry(
+                        source, "quest bundle", "localization", error));
+                continue;
+            }
+            QuestResourceEnvelope.read(
+                            source,
+                            materialized.quest(),
+                            new QuestResourceSource(source, "quest_bundle"))
+                    .ifPresent(envelope -> readV2File(
+                            registries, envelope, quests, compiledQuests, sources, dialogueCatalogs));
+        }
     }
 
     private static void validatePrerequisiteReferences(

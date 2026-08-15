@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.bread_delivery.description": {
+      "lines": [
+        "Bring bread so the village can stretch its stores through a hard night."
+      ]
+    },
+    "quest.village_supply.bread_delivery.dialogue.already_completed": {
+      "lines": [
+        "Nothing remains to be earned from this. We already settled Bread Delivery.",
+        "Nothing remains to be earned from this. The larder has the bread you brought.",
+        "Your earlier work still stands. I counted your 16 bread. We are square.",
+        "I remember your first return. The cooks already put that delivery to work.",
+        "You finished what I asked. You solved the problem of a shelf too light for supper.",
+        "There is no second payment here. There is no reason to gather another load of bread.",
+        "No one needs this done twice. Bread Delivery is crossed off the bread work list.",
+        "That chapter is closed. Your part in helping us cover a hard night's meals is finished.",
+        "I will not reopen a finished account. The last bread batch is still serving the village.",
+        "We settled this one already. I remember who filled the bread order, and it was you.",
+        "Nothing remains to be earned from this. The reward was paid when the bread delivery came in.",
+        "The matter ended well enough. You did enough the first time. I will leave the old entry filed under Bread Delivery.",
+        "Nothing remains to be earned from this. We can keep everyone steady because you answered Bread Delivery.",
+        "I remember your first return. The full bread count reached the larder. Nothing is missing.",
+        "Your earlier work still stands. The cooks would object if I asked you twice.",
+        "What was owed has been paid. Your bread delivery passed inspection and went into use.",
+        "We settled this one already. That empty spot in the larder belongs to yesterday.",
+        "That chapter is closed. The record shows 16 bread received from you.",
+        "The matter ended well enough. You did the quiet bread work that keeps everyone going.",
+        "Leave the old tally alone. The first ending was good enough for Bread Delivery."
+      ]
+    },
+    "quest.village_supply.bread_delivery.dialogue.inactive": {
+      "lines": [
+        "There is no reason to begin yet. The larder request is not open right now.",
+        "For now, let the matter rest. There is no open order for bread today.",
+        "There is no reason to begin yet. The larder is being counted before I ask for more.",
+        "Nothing calls for this work today. The cooks have not posted a fresh request.",
+        "I will post it when it matters. Hold off on the bread. We have nowhere useful to put it.",
+        "Ask me after the stores change. The need to cover a hard night's meals will return, but not today.",
+        "There is no reason to begin yet. I am waiting for the next tally before opening Bread Delivery.",
+        "Not today. Bringing 16 bread now would crowd the stores.",
+        "The board can wait. The last bread batch has not been used up yet.",
+        "Ask me after the stores change. Ask again after the cooks check what remains.",
+        "The board can wait. I will not invent an urgent need for bread.",
+        "There is no reason to begin yet. The larder is quiet, so this can wait.",
+        "There is no reason to begin yet. We are between work orders for bread.",
+        "The village can wait on this one. Nothing is wrong at the larder. The timing is simply off.",
+        "Not today. Save your effort until we actually need bread.",
+        "The time is wrong. The board has no current mark beside Bread Delivery.",
+        "We have no need of it yet. Today is not the day for another bread run.",
+        "I am keeping this off the board. Once a shelf too light for supper becomes a concern, I will reopen this.",
+        "I am keeping this off the board. I would rather delay than waste good bread.",
+        "Not today. Wait for the stores to change before asking me about Bread Delivery."
+      ]
+    },
+    "quest.village_supply.bread_delivery.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current bread order. Ask again after the village larder has been checked.",
+        "The village larder tally is missing, so I will not ask you to gather bread yet.",
+        "No one has confirmed how much bread the village larder needs today.",
+        "The work note is incomplete. Let me settle the bread count first.",
+        "I will not send you after bread until the village confirms the order.",
+        "The village larder has not posted a trustworthy bread count.",
+        "I checked the work slate twice; the bread request is not ready.",
+        "This order can wait until I have a current bread tally.",
+        "Someone needs to check the village larder before I hand you this order.",
+        "The village has not agreed on the bread count yet.",
+        "I have an old bread tally and no current one.",
+        "The village larder may need bread, but I will not turn a guess into work.",
+        "Come back after the village larder finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the village larder tally.",
+        "Let me confirm who needs the bread before you start gathering.",
+        "No work yet. The village has not approved this bread request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the bread order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.bread_delivery.dialogue.missing_proof": {
+      "lines": [
+        "I need something I can hold. Bring the bread before we close this.",
+        "Show me what came back with you. I need the bread here before I sign this off.",
+        "The last requirement is still missing. A promise does not fill the larder. Bring the bread delivery.",
+        "The last requirement is still missing. You may have gathered it, but the cooks have not received it.",
+        "The last requirement is still missing. Set the 16 bread down here and I can close the bread order.",
+        "A story cannot close the ledger. Handing over the bread is the proof on this supply job.",
+        "What you carried home decides this. I cannot inspect fresh loaves with good crusts while your hands are empty.",
+        "I believe you went, but that is not enough. Your report sounds fine. I still need the actual bread.",
+        "I believe you went, but that is not enough. Nothing has reached the larder yet.",
+        "The evidence still matters. Bring what you collected before we discuss the Bread Delivery reward.",
+        "The proof has to reach my hands. The larder needs usable bread, not a story about it.",
+        "A story cannot close the ledger. I will count the bread as soon as you place it here.",
+        "The evidence still matters. Do not leave the bread delivery in another chest.",
+        "A story cannot close the ledger. The cooks are waiting on the bread bundle itself.",
+        "You returned without the one thing I asked for. The last step is simple. Hand over the bread.",
+        "The evidence still matters. I cannot cover a hard night's meals with an empty counter.",
+        "I need something I can hold. Come back carrying the bread order, and we will be done.",
+        "Your word is not the missing piece. The bread work counts once the larder receives it.",
+        "The evidence still matters. You are one handoff away from finishing Bread Delivery.",
+        "What you carried home decides this. Let me see the bread before I call this complete."
+      ]
+    },
+    "quest.village_supply.bread_delivery.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the bread.",
+        "I counted twice; the full order of 16 loaves of bread is not here yet.",
+        "This helps, but the village larder still needs the remaining bread.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 16 loaves of bread; the pile is still short.",
+        "Bring the missing bread, and then I can settle the order.",
+        "The village larder has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The village larder is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 16 loaves of bread.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the village larder short.",
+        "The order stays open until all 16 loaves of bread are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The village larder is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.bread_delivery.dialogue.reminder": {
+      "lines": [
+        "Stay with the work you accepted. Sixteen bread, if you can spare it. No heroics today, just weight on the shelf.",
+        "Remember what the village is waiting for. I am still waiting on 16 bread for the larder.",
+        "Before you leave, hear this again. Look for fresh loaves with good crusts. Bad supplies only move the problem.",
+        "Remember what the village is waiting for. The cooks need those bread to cover a hard night's meals.",
+        "Before you leave, hear this again. The count is 16 bread. Check it before returning.",
+        "Keep the whole task in mind. This bread delivery means we can keep everyone steady.",
+        "You are not finished yet. If you are choosing between loads, bring the bread first.",
+        "Remember what the village is waiting for. Keep the bread order together so the bread tally stays easy.",
+        "Hold to the instructions I gave you. The larder has space waiting for the full bundle.",
+        "The job still has loose ends. Do not let a simple request turn into a shelf too light for supper.",
+        "Do not lose the thread now. There is no hidden part to Bread Delivery. Bring the agreed bread count.",
+        "The next step still matters. Handle it carefully. I want fresh loaves with good crusts.",
+        "You are not finished yet. Bring all the bread at once if you can manage it.",
+        "Keep the return trip in your plans. The cooks are planning their next work around your return.",
+        "You are not finished yet. I wrote 16 bread on the bread slate so neither of us has to guess.",
+        "Keep the whole task in mind. The sooner this arrive, the sooner we can cover a hard night's meals.",
+        "Bring this to a proper finish. Nothing else is missing from the bread order.",
+        "Before you leave, hear this again. Return when the bread is ready to hand over.",
+        "Keep the return trip in your plans. You know how many bread the larder needs. The rest is gathering.",
+        "Remember what the village is waiting for. A complete bread bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.bread_delivery.dialogue.start": {
+      "lines": [
+        "Take this seriously. Bring me 16 bread. Simple work, but it keeps people steady.",
+        "Take this seriously. The bread order needs 16 bread. Can you handle that?",
+        "Take the task only if you are ready. The cooks are trying to cover a hard night's meals, and supplies are thin.",
+        "Let us be clear about the job. Bring me 16 bread. I want fresh loaves with good crusts.",
+        "Take this seriously. I have a plain job with a useful result. Find 16 bread.",
+        "Let us be clear about the job. We can keep everyone steady if you fill the bread order.",
+        "Take this seriously. A shelf too light for supper is a small problem until everyone needs the same thing.",
+        "There is a reason I chose you. The count on the bread slate is 16 bread.",
+        "Let us be clear about the job. Gather the bread and bring the whole delivery here.",
+        "Take this seriously. Stocking the larder is not glory, but it matters.",
+        "I am trusting you with something important. The cooks asked me to find someone reliable for this run.",
+        "I have a difficult request. I need a clean delivery for the larder.",
+        "Take the task only if you are ready. If you can spare the time, 16 bread would settle the bread shortage.",
+        "Before you agree, hear all of it. The need is real, which makes the instructions for Bread Delivery simple.",
+        "Before you agree, hear all of it. Bring the bread when you have the complete count.",
+        "Here is the work. Good bread will let us cover a hard night's meals.",
+        "Take the task only if you are ready. The village should not reach a shelf too light for supper before we act.",
+        "Before you agree, hear all of it. Take care with the bread bundle. We need fresh loaves with good crusts.",
+        "Listen closely. I will pay when the larder receives the full order.",
+        "Listen closely. Find 16 bread, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.bread_delivery.dialogue.turn_in": {
+      "lines": [
+        "You delivered exactly what was needed. Good. A full shelf makes brave talk sound less hollow. Take this with my thanks.",
+        "The village can use this. The count is right. I will get this to the larder.",
+        "The village can use this. The cooks can cover a hard night's meals now.",
+        "That is the result I needed. This is fresh loaves with good crusts. You chose well.",
+        "You delivered exactly what was needed. That delivery keeps us from a shelf too light for supper.",
+        "This will make a real difference. Good work. All the bread arrived together.",
+        "This will make a real difference. I have your bread, and you earned the Bread Delivery reward.",
+        "This return was worth waiting for. The larder looks less bare already.",
+        "That is the result I needed. This will help us keep everyone steady.",
+        "That is the result I needed. You saved the cooks from making do with scraps.",
+        "That is the result I needed. Everything on the bread slate is here.",
+        "I am glad to see you home. A useful bread job, done without fuss. Thank you.",
+        "This return was worth waiting for. I will put the bread away before someone borrows it.",
+        "This return was worth waiting for. The village is better stocked because you completed Bread Delivery.",
+        "This will make a real difference. You brought exactly the bread I asked for.",
+        "You saw it through. The bread delivery is sound from top to bottom.",
+        "You saw it through. The larder has one less shortage waiting to surprise us.",
+        "You saw it through. The village may not cheer for bread, but it would notice their absence.",
+        "This return was worth waiting for. Take your payment. The bread count gives me no complaint.",
+        "The village can use this. I can hand the bread order to the cooks with confidence."
+      ]
+    },
+    "quest.village_supply.bread_delivery.dialogue.unavailable": {
+      "lines": [
+        "I will not place this burden on you. The bread shelves are closed to new help for now.",
+        "Come back after you have earned more trust. I cannot hand you the work filed under Bread Delivery yet.",
+        "Earn our confidence before asking again. The bread order is for someone the larder already knows.",
+        "You are not ready for this request. The cooks need a delivery they can count on.",
+        "This work is not yours today. Show the village steadier work before taking Bread Delivery.",
+        "I cannot trust you with this yet. The bread matters too much to gamble on a stranger.",
+        "This calls for someone we know better. I am not opening the bread slate to you today.",
+        "This work is not yours today. Build some trust, then ask about Bread Delivery again.",
+        "You are not ready for this request. I need someone who will return with the whole 16 bread.",
+        "You are not ready for this request. Gathering bread is simple, but reliability is not optional.",
+        "I need proof of your judgment first. For now, the bread order stays with regular hands.",
+        "Come back after you have earned more trust. I cannot promise the larder a delivery from you yet.",
+        "This work is not yours today. There will be other work before we trust you with the larder.",
+        "I need proof of your judgment first. The village has not cleared you for this bread run.",
+        "No, the risk is too high. I would rather wait than risk a shelf too light for supper.",
+        "This calls for someone we know better. This is not punishment. Show better judgment before I open Bread Delivery.",
+        "I cannot trust you with this yet. The cooks asked for a familiar runner this time.",
+        "The village needs a steadier hand. Come back for the bread order after your name carries more weight.",
+        "The village needs a steadier hand. I am not taking new help for Bread Delivery.",
+        "You are not ready for this request. Earn some confidence here, and we can revisit Bread Delivery."
+      ]
+    },
+    "quest.village_supply.bread_delivery.objective.bring_bread.complete_text": {
+      "lines": [
+        "The bread is packed and ready."
+      ]
+    },
+    "quest.village_supply.bread_delivery.objective.bring_bread.text": {
+      "lines": [
+        "Gather 16 bread for the village stores."
+      ]
+    },
+    "quest.village_supply.bread_delivery.stage.return.dialogue.turn_in.label": "About Bread Delivery",
+    "quest.village_supply.bread_delivery.stage.return.dialogue.turn_in.lines": [
+      "A full bread shelf makes the whole village stand a little straighter.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.bread_delivery.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.bread_delivery.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.bread_delivery.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "A full bread shelf makes the whole village stand a little straighter.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.bread_delivery.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.bread_delivery.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.bread_delivery.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.bread_delivery.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Bread Delivery is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.bread_delivery.stage.return.scene.turn_in_wait.lines": [
+      "Bring 16 bread for the village larder",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.bread_delivery.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.bread_delivery.stage.work.dialogue.offer.label": "Bread Delivery",
+    "quest.village_supply.bread_delivery.stage.work.dialogue.offer.lines": [
+      "The larder shelves are showing more wood than food.",
+      "Bring 16 bread for the village larder, and the shelves will look less worried.",
+      "Bring 16 bread for the village larder. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.bread_delivery.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.bread_delivery.stage.work.dialogue.reminder.label": "About Bread Delivery",
+    "quest.village_supply.bread_delivery.stage.work.dialogue.reminder.lines": [
+      "Bring 16 bread for the village larder",
+      "Bring 16 bread for the village larder.",
+      "Bring 16 bread for the village larder, and the shelves will look less worried."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.bread_delivery.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.bread_delivery.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.bread_delivery.stage.work.scene.abandon_confirm.lines": [
+      "Put Bread Delivery aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.bread_delivery.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.bread_delivery.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Bread Delivery is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.leave.lines": [
+      "Bring 16 bread for the village larder",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 16 bread for the village larder",
+      "Bring 16 bread for the village larder.",
+      "Bring 16 bread for the village larder, and the shelves will look less worried."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Bread Delivery is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Bread Delivery is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 16 bread for the village larder. Keep the full count together on the road back.",
+      "Bring 16 bread for the village larder.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Bread Delivery is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.bread_delivery.stage.work.ui.tracker_text": "Bring 16 bread for the village larder.",
+    "quest.village_supply.bread_delivery.title": {
+      "lines": [
+        "Bread Delivery"
+      ]
+    },
+    "quest.village_supply.bread_delivery.tracker.proof.text": {
+      "lines": [
+        "Bring 16 bread back to the quest giver."
+      ]
+    },
+    "quest.village_supply.bread_delivery.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the bread."
+      ]
+    },
+    "quest.village_supply.bread_delivery.tracker.title": {
+      "lines": [
+        "Bread Delivery"
+      ]
+    }
+  }
+}

@@ -36,6 +36,7 @@ public final class QuestV2Parser {
     private static final Set<String> ROOT_KEYS = Set.of(
             "schema",
             "id",
+            "localization_prefix",
             "metadata",
             "provider",
             "availability",

@@ -131,8 +131,10 @@ public final class BuiltInQuestContentGameTests {
     private static void assertQuestWorks(GameTestHelper helper, String expectedQuestline, String questPath) {
         MinecraftServer server = helper.getLevel().getServer();
         ResourceLocation questId = VillagerRetaliation.id(questPath);
-        ResourceLocation expectedSource =
-                VillagerRetaliation.id("quests/" + expectedQuestline + "/" + questPath + ".json");
+        Set<ResourceLocation> expectedSources = Set.of(
+                VillagerRetaliation.id("quests/" + expectedQuestline + "/" + questPath + ".json"),
+                VillagerRetaliation.id(
+                        "quests/" + expectedQuestline + "/" + questPath + "/quest.json"));
         CompiledQuest compiled = VillagerQuestResources.compiledQuest(server, questId)
                 .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
         QuestDefinition definition = compiled.asQuestDefinition();
@@ -141,7 +143,8 @@ public final class BuiltInQuestContentGameTests {
         helper.assertValueEqual(definition.id(), questId, questId + " runtime id");
         helper.assertValueEqual(definition.questline(), expectedQuestline, questId + " questline");
         helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, questId + " schema");
-        helper.assertValueEqual(compiled.source().resource(), expectedSource, questId + " source resource");
+        helper.assertTrue(expectedSources.contains(compiled.source().resource()),
+                questId + " source resource was " + compiled.source().resource());
         helper.assertFalse(definition.title().isBlank(), questId + " title is blank");
         helper.assertFalse(definition.description().isBlank(), questId + " description is blank");
         helper.assertFalse(definition.tags().isEmpty(), questId + " has no grouping tags");

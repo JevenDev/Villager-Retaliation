@@ -1,0 +1,133 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "villagerretaliation:atlas_horizon_choice",
+  "definition_version": 1,
+  "metadata": {
+    "title": {
+      "key": "#scene.atlas_horizon_choice.metadata.title"
+    },
+    "quest": "villagerretaliation:choose_the_horizon"
+  },
+  "ownership": "quest_instance",
+  "entry_step": "set_the_atlas_down",
+  "timeout_ticks": 1200,
+  "failure_policy": "block_for_repair",
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "none",
+  "actors": [
+    {
+      "alias": "player",
+      "type": "villagerretaliation:player",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "binding_source": "owner_player",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "block",
+      "timeout_ticks": 600
+    },
+    {
+      "alias": "cartographer",
+      "type": "villagerretaliation:villager",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/dialogue"
+      ],
+      "binding_source": "quest_provider",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "continue_with_snapshot",
+      "timeout_ticks": 600
+    }
+  ],
+  "steps": [
+    {
+      "id": "set_the_atlas_down",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "cartographer"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.atlas_horizon_choice.step.set_the_atlas_down.data.text"
+        },
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20
+      },
+      "next": "ink_the_choice",
+      "failure_step": "failed"
+    },
+    {
+      "id": "ink_the_choice",
+      "type": "villagerretaliation:wait_ticks",
+      "data": {
+        "ticks": 35
+      },
+      "next": "read_horizon"
+    },
+    {
+      "id": "read_horizon",
+      "type": "villagerretaliation:scene_branch",
+      "data": {
+        "branches": [
+          {
+            "transition": "coast",
+            "conditions": [
+              {
+                "type": "quest_fact",
+                "scope": "quest",
+                "quest": "villagerretaliation:choose_the_horizon",
+                "key": "choice",
+                "value": "coast"
+              }
+            ]
+          }
+        ],
+        "default_transition": "dark_roof"
+      },
+      "transitions": {
+        "coast": "coast_charge",
+        "dark_roof": "dark_roof_charge"
+      },
+      "failure_step": "failed"
+    },
+    {
+      "id": "coast_charge",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "cartographer"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.atlas_horizon_choice.step.coast_charge.data.text"
+        }
+      },
+      "next": "completed",
+      "failure_step": "failed"
+    },
+    {
+      "id": "dark_roof_charge",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "cartographer"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.atlas_horizon_choice.step.dark_roof_charge.data.text"
+        }
+      },
+      "next": "completed",
+      "failure_step": "failed"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ]
+}

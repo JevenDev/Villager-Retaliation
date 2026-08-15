@@ -1,0 +1,139 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.choose_the_horizon.description": {
+      "lines": [
+        "Choose and prepare the atlas's first great Overworld route."
+      ]
+    },
+    "quest.cartographers_atlas.choose_the_horizon.scene.atlas_horizon_choice.metadata.title": "Atlas horizon choice",
+    "quest.cartographers_atlas.choose_the_horizon.scene.atlas_horizon_choice.step.coast_charge.data.text": "The drowned coast takes the Overworld ink. Prepare the survey kit; the monument itself comes next.",
+    "quest.cartographers_atlas.choose_the_horizon.scene.atlas_horizon_choice.step.dark_roof_charge.data.text": "The dark roof road takes the Overworld ink. Prepare the survey kit; the mansion itself comes next.",
+    "quest.cartographers_atlas.choose_the_horizon.scene.atlas_horizon_choice.step.set_the_atlas_down.data.text": "The atlas lies open between you. Its Overworld margin waits for the first great route you chose.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_chosen.dialogue.turn_in.label": "About the Horizon",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_chosen.dialogue.turn_in.lines": [
+      "The drowned-coast kit is ready. The atlas can point toward its first great Overworld route."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_chosen.dialogue.turn_in.response.complete.label": "Set the drowned coast horizon",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_chosen.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_chosen.scene.complete_coast.action.turn_in.lines.completed": [
+      "Done. The atlas has chosen its first Overworld horizon. The monument survey comes next."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_chosen.scene.complete_coast.action.turn_in.lines.missing_objectives": [
+      "The coast kit still needs its spyglass, boat, and provisions."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_chosen.scene.complete_coast.action.turn_in.lines.unavailable": [
+      "I cannot set the coast horizon until the route kit is here."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_chosen.scene.leave.lines": [
+      "The coast will keep making noise until we finish."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_chosen.ui.tracker_text": "Return to the cartographer to set the drowned coast horizon.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.dialogue.reminder.label": "About the Horizon",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.dialogue.reminder.lines": [
+      "Before the drowned-coast page opens, assemble a spyglass, a boat, and enough provisions for the monument survey."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.dialogue.reminder.response.details.label": "Repeat the kit",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.objective.bring_provisions.tracker.complete_text": "The coast provisions are packed.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.objective.bring_provisions.tracker.text": "Bring 16 cooked cod for the coast expedition.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.objective.carry_boat.tracker.complete_text": "The coast boat is ready.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.objective.carry_boat.tracker.text": "Carry 1 oak boat for the drowned-coast route.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.objective.carry_spyglass.tracker.complete_text": "The survey spyglass is ready.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.objective.carry_spyglass.tracker.text": "Carry 1 spyglass for the drowned-coast survey.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.scene.leave.lines": [
+      "The tide can wait, but it will not wait forever."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.scene.reminder_details.action.remind.lines.reminder": [
+      "Carry 1 spyglass and 1 oak boat, then bring 16 cooked cod for the drowned-coast expedition."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have your horizon page open right now."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.coast_final.ui.tracker_text": "Prepare a spyglass, boat, and provisions for the drowned coast.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_chosen.dialogue.turn_in.label": "About the Horizon",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_chosen.dialogue.turn_in.lines": [
+      "The dark-roof kit is ready. The atlas can point toward its first great Overworld route."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_chosen.dialogue.turn_in.response.complete.label": "Set the dark roof horizon",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_chosen.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_chosen.scene.complete_dark_roof.action.turn_in.lines.completed": [
+      "Done. The atlas has chosen its first Overworld horizon. The mansion survey comes next."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_chosen.scene.complete_dark_roof.action.turn_in.lines.missing_objectives": [
+      "The dark-roof kit still needs its shield, crossbow, and torches."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_chosen.scene.complete_dark_roof.action.turn_in.lines.unavailable": [
+      "I cannot set the dark-roof horizon until the route kit is here."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_chosen.scene.leave.lines": [
+      "The roof will stay dark until we finish."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_chosen.ui.tracker_text": "Return to the cartographer to set the dark roof horizon.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.dialogue.reminder.label": "About the Horizon",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.dialogue.reminder.lines": [
+      "Before the dark-roof page opens, assemble a shield, a crossbow, and enough torches for the mansion survey."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.dialogue.reminder.response.details.label": "Repeat the kit",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.objective.bring_torches.tracker.complete_text": "The dark-roof torches are packed.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.objective.bring_torches.tracker.text": "Bring 32 torches for the dark-roof expedition.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.objective.carry_crossbow.tracker.complete_text": "The road crossbow is ready.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.objective.carry_crossbow.tracker.text": "Carry 1 crossbow for the mansion road.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.objective.carry_shield.tracker.complete_text": "The survey shield is ready.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.objective.carry_shield.tracker.text": "Carry 1 shield for the dark-roof survey.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.scene.leave.lines": [
+      "The roof will stay dark without our help."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.scene.reminder_details.action.remind.lines.reminder": [
+      "Carry 1 shield and 1 crossbow, then bring 32 torches for the dark-roof expedition."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have your horizon page open right now."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.dark_roof_final.ui.tracker_text": "Prepare a shield, crossbow, and torches for the dark roof.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.offer.label": "Choose the Horizon",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.offer.lines": [
+      "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for its first great horizon.",
+      "This permanent choice closes the other Overworld route. The coast kit prepares for a monument survey; the dark roof kit prepares for a mansion survey."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.offer.response.coast.action.notification.text": "You chose the drowned coast. Assemble a spyglass, boat, and provisions before the monument survey.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.offer.response.coast.label": "Choose the drowned coast",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.offer.response.coast.text": "Then we choose the coast. Keep your eyes on drowned stone, and do not trust quiet water.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.offer.response.dark_roof.action.notification.text": "You chose the dark roof road. Assemble a shield, crossbow, and torches before the mansion survey.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.offer.response.dark_roof.label": "Choose the dark roof road",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.offer.response.dark_roof.text": "Then we choose the dark roof road. If the house looks back, look back harder.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.reminder.label": "About the Horizon",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.reminder.lines": [
+      "This permanent Overworld fork closes the other route: coast prepares for a monument survey; dark roof prepares for a mansion survey."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.reminder.response.details.label": "Repeat the fork",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.dialogue.reminder.response.leave.label": "I will choose",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.objective.choose_route.tracker.complete_text": "You chose the {objective_choice_value} horizon.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.objective.choose_route.tracker.text": "Choose the atlas's Overworld horizon with the cartographer.",
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.scene.decline.lines": [
+      "Then the horizon stays unchosen, which is a kind of answer but not a useful one."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.scene.leave.lines": [
+      "Choose with both eyes open."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.scene.reminder_details.action.remind.lines.reminder": [
+      "This choice closes the other Overworld horizon. Coast needs a spyglass, boat, and provisions; dark roof needs a shield, crossbow, and torches."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have your horizon page open right now."
+    ],
+    "quest.cartographers_atlas.choose_the_horizon.stage.started.ui.tracker_text": "Choose the atlas's Overworld horizon from the cartographer's branch options.",
+    "quest.cartographers_atlas.choose_the_horizon.title": {
+      "lines": [
+        "Choose the Horizon"
+      ]
+    },
+    "quest.cartographers_atlas.choose_the_horizon.tracker.title": {
+      "lines": [
+        "Choose the Horizon"
+      ]
+    }
+  }
+}
