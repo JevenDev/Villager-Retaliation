@@ -1,6 +1,6 @@
 # Quest Scene Runtime
 
-This page explains the saved runtime rules for contributors who change quest or scene code. Pack authors usually need [Quest Scenes](../wiki/Quest-Scenes.md) instead.
+This page explains the saved runtime rules for contributors who change quest or scene code. Pack authors usually need [Quest Scenes](Quest-Scenes.md) instead.
 
 Terms used on this page:
 

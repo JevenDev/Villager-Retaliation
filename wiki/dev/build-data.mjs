@@ -45,8 +45,8 @@ const catalog = [
 ];
 
 const implementationDocs = [
-  ["docs/quest-scene-runtime.md", "Runtime Internals", "database-zap", "Durable quest-run identity, operation ownership, continuations, cleanup, and downed-state contracts."],
-  ["docs/tracked-villages.md", "Runtime Internals", "map-pinned", "Tracked-village identity, footprints, allegiance, naming, lifecycle, and administration."]
+  ["quest-scene-runtime.md", "Runtime Internals", "database-zap", "Durable quest-run identity, operation ownership, continuations, cleanup, and downed-state contracts."],
+  ["tracked-villages.md", "Runtime Internals", "map-pinned", "Tracked-village identity, footprints, allegiance, naming, lifecycle, and administration."]
 ];
 
 function readText(relativePath) {
@@ -130,7 +130,7 @@ function examplesFrom(page) {
 }
 
 function pageRecord(file, group, icon, description, sourceKind = "wiki") {
-  const source = sourceKind === "wiki" ? `wiki/${file}` : file;
+  const source = `wiki/dev/content/${file}`;
   const markdown = readText(source);
   return {
     slug: slugFor(file),
@@ -222,7 +222,7 @@ const output = `window.VR_DEVELOPER_WIKI_DATA = ${JSON.stringify(data, null, 2)}
 
 if (checkOnly) {
   if (!fs.existsSync(outputPath) || fs.readFileSync(outputPath, "utf8").replace(/\r\n/g, "\n") !== output) {
-    console.error("tools/developer-wiki/site-data.js is out of date. Run node tools/developer-wiki/build-data.mjs.");
+    console.error("wiki/dev/site-data.js is out of date. Run node wiki/dev/build-data.mjs.");
     process.exit(1);
   }
   console.log(`Developer wiki data is current (${pages.length} pages, ${examples.length} JSON examples, ${packDirectories.length} packs).`);

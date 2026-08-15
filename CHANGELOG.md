@@ -236,7 +236,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Added path-aware folderized dialogue loading under `dialogue/<locale>/...`, including typed `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` folders, optional `type` in option files, profession defaults from paths, and namespaced custom profession paths.
 - Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` for in-game dialogue and datapack debugging.
 - Added beta.12 Datapack Generator support for the new target, folderized dialogue import/export, versioned wiki snapshots, and the downloadable dialogue folder template.
-- Added a player-facing static wiki under `tools/player-wiki` with generated quest walkthroughs, rewards, gifts, reputation, skill trades, watched-container guidance, advancements, search, and command/keybind references.
+- Added a player-facing static wiki under `wiki/player` with generated quest walkthroughs, rewards, gifts, reputation, skill trades, watched-container guidance, advancements, search, and command/keybind references.
 - Added persistent per-villager/per-player last-seen memory with absence-aware opening dialogue placeholders: `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}`.
 - Added persisted village event and village encounter memories so dialogue can react to recent hostile events and prior village visits without rescanning every interaction.
 - Added recruitment left-behind follow-up dialogue and biome filters through `recruitment_memory_biome` / `recruitment_memory_biomes`.
