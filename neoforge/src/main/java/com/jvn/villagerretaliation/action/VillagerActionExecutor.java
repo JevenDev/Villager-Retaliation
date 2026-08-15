@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.action;
 
+import com.mojang.logging.LogUtils;
 import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
@@ -15,6 +16,7 @@ import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.scene.SceneLaunchService;
@@ -22,15 +24,12 @@ import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import org.slf4j.Logger;
 
 public final class VillagerActionExecutor {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private VillagerActionExecutor() {
     }
 
@@ -139,17 +138,15 @@ public final class VillagerActionExecutor {
         if (context == null || lootTableId == null) {
             return false;
         }
-        ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, lootTableId);
-        LootTable table = context.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
-        if (table == LootTable.EMPTY) {
+        QuestRewardResolver.RollResult roll = QuestRewardResolver.roll(
+                context.level(), context.player().getLuck(), lootTableId, context.random());
+        if (!roll.resolution().resolved()) {
+            LOGGER.warn("{}", roll.resolution().diagnostic());
             return false;
         }
 
         boolean gaveAny = false;
-        LootParams params = new LootParams.Builder(context.level())
-                .withLuck(context.player().getLuck())
-                .create(LootContextParamSets.EMPTY);
-        for (ItemStack stack : table.getRandomItems(params, context.random())) {
+        for (ItemStack stack : roll.items()) {
             if (stack.isEmpty()) {
                 continue;
             }

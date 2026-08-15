@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_table",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "villagerretaliation:quest/reward_probe"
+    }
+  ],
+  "table": "villagerretaliation:test/reward_probe_glm_addition"
+}

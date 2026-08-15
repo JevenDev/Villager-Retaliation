@@ -3,9 +3,9 @@ package com.jvn.villagerretaliation.quest.tracking;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,39 +16,36 @@ import net.minecraft.server.packs.resources.Resource;
 /** Reads the static item possibilities from quest reward loot tables for journal presentation. */
 public final class QuestRewardPreviewResources {
     private static final int MAX_PREVIEWS_PER_TABLE = 16;
-    private static final Map<ResourceLocation, List<ItemPreview>> CACHE = new HashMap<>();
-    private static MinecraftServer cachedServer;
-
     private QuestRewardPreviewResources() {
     }
 
-    public static synchronized List<ItemPreview> itemPreviews(MinecraftServer server, ResourceLocation lootTableId) {
-        if (server == null || lootTableId == null) {
-            return List.of();
-        }
-        if (cachedServer != server) {
-            cachedServer = server;
-            CACHE.clear();
-        }
-        return CACHE.computeIfAbsent(lootTableId, id -> read(server, id));
+    public static List<ItemPreview> itemPreviews(MinecraftServer server, ResourceLocation lootTableId) {
+        return server == null || lootTableId == null ? List.of() : read(server, lootTableId);
     }
 
-    public static synchronized void clearCache() {
-        cachedServer = null;
-        CACHE.clear();
+    /** Retained for callers; preview data now belongs to the immutable catalog snapshot. */
+    public static void clearCache() {
     }
 
     private static List<ItemPreview> read(MinecraftServer server, ResourceLocation lootTableId) {
-        ResourceLocation resourceLocation = ResourceLocation.fromNamespaceAndPath(
-                lootTableId.getNamespace(),
-                "loot_table/" + lootTableId.getPath() + ".json");
-        Resource resource = server.getResourceManager().getResource(resourceLocation).orElse(null);
-        if (resource == null) {
+        QuestRewardResolver.Resolution resolution = QuestRewardResolver.resolve(server, lootTableId);
+        JsonObject root;
+        if (resolution.bundled() != null) {
+            root = resolution.bundled().tableJson();
+        } else if (resolution.source() == QuestRewardResolver.Source.EXTERNAL) {
+            ResourceLocation resourceLocation = ResourceLocation.fromNamespaceAndPath(
+                    lootTableId.getNamespace(),
+                    "loot_table/" + lootTableId.getPath() + ".json");
+            Resource resource = server.getResourceManager().getResource(resourceLocation).orElse(null);
+            if (resource == null) {
+                return List.of();
+            }
+            root = DatapackResourceLoader
+                    .readObject(resourceLocation, "quest reward preview", resource)
+                    .orElse(null);
+        } else {
             return List.of();
         }
-        JsonObject root = DatapackResourceLoader
-                .readObject(resourceLocation, "quest reward preview", resource)
-                .orElse(null);
         if (root == null) {
             return List.of();
         }

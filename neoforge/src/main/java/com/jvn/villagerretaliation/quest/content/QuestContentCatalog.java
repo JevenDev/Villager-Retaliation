@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEventKind;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestLocaleCatalog;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardCatalog;
 import com.jvn.villagerretaliation.quest.pool.QuestPoolDefinition;
 import com.jvn.villagerretaliation.scene.encounter.EncounterTemplate;
 import com.jvn.villagerretaliation.scene.model.CompiledScene;
@@ -38,7 +39,8 @@ public record QuestContentCatalog(
         Map<ResourceLocation, EncounterTemplate> encounters,
         List<QuestPoolDefinition> pools,
         Map<QuestBundlePath.Owner, QuestBundleTransactions.EffectiveBundle> bundles,
-        QuestLocaleCatalog localization) {
+        QuestLocaleCatalog localization,
+        QuestRewardCatalog rewards) {
     public QuestContentCatalog {
         compiledQuestCatalog = compiledQuestCatalog == null
                 ? new CompiledQuestCatalog(Map.of())
@@ -55,6 +57,7 @@ public record QuestContentCatalog(
         pools = pools == null ? List.of() : List.copyOf(pools);
         bundles = freezeMap(bundles);
         localization = localization == null ? QuestLocaleCatalog.empty() : localization;
+        rewards = rewards == null ? QuestRewardCatalog.empty() : rewards;
     }
 
     public static QuestContentCatalog empty() {
@@ -72,7 +75,8 @@ public record QuestContentCatalog(
                 Map.of(),
                 List.of(),
                 Map.of(),
-                QuestLocaleCatalog.empty());
+                QuestLocaleCatalog.empty(),
+                QuestRewardCatalog.empty());
     }
 
     public Collection<QuestDefinition> questDefinitions() {
