@@ -19,6 +19,8 @@ import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestCatalog;
 import com.jvn.villagerretaliation.quest.compiled.QuestSourcePointer;
 import com.jvn.villagerretaliation.quest.compiler.QuestV1Compiler;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalog;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
@@ -90,11 +92,12 @@ public final class VillagerQuestResources {
     }
 
     public static void warm(MinecraftServer server) {
-        quests(server);
+        QuestContentCatalogs.warm(server);
     }
 
     public static void clearCache() {
         cachedQuests = emptyCache();
+        QuestContentCatalogs.invalidate();
     }
 
     public static void installCompiledTestCatalog(MinecraftServer server, Collection<CompiledQuest> compiledQuests) {
@@ -128,134 +131,125 @@ public final class VillagerQuestResources {
                 memoryEventQuestIds(frozenQuests),
                 exclusiveGroupQuestIds(frozenQuests),
                 triggerEventQuestIds(catalog));
+        QuestContentCatalogs.invalidate();
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
-        return loadCache(server).quests().values();
+        return QuestContentCatalogs.current(server).questDefinitions();
     }
 
     public static Collection<CompiledQuest> compiledQuests(MinecraftServer server) {
-        return loadCache(server).compiledCatalog().quests();
+        return QuestContentCatalogs.current(server).compiledQuests();
     }
 
     public static QuestDialogueCatalog questDialogueCatalog(MinecraftServer server) {
-        return loadCache(server).dialogueCatalog();
+        return QuestContentCatalogs.current(server).dialogueCatalog();
     }
 
     public static Optional<QuestDefinition> quest(MinecraftServer server, ResourceLocation id) {
-        if (id == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(loadCache(server).quests().get(id));
+        return QuestContentCatalogs.current(server).quest(id);
     }
 
     public static Optional<CompiledQuest> compiledQuest(MinecraftServer server, ResourceLocation id) {
-        if (id == null) {
-            return Optional.empty();
-        }
-        return loadCache(server).compiledCatalog().quest(id);
+        return QuestContentCatalogs.current(server).compiledQuest(id);
     }
 
     public static Optional<QuestSourcePointer> objectiveSource(
             MinecraftServer server,
             ResourceLocation questId,
             String objectiveId) {
-        if (objectiveId == null || objectiveId.isBlank()) {
-            return Optional.empty();
-        }
-        return compiledQuest(server, questId)
-                .map(quest -> quest.objectivesById().get(objectiveId))
-                .map(objective -> objective == null ? null : objective.source());
+        return QuestContentCatalogs.current(server).objectiveSource(questId, objectiveId);
     }
 
     public static Optional<QuestTriggerIndex> questTriggerIndex(MinecraftServer server, ResourceLocation id) {
-        return compiledQuest(server, id).map(CompiledQuest::triggerIndex);
+        return QuestContentCatalogs.current(server).questTriggerIndex(id);
     }
 
     public static boolean hasMobKillObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).objectiveEventQuestIds()
-                .getOrDefault(QuestObjectiveEventKind.MOB_KILL, Set.of())
-                .contains(id);
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.MOB_KILL);
     }
 
     public static boolean hasBlockBreakObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).objectiveEventQuestIds()
-                .getOrDefault(QuestObjectiveEventKind.BLOCK_BREAK, Set.of())
-                .contains(id);
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.BLOCK_BREAK);
     }
 
     public static boolean hasBlockPlaceObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).objectiveEventQuestIds()
-                .getOrDefault(QuestObjectiveEventKind.BLOCK_PLACE, Set.of())
-                .contains(id);
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.BLOCK_PLACE);
     }
 
     public static boolean hasBlockInteractObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).objectiveEventQuestIds()
-                .getOrDefault(QuestObjectiveEventKind.BLOCK_INTERACT, Set.of())
-                .contains(id);
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.BLOCK_INTERACT);
     }
 
-    public static Set<ResourceLocation> memoryEventQuestIds(MinecraftServer server, ResourceLocation memoryTag) {
-        if (memoryTag == null) {
-            return Set.of();
-        }
-        return loadCache(server).memoryEventQuestIds().getOrDefault(memoryTag, Set.of());
+    public static Set<ResourceLocation> memoryEventQuestIds(
+            MinecraftServer server, ResourceLocation memoryTag) {
+        return QuestContentCatalogs.current(server).memoryEventQuestIds(memoryTag);
     }
 
     public static boolean hasFactObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).factQuestIds().contains(id);
+        return id != null && QuestContentCatalogs.current(server).factQuestIds().contains(id);
     }
 
     public static boolean hasGiftObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).objectiveEventQuestIds()
-                .getOrDefault(QuestObjectiveEventKind.GIFT, Set.of())
-                .contains(id);
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.GIFT);
     }
 
     public static Set<ResourceLocation> questIdsForObjectiveEvent(
             MinecraftServer server,
             QuestObjectiveEventKind kind) {
-        if (kind == null) {
-            return Set.of();
-        }
-        return loadCache(server).objectiveEventQuestIds().getOrDefault(kind, Set.of());
+        return QuestContentCatalogs.current(server).questIdsForObjectiveEvent(kind);
     }
 
     public static Set<ResourceLocation> questIdsWithObjective(
             MinecraftServer server,
             QuestDefinition.ObjectiveType type) {
-        CachedQuests cache = loadCache(server);
+        QuestContentCatalog catalog = QuestContentCatalogs.current(server);
         return switch (type) {
-            case MOB_KILL -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.MOB_KILL, Set.of());
-            case BLOCK_BREAK -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.BLOCK_BREAK, Set.of());
-            case BLOCK_PLACE -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.BLOCK_PLACE, Set.of());
-            case BLOCK_INTERACT -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.BLOCK_INTERACT, Set.of());
-            case FACT -> cache.factQuestIds();
-            case TRADE -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.TRADE, Set.of());
-            case GIFT -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.GIFT, Set.of());
-            case MEMORY_EVENT -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.MEMORY_EVENT, Set.of());
-            case REPUTATION -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.REPUTATION, Set.of());
-            case CRITERION -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.CRITERION, Set.of());
+            case MOB_KILL -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.MOB_KILL);
+            case BLOCK_BREAK -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.BLOCK_BREAK);
+            case BLOCK_PLACE -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.BLOCK_PLACE);
+            case BLOCK_INTERACT -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.BLOCK_INTERACT);
+            case FACT -> catalog.factQuestIds();
+            case TRADE -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.TRADE);
+            case GIFT -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.GIFT);
+            case MEMORY_EVENT -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.MEMORY_EVENT);
+            case REPUTATION -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.REPUTATION);
+            case CRITERION -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.CRITERION);
             case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, CHOICE, CONDITION -> Set.of();
         };
     }
 
-    public static Set<ResourceLocation> exclusiveGroupQuestIds(MinecraftServer server, ResourceLocation group) {
-        if (group == null) {
-            return Set.of();
-        }
-        return loadCache(server).exclusiveGroupQuestIds().getOrDefault(group, Set.of());
+    public static Set<ResourceLocation> exclusiveGroupQuestIds(
+            MinecraftServer server, ResourceLocation group) {
+        return QuestContentCatalogs.current(server).exclusiveGroupQuestIds(group);
     }
 
     public static boolean hasQuestTrigger(
             MinecraftServer server,
             ResourceLocation id,
             QuestDefinition.TriggerEvent event) {
-        if (id == null || event == null) {
-            return false;
-        }
-        return loadCache(server).triggerEventQuestIds().getOrDefault(event, Set.of()).contains(id);
+        return QuestContentCatalogs.current(server).hasQuestTrigger(id, event);
+    }
+
+    public static ContentSnapshot snapshotForCatalog(MinecraftServer server) {
+        CachedQuests snapshot = loadCache(server);
+        return new ContentSnapshot(
+                snapshot.compiledCatalog(),
+                snapshot.dialogueCatalog(),
+                snapshot.quests(),
+                snapshot.objectiveEventQuestIds(),
+                snapshot.factQuestIds(),
+                snapshot.memoryEventQuestIds(),
+                snapshot.exclusiveGroupQuestIds(),
+                snapshot.triggerEventQuestIds());
+    }
+
+    private static boolean hasObjectiveEvent(
+            MinecraftServer server,
+            ResourceLocation id,
+            QuestObjectiveEventKind kind) {
+        return id != null
+                && QuestContentCatalogs.current(server).questIdsForObjectiveEvent(kind).contains(id);
     }
 
     private static CachedQuests loadCache(MinecraftServer server) {
@@ -2240,6 +2234,17 @@ public final class VillagerQuestResources {
         private boolean isEmpty() {
             return this.tags.isEmpty() && (this.key == null || this.key.isBlank());
         }
+    }
+
+    public record ContentSnapshot(
+            CompiledQuestCatalog compiledCatalog,
+            QuestDialogueCatalog dialogueCatalog,
+            Map<ResourceLocation, QuestDefinition> quests,
+            Map<QuestObjectiveEventKind, Set<ResourceLocation>> objectiveEventQuestIds,
+            Set<ResourceLocation> factQuestIds,
+            Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
+            Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
+            Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds) {
     }
 
     private record CachedQuests(

@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
@@ -43,23 +44,24 @@ public final class EncounterResources {
 
     public static Optional<EncounterTemplate> template(
             MinecraftServer server, ResourceLocation id) {
-        return Optional.ofNullable(load(server).templates.get(id));
+        return QuestContentCatalogs.current(server).encounter(id);
     }
 
     public static List<EncounterTemplate> templates(MinecraftServer server) {
-        return List.copyOf(load(server).templates.values());
+        return List.copyOf(QuestContentCatalogs.current(server).encounters().values());
     }
 
     public static Map<ResourceLocation, List<String>> diagnostics(MinecraftServer server) {
-        return load(server).diagnostics;
+        return snapshotForCatalog(server).diagnostics();
     }
 
     public static void warm(MinecraftServer server) {
-        load(server);
+        QuestContentCatalogs.warm(server);
     }
 
     public static void clearCache() {
         cache = new Cache(null, Map.of(), Map.of());
+        QuestContentCatalogs.invalidate();
     }
 
     public static void installTestTemplates(
@@ -69,6 +71,7 @@ public final class EncounterResources {
                 .sorted(Comparator.comparing(v -> v.id().toString()))
                 .forEach(v -> map.put(v.id(), v));
         cache = new Cache(server, Map.copyOf(map), Map.of());
+        QuestContentCatalogs.invalidate();
     }
 
     public static void validateRewardLootTables(
@@ -90,6 +93,11 @@ public final class EncounterResources {
                                     == LootTable.EMPTY)
                                 errors.add("unknown encounter reward loot table " + id);
                         });
+    }
+
+    public static ContentSnapshot snapshotForCatalog(MinecraftServer server) {
+        Cache snapshot = load(server);
+        return new ContentSnapshot(snapshot.templates(), snapshot.diagnostics());
     }
 
     private static Cache load(MinecraftServer server) {
@@ -1941,8 +1949,9 @@ public final class EncounterResources {
 
     public static VariantResolution resolve(
             MinecraftServer server, ResourceLocation source, long seed) {
-        Cache value = load(server);
-        EncounterTemplate root = value.templates.get(source);
+        Map<ResourceLocation, EncounterTemplate> templates =
+                QuestContentCatalogs.current(server).encounters();
+        EncounterTemplate root = templates.get(source);
         if (root == null)
             return new VariantResolution(
                     "", source, null, seed, "unknown encounter template " + source);
@@ -1967,7 +1976,7 @@ public final class EncounterResources {
                         seed,
                         "encounter variant selector " + current.id() + " is empty");
             if (selected.isBlank()) selected = choice.id();
-            current = value.templates.get(choice.template());
+            current = templates.get(choice.template());
             if (current == null)
                 return new VariantResolution(
                         selected,
@@ -2080,6 +2089,11 @@ public final class EncounterResources {
         } catch (IllegalArgumentException e) {
             return f;
         }
+    }
+
+    public record ContentSnapshot(
+            Map<ResourceLocation, EncounterTemplate> templates,
+            Map<ResourceLocation, List<String>> diagnostics) {
     }
 
     private record Cache(

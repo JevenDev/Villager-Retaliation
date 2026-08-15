@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.scene;
 
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.scene.compiler.SceneCompiler;
 import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
 import com.jvn.villagerretaliation.scene.compiler.SceneParser;
@@ -25,23 +26,24 @@ public final class SceneResources {
     }
 
     public static Optional<CompiledScene> scene(MinecraftServer server, ResourceLocation id) {
-        return Optional.ofNullable(load(server).scenes().get(id));
+        return QuestContentCatalogs.current(server).scene(id);
     }
 
     public static List<CompiledScene> scenes(MinecraftServer server) {
-        return List.copyOf(load(server).scenes().values());
+        return List.copyOf(QuestContentCatalogs.current(server).scenes().values());
     }
 
     public static Map<ResourceLocation, List<SceneDiagnostic>> diagnostics(MinecraftServer server) {
-        return load(server).diagnostics();
+        return snapshotForCatalog(server).diagnostics();
     }
 
     public static void warm(MinecraftServer server) {
-        load(server);
+        QuestContentCatalogs.warm(server);
     }
 
     public static void clearCache() {
         cache = new Cache(null, Map.of(), Map.of());
+        QuestContentCatalogs.invalidate();
     }
 
     public static void installTestScenes(MinecraftServer server, List<CompiledScene> scenes) {
@@ -49,6 +51,7 @@ public final class SceneResources {
         if (scenes != null) scenes.stream().filter(java.util.Objects::nonNull)
                 .sorted(Comparator.comparing(value -> value.id().toString())).forEach(value -> values.put(value.id(), value));
         cache = new Cache(server, Map.copyOf(values), Map.of());
+        QuestContentCatalogs.invalidate();
     }
 
     public static void installTestResources(MinecraftServer server, Map<ResourceLocation, com.google.gson.JsonObject> resources) {
@@ -71,6 +74,12 @@ public final class SceneResources {
             });
         }
         cache = new Cache(server, Map.copyOf(scenes), Map.copyOf(diagnostics));
+        QuestContentCatalogs.invalidate();
+    }
+
+    public static ContentSnapshot snapshotForCatalog(MinecraftServer server) {
+        Cache snapshot = load(server);
+        return new ContentSnapshot(snapshot.scenes(), snapshot.diagnostics());
     }
 
     private static Cache load(MinecraftServer server) {
@@ -81,7 +90,7 @@ public final class SceneResources {
             if (current.server() == server) return current;
             Map<ResourceLocation, CompiledScene> scenes = new LinkedHashMap<>();
             Map<ResourceLocation, List<SceneDiagnostic>> diagnostics = new LinkedHashMap<>();
-            Set<ResourceLocation> encounterTemplates = EncounterResources.templates(server).stream()
+            Set<ResourceLocation> encounterTemplates = EncounterResources.snapshotForCatalog(server).templates().values().stream()
                     .map(template -> template.id()).collect(Collectors.toUnmodifiableSet());
             for (DatapackResourceLoader.JsonResource resource : DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT)) {
                 ResourceLocation source = resource.location();
@@ -102,6 +111,11 @@ public final class SceneResources {
             cache = new Cache(server, Map.copyOf(scenes), Map.copyOf(diagnostics));
             return cache;
         }
+    }
+
+    public record ContentSnapshot(
+            Map<ResourceLocation, CompiledScene> scenes,
+            Map<ResourceLocation, List<SceneDiagnostic>> diagnostics) {
     }
 
     private record Cache(MinecraftServer server, Map<ResourceLocation, CompiledScene> scenes,
