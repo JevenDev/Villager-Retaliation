@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.quest.content.bundle;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.quest.content.reward.BundledQuestReward;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceLocation;
 
 /** Applies structural/English bundle transactions and independent optional-locale overlays. */
@@ -20,6 +22,13 @@ public final class QuestBundleTransactions {
     }
 
     public static Result compile(List<RawResource> resources, CompatibilityRules rules) {
+        return compile(resources, rules, null);
+    }
+
+    public static Result compile(
+            List<RawResource> resources,
+            CompatibilityRules rules,
+            HolderLookup.Provider registries) {
         CompatibilityRules compatibility = rules == null ? CompatibilityRules.empty() : rules;
         List<Diagnostic> diagnostics = new ArrayList<>();
         Map<LayerKey, List<Classified>> layers = new TreeMap<>();
@@ -51,7 +60,7 @@ public final class QuestBundleTransactions {
                     EffectiveBundle lower = bundles.get(owner);
                     Candidate candidate = Candidate.from(lower, owner);
                     List<String> errors = applyStructural(candidate, structural);
-                    errors.addAll(validate(candidate, lower, bundles, compatibility));
+                    errors.addAll(validate(candidate, lower, bundles, compatibility, registries));
                     if (errors.isEmpty()) {
                         bundles.put(owner, candidate.freeze());
                     } else {
@@ -155,7 +164,8 @@ public final class QuestBundleTransactions {
             Candidate candidate,
             EffectiveBundle lower,
             Map<QuestBundlePath.Owner, EffectiveBundle> accepted,
-            CompatibilityRules compatibility) {
+            CompatibilityRules compatibility,
+            HolderLookup.Provider registries) {
         List<String> errors = new ArrayList<>();
         candidate.references.clear();
         if (!candidate.owner.shared()) {
@@ -226,6 +236,23 @@ public final class QuestBundleTransactions {
                         QuestBundleLocalization.collectCompanion(definition, candidate.prefix);
                 errors.addAll(localization.errors());
                 candidate.references.addAll(localization.references());
+            }
+        }
+
+        Map<ResourceLocation, JsonObject> rewardDefinitions =
+                candidate.definitions.getOrDefault(QuestBundlePath.Kind.REWARD, Map.of());
+        if (!rewardDefinitions.isEmpty() && registries == null) {
+            errors.add("bundled rewards require registry context for LootTable.DIRECT_CODEC");
+        } else if (registries != null) {
+            candidate.rewards.clear();
+            for (Map.Entry<ResourceLocation, JsonObject> entry : rewardDefinitions.entrySet()) {
+                BundledQuestReward.ParseResult parsed = BundledQuestReward.parse(entry.getValue(), registries);
+                if (parsed.valid()) {
+                    candidate.rewards.put(entry.getKey(), parsed.reward());
+                } else {
+                    parsed.errors().forEach(error ->
+                            errors.add("reward " + entry.getKey() + ": " + error));
+                }
             }
         }
 
@@ -453,18 +480,20 @@ public final class QuestBundleTransactions {
             ResourceLocation questId,
             String localizationPrefix,
             Map<QuestBundlePath.Kind, Map<ResourceLocation, JsonObject>> definitions,
+            Map<ResourceLocation, BundledQuestReward> rewards,
             QuestLocaleCatalog locales,
             Set<String> references) {
         public EffectiveBundle {
             localizationPrefix = localizationPrefix == null ? "" : localizationPrefix;
             definitions = freezeDefinitions(definitions);
+            rewards = rewards == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(rewards));
             locales = locales == null ? QuestLocaleCatalog.empty() : locales;
             references = references == null ? Set.of() : Set.copyOf(references);
         }
 
         public EffectiveBundle withLocales(QuestLocaleCatalog replacement) {
             return new EffectiveBundle(this.owner, this.questId, this.localizationPrefix,
-                    this.definitions, replacement, this.references);
+                    this.definitions, this.rewards, replacement, this.references);
         }
 
         public Map<QuestBundlePath.Kind, Map<ResourceLocation, JsonObject>> definitions() {
@@ -535,6 +564,7 @@ public final class QuestBundleTransactions {
         private String prefix = "";
         private final Map<QuestBundlePath.Kind, Map<ResourceLocation, JsonObject>> definitions =
                 new EnumMap<>(QuestBundlePath.Kind.class);
+        private final Map<ResourceLocation, BundledQuestReward> rewards = new LinkedHashMap<>();
         private QuestLocaleCatalog locales = QuestLocaleCatalog.empty();
         private final Set<String> references = new LinkedHashSet<>();
         private boolean englishFileInLayer;
@@ -556,6 +586,7 @@ public final class QuestBundleTransactions {
                     values.forEach((id, root) -> copy.put(id, root.deepCopy()));
                     result.definitions.put(kind, copy);
                 });
+                result.rewards.putAll(lower.rewards());
                 result.locales = lower.locales();
                 result.references.addAll(lower.references());
             }
@@ -564,7 +595,7 @@ public final class QuestBundleTransactions {
 
         private EffectiveBundle freeze() {
             return new EffectiveBundle(this.owner, this.questId, this.prefix,
-                    this.definitions, this.locales, this.references);
+                    this.definitions, this.rewards, this.locales, this.references);
         }
     }
 

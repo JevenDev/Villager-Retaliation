@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.quest.content;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleDiscovery;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardCatalog;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardRegistryContext;
 import com.jvn.villagerretaliation.quest.pool.QuestPoolResources;
 import com.jvn.villagerretaliation.scene.SceneResources;
 import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
@@ -80,7 +82,8 @@ public final class QuestContentCatalogs {
         QuestPoolResources.ContentSnapshot pool = QuestPoolResources.snapshotForCatalog(server);
         QuestBundleTransactions.Result bundles = QuestBundleTransactions.compile(
                 QuestBundleDiscovery.discover(server),
-                QuestBundleTransactions.CompatibilityRules.empty());
+                QuestBundleTransactions.CompatibilityRules.empty(),
+                QuestRewardRegistryContext.create(server));
 
         QuestContentCatalog catalog = new QuestContentCatalog(
                 generation,
@@ -96,7 +99,8 @@ public final class QuestContentCatalogs {
                 encounter.templates(),
                 pool.pools(),
                 bundles.bundles(),
-                bundles.localization());
+                bundles.localization(),
+                QuestRewardCatalog.fromBundles(bundles.bundles()));
 
         QuestContentLoadReport.Builder report = QuestContentLoadReport.builder(generation);
         scene.diagnostics().forEach((source, entries) -> entries.forEach(diagnostic -> report.add(
