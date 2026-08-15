@@ -9,6 +9,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -231,6 +232,43 @@ public final class GiftPreferenceResolverGameTests {
                 pufferfish.source(),
                 GiftPreferenceDefinition.MatchSource.ITEM,
                 "pufferfish exact override source");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void giftAdviceChoosesAConcreteItemFromTheResolvedCategory(GameTestHelper helper) {
+        GiftPreferenceDefinition rawFish = VillagerGiftResources
+                .definitions(helper.getLevel(), VillagerProfession.FISHERMAN)
+                .stream()
+                .filter(definition -> definition.id().getPath().equals("builtin.fisherman.raw_fish"))
+                .findFirst()
+                .orElseThrow();
+
+        ItemStack suggested = VillagerGiftKnowledgeService
+                .representativeGift(
+                        helper.getLevel(),
+                        VillagerProfession.FISHERMAN,
+                        rawFish,
+                        RandomSource.create(3733L))
+                .orElseThrow();
+        String adviceName = VillagerGiftKnowledgeService.giftAdviceName(
+                helper.getLevel(),
+                "en_us",
+                VillagerProfession.FISHERMAN,
+                rawFish,
+                RandomSource.create(3733L));
+        ResolvedGiftPreference resolved = VillagerGiftPreferences.evaluate(
+                helper.getLevel(), VillagerProfession.FISHERMAN, suggested);
+
+        helper.assertFalse(suggested.isEmpty(), "gift advice should choose an item");
+        helper.assertValueEqual(
+                resolved.categoryId(),
+                rawFish.id(),
+                "suggested item should resolve back to the advised category");
+        helper.assertValueEqual(
+                adviceName,
+                VillagerItemText.dialogueName(helper.getLevel().getServer(), "en_us", suggested),
+                "spoken gift advice should contain only the concrete item name");
         helper.succeed();
     }
 

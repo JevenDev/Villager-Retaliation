@@ -6,16 +6,21 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.normal.GiftAdviceKind;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class VillagerGiftKnowledgeService {
     private static final String GLOBAL_PROFESSION_KEY = "*";
@@ -50,20 +55,24 @@ public final class VillagerGiftKnowledgeService {
             GiftPreferenceDefinition discovered = unknown.remove(context.random().nextInt(unknown.size()));
             String knowledgeKey = discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY;
             discoverCategory(data, player, knowledgeKey, discovered.id().toString());
-            String categoryName = discovered.name().component(discovered.id()).getString();
-            String revealedName = categoryName + " " + ratingLabel(discovered.rating());
+            String giftName = giftAdviceName(
+                    level,
+                    context.locale(),
+                    profession,
+                    discovered,
+                    context.random());
             if (index == 0 && discovered.rating() > 0) {
                 VillagerInteractionTracker.rememberGiftAdvice(
                         level,
                         context.villager(),
                         player,
                         discovered.id().toString(),
-                        categoryName,
+                        giftName,
                         knowledgeKey);
             }
             discoveries.add(new GiftKnowledgeDiscovery(
                     giftAdviceKind(discovered.rating() > 0, discovered.professionSpecific()),
-                    revealedName,
+                    giftName,
                     giftSubject(profession),
                     discovered.id().toString(),
                     knowledgeKey));
@@ -99,8 +108,66 @@ public final class VillagerGiftKnowledgeService {
         if (candidates.isEmpty()) {
             return Optional.empty();
         }
-        GiftPreferenceDefinition selected = candidates.get(random.nextInt(candidates.size()));
-        return Optional.of(selected.name().component(selected.id()).getString());
+        List<ItemStack> gifts = new ArrayList<>();
+        for (GiftPreferenceDefinition candidate : candidates) {
+            representativeGift(level, profession, candidate, random).ifPresent(gifts::add);
+        }
+        if (gifts.isEmpty()) {
+            return Optional.empty();
+        }
+        ItemStack selected = gifts.get(random.nextInt(gifts.size()));
+        return Optional.of(VillagerItemText.dialogueName(level.getServer(), locale, selected));
+    }
+
+    static String giftAdviceName(
+            ServerLevel level,
+            String locale,
+            VillagerProfession profession,
+            GiftPreferenceDefinition definition,
+            RandomSource random) {
+        String categoryName = definition.name().component(definition.id()).getString();
+        return representativeGift(level, profession, definition, random)
+                .map(stack -> VillagerItemText.dialogueName(level.getServer(), locale, stack))
+                .orElse(categoryName);
+    }
+
+    static Optional<ItemStack> representativeGift(
+            ServerLevel level,
+            VillagerProfession profession,
+            GiftPreferenceDefinition definition,
+            RandomSource random) {
+        List<Item> candidates = definition.matchers().stream()
+                .flatMap(matcher -> matchingItems(matcher).stream())
+                .filter(item -> definition.bestMatcher(new ItemStack(item)).isPresent())
+                .filter(item -> VillagerGiftResources.preference(level, profession, new ItemStack(item))
+                        .map(resolved -> resolved.categoryId().equals(definition.id()))
+                        .orElse(false))
+                .distinct()
+                .sorted(java.util.Comparator.comparing(item -> BuiltInRegistries.ITEM.getKey(item).toString()))
+                .toList();
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(new ItemStack(candidates.get(random.nextInt(candidates.size()))));
+    }
+
+    private static List<Item> matchingItems(GiftPreferenceDefinition.ItemMatcher matcher) {
+        if (matcher.source() == GiftPreferenceDefinition.MatchSource.ITEM) {
+            return BuiltInRegistries.ITEM.getOptional(matcher.value())
+                    .filter(item -> item != Items.AIR)
+                    .map(List::of)
+                    .orElseGet(List::of);
+        }
+        if (matcher.source() != GiftPreferenceDefinition.MatchSource.TAG) {
+            return List.of();
+        }
+        return BuiltInRegistries.ITEM
+                .getTag(TagKey.create(Registries.ITEM, matcher.value()))
+                .stream()
+                .flatMap(holders -> holders.stream())
+                .map(holder -> holder.value())
+                .filter(item -> item != Items.AIR)
+                .toList();
     }
 
     private static void migrateLegacyKnowledge(
