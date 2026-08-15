@@ -12,7 +12,6 @@ import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
-import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -24,9 +23,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 
 public final class QuestPoolResources {
-    private static final String RESOURCE_ROOT = "quest_pools";
     private static final long DEFAULT_REFRESH_TICKS = 24_000L;
-    private static volatile Cache cache = new Cache(null, List.of());
     private static final Map<SelectionKey, Set<ResourceLocation>> SELECTION_CACHE = new ConcurrentHashMap<>();
 
     private QuestPoolResources() {
@@ -37,7 +34,6 @@ public final class QuestPoolResources {
     }
 
     public static void clearCache() {
-        cache = new Cache(null, List.of());
         SELECTION_CACHE.clear();
         QuestContentCatalogs.invalidate();
     }
@@ -60,18 +56,7 @@ public final class QuestPoolResources {
     private static List<QuestPoolDefinition> load(
             MinecraftServer server,
             QuestBundleTransactions.Result bundles) {
-        Cache current = cache;
-        if (current.server() == server) {
-            return current.pools();
-        }
-        synchronized (QuestPoolResources.class) {
-            current = cache;
-            if (current.server() != server) {
-                current = new Cache(server, read(server, bundles));
-                cache = current;
-            }
-            return current.pools();
-        }
+        return read(server, bundles);
     }
 
     public static boolean allows(DialogueContext context, QuestDefinition quest) {
@@ -133,9 +118,6 @@ public final class QuestPoolResources {
             QuestBundleTransactions.Result bundles) {
         List<QuestPoolDefinition> pools = new ArrayList<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
-        DatapackResourceLoader.forEachJsonResource(server, RESOURCE_ROOT, (location, resource) ->
-                DatapackResourceLoader.readObject(location, "quest pool", resource).ifPresent(root ->
-                        readDefinition(location, root, pools, sources)));
         if (bundles != null) {
             bundles.bundles().values().stream()
                     .sorted(java.util.Comparator.comparing(bundle -> bundle.owner().key()))
@@ -157,6 +139,11 @@ public final class QuestPoolResources {
             List<QuestPoolDefinition> pools,
             Map<ResourceLocation, ResourceLocation> sources) {
         ResourceLocation requestedId = poolId(location, root);
+        if (requestedId == null) {
+            DatapackDiagnostics.warnSkippedEntry(
+                    location, "quest pool", "id", "bundle definitions require an explicit stable id");
+            return;
+        }
         if (DatapackJsonReader.readBoolean(root, "remove", false)) {
             pools.removeIf(existing -> existing.id().equals(requestedId));
             sources.remove(requestedId);
@@ -249,13 +236,7 @@ public final class QuestPoolResources {
     }
 
     private static ResourceLocation poolId(ResourceLocation location, JsonObject root) {
-        ResourceLocation id = ResourceLocation.tryParse(DatapackJsonReader.readString(root, "id"));
-        if (id != null) {
-            return id;
-        }
-        String path = location.getPath().substring((RESOURCE_ROOT + "/").length());
-        return ResourceLocation.fromNamespaceAndPath(
-                location.getNamespace(), path.substring(0, path.length() - 5));
+        return ResourceLocation.tryParse(DatapackJsonReader.readString(root, "id"));
     }
 
     private static Set<ResourceLocation> resourceSet(JsonElement element) {
@@ -296,8 +277,6 @@ public final class QuestPoolResources {
         }
     }
 
-    private record Cache(MinecraftServer server, List<QuestPoolDefinition> pools) {
-    }
 
     private record WeightedQuestId(ResourceLocation id, int weight) {
     }

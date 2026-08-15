@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest.content.bundle;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
@@ -20,10 +21,24 @@ public record QuestBundlePath(
     }
 
     public static Classification classify(ResourceLocation resource) {
-        if (resource == null || !resource.getPath().startsWith(ROOT)) {
+        if (resource == null) {
             return Classification.error("resource is outside data/<namespace>/quests/");
         }
-        String[] parts = resource.getPath().substring(ROOT.length()).split("/");
+        String resourcePath = resource.getPath();
+        for (String legacyRoot : List.of(
+                "quest_messages/", "quest_scenes/", "quest_encounters/", "quest_pools/", "loot_table/quest/")) {
+            if (resourcePath.startsWith(legacyRoot)) {
+                return Classification.error("unsupported legacy quest layout data/<namespace>/" + legacyRoot
+                        + "...; move the definition into data/<namespace>/quests/_shared/ or its owning quest bundle");
+            }
+        }
+        if (!resourcePath.startsWith(ROOT)) {
+            return Classification.error("resource is outside data/<namespace>/quests/");
+        }
+        String[] parts = resourcePath.substring(ROOT.length()).split("/");
+        if (parts.length == 2 && parts[1].endsWith(".json")) {
+            return Classification.error("unsupported loose quest JSON; move it to quests/<questline>/<quest-slug>/quest.json");
+        }
         if (parts.length < 3) {
             return Classification.error("quest bundle path is incomplete");
         }

@@ -22,6 +22,64 @@ function walkJson(dir) {
   });
 }
 
+function questBundleFiles() {
+  return walkJson(path.join(dataDir, "quests"))
+    .filter((file) => path.basename(file) === "quest.json");
+}
+
+function localizedMessageKey(prefix, key) {
+  return key.startsWith("#") ? `${prefix}${key.slice(1)}` : key;
+}
+
+function localizedPayloadStrings(payload) {
+  if (typeof payload === "string") return payload.trim() ? [payload] : [];
+  if (Array.isArray(payload)) return payload.flatMap(localizedPayloadStrings);
+  if (!payload || typeof payload !== "object") return [];
+  if (Object.hasOwn(payload, "lines")) return localizedPayloadStrings(payload.lines);
+  if (Object.hasOwn(payload, "line")) return localizedPayloadStrings(payload.line);
+  if (Object.hasOwn(payload, "text")) return localizedPayloadStrings(payload.text);
+  return [];
+}
+
+function materializeLocalizedReferences(value, prefix, messages, field = "") {
+  if (Array.isArray(value)) {
+    return value.map((entry) => materializeLocalizedReferences(entry, prefix, messages, field));
+  }
+  if (!value || typeof value !== "object") return value;
+  if (typeof value.key === "string" && Object.keys(value).every((key) => key === "key")) {
+    const payload = messages[localizedMessageKey(prefix, value.key)];
+    if (payload == null) return "";
+    const strings = localizedPayloadStrings(payload);
+    if (field === "lines") return strings;
+    return strings.length <= 1 ? (strings[0] || "") : strings;
+  }
+  return Object.fromEntries(Object.entries(value).map(([key, child]) => [
+    key,
+    materializeLocalizedReferences(child, prefix, messages, key)
+  ]));
+}
+
+function readBundleQuest(file) {
+  const quest = readJson(file);
+  const localeFile = path.join(path.dirname(file), "locales", "en_us.json");
+  const messages = fs.existsSync(localeFile) ? readJson(localeFile).messages || {} : {};
+  return materializeLocalizedReferences(quest, quest.localization_prefix || "", messages);
+}
+
+let bundledRewardTables;
+
+function rewardTables() {
+  if (bundledRewardTables) return bundledRewardTables;
+  bundledRewardTables = new Map();
+  for (const file of walkJson(path.join(dataDir, "quests"))) {
+    if (!file.split(path.sep).includes("rewards")) continue;
+    const reward = readJson(file);
+    if (reward.schema === "villagerretaliation:quest_reward/v1" && reward.id && reward.table) {
+      bundledRewardTables.set(reward.id, reward.table);
+    }
+  }
+  return bundledRewardTables;
+}
 function countDialogueTextLines(node, key = "") {
   if (node == null) return 0;
   if (typeof node === "string") {
@@ -176,11 +234,8 @@ function groupBy(items, key) {
 }
 
 function lootEntries(lootTableId) {
-  const tablePath = idTail(lootTableId);
-  const slug = tablePath.split("/").pop() || tablePath;
-  const file = path.join(dataDir, "loot_table", "quest", `${slug}.json`);
-  if (!fs.existsSync(file)) return [];
-  const loot = readJson(file);
+  const loot = rewardTables().get(lootTableId);
+  if (!loot) return [];
   return firstArray(loot.pools).flatMap((pool) => firstArray(pool.entries).map((entry) => {
     const countFunction = firstArray(entry.functions).find((fn) => fn.function === "minecraft:set_count");
     const enchantFunction = firstArray(entry.functions).find((fn) => fn.function === "minecraft:set_enchantments");
@@ -591,8 +646,8 @@ function questBranchChoices(quest) {
 
 function buildQuests() {
   const questRoot = path.join(dataDir, "quests");
-  const quests = walkJson(questRoot).map((file) => {
-    const quest = readJson(file);
+  const quests = questBundleFiles().map((file) => {
+    const quest = readBundleQuest(file);
     const rel = path.relative(questRoot, file);
     const moduleGroup = rel.split(path.sep)[0] || "";
     const metadata = questMetadata(quest);
@@ -1015,9 +1070,9 @@ function buildStats() {
     .reduce((total, file) => total + countDialogueTextLines(readJson(file)), 0);
   const dialogueTreeLines = walkJson(path.join(dataDir, "dialogue_trees"))
     .reduce((total, file) => total + countDialogueTextLines(readJson(file)), 0);
-  const questModuleDialogueLines = walkJson(path.join(dataDir, "quests"))
+  const questModuleDialogueLines = questBundleFiles()
     .reduce((total, file) => {
-      const quest = readJson(file);
+      const quest = readBundleQuest(file);
       return total + countDialogueTextLines(quest.dialogue) + questStagesArray(quest)
         .reduce((stageTotal, stage) => (
           stageTotal

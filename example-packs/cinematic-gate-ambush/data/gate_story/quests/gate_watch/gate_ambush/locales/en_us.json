@@ -1,0 +1,145 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "gate_story.quest.gate_ambush.metadata.title": {
+      "lines": [
+        "Ambush at the Gate"
+      ]
+    },
+    "gate_story.quest.gate_ambush.metadata.description": {
+      "lines": [
+        "Escort Captain Mara and Scout Tovin to defend the village gate."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.title": {
+      "lines": [
+        "Defend the gate"
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.description": {
+      "lines": [
+        "Choose an approach and follow the watch to the gate."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.dialogue.offer.label": {
+      "lines": [
+        "Ambush at the Gate"
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.dialogue.offer.lines": {
+      "lines": [
+        "Tovin saw movement beyond the gate. How should we approach?"
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.dialogue.offer.response.decide.label": {
+      "lines": [
+        "Discuss the approach."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.scene.decision.lines": {
+      "lines": [
+        "Mara waits for your call."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.scene.decision.response.bold.label": {
+      "lines": [
+        "Move quickly and meet them at the gate."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.scene.decision.response.cautious.label": {
+      "lines": [
+        "Advance carefully and let Tovin scout."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.scene.bold_confirm.lines": {
+      "lines": [
+        "Mara nods. The watch will advance at once."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.scene.bold_confirm.response.bold.label": {
+      "lines": [
+        "To the gate."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.scene.cautious_confirm.lines": {
+      "lines": [
+        "Tovin slips ahead while Mara keeps the party together."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.briefing.scene.cautious_confirm.response.cautious.label": {
+      "lines": [
+        "Advance carefully."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.defending.title": {
+      "lines": [
+        "Hold the gate"
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.defending.description": {
+      "lines": [
+        "The persistent scene is coordinating the defense."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.defending.dialogue.reminder.lines": {
+      "lines": [
+        "Stay with the watch. The scene journal shows what it is waiting for."
+      ]
+    },
+    "gate_story.quest.gate_ambush.stage.defending.dialogue.turn_in.lines": {
+      "lines": [
+        "The gate is safe. The scene will close this quest when cleanup is durable."
+      ]
+    },
+    "gate_story.quest.gate_ambush.ui.title": {
+      "lines": [
+        "Ambush at the Gate"
+      ]
+    },
+    "gate_story.quest.gate_ambush.ui.tracker_text": {
+      "lines": [
+        "Follow Captain Mara and Scout Tovin to the gate."
+      ]
+    },
+    "gate_story.quest.gate_ambush.scene.gate_ambush.metadata.title": {
+      "lines": [
+        "Mara and Tovin defend the gate"
+      ]
+    },
+    "gate_story.quest.gate_ambush.scene.gate_ambush.step.opening.data.text": {
+      "lines": [
+        "Mara: Tovin and I will meet you at the gate."
+      ]
+    },
+    "gate_story.quest.gate_ambush.scene.gate_ambush.step.bold_line.data.text": {
+      "lines": [
+        "Mara: Shields high. We meet them head-on."
+      ]
+    },
+    "gate_story.quest.gate_ambush.scene.gate_ambush.step.cautious_line.data.text": {
+      "lines": [
+        "Tovin circles wide while Mara holds the road."
+      ]
+    },
+    "gate_story.quest.gate_ambush.encounter.gate_ambush.wave.roadside_dead.boss_bar_title": {
+      "lines": [
+        "Gate Ambush - Roadside Dead"
+      ]
+    },
+    "gate_story.quest.gate_ambush.encounter.gate_ambush.wave.gatebreaker_wave.member.gatebreaker.custom_name": {
+      "lines": [
+        "Gatebreaker"
+      ]
+    },
+    "gate_story.quest.gate_ambush.encounter.gate_ambush.wave.gatebreaker_wave.boss_bar_title": {
+      "lines": [
+        "Gate Ambush - Gatebreaker"
+      ]
+    },
+    "gate_story.quest.gate_ambush.encounter.gate_ambush.phase.gatebreaker_arrives.action.arrival_line.text": {
+      "lines": [
+        "Mara: Gatebreaker! Keep it away from the gate!"
+      ]
+    }
+  }
+}

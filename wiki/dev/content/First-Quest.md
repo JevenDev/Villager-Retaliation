@@ -2,7 +2,7 @@
 
 This guide walks through the smallest complete quest that feels playable in game.
 
-For new packs, use one quest module v2 file first. Add external dialogue trees later only when the scene grows large or needs separate ownership.
+For new packs, start with one owner bundle. The inline JSON in this guide is browser-builder input; beta.13 export replaces player-facing strings with localized references and writes exhaustive English beside `quest.json`.
 
 ## What You Are Making
 
@@ -15,12 +15,13 @@ The player can:
 3. Track the objective in the quest HUD and journal.
 4. Return to the same quest giver and turn it in.
 
-## File: Quest Module V2
+## Builder Input And Exported Files
 
 Create:
 
 ```text
-data/my_pack/quests/village_supply/bread_delivery.json
+data/my_pack/quests/village_supply/bread_delivery/quest.json
+data/my_pack/quests/village_supply/bread_delivery/locales/en_us.json
 ```
 
 ```json
@@ -209,7 +210,7 @@ What this file does:
 The repository validator accepts a quest file directly:
 
 ```text
-node tools/validate-dialogue-data.mjs --quest path/to/data/my_pack/quests/village_supply/bread_delivery.json
+node tools/validate-dialogue-data.mjs --quest path/to/data/my_pack/quests/village_supply/bread_delivery/quest.json
 ```
 
 Runtime diagnostics are available through:
@@ -257,9 +258,9 @@ Add forced dialogue only when the quest needs an event-driven interruption, warn
 data/my_pack/forced_dialogue/quests/village_supply/bread_delivery.json
 ```
 
-## Legacy V1 Note
+## Legacy Layout Note
 
-Older v1 quests still work with a quest file plus a matching dialogue tree. Do not rewrite a working v1 pack just to load it on current builds. Use v2 when creating new quests, when migrating intentionally, or when you want a simple quest to be playable from one file.
+Beta.13 diagnoses loose v1 and v2 quest files and old companion roots as unsupported; it does not load them. Convert them offline to an owner bundle before changing the pack target.
 
 ## Next Steps
 

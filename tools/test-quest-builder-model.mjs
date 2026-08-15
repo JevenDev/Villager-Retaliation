@@ -28,8 +28,11 @@ function testLinearTemplate() {
   assert.equal(quest.schema, model.SCHEMA_ID);
   assert.equal(quest.id, "example_pack:a_helping_hand");
   assert.equal(quest.entry_stage, "gather_supplies");
-  assert.equal(model.questFilePath(quest), "data/example_pack/quests/a_helping_hand.json");
+  assert.equal(model.questFilePath(quest), "data/example_pack/quests/village_errands/a_helping_hand/quest.json");
   assert.deepEqual(model.validateQuest(quest, registryMetadata), []);
+  const bundle = model.questBundleFiles(quest);
+  assert.equal(bundle.quest.metadata.title.key, "#metadata.title");
+  assert.equal(bundle.locale.messages["example_pack.quest.a_helping_hand.metadata.title"].lines[0], "A Helping Hand");
 }
 
 function testBranchingTemplate() {
@@ -105,7 +108,7 @@ function testFailureAndPrerequisiteContracts() {
 function testPersistentSceneModel() {
   const scene = model.createScene("scene_pack");
   assert.equal(scene.schema, model.SCENE_SCHEMA_ID);
-  assert.equal(model.sceneFilePath(scene), "data/scene_pack/quest_scenes/new_scene.json");
+  assert.equal(model.sceneFilePath(scene), "data/scene_pack/quests/_shared/scenes/new_scene.json");
   assert.deepEqual(model.validateScene(scene, registryMetadata), []);
   scene.steps.push({ ...scene.steps[0] });
   const codes = model.validateScene(scene, registryMetadata).map((issue) => issue.code);
@@ -120,7 +123,7 @@ function testPersistentSceneModel() {
 
 function testWorkedSceneExample() {
   const metadata = JSON.parse(fs.readFileSync("tools/datapack-builder/quest-registry-metadata.json", "utf8"));
-  const scene = JSON.parse(fs.readFileSync("example-packs/cinematic-gate-ambush/data/gate_story/quest_scenes/gate_ambush.json", "utf8"));
+  const scene = JSON.parse(fs.readFileSync("example-packs/cinematic-gate-ambush/data/gate_story/quests/gate_watch/gate_ambush/scenes/gate_ambush.json", "utf8"));
   const errors = model.validateScene(scene, metadata).filter((issue) => issue.severity === "error");
   assert.deepEqual(errors, [], errors.map((issue) => `${issue.code}: ${issue.message}`).join("\n"));
 }

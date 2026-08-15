@@ -9,7 +9,6 @@ import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
 import com.jvn.villagerretaliation.scene.compiler.SceneParser;
 import com.jvn.villagerretaliation.scene.encounter.EncounterResources;
 import com.jvn.villagerretaliation.scene.model.CompiledScene;
-import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -22,8 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 
 public final class SceneResources {
-    public static final String RESOURCE_ROOT = "quest_scenes";
-    private static volatile Cache cache = new Cache(null, Map.of(), Map.of());
+    private static volatile TestOverride testOverride = TestOverride.empty();
 
     private SceneResources() {
     }
@@ -45,7 +43,7 @@ public final class SceneResources {
     }
 
     public static void clearCache() {
-        cache = new Cache(null, Map.of(), Map.of());
+        testOverride = TestOverride.empty();
         QuestContentCatalogs.invalidate();
     }
 
@@ -53,7 +51,7 @@ public final class SceneResources {
         Map<ResourceLocation, CompiledScene> values = new LinkedHashMap<>();
         if (scenes != null) scenes.stream().filter(java.util.Objects::nonNull)
                 .sorted(Comparator.comparing(value -> value.id().toString())).forEach(value -> values.put(value.id(), value));
-        cache = new Cache(server, Map.copyOf(values), Map.of());
+        testOverride = new TestOverride(server, new ContentSnapshot(Map.copyOf(values), Map.of()));
         QuestContentCatalogs.invalidate();
     }
 
@@ -76,7 +74,7 @@ public final class SceneResources {
                 }
             });
         }
-        cache = new Cache(server, Map.copyOf(scenes), Map.copyOf(diagnostics));
+        testOverride = new TestOverride(server, new ContentSnapshot(Map.copyOf(scenes), Map.copyOf(diagnostics)));
         QuestContentCatalogs.invalidate();
     }
 
@@ -94,47 +92,38 @@ public final class SceneResources {
             EncounterResources.ContentSnapshot encounters) {
         Set<ResourceLocation> encounterTemplates = encounters.templates().values().stream()
                 .map(template -> template.id()).collect(Collectors.toUnmodifiableSet());
-        Cache snapshot = load(server, bundles, encounterTemplates);
-        return new ContentSnapshot(snapshot.scenes(), snapshot.diagnostics());
+        return load(server, bundles, encounterTemplates);
     }
 
-    private static Cache load(
+    private static ContentSnapshot load(
             MinecraftServer server,
             QuestBundleTransactions.Result bundles,
             Set<ResourceLocation> encounterTemplates) {
-        Cache current = cache;
-        if (current.server() == server) return current;
-        synchronized (SceneResources.class) {
-            current = cache;
-            if (current.server() == server) return current;
-            Map<ResourceLocation, CompiledScene> scenes = new LinkedHashMap<>();
-            Map<ResourceLocation, List<SceneDiagnostic>> diagnostics = new LinkedHashMap<>();
-            for (DatapackResourceLoader.JsonResource resource : DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT)) {
-                ResourceLocation source = resource.location();
-                var root = DatapackResourceLoader.readObject(source, "quest scene", resource.resource()).orElse(null);
-                readDefinition(source, root, encounterTemplates, scenes, diagnostics, List.of());
-            }
-            if (bundles != null) {
-                bundles.bundles().values().stream()
-                        .sorted(Comparator.comparing(bundle -> bundle.owner().key()))
-                        .forEach(bundle -> bundle.definitions()
-                                .getOrDefault(QuestBundlePath.Kind.SCENE, Map.of())
-                                .keySet().stream().sorted().forEach(id -> {
-                                    QuestBundleRuntimeMaterializer.DefinitionResult materialized =
-                                            QuestBundleRuntimeMaterializer.materializeDefinition(
-                                                    bundle, QuestBundlePath.Kind.SCENE, id);
-                                    readDefinition(
-                                            bundleSource(bundle.owner(), "scenes", id),
-                                            materialized.definition(),
-                                            encounterTemplates,
-                                            scenes,
-                                            diagnostics,
-                                            materialized.errors());
-                                }));
-            }
-            cache = new Cache(server, Map.copyOf(scenes), Map.copyOf(diagnostics));
-            return cache;
+        TestOverride override = testOverride;
+        if (override.server() == server) {
+            return override.snapshot();
         }
+        Map<ResourceLocation, CompiledScene> scenes = new LinkedHashMap<>();
+        Map<ResourceLocation, List<SceneDiagnostic>> diagnostics = new LinkedHashMap<>();
+        if (bundles != null) {
+            bundles.bundles().values().stream()
+                    .sorted(Comparator.comparing(bundle -> bundle.owner().key()))
+                    .forEach(bundle -> bundle.definitions()
+                            .getOrDefault(QuestBundlePath.Kind.SCENE, Map.of())
+                            .keySet().stream().sorted().forEach(id -> {
+                                QuestBundleRuntimeMaterializer.DefinitionResult materialized =
+                                        QuestBundleRuntimeMaterializer.materializeDefinition(
+                                                bundle, QuestBundlePath.Kind.SCENE, id);
+                                readDefinition(
+                                        bundleSource(bundle.owner(), "scenes", id),
+                                        materialized.definition(),
+                                        encounterTemplates,
+                                        scenes,
+                                        diagnostics,
+                                        materialized.errors());
+                            }));
+        }
+        return new ContentSnapshot(Map.copyOf(scenes), Map.copyOf(diagnostics));
     }
 
     private static void readDefinition(
@@ -183,7 +172,9 @@ public final class SceneResources {
             Map<ResourceLocation, List<SceneDiagnostic>> diagnostics) {
     }
 
-    private record Cache(MinecraftServer server, Map<ResourceLocation, CompiledScene> scenes,
-                         Map<ResourceLocation, List<SceneDiagnostic>> diagnostics) {
+    private record TestOverride(MinecraftServer server, ContentSnapshot snapshot) {
+        private static TestOverride empty() {
+            return new TestOverride(null, new ContentSnapshot(Map.of(), Map.of()));
+        }
     }
 }

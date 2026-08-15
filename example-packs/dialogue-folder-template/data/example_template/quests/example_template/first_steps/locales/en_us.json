@@ -1,0 +1,85 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "example_template.quest.first_steps.metadata.title": {
+      "lines": [
+        "Example First Steps"
+      ]
+    },
+    "example_template.quest.first_steps.metadata.description": {
+      "lines": [
+        "Bring one paper to a villager."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.objective.bring_paper.tracker.text": {
+      "lines": [
+        "Bring one paper."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.objective.bring_paper.tracker.complete_text": {
+      "lines": [
+        "The paper is ready."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.dialogue.offer.label": {
+      "lines": [
+        "Example First Steps"
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.dialogue.offer.lines": {
+      "lines": [
+        "Bring one paper."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.dialogue.offer.response.accept.label": {
+      "lines": [
+        "I can help."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.dialogue.turn_in.label": {
+      "lines": [
+        "Example First Steps"
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.dialogue.turn_in.lines": {
+      "lines": [
+        "Thank you for the paper."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.dialogue.turn_in.response.complete.label": {
+      "lines": [
+        "Hand over the paper."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.scene.start_quest.action.start.lines.started": {
+      "lines": [
+        "Paper first, then ink."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.scene.start_quest.action.start.lines.unavailable": {
+      "lines": [
+        "This example quest is not available right now."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.scene.complete_quest.action.turn_in.lines.completed": {
+      "lines": [
+        "Good. This is enough to write the first draft."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.scene.complete_quest.action.turn_in.lines.missing_objectives": {
+      "lines": [
+        "Bring one paper before we close this."
+      ]
+    },
+    "example_template.quest.first_steps.stage.started.scene.complete_quest.action.turn_in.lines.unavailable": {
+      "lines": [
+        "This example quest is not ready to close yet."
+      ]
+    },
+    "example_template.quest.first_steps.ui.tracker_text": {
+      "lines": [
+        "Bring one paper."
+      ]
+    }
+  }
+}

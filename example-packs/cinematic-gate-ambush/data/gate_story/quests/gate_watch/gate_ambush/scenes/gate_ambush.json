@@ -3,7 +3,9 @@
   "id": "gate_story:gate_ambush",
   "definition_version": 1,
   "metadata": {
-    "title": "Mara and Tovin defend the gate",
+    "title": {
+      "key": "#scene.gate_ambush.metadata.title"
+    },
     "example": "provider unload and encounter recovery"
   },
   "ownership": "party",
@@ -17,7 +19,9 @@
       "alias": "player",
       "type": "villagerretaliation:player",
       "required": true,
-      "capabilities": ["villagerretaliation:capability/live_entity"],
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
       "binding_source": "owner_player",
       "replacement_policy": "fixed",
       "missing_actor_policy": "wait_until_timeout",
@@ -28,24 +32,34 @@
       "alias": "captain_mara",
       "type": "villagerretaliation:villager",
       "required": true,
-      "capabilities": ["villagerretaliation:capability/pathfinding", "villagerretaliation:capability/dialogue"],
+      "capabilities": [
+        "villagerretaliation:capability/pathfinding",
+        "villagerretaliation:capability/dialogue"
+      ],
       "binding_source": "quest_provider",
       "replacement_policy": "fixed",
       "missing_actor_policy": "wait_until_timeout",
       "death_policy": "fail",
-      "filters": { "display_name": "Captain Mara" },
+      "filters": {
+        "display_name": "Captain Mara"
+      },
       "timeout_ticks": 1200
     },
     {
       "alias": "scout_tovin",
       "type": "villagerretaliation:villager",
       "required": false,
-      "capabilities": ["villagerretaliation:capability/pathfinding", "villagerretaliation:capability/dialogue"],
+      "capabilities": [
+        "villagerretaliation:capability/pathfinding",
+        "villagerretaliation:capability/dialogue"
+      ],
       "binding_source": "unbound",
       "replacement_policy": "operator_rebindable",
       "missing_actor_policy": "skip",
       "death_policy": "continue_with_snapshot",
-      "filters": { "display_name": "Scout Tovin" }
+      "filters": {
+        "display_name": "Scout Tovin"
+      }
     },
     {
       "alias": "gate",
@@ -55,22 +69,36 @@
       "binding": "village_gate",
       "replacement_policy": "fixed",
       "missing_actor_policy": "skip",
-      "filters": { "dimension": "minecraft:overworld", "x": "0", "y": "64", "z": "12" }
+      "filters": {
+        "dimension": "minecraft:overworld",
+        "x": "0",
+        "y": "64",
+        "z": "12"
+      }
     }
   ],
   "steps": [
     {
       "id": "opening",
       "type": "villagerretaliation:dialogue",
-      "actors": ["captain_mara", "scout_tovin"],
-      "data": { "text": "Mara: Tovin and I will meet you at the gate." },
+      "actors": [
+        "captain_mara",
+        "scout_tovin"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.gate_ambush.step.opening.data.text"
+        }
+      },
       "next": "move_mara",
       "failure_step": "failed"
     },
     {
       "id": "move_mara",
       "type": "villagerretaliation:move_actor",
-      "actors": ["captain_mara"],
+      "actors": [
+        "captain_mara"
+      ],
       "data": {
         "actor": "captain_mara",
         "target_actor": "gate",
@@ -87,15 +115,24 @@
     {
       "id": "move_tovin",
       "type": "villagerretaliation:move_actor",
-      "actors": ["scout_tovin"],
-      "data": { "actor": "scout_tovin", "target_actor": "gate", "timeout_ticks": 900, "path_failure_policy": "block" },
+      "actors": [
+        "scout_tovin"
+      ],
+      "data": {
+        "actor": "scout_tovin",
+        "target_actor": "gate",
+        "timeout_ticks": 900,
+        "path_failure_policy": "block"
+      },
       "next": "persisted_pause",
       "failure_step": "failed"
     },
     {
       "id": "persisted_pause",
       "type": "villagerretaliation:wait_ticks",
-      "data": { "ticks": 80 },
+      "data": {
+        "ticks": 80
+      },
       "next": "approach_choice"
     },
     {
@@ -106,64 +143,105 @@
           {
             "transition": "bold",
             "conditions": [
-              { "type": "selected_choice", "quest": "gate_story:gate_ambush", "scene_path": "stage.briefing.scene.bold_confirm", "response": "bold" }
+              {
+                "type": "selected_choice",
+                "quest": "gate_story:gate_ambush",
+                "scene_path": "stage.briefing.scene.bold_confirm",
+                "response": "bold"
+              }
             ]
           }
         ],
         "default_transition": "cautious"
       },
-      "transitions": { "bold": "bold_line", "cautious": "cautious_line" },
+      "transitions": {
+        "bold": "bold_line",
+        "cautious": "cautious_line"
+      },
       "failure_step": "failed"
     },
     {
       "id": "bold_line",
       "type": "villagerretaliation:dialogue",
-      "actors": ["captain_mara"],
-      "data": { "text": "Mara: Shields high. We meet them head-on." },
+      "actors": [
+        "captain_mara"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.gate_ambush.step.bold_line.data.text"
+        }
+      },
       "next": "start_ambush"
     },
     {
       "id": "cautious_line",
       "type": "villagerretaliation:dialogue",
-      "actors": ["captain_mara", "scout_tovin"],
-      "data": { "text": "Tovin circles wide while Mara holds the road." },
+      "actors": [
+        "captain_mara",
+        "scout_tovin"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.gate_ambush.step.cautious_line.data.text"
+        }
+      },
       "next": "scouting_wait"
     },
     {
       "id": "scouting_wait",
       "type": "villagerretaliation:wait_ticks",
-      "data": { "ticks": 40 },
+      "data": {
+        "ticks": 40
+      },
       "next": "start_ambush"
     },
     {
       "id": "start_ambush",
       "type": "villagerretaliation:start_encounter",
-      "data": { "template": "gate_story:gate_ambush", "anchor_actor": "captain_mara", "difficulty": "normal" },
+      "data": {
+        "template": "gate_story:gate_ambush",
+        "anchor_actor": "captain_mara",
+        "difficulty": "normal"
+      },
       "next": "fight",
       "failure_step": "failed"
     },
     {
       "id": "fight",
       "type": "villagerretaliation:wait_encounter",
-      "data": { "encounter_step": "start_ambush" },
+      "data": {
+        "encounter_step": "start_ambush"
+      },
       "next": "cleanup",
       "failure_step": "failed"
     },
     {
       "id": "cleanup",
       "type": "villagerretaliation:cleanup_encounter",
-      "data": { "encounter_step": "start_ambush", "force_remove": false },
+      "data": {
+        "encounter_step": "start_ambush",
+        "force_remove": false
+      },
       "next": "complete_quest",
       "failure_step": "failed"
     },
     {
       "id": "complete_quest",
       "type": "villagerretaliation:quest_transition",
-      "data": { "quest": "gate_story:gate_ambush", "target": "complete" },
+      "data": {
+        "quest": "gate_story:gate_ambush",
+        "target": "complete"
+      },
       "next": "completed",
       "failure_step": "failed"
     },
-    { "id": "completed", "type": "villagerretaliation:scene_complete" },
-    { "id": "failed", "type": "villagerretaliation:scene_fail" }
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
   ]
 }

@@ -2,14 +2,21 @@
   "schema": "villagerretaliation:quest/v2",
   "id": "example:lasting_guide",
   "metadata": {
-    "title": "The Lasting Guide",
-    "description": "Starting this quest permanently protects its exact provider."
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
+    },
+    "questline": "example"
   },
   "provider": {
     "type": "villagerretaliation:villager",
     "death_protection": "after_start",
     "filters": {
-      "professions": ["minecraft:librarian"]
+      "professions": [
+        "minecraft:librarian"
+      ]
     }
   },
   "availability": {
@@ -22,5 +29,6 @@
       "id": "begin",
       "objectives": []
     }
-  ]
+  ],
+  "localization_prefix": "example.quest.lasting_guide"
 }

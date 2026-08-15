@@ -296,9 +296,14 @@ const PACK_VERSIONS = [
     label: "VR 1.0.0-beta.12",
     packFormat: 48,
     feature: "beta.12"
+  },
+  {
+    id: "1.0.0-beta.13",
+    label: "VR 1.0.0-beta.13",
+    packFormat: 48,
+    feature: "beta.13"
   }
 ];
-
 const CURRENT_PACK_VERSION = PACK_VERSIONS[PACK_VERSIONS.length - 1].id;
 const PACK_VERSION_IDS = PACK_VERSIONS.map((version) => version.id);
 const PACK_VERSION_STORAGE_KEY = "pack_version";
@@ -3454,8 +3459,8 @@ function questTopLevelIssueDetail(entry) {
   if (!module || typeof module !== "object" || Array.isArray(module)) {
     return issueDetail("Quest JSON", "a JSON object", module, "quest-json");
   }
-  if (entry?.__sourcePath && !/^data\/[a-z0-9_.-]+\/quests\/[a-z0-9_./-]+\.json$/.test(entry.__sourcePath)) {
-    return issueDetail("Quest file path", "data/<namespace>/quests/<path>.json", entry.__sourcePath, "quest-sourcePath");
+  if (entry?.__sourcePath && !datapackBackend.questBundlePathInfo(entry.__sourcePath)) {
+    return issueDetail("Quest file path", "data/<namespace>/quests/<questline>/<quest-slug>/quest.json", entry.__sourcePath, "quest-sourcePath");
   }
   const schemaId = questSchemaConst("schema") || QUEST_MODULE_SCHEMA_ID;
   if (module.schema !== schemaId) {
@@ -3578,7 +3583,7 @@ function skillTradeIssueDetail(entry) {
 }
 
 function sceneResourceIssueDetail(path, resource) {
-  const isScene = path.includes("/quest_scenes/");
+  const isScene = path.includes("/scenes/");
   const schema = isScene ? sceneV1Schema : encounterV1Schema;
   const schemaId = isScene ? "villagerretaliation:scene/v1" : "villagerretaliation:encounter/v1";
   const required = Array.isArray(schema?.required)
@@ -5073,17 +5078,23 @@ function validate() {
   }
 
   for (const [path, source] of Object.entries(state.extraFiles)) {
-    if (!/^data\/[^/]+\/(?:quest_scenes|quest_encounters)\/.+\.json$/.test(path)) continue;
+    if (!/^data\/[^/]+\/quests\/(?:_shared\/|[^/]+\/[^/]+\/)(?:scenes|encounters)\/.+\.json$/.test(path)) continue;
     let resource;
     try {
       resource = JSON.parse(source);
     } catch {
       addCheck(checks, "error", "Scene resource JSON", `${path} is not valid JSON.`, { paths: [path] });
       continue;
+
+  const legacyQuestPaths = Object.keys(state.extraFiles)
+    .filter((path) => datapackBackend.isLegacyQuestResourcePath(path));
+  if (legacyQuestPaths.length > 0) {
+    addCheck(checks, "error", "Unsupported quest layout", `Move legacy quest resources into data/<namespace>/quests/<questline>/<quest-slug>/ or quests/_shared/. Found: ${legacyQuestPaths.join(", ")}`, { paths: legacyQuestPaths });
+  }
     }
     const detail = sceneResourceIssueDetail(path, resource);
     if (!detail) continue;
-    addCheck(checks, detail.severity || "error", path.includes("/quest_scenes/") ? "Scene resource" : "Encounter resource", detail.message, { paths: [path] });
+    addCheck(checks, detail.severity || "error", path.includes("/scenes/") ? "Scene resource" : "Encounter resource", detail.message, { paths: [path] });
   }
 
   for (const entry of state.notifications.notifications) {
@@ -7529,6 +7540,7 @@ function questModuleExample() {
   return {
     schema: QUEST_MODULE_SCHEMA_ID,
     id: `${namespace}:first_steps`,
+    localization_prefix: `${namespace}.quest.first_steps`,
     metadata: {
       title: "First Steps",
       description: "Bring three loaves of bread to a villager.",
@@ -8898,7 +8910,7 @@ function dialogueFolderTemplateFiles() {
     "pack.mcmeta": safeJson({
       pack: {
         pack_format: packVersionInfo(CURRENT_PACK_VERSION).packFormat,
-        description: "Folderized Villager Retaliation beta.12 dialogue template"
+        description: "Folderized Villager Retaliation beta.13 quest-bundle template"
       },
       villagerretaliation: {
         pack_version: CURRENT_PACK_VERSION
@@ -8907,7 +8919,7 @@ function dialogueFolderTemplateFiles() {
     "README.md": [
       "# Villager Retaliation Dialogue Folder Template",
       "",
-      "This beta.12 template gives pack developers a folder-first starting point.",
+      "This beta.13 template gives pack developers a folder-first starting point.",
       "Every dialogue request has one custom option and one response line with the text `example`.",
       "Replace ids, labels, filters, and text as your pack grows.",
       "",
@@ -9002,7 +9014,7 @@ function dialogueFolderTemplateFiles() {
     },
     weight: 10
   });
-  files["data/example_template/quests/first_steps.json"] = safeJson({
+  const templateQuest = {
     schema: "villagerretaliation:quest/v2",
     id: "example_template:first_steps",
     metadata: {
@@ -9098,7 +9110,10 @@ function dialogueFolderTemplateFiles() {
       tracker_text: "Bring one paper.",
       icon: "minecraft:paper"
     }
-  });
+  };
+  const templateQuestBundle = QuestBuilderModel.questBundleFiles(templateQuest);
+  files[templateQuestBundle.questPath] = safeJson(templateQuestBundle.quest);
+  files[templateQuestBundle.localePath] = safeJson(templateQuestBundle.locale);
   files[`${dialogueRoot}/professions/farmer/options/00_example.json`] = safeJson({
     id: "example_template.farmer.option.question",
     label: "Example Farmer Question",
@@ -9783,7 +9798,12 @@ async function handleImport(files, replaceProject = false) {
     const path = (file.webkitRelativePath || file.name).replaceAll("\\", "/");
     if (/\.zip$/i.test(file.name)) {
       const zipFiles = await readZip(new Uint8Array(await file.arrayBuffer()));
-      Object.assign(imported, normalizeImportedPaths(zipFiles));
+      const normalizedZip = normalizeImportedPaths(zipFiles);
+      if (!Object.hasOwn(normalizedZip, "pack.mcmeta")
+          || !Object.keys(normalizedZip).some((entry) => entry.startsWith("data/"))) {
+        throw new Error("A datapack ZIP must contain root pack.mcmeta and data/ content.");
+      }
+      Object.assign(imported, normalizedZip);
     } else {
       const bytes = new Uint8Array(await file.arrayBuffer());
       imported[path] = isTextPath(path) ? decodeTextFile(bytes) : bytes;

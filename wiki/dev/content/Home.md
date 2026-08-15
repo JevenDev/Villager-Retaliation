@@ -36,9 +36,9 @@ Terms that matter only to advanced scene or Java extension work are explained on
 | Dialogue tuning | Built-in conversation frequency and memory-response chances | `data/<namespace>/dialogue_tuning/` | [Dialogue](Dialogue.md#dialogue-frequency-tuning) |
 | Dialogue trees | Branching scenes and authored conversations | `data/<namespace>/dialogue_trees/<locale>/` | [Dialogue Trees](Dialogue-Trees.md) |
 | Quests | Offers, objectives, rewards, tracker text, quest triggers, and inline quest scenes | `data/<namespace>/quests/` | [Quests](Quests.md) |
-| Quest pools | Rotating, scoped sets of quest offers | `data/<namespace>/quest_pools/` | [Quests](Quests.md#quest-pools) |
+| Quest pools | Rotating, scoped sets of quest offers | `data/<namespace>/quests/_shared/pools/` | [Quests](Quests.md#quest-pools) |
 | First quest | A complete beginner quest in one quest module v2 file | `data/<namespace>/quests/` | [First Quest Guide](First-Quest.md) |
-| Persistent quest scenes | Multi-actor cinematic graphs, recovery, and controlled encounters | `data/<namespace>/quest_scenes/` | [Persistent Quest Scenes](Quest-Scenes.md) |
+| Persistent quest scenes | Multi-actor cinematic graphs, recovery, and controlled encounters | Quest-private or `data/<namespace>/quests/_shared/scenes/` | [Persistent Quest Scenes](Quest-Scenes.md) |
 | Forced dialogue | Event-driven locked scenes and chat barks | `data/<namespace>/forced_dialogue/` | [Forced Dialogue](Forced-Dialogue.md) |
 | Villager event triggers | Actions started by recorded village memories | `data/<namespace>/villager_events/` | [Villager Event Triggers](Villager-Event-Triggers.md) |
 | Notifications | HUD quest notices and ambient world text | `data/villagerretaliation/notifications/<locale>/` | [Notifications](Notifications.md) |

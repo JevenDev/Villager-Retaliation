@@ -22,9 +22,9 @@ The builder does not offer beta.11 to beta.12 migration support. Beta.12 is a ma
 
 The Preset button opens a template picker. `Starter Pack` loads a small editable beta.12 example, and `Dialogue Folder Template` loads the beta.12 folderized skeleton that mirrors `example-packs/dialogue-folder-template/` with one `example` option and line for every dialogue request.
 
-Import follows the same strict folder rules as the game for known Villager Retaliation roots. Dialogue files stay dialogue, notification files stay notifications, forced-dialogue files stay forced dialogue, and quest module v2 files become editable Quests tab entries. Legacy v1 quest JSON and dialogue-tree JSON are preserved as pass-through content, with migration suggestions shown for v1 quests instead of overwriting source files. Mixed old packs should be split into the documented folders before export.
+Import follows the same strict folder rules as the game for known Villager Retaliation roots. Exact bundle `quest.json` files become editable entries; sibling locales and private/shared companions keep their paths. Loose quest JSON and old companion roots are preserved only to show an unsupported-layout error and do not make a valid beta.13 export.
 
-The Quests tab authors `villagerretaliation:quest/v2` modules as single-file JSON entries. It loads generated registry metadata and the quest/scene/encounter JSON Schemas, offers inline versus external scene references, validates imported `quest_scenes` and `quest_encounters` pass-through files, warns about duplicate export paths and conflicting response transitions, and preserves unknown imported fields when round-tripping module JSON.
+The Quests tab authors `villagerretaliation:quest/v2` structure with convenient inline English, then exports `data/<namespace>/quests/<questline>/<quest-slug>/quest.json` plus exhaustive `locales/en_us.json`. It validates bundled scene, encounter, locale, and reward schemas, warns about duplicate paths and legacy layouts, and preserves unknown imported fields during round-trip.
 
 The generated quest schema validates provider `death_protection` (`none`, `while_active`, `after_start`), and the scene schema validates actor `lethal_damage_policy` (`normal`, `downed`). The browser editor preserves these fields when importing and exporting packs.
 
