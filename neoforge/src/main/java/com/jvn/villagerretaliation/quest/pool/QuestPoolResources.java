@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -30,15 +31,24 @@ public final class QuestPoolResources {
     }
 
     public static void warm(MinecraftServer server) {
-        pools(server);
+        QuestContentCatalogs.warm(server);
     }
 
     public static void clearCache() {
         cache = new Cache(null, List.of());
         SELECTION_CACHE.clear();
+        QuestContentCatalogs.invalidate();
     }
 
     public static List<QuestPoolDefinition> pools(MinecraftServer server) {
+        return QuestContentCatalogs.current(server).pools();
+    }
+
+    public static ContentSnapshot snapshotForCatalog(MinecraftServer server) {
+        return new ContentSnapshot(load(server));
+    }
+
+    private static List<QuestPoolDefinition> load(MinecraftServer server) {
         Cache current = cache;
         if (current.server() == server) {
             return current.pools();
@@ -234,6 +244,12 @@ public final class QuestPoolResources {
             values.add(element.getAsString());
         }
         return List.copyOf(values);
+    }
+
+    public record ContentSnapshot(List<QuestPoolDefinition> pools) {
+        public ContentSnapshot {
+            pools = pools == null ? List.of() : List.copyOf(pools);
+        }
     }
 
     private record Cache(MinecraftServer server, List<QuestPoolDefinition> pools) {
