@@ -211,7 +211,7 @@ public final class CourierWorker implements HiredRoleWorker {
         int cargoBefore = cargoItemCount(context);
         BlockPos selectedOutput = output;
         while (context.inventory().hasOutputItems()
-                && context.inventory().depositOutputToAssignedStorageAt(
+                && context.inventory().depositCourierOutputToAssignedStorageAt(
                         selectedOutput,
                         stack -> AssignedStorageService.courierOutputStorageAccepts(level, villager, selectedOutput, stack))) {
         }

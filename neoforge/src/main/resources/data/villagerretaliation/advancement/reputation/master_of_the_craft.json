@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/honest_work",
+  "display": {
+    "icon": {
+      "id": "minecraft:diamond_pickaxe"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.master_of_the_craft.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.master_of_the_craft.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

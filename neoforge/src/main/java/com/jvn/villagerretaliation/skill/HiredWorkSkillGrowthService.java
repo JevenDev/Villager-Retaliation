@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.List;
 import java.util.ArrayList;
@@ -66,6 +67,10 @@ public final class HiredWorkSkillGrowthService {
         if (hirer != null && result.increased()) {
             VillagerReputationNetworking.sendProfile(hirer, villager, profile);
             sendFeedback(hirer, villager, result.increases().getFirst().skill());
+            result.increases().stream()
+                    .filter(increase -> increase.newValue() >= VillagerSkillSet.MAX_VALUE)
+                    .forEach(increase -> VillagerReputationAdvancements.onSkillMaxedThroughWork(
+                            hirer, villager, increase.skill()));
         }
         return result;
     }

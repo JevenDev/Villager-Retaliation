@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/master_of_the_craft",
+  "display": {
+    "icon": {
+      "id": "minecraft:nether_star"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.master_of_all_trades.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.master_of_all_trades.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

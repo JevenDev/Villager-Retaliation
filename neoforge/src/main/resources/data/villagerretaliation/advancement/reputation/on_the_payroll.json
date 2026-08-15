@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/payday",
+  "display": {
+    "icon": {
+      "id": "minecraft:diamond"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.on_the_payroll.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.on_the_payroll.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

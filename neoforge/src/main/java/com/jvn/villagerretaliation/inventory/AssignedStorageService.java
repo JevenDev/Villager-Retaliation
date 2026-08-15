@@ -63,6 +63,10 @@ public final class AssignedStorageService {
         return !assignedPaymentStorage(level, villager).isEmpty();
     }
 
+    public static boolean hasLoadedAssignedStorage(ServerLevel level, Villager villager) {
+        return !liveContainerCandidates(level, villager).isEmpty();
+    }
+
     public static boolean hasLoadedAssignedPaymentStorage(ServerLevel level, Villager villager) {
         return !livePaymentContainerCandidates(level, villager).isEmpty();
     }

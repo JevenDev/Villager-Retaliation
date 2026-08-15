@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.allegiance;
 
+import com.jvn.villagerretaliation.interaction.VillagerAssignmentStore;
 import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.ArrayDeque;
 import java.util.Comparator;
@@ -368,6 +370,9 @@ public final class VillageAllegianceService {
         }
         assignKnown(level, villager, current.get(), AllegianceAssignmentSource.SETTLEMENT,
                 villager.blockPosition());
+        VillagerAssignmentStore.commandOwner(villager)
+                .map(ownerId -> level.getServer().getPlayerList().getPlayer(ownerId))
+                .ifPresent(VillagerReputationAdvancements::onHousewarming);
         VillageAllegianceReassignmentService.complete(villager);
         return true;
     }
