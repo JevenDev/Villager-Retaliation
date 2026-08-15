@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/commonfolk",
+  "display": {
+    "icon": {
+      "id": "minecraft:white_bed"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.housewarming.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.housewarming.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

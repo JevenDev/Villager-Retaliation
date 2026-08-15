@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
@@ -98,7 +99,7 @@ public final class VillagerCommandController {
             if (!owner.isAlive() || owner.isSpectator() || !villager.isAlive()) {
                 return durableCommand ? TickResult.WAITING_FOR_OWNER : TickResult.OWNER_LOST;
             }
-            updateJourney(level, villager);
+            updateJourney(level, villager, owner);
             syncVehicle(villager, owner);
             double maxDistance = VillagerRetaliationConfig.MAX_FOLLOW_DISTANCE.get();
             if (!durableCommand && villager.distanceToSqr(owner) > maxDistance * maxDistance) {
@@ -160,11 +161,13 @@ public final class VillagerCommandController {
         }
     }
 
-    private static void updateJourney(ServerLevel level, Villager villager) {
+    private static void updateJourney(ServerLevel level, Villager villager, ServerPlayer owner) {
         if (!TickThrottle.consume(
                 villager.getUUID(), NEXT_JOURNEY_UPDATE_TICKS, level.getGameTime(), JOURNEY_UPDATE_INTERVAL_TICKS)) return;
         VillagerAssignmentStore.updateJourney(
                 villager, villager.getVehicle() instanceof Boat, level.getBiome(villager.blockPosition()).is(BiomeTags.IS_OCEAN));
+        VillagerReputationAdvancements.onFollowerJourneyUpdated(
+                owner, VillagerAssignmentStore.journey(villager).distanceBlocks());
     }
 
     private static void syncVehicle(Villager villager, ServerPlayer owner) {

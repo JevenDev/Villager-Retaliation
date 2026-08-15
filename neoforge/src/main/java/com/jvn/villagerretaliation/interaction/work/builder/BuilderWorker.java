@@ -19,6 +19,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -109,7 +110,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
 
         int index = skipAlreadyPlaced(level, context.state(), plan.get(), origin);
         if (index >= plan.get().blocks().size()) {
-            return finishBuild(level, villager, context, plan.get());
+            return finishBuild(level, villager, hirer, context, plan.get());
         }
 
         BuilderStructureScanner.BuildBlock block = plan.get().blocks().get(index);
@@ -2601,6 +2602,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
     private WorkResult finishBuild(
             ServerLevel level,
             Villager villager,
+            ServerPlayer hirer,
             HiredWorkContext context,
             BuilderStructureScanner.StructurePlan plan) {
         Map<String, String> replacements = BuilderTaskState.replacements(context.state());
@@ -2611,6 +2613,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
         Optional<java.util.UUID> jobId = BuilderTaskState.jobId(context.state());
         BuilderPaymentEscrowService.releaseToWallet(villager, jobId);
         jobId.ifPresent(id -> ConstructionBlueprintItem.completeMatchingBlueprints(level, id));
+        if (hirer != null) {
+            BuilderTaskState.structureId(context.state())
+                    .ifPresent(structureId -> VillagerReputationAdvancements.onBlueprintCompleted(hirer, structureId));
+        }
         BuilderTaskState.clearTask(context.state());
         HiredWorkerBrain.clearFailure(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);

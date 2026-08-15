@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.reputation.CourierDeliveryTracker;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.ArrayList;
@@ -658,6 +659,7 @@ public final class HiredJobInventory implements Container {
                 continue;
             }
             int removed = Math.min(remaining, stack.getCount());
+            CourierDeliveryTracker.onMaterialUsed(this.villager, stack);
             stack.shrink(removed);
             if (stack.isEmpty()) {
                 this.items.set(slot, ItemStack.EMPTY);
@@ -1159,6 +1161,23 @@ public final class HiredJobInventory implements Container {
                     this.villager,
                     storagePos,
                     output.stack());
+        });
+    }
+
+    public boolean depositCourierOutputToAssignedStorageAt(
+            BlockPos storagePos,
+            Predicate<ItemStack> outputFilter) {
+        if (storagePos == null) {
+            return false;
+        }
+        Predicate<ItemStack> safeFilter = outputFilter == null ? ignored -> true : outputFilter;
+        return depositOneOutputStack(output -> {
+            if (!safeFilter.test(output.stack())) {
+                return output.stack();
+            }
+            CourierDeliveryTracker.markDelivered(output.stack(), this.villager);
+            return AssignedStorageService.depositStackAtAssignedStorage(
+                    this.villager, storagePos, output.stack());
         });
     }
 

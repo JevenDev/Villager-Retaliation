@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/honest_work",
+  "display": {
+    "icon": {
+      "id": "minecraft:cake"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.family_business.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.family_business.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

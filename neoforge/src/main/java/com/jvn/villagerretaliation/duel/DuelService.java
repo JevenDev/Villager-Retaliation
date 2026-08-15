@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillPractice;
 import com.jvn.villagerretaliation.skill.VillagerSkillProgressionService;
@@ -721,6 +722,7 @@ public final class DuelService {
                 result, duel.stake(), server.overworld().getGameTime(), BlockPos.containing(duel.center()).asLong(), villageId,
                 duel.spectators(), record.villagerWins(), record.villagerLosses()));
         if (result == DuelResult.PLAYER_WIN && player != null) {
+            VillagerReputationAdvancements.onDuelWon(player);
             DuelSpectators.reward(level, duel.spectators(), duel.center(), duel.arenaRadius(), player);
         }
         if (knockedOut && VillagerSecondWindCompat.isActive()) {

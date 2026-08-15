@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceState;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceEntityData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService;
@@ -2497,11 +2498,17 @@ public final class VillagerInteractionService {
                     "That would change where I belong and which village I defend. Ask me once more within 30 seconds if you are certain.");
             return;
         }
+        boolean wasUnaffiliated = VillageAllegianceApi.get(villager)
+                .map(data -> data.state() == AllegianceState.UNAFFILIATED)
+                .orElse(false);
         if (!VillageAllegianceService.reassignToCurrentVillage(level, villager)) {
             sendVillagerNotice(player, villager, "I cannot change my allegiance right now.");
             return;
         }
         VillageAllegianceReassignmentService.complete(villager);
+        if (wasUnaffiliated) {
+            VillagerReputationAdvancements.onHousewarming(player);
+        }
         VillageAllegianceEntityData.annotateLatestHistoryActor(villager, player.getUUID());
         String villageName = registry.canonicalRecord(current.get())
                 .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)

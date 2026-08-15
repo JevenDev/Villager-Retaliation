@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
@@ -708,6 +709,8 @@ public final class HiredVillagerContractService {
             return AutoPaymentResult.INSUFFICIENT_FUNDS;
         }
         PaymentBoxChunkLoadingService.releaseLoads(level, villager);
+        currentContractHirer(villager).ifPresent(hirerId ->
+                VillagerReputationAdvancements.onWagesPaid(level, hirerId, dailyCost));
         HirePaymentEscrow.releaseEarned(level, villager);
         extendActiveContract(level, tag, 1, dailyCost);
         tag.putString(STATUS_TAG, STATUS_ACTIVE);

@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -129,6 +130,11 @@ public final class VillagerGiftRequestHandler {
             );
         }
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
+        if (giftPreference.matched()
+                && (giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.LIKED
+                || giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.LOVED)) {
+            VillagerReputationAdvancements.onPreferredGift(player);
+        }
         if (!rejected) {
             VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference, reputationValue);
             rememberGearGift(level, villager, player, giftedStack);

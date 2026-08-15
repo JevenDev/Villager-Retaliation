@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/housewarming",
+  "display": {
+    "icon": {
+      "id": "minecraft:leather_boots"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.are_we_there_yet.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.are_we_there_yet.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

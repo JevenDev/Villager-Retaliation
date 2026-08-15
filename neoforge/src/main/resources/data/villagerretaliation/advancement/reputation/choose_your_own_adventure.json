@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/once_upon_a_time",
+  "display": {
+    "icon": {
+      "id": "minecraft:compass"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.choose_your_own_adventure.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.choose_your_own_adventure.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

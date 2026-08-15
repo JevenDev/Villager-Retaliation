@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/commonfolk",
+  "display": {
+    "icon": {
+      "id": "minecraft:poppy"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.its_the_thought_that_counts.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.its_the_thought_that_counts.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
