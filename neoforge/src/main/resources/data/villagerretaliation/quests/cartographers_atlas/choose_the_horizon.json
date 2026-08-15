@@ -3,20 +3,18 @@
   "id": "villagerretaliation:choose_the_horizon",
   "metadata": {
     "title": "Choose the Horizon",
-    "description": "Set the completed atlas toward the drowned coast or the dark roof road.",
+    "description": "Choose and prepare the atlas's first great Overworld route.",
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
       "role.story",
       "activity.choice",
       "activity.deliver",
-      "activity.explore",
       "activity.gather",
       "destination.overworld",
-      "destination.remote",
       "tier.late",
-      "difficulty.hard",
-      "commitment.expedition",
+      "difficulty.normal",
+      "commitment.standard",
       "theme.exploration",
       "feature.branching",
       "feature.scene"
@@ -76,7 +74,7 @@
             "dark_roof"
           ],
           "tracker": {
-            "text": "Choose the final atlas horizon with the cartographer.",
+            "text": "Choose the atlas's Overworld horizon with the cartographer.",
             "complete_text": "You chose the {objective_choice_value} horizon.",
             "show_progress": true,
             "progress": 0.45
@@ -93,8 +91,8 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for a horizon.",
-            "This final choice closes the other horizon. Coast continues through monuments and pays in conduit materials; dark roof continues through a mansion and pays in mansion treasure."
+            "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for its first great horizon.",
+            "This permanent choice closes the other Overworld route. The coast kit prepares for a monument survey; the dark roof kit prepares for a mansion survey."
           ],
           "responses": [
             {
@@ -116,7 +114,7 @@
                 {
                   "type": "notification",
                   "trigger": "quest.updated",
-                  "text": "You chose the drowned coast. Reach the Ocean Monument, then bring back the prismarine proof."
+                  "text": "You chose the drowned coast. Assemble a spyglass, boat, and provisions before the monument survey."
                 },
                 {
                   "type": "start_scene",
@@ -148,7 +146,7 @@
                 {
                   "type": "notification",
                   "trigger": "quest.updated",
-                  "text": "You chose the dark roof road. Reach the Woodland Mansion, then bring back the binding proof."
+                  "text": "You chose the dark roof road. Assemble a shield, crossbow, and torches before the mansion survey."
                 },
                 {
                   "type": "start_scene",
@@ -174,7 +172,7 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "This final fork closes the other route: coast means monuments and conduit materials; dark roof means a mansion and rare mansion treasure."
+            "This permanent Overworld fork closes the other route: coast prepares for a monument survey; dark roof prepares for a mansion survey."
           ],
           "responses": [
             {
@@ -201,7 +199,7 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "This choice closes the other horizon. Coast leads to guardian work and conduit materials; dark roof leads to illagers and rare mansion treasure."
+                  "This choice closes the other Overworld horizon. Coast needs a spyglass, boat, and provisions; dark roof needs a shield, crossbow, and torches."
                 ],
                 "unavailable": [
                   "I do not have your horizon page open right now."
@@ -224,7 +222,7 @@
         }
       ],
       "ui": {
-        "tracker_text": "Choose the final atlas horizon from the cartographer's branch options.",
+        "tracker_text": "Choose the atlas's Overworld horizon from the cartographer's branch options.",
         "show_progress": true,
         "progress": 0.45
       }
@@ -233,47 +231,48 @@
       "id": "coast_final",
       "objectives": [
         {
-          "id": "visit_monument",
-          "type": "structure_visit",
-          "structure": "minecraft:monument",
-          "search_radius": 384,
-          "discovery_radius": 160,
+          "id": "carry_spyglass",
+          "type": "item_check",
+          "item": "minecraft:spyglass",
+          "count": 1,
+          "consume": false,
           "tracker": {
-            "text": "Reach the Ocean Monument near {target_x}, {target_z}.",
-            "complete_text": "The drowned coast mark is confirmed.",
+            "text": "Carry 1 spyglass for the drowned-coast survey.",
+            "complete_text": "The survey spyglass is ready.",
             "show_progress": true,
             "progress": 0.65
           }
         },
         {
-          "id": "bring_prismarine_crystals",
+          "id": "carry_boat",
           "type": "item_check",
-          "item": "minecraft:prismarine_crystals",
-          "count": 4,
+          "item": "minecraft:oak_boat",
+          "count": 1,
+          "consume": false,
           "tracker": {
-            "text": "Bring 4 prismarine crystals to bind the drowned coast horizon.",
-            "complete_text": "The coast binding crystals are ready.",
+            "text": "Carry 1 oak boat for the drowned-coast route.",
+            "complete_text": "The coast boat is ready.",
             "show_progress": true,
-            "progress": 0.8
+            "progress": 0.75
           }
         },
         {
-          "id": "bring_prismarine_shards",
+          "id": "bring_provisions",
           "type": "item_check",
-          "item": "minecraft:prismarine_shard",
-          "count": 4,
+          "item": "minecraft:cooked_cod",
+          "count": 16,
           "tracker": {
-            "text": "Bring 4 prismarine shards to set the coast margin.",
-            "complete_text": "The coast margin shards are ready.",
+            "text": "Bring 16 cooked cod for the coast expedition.",
+            "complete_text": "The coast provisions are packed.",
             "show_progress": true,
-            "progress": 0.85
+            "progress": 0.9
           }
         }
       ],
       "complete_when": [
-        "visit_monument",
-        "bring_prismarine_crystals",
-        "bring_prismarine_shards"
+        "carry_spyglass",
+        "carry_boat",
+        "bring_provisions"
       ],
       "next": "coast_chosen",
       "dialogue": {
@@ -283,12 +282,12 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The drowned coast needs prismarine proof before I can set it into the final folio."
+            "Before the drowned-coast page opens, assemble a spyglass, a boat, and enough provisions for the monument survey."
           ],
           "responses": [
             {
               "id": "details",
-              "label": "Repeat the proof",
+              "label": "Repeat the kit",
               "scene": "reminder_details",
               "order": 0
             },
@@ -316,7 +315,7 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Reach the Ocean Monument near the mark, then bring 4 prismarine crystals and 4 prismarine shards to bind the drowned coast horizon."
+                  "Carry 1 spyglass and 1 oak boat, then bring 16 cooked cod for the drowned-coast expedition."
                 ],
                 "unavailable": [
                   "I do not have your horizon page open right now."
@@ -327,7 +326,7 @@
         }
       ],
       "ui": {
-        "tracker_text": "Reach the Ocean Monument, then bring prismarine crystals and shards.",
+        "tracker_text": "Prepare a spyglass, boat, and provisions for the drowned coast.",
         "show_progress": true,
         "progress": 0.85
       }
@@ -336,48 +335,48 @@
       "id": "dark_roof_final",
       "objectives": [
         {
-          "id": "visit_mansion",
-          "type": "structure_visit",
-          "structure": "minecraft:woodland_mansion",
-          "search_radius": 768,
-          "discovery_radius": 192,
+          "id": "carry_shield",
+          "type": "item_check",
+          "item": "minecraft:shield",
+          "count": 1,
+          "consume": false,
           "tracker": {
-            "text": "Reach the Woodland Mansion near {target_x}, {target_z}.",
-            "complete_text": "The dark roof mark is confirmed.",
+            "text": "Carry 1 shield for the dark-roof survey.",
+            "complete_text": "The survey shield is ready.",
             "show_progress": true,
             "progress": 0.65
           }
         },
         {
-          "id": "bring_books",
+          "id": "carry_crossbow",
           "type": "item_check",
-          "item": "minecraft:book",
-          "count": 6,
+          "item": "minecraft:crossbow",
+          "count": 1,
+          "consume": false,
           "tracker": {
-            "text": "Bring 6 books for the dark roof index.",
-            "complete_text": "The dark roof index is ready.",
+            "text": "Carry 1 crossbow for the mansion road.",
+            "complete_text": "The road crossbow is ready.",
             "show_progress": true,
             "progress": 0.75
           }
         },
         {
-          "id": "carry_totem",
+          "id": "bring_torches",
           "type": "item_check",
-          "item": "minecraft:totem_of_undying",
-          "count": 1,
-          "consume": false,
+          "item": "minecraft:torch",
+          "count": 32,
           "tracker": {
-            "text": "Carry a Totem of Undying as proof the dark roof road was not imaginary.",
-            "complete_text": "The dark roof proof is ready.",
+            "text": "Bring 32 torches for the dark-roof expedition.",
+            "complete_text": "The dark-roof torches are packed.",
             "show_progress": true,
             "progress": 0.9
           }
         }
       ],
       "complete_when": [
-        "visit_mansion",
-        "bring_books",
-        "carry_totem"
+        "carry_shield",
+        "carry_crossbow",
+        "bring_torches"
       ],
       "next": "dark_roof_chosen",
       "dialogue": {
@@ -387,12 +386,12 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The dark roof road needs books and a totem before I can set it into the final folio."
+            "Before the dark-roof page opens, assemble a shield, a crossbow, and enough torches for the mansion survey."
           ],
           "responses": [
             {
               "id": "details",
-              "label": "Repeat the proof",
+              "label": "Repeat the kit",
               "scene": "reminder_details",
               "order": 0
             },
@@ -420,7 +419,7 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Reach the Woodland Mansion near the mark, then bring 6 books and carry a Totem of Undying to bind the dark roof road."
+                  "Carry 1 shield and 1 crossbow, then bring 32 torches for the dark-roof expedition."
                 ],
                 "unavailable": [
                   "I do not have your horizon page open right now."
@@ -431,7 +430,7 @@
         }
       ],
       "ui": {
-        "tracker_text": "Reach the Woodland Mansion, then bring books and a totem.",
+        "tracker_text": "Prepare a shield, crossbow, and torches for the dark roof.",
         "show_progress": true,
         "progress": 0.9
       }
@@ -446,7 +445,7 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The drowned coast proof is here. The atlas can finally point beyond its own margin."
+            "The drowned-coast kit is ready. The atlas can point toward its first great Overworld route."
           ],
           "responses": [
             {
@@ -475,13 +474,13 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "Done. The atlas has chosen the drowned coast, and the old blank promise has become a horizon."
+                  "Done. The atlas has chosen its first Overworld horizon. The monument survey comes next."
                 ],
                 "missing_objectives": [
-                  "The coast binding still needs the monument mark and prismarine proof."
+                  "The coast kit still needs its spyglass, boat, and provisions."
                 ],
                 "unavailable": [
-                  "I cannot set the coast horizon until the proof is all here."
+                  "I cannot set the coast horizon until the route kit is here."
                 ]
               }
             }
@@ -510,7 +509,7 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The dark roof proof is here. The atlas can finally point beyond its own courage."
+            "The dark-roof kit is ready. The atlas can point toward its first great Overworld route."
           ],
           "responses": [
             {
@@ -539,13 +538,13 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "Done. The atlas has chosen the dark roof road, and the old blank promise has become a horizon."
+                  "Done. The atlas has chosen its first Overworld horizon. The mansion survey comes next."
                 ],
                 "missing_objectives": [
-                  "The dark roof binding still needs the mansion mark, the books, and the totem proof."
+                  "The dark-roof kit still needs its shield, crossbow, and torches."
                 ],
                 "unavailable": [
-                  "I cannot set the dark roof horizon until the proof is all here."
+                  "I cannot set the dark-roof horizon until the route kit is here."
                 ]
               }
             }
@@ -566,11 +565,11 @@
     }
   ],
   "rewards": {
-    "experience": 360,
-    "gossip_reputation": 9,
+    "experience": 220,
+    "gossip_reputation": 6,
     "loot_table": "villagerretaliation:quest/choose_the_horizon",
     "memory_event": "player_completed_quest",
-    "reputation": 20
+    "reputation": 14
   },
   "ui": {
     "title": "Choose the Horizon",

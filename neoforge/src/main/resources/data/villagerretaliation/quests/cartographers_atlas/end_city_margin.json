@@ -3,7 +3,7 @@
   "id": "villagerretaliation:end_city_margin",
   "metadata": {
     "title": "End City Margin",
-    "description": "Carry the atlas into the End, survey an End City, and return with shulker proof.",
+    "description": "Add an End City route to the atlas and return with shulker proof.",
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration",
@@ -137,7 +137,7 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The last blank margin waits in the End, where roads float and cities pretend distance still makes sense.",
+            "An End City is not a new place merely because this atlas lacks it. Its outer margin still needs a road where distance stops making sense.",
             "Find the city, record its shulkers, and bring shells with chorus fruit. This is how the outer margin learns to hold."
           ],
           "responses": [

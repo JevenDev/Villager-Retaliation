@@ -358,7 +358,7 @@
           "show_for_babies": false,
           "lines": [
             "The fruit all came from one route, though none of it agrees where that route was.",
-            "The chorus trail is marked. The final survey will follow living purple branches."
+            "The chorus trail is marked. The concluding survey for this expedition will follow living purple branches."
           ],
           "responses": [
             {
@@ -383,7 +383,7 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "The chorus trail is marked. The final survey will follow living purple branches.",
+                  "The chorus trail is marked. The concluding survey for this expedition will follow living purple branches.",
                   "The fruit all came from one route, though none of it agrees where that route was."
                 ],
                 "missing_objectives": [
@@ -527,7 +527,7 @@
           "show_for_babies": false,
           "lines": [
             "The city bearing holds, even if its stairways seem to resent the ground.",
-            "The city light is marked. The final survey will follow pale towers."
+            "The city light is marked. The concluding survey for this expedition will follow pale towers."
           ],
           "responses": [
             {
@@ -552,7 +552,7 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "The city light is marked. The final survey will follow pale towers.",
+                  "The city light is marked. The concluding survey for this expedition will follow pale towers.",
                   "The city bearing holds, even if its stairways seem to resent the ground."
                 ],
                 "missing_objectives": [

@@ -3,7 +3,7 @@
   "id": "villagerretaliation:city_lantern",
   "metadata": {
     "title": "The Way Home",
-    "description": "Complete the End City branch with rods, shells, and a final tower survey.",
+    "description": "Complete this End City branch with rods, shells, and a concluding tower survey.",
     "questline": "end_survey",
     "parent": "villagerretaliation:choose_a_star",
     "tags": [
@@ -119,7 +119,7 @@
           "order": -20,
           "show_for_babies": false,
           "lines": [
-            "One city light is marked. The last survey must make the road home visible too.",
+            "One city light is marked. The concluding survey for this expedition must make the road home visible too.",
             "Climb the tower, set End rods along the return, and recover shells for the archive.",
             "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
           ],

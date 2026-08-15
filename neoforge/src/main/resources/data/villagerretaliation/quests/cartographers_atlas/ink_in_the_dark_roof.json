@@ -27,13 +27,13 @@
   "provider": {
     "type": "villagerretaliation:villager",
     "filters": {
-      "min_villager_level": "journeyman",
+      "min_villager_level": "master",
       "professions": [
         "minecraft:cartographer"
       ],
       "skills": {
         "cartography": {
-          "min": 30
+          "min": 54
         }
       }
     }

@@ -61,15 +61,28 @@
           "entity": "minecraft:ender_dragon",
           "count": 1,
           "tracker": {
-            "text": "Defeat the Ender Dragon.",
+            "text": "Bottle 1 dragon breath while the dragon is alive, then defeat the Ender Dragon.",
             "complete_text": "The roar has ended.",
             "show_progress": true,
             "progress": 0.55
           }
+        },
+        {
+          "id": "bring_dragon_breath",
+          "type": "item_check",
+          "item": "minecraft:dragon_breath",
+          "count": 1,
+          "tracker": {
+            "text": "Bring 1 dragon breath as proof of the roar.",
+            "complete_text": "The dragon breath is ready.",
+            "show_progress": true,
+            "progress": 0.7
+          }
         }
       ],
       "complete_when": [
-        "defeat_dragon"
+        "defeat_dragon",
+        "bring_dragon_breath"
       ],
       "next": "carry_proof",
       "dialogue": {
@@ -80,7 +93,7 @@
           "show_for_babies": false,
           "lines": [
             "The Last Ember notes end at a place I cannot make sound harmless.",
-            "If you go through the gate and return after the dragon, bring proof that the silence after the roar belongs to the living."
+            "If you go through the gate, bottle the dragon's breath while it still falls, end the roar, and return with proof that the silence belongs to the living."
           ],
           "responses": [
             {
@@ -101,7 +114,7 @@
           "order": -19,
           "show_for_babies": false,
           "lines": [
-            "There is no gentle wording for this stage. Face the dragon, and come back alive enough to argue about the notes."
+            "There is no gentle wording for this stage. Bottle the dragon's breath while it still falls, face the dragon, and come back alive enough to argue about the notes."
           ],
           "responses": [
             {
@@ -129,7 +142,7 @@
                   "The Last Ember has already been carried home."
                 ],
                 "started": [
-                  "Defeat the Ender Dragon. If that sounds too plain, good. Plain words leave more room for careful choices."
+                  "Bottle the dragon's breath while it still falls, then defeat the Ender Dragon. Plain words leave more room for careful choices."
                 ],
                 "unavailable": [
                   "The Last Ember is not ready to ask this of you right now."
@@ -152,7 +165,7 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Defeat the Ender Dragon, then bring dragon breath and end stone back to the village."
+                  "Bottle 1 dragon breath while the Ender Dragon is alive, defeat it, then bring 16 end stone back to the village."
                 ],
                 "unavailable": [
                   "The dragon answer is not open right now."
@@ -175,7 +188,7 @@
         }
       ],
       "ui": {
-        "tracker_text": "Defeat the Ender Dragon.",
+        "tracker_text": "Bottle 1 dragon breath while the dragon is alive, then defeat the Ender Dragon.",
         "show_progress": true,
         "progress": 0.55
       }
@@ -183,18 +196,6 @@
     {
       "id": "carry_proof",
       "objectives": [
-        {
-          "id": "bring_dragon_breath",
-          "type": "item_check",
-          "item": "minecraft:dragon_breath",
-          "count": 1,
-          "tracker": {
-            "text": "Bring 1 dragon breath as proof of the roar.",
-            "complete_text": "The dragon breath is ready.",
-            "show_progress": true,
-            "progress": 0.82
-          }
-        },
         {
           "id": "bring_end_stone",
           "type": "item_check",
@@ -209,7 +210,6 @@
         }
       ],
       "complete_when": [
-        "bring_dragon_breath",
         "bring_end_stone"
       ],
       "next": "return",
@@ -220,7 +220,7 @@
           "order": -19,
           "show_for_babies": false,
           "lines": [
-            "The roar has ended. Bring dragon breath and end stone so the village can hold the truth without needing to invent it."
+            "The roar has ended. Bring end stone so the village can set something solid beside the bottled breath."
           ],
           "responses": [
             {
@@ -245,7 +245,7 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Bring 1 dragon breath and 16 end stone after the dragon is defeated."
+                  "Bring 16 end stone now that the dragon is defeated; the bottled breath is already accounted for."
                 ],
                 "unavailable": [
                   "The proof can wait until the dragon has fallen."
@@ -262,7 +262,7 @@
         }
       ],
       "ui": {
-        "tracker_text": "Bring 1 dragon breath and 16 end stone.",
+        "tracker_text": "Bring 16 end stone to complete the proof.",
         "show_progress": true,
         "progress": 0.9
       }
