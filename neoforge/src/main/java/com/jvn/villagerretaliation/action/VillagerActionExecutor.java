@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -168,14 +169,22 @@ public final class VillagerActionExecutor {
             VillagerActionDefinition action,
             Map<String, String> replacements) {
         String trigger = action.notificationTrigger().isBlank() ? "quest.trigger" : action.notificationTrigger();
+        Map<String, String> notificationReplacements = new LinkedHashMap<>(replacements);
+        if (action.questId() != null) {
+            String questTitle = VillagerQuestResources.quest(context.level().getServer(), action.questId())
+                    .map(definition -> definition.title())
+                    .orElse(action.questId().toString());
+            notificationReplacements.putIfAbsent("quest", questTitle);
+            notificationReplacements.putIfAbsent("quest_id", action.questId().toString());
+        }
         String fallback = action.text().isBlank() ? "Quest updated: {quest}" : action.text();
         VillagerNotifications.sendHud(
                 context.player(),
                 context.level(),
                 context.villager(),
                 trigger,
-                replacements,
-                VillagerDialogueResources.resolveTemplate(fallback, replacements),
+                notificationReplacements,
+                VillagerDialogueResources.resolveTemplate(fallback, notificationReplacements),
                 VillagerReputationNoticeKind.QUEST
         );
         return VillagerActionResult.success();

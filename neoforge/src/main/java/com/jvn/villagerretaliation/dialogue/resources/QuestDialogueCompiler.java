@@ -535,15 +535,29 @@ public final class QuestDialogueCompiler {
             return;
         }
         JsonArray array = new JsonArray();
+        boolean transitionAdded = false;
         if (actions != null) {
             for (JsonObject action : actions) {
                 array.add(action.deepCopy());
+                if (!transitionAdded && transitionAction != null && suspendsForScene(action)) {
+                    // Keep the transition adjacent to a blocking cinematic. The action
+                    // runner launches the scene first, then commits this transition before
+                    // returning control to the player.
+                    array.add(transitionAction);
+                    transitionAdded = true;
+                }
             }
         }
-        if (transitionAction != null) {
+        if (transitionAction != null && !transitionAdded) {
             array.add(transitionAction);
         }
         target.add("actions", array);
+    }
+
+    private static boolean suspendsForScene(JsonObject action) {
+        return action != null
+                && "start_scene".equals(DatapackJsonReader.readString(action, "type"))
+                && DatapackJsonReader.readBoolean(action, "wait_for_result", false);
     }
 
     private static void copyArrayIfPresent(JsonObject source, JsonObject target, String key) {

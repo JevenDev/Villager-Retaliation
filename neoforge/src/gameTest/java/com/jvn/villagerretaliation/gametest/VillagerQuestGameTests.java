@@ -2000,7 +2000,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "choose_horizon_response_commit")
     public static void builtInChooseTheHorizonBranchesRoundTripResponseHistory(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         VillagerQuestResources.clearCache();
@@ -5863,19 +5863,16 @@ public final class VillagerQuestGameTests {
 
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), questId);
-        if (progress == null) {
-            SceneSavedData scenes = SceneSavedData.get(level);
-            var continuation = scenes.continuations().stream()
-                    .filter(value -> value.playerId().equals(player.getUUID()) && !value.completionReceipt())
-                    .findFirst().orElse(null);
-            helper.assertTrue(continuation != null, branchId + " waiting scene continuation missing after response");
-            var waitingScene = scenes.get(continuation.sceneInstanceId()).orElse(null);
-            helper.assertTrue(waitingScene != null, branchId + " waiting scene instance missing after response");
-            SceneTransitionService.complete(scenes, waitingScene, level.getGameTime());
-            SceneContinuationService.maintain(level.getServer(), scenes);
-            progress = data.get(player.getUUID(), questId);
-        }
-        helper.assertTrue(progress != null, branchId + " progress missing after response");
+        helper.assertTrue(progress != null, branchId + " response did not commit before its blocking scene");
+        SceneSavedData scenes = SceneSavedData.get(level);
+        scenes.continuations().stream()
+                .filter(value -> value.playerId().equals(player.getUUID()) && !value.completionReceipt())
+                .findFirst()
+                .flatMap(value -> scenes.get(value.sceneInstanceId()))
+                .ifPresent(waitingScene -> {
+                    SceneTransitionService.complete(scenes, waitingScene, level.getGameTime());
+                    SceneContinuationService.maintain(level.getServer(), scenes);
+                });
         helper.assertValueEqual(progress.currentStage(), nextStage, branchId + " transition stage");
         helper.assertValueEqual(progress.choiceHistory().size(), 1, branchId + " choice history count");
         VillagerQuestSavedData.ChoiceHistoryEntry choice = progress.choiceHistory().getFirst();
@@ -5950,11 +5947,13 @@ public final class VillagerQuestGameTests {
         VillagerActionDefinition notification = response.actions().get(2);
         helper.assertValueEqual(notification.kind(), VillagerActionDefinition.Kind.NOTIFICATION, branchId + " notification kind");
         helper.assertValueEqual(notification.notificationTrigger(), "quest.updated", branchId + " notification trigger");
+        helper.assertValueEqual(notification.questId(), VillagerRetaliation.id("choose_the_horizon"), branchId + " notification quest context");
         helper.assertFalse(notification.text().isBlank(), branchId + " notification text");
         VillagerActionDefinition scene = response.actions().get(3);
         helper.assertValueEqual(scene.kind(), VillagerActionDefinition.Kind.START_SCENE, branchId + " scene action kind");
         helper.assertValueEqual(scene.sceneId(), VillagerRetaliation.id("atlas_horizon_choice"), branchId + " scene id");
         helper.assertValueEqual(scene.sceneOperationId(), "atlas_horizon_choice_v1", branchId + " scene operation");
+        helper.assertTrue(scene.waitForScene(), branchId + " scene should still wait for its result");
         VillagerActionDefinition transition = response.actions().get(4);
         helper.assertValueEqual(transition.kind(), VillagerActionDefinition.Kind.QUEST_TRANSITION, branchId + " transition kind");
         helper.assertValueEqual(transition.questTransition().responseId(), branchId, branchId + " transition response");
