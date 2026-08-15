@@ -14,7 +14,7 @@ When editing files under `tools/datapack-builder/wiki/`, regenerate the bundled 
 node tools/datapack-builder/build-wiki-snapshot.mjs
 ```
 
-Use `node tools/datapack-builder/build-wiki-snapshot.mjs --check` in validation scripts to fail if the markdown and bundled wiki have drifted.
+The generated snapshot is committed so the static builder works without a build step. Do not edit `wiki-snapshot.js` directly. Run `node tools/verify.mjs` to fail if the Markdown and bundled wiki have drifted.
 
 Exports from beta.11 onward include a `villagerretaliation.pack_version` marker in `pack.mcmeta`. Import uses that marker to restore the target VR version automatically. If an older or hand-written pack does not include the marker, choose the intended VR version in Pack Setup before editing or exporting.
 

@@ -18,19 +18,6 @@ jobs:
         with:
           node-version: 22
       - name: Validate data and tools
-        run: |
-          node --check tools/datapack-builder/app.js
-          node --check tools/quest-builder/app.js
-          node --check tools/quest-builder/quest-model.js
-          node --check tools/quest-builder/zip-utils.js
-          node --check wiki/player/app.js
-          node tools/validate-dialogue-data.mjs
-          node tools/test-quest-v2-tools.mjs
-          node tools/test-datapack-builder-schema.mjs
-          node tools/test-quest-builder-model.mjs
-          node tools/test-quest-builder-zip.mjs
-          node tools/test-quest-builder-output.mjs
-          node tools/datapack-builder/build-wiki-snapshot.mjs --check
-          node wiki/player/build-data.mjs --check
+        run: node tools/verify.mjs
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew build

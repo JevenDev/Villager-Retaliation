@@ -4,3 +4,5 @@
 src/generated/**/.cache/* text eol=lf
 src/generated/**/*.json text eol=lf
 example-packs/dialogue-folder-template/** text eol=lf
+tools/datapack-builder/wiki-snapshot.js text eol=lf
+wiki/*/site-data.js text eol=lf
