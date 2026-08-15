@@ -3,7 +3,7 @@
   "id": "villagerretaliation:end_city_survey",
   "metadata": {
     "title": "End City Survey",
-    "description": "Reach an End City and bring back a Shulker Shell with a Chorus Flower sample.",
+    "description": "Survey an End City to test whether an Ancient City record describes the same builders.",
     "questline": "lost_civilization",
     "parent": "villagerretaliation:tales_of_a_lost_civilization",
     "tags": [
@@ -113,8 +113,8 @@
           "order": -20,
           "show_for_babies": false,
           "lines": [
-            "The Ancient City records point beyond the dragon island, toward towers drawn without a ground line.",
-            "Find an End City and bring back both a shulker shell and something still growing there.",
+            "An Ancient City record sketches towers beyond the dragon island, but resemblance is not proof of who built them.",
+            "Find an End City and bring back a shulker shell and something still growing there so we can test the record.",
             "Reach the marked End City and return with a shulker shell and 1 Chorus Flower."
           ],
           "responses": [
@@ -138,7 +138,7 @@
           "lines": [
             "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
             "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
-            "Find an End City and bring back both a shulker shell and something still growing there."
+            "Find an End City and bring back a shulker shell and something still growing there so we can test the record."
           ],
           "responses": [
             {
@@ -200,7 +200,7 @@
                 "reminder": [
                   "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
                   "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
-                  "Find an End City and bring back both a shulker shell and something still growing there."
+                  "Find an End City and bring back a shulker shell and something still growing there so we can test the record."
                 ],
                 "unavailable": [
                   "End City Survey is not open right now.",
@@ -282,8 +282,8 @@
           "order": -20,
           "show_for_babies": false,
           "lines": [
-            "A shell from the towers and a flower from the stone. The old record was telling the truth.",
-            "The lost civilization has a second city now, and this one still touches the sky.",
+            "A shell from the towers and a flower from the stone. The record described the setting, but it still does not name the builders.",
+            "This may be a second city in the same story, or a different ruin under the same sky. The connection remains a hypothesis.",
             "Let me see the full work before I close the note."
           ],
           "responses": [
@@ -309,8 +309,8 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "A shell from the towers and a flower from the stone. The old record was telling the truth.",
-                  "The lost civilization has a second city now, and this one still touches the sky."
+                  "A shell from the towers and a flower from the stone. The record described the setting, but it still does not name the builders.",
+                  "This may be a second city in the same story, or a different ruin under the same sky. The connection remains a hypothesis."
                 ],
                 "missing_objectives": [
                   "The full work is not ready to count yet."

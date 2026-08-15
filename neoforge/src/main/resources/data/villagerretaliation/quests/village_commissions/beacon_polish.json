@@ -3,7 +3,7 @@
   "id": "villagerretaliation:beacon_polish",
   "metadata": {
     "title": "A Star for Home",
-    "description": "Defeat a Wither and surrender its Nether Star for a village beacon.",
+    "description": "Defeat a Wither and surrender its Nether Star for another village beacon.",
     "questline": "village_commissions",
     "tags": [
       "group.village_commissions",
@@ -44,11 +44,11 @@
     "repeatable": true,
     "max_starts": 0,
     "max_completions": 0,
-    "completion_cooldown_days": 10,
     "abandonment": "allow_repickup",
     "consume_on_completion": true,
     "locked_to_villager": true,
-    "cross_villager_compatible": false
+    "cross_villager_compatible": false,
+    "completion_cooldown_days": 10
   },
   "entry_stage": "work",
   "stages": [
@@ -92,8 +92,8 @@
           "order": -20,
           "show_for_babies": false,
           "lines": [
-            "The village can build a beacon base. The missing piece is the one that fights back.",
-            "Bring down a Wither and surrender its Nether Star. The whole village will stand in that light.",
+            "The village can build another beacon base. The outer fields still lie beyond the light.",
+            "Bring down a Wither and surrender its Nether Star. Another village district will stand in that light.",
             "Defeat a Wither and bring back its Nether Star. I will make the reward worth the trouble."
           ],
           "responses": [
@@ -117,7 +117,7 @@
           "lines": [
             "One Wither, one Nether Star. There is no smaller way to say it.",
             "Defeat a Wither and bring back its Nether Star.",
-            "Bring down a Wither and surrender its Nether Star. The whole village will stand in that light."
+            "Bring down a Wither and surrender its Nether Star. Another village district will stand in that light."
           ],
           "responses": [
             {
@@ -180,7 +180,7 @@
                 "reminder": [
                   "One Wither, one Nether Star. There is no smaller way to say it.",
                   "Defeat a Wither and bring back its Nether Star.",
-                  "Bring down a Wither and surrender its Nether Star. The whole village will stand in that light."
+                  "Bring down a Wither and surrender its Nether Star. Another village district will stand in that light."
                 ],
                 "unavailable": [
                   "A Star for Home is not open right now.",
@@ -263,8 +263,8 @@
           "order": -20,
           "show_for_babies": false,
           "lines": [
-            "This star will shine over every field you nearly died to protect.",
-            "The Wither is gone. The village gets the light, and you get the honor and the pay.",
+            "This star will extend the village light across another stretch of fields.",
+            "The Wither is gone. Another village district gets the light, and you get the honor and the pay.",
             "Let me see the full work before I close the note."
           ],
           "responses": [
@@ -290,8 +290,8 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "This star will shine over every field you nearly died to protect.",
-                  "The Wither is gone. The village gets the light, and you get the honor and the pay.",
+                  "This star will extend the village light across another stretch of fields.",
+                  "The Wither is gone. Another village district gets the light, and you get the honor and the pay.",
                   "That settles it. The village will make good use of this."
                 ],
                 "missing_objectives": [

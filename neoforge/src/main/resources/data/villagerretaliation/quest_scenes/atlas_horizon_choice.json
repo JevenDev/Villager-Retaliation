@@ -48,7 +48,7 @@
         "cartographer"
       ],
       "data": {
-        "text": "The atlas lies open between you. Its last empty margin waits for the route you chose.",
+        "text": "The atlas lies open between you. Its Overworld margin waits for the first great route you chose.",
         "offline_policy": "wait",
         "offline_poll_ticks": 20
       },
@@ -96,7 +96,7 @@
         "cartographer"
       ],
       "data": {
-        "text": "The drowned coast takes the final ink. Follow prismarine beneath the water and bring its light home."
+        "text": "The drowned coast takes the Overworld ink. Prepare the survey kit; the monument itself comes next."
       },
       "next": "completed",
       "failure_step": "failed"
@@ -108,7 +108,7 @@
         "cartographer"
       ],
       "data": {
-        "text": "The dark roof road takes the final ink. Follow old timber and return with proof the house could not keep."
+        "text": "The dark roof road takes the Overworld ink. Prepare the survey kit; the mansion itself comes next."
       },
       "next": "completed",
       "failure_step": "failed"

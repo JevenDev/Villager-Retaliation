@@ -85,7 +85,7 @@
         "ember_keeper"
       ],
       "data": {
-        "text": "Come home after the roar. Bring breath, stone, and a story that still belongs to you."
+        "text": "Bottle the dragon's breath while the roar still sounds. Then come home with stone and a story that still belongs to you."
       },
       "next": "completed",
       "failure_step": "failed"

@@ -97,8 +97,8 @@
           "item": "minecraft:gold_block",
           "count": 1,
           "tracker": {
-            "text": "Bring 1 gold block to settle the debt.",
-            "complete_text": "The settlement gold is ready.",
+            "text": "Bring 1 gold block for the settlement payment.",
+            "complete_text": "The settlement payment is ready.",
             "show_progress": true,
             "progress": 0.75
           }
@@ -118,7 +118,7 @@
           "show_for_babies": false,
           "lines": [
             "The mansion informants kept their word. Now the gold promised for their Nether route is due.",
-            "Carry one gold block to the bastion road and bring gilded blackstone back as proof the debt reached its mark.",
+            "Return with one gold block and gilded blackstone; the village will send the payment once the route is proven.",
             "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
           ],
           "responses": [
@@ -142,7 +142,7 @@
           "lines": [
             "The bastion mark, one gilded blackstone, and one gold block for the debt.",
             "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block.",
-            "Carry one gold block to the bastion road and bring gilded blackstone back as proof the debt reached its mark."
+            "Return with one gold block and gilded blackstone; the village will send the payment once the route is proven."
           ],
           "responses": [
             {
@@ -204,7 +204,7 @@
                 "reminder": [
                   "The bastion mark, one gilded blackstone, and one gold block for the debt.",
                   "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block.",
-                  "Carry one gold block to the bastion road and bring gilded blackstone back as proof the debt reached its mark."
+                  "Return with one gold block and gilded blackstone; the village will send the payment once the route is proven."
                 ],
                 "unavailable": [
                   "Gilded Debt is not open right now.",
@@ -286,8 +286,8 @@
           "order": -20,
           "show_for_babies": false,
           "lines": [
-            "The debt is settled, the route is proven, and no promise is chasing the village now.",
-            "Gold paid on time buys more than goods. It buys a road that stays open.",
+            "The route is proven and the payment is sealed for the informants. No promise is chasing the village now.",
+            "Gold set aside on time buys more than goods. Once the informants receive it, the road stays open.",
             "Let me see the full work before I close the note."
           ],
           "responses": [
@@ -313,8 +313,8 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "The debt is settled, the route is proven, and no promise is chasing the village now.",
-                  "Gold paid on time buys more than goods. It buys a road that stays open."
+                  "The route is proven and the payment is sealed for the informants. No promise is chasing the village now.",
+                  "Gold set aside on time buys more than goods. Once the informants receive it, the road stays open."
                 ],
                 "missing_objectives": [
                   "The full work is not ready to count yet."
