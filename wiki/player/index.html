@@ -14,7 +14,7 @@
     <div class="site-shell">
       <aside class="sidebar" aria-label="Wiki navigation">
         <a class="brand" href="#/home" aria-label="Villager Retaliation Wiki home">
-          <img src="./assets/villager_retaliation_logo.png?v=2" alt="Villager Retaliation logo">
+          <img data-wiki-shared-logo alt="Villager Retaliation logo">
           <span>Villager Retaliation Wiki</span>
         </a>
 
@@ -68,8 +68,12 @@
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="./site-data.js?v=62"></script>
-    <script src="./search.js?v=9"></script>
+    <script>
+      window.VR_WIKI_SHARED_BASE = location.protocol === "file:" ? "../shared/" : "./shared/";
+      document.querySelector("[data-wiki-shared-logo]").src = `${window.VR_WIKI_SHARED_BASE}villager_retaliation_logo.png?v=2`;
+      document.write(`<script src="${window.VR_WIKI_SHARED_BASE}search.js?v=9"><\/script>`);
+    </script>
     <script src="./app.js?v=72"></script>
-    <script src="./content/beta13-content.js?v=60"></script>
+    <script src="./content/guides.js?v=60"></script>
   </body>
 </html>

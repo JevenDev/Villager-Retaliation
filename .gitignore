@@ -35,6 +35,7 @@ runs/
 logs/
 crash-reports/
 **/src/generated/**/.cache/
+**/src/generated/generated/
 
 ### Local developer utilities ###
 /dev_tools/

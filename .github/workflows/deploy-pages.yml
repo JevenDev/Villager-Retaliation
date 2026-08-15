@@ -7,6 +7,7 @@ on:
       - "tools/datapack-builder/**"
       - "tools/quest-builder/**"
       - "tools/test-quest-builder-*.mjs"
+      - "tools/verify.mjs"
       - "wiki/**"
       - "example-packs/**"
       - ".github/workflows/deploy-pages.yml"
@@ -16,6 +17,7 @@ on:
       - "tools/datapack-builder/**"
       - "tools/quest-builder/**"
       - "tools/test-quest-builder-*.mjs"
+      - "tools/verify.mjs"
       - "wiki/**"
       - "example-packs/**"
       - ".github/workflows/deploy-pages.yml"
@@ -44,61 +46,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Check JavaScript syntax
-        run: node --check tools/datapack-builder/app.js
-
-      - name: Check player wiki JavaScript syntax
-        run: |
-          node --check wiki/player/app.js
-          node --check wiki/player/content/beta13-content.js
-
-      - name: Check developer wiki JavaScript syntax
-        run: node --check wiki/dev/app.js
-
-      - name: Check quest builder
-        run: |
-          node --check tools/quest-builder/app.js
-          node --check tools/quest-builder/quest-model.js
-          node --check tools/quest-builder/zip-utils.js
-          node tools/test-quest-builder-model.mjs
-          node tools/test-quest-builder-zip.mjs
-          node tools/test-quest-builder-output.mjs
-
-      - name: Check generated static data
-        run: |
-          node tools/datapack-builder/build-wiki-snapshot.mjs --check
-          node wiki/player/build-data.mjs --check
-          node wiki/dev/build-data.mjs --check
-
-      - name: Verify datapack builder entry files
-        run: |
-          test -f tools/datapack-builder/index.html
-          test -f tools/datapack-builder/styles.css
-          test -f tools/datapack-builder/app.js
-
-      - name: Verify player wiki entry files
-        run: |
-          test -f wiki/player/index.html
-          test -f wiki/player/styles.css
-          test -f wiki/player/app.js
-          test -f wiki/player/content/beta13-content.js
-          test -f wiki/player/site-data.js
-
-      - name: Verify developer wiki entry files
-        run: |
-          test -f wiki/dev/index.html
-          test -f wiki/dev/styles.css
-          test -f wiki/dev/developer.css
-          test -f wiki/dev/app.js
-          test -f wiki/dev/site-data.js
-
-      - name: Verify quest builder entry files
-        run: |
-          test -f tools/quest-builder/index.html
-          test -f tools/quest-builder/styles.css
-          test -f tools/quest-builder/app.js
-          test -f tools/quest-builder/quest-model.js
-          test -f tools/quest-builder/zip-utils.js
+      - name: Validate repository tools and sites
+        run: node tools/verify.mjs
 
   deploy:
     name: Deploy to GitHub Pages
@@ -123,10 +72,12 @@ jobs:
           mkdir -p _site/datapack-builder
           mkdir -p _site/quest-builder
           mkdir -p _site/developer-wiki
+          mkdir -p _site/shared
           cp -R wiki/player/. _site/
           cp -R tools/datapack-builder/. _site/datapack-builder/
           cp -R tools/quest-builder/. _site/quest-builder/
           cp -R wiki/dev/. _site/developer-wiki/
+          cp -R wiki/shared/. _site/shared/
           touch _site/.nojekyll
 
       - name: Upload static site
