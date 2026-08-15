@@ -1,0 +1,351 @@
+{
+  "messages": [
+    {
+      "id": "quest.offer_hint.trust",
+      "seed": 0,
+      "selected": "I may have work when I trust you more."
+    },
+    {
+      "id": "quest.offer_hint.trust",
+      "seed": 1,
+      "selected": "People here still watch you closely. Give them a reason to relax."
+    },
+    {
+      "id": "quest.offer_hint.trust",
+      "seed": 42,
+      "selected": "I cannot risk this on a stranger, even one who means well."
+    },
+    {
+      "id": "quest.offer_hint.trust",
+      "seed": 3733,
+      "selected": "Earn a good name around here and I will reconsider."
+    },
+    {
+      "id": "quest.offer_hint.trust",
+      "seed": 16411,
+      "selected": "This task goes to someone I know will come back."
+    },
+    {
+      "id": "quest.offer_hint.level",
+      "seed": 0,
+      "selected": "I may have work when I reach {level}."
+    },
+    {
+      "id": "quest.offer_hint.level",
+      "seed": 1,
+      "selected": "The supplies for that task become available when I reach {level}."
+    },
+    {
+      "id": "quest.offer_hint.level",
+      "seed": 42,
+      "selected": "This job is beyond my current rank, but it will not be beyond {level}."
+    },
+    {
+      "id": "quest.offer_hint.level",
+      "seed": 3733,
+      "selected": "My workshop is not ready for this until my rank reaches {level}."
+    },
+    {
+      "id": "quest.offer_hint.level",
+      "seed": 16411,
+      "selected": "Once I am {level}, the other traders will take this request seriously."
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.objective.bring_bread.text",
+      "seed": 0,
+      "selected": "Gather 16 bread for the village stores."
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.objective.bring_bread.text",
+      "seed": 1,
+      "selected": "Gather 16 bread for the village stores."
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.objective.bring_bread.text",
+      "seed": 42,
+      "selected": "Gather 16 bread for the village stores."
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.objective.bring_bread.text",
+      "seed": 3733,
+      "selected": "Gather 16 bread for the village stores."
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.objective.bring_bread.text",
+      "seed": 16411,
+      "selected": "Gather 16 bread for the village stores."
+    },
+    {
+      "id": "quest.cartographers_atlas.choose_the_horizon.title",
+      "seed": 0,
+      "selected": "Choose the Horizon"
+    },
+    {
+      "id": "quest.cartographers_atlas.choose_the_horizon.title",
+      "seed": 1,
+      "selected": "Choose the Horizon"
+    },
+    {
+      "id": "quest.cartographers_atlas.choose_the_horizon.title",
+      "seed": 42,
+      "selected": "Choose the Horizon"
+    },
+    {
+      "id": "quest.cartographers_atlas.choose_the_horizon.title",
+      "seed": 3733,
+      "selected": "Choose the Horizon"
+    },
+    {
+      "id": "quest.cartographers_atlas.choose_the_horizon.title",
+      "seed": 16411,
+      "selected": "Choose the Horizon"
+    }
+  ],
+  "pools": [
+    {
+      "epoch": 0,
+      "id": "villagerretaliation:quest_board",
+      "quests": [
+        "villagerretaliation:market_day",
+        "villagerretaliation:seed_stockpile",
+        "villagerretaliation:village_lanterns"
+      ],
+      "scope": "baseline-village"
+    },
+    {
+      "epoch": 1,
+      "id": "villagerretaliation:quest_board",
+      "quests": [
+        "villagerretaliation:fresh_cod",
+        "villagerretaliation:leather_repairs",
+        "villagerretaliation:wither_ash"
+      ],
+      "scope": "baseline-village"
+    },
+    {
+      "epoch": 17,
+      "id": "villagerretaliation:quest_board",
+      "quests": [
+        "villagerretaliation:beetroot_bundle",
+        "villagerretaliation:ocean_glass",
+        "villagerretaliation:pond_restock"
+      ],
+      "scope": "other-village"
+    }
+  ],
+  "rewards": [
+    {
+      "id": "villagerretaliation:quest/bread_delivery",
+      "items": [
+        {
+          "count": 9,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 4,
+          "item": "minecraft:hay_block"
+        }
+      ],
+      "seed": 0
+    },
+    {
+      "id": "villagerretaliation:quest/bread_delivery",
+      "items": [
+        {
+          "count": 9,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 4,
+          "item": "minecraft:golden_carrot"
+        }
+      ],
+      "seed": 1
+    },
+    {
+      "id": "villagerretaliation:quest/bread_delivery",
+      "items": [
+        {
+          "count": 9,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 3,
+          "item": "minecraft:golden_carrot"
+        }
+      ],
+      "seed": 42
+    },
+    {
+      "id": "villagerretaliation:quest/bread_delivery",
+      "items": [
+        {
+          "count": 9,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 3,
+          "item": "minecraft:golden_carrot"
+        }
+      ],
+      "seed": 3733
+    },
+    {
+      "id": "villagerretaliation:quest/bread_delivery",
+      "items": [
+        {
+          "count": 8,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 6,
+          "item": "minecraft:experience_bottle"
+        }
+      ],
+      "seed": 16411
+    },
+    {
+      "id": "villagerretaliation:quest/egg_baskets",
+      "items": [
+        {
+          "count": 7,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 5,
+          "item": "minecraft:bread"
+        }
+      ],
+      "seed": 0
+    },
+    {
+      "id": "villagerretaliation:quest/egg_baskets",
+      "items": [
+        {
+          "count": 4,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 3,
+          "item": "minecraft:bread"
+        }
+      ],
+      "seed": 1
+    },
+    {
+      "id": "villagerretaliation:quest/egg_baskets",
+      "items": [
+        {
+          "count": 4,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 1,
+          "item": "minecraft:pumpkin_pie"
+        }
+      ],
+      "seed": 42
+    },
+    {
+      "id": "villagerretaliation:quest/egg_baskets",
+      "items": [
+        {
+          "count": 6,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 3,
+          "item": "minecraft:experience_bottle"
+        }
+      ],
+      "seed": 3733
+    },
+    {
+      "id": "villagerretaliation:quest/egg_baskets",
+      "items": [
+        {
+          "count": 4,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 2,
+          "item": "minecraft:pumpkin_pie"
+        }
+      ],
+      "seed": 16411
+    },
+    {
+      "id": "villagerretaliation:quest/map_paper",
+      "items": [
+        {
+          "count": 8,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 2,
+          "item": "minecraft:book"
+        }
+      ],
+      "seed": 0
+    },
+    {
+      "id": "villagerretaliation:quest/map_paper",
+      "items": [
+        {
+          "count": 8,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 1,
+          "item": "minecraft:book"
+        }
+      ],
+      "seed": 1
+    },
+    {
+      "id": "villagerretaliation:quest/map_paper",
+      "items": [
+        {
+          "count": 8,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 1,
+          "item": "minecraft:map"
+        }
+      ],
+      "seed": 42
+    },
+    {
+      "id": "villagerretaliation:quest/map_paper",
+      "items": [
+        {
+          "count": 8,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 4,
+          "item": "minecraft:experience_bottle"
+        }
+      ],
+      "seed": 3733
+    },
+    {
+      "id": "villagerretaliation:quest/map_paper",
+      "items": [
+        {
+          "count": 7,
+          "item": "minecraft:emerald"
+        },
+        {
+          "count": 1,
+          "item": "minecraft:map"
+        }
+      ],
+      "seed": 16411
+    }
+  ],
+  "rng_contract": "net.minecraft.util.RandomSource.create(seed); semantically ordered arrays preserved",
+  "schema": "villagerretaliation:quest_bundle_behavioral_baseline/v1",
+  "source_commit": "6e5913766bc93eede34185e0b87eaa428e53b0e6"
+}

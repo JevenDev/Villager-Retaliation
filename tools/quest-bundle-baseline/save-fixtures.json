@@ -1,0 +1,112 @@
+{
+  "fixtures": [
+    {
+      "id": "active",
+      "progress": {
+        "bring_bread": 9
+      },
+      "quest": "villagerretaliation:bread_delivery",
+      "stage": "work",
+      "state": "ACTIVE"
+    },
+    {
+      "completion_count": 1,
+      "id": "completed",
+      "quest": "villagerretaliation:blank_map_promise",
+      "stage": "return",
+      "state": "COMPLETED"
+    },
+    {
+      "abandonment_time": 72000,
+      "id": "abandoned",
+      "quest": "villagerretaliation:night_run",
+      "stage": "escort",
+      "state": "ABANDONED"
+    },
+    {
+      "choice_history": [
+        "choice=coast"
+      ],
+      "id": "branching",
+      "quest": "villagerretaliation:choose_the_horizon",
+      "stage": "coast_final",
+      "state": "ACTIVE",
+      "variables": {
+        "choice": "coast"
+      }
+    },
+    {
+      "id": "randomized",
+      "quest": "villagerretaliation:market_day",
+      "selected_items": {
+        "bring_market_goods": "minecraft:apple"
+      },
+      "stage": "work",
+      "state": "ACTIVE"
+    },
+    {
+      "id": "party",
+      "party_scope": "00000000-0000-4000-8000-000000000003",
+      "pending_party_reward": true,
+      "quest": "villagerretaliation:standing_watch",
+      "stage": "watch",
+      "state": "ACTIVE"
+    },
+    {
+      "id": "tracked",
+      "quest": "villagerretaliation:bread_delivery",
+      "stage": "work",
+      "state": "ACTIVE",
+      "tracked": true
+    },
+    {
+      "id": "pending",
+      "pending_lifecycle_events": [
+        "completed"
+      ],
+      "pending_trigger_events": [
+        "lost_city_told"
+      ],
+      "quest": "villagerretaliation:tales_of_a_lost_civilization",
+      "stage": "return",
+      "state": "ACTIVE"
+    },
+    {
+      "id": "scene",
+      "quest": "villagerretaliation:choose_the_horizon",
+      "scene": {
+        "id": "villagerretaliation:atlas_horizon_choice",
+        "operation": "atlas_horizon_choice_v1",
+        "step": "ink_the_choice"
+      },
+      "stage": "coast_final",
+      "state": "ACTIVE"
+    },
+    {
+      "encounter": {
+        "definition_version": 1,
+        "id": "villagerretaliation:standing_watch",
+        "wave": "captain_assault"
+      },
+      "id": "encounter",
+      "quest": "villagerretaliation:standing_watch",
+      "stage": "watch",
+      "state": "ACTIVE"
+    },
+    {
+      "id": "missing-definition",
+      "progress": {
+        "stable_objective": 7
+      },
+      "quest": "missingpack:removed_quest",
+      "stage": "stable_stage",
+      "state": "ACTIVE",
+      "unresolved": true
+    }
+  ],
+  "player": "00000000-0000-4000-8000-000000000001",
+  "provider": "00000000-0000-4000-8000-000000000002",
+  "quest_data_version": 4,
+  "scene_data_version": 4,
+  "schema": "villagerretaliation:quest_bundle_save_fixtures/v1"
+}
