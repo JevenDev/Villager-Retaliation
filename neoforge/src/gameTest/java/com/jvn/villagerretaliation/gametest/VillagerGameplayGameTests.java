@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.gametest;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
@@ -45,6 +46,7 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerArmor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
+import com.jvn.villagerretaliation.villager.VillagerItemPickupReach;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
@@ -191,6 +193,74 @@ public final class VillagerGameplayGameTests {
                 VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).orElse(null) == fartherSword,
                 "ground-weapon selection should prefer melee quality before proximity");
         helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerCanPickUpWeaponRestingOnFence(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        BlockPos fencePos = helper.absolutePos(new BlockPos(2, 2, 1));
+        helper.getLevel().setBlock(fencePos, Blocks.OAK_FENCE.defaultBlockState(), 3);
+        ItemEntity weapon = new ItemEntity(
+                helper.getLevel(),
+                fencePos.getX() + 0.5D,
+                fencePos.getY() + 1.5D,
+                fencePos.getZ() + 0.5D,
+                new ItemStack(Items.IRON_SWORD));
+        weapon.setNoPickUpDelay();
+        helper.getLevel().addFreshEntity(weapon);
+
+        helper.assertTrue(
+                villager.distanceToSqr(weapon)
+                        > VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR,
+                "the raised item should reproduce the old center-distance pickup failure");
+        helper.assertTrue(
+                VillagerItemPickupReach.isWithinReach(
+                        villager,
+                        weapon,
+                        VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR),
+                "an item on an adjacent fence should be within the villager's physical reach");
+
+        VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(villager, weapon, 0.6D, () -> {
+        });
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                "the villager should pick up the weapon from the fence");
+        helper.assertTrue(weapon.isRemoved(), "the picked-up item entity should be consumed");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerCanPickUpWantedItemAcrossFence(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(4, 2, 2));
+        villager.setCanPickUpLoot(true);
+        for (int z = 0; z <= 10; z++) {
+            BlockPos fencePos = helper.absolutePos(new BlockPos(3, 2, z));
+            level.setBlock(fencePos, Blocks.OAK_FENCE.defaultBlockState(), 3);
+        }
+
+        BlockPos itemPos = helper.absolutePos(new BlockPos(2, 2, 2));
+        ItemEntity bread = new ItemEntity(
+                level,
+                itemPos.getX() + 0.5D,
+                itemPos.getY(),
+                itemPos.getZ() + 0.5D,
+                new ItemStack(Items.BREAD));
+        bread.setNoPickUpDelay();
+        level.addFreshEntity(bread);
+        villager.getBrain().setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, bread);
+
+        helper.assertTrue(villager.wantsToPickUp(bread.getItem()),
+                "the villager should want the item beyond the fence");
+        helper.assertTrue(VillagerItemPickupReach.isWithinReach(villager, bread, 2.25D),
+                "the partial fence collision should permit pickup from the nearest walkable block");
+
+        helper.runAfterDelay(20, () -> {
+            helper.assertTrue(bread.isRemoved(),
+                    "the villager should collect an item it cannot path directly onto through a fence");
+            helper.assertValueEqual(villager.getInventory().countItem(Items.BREAD), 1,
+                    "the collected item should enter the villager inventory");
+            helper.succeed();
+        });
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
