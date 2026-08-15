@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
+import com.jvn.villagerretaliation.villager.VillagerItemPickupReach;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -945,7 +946,7 @@ public final class PartyQuickCommandService {
             }
         }
 
-        if (villager.distanceToSqr(drop) <= ITEM_PICKUP_DISTANCE_SQR) {
+        if (VillagerItemPickupReach.isWithinReach(villager, drop, ITEM_PICKUP_DISTANCE_SQR)) {
             boolean waitingForPickup = drop instanceof ItemEntity item && item.hasPickUpDelay()
                     || drop instanceof AbstractArrow arrow
                     && !PartyVillagerDropCollection.isRecoverableArrow(villager, arrow);

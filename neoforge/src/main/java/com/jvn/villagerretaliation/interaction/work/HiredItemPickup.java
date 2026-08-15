@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.villager.VillagerItemPickupReach;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -135,7 +136,7 @@ public final class HiredItemPickup {
             double reachSqr) {
         return context.isInsideWorkAreaOrRoute(villager.blockPosition())
                 && context.isInsideWorkAreaOrRoute(item.blockPosition())
-                && villager.distanceToSqr(item) <= reachSqr;
+                && VillagerItemPickupReach.isWithinReach(villager, item, reachSqr);
     }
 
     private static boolean moveToItem(
@@ -151,7 +152,7 @@ public final class HiredItemPickup {
             worker.stopWorkNavigation(villager);
             return false;
         }
-        if (villager.distanceToSqr(item) <= reachSqr) {
+        if (VillagerItemPickupReach.isWithinReach(villager, item, reachSqr)) {
             worker.stopWorkNavigation(villager);
             worker.faceBlock(villager, item.position());
             return true;

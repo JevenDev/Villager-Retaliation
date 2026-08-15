@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerItemPickupReach;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerArmor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -114,7 +115,10 @@ public final class VillagerRetaliationRetaliationUtil {
         }
 
         if (!itemEntity.hasPickUpDelay()
-                && villager.distanceToSqr(itemEntity) <= VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR) {
+                && VillagerItemPickupReach.isWithinReach(
+                        villager,
+                        itemEntity,
+                        VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR)) {
             beforeEquip.run();
             VillagerRetaliationVillagerWeapons.equipGroundWeapon(villager, itemEntity);
             VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
@@ -439,7 +443,10 @@ public final class VillagerRetaliationRetaliationUtil {
         }
 
         if (!itemEntity.hasPickUpDelay()
-                && villager.distanceToSqr(itemEntity) <= VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR) {
+                && VillagerItemPickupReach.isWithinReach(
+                        villager,
+                        itemEntity,
+                        VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR)) {
             VillagerRetaliationVillagerArmor.equipGroundUpgrade(villager, itemEntity);
             clearGroundWeaponPursuitState(villager);
             return false;
