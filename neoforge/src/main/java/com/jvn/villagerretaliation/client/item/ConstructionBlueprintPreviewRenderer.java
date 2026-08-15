@@ -103,7 +103,7 @@ public final class ConstructionBlueprintPreviewRenderer {
                 continue;
             }
             renderableBlocks.add(new RenderablePreviewBlock(worldPos, block.state()));
-            if (shouldRenderSoftFill(block.state())) {
+            if (shouldRenderSoftFill(previewLevel, worldPos, block.state())) {
                 renderSoftFill(poseStack, fillConsumer, worldPos);
             }
         }
@@ -160,8 +160,8 @@ public final class ConstructionBlueprintPreviewRenderer {
         return worldPos;
     }
 
-    private static boolean shouldRenderSoftFill(BlockState state) {
-        return state.getRenderShape() == RenderShape.MODEL && state.canOcclude();
+    private static boolean shouldRenderSoftFill(BlockAndTintGetter level, BlockPos pos, BlockState state) {
+        return state.getRenderShape() == RenderShape.MODEL && state.isSolidRender(level, pos);
     }
 
     private static void renderSoftFill(PoseStack poseStack, VertexConsumer consumer, BlockPos pos) {
