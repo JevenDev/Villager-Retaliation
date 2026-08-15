@@ -69425,6 +69425,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/commonfolk"
     },
     {
+      "id": "a_well_oiled_machine",
+      "title": "A Well-Oiled Machine",
+      "description": "Have ten villagers actively working in different roles with valid storage and payment.",
+      "frame": "Challenge",
+      "hidden": false,
+      "icon": "Redstone",
+      "parent": "reputation/full_employment"
+    },
+    {
       "id": "accidentally_of_course",
       "title": "Accidentally, Of Course",
       "description": "Let the environment do the talking.",
@@ -69434,6 +69443,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/hands_off"
     },
     {
+      "id": "all_roads_lead_somewhere",
+      "title": "All Roads Lead Somewhere",
+      "description": "Complete quests originating in the Overworld, Nether, and End.",
+      "frame": "Challenge",
+      "hidden": false,
+      "icon": "Recovery Compass",
+      "parent": "reputation/choose_your_own_adventure"
+    },
+    {
       "id": "an_unwise_decision",
       "title": "An Unwise Decision",
       "description": "Attack the village's protector.",
@@ -69441,6 +69459,15 @@ window.VR_WIKI_DATA = {
       "hidden": false,
       "icon": "Iron Axe",
       "parent": "reputation/bad_first_impression"
+    },
+    {
+      "id": "are_we_there_yet",
+      "title": "Are We There Yet?",
+      "description": "Make a villager follow you across 5,000 blocks.",
+      "frame": "Challenge",
+      "hidden": true,
+      "icon": "Leather Boots",
+      "parent": "reputation/housewarming"
     },
     {
       "id": "army_of_one",
@@ -69470,6 +69497,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/hands_off"
     },
     {
+      "id": "blueprint_for_success",
+      "title": "Blueprint for Success",
+      "description": "Complete your first Builder blueprint.",
+      "frame": "Task",
+      "hidden": false,
+      "icon": "Paper",
+      "parent": "reputation/honest_work"
+    },
+    {
       "id": "changed_my_mind",
       "title": "Changed My Mind",
       "description": "Take back a gift from a villager.",
@@ -69477,6 +69513,15 @@ window.VR_WIKI_DATA = {
       "hidden": false,
       "icon": "Emerald",
       "parent": "reputation/familiar_face"
+    },
+    {
+      "id": "choose_your_own_adventure",
+      "title": "Choose Your Own Adventure",
+      "description": "Finish a branching questline.",
+      "frame": "Goal",
+      "hidden": false,
+      "icon": "Compass",
+      "parent": "reputation/once_upon_a_time"
     },
     {
       "id": "commonfolk",
@@ -69515,6 +69560,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/local_legend"
     },
     {
+      "id": "emerald_economy",
+      "title": "Emerald Economy",
+      "description": "Pay 10,000 emeralds' worth of wages through Payment Boxes.",
+      "frame": "Challenge",
+      "hidden": false,
+      "icon": "Beacon",
+      "parent": "reputation/on_the_payroll"
+    },
+    {
       "id": "et_tu_brute",
       "title": "Et tu, Brute?",
       "description": "Begin a raid where a recruited villager leaves your party to defend their home.",
@@ -69524,6 +69578,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/sound_the_horn"
     },
     {
+      "id": "family_business",
+      "title": "Family Business",
+      "description": "Complete assignments or quests for three related villagers.",
+      "frame": "Goal",
+      "hidden": false,
+      "icon": "Cake",
+      "parent": "reputation/honest_work"
+    },
+    {
       "id": "friend_of_the_village",
       "title": "Friend of the Village",
       "description": "Become trusted by multiple villagers in the same village.",
@@ -69531,6 +69594,15 @@ window.VR_WIKI_DATA = {
       "hidden": false,
       "icon": "Bell",
       "parent": "reputation/respect_is_earned"
+    },
+    {
+      "id": "friendly_competition",
+      "title": "Friendly Competition",
+      "description": "Win a non-lethal duel.",
+      "frame": "Task",
+      "hidden": false,
+      "icon": "Iron Sword",
+      "parent": "reputation/commonfolk"
     },
     {
       "id": "full_employment",
@@ -69569,12 +69641,30 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/commonfolk"
     },
     {
+      "id": "housewarming",
+      "title": "Housewarming",
+      "description": "Help a wandering villager settle in a tracked village.",
+      "frame": "Task",
+      "hidden": false,
+      "icon": "White Bed",
+      "parent": "reputation/commonfolk"
+    },
+    {
       "id": "im_sorry",
       "title": "I'm Sorry!",
       "description": "Pacify a villager with a peace offering.",
       "frame": "Task",
       "hidden": false,
       "icon": "Emerald",
+      "parent": "reputation/commonfolk"
+    },
+    {
+      "id": "its_the_thought_that_counts",
+      "title": "It's the Thought That Counts",
+      "description": "Give a villager one of their preferred gifts.",
+      "frame": "Task",
+      "hidden": false,
+      "icon": "Poppy",
       "parent": "reputation/commonfolk"
     },
     {
@@ -69614,6 +69704,24 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/bad_first_impression"
     },
     {
+      "id": "master_of_all_trades",
+      "title": "Master of All Trades",
+      "description": "Raise every villager skill to its maximum through successful work.",
+      "frame": "Challenge",
+      "hidden": true,
+      "icon": "Nether Star",
+      "parent": "reputation/master_of_the_craft"
+    },
+    {
+      "id": "master_of_the_craft",
+      "title": "Master of the Craft",
+      "description": "Raise a villager skill to its maximum through successful work.",
+      "frame": "Goal",
+      "hidden": false,
+      "icon": "Diamond Pickaxe",
+      "parent": "reputation/honest_work"
+    },
+    {
       "id": "mob_justice",
       "title": "Mob Justice",
       "description": "Anger enough villagers to be surrounded.",
@@ -69632,6 +69740,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/hands_off"
     },
     {
+      "id": "on_the_payroll",
+      "title": "On the Payroll",
+      "description": "Pay 1,000 emeralds' worth of wages through Payment Boxes.",
+      "frame": "Goal",
+      "hidden": false,
+      "icon": "Diamond",
+      "parent": "reputation/payday"
+    },
+    {
       "id": "once_upon_a_time",
       "title": "Once Upon a Time",
       "description": "Share a discovered story with a villager.",
@@ -69639,6 +69756,15 @@ window.VR_WIKI_DATA = {
       "hidden": false,
       "icon": "Writable Book",
       "parent": "reputation/trusted_directions"
+    },
+    {
+      "id": "payday",
+      "title": "Payday",
+      "description": "Pay 100 emeralds' worth of wages through Payment Boxes.",
+      "frame": "Task",
+      "hidden": false,
+      "icon": "Emerald Block",
+      "parent": "reputation/honest_work"
     },
     {
       "id": "peace_offering",
@@ -69731,6 +69857,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/once_upon_a_time"
     },
     {
+      "id": "supply_and_demand",
+      "title": "Supply and Demand",
+      "description": "Have a courier deliver materials that another hired villager subsequently uses.",
+      "frame": "Goal",
+      "hidden": false,
+      "icon": "Chest Minecart",
+      "parent": "reputation/honest_work"
+    },
+    {
       "id": "the_mark_you_chose",
       "title": "The Mark You Chose",
       "description": "Speak to a villager while displaying an ominous banner.",
@@ -69783,6 +69918,15 @@ window.VR_WIKI_DATA = {
       "hidden": true,
       "icon": "Filled Map",
       "parent": "reputation/respect_is_earned"
+    },
+    {
+      "id": "urban_planner",
+      "title": "Urban Planner",
+      "description": "Complete ten distinct blueprint structures.",
+      "frame": "Goal",
+      "hidden": false,
+      "icon": "Bricks",
+      "parent": "reputation/blueprint_for_success"
     },
     {
       "id": "village_chronicler",

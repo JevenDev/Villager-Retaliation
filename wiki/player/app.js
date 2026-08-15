@@ -78,7 +78,7 @@ const PAGES = [
     title: "Advancements",
     group: "Reference",
     icon: "trophy",
-    description: "The reputation advancement tab's trust, story, and conflict milestones.",
+    description: "Milestones for trust, village life, hired work, quests, exploration, and conflict.",
     render: renderAdvancements
   },
   {
@@ -444,7 +444,7 @@ function render() {
       const advancement = findAdvancement(route.id);
       renderDocument("Advancements", advancement
         ? `Focused on ${advancement.title}.`
-        : "The reputation advancement tab's trust, story, and conflict milestones.", renderAdvancements({
+        : "Milestones for trust, village life, hired work, quests, exploration, and conflict.", renderAdvancements({
         focusedAdvancementId: advancement?.id || ""
       }), {
         icon: "trophy",
@@ -1396,6 +1396,21 @@ function groupedAdvancements() {
       "im_sorry",
       "the_village_remembers"
     ],
+    village: [
+      "housewarming",
+      "its_the_thought_that_counts",
+      "family_business"
+    ],
+    work: [
+      "blueprint_for_success",
+      "urban_planner",
+      "master_of_the_craft",
+      "a_well_oiled_machine",
+      "supply_and_demand",
+      "payday",
+      "on_the_payroll",
+      "emerald_economy"
+    ],
     trust: [
       "friend_of_the_village",
       "community_support",
@@ -1408,7 +1423,9 @@ function groupedAdvancements() {
       "once_upon_a_time",
       "story_keeper",
       "village_chronicler",
-      "legend_trader"
+      "legend_trader",
+      "choose_your_own_adventure",
+      "all_roads_lead_somewhere"
     ],
     retaliation: [
       "bad_first_impression",
@@ -1419,6 +1436,7 @@ function groupedAdvancements() {
       "village_enemy",
       "mob_justice",
       "hero_not_menace",
+      "friendly_competition",
       "an_unwise_decision"
     ],
     hidden: []
@@ -1427,19 +1445,23 @@ function groupedAdvancements() {
   const labels = {
     foundation: "Trust Foundations",
     trust: "Reputation Growth",
+    village: "Village Life",
+    work: "Work And Economy",
     story: "Story Progression",
     retaliation: "Conflict And Consequences",
     hidden: "Hidden Advancements",
     other: "Other Advancements"
   };
 
-  const order = ["foundation", "trust", "story", "retaliation", "hidden", "other"];
+  const order = ["foundation", "trust", "village", "work", "story", "retaliation", "hidden", "other"];
   const idToGroup = new Map();
   Object.entries(groupedIds).forEach(([group, ids]) => ids.forEach((id) => idToGroup.set(id, group)));
 
   const groups = {
     foundation: [],
     trust: [],
+    village: [],
+    work: [],
     story: [],
     retaliation: [],
     hidden: [],
@@ -1493,7 +1515,7 @@ function renderAdvancements(options = {}) {
 
   return `
     ${section("Reputation Milestones", `
-      <p>The Reputation advancement tab tracks trust, story, and conflict milestones. Related visible milestones are grouped below so you can see what each one follows.</p>
+      <p>The Reputation advancement tab tracks trust, village life, hired work, quests, exploration, and conflict milestones. Related visible milestones are grouped below so you can see what each one follows.</p>
     `)}
     ${groupedSections}
   `;
