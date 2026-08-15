@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.util.GsonHelper;
 import net.neoforged.fml.ModList;
 import org.slf4j.Logger;
 
@@ -36,6 +37,9 @@ public final class VillagerRetaliationEntityModelLoader {
             VillagerRetaliationClientAssets.COMBAT_VILLAGER_CEM_MODEL,
             VillagerRetaliationClientAssets.COMBAT_VILLAGER_CEM_MODEL_DEPRECATED,
             VillagerRetaliationClientAssets.COMBAT_VILLAGER_CEM_MODEL_LEGACY_FOLDER
+    );
+    private static final List<ResourceLocation> HUMANOID_VILLAGER_CEM_MODELS = List.of(
+            VillagerRetaliationClientAssets.HUMANOID_VILLAGER_CEM_MODEL
     );
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -63,6 +67,68 @@ public final class VillagerRetaliationEntityModelLoader {
         }
         LOGGER.info("Loading combat villager model from built-in JSON fallback");
         return loadCombatVillagerModel(resourceManager);
+    }
+
+    public static ModelPart loadHumanoidVillagerModel(EntityRendererProvider.Context context) {
+        ResourceManager resourceManager = context.getResourceManager();
+        Optional<Resource> cemOverrideResource = findFirstResourcePackOverride(resourceManager, HUMANOID_VILLAGER_CEM_MODELS);
+        if (isEntityModelFeaturesLoaded() && cemOverrideResource.isPresent()) {
+            LOGGER.info("Loading humanoid compatibility villager model through EMF extension:{}",
+                    cemOverrideResource.get().sourcePackId());
+            ModelPart root = context.bakeLayer(HumanoidCompatVillagerModel.LAYER_LOCATION);
+            if (hasRequiredCombatParts(root)) {
+                return root;
+            }
+            LOGGER.warn(
+                    "Humanoid compatibility CEM model from {} is missing required parts. Falling back to the JSON bridge model.",
+                    cemOverrideResource.get().sourcePackId()
+            );
+        }
+
+        Optional<Resource> resource = resourceManager.getResource(VillagerRetaliationClientAssets.HUMANOID_VILLAGER_MODEL);
+        if (resource.isEmpty()) {
+            LOGGER.warn("Humanoid compatibility model {} was not found. Falling back to the built-in model.",
+                    VillagerRetaliationClientAssets.HUMANOID_VILLAGER_MODEL);
+            return HumanoidCompatVillagerModel.createBodyLayer().bakeRoot();
+        }
+
+        LOGGER.info("Loading humanoid compatibility villager model from json:{}", resource.get().sourcePackId());
+        ModelPart root = loadLayerDefinition(resource.get(), VillagerRetaliationClientAssets.HUMANOID_VILLAGER_MODEL)
+                .orElseGet(HumanoidCompatVillagerModel::createBodyLayer)
+                .bakeRoot();
+        if (hasRequiredCombatParts(root)) {
+            return root;
+        }
+
+        LOGGER.warn("Humanoid compatibility model {} is missing required parts. Falling back to the built-in model.",
+                VillagerRetaliationClientAssets.HUMANOID_VILLAGER_MODEL);
+        return HumanoidCompatVillagerModel.createBodyLayer().bakeRoot();
+    }
+
+    public static boolean shouldUseHumanoidFreshAnimationProfile(ResourceManager resourceManager) {
+        Optional<Resource> profileResource = findResourcePackOverride(
+                resourceManager,
+                VillagerRetaliationClientAssets.HUMANOID_VILLAGER_ANIMATION_PROFILE
+        );
+        if (profileResource.isEmpty()) {
+            return false;
+        }
+
+        Resource resource = profileResource.get();
+        try (Reader reader = resource.openAsReader()) {
+            JsonObject json = GSON.fromJson(reader, JsonObject.class);
+            String profile = GsonHelper.getAsString(json, "profile", "");
+            boolean enabled = "hevi_fresh_safe".equals(profile);
+            if (enabled) {
+                LOGGER.info("Enabling equipment-safe HEVI Fresh animation profile from {}", resource.sourcePackId());
+            } else {
+                LOGGER.warn("Unknown humanoid villager animation profile '{}' from {}", profile, resource.sourcePackId());
+            }
+            return enabled;
+        } catch (Exception exception) {
+            LOGGER.warn("Failed to load humanoid villager animation profile from {}", resource.sourcePackId(), exception);
+            return false;
+        }
     }
 
     public static Optional<ModelPart> loadNonCombatVillagerModel(ResourceManager resourceManager) {

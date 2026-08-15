@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.client.renderer.layer;
 
 import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
+import com.jvn.villagerretaliation.client.model.HumanoidCompatVillagerModel;
 import com.jvn.villagerretaliation.client.model.VillagerArmorModel;
+import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.HumanoidModel;
@@ -27,12 +29,16 @@ import net.minecraft.world.item.armortrim.ArmorTrim;
 public class VillagerArmorLayer<T extends AbstractVillager> extends RenderLayer<T, BaseVillagerModel<T>> {
     private final VillagerArmorModel<T> innerModel;
     private final VillagerArmorModel<T> outerModel;
+    private final VillagerArmorModel<T> humanoidInnerModel;
+    private final VillagerArmorModel<T> humanoidOuterModel;
     private final TextureAtlas armorTrimAtlas;
 
     public VillagerArmorLayer(RenderLayerParent<T, BaseVillagerModel<T>> renderer, EntityRendererProvider.Context context) {
         super(renderer);
         this.innerModel = new VillagerArmorModel<>(context.bakeLayer(VillagerArmorModel.INNER_ARMOR));
         this.outerModel = new VillagerArmorModel<>(context.bakeLayer(VillagerArmorModel.OUTER_ARMOR));
+        this.humanoidInnerModel = new VillagerArmorModel<>(context.bakeLayer(VillagerArmorModel.HUMANOID_INNER_ARMOR));
+        this.humanoidOuterModel = new VillagerArmorModel<>(context.bakeLayer(VillagerArmorModel.HUMANOID_OUTER_ARMOR));
         this.armorTrimAtlas = context.getModelManager().getAtlas(Sheets.ARMOR_TRIMS_SHEET);
     }
 
@@ -49,6 +55,9 @@ public class VillagerArmorLayer<T extends AbstractVillager> extends RenderLayer<
             float netHeadYaw,
             float headPitch
     ) {
+        if (!(this.getParentModel() instanceof VillagerRetaliationVillagerModel<?>)) {
+            return;
+        }
         poseStack.pushPose();
         this.getParentModel().translateRoot(poseStack);
         this.renderArmorPiece(poseStack, buffer, villager, EquipmentSlot.CHEST, packedLight,
@@ -170,6 +179,9 @@ public class VillagerArmorLayer<T extends AbstractVillager> extends RenderLayer<
     }
 
     private VillagerArmorModel<T> getArmorModel(EquipmentSlot slot) {
+        if (this.getParentModel() instanceof HumanoidCompatVillagerModel<?>) {
+            return this.usesInnerModel(slot) ? this.humanoidInnerModel : this.humanoidOuterModel;
+        }
         return this.usesInnerModel(slot) ? this.innerModel : this.outerModel;
     }
 

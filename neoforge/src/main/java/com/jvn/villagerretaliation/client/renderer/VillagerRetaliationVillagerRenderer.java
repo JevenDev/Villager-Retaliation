@@ -20,6 +20,7 @@ public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetalia
                 VillagerRetaliationClientAssets.VANILLA_VILLAGER_SKIN,
                 VillagerRetaliationClientAssets.COMBAT_VILLAGER_SKIN,
                 true,
+                true,
                 true
         );
         this.addLayer(new VillagerRetaliationProfessionLayer<>(this, context.getResourceManager(), "villager"));
