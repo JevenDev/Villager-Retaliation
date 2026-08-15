@@ -17,6 +17,10 @@ public class VillagerArmorModel<T extends AbstractVillager> extends HumanoidMode
             new ModelLayerLocation(VillagerRetaliation.id("villager_armor"), "inner");
     public static final ModelLayerLocation OUTER_ARMOR =
             new ModelLayerLocation(VillagerRetaliation.id("villager_armor"), "outer");
+    public static final ModelLayerLocation HUMANOID_INNER_ARMOR =
+            new ModelLayerLocation(VillagerRetaliation.id("humanoid_villager_armor"), "inner");
+    public static final ModelLayerLocation HUMANOID_OUTER_ARMOR =
+            new ModelLayerLocation(VillagerRetaliation.id("humanoid_villager_armor"), "outer");
     private static final float EXTRA_ARMOR_DEFORMATION = 0.25F;
     private static final CubeDeformation INNER_ARMOR_DEFORMATION = new CubeDeformation(0.5F);
     private static final CubeDeformation OUTER_ARMOR_DEFORMATION = new CubeDeformation(1.0F);
@@ -30,6 +34,18 @@ public class VillagerArmorModel<T extends AbstractVillager> extends HumanoidMode
 
     public static LayerDefinition createOuterArmorLayer() {
         return createArmorLayer(OUTER_ARMOR_DEFORMATION);
+    }
+
+    public static LayerDefinition createHumanoidInnerArmorLayer() {
+        return createHumanoidArmorLayer(INNER_ARMOR_DEFORMATION);
+    }
+
+    public static LayerDefinition createHumanoidOuterArmorLayer() {
+        return createHumanoidArmorLayer(OUTER_ARMOR_DEFORMATION);
+    }
+
+    private static LayerDefinition createHumanoidArmorLayer(CubeDeformation deformation) {
+        return LayerDefinition.create(HumanoidModel.createMesh(deformation, 0.0F), 64, 32);
     }
 
     private static LayerDefinition createArmorLayer(CubeDeformation baseDeformation) {

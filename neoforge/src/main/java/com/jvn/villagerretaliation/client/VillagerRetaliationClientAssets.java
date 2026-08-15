@@ -252,6 +252,10 @@ public final class VillagerRetaliationClientAssets {
 
     public static final ResourceLocation COMBAT_VILLAGER_MODEL =
             VillagerRetaliation.id("models/entity/villager/combat_villager.json");
+    public static final ResourceLocation HUMANOID_VILLAGER_MODEL =
+            VillagerRetaliation.id("models/entity/villager/humanoid_villager.json");
+    public static final ResourceLocation HUMANOID_VILLAGER_ANIMATION_PROFILE =
+            VillagerRetaliation.id("models/entity/villager/humanoid_animation_profile.json");
     public static final ResourceLocation NON_COMBAT_VILLAGER_MODEL =
             VillagerRetaliation.id("models/entity/villager/non_combat_villager.json");
     public static final ResourceLocation VILLAGER_MODEL_OPTIONS =
@@ -260,6 +264,8 @@ public final class VillagerRetaliationClientAssets {
             ResourceLocation.withDefaultNamespace("optifine/cem/villager.jem");
     public static final ResourceLocation COMBAT_VILLAGER_CEM_MODEL =
             VillagerRetaliation.id("optifine/cem/villager.jem");
+    public static final ResourceLocation HUMANOID_VILLAGER_CEM_MODEL =
+            VillagerRetaliation.id("optifine/cem/humanoid_villager.jem");
     public static final ResourceLocation COMBAT_VILLAGER_CEM_MODEL_DEPRECATED =
             ResourceLocation.withDefaultNamespace("optifine/cem/modded/" + VillagerRetaliation.MOD_ID + "/villager.jem");
     public static final ResourceLocation COMBAT_VILLAGER_CEM_MODEL_LEGACY_FOLDER =

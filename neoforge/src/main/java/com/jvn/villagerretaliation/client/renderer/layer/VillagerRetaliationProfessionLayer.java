@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.renderer.layer;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
+import com.jvn.villagerretaliation.client.model.HumanoidCompatVillagerModel;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -71,7 +72,8 @@ public class VillagerRetaliationProfessionLayer<T extends AbstractVillager & Vil
             return;
         }
 
-        boolean useRetaliationTextures = this.getParentModel() instanceof VillagerRetaliationVillagerModel<?>;
+        boolean useRetaliationTextures = this.getParentModel() instanceof VillagerRetaliationVillagerModel<?>
+                && !(this.getParentModel() instanceof HumanoidCompatVillagerModel<?>);
         VillagerData villagerData = villager.getVillagerData();
         VillagerType type = villagerData.getType();
         VillagerProfession profession = villagerData.getProfession();

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlockEntityTypes;
 
 import com.jvn.villagerretaliation.client.model.VillagerArmorModel;
+import com.jvn.villagerretaliation.client.model.HumanoidCompatVillagerModel;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.jvn.villagerretaliation.client.renderer.VillagerFishingHookRenderer;
 import com.jvn.villagerretaliation.client.renderer.VillagerRetaliationVillagerRenderer;
@@ -26,7 +27,10 @@ public final class VillagerRetaliationClientRenderers {
 
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(VillagerRetaliationVillagerModel.LAYER_LOCATION, VillagerRetaliationVillagerModel::createBodyLayer);
+        event.registerLayerDefinition(HumanoidCompatVillagerModel.LAYER_LOCATION, HumanoidCompatVillagerModel::createEmfBodyLayer);
         event.registerLayerDefinition(VillagerArmorModel.INNER_ARMOR, VillagerArmorModel::createInnerArmorLayer);
         event.registerLayerDefinition(VillagerArmorModel.OUTER_ARMOR, VillagerArmorModel::createOuterArmorLayer);
+        event.registerLayerDefinition(VillagerArmorModel.HUMANOID_INNER_ARMOR, VillagerArmorModel::createHumanoidInnerArmorLayer);
+        event.registerLayerDefinition(VillagerArmorModel.HUMANOID_OUTER_ARMOR, VillagerArmorModel::createHumanoidOuterArmorLayer);
     }
 }

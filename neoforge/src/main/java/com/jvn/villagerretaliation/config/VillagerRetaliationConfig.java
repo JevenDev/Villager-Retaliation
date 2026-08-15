@@ -43,6 +43,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<ReputationChangeHudPosition> REPUTATION_CHANGE_HUD_POSITION = bind("general.reputationChangeHudPosition", ReputationChangeHudPosition.class);
     public static final ConfigValue<Boolean> COLLAPSE_REPUTATION_CHANGE_NOTIFICATIONS = bind("general.collapseReputationChangeNotifications", Boolean.class);
     public static final ConfigValue<Boolean> SHOW_VILLAGER_NAME_TAGS = bind("general.showVillagerNameTags", Boolean.class);
+    public static final ConfigValue<VillagerRenderMode> VILLAGER_RENDER_MODE = bind("general.villagerRenderMode", VillagerRenderMode.class);
     public static final ConfigValue<VillagerStatDisplayMode> VILLAGER_STAT_DISPLAY_MODE = bind("general.villagerStatDisplayMode", VillagerStatDisplayMode.class);
     public static final ConfigValue<Boolean> VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD = bind("general.villagerReputationHoverTooltipRequiresEmerald", Boolean.class);
     public static final ConfigValue<Boolean> SHOW_TRADE_GUI_REPUTATION_ICON = bind("general.showTradeGuiReputationIcon", Boolean.class);

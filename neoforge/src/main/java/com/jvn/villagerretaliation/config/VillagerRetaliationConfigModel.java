@@ -88,6 +88,8 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean showVillagerNameTags = true;
 
+        public VillagerRenderMode villagerRenderMode = VillagerRenderMode.VR_DEFAULT;
+
         public VillagerStatDisplayMode villagerStatDisplayMode = VillagerStatDisplayMode.PARTY_ONLY;
 
         public boolean villagerReputationHoverTooltipRequiresEmerald = true;
