@@ -14,6 +14,20 @@ java {
     withSourcesJar()
 }
 
+sourceSets {
+    gameTest {
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+    }
+}
+
+configurations {
+    gameTestImplementation.extendsFrom implementation
+    gameTestCompileOnly.extendsFrom compileOnly
+    gameTestRuntimeOnly.extendsFrom runtimeOnly
+    gameTestAnnotationProcessor.extendsFrom annotationProcessor
+}
+
 sourceSets.main.resources {
     srcDir('src/generated/resources')
     exclude('**/*.bbmodel')
@@ -42,6 +56,7 @@ neoForge {
 
         gameTestServer {
             type = 'gameTestServer'
+            sourceSet = sourceSets.gameTest
             gameDirectory.set(layout.buildDirectory.dir('gametest-run'))
             systemProperty 'villagerretaliation.gametestOriginSeed', gameTestOriginSeed.get()
             systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
@@ -63,8 +78,11 @@ neoForge {
     mods {
         "${rootProject.mod_id}" {
             sourceSet(sourceSets.main)
+            sourceSet(sourceSets.gameTest)
         }
     }
+
+    addModdingDependenciesTo sourceSets.gameTest
 }
 
 tasks.named('runGameTestServer') {
