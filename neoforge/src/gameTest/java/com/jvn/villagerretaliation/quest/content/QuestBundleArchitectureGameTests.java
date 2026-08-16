@@ -276,6 +276,34 @@ public final class QuestBundleArchitectureGameTests {
                         && diagnostic(privateReference, "private SCENE"),
                 "cross-bundle private access not isolated");
 
+        List<QuestBundleTransactions.RawResource> layeredCrossOwner = new ArrayList<>(introduce(
+                0, "base", NS, "road", "alpha", quest(NS, "road", "alpha", "examplemod.quest.alpha"),
+                locale("examplemod.quest.alpha.title", "Alpha")));
+        layeredCrossOwner.add(raw(0, "base", NS, scenePath("road", "alpha", "private"),
+                definition("examplemod:private_scene")));
+        layeredCrossOwner.addAll(introduce(
+                0, "base", NS, "road", "beta", quest(NS, "road", "beta", "examplemod.quest.beta"),
+                locale("examplemod.quest.beta.title", "Lower Beta")));
+        JsonObject invalidBetaOverride = quest(NS, "road", "beta", "examplemod.quest.beta");
+        invalidBetaOverride.addProperty("scene", "examplemod:private_scene");
+        layeredCrossOwner.add(raw(
+                1, "patch", NS, questPath("road", "beta"), invalidBetaOverride));
+        QuestBundleTransactions.Result layeredPrivateReference = compile(layeredCrossOwner);
+        QuestBundleTransactions.EffectiveBundle retainedBeta =
+                layeredPrivateReference.bundles().get(owner("road", "beta"));
+        helper.assertTrue(retainedBeta != null
+                        && !retainedBeta.definitions().get(QuestBundlePath.Kind.QUEST)
+                                .get(id("examplemod:beta")).has("scene"),
+                "cross-owner override did not retain the lower structural bundle");
+        helper.assertValueEqual(
+                retainedBeta.locales().plainText("en_us", "examplemod.quest.beta.title").orElse(""),
+                "Lower Beta",
+                "cross-owner override did not retain lower English");
+        helper.assertTrue(layeredPrivateReference.diagnostics().stream().anyMatch(value ->
+                        value.layer() == 1 && value.packId().equals("patch")
+                                && value.message().contains("private SCENE")),
+                "cross-owner rollback lost rejecting layer provenance");
+
         JsonObject prerequisite = quest(NS, "road", "beta", "examplemod.quest.beta");
         prerequisite.add("availability", object("{\"prerequisites\":[\"examplemod:alpha\"]}"));
         List<QuestBundleTransactions.RawResource> legal = new ArrayList<>(introduce(

@@ -46,6 +46,8 @@ public final class QuestBundleTransactions {
         Map<QuestBundlePath.Owner, EffectiveBundle> bundles = new LinkedHashMap<>();
         for (Map.Entry<LayerKey, List<Classified>> layer : layers.entrySet()) {
             Map<QuestBundlePath.Owner, List<Classified>> byOwner = groupOwners(layer.getValue());
+            Map<QuestBundlePath.Owner, EffectiveBundle> lowerBundles = new LinkedHashMap<>();
+            Map<QuestBundlePath.Owner, Classified> acceptedSources = new LinkedHashMap<>();
             List<QuestBundlePath.Owner> owners = byOwner.keySet().stream()
                     .sorted(Comparator.comparing((QuestBundlePath.Owner owner) -> !owner.shared())
                             .thenComparing(QuestBundlePath.Owner::key))
@@ -62,6 +64,8 @@ public final class QuestBundleTransactions {
                     List<String> errors = applyStructural(candidate, structural);
                     errors.addAll(validate(candidate, lower, bundles, compatibility, registries));
                     if (errors.isEmpty()) {
+                        lowerBundles.put(owner, lower);
+                        acceptedSources.put(owner, structural.getFirst());
                         bundles.put(owner, candidate.freeze());
                     } else {
                         for (String error : errors) {
@@ -70,6 +74,9 @@ public final class QuestBundleTransactions {
                     }
                 }
             }
+
+            rollbackPrivateCrossOwnerReferences(
+                    bundles, lowerBundles, acceptedSources, diagnostics);
 
             for (QuestBundlePath.Owner owner : owners) {
                 Map<String, List<Classified>> locales = new TreeMap<>();
@@ -97,7 +104,6 @@ public final class QuestBundleTransactions {
             }
         }
 
-        isolatePrivateCrossOwnerReferences(bundles, diagnostics);
         return new Result(Collections.unmodifiableMap(new LinkedHashMap<>(bundles)), List.copyOf(diagnostics));
     }
 
@@ -346,12 +352,18 @@ public final class QuestBundleTransactions {
         return result;
     }
 
-    private static void isolatePrivateCrossOwnerReferences(
+    private static void rollbackPrivateCrossOwnerReferences(
             Map<QuestBundlePath.Owner, EffectiveBundle> bundles,
+            Map<QuestBundlePath.Owner, EffectiveBundle> lowerBundles,
+            Map<QuestBundlePath.Owner, Classified> acceptedSources,
             List<Diagnostic> diagnostics) {
         Map<DefinitionKey, QuestBundlePath.Owner> owners = definitionOwners(bundles, nullOwner());
-        List<QuestBundlePath.Owner> rejected = new ArrayList<>();
-        for (EffectiveBundle bundle : bundles.values()) {
+        Set<QuestBundlePath.Owner> rejected = new LinkedHashSet<>();
+        for (QuestBundlePath.Owner acceptedOwner : acceptedSources.keySet()) {
+            EffectiveBundle bundle = bundles.get(acceptedOwner);
+            if (bundle == null) {
+                continue;
+            }
             if (bundle.owner().shared()) {
                 continue;
             }
@@ -363,16 +375,26 @@ public final class QuestBundleTransactions {
                     for (CompanionReference reference : companionReferences(root)) {
                         QuestBundlePath.Owner target = owners.get(new DefinitionKey(reference.kind(), reference.id()));
                         if (target != null && !target.shared() && !target.equals(bundle.owner())) {
-                            diagnostics.add(new Diagnostic(-1, "", bundle.owner(), null, "ownership",
+                            diagnostics.add(Diagnostic.error(
+                                    acceptedSources.get(acceptedOwner).resource(),
+                                    bundle.owner(),
+                                    "ownership",
                                     "private " + reference.kind() + " " + reference.id()
-                                            + " belongs to " + target.key(), true));
+                                            + " belongs to " + target.key()));
                             rejected.add(bundle.owner());
                         }
                     }
                 }
             }
         }
-        rejected.forEach(bundles::remove);
+        for (QuestBundlePath.Owner owner : rejected) {
+            EffectiveBundle lower = lowerBundles.get(owner);
+            if (lower == null) {
+                bundles.remove(owner);
+            } else {
+                bundles.put(owner, lower);
+            }
+        }
     }
 
     private static Set<CompanionReference> companionReferences(JsonElement element) {
