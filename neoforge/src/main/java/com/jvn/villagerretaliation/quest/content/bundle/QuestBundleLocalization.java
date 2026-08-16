@@ -264,10 +264,12 @@ public final class QuestBundleLocalization {
         if (element == null || element.isJsonNull()) {
             return;
         }
-        LocalizedReference reference = localizedContext
-                ? LocalizedReference.read(element).orElse(null)
-                : null;
-        if (reference != null) {
+        if (localizedContext) {
+            LocalizedReference reference = LocalizedReference.read(element).orElse(null);
+            if (reference == null) {
+                errors.add((path.isBlank() ? "/" : path) + " must use a localized reference");
+                return;
+            }
             try {
                 references.add(reference.expand(prefix));
             } catch (IllegalArgumentException exception) {
@@ -297,7 +299,8 @@ public final class QuestBundleLocalization {
         return switch (field) {
             case "title", "description", "label", "text", "lines",
                     "tracker_text", "tracker_complete_text", "complete_text",
-                    "custom_name", "trophy_name", "boss_bar_title" -> true;
+                    "custom_name", "trophy_name", "boss_bar_title",
+                    "location_message" -> true;
             default -> false;
         };
     }

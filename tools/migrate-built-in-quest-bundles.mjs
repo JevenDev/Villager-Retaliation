@@ -21,7 +21,8 @@ if (compatibility.source_commit !== expectedCommit
 
 const textFields = new Set([
   "title", "description", "label", "text", "lines", "tracker_text",
-  "complete_text", "custom_name", "trophy_name"
+  "tracker_complete_text", "complete_text", "custom_name", "trophy_name",
+  "boss_bar_title", "location_message"
 ]);
 const stableArrays = new Set([
   "stages", "objectives", "events", "triggers", "scenes", "responses",

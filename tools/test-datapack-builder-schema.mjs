@@ -498,8 +498,8 @@ function testSceneResourceRoundTrip(app) {
     id: "storypack:gate_ambush",
     spawn_mode: "raid_waves",
     waves: [
-      { id: "scouts", members: [{ entity: "minecraft:zombie", count: 2 }], boss_bar_title: "Scouts" },
-      { id: "captain", members: [{ id: "gate_captain", entity: "minecraft:pillager", custom_name: "Gate Captain", name_visible: true, health: 40, attributes: { "minecraft:armor": 10 }, boss: true, boss_bar_color: "purple", boss_bar_overlay: "notched_10" }], delay_ticks: 80, trigger: "all_defeated", equipment: { mainhand: { item: "minecraft:crossbow" } }, dialogue_hook: { id: "arrival", text: "Captain incoming." } }
+      { id: "scouts", members: [{ entity: "minecraft:zombie", count: 2 }], boss_bar_title: { key: "storypack.encounter.gate_ambush.wave.scouts.boss_bar_title" } },
+      { id: "captain", members: [{ id: "gate_captain", entity: "minecraft:pillager", custom_name: { key: "storypack.encounter.gate_ambush.member.gate_captain.custom_name" }, name_visible: true, health: 40, attributes: { "minecraft:armor": 10 }, boss: true, boss_bar_color: "purple", boss_bar_overlay: "notched_10" }], delay_ticks: 80, trigger: "all_defeated", equipment: { mainhand: { item: "minecraft:crossbow" } }, dialogue_hook: { id: "arrival", text: { key: "storypack.encounter.gate_ambush.wave.captain.dialogue_hook.text" } } }
     ],
     spawn_points: [
       { id: "west_gate", marker: "west_marker", offset_x: -2, weight: 3 },
@@ -511,13 +511,13 @@ function testSceneResourceRoundTrip(app) {
       { id: "captain_ally", actor: "captain_mara", invulnerable: true, cleanup_policy: "preserve" }
     ],
     phases: [
-      { id: "captain_arrives", trigger: { type: "wave_started", wave: "captain" }, actions: [{ id: "warn", type: "notification", text: "Captain incoming." }] },
+      { id: "captain_arrives", trigger: { type: "wave_started", wave: "captain" }, actions: [{ id: "warn", type: "notification", text: { key: "storypack.encounter.gate_ambush.phase.captain_arrives.warn.text" } }] },
       { id: "captain_falls", trigger: { type: "elite_defeated", member: "gate_captain" }, actions: [{ id: "remember", type: "fact", scope: "player", tag: "storypack:captain_defeated" }] }
     ],
     failure: { on_player_death: "reset_wave", on_protected_actor_death: "branch_scene", retry_delay_ticks: 20, max_attempts: 3, retain_defeated: false, branch_step: "done" },
     environment: { cues: [{ id: "alarm", type: "sound", sound: "minecraft:block.bell.use", volume: 1, pitch: 0.8 }, { id: "column", type: "glowing_column", particle: "minecraft:end_rod", count: 24, height: 8 }], temporary_blocks: [{ id: "gate_light", block: "minecraft:light", offset_y: 3 }] },
     guidance: { coordinate_message: "Find {location}.", arrival_message: "Arrived at {coordinates}.", discovery_radius: 64, arrival_radius: 8, distance_tracker: true, compass_target: true, directional_particles: true, hud_marker: true, exact_coordinates: "after_discovery", update_interval_ticks: 20 },
-    rewards: { waves: [{ id: "captain_supply", wave: "captain", item: "minecraft:arrow", count: 4 }], phases: [{ id: "captain_token", phase: "captain_falls", item: "minecraft:iron_nugget" }], completion: [{ id: "medal", item: "minecraft:emerald", trophy_name: "Gate Medal" }], trophies: [{ id: "badge", member: "gate_captain", item: "minecraft:gold_nugget", name: "Captain Badge" }], drop_policy: "trophy_only" },
+    rewards: { waves: [{ id: "captain_supply", wave: "captain", item: "minecraft:arrow", count: 4 }], phases: [{ id: "captain_token", phase: "captain_falls", item: "minecraft:iron_nugget" }], completion: [{ id: "medal", item: "minecraft:emerald", trophy_name: { key: "storypack.encounter.gate_ambush.reward.medal.trophy_name" } }], trophies: [{ id: "badge", member: "gate_captain", item: "minecraft:gold_nugget", name: "Captain Badge" }], drop_policy: "trophy_only" },
     completion_objectives: { mode: "all", objectives: [{ id: "clear", type: "all_defeated" }, { id: "leader", type: "defeat_leader", member: "gate_captain" }] },
     area: { radius: 32, vertical_radius: 16, leave_behavior: "warn", leave_timeout_ticks: 200, mob_behavior: "return" }
   };
@@ -528,6 +528,13 @@ function testSceneResourceRoundTrip(app) {
   const files = app.generatedFiles();
   assert(JSON.stringify(jsonFile(files, scenePath)) === JSON.stringify(scene), "Scene resource changed during export.");
   assert(JSON.stringify(jsonFile(files, encounterPath)) === JSON.stringify(encounter), "Encounter resource changed during export.");
+  const localizedLocation = structuredClone(encounter);
+  delete localizedLocation.guidance;
+  localizedLocation.location_message = { key: "storypack.encounter.gate_ambush.location_message" };
+  assert(app.sceneResourceIssueDetail(encounterPath, localizedLocation) === null, "Localized location message was rejected.");
+  const inlineLocation = structuredClone(localizedLocation);
+  inlineLocation.location_message = "Find the gate.";
+  assert(/localized reference/i.test(app.sceneResourceIssueDetail(encounterPath, inlineLocation)?.message || ""), "Inline location message was accepted.");
   assert(!app.applyEditedFile(scenePath, JSON.stringify({ ...scene, schema: "wrong" })), "Invalid scene schema edit was accepted.");
   const invalidArea = { ...encounter, area: { radius: 0, leave_behavior: "wander" } };
   const invalidAreaDetail = app.sceneResourceIssueDetail(encounterPath, invalidArea);

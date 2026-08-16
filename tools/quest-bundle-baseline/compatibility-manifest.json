@@ -55019,6 +55019,15 @@
     },
     {
       "generated": true,
+      "key": "villagerretaliation.shared.encounter.night_run_attack.location_message",
+      "owner": "_shared",
+      "payload": "The blocked night route is at {x}, {y}, {z}. Clear it before returning.",
+      "sources": [
+        "encounter:villagerretaliation:night_run_attack/encounter/night_run_attack/location_message"
+      ]
+    },
+    {
+      "generated": true,
       "key": "villagerretaliation.shared.encounter.standing_watch.phase.captain_enters.action.warn_defenders.text",
       "owner": "_shared",
       "payload": "The raider captain has entered the fight.",
@@ -55037,6 +55046,15 @@
     },
     {
       "generated": true,
+      "key": "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.boss_bar_title",
+      "owner": "_shared",
+      "payload": "Standing Watch - Raider Captain",
+      "sources": [
+        "encounter:villagerretaliation:standing_watch/encounter/standing_watch/wave/raider_captain/boss_bar_title"
+      ]
+    },
+    {
+      "generated": true,
       "key": "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.dialogue_hook.text",
       "owner": "_shared",
       "payload": "The captain is here. Hold the line!",
@@ -55051,6 +55069,15 @@
       "payload": "Raider Captain",
       "sources": [
         "encounter:villagerretaliation:standing_watch/encounter/standing_watch/wave/raider_captain/member/raider_captain/custom_name"
+      ]
+    },
+    {
+      "generated": true,
+      "key": "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.boss_bar_title",
+      "owner": "_shared",
+      "payload": "Standing Watch - Restless Dead",
+      "sources": [
+        "encounter:villagerretaliation:standing_watch/encounter/standing_watch/wave/restless_dead/boss_bar_title"
       ]
     },
     {

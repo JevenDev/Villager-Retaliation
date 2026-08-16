@@ -177,7 +177,7 @@ Encounter offsets are applied to an actor or coordinate anchor before that ancho
     {
       "entity": "minecraft:pillager",
       "count": 1,
-      "custom_name": "Gate Captain",
+      "custom_name": {"key": "example.encounter.gate_ambush.member.gate_captain.custom_name"},
       "name_visible": true,
       "glowing": true,
       "persistent": true,
@@ -240,7 +240,7 @@ The optional `spawn_points` array supplies 1-64 named positions. Each point has 
 | `elapsed_time` | `ticks` (1-1,728,000) | The durable time since first encounter reconciliation reaches the threshold. |
 | `elite_defeated` | `member` | The referenced stable member ID has been defeated. The member must have count 1, must not receive party-scaling copies, and must be named, enhanced, or designated as a boss. |
 
-Members only need an `id` when another encounter feature references them. IDs are unique across the encounter's waves. A phase action is `notification` or `dialogue` with bounded `text`, `fact` with either a namespaced `tag` or `key`/`value`, or `transition` with a target scene step. Fact scope is `player`, `quest`, or `world`. Player and quest facts apply to each captured participant, and quest scope requires a linked quest scene. Transitions are checked against the scene when `start_encounter` prepares. At most one transition may appear in a non-repeatable phase.
+Members only need an `id` when another encounter feature references them. IDs are unique across the encounter's waves. A phase action is `notification` or `dialogue` with a localized `text` reference, `fact` with either a namespaced `tag` or `key`/`value`, or `transition` with a target scene step. Fact scope is `player`, `quest`, or `world`. Player and quest facts apply to each captured participant, and quest scope requires a linked quest scene. Transitions are checked against the scene when `start_encounter` prepares. At most one transition may appear in a non-repeatable phase.
 
 Phases fire once by default. Setting `repeatable: true` also requires `repeat_interval_ticks` from 1-12,000 and `max_fires` from 2-64. Repeatable phases cannot transition the scene. The encounter saves its start time, defeated member IDs, fire counts, and absolute repeat deadlines. Each phase run and action also receives a stable scene operation receipt. Idempotent facts and transitions resume safely, while participant messages reserve their receipt before delivery so a reload can never send them twice.
 
@@ -444,7 +444,7 @@ Concrete encounter templates can grant bounded rewards and control drops without
     { "id": "captain_token", "phase": "captain_falls", "item": "minecraft:iron_nugget" }
   ],
   "completion": [
-    { "id": "village_medal", "item": "minecraft:emerald", "trophy_name": "Village Medal" },
+    { "id": "village_medal", "item": "minecraft:emerald", "trophy_name": {"key": "example.encounter.gate_defense.reward.village_medal.trophy_name"} },
     { "id": "bonus_cache", "loot_table": "example:encounters/gate_cache" }
   ],
   "trophies": [
@@ -455,7 +455,7 @@ Concrete encounter templates can grant bounded rewards and control drops without
 }
 ```
 
-`waves`, `phases`, and `completion` each contain at most 32 rewards, with at most 64 triggered rewards total. IDs are unique across every reward and trophy. A reward has exactly one registered `item` (count 1-64) or registered `loot_table`. `trophy_name` is an optional bounded custom name for direct item rewards. Wave and phase targets must reference authored IDs. Repeatable phase rewards use the phase fire ordinal, so each bounded fire is independently receipt-guarded.
+`waves`, `phases`, and `completion` each contain at most 32 rewards, with at most 64 triggered rewards total. IDs are unique across every reward and trophy. A reward has exactly one registered `item` (count 1-64) or registered `loot_table`. `trophy_name` is an optional localized reference for direct item rewards. Wave and phase targets must reference authored IDs. Repeatable phase rewards use the phase fire ordinal, so each bounded fire is independently receipt-guarded.
 
 Every eligible reward reserves a durable scene operation receipt per captured participant before delivery. Item and loot grants use the existing item/loot receipt kinds. Loot rolls use a stable encounter/reward/player seed. Reconciliation, reload, retry, and maintenance reuse the receipt and never grant it twice. Offline participants remain pending, and successfully completed encounters retain completion eligibility through cleanup so their rewards can be delivered after they reconnect. Failed or cancelled encounters do not create new pending grants. A persisted ambiguous `prepared` receipt is treated as consumed rather than risking a duplicate.
 
@@ -469,7 +469,7 @@ Every mob runs its normal vanilla spawn initialization first, so mobs such as pi
 
 ### Elite and boss members
 
-Member presentation is an allowlist: `custom_name` (1-128 characters), `name_visible`, `glowing`, and `persistent`. The last option calls the mob's normal persistence mechanism. It does not inject NBT. `name_visible: true` requires a custom name. Omitting every field retains vanilla encounter/v1 presentation and despawn behavior.
+Member presentation is an allowlist: localized `custom_name`, `name_visible`, `glowing`, and `persistent`. The last option calls the mob's normal persistence mechanism. It does not inject NBT. `name_visible: true` requires a custom name. Omitting every field retains vanilla encounter/v1 presentation and despawn behavior.
 
 Safe combat attributes can use the short fields below or their exact namespaced IDs inside `attributes`, but not both for the same attribute:
 
@@ -494,13 +494,13 @@ Set `boss: true` for a participant-only health bar owned by that spawned member.
 | `fixed` | Spawns at the step's `dimension`, `x`, `y`, and `z` coordinates and tells participants where to go. |
 | `raid_waves` | Spawns either `wave_count` copies of `members` or an explicit `waves` array, retaining authored identity and progress across saves. |
 
-For `fixed`, customize the message with `location_message`. `{x}`, `{y}`, `{z}`, and `{dimension}` are replaced at runtime. If omitted, the player receives a default “Go to the encounter” coordinate message.
+For `fixed`, customize the message with a localized `location_message` reference such as `{"key":"example.encounter.gate_defense.location_message"}`. `{x}`, `{y}`, `{z}`, and `{dimension}` are replaced after localization. If omitted, the player receives a default "Go to the encounter" coordinate message.
 
 For `raid_waves`, `wave_interval_ticks` controls the delay between waves. `wave_trigger` is `all_defeated` (the default raid-style behavior) or `timer`. A timer-triggered wave waits only for its interval. An all-defeated wave starts its interval after every mob in the previous wave has been defeated. Raid waves show a participant-only boss bar by default. Set `"boss_bar": false` to disable it. The bar is restored after a reload and removed when the encounter ends or is cleaned up.
 
-The legacy `members` plus `wave_count` shape remains shorthand for identical waves. For distinct waves, omit those shorthand fields and author `waves` with 1-32 entries. Every wave requires a stable lowercase `id` and its own `members`. It may set `delay_ticks` (0-12000), `trigger`, `boss_bar_title`, and wave-level `equipment` defaults that individual members override. The current wave index and ID, its absolute delay deadline, started-wave IDs, and fired hook IDs are persisted. Changing or removing an active wave ID fails safely rather than silently substituting a different definition.
+The legacy `members` plus `wave_count` shape remains shorthand for identical waves. For distinct waves, omit those shorthand fields and author `waves` with 1-32 entries. Every wave requires a stable lowercase `id` and its own `members`. It may set `delay_ticks` (0-12000), `trigger`, a localized `boss_bar_title` reference, and wave-level `equipment` defaults that individual members override. The current wave index and ID, its absolute delay deadline, started-wave IDs, and fired hook IDs are persisted. Changing or removing an active wave ID fails safely rather than silently substituting a different definition.
 
-`extra_per_player` is deterministic for both forms: after party size is captured at encounter creation, that many copies of each wave's first member are added for every additional participant up to `max_party_size`. Explicit waves may also use bounded, participant-only `scene_actions` of type `notification` or `dialogue`, plus a single `dialogue_hook`. Every hook needs a stable ID and text of at most 512 characters. Hook IDs are recorded before delivery and are never fired again after reload.
+`extra_per_player` is deterministic for both forms: after party size is captured at encounter creation, that many copies of each wave's first member are added for every additional participant up to `max_party_size`. Explicit waves may also use bounded, participant-only `scene_actions` of type `notification` or `dialogue`, plus a single `dialogue_hook`. Every hook needs a stable ID and a localized `text` reference. Hook IDs are recorded before delivery and are never fired again after reload.
 
 ```json
 {
@@ -527,16 +527,16 @@ Distinct composition example:
     {
       "id": "scouts",
       "members": [{ "entity": "minecraft:zombie", "count": 3 }],
-      "boss_bar_title": "Gate Defense - Scouts"
+      "boss_bar_title": {"key": "example.encounter.gate_defense.wave.scouts.boss_bar_title"}
     },
     {
       "id": "captain",
       "members": [{ "entity": "minecraft:pillager" }],
       "delay_ticks": 100,
       "trigger": "all_defeated",
-      "boss_bar_title": "Gate Defense - Captain",
+      "boss_bar_title": {"key": "example.encounter.gate_defense.wave.captain.boss_bar_title"},
       "equipment": { "mainhand": { "item": "minecraft:crossbow" } },
-      "dialogue_hook": { "id": "captain_arrives", "text": "Their captain is here!" }
+      "dialogue_hook": { "id": "captain_arrives", "text": {"key": "example.encounter.gate_defense.wave.captain.dialogue_hook.text"} }
     }
   ]
 }
