@@ -30,6 +30,7 @@ import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.debug.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.conditions.QuestAvailabilityService;
@@ -55,6 +56,7 @@ import com.jvn.villagerretaliation.quest.QuestTriggerIndex;
 import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerPresenter;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
+import com.jvn.villagerretaliation.quest.VillagerQuestHiringRestrictionService;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
@@ -562,6 +564,7 @@ public final class VillagerQuestGameTests {
                 null,
                 "",
                 "",
+                Map.of(),
                 Map.of(),
                 CompiledQuestTransition.EMPTY,
                 null,
@@ -2475,6 +2478,46 @@ public final class VillagerQuestGameTests {
                 "invalid provider policy fallback");
         assertRecentDiagnosticPointer(helper, "/provider/death_protection", "using none");
         DatapackDiagnostics.clear();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_questproviderblockshiringwhenoptedin")
+    public static void questProviderBlocksHiringWhenOptedIn(GameTestHelper helper) {
+        ResourceLocation location = VillagerRetaliation.id("quests/provider_blocks_hiring.json");
+        JsonObject root = validQuestV2Fixture();
+        root.getAsJsonObject("provider").addProperty("blocks_hiring", true);
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope).orElseThrow();
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope).orElseThrow();
+
+        helper.assertTrue(parsed.provider().blocksHiring(), "parser dropped provider blocks_hiring");
+        helper.assertTrue(compiled.provider().blocksHiring(), "compiler dropped provider blocks_hiring");
+        JsonObject defaultRoot = validQuestV2Fixture();
+        QuestResourceEnvelope defaultEnvelope = QuestResourceEnvelope.read(
+                VillagerRetaliation.id("quests/provider_allows_hiring.json"), defaultRoot).orElseThrow();
+        helper.assertFalse(
+                QuestV2Compiler.compile(QuestV2Parser.parse(defaultEnvelope).orElseThrow(), defaultEnvelope)
+                        .orElseThrow().provider().blocksHiring(),
+                "omitted blocks_hiring should default to false");
+
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager provider = spawnVillager(helper, new BlockPos(2, 2, 2));
+        VillagerQuestResources.installCompiledTestCatalog(helper.getLevel().getServer(), List.of(compiled));
+        try {
+            helper.assertValueEqual(
+                    VillagerQuestHiringRestrictionService.blockingQuests(helper.getLevel(), provider, player),
+                    Set.of(compiled.id()),
+                    "matching provider should report the blocking quest");
+            helper.assertFalse(
+                    HiredVillagerContractService.startHireContract(helper.getLevel(), provider, player, 1, 8),
+                    "provider with blocks_hiring should reject a new contract");
+            helper.assertFalse(
+                    HiredVillagerContractService.isHired(helper.getLevel(), provider),
+                    "rejected provider contract should not mutate hiring state");
+        } finally {
+            VillagerQuestResources.clearCache();
+            provider.discard();
+        }
         helper.succeed();
     }
 

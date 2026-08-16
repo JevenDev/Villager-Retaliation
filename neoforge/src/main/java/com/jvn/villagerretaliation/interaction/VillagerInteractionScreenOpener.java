@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillageAllegianceView;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.quest.VillagerQuestHiringRestrictionService;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -235,6 +236,9 @@ public final class VillagerInteractionScreenOpener {
                 partyVillagerAuthorized,
                 partyVillagerPartyMember,
                 partyRecruitAvailable,
+                !hiredAnyPlayer
+                        && VillagerRecruitmentService.canRecruit(level, villager, player)
+                        && !VillagerQuestHiringRestrictionService.blocksHiring(level, villager, player),
                 com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.featureAvailable(),
                 com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.hasAssignment(level, villager.getUUID()),
                 HiredVillagerContractService.isMountedTravelEnabled(level, villager),

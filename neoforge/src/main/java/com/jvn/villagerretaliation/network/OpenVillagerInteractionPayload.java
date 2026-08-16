@@ -49,6 +49,7 @@ public record OpenVillagerInteractionPayload(
         boolean partyVillagerAuthorized,
         boolean partyVillagerPartyMember,
         boolean partyRecruitAvailable,
+        boolean hireAvailable,
         boolean mountFeatureAvailable,
         boolean assignedMount,
         boolean mountedTravelEnabled,
@@ -133,6 +134,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.partyVillagerAuthorized());
         buffer.writeBoolean(payload.partyVillagerPartyMember());
         buffer.writeBoolean(payload.partyRecruitAvailable());
+        buffer.writeBoolean(payload.hireAvailable());
         buffer.writeBoolean(payload.mountFeatureAvailable());
         buffer.writeBoolean(payload.assignedMount());
         buffer.writeBoolean(payload.mountedTravelEnabled());
@@ -202,6 +204,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readUtf(HIRER_NAME_LENGTH),
                 buffer.readVarInt(),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),

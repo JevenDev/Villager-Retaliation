@@ -231,6 +231,9 @@
             "while_active"
           ]
         },
+        "blocks_hiring": {
+          "type": "boolean"
+        },
         "filters": {
           "type": "object"
         },
@@ -1372,6 +1375,9 @@
             }
           ]
         },
+        "label_key": {
+          "type": "string"
+        },
         "request": {
           "type": "string"
         },
@@ -1459,6 +1465,9 @@
               "$ref": "#/$defs/localized_reference"
             }
           ]
+        },
+        "label_key": {
+          "type": "string"
         },
         "request": {
           "type": "string"

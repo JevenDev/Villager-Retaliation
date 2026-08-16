@@ -263,6 +263,9 @@ public final class QuestDialogueCompiler {
         if (lines.size() > 0) {
             node.add("lines", lines);
         }
+        if (!scene.textKey().isBlank()) {
+            node.addProperty("text_key", scene.textKey());
+        }
         copyArrayIfPresent(scene.data(), node, "actions");
         copyArrayIfPresent(scene.data(), node, "conditions");
         copyIfPresent(scene.data(), node, "end");
@@ -292,6 +295,14 @@ public final class QuestDialogueCompiler {
             JsonObject object = new JsonObject();
             object.addProperty("id", response.id());
             object.addProperty("label", responseLabel(response));
+            String labelKey = DatapackJsonReader.readString(response.data(), "label_key");
+            if (!labelKey.isBlank()) {
+                object.addProperty("label_key", labelKey);
+            }
+            String textKey = DatapackJsonReader.readString(response.data(), "text_key");
+            if (!textKey.isBlank()) {
+                object.addProperty("text_key", textKey);
+            }
             JsonArray lines = responseLines(response);
             if (lines.size() > 0) {
                 object.add("lines", lines);
@@ -392,6 +403,10 @@ public final class QuestDialogueCompiler {
         entry.addProperty("id", entryId);
         String explicitLabel = entryData == null ? "" : DatapackJsonReader.readString(entryData, "label");
         entry.addProperty("label", explicitLabel.isBlank() ? label : explicitLabel);
+        String labelKey = entryData == null ? "" : DatapackJsonReader.readString(entryData, "label_key");
+        if (!labelKey.isBlank()) {
+            entry.addProperty("label_key", labelKey);
+        }
         entry.addProperty("start", nodeId);
         entry.add("metadata", metadata(resource, stageId, "quest_module_v2_entry", source, entryData));
         copyIfPresent(entryData, entry, "request");

@@ -53,6 +53,7 @@ public record DialogueTreeDefinition(
     public record Entry(
             String id,
             String label,
+            String labelKey,
             DialogueEntryMetadata metadata,
             String start,
             DialogueRequestType requestType,
@@ -68,6 +69,7 @@ public record DialogueTreeDefinition(
         public Entry {
             id = id == null || id.isBlank() ? "default" : id;
             label = label == null ? "" : label;
+            labelKey = labelKey == null ? "" : labelKey;
             metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
             start = start == null || start.isBlank() ? "start" : start;
             requestType = requestType == null ? DialogueRequestType.STORY : requestType;
@@ -81,12 +83,12 @@ public record DialogueTreeDefinition(
                 boolean showForAdults, boolean showForBabies, Set<VillagerProfession> professions,
                 Set<DialogueDisposition> dispositions, List<DialogueCondition> conditions,
                 boolean forceCameraTowardsVillager, int order) {
-            this(id, label, metadata, start, requestType, showForAdults, showForBabies, professions, dispositions,
+            this(id, label, "", metadata, start, requestType, showForAdults, showForBabies, professions, dispositions,
                     conditions, forceCameraTowardsVillager, order, 0);
         }
 
         public boolean matches(DialogueContext context, DialogueDisposition disposition) {
-            if (this.label.isBlank()) {
+            if (this.label.isBlank() && this.labelKey.isBlank()) {
                 return false;
             }
             if (context.villager().isBaby()) {
@@ -110,12 +112,19 @@ public record DialogueTreeDefinition(
         }
 
         public DialogueOptionDefinition toOption(ResourceLocation treeId, DialogueEntryMetadata inheritedMetadata) {
+            return toOption(null, treeId, inheritedMetadata);
+        }
+
+        public DialogueOptionDefinition toOption(
+                DialogueContext context,
+                ResourceLocation treeId,
+                DialogueEntryMetadata inheritedMetadata) {
             return option(
                     DialogueTreeService.entryOptionId(treeId, this.id),
                     DialogueTreeReference.entry(treeId, this.id),
                     treeId,
                     inheritedMetadata == null ? this.metadata : inheritedMetadata.merge(this.metadata),
-                    this.label,
+                    resolveLabel(context, this.label, this.labelKey),
                     this.requestType,
                     this.forceCameraTowardsVillager,
                     this.priority,
@@ -171,6 +180,7 @@ public record DialogueTreeDefinition(
     public record Response(
             String id,
             String label,
+            String labelKey,
             DialogueEntryMetadata metadata,
             String next,
             DialogueRequestType requestType,
@@ -185,6 +195,7 @@ public record DialogueTreeDefinition(
         public Response {
             id = id == null || id.isBlank() ? "response" : id;
             label = label == null ? "" : label;
+            labelKey = labelKey == null ? "" : labelKey;
             metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
             next = next == null ? "" : next;
             requestType = requestType == null ? DialogueRequestType.STORY : requestType;
@@ -200,18 +211,19 @@ public record DialogueTreeDefinition(
                 String id, String label, DialogueEntryMetadata metadata, String next, DialogueRequestType requestType,
                 List<String> lines, List<VillagerActionDefinition> actions, List<DialogueCondition> conditions,
                 boolean end, int order) {
-            this(id, label, metadata, next, requestType, lines, List.of(), actions, conditions, end, order, 0);
+            this(id, label, "", metadata, next, requestType, lines, List.of(), actions, conditions, end, order, 0);
         }
 
         public Response(
                 String id, String label, DialogueEntryMetadata metadata, String next, DialogueRequestType requestType,
                 List<String> lines, List<VillagerActionDefinition> actions, List<DialogueCondition> conditions,
                 boolean end, int order, int priority) {
-            this(id, label, metadata, next, requestType, lines, List.of(), actions, conditions, end, order, priority);
+            this(id, label, "", metadata, next, requestType, lines, List.of(), actions, conditions, end, order, priority);
         }
 
         public boolean matches(DialogueContext context) {
-            return !this.label.isBlank() && DialogueCondition.matchesAll(context, this.conditions);
+            return (!this.label.isBlank() || !this.labelKey.isBlank())
+                    && DialogueCondition.matchesAll(context, this.conditions);
         }
 
         public DialogueOptionDefinition toOption(ResourceLocation treeId) {
@@ -219,12 +231,19 @@ public record DialogueTreeDefinition(
         }
 
         public DialogueOptionDefinition toOption(ResourceLocation treeId, DialogueEntryMetadata inheritedMetadata) {
+            return toOption(null, treeId, inheritedMetadata);
+        }
+
+        public DialogueOptionDefinition toOption(
+                DialogueContext context,
+                ResourceLocation treeId,
+                DialogueEntryMetadata inheritedMetadata) {
             return option(
                     DialogueTreeService.responseOptionId(treeId, this.id),
                     DialogueTreeReference.response(treeId, this.id),
                     treeId,
                     inheritedMetadata == null ? this.metadata : inheritedMetadata.merge(this.metadata),
-                    this.label,
+                    resolveLabel(context, this.label, this.labelKey),
                     this.requestType,
                     false,
                     this.priority,
@@ -245,6 +264,14 @@ public record DialogueTreeDefinition(
                             : VillagerDialogueResources.message(context, variant.textKey()).orElse(variant.text()))
                     .orElse("");
         }
+    }
+
+    private static String resolveLabel(DialogueContext context, String fallback, String key) {
+        if (context == null || key == null || key.isBlank()) {
+            return fallback == null ? "" : fallback;
+        }
+        return DialogueOptionDefinition.networkSafeLabel(
+                VillagerDialogueResources.message(context, key).orElse(fallback == null ? "" : fallback));
     }
 
     private static DialogueOptionDefinition option(

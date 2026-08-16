@@ -57,7 +57,7 @@ public final class DialogueTreeResources {
                 .filter(tree -> tree.matches(context))
                 .flatMap(tree -> tree.entries().stream()
                         .filter(entry -> entry.matches(context, disposition))
-                        .map(entry -> new RankedOption(entry.toOption(tree.id(), tree.metadata()), entry.priority())))
+                        .map(entry -> new RankedOption(entry.toOption(context, tree.id(), tree.metadata()), entry.priority())))
                 .sorted(Comparator.comparingInt(RankedOption::priority).reversed()
                         .thenComparingInt(value -> value.option().order())
                         .thenComparing(value -> value.option().id()))
@@ -317,6 +317,7 @@ public final class DialogueTreeResources {
                 entries.add(new DialogueTreeDefinition.Entry(
                         entryId,
                         label,
+                        DatapackJsonReader.readString(entry, "label_key"),
                         DialogueEntryMetadata.read(location, "dialogue tree entry", context, entry),
                         DatapackJsonReader.readString(entry, "start"),
                         DatapackJsonReader.readEnum(entry, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
@@ -369,14 +370,23 @@ public final class DialogueTreeResources {
         String id = firstNonBlank(DatapackJsonReader.readString(node, "id"), fallbackId);
         String context = "dialogue tree node \"" + id + "\"";
         ResourceLocation nodeQuestId = defaultQuestId(location, node, defaultQuestId);
+        List<String> lines = DatapackJsonReader.readLines(node);
+        String textKey = DatapackJsonReader.readString(node, "text_key");
+        DialogueUsagePolicy usage = DialogueUsagePolicy.read(node, DialogueUsagePolicy.DEFAULT);
         return new DialogueTreeDefinition.Node(
                 id,
-                DatapackJsonReader.readLines(node),
-                DialogueTextVariant.read(location, "dialogue tree", context,
-                        treeId + "/node/" + id,
-                        node.has("variants") ? node.get("variants") : node.get("lines"),
-                        nodeQuestId, DialogueEntryMetadata.EMPTY,
-                        DialogueUsagePolicy.read(node, DialogueUsagePolicy.DEFAULT)),
+                lines,
+                textKey.isBlank()
+                        ? DialogueTextVariant.read(location, "dialogue tree", context,
+                                treeId + "/node/" + id,
+                                node.has("variants") ? node.get("variants") : node.get("lines"),
+                                nodeQuestId, DialogueEntryMetadata.EMPTY, usage)
+                        : DialogueTextVariant.legacy(
+                                treeId + "/node/" + id,
+                                lines.isEmpty() ? lines : List.of(lines.getFirst()),
+                                textKey,
+                                DialogueEntryMetadata.EMPTY,
+                                usage),
                 VillagerActionDefinition.readList(location, context, node, nodeQuestId),
                 DialogueCondition.readList(location, context, node, nodeQuestId),
                 readResponses(location, context, node, nodeQuestId, treeId),
@@ -412,19 +422,30 @@ public final class DialogueTreeResources {
                     continue;
                 }
                 ResourceLocation responseQuestId = defaultQuestId(location, response, defaultQuestId);
+                DialogueEntryMetadata metadata =
+                        DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response);
+                List<String> lines = DatapackJsonReader.readLines(response);
+                String textKey = DatapackJsonReader.readString(response, "text_key");
+                DialogueUsagePolicy usage = DialogueUsagePolicy.read(response, DialogueUsagePolicy.DEFAULT);
                 responses.add(new DialogueTreeDefinition.Response(
                         id,
                         label,
-                        DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response),
+                        DatapackJsonReader.readString(response, "label_key"),
+                        metadata,
                         DatapackJsonReader.readString(response, "next"),
                         DatapackJsonReader.readEnum(response, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
-                        DatapackJsonReader.readLines(response),
-                        DialogueTextVariant.read(location, "dialogue tree", responseContext,
-                                treeId + "/response/" + id,
-                                response.has("variants") ? response.get("variants") : response.get("lines"),
-                                responseQuestId,
-                                DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response),
-                                DialogueUsagePolicy.read(response, DialogueUsagePolicy.DEFAULT)),
+                        lines,
+                        textKey.isBlank()
+                                ? DialogueTextVariant.read(location, "dialogue tree", responseContext,
+                                        treeId + "/response/" + id,
+                                        response.has("variants") ? response.get("variants") : response.get("lines"),
+                                        responseQuestId, metadata, usage)
+                                : DialogueTextVariant.legacy(
+                                        treeId + "/response/" + id,
+                                        lines.isEmpty() ? lines : List.of(lines.getFirst()),
+                                        textKey,
+                                        metadata,
+                                        usage),
                         VillagerActionDefinition.readList(location, responseContext, response, responseQuestId),
                         DialogueCondition.readList(location, responseContext, response, responseQuestId),
                         DatapackJsonReader.readBoolean(response, "end", false),

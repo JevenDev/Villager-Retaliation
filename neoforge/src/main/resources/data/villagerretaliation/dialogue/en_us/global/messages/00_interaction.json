@@ -718,6 +718,15 @@
       "id": "global.messages.00_interaction.messages.interaction.recruit_unavailable.022"
     },
     {
+      "key": "interaction.hire.quest_provider_locked",
+      "lines": [
+        "I have responsibilities here that prevent me from accepting a contract.",
+        "I cannot leave while this duty depends on me.",
+        "My work here must come before any hiring agreement."
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.hire.quest_provider_locked"
+    },
+    {
       "key": "interaction.child_refuse_trade",
       "lines": [
         "I do not know how to trade yet.",

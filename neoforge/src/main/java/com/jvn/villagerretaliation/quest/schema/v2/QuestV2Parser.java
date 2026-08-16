@@ -78,6 +78,7 @@ public final class QuestV2Parser {
             "capabilities",
             "required_capabilities",
             "death_protection",
+            "blocks_hiring",
             "filters",
             "data");
     private static final Set<String> AVAILABILITY_KEYS = Set.of(
@@ -234,6 +235,7 @@ public final class QuestV2Parser {
             "external_scene",
             "external_entry",
             "label",
+            "label_key",
             "request",
             "show_for_babies",
             "order",
@@ -250,6 +252,7 @@ public final class QuestV2Parser {
             "id",
             "slot",
             "label",
+            "label_key",
             "request",
             "show_for_babies",
             "order",
@@ -495,7 +498,12 @@ public final class QuestV2Parser {
                             Set.of(deathProtectionValue));
                     return QuestProviderDeathProtection.NONE;
                 });
-        return new QuestV2Resource.Provider(type.orElse(null), requiredCapabilities, deathProtection, object);
+        return new QuestV2Resource.Provider(
+                type.orElse(null),
+                requiredCapabilities,
+                deathProtection,
+                readBoolean(object, "blocks_hiring"),
+                object);
     }
 
     private static QuestV2Resource.Availability readAvailability(Validator validator, JsonElement element) {

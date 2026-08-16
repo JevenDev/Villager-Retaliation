@@ -90,6 +90,7 @@ public final class SceneSchema {
         properties.add("wave_trigger", enumValues(EncounterTemplate.WaveTrigger.values()));
         properties.add("boss_bar", bool());
         properties.add("location_message", localizedReference());
+        properties.add("location_message_key", text());
         properties.add("area", encounterArea());
         properties.add("respawn_policy", enumValues(EncounterTemplate.RespawnPolicy.values()));
         properties.add("cleanup_policy", enumValues(EncounterTemplate.CleanupPolicy.values()));
@@ -260,6 +261,7 @@ public final class SceneSchema {
         properties.add("id", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
         properties.add("type", enumValues(EncounterTemplate.PhaseActionType.values()));
         properties.add("text", localizedReference());
+        properties.add("text_key", text());
         properties.add("scope", enumValues(EncounterTemplate.FactScope.values()));
         properties.add("tag", resourceLocation());
         properties.add("key", patternedText("^[a-zA-Z0-9_.:-]{1,128}$"));
@@ -510,6 +512,7 @@ public final class SceneSchema {
         properties.add("count", boundedInteger(1, 16));
         properties.add("equipment", equipment());
         properties.add("custom_name", localizedReference());
+        properties.add("custom_name_key", text());
         properties.add("name_visible", bool());
         properties.add("glowing", bool());
         properties.add("persistent", bool());
@@ -704,6 +707,7 @@ public final class SceneSchema {
         properties.add("item", resourceLocation());
         properties.add("count", boundedInteger(1, 64));
         properties.add("trophy_name", localizedReference());
+        properties.add("trophy_name_key", text());
         reward.add("properties", properties);
         JsonArray sources = new JsonArray();
         sources.add(
@@ -782,6 +786,7 @@ public final class SceneSchema {
         properties.add("delay_ticks", boundedInteger(0, 12000));
         properties.add("trigger", enumValues(EncounterTemplate.WaveTrigger.values()));
         properties.add("boss_bar_title", localizedReference());
+        properties.add("boss_bar_title_key", text());
         properties.add("equipment", equipment());
         JsonObject hooks = array(waveHook(), 0);
         hooks.addProperty("maxItems", 32);
@@ -799,6 +804,7 @@ public final class SceneSchema {
         properties.add("id", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
         properties.add("type", enumValues(EncounterTemplate.HookType.values()));
         properties.add("text", localizedReference());
+        properties.add("text_key", text());
         hook.add("properties", properties);
         return hook;
     }
@@ -810,6 +816,7 @@ public final class SceneSchema {
         JsonObject properties = new JsonObject();
         properties.add("id", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
         properties.add("text", localizedReference());
+        properties.add("text_key", text());
         hook.add("properties", properties);
         return hook;
     }
@@ -982,6 +989,7 @@ public final class SceneSchema {
         properties.add("count", boundedInteger(1, 64));
         properties.add("equipment", equipment());
         properties.add("custom_name", localizedReference());
+        properties.add("custom_name_key", text());
         properties.add("name_visible", bool());
         properties.add("glowing", bool());
         properties.add("persistent", bool());

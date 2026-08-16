@@ -325,6 +325,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final boolean partyVillagerAuthorized;
     private final boolean partyVillagerPartyMember;
     private final boolean partyRecruitAvailable;
+    private final boolean hireAvailable;
     private final boolean mountFeatureAvailable;
     private boolean assignedMount;
     private boolean mountedTravelEnabled;
@@ -481,6 +482,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean partyVillagerAuthorized,
             boolean partyVillagerPartyMember,
             boolean partyRecruitAvailable,
+            boolean hireAvailable,
             boolean mountFeatureAvailable,
             boolean assignedMount,
             boolean mountedTravelEnabled,
@@ -545,6 +547,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.partyVillagerAuthorized = partyVillagerAuthorized;
         this.partyVillagerPartyMember = partyVillagerPartyMember;
         this.partyRecruitAvailable = partyRecruitAvailable;
+        this.hireAvailable = hireAvailable;
         this.mountFeatureAvailable = mountFeatureAvailable;
         this.assignedMount = assignedMount;
         this.mountedTravelEnabled = mountedTravelEnabled;
@@ -2097,8 +2100,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean canHireVillager() {
-        return this.reputationLevel != null
-                && this.reputationLevel.trustRank() >= VillagerReputationLevel.NEUTRAL.trustRank();
+        return this.hireAvailable;
     }
 
     private boolean canCommandFollow() {

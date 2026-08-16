@@ -48,12 +48,22 @@ public record QuestV2Resource(
             ResourceLocation type,
             Set<ResourceLocation> requiredCapabilities,
             QuestProviderDeathProtection deathProtection,
+            boolean blocksHiring,
             JsonObject data
     ) {
-        public static final Provider EMPTY = new Provider(null, Set.of(), QuestProviderDeathProtection.NONE, new JsonObject());
+        public static final Provider EMPTY = new Provider(
+                null, Set.of(), QuestProviderDeathProtection.NONE, false, new JsonObject());
 
         public Provider(ResourceLocation type, Set<ResourceLocation> requiredCapabilities, JsonObject data) {
-            this(type, requiredCapabilities, QuestProviderDeathProtection.NONE, data);
+            this(type, requiredCapabilities, QuestProviderDeathProtection.NONE, false, data);
+        }
+
+        public Provider(
+                ResourceLocation type,
+                Set<ResourceLocation> requiredCapabilities,
+                QuestProviderDeathProtection deathProtection,
+                JsonObject data) {
+            this(type, requiredCapabilities, deathProtection, false, data);
         }
 
         public Provider {

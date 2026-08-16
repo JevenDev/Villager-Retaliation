@@ -72,7 +72,7 @@ public final class DialogueTreeService {
                 .sorted(Comparator.comparingInt(DialogueTreeDefinition.Response::priority).reversed()
                         .thenComparingInt(DialogueTreeDefinition.Response::order)
                         .thenComparing(DialogueTreeDefinition.Response::id))
-                .map(response -> response.toOption(tree.id(), tree.metadata()))
+                .map(response -> response.toOption(context, tree.id(), tree.metadata()))
                 .toList();
         if (options.isEmpty()) {
             SESSIONS.remove(key);

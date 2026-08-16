@@ -303,7 +303,8 @@ public final class EncounterResources {
                     variants,
                     validateEnvironment(parseEnvironment(root, errors), errors),
                     parseGuidance(root, errors),
-                    parseRewards(root, members, waves, phases, errors));
+                    parseRewards(root, members, waves, phases, errors),
+                    string(root, "location_message_key", ""));
         } catch (IllegalArgumentException e) {
             errors.add(e.getMessage());
             return null;
@@ -451,7 +452,8 @@ public final class EncounterResources {
             }
             JsonObject reward = element.getAsJsonObject();
             for (String field : reward.keySet())
-                if (!List.of("id", "wave", "phase", "loot_table", "item", "count", "trophy_name")
+                if (!List.of("id", "wave", "phase", "loot_table", "item", "count", "trophy_name",
+                                "trophy_name_key")
                         .contains(field)) errors.add("unknown reward field " + field);
             String id = string(reward, "id", ""),
                     target = targetField.isBlank() ? "" : string(reward, targetField, "");
@@ -485,7 +487,8 @@ public final class EncounterResources {
                                 loot,
                                 item,
                                 boundedInteger(reward, "count", 1, 1, 64, "reward " + id, errors),
-                                string(reward, "trophy_name", "")));
+                                string(reward, "trophy_name", ""),
+                                string(reward, "trophy_name_key", "")));
             } catch (IllegalArgumentException e) {
                 errors.add(e.getMessage());
             }
@@ -879,6 +882,7 @@ public final class EncounterResources {
                                 "count",
                                 "equipment",
                                 "custom_name",
+                                "custom_name_key",
                                 "name_visible",
                                 "glowing",
                                 "persistent",
@@ -926,6 +930,7 @@ public final class EncounterResources {
                                 "count",
                                 "equipment",
                                 "custom_name",
+                                "custom_name_key",
                                 "name_visible",
                                 "glowing",
                                 "persistent",
@@ -1437,7 +1442,7 @@ public final class EncounterResources {
             }
             JsonObject action = value.getAsJsonObject();
             for (String key : action.keySet())
-                if (!List.of("id", "type", "text", "scope", "tag", "key", "value", "target")
+                if (!List.of("id", "type", "text", "text_key", "scope", "tag", "key", "value", "target")
                         .contains(key)) errors.add("unknown phase action field " + key);
             String id = string(action, "id", "");
             EncounterTemplate.PhaseActionType type =
@@ -1448,7 +1453,8 @@ public final class EncounterResources {
                 if (!key.equals("id")
                         && !key.equals("type")
                         && !switch (type) {
-                            case NOTIFICATION, DIALOGUE -> key.equals("text");
+                            case NOTIFICATION, DIALOGUE ->
+                                    key.equals("text") || key.equals("text_key");
                             case FACT -> List.of("scope", "tag", "key", "value").contains(key);
                             case TRANSITION -> key.equals("target");
                         })
@@ -1484,7 +1490,8 @@ public final class EncounterResources {
                                 tag,
                                 string(action, "key", ""),
                                 string(action, "value", ""),
-                                string(action, "target", "")));
+                                string(action, "target", ""),
+                                string(action, "text_key", "")));
             } catch (IllegalArgumentException e) {
                 errors.add(e.getMessage());
             }
@@ -1519,6 +1526,7 @@ public final class EncounterResources {
                                 "delay_ticks",
                                 "trigger",
                                 "boss_bar_title",
+                                "boss_bar_title_key",
                                 "equipment",
                                 "scene_actions",
                                 "dialogue_hook")
@@ -1542,7 +1550,8 @@ public final class EncounterResources {
                                         EncounterTemplate.WaveTrigger.ALL_DEFEATED,
                                         errors),
                                 string(wave, "boss_bar_title", ""),
-                                hooks));
+                                hooks,
+                                string(wave, "boss_bar_title_key", "")));
             } catch (IllegalArgumentException e) {
                 errors.add(e.getMessage());
             }
@@ -1575,6 +1584,7 @@ public final class EncounterResources {
                                 "count",
                                 "equipment",
                                 "custom_name",
+                                "custom_name_key",
                                 "name_visible",
                                 "glowing",
                                 "persistent",
@@ -1677,7 +1687,8 @@ public final class EncounterResources {
                 if (value != null) putAttribute(attributes, alias.getValue(), value, owner, errors);
             }
         return new EncounterTemplate.MobOptions(
-                customName, nameVisible, glowing, persistent, attributes, boss, color, overlay);
+                customName, nameVisible, glowing, persistent, attributes, boss, color, overlay,
+                string(member, "custom_name_key", ""));
     }
 
     private static void putAttribute(
@@ -1740,7 +1751,7 @@ public final class EncounterResources {
                     }
                     JsonObject hook = value.getAsJsonObject();
                     for (String key : hook.keySet())
-                        if (!List.of("id", "type", "text").contains(key))
+                        if (!List.of("id", "type", "text", "text_key").contains(key))
                             errors.add("unknown wave scene action field " + key);
                     String id = string(hook, "id", "");
                     if (!ids.add(id)) errors.add("duplicate wave hook id " + id);
@@ -1749,7 +1760,9 @@ public final class EncounterResources {
                                     EncounterTemplate.HookType.class, hook, "type", null, errors);
                     try {
                         hooks.add(
-                                new EncounterTemplate.WaveHook(id, type, string(hook, "text", "")));
+                                new EncounterTemplate.WaveHook(
+                                        id, type, string(hook, "text", ""),
+                                        string(hook, "text_key", "")));
                     } catch (IllegalArgumentException e) {
                         errors.add(e.getMessage());
                     }
@@ -1761,7 +1774,7 @@ public final class EncounterResources {
             else {
                 JsonObject hook = wave.getAsJsonObject("dialogue_hook");
                 for (String key : hook.keySet())
-                    if (!List.of("id", "text").contains(key))
+                    if (!List.of("id", "text", "text_key").contains(key))
                         errors.add("unknown wave dialogue hook field " + key);
                 String id = string(hook, "id", "");
                 if (!ids.add(id)) errors.add("duplicate wave hook id " + id);
@@ -1770,7 +1783,8 @@ public final class EncounterResources {
                             new EncounterTemplate.WaveHook(
                                     id,
                                     EncounterTemplate.HookType.DIALOGUE,
-                                    string(hook, "text", "")));
+                                    string(hook, "text", ""),
+                                    string(hook, "text_key", "")));
                 } catch (IllegalArgumentException e) {
                     errors.add(e.getMessage());
                 }

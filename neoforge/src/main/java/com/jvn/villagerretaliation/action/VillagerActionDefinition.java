@@ -33,6 +33,7 @@ public record VillagerActionDefinition(
         String factKey,
         String factValue,
         Map<String, List<String>> linesByStatus,
+        Map<String, List<String>> lineKeysByStatus,
         CompiledQuestTransition questTransition,
         ResourceLocation sceneId,
         String sceneOperationId,
@@ -49,6 +50,7 @@ public record VillagerActionDefinition(
         factKey = factKey == null ? "" : factKey;
         factValue = factValue == null ? "" : factValue;
         linesByStatus = linesByStatus == null ? Map.of() : copyLines(linesByStatus);
+        lineKeysByStatus = lineKeysByStatus == null ? Map.of() : copyLines(lineKeysByStatus);
         questTransition = questTransition == null ? CompiledQuestTransition.EMPTY : questTransition;
         sceneOperationId = sceneOperationId == null ? "" : sceneOperationId.trim();
     }
@@ -212,6 +214,7 @@ public record VillagerActionDefinition(
                 factKey,
                 factValue,
                 readLinesByStatus(entry),
+                readLineKeysByStatus(entry),
                 questTransition,
                 sceneId,
                 sceneOperationId,
@@ -491,6 +494,31 @@ public record VillagerActionDefinition(
         return Map.copyOf(values);
     }
 
+    private static Map<String, List<String>> readLineKeysByStatus(JsonObject entry) {
+        JsonObject lines = DatapackJsonReader.readObject(entry, "lines");
+        if (lines == null) {
+            return Map.of();
+        }
+        Map<String, List<String>> values = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> child : lines.entrySet()) {
+            String field = child.getKey();
+            if (field.endsWith("_key") || field.endsWith("_keys")) {
+                String suffix = field.endsWith("_keys") ? "_keys" : "_key";
+                List<String> keys = readTextVariants(child.getValue());
+                if (!keys.isEmpty()) {
+                    values.put(normalizeStatus(field.substring(0, field.length() - suffix.length())), keys);
+                }
+            } else if (child.getValue().isJsonObject()) {
+                List<String> keys = DatapackJsonReader.readStringList(
+                        child.getValue().getAsJsonObject(), "text_key", "text_keys");
+                if (!keys.isEmpty()) {
+                    values.put(normalizeStatus(field), keys);
+                }
+            }
+        }
+        return Map.copyOf(values);
+    }
+
     private static List<String> readTextVariants(JsonElement element) {
         if (element == null || element.isJsonNull()) {
             return List.of();
@@ -516,6 +544,10 @@ public record VillagerActionDefinition(
 
     public List<String> linesForStatus(String status) {
         return this.linesByStatus.getOrDefault(normalizeStatus(status), List.of());
+    }
+
+    public List<String> lineKeysForStatus(String status) {
+        return this.lineKeysByStatus.getOrDefault(normalizeStatus(status), List.of());
     }
 
     private static String normalizeStatus(String status) {

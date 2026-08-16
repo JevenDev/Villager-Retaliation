@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.content.bundle.BuiltInQuestBundleCompatibility;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleDiscovery;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestLocaleCatalog;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
 import com.jvn.villagerretaliation.quest.content.reward.QuestRewardCatalog;
 import com.jvn.villagerretaliation.quest.content.reward.QuestRewardRegistryContext;
@@ -161,9 +162,8 @@ public final class QuestContentCatalogs {
                             "invalid built-in owner " + invalid.getKey().key() + ": " + message));
                     continue;
                 }
-                int before = remaining.size();
-                remaining.removeIf(resource -> sameOwnerLayer(resource, invalid.getKey(), layer));
-                if (remaining.size() != before) {
+                if (removeRejectedStructuralLayer(
+                        remaining, invalid.getKey(), layer.layer(), layer.packId())) {
                     removed = true;
                     manualDiagnostics.add(new ManualDiagnostic(
                             source,
@@ -327,15 +327,22 @@ public final class QuestContentCatalogs {
                 .orElse(null);
     }
 
-    private static boolean sameOwnerLayer(
-            QuestBundleTransactions.RawResource resource,
+    static boolean removeRejectedStructuralLayer(
+            List<QuestBundleTransactions.RawResource> resources,
             QuestBundlePath.Owner owner,
-            RejectedLayer layer) {
-        QuestBundlePath.Classification classified = QuestBundlePath.classify(resource.location());
-        return classified.valid()
-                && classified.path().owner().equals(owner)
-                && resource.layer() == layer.layer()
-                && resource.packId().equals(layer.packId());
+            int layer,
+            String packId) {
+        int before = resources.size();
+        resources.removeIf(resource -> {
+            QuestBundlePath.Classification classified = QuestBundlePath.classify(resource.location());
+            return classified.valid()
+                    && classified.path().owner().equals(owner)
+                    && (classified.path().kind() != QuestBundlePath.Kind.LOCALE
+                            || QuestLocaleCatalog.ENGLISH.equals(classified.path().locale()))
+                    && resource.layer() == layer
+                    && resource.packId().equals(packId);
+        });
+        return resources.size() != before;
     }
 
     private static boolean fatalDiagnostic(QuestBundleTransactions.Diagnostic diagnostic) {

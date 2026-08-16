@@ -142,6 +142,7 @@ public final class QuestV2Schema {
                 com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection.values())
                 .map(com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection::serializedName)
                 .toList()));
+        properties.add("blocks_hiring", booleanSchema());
         properties.add("filters", openObject());
         properties.add("data", openObject());
         schema.add("properties", properties);
@@ -403,6 +404,7 @@ public final class QuestV2Schema {
         properties.add("scene", idString());
         properties.add("scene_ref", idString());
         properties.add("label", localizedText());
+        properties.add("label_key", string());
         properties.add("request", string());
         properties.add("show_for_babies", booleanSchema());
         properties.add("order", integer());
@@ -425,6 +427,7 @@ public final class QuestV2Schema {
         properties.add("id", idString());
         properties.add("slot", idString());
         properties.add("label", localizedText());
+        properties.add("label_key", string());
         properties.add("request", string());
         properties.add("show_for_babies", booleanSchema());
         properties.add("order", integer());

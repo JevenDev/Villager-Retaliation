@@ -26,7 +26,6 @@ public final class VillagerPoseAnimator {
         switch (VillagerDownedClientCache.pose(villager)) {
             case SITTING -> applyDownedSittingPose(body, head, rightArm, leftArm, rightLeg, leftLeg);
             case SIDE_LYING -> applyDownedSideLyingPose(villager, root, body, head, rightArm, leftArm, rightLeg, leftLeg);
-            case HANDS_AND_KNEES -> applyDownedHandsAndKneesPose(body, head, rightArm, leftArm, rightLeg, leftLeg);
             case SECOND_WIND_CRAWL -> applySecondWindCrawlPose(root, body, head, rightArm, leftArm, rightLeg, leftLeg);
         }
     }
@@ -121,43 +120,6 @@ public final class VillagerPoseAnimator {
         leftLeg.xRot = 0.18F;
         leftLeg.yRot = -0.12F;
         leftLeg.zRot = -0.08F;
-    }
-
-    private static void applyDownedHandsAndKneesPose(
-            ModelPart body,
-            ModelPart head,
-            ModelPart rightArm,
-            ModelPart leftArm,
-            ModelPart rightLeg,
-            ModelPart leftLeg) {
-        body.y = 12.5F;
-        body.z = -1.0F;
-        body.xRot = 1.2F;
-        head.y = 15.0F;
-        head.z = -2.5F;
-        head.xRot = 0.4F;
-
-        rightArm.y = 13.5F;
-        rightArm.z = -2.5F;
-        rightArm.xRot = -0.12F;
-        rightArm.yRot = -0.08F;
-        rightArm.zRot = 0.06F;
-        leftArm.y = 13.5F;
-        leftArm.z = -2.5F;
-        leftArm.xRot = -0.12F;
-        leftArm.yRot = 0.08F;
-        leftArm.zRot = -0.06F;
-
-        rightLeg.y = 14.0F;
-        rightLeg.z = 8.0F;
-        rightLeg.xRot = 0.62F;
-        rightLeg.yRot = 0.12F;
-        rightLeg.zRot = 0.06F;
-        leftLeg.y = 14.0F;
-        leftLeg.z = 8.0F;
-        leftLeg.xRot = 0.62F;
-        leftLeg.yRot = -0.12F;
-        leftLeg.zRot = -0.06F;
     }
 
     public static <T extends AbstractVillager> void applyPose(
