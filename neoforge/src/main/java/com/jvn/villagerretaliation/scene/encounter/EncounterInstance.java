@@ -78,6 +78,7 @@ public final class EncounterInstance {
             guidanceCleared = new LinkedHashSet<>();
     private final Map<UUID, Long> guidanceNextAt = new LinkedHashMap<>();
     private String diagnostic = "";
+    private String contentDiagnostic = "";
 
     public EncounterInstance(
             UUID id,
@@ -349,7 +350,32 @@ public final class EncounterInstance {
     }
 
     public String diagnostic() {
-        return diagnostic;
+        return contentDiagnostic.isBlank() ? diagnostic : contentDiagnostic;
+    }
+
+    public String contentDiagnostic() {
+        return contentDiagnostic;
+    }
+
+    public boolean contentUnresolved() {
+        return !contentDiagnostic.isBlank();
+    }
+
+    public boolean markContentUnresolved(String message) {
+        String next = message == null ? "" : message;
+        if (contentDiagnostic.equals(next)) {
+            return false;
+        }
+        contentDiagnostic = next;
+        return true;
+    }
+
+    public boolean clearContentUnresolved() {
+        if (contentDiagnostic.isBlank()) {
+            return false;
+        }
+        contentDiagnostic = "";
+        return true;
     }
 
     public void addSpawn(UUID entity) {
@@ -764,6 +790,7 @@ public final class EncounterInstance {
         t.putLong("NextWaveAt", nextWaveAt);
         t.putBoolean("LocationNotified", locationNotified);
         t.putString("Diagnostic", diagnostic);
+        t.putString("ContentDiagnostic", contentDiagnostic);
         return t;
     }
 
@@ -839,6 +866,7 @@ public final class EncounterInstance {
         v.locationNotified = t.getBoolean("LocationNotified");
         v.state = EncounterState.valueOf(t.getString("State"));
         v.diagnostic = t.getString("Diagnostic");
+        v.contentDiagnostic = t.getString("ContentDiagnostic");
         return v;
     }
 

@@ -19,6 +19,7 @@ import com.jvn.villagerretaliation.quest.runtime.QuestStageBranchOptionIds;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.quest.runtime.QuestActionSequenceRunner;
 import com.jvn.villagerretaliation.quest.persistence.QuestDefinitionMigration;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.scene.SceneJournalPresenter;
 import com.jvn.villagerretaliation.VillagerRetaliation;
@@ -104,6 +105,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -2697,6 +2699,25 @@ public final class VillagerQuestService {
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
+        ResourceLocation rewardId = definition.rewards().lootTable();
+        if (rewardId != null) {
+            QuestRewardResolver.Resolution rewardResolution =
+                    QuestRewardResolver.resolve(context.level().getServer(), rewardId);
+            if (!rewardResolution.resolved()) {
+                Map<String, String> rewardReplacements =
+                        new LinkedHashMap<>(replacements(context, definition, progress));
+                rewardReplacements.put("reward_id", rewardId.toString());
+                return result(
+                        "reward_unresolved",
+                        lineId(definition, "unavailable"),
+                        resolveGlobalText(
+                                context.player(),
+                                "quest.reward_unresolved",
+                                "The reward ledger for {reward_id} is unavailable; try again after reloading content.",
+                                rewardReplacements),
+                        rewardReplacements);
+            }
+        }
         ItemHandInResult itemHandInResult = handInRequiredObjectiveItems(context, definition, progress);
         if (itemHandInResult != ItemHandInResult.SUCCESS) {
             return result(
@@ -2822,7 +2843,10 @@ public final class VillagerQuestService {
                 continue;
             }
             DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
-            finishLinkedPartyReward(context, definition, progress, enrollment);
+            if (!finishLinkedPartyReward(context, definition, progress, enrollment)) {
+                enrollment.markPendingReward();
+                progress.markPendingPartyReward();
+            }
         }
         if (party != null && shared.settled()) {
             party.removeSharedQuest(shared.instanceId());
@@ -2831,7 +2855,7 @@ public final class VillagerQuestService {
         com.jvn.villagerretaliation.party.PartyService.markChanged(completingContext.level());
     }
 
-    private static void finishLinkedPartyReward(
+    private static boolean finishLinkedPartyReward(
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
@@ -2840,13 +2864,14 @@ public final class VillagerQuestService {
             if (enrollment != null && !enrollment.rewardClaimed()) {
                 enrollment.markRewardClaimed();
             }
-            return;
+            return true;
         }
         if (enrollment != null && enrollment.rewardClaimed()) {
             progress.markPartyRewardClaimed();
             VillagerQuestSavedData.get(context.level()).setDirty();
-            return;
+            return true;
         }
+        if (!unresolvedQuestRewardDiagnostic(context.level().getServer(), definition).isBlank()) return false;
         // Persist the claim before invoking reward actions so repeated packets or reconnects
         // cannot deliver a second copy through either the party or personal quest path.
         progress.markPartyRewardClaimed();
@@ -2865,6 +2890,7 @@ public final class VillagerQuestService {
         dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.COMPLETED);
         data.setDirty();
         sendTrackerSync(context.player(), true);
+        return true;
     }
 
     private static void deliverPendingPartyRewards(ServerPlayer player) {
@@ -5247,6 +5273,16 @@ public final class VillagerQuestService {
         List<ItemStack> stacks = new ArrayList<>(player.getInventory().items);
         stacks.addAll(player.getInventory().offhand);
         return stacks;
+    }
+
+    static String unresolvedQuestRewardDiagnostic(
+            MinecraftServer server, QuestDefinition definition) {
+        ResourceLocation rewardId =
+                definition == null ? null : definition.rewards().lootTable();
+        if (rewardId == null) return "";
+        QuestRewardResolver.Resolution resolution =
+                QuestRewardResolver.resolve(server, rewardId);
+        return resolution.resolved() ? "" : resolution.diagnostic();
     }
 
     private static void awardRewards(DialogueContext context, QuestDefinition definition) {
