@@ -137,7 +137,7 @@ public final class PlayerItemProximityForcedDialogueGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE)
+    @GameTest(template = EMPTY_TEMPLATE, batch = "isolated_samepartyweaponaimingruleprovidestennonhostilearmedvariations")
     public static void samePartyWeaponAimingRuleProvidesTenNonHostileArmedVariations(GameTestHelper helper) {
         ForcedDialogueResources.clearCache();
         ForcedDialogueResources.ForcedDialogueDefinition definition =
@@ -164,7 +164,7 @@ public final class PlayerItemProximityForcedDialogueGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE)
+    @GameTest(template = EMPTY_TEMPLATE, batch = "isolated_matchingaimrefreshesweapondrawwhiledialogueisoncooldown")
     public static void matchingAimRefreshesWeaponDrawWhileDialogueIsOnCooldown(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = fakePlayer(level, "VrAimingDrawRefresh");

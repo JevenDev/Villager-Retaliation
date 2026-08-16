@@ -62,6 +62,10 @@ import com.jvn.villagerretaliation.quest.VillagerQuestDeathProtectionService;
 import com.jvn.villagerretaliation.quest.QuestV2Compiler;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestCatalog;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalog;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardCatalog;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestStage;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
@@ -1947,15 +1951,15 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(quest.stages().containsKey("dark_roof_chosen"), "dark_roof_chosen stage missing");
         helper.assertValueEqual(
                 quest.tracker().steps().get("started").text(),
-                "Choose the final atlas horizon from the cartographer's branch options.",
+                "Choose the atlas's Overworld horizon from the cartographer's branch options.",
                 "choose horizon proof tracker");
         helper.assertValueEqual(
                 quest.tracker().steps().get("coast_final").text(),
-                "Reach the Ocean Monument, then bring prismarine crystals and shards.",
+                "Prepare a spyglass, boat, and provisions for the drowned coast.",
                 "choose horizon coast proof tracker");
         helper.assertValueEqual(
                 quest.tracker().steps().get("dark_roof_final").text(),
-                "Reach the Woodland Mansion, then bring books and a totem.",
+                "Prepare a shield, crossbow, and torches for the dark roof.",
                 "choose horizon dark roof proof tracker");
         helper.assertValueEqual(quest.tracker().steps().get("coast_chosen").progress(), 1.0F, "choose horizon coast return");
         helper.assertValueEqual(quest.tracker().steps().get("dark_roof_chosen").progress(), 1.0F, "choose horizon dark roof return");
@@ -1972,17 +1976,15 @@ public final class VillagerQuestGameTests {
         Set<String> coastObjectiveIds = QuestObjectiveQuery.activeObjectives(quest, branchProgress).stream()
                 .map(QuestDefinition.Objective::id)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-        helper.assertTrue(coastObjectiveIds.contains("coast_final.visit_monument"), "coast branch visit objective missing");
-        helper.assertTrue(coastObjectiveIds.contains("coast_final.bring_prismarine_crystals"), "coast branch crystal objective missing");
-        helper.assertFalse(coastObjectiveIds.contains("dark_roof_final.bring_books"), "dark roof objective leaked into coast branch");
+        helper.assertTrue(coastObjectiveIds.contains("coast_final.carry_spyglass"), "coast branch spyglass objective missing");
+        helper.assertTrue(coastObjectiveIds.contains("coast_final.bring_provisions"), "coast branch provisions objective missing");
+        helper.assertFalse(coastObjectiveIds.contains("dark_roof_final.carry_shield"), "dark roof objective leaked into coast branch");
         Set<ResourceLocation> coastHandIns = QuestObjectiveQuery.requiredItemHandIns(quest, branchProgress).stream()
                 .map(QuestDefinition.Objective::item)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         helper.assertValueEqual(
                 coastHandIns,
-                Set.of(
-                        ResourceLocation.fromNamespaceAndPath("minecraft", "prismarine_crystals"),
-                        ResourceLocation.fromNamespaceAndPath("minecraft", "prismarine_shard")),
+                Set.of(ResourceLocation.fromNamespaceAndPath("minecraft", "cooked_cod")),
                 "coast branch hand-ins leaked another route");
 
         DialogueTreeDefinition generatedTree = DialogueTreeResources
@@ -2348,7 +2350,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_randomizeditemobjectiveresolvesoncepersistsandtracks")
     public static void randomizedItemObjectiveResolvesOncePersistsAndTracks(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -2476,7 +2478,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_afterstartprotectioniswrittenonlybysuccessfulqueststart")
     public static void afterStartProtectionIsWrittenOnlyBySuccessfulQuestStart(GameTestHelper helper) {
         ResourceLocation location = VillagerRetaliation.id("quests/death_protection_after_start_runtime.json");
         JsonObject root = validQuestV2Fixture();
@@ -2511,7 +2513,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_whileactiveprotectionusesexactproviderandendswithprogress")
     public static void whileActiveProtectionUsesExactProviderAndEndsWithProgress(GameTestHelper helper) {
         ResourceLocation location = VillagerRetaliation.id("quests/death_protection_while_active_runtime.json");
         JsonObject root = validQuestV2Fixture();
@@ -2837,7 +2839,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_questv2compiledquestusesruntimeservices")
     public static void questV2CompiledQuestUsesRuntimeServices(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -2951,8 +2953,135 @@ public final class VillagerQuestGameTests {
 
         helper.succeed();
     }
+    @GameTest(
+            template = EMPTY_TEMPLATE,
+            timeoutTicks = 100,
+            batch = "quest_missing_saved_content")
+    public static void missingQuestAndRewardContentStayDormantUntilRestored(
+            GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ResourceLocation location =
+                VillagerRetaliation.id("quests/missing_saved_content_fixture.json");
+        ResourceLocation rewardId = VillagerRetaliation.id("quest/bread_delivery");
+        JsonObject root = runtimeQuestV2Fixture();
+        root.addProperty("id", "villagerretaliation:missing_saved_content_fixture");
+        root.getAsJsonObject("rewards").addProperty("loot_table", rewardId.toString());
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope).orElseThrow();
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope).orElseThrow();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(
+                    level.getServer(),
+                    List.of(compiled),
+                    QuestDialogueCompiler.compile(parsed, envelope));
+            QuestContentCatalog complete = QuestContentCatalogs.current(level.getServer());
+            helper.assertTrue(
+                    QuestRewardResolver.resolve(level.getServer(), rewardId).resolved(),
+                    "restored fixture reward should resolve before removal");
+
+            helper.assertTrue(
+                    VillagerQuestService.debugStartQuest(player, villager, compiled.id(), true)
+                            .started(),
+                    "dormancy fixture did not start");
+            VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+            VillagerQuestSavedData.QuestProgress progress =
+                    data.get(player.getUUID(), compiled.id());
+            VillagerQuestFacts.get(level)
+                    .setVariable(
+                            QuestScopeKey.quest(player.getUUID(), compiled.id()),
+                            "ready",
+                            "yes");
+            player.tickCount = 0;
+            VillagerQuestService.onPlayerTick(player);
+            helper.assertValueEqual(
+                    progress.currentStage(), "done", "fixture did not become ready");
+
+            QuestContentCatalogs.installForTests(
+                    level.getServer(), withoutQuests(complete, complete.generation() + 1L), null);
+            VillagerQuestService.QuestActionOutcome missing =
+                    VillagerQuestService.performAction(
+                                    VillagerInteractionService.createDialogueContext(
+                                            level, player, villager),
+                                    compiled.id(),
+                                    VillagerActionDefinition.QuestAction.TURN_IN)
+                            .orElseThrow();
+            helper.assertValueEqual(missing.status(), "missing", "missing quest was actionable");
+            helper.assertValueEqual(
+                    progress.state(),
+                    VillagerQuestSavedData.QuestState.ACTIVE,
+                    "missing quest definition changed saved state");
+            helper.assertValueEqual(
+                    progress.currentStage(), "done", "missing quest definition changed stage");
+
+            CompoundTag dormantSave =
+                    data.save(new CompoundTag(), level.registryAccess());
+            VillagerQuestSavedData.QuestProgress dormantReload =
+                    VillagerQuestSavedData.load(dormantSave, level.registryAccess())
+                            .get(player.getUUID(), compiled.id());
+            helper.assertTrue(dormantReload != null, "dormant quest progress was discarded");
+            helper.assertValueEqual(
+                    dormantReload.currentStage(), "done", "dormant quest stage did not reload");
+
+            QuestContentCatalogs.installForTests(
+                    level.getServer(),
+                    withoutRewards(complete, complete.generation() + 2L),
+                    null);
+            int experienceBefore = player.totalExperience;
+            VillagerQuestService.QuestActionOutcome unresolved =
+                    VillagerQuestService.performAction(
+                                    VillagerInteractionService.createDialogueContext(
+                                            level, player, villager),
+                                    compiled.id(),
+                                    VillagerActionDefinition.QuestAction.TURN_IN)
+                            .orElseThrow();
+            helper.assertValueEqual(
+                    unresolved.status(),
+                    "reward_unresolved",
+                    "missing reward definition was not diagnosed");
+            helper.assertTrue(
+                    unresolved.text().contains(rewardId.toString()),
+                    "missing reward diagnostic omitted its stable ID");
+            helper.assertValueEqual(
+                    progress.state(),
+                    VillagerQuestSavedData.QuestState.ACTIVE,
+                    "missing reward completed the quest");
+            helper.assertValueEqual(
+                    player.totalExperience,
+                    experienceBefore,
+                    "missing reward allowed another reward action to run");
+
+            QuestContentCatalogs.installForTests(level.getServer(), complete, null);
+            VillagerQuestService.QuestActionOutcome restored =
+                    VillagerQuestService.performAction(
+                                    VillagerInteractionService.createDialogueContext(
+                                            level, player, villager),
+                                    compiled.id(),
+                                    VillagerActionDefinition.QuestAction.TURN_IN)
+                            .orElseThrow();
+            helper.assertValueEqual(restored.status(), "completed", "restored content did not resume");
+            helper.assertValueEqual(
+                    progress.state(),
+                    VillagerQuestSavedData.QuestState.COMPLETED,
+                    "restored quest did not reconcile unchanged saved progress");
+            helper.assertValueEqual(
+                    player.totalExperience,
+                    experienceBefore + 7,
+                    "restored reward did not execute exactly once");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            VillagerQuestResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_questdebugtoolsexplaintraceanddryrun")
     public static void questDebugToolsExplainTraceAndDryRun(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -3063,7 +3192,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_questv2optionaltrackerdisplaydoesnotblockreadystatus")
     public static void questV2OptionalTrackerDisplayDoesNotBlockReadyStatus(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -3173,7 +3302,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_questv2embeddeddialoguerunsthroughexistingsessions")
     public static void questV2EmbeddedDialogueRunsThroughExistingSessions(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -3310,7 +3439,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_questv2externaldialogueandforcedscenesresolve")
     public static void questV2ExternalDialogueAndForcedScenesResolve(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -3412,7 +3541,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_questv2legacytreeoverrideprecedenceissourceaware")
     public static void questV2LegacyTreeOverridePrecedenceIsSourceAware(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -3467,7 +3596,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_builtineggbasketsquestmodulev2matcheslegacysemantics")
     public static void builtInEggBasketsQuestModuleV2MatchesLegacySemantics(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         VillagerQuestResources.clearCache();
@@ -3510,7 +3639,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_builtineggbasketslegacytreeoverrideremainssourceaware")
     public static void builtInEggBasketsLegacyTreeOverrideRemainsSourceAware(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         VillagerQuestResources.clearCache();
@@ -3521,6 +3650,10 @@ public final class VillagerQuestGameTests {
                 .compiledQuest(level.getServer(), questId)
                 .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
         helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "egg baskets schema version");
+        QuestDialogueCatalog generatedDialogue =
+                VillagerQuestResources.questDialogueCatalog(level.getServer());
+        VillagerQuestResources.installCompiledTestCatalog(
+                level.getServer(), List.of(compiled), generatedDialogue);
 
         DialogueTreeDefinition legacyTree = singleEntryDialogueTree(
                 questId,
@@ -3531,6 +3664,12 @@ public final class VillagerQuestGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         movePlayer(helper, player, new BlockPos(1, 2, 2));
         configureEggBasketsProvider(level, villager);
+        VillagerQuestSavedData questData = VillagerQuestSavedData.get(level);
+        questData.activeProgress(player.getUUID()).stream()
+                .map(Map.Entry::getKey)
+                .toList()
+                .forEach(activeQuestId -> questData.remove(player.getUUID(), activeQuestId));
+        questData.remove(player.getUUID(), questId);
 
         try {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
@@ -3568,7 +3707,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_builtinfirstfarmarkerquestmodulev2preservesobjectivetargetsemantics")
     public static void builtInFirstFarMarkerQuestModuleV2PreservesObjectiveTargetSemantics(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         VillagerQuestResources.clearCache();
@@ -3637,7 +3776,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_builtinfirstfarmarkerlegacytreeoverrideremainssourceaware")
     public static void builtInFirstFarMarkerLegacyTreeOverrideRemainsSourceAware(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         VillagerQuestResources.clearCache();
@@ -3692,7 +3831,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_builtintaleslostcivilizationquestmodulev2preservesforcedtrigger")
     public static void builtInTalesLostCivilizationQuestModuleV2PreservesForcedTrigger(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         VillagerQuestResources.clearCache();
@@ -3769,7 +3908,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_builtintaleslostcivilizationforcedtriggerqueuesandskipswithoutissuer")
     public static void builtInTalesLostCivilizationForcedTriggerQueuesAndSkipsWithoutIssuer(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         VillagerQuestResources.clearCache();
@@ -3904,7 +4043,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_questv2responsetransitionsrecordchoicehistory")
     public static void questV2ResponseTransitionsRecordChoiceHistory(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -4193,7 +4332,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_questv2failureisdistinctfromabandonment")
     public static void questV2FailureIsDistinctFromAbandonment(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         EmbeddedDialogueQuest failure = embeddedDialogueQuest(
@@ -4701,7 +4840,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_missingquestprovidercanbeabandonedandexplicitlyrebound")
     public static void missingQuestProviderCanBeAbandonedAndExplicitlyRebound(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ResourceLocation location = VillagerRetaliation.id("quests/provider_recovery.json");
@@ -4791,7 +4930,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_deferredlifecycleeventreplayswhenoriginalproviderreturns")
     public static void deferredLifecycleEventReplaysWhenOriginalProviderReturns(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ResourceLocation location = VillagerRetaliation.id("quests/provider_return_replay.json");
@@ -4877,7 +5016,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_fakequestprovidertypeprovescontextisnotvillagerspecific")
     public static void fakeQuestProviderTypeProvesContextIsNotVillagerSpecific(GameTestHelper helper) {
         QuestDefinition quest = quest(helper, VillagerRetaliation.id("choose_the_horizon"));
         ResourceLocation fakeProviderId = VillagerRetaliation.id("fake_provider_type");
@@ -6006,6 +6145,46 @@ public final class VillagerQuestGameTests {
                                 .map(diagnostic -> diagnostic.jsonPointer() + " :: " + diagnostic.message())
                                 .toList());
     }
+    private static QuestContentCatalog withoutQuests(
+            QuestContentCatalog source, long generation) {
+        return new QuestContentCatalog(
+                generation,
+                new CompiledQuestCatalog(Map.of()),
+                QuestDialogueCatalog.empty(),
+                Map.of(),
+                Map.of(),
+                Set.of(),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                source.scenes(),
+                source.encounters(),
+                source.pools(),
+                source.bundles(),
+                source.localization(),
+                source.rewards());
+    }
+
+    private static QuestContentCatalog withoutRewards(
+            QuestContentCatalog source, long generation) {
+        return new QuestContentCatalog(
+                generation,
+                source.compiledQuestCatalog(),
+                source.dialogueCatalog(),
+                source.quests(),
+                source.objectiveEventQuestIds(),
+                source.factQuestIds(),
+                source.memoryEventQuestIds(),
+                source.exclusiveGroupQuestIds(),
+                source.triggerEventQuestIds(),
+                source.scenes(),
+                source.encounters(),
+                source.pools(),
+                source.bundles(),
+                source.localization(),
+                QuestRewardCatalog.empty());
+    }
+
 
     private static JsonObject validQuestV2Fixture() {
         return JsonParser.parseString("""

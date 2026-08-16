@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.api.registry.FreezableExtensionRegistry;
 import com.jvn.villagerretaliation.api.registry.RuntimeTypeDescriptor;
 import com.jvn.villagerretaliation.quest.QuestRegistryMetadata;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
@@ -414,7 +415,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_activesceneactortransitionsdownedandbacktolive")
     public static void activeSceneActorTransitionsDownedAndBackToLive(GameTestHelper helper) {
         JsonObject root = validScene();
         root.getAsJsonArray("actors")
@@ -761,7 +762,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_schedulerboundsworkandreconcilesstabledefinitions")
     public static void schedulerBoundsWorkAndReconcilesStableDefinitions(GameTestHelper helper) {
         var definition = compiledValidScene();
         SceneResources.installTestScenes(helper.getLevel().getServer(), List.of(definition));
@@ -1376,7 +1377,7 @@ public final class SceneRegistryGameTests {
                 });
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200, batch = "isolated_encounterreloadownsonlyitsmobsandcleanuphonorspolicy")
     public static void encounterReloadOwnsOnlyItsMobsAndCleanupHonorsPolicy(GameTestHelper helper) {
         EncounterTemplate remove =
                 new EncounterTemplate(
@@ -1569,7 +1570,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_encounterareaspersistleaveandmobdeadlines")
     public static void encounterAreasPersistLeaveAndMobDeadlines(GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
         EncounterResources.parse(
@@ -1673,7 +1674,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120, batch = "isolated_authoredencounterwaveskeepidentitycompositionandhooksafterreload")
     public static void authoredEncounterWavesKeepIdentityCompositionAndHooksAfterReload(
             GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
@@ -1841,7 +1842,7 @@ public final class SceneRegistryGameTests {
                 });
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_eliteencountermembersapplysafeattributesaftervanillainitialization")
     public static void eliteEncounterMembersApplySafeAttributesAfterVanillaInitialization(
             GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
@@ -2018,7 +2019,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_authoredspawnpointspersistselectionsandrejectinvalidsources")
     public static void authoredSpawnPointsPersistSelectionsAndRejectInvalidSources(
             GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
@@ -2255,7 +2256,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120, batch = "isolated_encounterphasespersisttriggersactionsandreceipts")
     public static void encounterPhasesPersistTriggersActionsAndReceipts(GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
         EncounterTemplate template =
@@ -2447,7 +2448,7 @@ public final class SceneRegistryGameTests {
                 });
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_composableencounterobjectivesparseevaluateandpersist")
     public static void composableEncounterObjectivesParseEvaluateAndPersist(GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
         EncounterTemplate template =
@@ -2747,7 +2748,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120, batch = "isolated_encounterfailureretriespersistandresetownedprogressonce")
     public static void encounterFailureRetriesPersistAndResetOwnedProgressOnce(
             GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
@@ -2862,7 +2863,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120, batch = "isolated_encountervariantschooseoncepersistandrejectrecursion")
     public static void encounterVariantsChooseOncePersistAndRejectRecursion(GameTestHelper helper) {
         EncounterStepExecutors.register();
         var errors = new java.util.ArrayList<String>();
@@ -3017,13 +3018,17 @@ public final class SceneRegistryGameTests {
                 helper.getLevel().getServer(), List.of(cycleA, cycleB));
         var recursive =
                 EncounterResources.resolve(helper.getLevel().getServer(), cycleA.id(), seed);
+        boolean recursiveReported = recursive.diagnostic().contains("recursive")
+                || QuestContentCatalogs.loadReport(helper.getLevel().getServer()).entries().stream()
+                        .anyMatch(entry -> entry.system().contains("encounter")
+                                && entry.message().contains("recursive encounter variant reference"));
         helper.assertTrue(
-                !recursive.valid() && recursive.diagnostic().contains("recursive"),
+                !recursive.valid() && recursiveReported,
                 "recursive variant chains must be rejected with a focused diagnostic");
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120, batch = "isolated_encounterenvironmentrestoresonlyownedmatchingblocks")
     public static void encounterEnvironmentRestoresOnlyOwnedMatchingBlocks(GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
         EncounterTemplate template =
@@ -3131,7 +3136,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120, batch = "isolated_encounterguidancepersistsparticipantdiscoveryandarrival")
     public static void encounterGuidancePersistsParticipantDiscoveryAndArrival(
             GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
@@ -3233,7 +3238,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120, batch = "isolated_encounterrewardsanddropsarereceiptguarded")
     public static void encounterRewardsAndDropsAreReceiptGuarded(GameTestHelper helper) {
         var errors = new java.util.ArrayList<String>();
         EncounterTemplate template =
@@ -3636,7 +3641,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_compatiblequestproviderrebindupdatesscenehistory")
     public static void compatibleQuestProviderRebindUpdatesSceneHistory(GameTestHelper helper) {
         Villager first = spawnVillager(helper, 1, 1);
         Villager second = spawnVillager(helper, 2, 1);
@@ -3694,7 +3699,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_operatorrepairauditswithouterasinghistoryorreceipts")
     public static void operatorRepairAuditsWithoutErasingHistoryOrReceipts(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         Villager first = spawnVillager(helper, 1, 1);
@@ -3804,7 +3809,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_overalldeadlinepreemptswaitandsurvivesreload")
     public static void overallDeadlinePreemptsWaitAndSurvivesReload(GameTestHelper helper) {
         BuiltinSceneStepExecutors.register();
         JsonObject timedJson = validScene();
@@ -3861,7 +3866,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_blockedscenekeepsitsoveralldeadlinewake")
     public static void blockedSceneKeepsItsOverallDeadlineWake(GameTestHelper helper) {
         BuiltinSceneStepExecutors.register();
         JsonObject timedJson = validScene();
@@ -4056,7 +4061,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_executorfailurerunsauthoredfailurestepexactlyonce")
     public static void executorFailureRunsAuthoredFailureStepExactlyOnce(GameTestHelper helper) {
         BuiltinSceneStepExecutors.register();
         JsonObject json =
@@ -4501,7 +4506,7 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "isolated_sceneresourceboundaryrejectserrorsbutloadswarnings")
     public static void sceneResourceBoundaryRejectsErrorsButLoadsWarnings(GameTestHelper helper) {
         JsonObject invalid = validScene();
         invalid.getAsJsonArray("steps")

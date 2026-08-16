@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.scene.SceneResources;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
@@ -44,9 +45,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 public final class EncounterService {
@@ -156,10 +154,10 @@ public final class EncounterService {
                 evaluateObjectives(server, data, encounter, template, level.getGameTime());
         String rewardError = grantEligibleRewards(server, data, encounter, template);
         if (!rewardError.isBlank()) {
-            encounter.fail(rewardError);
-            data.changed();
-            return Result.failed(rewardError);
+            if (encounter.markContentUnresolved(rewardError)) data.changed();
+            return Result.waiting(rewardError);
         }
+        if (encounter.clearContentUnresolved()) data.changed();
         if (objectives.status() != Status.ACTIVE) return objectives;
         updateBossBar(server, encounter, template);
         updateMobBossBars(server, encounter);
@@ -828,11 +826,21 @@ public final class EncounterService {
 
     public static void maintainCleanup(MinecraftServer server, SceneSavedData data) {
         for (EncounterInstance encounter : data.encounters()) {
-            if (encounter.completionRewardEligible())
-                EncounterResources.template(server, encounter.templateId())
-                        .ifPresent(
-                                template ->
-                                        grantEligibleRewards(server, data, encounter, template));
+            if (encounter.completionRewardEligible()) {
+                EncounterTemplate template =
+                        EncounterResources.template(server, encounter.templateId()).orElse(null);
+                String rewardError =
+                        template == null
+                                ? "encounter template "
+                                        + encounter.templateId()
+                                        + " is unavailable"
+                                : grantEligibleRewards(server, data, encounter, template);
+                if (!rewardError.isBlank()) {
+                    if (encounter.markContentUnresolved(rewardError)) data.changed();
+                } else if (encounter.clearContentUnresolved()) {
+                    data.changed();
+                }
+            }
             if (encounter.state() == EncounterInstance.EncounterState.CLEANING_UP)
                 cleanup(server, data, encounter, false);
             else if (encounter.state() == EncounterInstance.EncounterState.COMPLETED
@@ -849,13 +857,12 @@ public final class EncounterService {
             SceneSavedData data,
             EncounterInstance encounter,
             EncounterTemplate template) {
-        String profileError = grantVillagerCompletionGuts(server, data, encounter, template);
-        if (!profileError.isBlank()) return profileError;
         EncounterTemplate.RewardPolicy policy = template.rewards();
         if (policy == null
                 || policy.waves().isEmpty()
                         && policy.phases().isEmpty()
-                        && policy.completion().isEmpty()) return "";
+                        && policy.completion().isEmpty())
+            return grantVillagerCompletionGuts(server, data, encounter, template);
         if (encounter.state() != EncounterInstance.EncounterState.ACTIVE
                 && !encounter.completionRewardEligible()) return "";
         SceneInstance scene = data.get(encounter.sceneId()).orElse(null);
@@ -890,17 +897,19 @@ public final class EncounterService {
             for (EncounterTemplate.Reward reward : policy.completion())
                 grants.add(new RewardGrant(reward, "completion"));
         for (RewardGrant grant : grants) {
-            if (grant.reward().lootTable() != null
-                    && server.reloadableRegistries()
-                                    .getLootTable(
-                                            ResourceKey.create(
-                                                    Registries.LOOT_TABLE,
-                                                    grant.reward().lootTable()))
-                            == LootTable.EMPTY)
+            QuestRewardResolver.Resolution resolution =
+                    grant.reward().lootTable() == null
+                            ? null
+                            : QuestRewardResolver.resolve(server, grant.reward().lootTable());
+            if (resolution != null && !resolution.resolved())
                 return "encounter reward "
                         + grant.reward().id()
-                        + " references unavailable loot table "
-                        + grant.reward().lootTable();
+                        + " is unresolved: "
+                        + resolution.diagnostic();
+        }
+        String profileError = grantVillagerCompletionGuts(server, data, encounter, template);
+        if (!profileError.isBlank()) return profileError;
+        for (RewardGrant grant : grants) {
             for (UUID participant : encounter.participants()) {
                 var player = server.getPlayerList().getPlayer(participant);
                 if (player == null) continue;
@@ -1024,22 +1033,20 @@ public final class EncounterService {
             give(player, stack);
             return;
         }
-        LootTable table =
-                player.getServer()
-                        .reloadableRegistries()
-                        .getLootTable(
-                                ResourceKey.create(Registries.LOOT_TABLE, reward.lootTable()));
-        LootParams params =
-                new LootParams.Builder(player.serverLevel())
-                        .withLuck(player.getLuck())
-                        .create(LootContextParamSets.EMPTY);
         long seed =
                 encounter.variantSeed()
                         ^ encounter.id().getMostSignificantBits()
                         ^ player.getUUID().getLeastSignificantBits()
                         ^ reward.id().hashCode()
                         ^ trigger.hashCode();
-        for (ItemStack stack : table.getRandomItems(params, RandomSource.create(seed)))
+        QuestRewardResolver.RollResult roll =
+                QuestRewardResolver.roll(
+                        player.serverLevel(),
+                        player.getLuck(),
+                        reward.lootTable(),
+                        RandomSource.create(seed));
+        if (!roll.resolution().resolved()) return;
+        for (ItemStack stack : roll.items())
             if (!stack.isEmpty()) give(player, stack.copy());
     }
 
@@ -1272,14 +1279,17 @@ public final class EncounterService {
 
     public static Result refresh(
             MinecraftServer server, SceneSavedData data, EncounterInstance encounter) {
+        String missingTemplateDiagnostic =
+                "encounter template " + encounter.templateId() + " is unavailable";
         EncounterTemplate template =
                 EncounterResources.template(server, encounter.templateId()).orElse(null);
         if (template == null) {
-            encounter.fail("encounter template is unavailable");
+            if (encounter.markContentUnresolved(missingTemplateDiagnostic)) data.changed();
             hideBossBars(encounter);
-            data.changed();
-            return Result.failed(encounter.diagnostic());
+            return Result.waiting(missingTemplateDiagnostic);
         }
+        if (missingTemplateDiagnostic.equals(encounter.contentDiagnostic())
+                && encounter.clearContentUnresolved()) data.changed();
         if (encounter.state() == EncounterInstance.EncounterState.PREPARED
                 || encounter.state() == EncounterInstance.EncounterState.SPAWNING
                 || encounter.state() == EncounterInstance.EncounterState.ACTIVE
@@ -1294,7 +1304,12 @@ public final class EncounterService {
                 && encounter.state() == EncounterInstance.EncounterState.ACTIVE)
             evaluateObjectives(server, data, encounter, template, server.overworld().getGameTime());
         String rewardError = grantEligibleRewards(server, data, encounter, template);
-        if (!rewardError.isBlank()) encounter.fail(rewardError);
+        if (!rewardError.isBlank()) {
+            if (encounter.markContentUnresolved(rewardError)) data.changed();
+            hideBossBars(encounter);
+            return Result.waiting(rewardError);
+        }
+        if (encounter.clearContentUnresolved()) data.changed();
         if (encounter.state() == EncounterInstance.EncounterState.COMPLETED
                 || encounter.state() == EncounterInstance.EncounterState.FAILED)
             hideBossBars(encounter);

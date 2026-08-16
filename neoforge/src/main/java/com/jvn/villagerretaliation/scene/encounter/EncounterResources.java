@@ -125,9 +125,6 @@ public final class EncounterResources {
             QuestBundleTransactions.Result bundles,
             QuestRewardCatalog rewards) {
         TestOverride override = testOverride;
-        if (override.server() == server) {
-            return override.snapshot();
-        }
         Map<ResourceLocation, EncounterTemplate> templates = new LinkedHashMap<>();
         Map<ResourceLocation, List<String>> diagnostics = new LinkedHashMap<>();
         if (bundles != null) {
@@ -148,6 +145,10 @@ public final class EncounterResources {
                                         diagnostics,
                                         materialized.errors());
                             }));
+        }
+        if (override.server() == server) {
+            templates.putAll(override.snapshot().templates());
+            diagnostics.putAll(override.snapshot().diagnostics());
         }
         validateVariantGraph(templates, diagnostics);
         return new ContentSnapshot(Map.copyOf(templates), Map.copyOf(diagnostics));
