@@ -29,7 +29,7 @@ public final class BuiltInQuestBundleCompatibility {
         Map<ResourceLocation, String> prefixes = new LinkedHashMap<>();
         try (var stream = BuiltInQuestBundleCompatibility.class.getResourceAsStream(RESOURCE)) {
             if (stream == null) {
-                return QuestBundleTransactions.CompatibilityRules.empty();
+                throw new IllegalStateException("Missing required packaged resource " + RESOURCE);
             }
             JsonObject root = JsonParser.parseReader(
                     new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();

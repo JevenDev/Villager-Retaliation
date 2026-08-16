@@ -579,8 +579,25 @@
     function replaceQuestModuleFile(state, path, json) {
       const namespaceMatch = path.match(/^data\/([^/]+)\/quests\/.+\.json$/);
       if (namespaceMatch) state.meta.namespace = namespaceify(namespaceMatch[1], state.meta.namespace || "my_pack");
+      let imported = json;
+      const localeSource = state.extraFiles[path.replace(/\/quest\.json$/, "/locales/en_us.json")];
+      if (typeof localeSource === "string") {
+        try {
+          const locale = JSON.parse(stripTextBom(localeSource));
+          if (locale?.schema === "villagerretaliation:quest_locale/v1"
+              && locale.messages && typeof locale.messages === "object") {
+            imported = questModel.materializeLocalizedDefinition(
+              json,
+              json.localization_prefix || "",
+              locale.messages
+            );
+          }
+        } catch {
+          // Preserve malformed locale files for the normal preview validator.
+        }
+      }
       state.quests.modules = state.quests.modules.filter((entry, index) => questModulePath(state, entry, index) !== path);
-      state.quests.modules.push(normalizeQuestModuleEntry(json, path));
+      state.quests.modules.push(normalizeQuestModuleEntry(imported, path));
       delete state.extraFiles[path];
       removeQuestV1Import(state, path);
     }
@@ -882,8 +899,13 @@
 
     function ingestFiles(state, files) {
       const extra = {};
-      for (const [path, value] of Object.entries(files)) {
-        const normalizedPath = path.replace(/^\/+/, "");
+      const entries = Object.entries(files)
+        .map(([path, value]) => [path.replace(/^\/+/, ""), value]);
+      const ordered = [
+        ...entries.filter(([path]) => !questBundlePathInfo(path)),
+        ...entries.filter(([path]) => questBundlePathInfo(path))
+      ];
+      for (const [normalizedPath, value] of ordered) {
         if (normalizedPath.endsWith("/")) continue;
         if (normalizedPath === "pack.mcmeta" && typeof value === "string") {
           try {

@@ -5098,6 +5098,12 @@ function validate() {
     addCheck(checks, "info", "Quest migration", `${state.quests.v1Imports.length} legacy quest import${state.quests.v1Imports.length === 1 ? "" : "s"} preserved with migration suggestions.`);
   }
 
+  const legacyQuestPaths = Object.keys(state.extraFiles)
+    .filter((path) => datapackBackend.isLegacyQuestResourcePath(path));
+  if (legacyQuestPaths.length > 0) {
+    addCheck(checks, "error", "Unsupported quest layout", `Move legacy quest resources into data/<namespace>/quests/<questline>/<quest-slug>/ or quests/_shared/. Found: ${legacyQuestPaths.join(", ")}`, { paths: legacyQuestPaths });
+  }
+
   for (const [path, source] of Object.entries(state.extraFiles)) {
     if (!/^data\/[^/]+\/quests\/(?:_shared\/|[^/]+\/[^/]+\/)(?:scenes|encounters)\/.+\.json$/.test(path)) continue;
     let resource;
@@ -5106,12 +5112,6 @@ function validate() {
     } catch {
       addCheck(checks, "error", "Scene resource JSON", `${path} is not valid JSON.`, { paths: [path] });
       continue;
-
-  const legacyQuestPaths = Object.keys(state.extraFiles)
-    .filter((path) => datapackBackend.isLegacyQuestResourcePath(path));
-  if (legacyQuestPaths.length > 0) {
-    addCheck(checks, "error", "Unsupported quest layout", `Move legacy quest resources into data/<namespace>/quests/<questline>/<quest-slug>/ or quests/_shared/. Found: ${legacyQuestPaths.join(", ")}`, { paths: legacyQuestPaths });
-  }
     }
     const detail = sceneResourceIssueDetail(path, resource);
     if (!detail) continue;

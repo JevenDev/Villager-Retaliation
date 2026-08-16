@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.quest.content.bundle.BuiltInQuestBundleCompatibility;
 import com.jvn.villagerretaliation.quest.content.bundle.LocalizedReference;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleLocalization;
@@ -145,6 +146,14 @@ public final class QuestBundleArchitectureGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "quest_bundle_architecture")
     public static void introductionIdentityAndCompatibilityAreValidated(GameTestHelper helper) {
+        QuestBundleTransactions.CompatibilityRules packaged =
+                BuiltInQuestBundleCompatibility.rules();
+        helper.assertValueEqual(
+                packaged.frozenQuestIds().size(), 85, "packaged compatibility quest count");
+        helper.assertTrue(
+                packaged.frozenSlugs().keySet().equals(packaged.frozenQuestIds())
+                        && packaged.frozenPrefixes().keySet().equals(packaged.frozenQuestIds()),
+                "packaged compatibility identities are incomplete");
         helper.assertTrue(compile(introduce(
                 0, "base", NS, LINE, SLUG, quest(NS, LINE, SLUG, PREFIX),
                 locale(PREFIX + ".title", "Alpha"))).bundles().containsKey(owner(LINE, SLUG)),
