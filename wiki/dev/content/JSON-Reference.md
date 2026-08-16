@@ -419,7 +419,7 @@ Required top-level fields:
 | `schema` | Must be `villagerretaliation:quest/v2` |
 | `id` | Full stable quest ID, such as `my_pack:bread_delivery` |
 | `localization_prefix` | Immutable prefix for relative localized references |
-| `provider` | Provider type and filters, usually `villagerretaliation:villager` |
+| `provider` | Provider type, filters, death protection, and optional hiring restriction, usually for `villagerretaliation:villager` |
 | `entry_stage` | First stable stage ID |
 | `stages` | Ordered array of stage objects |
 
@@ -437,6 +437,20 @@ Common optional fields:
 | `ui` | Localized tracker text, icon, colors, progress, placeholders, priority, and hidden flag |
 
 Set `metadata.show_locked_adventure_hint` to `false` when a quest should not appear as a locked preview in the villager `Adventures` menu before its offer requirements are met.
+
+Villager providers may opt into a paid-hiring restriction:
+
+```json
+{
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "blocks_hiring": true,
+    "filters": { "professions": ["minecraft:cartographer"] }
+  }
+}
+```
+
+`blocks_hiring` defaults to `false`. When true, every villager matching those provider filters is prevented from beginning a new paid hire contract. The check is provider-wide: it does not depend on whether a particular player has seen, started, completed, or can currently be offered the quest. Existing hire contracts and party recruitment are unchanged.
 
 Each stage requires `id` and `objectives`. Stages can also define `complete_when`, `next`, `dialogue`, `responses`, `scenes`, `events`, `entry_actions`, `exit_actions`, `rewards`, `ui`, and `metadata`.
 

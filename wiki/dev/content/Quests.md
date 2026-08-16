@@ -219,7 +219,7 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 | `schema` | Must be `villagerretaliation:quest/v2` for v2 modules |
 | `id` | Stable quest resource id used by saves, commands, dialogue, and overrides |
 | `metadata` | Player-facing title, description, questline, tags, and legacy parent convenience |
-| `provider` | Who can offer or own the quest |
+| `provider` | Who can offer or own the quest, plus provider-wide death protection and hiring policy |
 | `availability` | Ordered prerequisites, repeat limits, abandonment, cooldowns, locking, and active gates |
 | `target` | Optional world target such as a structure search |
 | `entry_stage` | Authoritative first stage id. A later stage named `started` does not override it |
@@ -237,6 +237,7 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 Root `ui` fields are live journal data, not authoring-only hints:
 
 ```json
+{
 "ui": {
   "icon": "minecraft:filled_map",
   "color": "#d4a35a",
@@ -244,6 +245,7 @@ Root `ui` fields are live journal data, not authoring-only hints:
   "priority": 25,
   "hidden": false,
   "tracker_text": "Survey the old road."
+}
 }
 ```
 
@@ -379,6 +381,7 @@ Built-in quests use these families:
 Use the full prefix in JSON:
 
 ```json
+{
 "tags": [
   "group.village_supply",
   "role.request",
@@ -392,6 +395,7 @@ Use the full prefix in JSON:
   "pool.daily",
   "pool.quest_board"
 ]
+}
 ```
 
 For built-in content:
@@ -465,6 +469,7 @@ Put every required quest in `availability.prerequisites`. The list is ordered fo
 Quest module v2 also carries the full runtime rule set used by v1. Put active-state gates, expiration policy, and branch exclusion under `availability`:
 
 ```json
+{
 "availability": {
   "active": {
     "conditions": [{ "type": "quest_fact", "tag": "my_pack:road_open" }],
@@ -483,6 +488,7 @@ Quest module v2 also carries the full runtime rule set used by v1. Put active-st
     "blocks_on_completion": ["my_pack:other_route"]
   }
 }
+}
 ```
 
 `complete_when` may mix objective references with condition predicates. Objective UI also accepts `tracker_complete_text` and `tracker_complete_text_key`, and reward memory events retain `memory_scope`. The v1-to-v2 migration tool preserves these rules, stage tracker steps, and objective completion copy.
@@ -492,6 +498,7 @@ Quest module v2 also carries the full runtime rule set used by v1. Put active-st
 Increment `metadata.revision` whenever an update changes stage or objective identity for a quest that players may already have active. The migration policy is applied once when a save first sees the newer revision and the result is persisted for audit/debug output.
 
 ```json
+{
 "metadata": {
   "revision": 3,
   "migration": {
@@ -503,6 +510,7 @@ Increment `metadata.revision` whenever an update changes stage or objective iden
       "find_ruins.old_map": "survey_ruins.map_fragment"
     }
   }
+}
 }
 ```
 
@@ -528,6 +536,32 @@ Legacy saves without a stored revision adopt the current revision without destru
 ```
 
 Failed quests can restart only when `repeatable` is true. `max_starts`, `max_completions`, provider locking, and completion scope still apply. Failure does not consume the quest by itself. Abandoned quests continue to follow `abandonment`, abandonment cooldown, and `consume_on_abandonment`.
+
+## Provider Protection And Hiring Policy
+
+Villager providers can declare two independent world-facing policies:
+
+- `death_protection: "none"` leaves normal lethal behavior unchanged. This is the default.
+- `death_protection: "while_active"` protects the issuing villager while the quest is active.
+- `death_protection: "after_start"` protects that issuing villager permanently after this player starts the quest from them.
+- `blocks_hiring: true` prevents every villager matching the provider filters from beginning a new paid hire contract.
+
+```json
+{
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "death_protection": "while_active",
+    "blocks_hiring": true,
+    "filters": {
+      "professions": ["minecraft:cartographer"]
+    }
+  }
+}
+```
+
+The hiring rule is deliberately provider-wide. It does not depend on a player's quest state, offer visibility, prerequisites, pool selection, or active-quest capacity: the author is declaring that the matching NPC role must remain available as a quest provider. Existing paid contracts are not cancelled, and party recruitment is not affected. The field defaults to `false`.
+
+Keep filters narrow when enabling `blocks_hiring`. A broad profession-only filter can reserve every villager of that profession in the world. A player who tries to hire a reserved provider receives a quest-provider notice, and the Hire option is hidden when the client receives the restriction.
 
 ## Missing Providers And Rebind
 

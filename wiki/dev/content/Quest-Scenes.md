@@ -226,6 +226,16 @@ Templates are allowlists, not command containers. Party-size and difficulty inpu
 
 The optional `spawn_points` array supplies 1-64 named positions. Each point has a stable `id` and exactly one source: `actor`, `marker`, or complete `x`/`y`/`z` coordinates. `actor` and `marker` both name an actor alias declared by the scene. The two spellings let a template communicate whether it expects a live/snapshotted actor or a position actor bound from a marker. Actor and marker sources may add bounded `offset_x`, `offset_y`, and `offset_z` values. Explicit coordinates may set `dimension`. Otherwise they use the encounter anchor dimension. Every point must resolve into that same dimension. Missing actors, unknown or incompatible dimensions, incomplete coordinates, duplicate IDs, empty lists, and weights outside 1-10000 reject the start with a focused diagnostic.
 
+### Localized encounter presentation
+
+In quest-owned bundle source, use localized references such as `{"key":"#encounter.captain_name"}` or absolute message IDs. The bundle materializer preserves those references as runtime key fields and the encounter resolves them using each participant's locale.
+
+Localized encounter fields include member and summoned-entity `custom_name`, wave `boss_bar_title`, phase/hook/action `text`, reward and trophy `trophy_name`, and fixed-mode `location_message`. The corresponding runtime fields are `custom_name_key`, `boss_bar_title_key`, `text_key`, `trophy_name_key`, and `location_message_key`.
+
+Quest dialogue scenes likewise preserve response and node `label_key` values. For new bundle content, author localized reference objects in `quest.json` and keep the exhaustive English values in the owner's `locales/en_us.json`; the `*_key` forms are the compiled runtime representation, not a second source to maintain by hand.
+
+`guidance.coordinate_message`, `guidance.arrival_message`, and `guidance.discovery_message` are also localized references. Placeholders such as `{location}`, `{coordinates}`, `{distance}`, and `{direction}` are substituted after locale resolution.
+
 `spawn_selection` defaults to `random` and may be `random`, `sequential`, `weighted`, `nearest_player`, `farthest_player`, or `one_group_per_point`. Weighted selection uses each point's optional `weight` (default 1). Distance modes compare the points with online captured participants and wait when no suitable participant is online. Group selection assigns each member definition to a point in authored order. Party-scaling extras stay with the first group. Resolved absolute points, every member's selected point ID, and the sequential cursor are saved before placement, so reloads and unloaded chunks wait without rerolling. Recovery checks only the bounded anchor and authored-point neighborhoods and never force-loads chunks. Authored points cannot be combined with `spawn_mode: "near_player"`.
 
 ### Mid-fight phases

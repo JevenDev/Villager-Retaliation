@@ -184,4 +184,5 @@ Custom professions follow the same pattern with namespace and dotted path:
 
 - Dialogue, notifications, and authored lines: datapack locale folders
 - Quest titles, quest tracker text, quest lifecycle dialogue, and forced-dialogue labels/responses: datapack locale folders with message keys
+- Quest-owned scene and encounter presentation: localized references in authoring files; runtime `*_key` fields are materialized from the owning bundle and resolved per player
 - UI labels, profile text, family rows, profession names: resource-pack language files

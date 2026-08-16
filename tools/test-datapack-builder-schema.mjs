@@ -164,6 +164,16 @@ function testQuestBundleSchemas() {
       assert(!Object.hasOwn(definition.properties, field), "Quest schema exposes external dialogue field " + field + ".");
     }
   }
+  assert(
+    quest.$defs.provider.properties.blocks_hiring?.type === "boolean",
+    "Quest schema does not expose provider.blocks_hiring as a boolean."
+  );
+  const questSchemaText = JSON.stringify(quest);
+  const encounterSchemaText = JSON.stringify(encounter);
+  assert(questSchemaText.includes('"label_key"'), "Quest schema does not preserve localized dialogue labels.");
+  for (const field of ["custom_name_key", "boss_bar_title_key", "text_key", "trophy_name_key", "location_message_key"]) {
+    assert(encounterSchemaText.includes(`"${field}"`), `Encounter schema does not expose localized runtime field ${field}.`);
+  }
 }
 
 function assert(condition, message) {

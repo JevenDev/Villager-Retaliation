@@ -142,6 +142,7 @@
           { icon: "route", title: "Special roles", text: "Nitwit work is available only to nitwits. Builder is available to adults through a separate construction order." },
           { icon: "lock-keyhole", title: "One active controller", text: "Only the hirer manages the contract, work setup, storage, assigned mount, and ordinary job inventory." }
         ])}
+        <p><strong>Quest-provider reservation:</strong> a datapack can reserve narrowly matched quest-provider villagers from new paid hire contracts. When that applies, Hire is unavailable and the villager explains that quest duties prevent the contract. This does not cancel an existing contract or prevent party recruitment.</p>
       `)}
       ${section("Price And Duration", `
         <p>Ordinary work is prepaid for 1 to 30 Minecraft days. Extensions cannot push the remaining time above 30 days. The daily wage is based on the server's base price, the villager's relevant skill, and your reputation with that villager, then clamped to the configured minimum and maximum.</p>
@@ -1126,6 +1127,64 @@
     `;
   }
 
+  function beta13RenderCommands() {
+    const partyCommands = [
+      ["/vr party create", "Create a player party."],
+      ["/vr party invite <player>", "Invite an online player."],
+      ["/vr party accept [player]", "Accept the latest invitation, or one from the named player."],
+      ["/vr party decline [player]", "Decline the latest invitation, or one from the named player."],
+      ["/vr party leave", "Leave your party."],
+      ["/vr party kick <player>", "Remove a member when you have party permission."],
+      ["/vr party promote <player>", "Transfer leadership to a member."],
+      ["/vr party disband", "Disband your party."],
+      ["/vr party alliance request <player>", "Request an alliance with that player's party."],
+      ["/vr party alliance accept <player>", "Accept that party's request."],
+      ["/vr party alliance cancel <player>", "Cancel your outgoing request."],
+      ["/vr party alliance end <player>", "End the alliance."]
+    ];
+    const duelCommands = [
+      ["/vr duel challenge <player> [kit] [wager]", "Challenge an online player. Kit defaults to bring-your-own and wager defaults to 0."],
+      ["/vr duel accept [player]", "Accept the latest challenge, or the challenge from the named online player."],
+      ["/vr duel decline [player]", "Decline the latest challenge, or the challenge from the named online player."]
+    ];
+    const operatorGroups = [
+      ["Villager profile", "profile get <villager>; profile set <villager> <attribute> <value>; profile reroll <villager>; profile export <villager>"],
+      ["Villager skill and social state", "skill get <villager> [skill]; skill set <villager> <skill> <value>; skill reroll <villager>; gender set <villager> <gender>; reputation set <targets> <player> <value>; relationship set <first> <second> <stage>"],
+      ["Allegiance", "allegiance inspect|explain|unknown|unaffiliated|fork|repair <entity>; assign <entity> <uuid>; merge <source> <target>; undoMerge <source>; statistics; resetAbuse <entity> <player>"],
+      ["Tracked villages", "village inspectHere; renameHere <name>; list; registry inspect [limit]; registry pruneOlderThan <ticks>; registry suggestMerges [radius] [limit]; registry merge <source_key> <target_key>"],
+      ["Datapacks and dialogue", "datapack diagnostics [severity <severity> [resource <resource>] | resource <resource>]; dialogue explain <villager> <request> [option]"],
+      ["Quests", "quest providers [radius]; start|forceStart|rebind|whyAvailable <quest_id> <provider>; remove|inspect|objectives <quest_id>; whyHidden <quest_id> [provider]; setStage <quest_id> <stage>; fireTrigger <quest_id> <event>; actions dryRun <quest_id> <trigger_id>; facts <scope_key>"],
+      ["Quest traces", "quest trace on|off|clear; quest trace show [limit]; quest trace capture <quest_id> <provider>"],
+      ["Scenes", "scene list; inspect|trace|retry|cancel|resume <scene_id>; rebind <scene_id> <alias> <target>; cleanupEncounter <encounter_id>"],
+      ["Debug", "debug duel <villager> [kit] [wager]; hired previews <enabled> [radius]; hired stressGrid [count]; hired inspect <villager>; raid win|lose; builder materials <structure>; transferVillagerOwnership <villager> <player>"]
+    ];
+    return `
+      ${section("Command Basics", `
+        <p>Every command uses the <code>/vr</code> root. Run <code>/vr</code>, <code>/vr party</code>, or <code>/vr duel</code> for in-game help, and press Tab for available players, kits, IDs, selectors, and other values.</p>
+        ${beta13FactList([
+          ["Required argument", "Shown as <value>"],
+          ["Optional argument", "Shown as [value]"],
+          ["Operator tools", "/vr admin requires permission level 2"],
+          ["Capitalization", "Command literals are case-sensitive; keep names such as forceStart and inspectHere exactly as shown"]
+        ])}
+      `)}
+      ${section("Party Commands", beta13Table(["Command", "Use"], partyCommands))}
+      ${section("Player Duel Commands", beta13Table(["Command", "Use"], duelCommands))}
+      ${section("Operator Command Tree", `
+        <p>Each entry below follows <code>/vr admin</code>. These are testing, diagnostics, and repair tools; back up a world before mutating live quests, scenes, village identities, or ownership.</p>
+        ${beta13Table(["Group", "Subcommands after /vr admin"], operatorGroups)}
+      `)}
+      ${section("Useful Diagnostic Order", `
+        <ol class="step-list icon-step-list">
+          <li>${icon("refresh-cw")}<strong>Reload.</strong><span>Run <code>/reload</code> after changing datapack files.</span></li>
+          <li>${icon("triangle-alert")}<strong>Read diagnostics.</strong><span>Run <code>/vr admin datapack diagnostics</code>, optionally filtering by severity or resource.</span></li>
+          <li>${icon("search")}<strong>Inspect the feature.</strong><span>Use dialogue explain, quest whyAvailable or whyHidden, quest inspect or trace, scene inspect or trace, hired inspect, or village inspection.</span></li>
+          <li>${icon("terminal")}<strong>Use precise targets.</strong><span>If a villager name is ambiguous, use a UUID or a narrow entity selector. Tab completion is the safest source for IDs and enum values.</span></li>
+        </ol>
+      `)}
+    `;
+  }
+
   document.addEventListener("input", (event) => {
     if (!(event.target instanceof HTMLInputElement) || event.target.id !== "market-filter") return;
     const query = event.target.value.trim().toLowerCase();
@@ -1306,7 +1365,15 @@
       group: "Reference",
       description: "Player controls, Mod Menu settings, gamerules, datapack differences, and optional Second Wind and Ride On compatibility.",
       render: beta13RenderSettings
-    })
+    }),
+    beta13NewPage(
+      "commands",
+      "Commands",
+      "Reference",
+      "terminal",
+      "Complete player party and duel commands plus the permission-level-2 operator command tree for diagnostics, quests, scenes, villagers, villages, and debug tools.",
+      beta13RenderCommands
+    )
   ];
 
   const beta13DuplicateIds = beta13Pages

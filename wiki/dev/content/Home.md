@@ -9,6 +9,7 @@ System pages include copyable examples wherever JSON shape or file placement mat
 1. Read [Pack Development](Pack-Development.md) for folder layout, namespaces, overrides, and testing.
 2. Read [JSON Reference](JSON-Reference.md) for shared rules like `id`, `replace`, `text` vs `lines`, and conditions.
 3. If you want to make a quest, start with [First Quest Guide](First-Quest.md).
+4. Use [Commands](Commands.md) for the exact player and permission-level-2 operator command trees.
 4. Pick the system you want to customize from the table below.
 5. Copy a working example from [Example Packs](Example-Packs.md) or the full template pack.
 
