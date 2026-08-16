@@ -210,10 +210,10 @@ public final class QuestBundleTransactions {
             } else if (!candidate.prefix.startsWith(candidate.owner.namespace() + ".quest.")) {
                 errors.add("new localization_prefix must begin with " + candidate.owner.namespace() + ".quest.");
             }
-            if (lower != null && !lower.localizationPrefix().equals(candidate.prefix)) {
             if (lower != null && !lower.questId().equals(candidate.questId)) {
                 errors.add("quest ID is immutable across overrides");
             }
+            if (lower != null && !lower.localizationPrefix().equals(candidate.prefix)) {
                 errors.add("localization_prefix is immutable across overrides");
             }
             QuestBundleLocalization.Validation localization =

@@ -65,6 +65,10 @@ public final class EncounterResources {
         QuestContentCatalogs.invalidate();
     }
 
+    public static boolean hasTestOverride(MinecraftServer server) {
+        return server != null && testOverride.server() == server;
+    }
+
     public static void installTestTemplates(
             MinecraftServer server, List<EncounterTemplate> templates) {
         Map<ResourceLocation, EncounterTemplate> map = new LinkedHashMap<>();

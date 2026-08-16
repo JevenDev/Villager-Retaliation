@@ -132,7 +132,8 @@ public final class QuestContentCatalogGameTests {
         QuestContentCatalogs.invalidate();
         QuestContentCatalog replacement = QuestContentCatalogs.current(server);
 
-        helper.assertTrue(held != replacement, "reload must publish a new snapshot object");
+        helper.assertTrue(held != replacement, "reload must publish a new snapshot object; report="
+                + QuestContentCatalogs.loadReport(server).entries());
         helper.assertTrue(
                 replacement.generation() > heldGeneration,
                 "reload must advance the snapshot generation");
@@ -144,6 +145,42 @@ public final class QuestContentCatalogGameTests {
                 replacement.generation(),
                 QuestContentCatalogs.loadReport(server).generation(),
                 "replacement report does not belong to the replacement snapshot");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "quest_content_catalog_reload")
+    public static void failedCandidateRetainsThePriorLiveSnapshot(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        QuestContentCatalog held = QuestContentCatalogs.current(server);
+        QuestContentLoadReport originalReport = QuestContentCatalogs.loadReport(server);
+        QuestContentLoadReport failedReport = QuestContentLoadReport.builder(held.generation() + 1000L)
+                .add(
+                        ResourceLocation.parse("examplemod:quests/road/broken/quest.json"),
+                        "catalog/test",
+                        QuestContentLoadReport.Severity.ERROR,
+                        "synthetic invalid candidate")
+                .build();
+
+        try {
+            QuestContentCatalog selected = QuestContentCatalogs.attemptPublicationForTests(
+                    server,
+                    QuestContentCatalog.empty(),
+                    failedReport,
+                    false);
+            helper.assertTrue(selected == held, "failed candidate replaced the live snapshot");
+            helper.assertTrue(
+                    QuestContentCatalogs.current(server) == held,
+                    "service lookup observed a failed candidate");
+            helper.assertTrue(
+                    QuestContentCatalogs.loadReport(server) == failedReport,
+                    "failed candidate report was not published separately");
+            helper.assertValueEqual(
+                    held.quests().size(),
+                    QuestContentCatalogs.current(server).quests().size(),
+                    "held quest view changed after rejected publication");
+        } finally {
+            QuestContentCatalogs.installForTests(server, held, originalReport);
+        }
         helper.succeed();
     }
 }
