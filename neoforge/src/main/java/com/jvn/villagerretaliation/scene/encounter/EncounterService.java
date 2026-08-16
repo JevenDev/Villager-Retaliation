@@ -1067,11 +1067,7 @@ public final class EncounterService {
         CompoundTag tag = entity.getPersistentData();
         if (!tag.hasUUID(OWNER)) return;
         EncounterInstance encounter = data.encounter(tag.getUUID(OWNER)).orElse(null);
-        EncounterTemplate template =
-                encounter == null
-                        ? null
-                        : EncounterResources.template(level.getServer(), encounter.templateId())
-                                .orElse(null);
+        EncounterTemplate template = availableTemplate(level.getServer(), data, encounter);
         EncounterTemplate.RewardPolicy policy = template == null ? null : template.rewards();
         if (policy == null || policy.dropPolicy() == EncounterTemplate.DropPolicy.NORMAL) return;
         event.getDrops().clear();
@@ -1277,6 +1273,17 @@ public final class EncounterService {
                 .anyMatch(ally -> ally.requiredSurvival() && ally.actorAlias().equals(alias));
     }
 
+    private static EncounterTemplate availableTemplate(
+            MinecraftServer server, SceneSavedData data, EncounterInstance encounter) {
+        if (encounter == null) return null;
+        EncounterTemplate template =
+                EncounterResources.template(server, encounter.templateId()).orElse(null);
+        if (template == null) return null;
+        SceneInstance scene = data.get(encounter.sceneId()).orElse(null);
+        if (scene == null || SceneResources.scene(server, scene.sceneId()).isEmpty()) return null;
+        return template;
+    }
+
     public static Result refresh(
             MinecraftServer server, SceneSavedData data, EncounterInstance encounter) {
         String missingTemplateDiagnostic =
@@ -1389,9 +1396,7 @@ public final class EncounterService {
         Set<UUID> affected = new java.util.LinkedHashSet<>();
         for (EncounterInstance candidate : data.encounters()) {
             if (candidate.state() != EncounterInstance.EncounterState.ACTIVE) continue;
-            EncounterTemplate template =
-                    EncounterResources.template(level.getServer(), candidate.templateId())
-                            .orElse(null);
+            EncounterTemplate template = availableTemplate(level.getServer(), data, candidate);
             if (template == null) continue;
             if (candidate.participants().contains(entity.getUUID()) && template.failure() != null)
                 applyFailure(
@@ -1424,6 +1429,8 @@ public final class EncounterService {
         CompoundTag persistent = entity.getPersistentData();
         if (persistent.hasUUID(OWNER))
             data.encounter(persistent.getUUID(OWNER))
+                    .filter(
+                            encounter -> availableTemplate(level.getServer(), data, encounter) != null)
                     .ifPresent(
                             encounter -> {
                                 encounter.defeated(entity.getUUID());
@@ -1432,6 +1439,8 @@ public final class EncounterService {
                             });
         if (persistent.hasUUID(ALLY_OWNER))
             data.encounter(persistent.getUUID(ALLY_OWNER))
+                    .filter(
+                            encounter -> availableTemplate(level.getServer(), data, encounter) != null)
                     .ifPresent(
                             encounter -> {
                                 EncounterInstance.AllyIdentity identity =
@@ -1581,9 +1590,11 @@ public final class EncounterService {
         else if (encounter.state() == EncounterInstance.EncounterState.CLEANED) entity.discard();
         else if (encounter.state() == EncounterInstance.EncounterState.PREPARED
                 || encounter.state() == EncounterInstance.EncounterState.SPAWNING
-                || encounter.state() == EncounterInstance.EncounterState.ACTIVE)
-            updateMobBossBars(level.getServer(), encounter);
-        else hideMobBossBar(entity.getUUID());
+                || encounter.state() == EncounterInstance.EncounterState.ACTIVE) {
+            if (availableTemplate(level.getServer(), data, encounter) != null)
+                updateMobBossBars(level.getServer(), encounter);
+            else hideMobBossBar(entity.getUUID());
+        } else hideMobBossBar(entity.getUUID());
     }
 
     public static boolean shouldCancelFriendlyDamage(
