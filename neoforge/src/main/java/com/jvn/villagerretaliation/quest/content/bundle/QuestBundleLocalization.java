@@ -266,16 +266,18 @@ public final class QuestBundleLocalization {
         }
         if (localizedContext) {
             LocalizedReference reference = LocalizedReference.read(element).orElse(null);
-            if (reference == null) {
+            if (reference != null) {
+                try {
+                    references.add(reference.expand(prefix));
+                } catch (IllegalArgumentException exception) {
+                    errors.add((path.isBlank() ? "/" : path) + " " + exception.getMessage());
+                }
+                return;
+            }
+            if (!element.isJsonArray() && !element.isJsonObject()) {
                 errors.add((path.isBlank() ? "/" : path) + " must use a localized reference");
                 return;
             }
-            try {
-                references.add(reference.expand(prefix));
-            } catch (IllegalArgumentException exception) {
-                errors.add((path.isBlank() ? "/" : path) + " " + exception.getMessage());
-            }
-            return;
         }
         if (element.isJsonArray()) {
             JsonArray array = element.getAsJsonArray();
