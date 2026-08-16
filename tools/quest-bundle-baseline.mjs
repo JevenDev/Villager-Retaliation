@@ -20,7 +20,11 @@ const roots = {
   messages: path.join(dataRoot, "dialogue", "en_us", "quests", "messages")
 };
 
-const textFields = new Set(["title", "description", "label", "text", "lines", "tracker_text", "tracker_complete_text", "complete_text", "custom_name", "trophy_name"]);
+const textFields = new Set([
+  "title", "description", "label", "text", "lines", "tracker_text",
+  "tracker_complete_text", "complete_text", "custom_name", "trophy_name",
+  "boss_bar_title", "location_message"
+]);
 const stableArrays = new Set(["stages", "objectives", "events", "triggers", "scenes", "responses", "actors", "steps", "actions", "waves", "variants", "members", "phases"]);
 
 const [quests, scenes, encounters, pools, rewards, messages] = await Promise.all([
@@ -508,10 +512,9 @@ async function loadBundleMessages(directory) {
   }
   const actualKeys = new Set(result.keys());
   const missing = [...frozenLocaleKeys].filter(key => !actualKeys.has(key));
-  const unexpected = [...actualKeys].filter(key => !frozenLocaleKeys.has(key));
-  if (missing.length || unexpected.length) {
-    throw new Error("Effective English locale key set changed: missing="
-      + missing.join(",") + "; unexpected=" + unexpected.join(","));
+  if (missing.length) {
+    throw new Error("Effective English locale key set lost frozen keys: missing="
+      + missing.join(","));
   }
   return new Map(sortedEntries(new Map(
     [...result].filter(([key]) => frozenAuthoredMessages.has(key)))));

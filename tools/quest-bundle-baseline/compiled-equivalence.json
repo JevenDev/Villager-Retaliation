@@ -16201,10 +16201,13 @@
     ],
     "quest.workshop_oaths.temper_and_tally.stage.return.ui.tracker_text": "Return with the forge stock.",
     "quest.workshop_oaths.temper_and_tally.title": "Temper",
+    "villagerretaliation.shared.encounter.night_run_attack.location_message": "The blocked night route is at {x}, {y}, {z}. Clear it before returning.",
     "villagerretaliation.shared.encounter.standing_watch.phase.captain_enters.action.warn_defenders.text": "The raider captain has entered the fight.",
     "villagerretaliation.shared.encounter.standing_watch.rewards.completion.watch_medal.trophy_name": "Standing Watch Medal",
+    "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.boss_bar_title": "Standing Watch - Raider Captain",
     "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.dialogue_hook.text": "The captain is here. Hold the line!",
     "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.member.raider_captain.custom_name": "Raider Captain",
+    "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.boss_bar_title": "Standing Watch - Restless Dead",
     "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.scene_action.first_warning.text": "The first attackers are coming through the dark."
   },
   "encounters": {
@@ -16533,7 +16536,7 @@
     }
   },
   "fingerprints": {
-    "migration_equivalence": "f9de76e0f4667e9dadb82c68feb61629e4b658856f4afd63f40a1f6e1b41791d",
+    "migration_equivalence": "3f4d638b76e3501545b7ac7c8b5fecc5b2b758d0e2351bc674a4fc4cf41d5f5f",
     "persistent_structure": "cfd8aa7262a57027988a2a6984adeea6e8af11288f3acbe3b247b898a6c3fed2"
   },
   "pools": {

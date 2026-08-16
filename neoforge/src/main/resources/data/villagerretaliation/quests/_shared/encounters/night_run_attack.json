@@ -4,7 +4,9 @@
   "controller": "villagerretaliation:controlled",
   "extra_per_player": 1,
   "id": "villagerretaliation:night_run_attack",
-  "location_message": "The blocked night route is at {x}, {y}, {z}. Clear it before returning.",
+  "location_message": {
+    "key": "villagerretaliation.shared.encounter.night_run_attack.location_message"
+  },
   "max_party_size": 4,
   "members": [
     {

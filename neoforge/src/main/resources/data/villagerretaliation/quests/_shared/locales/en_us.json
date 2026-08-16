@@ -581,10 +581,13 @@
         "Travel to the quest target."
       ]
     },
+    "villagerretaliation.shared.encounter.night_run_attack.location_message": "The blocked night route is at {x}, {y}, {z}. Clear it before returning.",
     "villagerretaliation.shared.encounter.standing_watch.phase.captain_enters.action.warn_defenders.text": "The raider captain has entered the fight.",
     "villagerretaliation.shared.encounter.standing_watch.rewards.completion.watch_medal.trophy_name": "Standing Watch Medal",
+    "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.boss_bar_title": "Standing Watch - Raider Captain",
     "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.dialogue_hook.text": "The captain is here. Hold the line!",
     "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.member.raider_captain.custom_name": "Raider Captain",
+    "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.boss_bar_title": "Standing Watch - Restless Dead",
     "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.scene_action.first_warning.text": "The first attackers are coming through the dark."
   }
 }

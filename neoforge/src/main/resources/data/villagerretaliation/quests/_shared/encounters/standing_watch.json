@@ -177,7 +177,9 @@
   "version": 11,
   "waves": [
     {
-      "boss_bar_title": "Standing Watch - Restless Dead",
+      "boss_bar_title": {
+        "key": "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.boss_bar_title"
+      },
       "delay_ticks": 0,
       "id": "restless_dead",
       "members": [
@@ -198,7 +200,9 @@
       "trigger": "all_defeated"
     },
     {
-      "boss_bar_title": "Standing Watch - Raider Captain",
+      "boss_bar_title": {
+        "key": "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.boss_bar_title"
+      },
       "delay_ticks": 80,
       "dialogue_hook": {
         "id": "captain_arrives",

@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.quest.content.bundle.LocalizedReference;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleLocalization;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleRuntimeMaterializer;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestDeterministicLocaleKeys;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestLocaleCatalog;
@@ -76,6 +77,42 @@ public final class QuestBundleArchitectureGameTests {
         dialogueCodec.add("dialogue", object("{\"offer\":{\"actions\":[{\"type\":\"examplemod:custom\",\"external\":\"opaque\"}]}}"));
         helper.assertTrue(QuestBundleLocalization.validateQuest(dialogueCodec, PREFIX).valid(),
                 "opaque action payload mistaken for external structural dialogue");
+
+        JsonObject inlineBossBar = object(
+                "{\"id\":\"examplemod:inline_boss\",\"boss_bar_title\":\"Inline boss\"}");
+        helper.assertTrue(!QuestBundleLocalization.collectCompanion(inlineBossBar, PREFIX).valid(),
+                "inline companion boss-bar title accepted");
+        JsonObject inlineLocation = object(
+                "{\"id\":\"examplemod:inline_location\",\"location_message\":\"Go there\"}");
+        helper.assertTrue(!QuestBundleLocalization.collectCompanion(inlineLocation, PREFIX).valid(),
+                "inline companion location message accepted");
+
+        JsonObject localizedEncounter = object(
+                "{\"id\":\"examplemod:localized_encounter\","
+                        + "\"boss_bar_title\":{\"key\":\"#encounter.boss\"},"
+                        + "\"location_message\":{\"key\":\"#encounter.location\"}}");
+        List<QuestBundleTransactions.RawResource> localizedResources = new ArrayList<>(introduce(
+                0, "base", NS, LINE, SLUG, quest(NS, LINE, SLUG, PREFIX),
+                locale(Map.of(
+                        PREFIX + ".title", element("\"Alpha\""),
+                        PREFIX + ".encounter.boss", element("\"Localized boss\""),
+                        PREFIX + ".encounter.location", element("\"Localized location\"")))));
+        localizedResources.add(raw(
+                0, "base", NS, "quests/road/alpha/encounters/localized.json", localizedEncounter));
+        QuestBundleTransactions.EffectiveBundle localizedBundle =
+                bundle(compile(localizedResources), LINE, SLUG);
+        QuestBundleRuntimeMaterializer.DefinitionResult materialized =
+                QuestBundleRuntimeMaterializer.materializeDefinition(
+                        localizedBundle,
+                        QuestBundlePath.Kind.ENCOUNTER,
+                        id("examplemod:localized_encounter"));
+        helper.assertTrue(materialized.errors().isEmpty(), "companion localization failed");
+        helper.assertValueEqual(
+                materialized.definition().get("boss_bar_title").getAsString(),
+                "Localized boss", "boss-bar title was not materialized");
+        helper.assertValueEqual(
+                materialized.definition().get("location_message").getAsString(),
+                "Localized location", "location message was not materialized");
 
         QuestDeterministicLocaleKeys.Address address = new QuestDeterministicLocaleKeys.Address(
                 id("examplemod:alpha"), List.of("stage_one", "objective_one"), "tracker.text");
