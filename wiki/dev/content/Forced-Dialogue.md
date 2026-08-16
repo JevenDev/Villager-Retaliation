@@ -199,6 +199,7 @@ Proximity rules also accept `player_item_components`, `player_item_custom_data`,
   "witness_radius": 8,
   "chance": 1.0,
   "requires_player_aiming_at_witness": true,
+  "required_aim_duration_seconds": 2,
   "player_items": ["minecraft:diamond_sword"],
   "player_item_slots": ["hands"],
   "draw_weapon": true,
@@ -209,6 +210,8 @@ Proximity rules also accept `player_item_components`, `player_item_custom_data`,
 `draw_weapon: true` makes the matching villager visibly equip the best usable weapon they carry for 10 seconds by default. Set `draw_weapon_duration_ticks`, `draw_weapon_duration_seconds`, or `draw_weapon_duration_days` to change that window. Ongoing `player_item_proximity` matches refresh the window even while dialogue is on cooldown, so the duration becomes the sheathing delay after the condition stops matching. Drawing a weapon does not assign a target or start retaliation.
 
 `requires_player_aiming_at_witness: true` requires the player's unobstructed server-side sight ray to hit this villager before another living entity. Aiming rules use one staggered sight ray per matching player every 5 ticks, so their cost scales with armed players instead of nearby villagers. They can be combined with `player_items` and `player_item_slots` to author weapon-specific warnings.
+
+Set `required_aim_duration_ticks`, `required_aim_duration_seconds`, or `required_aim_duration_days` to require uninterrupted aim before the line can fire. The timer resets when the player looks away or changes targets. Omit the field or use `0` for an instant response. The client-facing delayed weapon-aiming dialogue config can bypass authored delays without changing the datapack.
 
 `requires_same_party: true` restricts a `player_item_proximity` entry to villagers in the nearby player's party. This is useful for ally-specific warnings that should take priority over reputation-based reactions.
 

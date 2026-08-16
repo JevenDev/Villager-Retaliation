@@ -34,6 +34,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "requires_same_party": true,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
@@ -72,6 +73,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -110,6 +112,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -149,6 +152,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -187,6 +191,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -226,6 +231,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -264,6 +270,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -303,6 +310,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -341,6 +349,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -380,6 +389,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -418,6 +428,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -457,6 +468,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -495,6 +507,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -534,6 +547,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -572,6 +586,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -611,6 +626,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -649,6 +665,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -688,6 +705,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [
@@ -726,6 +744,7 @@
       "witness_radius": 8,
       "requires_line_of_sight": true,
       "requires_player_aiming_at_witness": true,
+      "required_aim_duration_seconds": 2,
       "draw_weapon": true,
       "draw_weapon_duration_seconds": 5,
       "reputation_levels": [

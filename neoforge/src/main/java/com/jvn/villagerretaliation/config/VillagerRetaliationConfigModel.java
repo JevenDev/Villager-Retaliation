@@ -138,6 +138,8 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean enablePlayerItemProximityForcedDialogue = true;
 
+        public boolean enableWeaponAimingDialogueDelay = true;
+
         public boolean separateVillagerChatMessages = false;
 
         public boolean separateVillagerChatSpeakers = true;

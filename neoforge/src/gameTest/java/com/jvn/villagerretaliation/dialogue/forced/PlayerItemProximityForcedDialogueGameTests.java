@@ -154,6 +154,8 @@ public final class PlayerItemProximityForcedDialogueGameTests {
                 "arming in response to an ally should not immediately start retaliation");
         helper.assertValueEqual(definition.drawWeaponTicks(), 100,
                 "the party villager should retain a five-second sheathing delay");
+        helper.assertValueEqual(definition.requiredAimDurationTicks(), 40,
+                "the built-in aiming warning should require two seconds of continuous aim");
         helper.assertValueEqual(definition.lines().size(), 10,
                 "the party aiming rule should retain all ten inline dialogue variations");
         helper.assertTrue(definition.lines().stream().allMatch(line -> line.key().isBlank()),
@@ -235,6 +237,99 @@ public final class PlayerItemProximityForcedDialogueGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, batch = "isolated_weaponaimdrawsandconfigbypassesdelay")
+    public static void weaponAimDrawsImmediatelyAndConfigCanBypassDialogueDelay(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrDelayedAimingDialogue");
+        BlockPos playerPos = helper.absolutePos(new BlockPos(1, 2, 1));
+        player.moveTo(playerPos.getX() + 0.5D, playerPos.getY(), playerPos.getZ() + 0.5D, 0.0F, 0.0F);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+        Villager witness = helper.spawn(EntityType.VILLAGER, new BlockPos(5, 2, 1));
+        witness.setNoAi(true);
+        VillagerInventoryAccess.addItem(witness, new ItemStack(Items.IRON_SWORD));
+        player.lookAt(EntityAnchorArgument.Anchor.EYES, witness.getEyePosition());
+
+        ForcedDialogueResources.clearCache();
+        ForcedDialogueResources.ForcedDialogueDefinition definition =
+                ForcedDialogueResources.playerItemProximityCandidates(level.getServer()).stream()
+                        .filter(candidate -> candidate.id().equals("player_aiming_sword_neutral"))
+                        .findFirst()
+                        .orElseThrow();
+        boolean[] dialogueTriggered = {false};
+        PlayerItemProximityForcedDialogueService.clearRuntimeState();
+        PlayerItemProximityForcedDialogueService.setAimingDialogueDelayEnabled(player, true);
+
+        PlayerItemProximityForcedDialogueService.tryDefinitions(
+                level,
+                witness,
+                player,
+                List.of(definition),
+                level.getGameTime(),
+                true,
+                0L,
+                PlayerItemProximityForcedDialogueService.aimingDialogueDelayEnabled(player),
+                triggeringDelegate(dialogueTriggered));
+
+        helper.assertTrue(VillagerWeaponDrawService.isDrawn(witness),
+                "the villager should draw as soon as a matching weapon is aimed at it");
+        helper.assertFalse(dialogueTriggered[0],
+                "the dialogue should remain blocked until the data-driven aim duration elapses");
+
+        PlayerItemProximityForcedDialogueService.setAimingDialogueDelayEnabled(player, false);
+        PlayerItemProximityForcedDialogueService.tryDefinitions(
+                level,
+                witness,
+                player,
+                List.of(definition),
+                level.getGameTime(),
+                true,
+                0L,
+                PlayerItemProximityForcedDialogueService.aimingDialogueDelayEnabled(player),
+                triggeringDelegate(dialogueTriggered));
+        helper.assertTrue(dialogueTriggered[0],
+                "disabling aim delays in config should make the data-driven warning instant");
+        VillagerWeaponDrawService.sheathe(witness);
+        PlayerItemProximityForcedDialogueService.setAimingDialogueDelayEnabled(player, true);
+        PlayerItemProximityForcedDialogueService.clearRuntimeState();
+        witness.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "isolated_continuousaimdurationresets")
+    public static void continuousAimDurationResetsWhenAimBreaksOrChangesTarget(GameTestHelper helper) {
+        UUID playerId = UUID.randomUUID();
+        UUID villagerId = UUID.randomUUID();
+        UUID otherVillagerId = UUID.randomUUID();
+        PlayerItemProximityForcedDialogueService.clearRuntimeState();
+
+        helper.assertValueEqual(PlayerItemProximityForcedDialogueService.continuousAimTicks(
+                        playerId, villagerId, 100L),
+                0L,
+                "the first matching aim scan should start at zero elapsed ticks");
+        for (long gameTime = 105L; gameTime < 140L; gameTime += 5L) {
+            helper.assertValueEqual(PlayerItemProximityForcedDialogueService.continuousAimTicks(
+                            playerId, villagerId, gameTime),
+                    gameTime - 100L,
+                    "continuous aim should accumulate between sight-ray scans");
+        }
+        helper.assertValueEqual(PlayerItemProximityForcedDialogueService.continuousAimTicks(
+                        playerId, villagerId, 140L),
+                40L,
+                "continuous aim should reach the authored two-second delay");
+        helper.assertValueEqual(PlayerItemProximityForcedDialogueService.continuousAimTicks(
+                        playerId, otherVillagerId, 145L),
+                0L,
+                "switching targets should restart the elapsed aim duration");
+
+        PlayerItemProximityForcedDialogueService.clearAim(playerId);
+        helper.assertValueEqual(PlayerItemProximityForcedDialogueService.continuousAimTicks(
+                        playerId, villagerId, 150L),
+                0L,
+                "looking away should restart the elapsed aim duration");
+        PlayerItemProximityForcedDialogueService.clearRuntimeState();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE)
     public static void aimRayRequiresTheWitnessToBeTheFirstVisibleLivingTarget(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
@@ -268,6 +363,40 @@ public final class PlayerItemProximityForcedDialogueGameTests {
     private static ServerPlayer fakePlayer(ServerLevel level, String name) {
         UUID id = UUID.nameUUIDFromBytes(("villagerretaliation:" + name).getBytes(StandardCharsets.UTF_8));
         return FakePlayerFactory.get(level, new GameProfile(id, name));
+    }
+
+    private static PlayerItemProximityForcedDialogueService.Delegate triggeringDelegate(boolean[] dialogueTriggered) {
+        return new PlayerItemProximityForcedDialogueService.Delegate() {
+            @Override
+            public boolean canUseForcedInteractionSystem(ServerPlayer ignoredPlayer, Villager ignoredVillager) {
+                return true;
+            }
+
+            @Override
+            public boolean hasForcedSession(ServerPlayer ignoredPlayer) {
+                return false;
+            }
+
+            @Override
+            public boolean matchesReputation(
+                    ServerLevel ignoredLevel,
+                    Villager ignoredVillager,
+                    ServerPlayer ignoredPlayer,
+                    ForcedDialogueResources.ForcedDialogueDefinition ignoredDefinition) {
+                return true;
+            }
+
+            @Override
+            public boolean trigger(
+                    ServerLevel ignoredLevel,
+                    Villager ignoredVillager,
+                    ServerPlayer ignoredPlayer,
+                    ForcedDialogueResources.ForcedDialogueDefinition ignoredDefinition,
+                    Optional<PlayerItemProximityForcedDialogueService.TradeItemMatch> ignoredTradeItemMatch) {
+                dialogueTriggered[0] = true;
+                return true;
+            }
+        };
     }
 
     private static MerchantOffer offer(

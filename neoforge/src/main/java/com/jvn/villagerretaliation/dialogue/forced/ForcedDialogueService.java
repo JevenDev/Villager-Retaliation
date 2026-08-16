@@ -201,6 +201,10 @@ public final class ForcedDialogueService {
     private ForcedDialogueService() {
     }
 
+    public static void setWeaponAimingDialogueDelayEnabled(ServerPlayer player, boolean enabled) {
+        PlayerItemProximityForcedDialogueService.setAimingDialogueDelayEnabled(player, enabled);
+    }
+
     public static void clearRuntimeState() {
         RECENT_CONTAINER_CLICKS.clear();
         OPEN_CONTAINER_SNAPSHOTS.clear();
@@ -424,6 +428,7 @@ public final class ForcedDialogueService {
                 5,
                 false,
                 false,
+                0,
                 false,
                 VillagerEquipmentCondition.empty(),
                 VillagerPlayerItemCondition.empty(),
@@ -467,7 +472,7 @@ public final class ForcedDialogueService {
                 EXPIRED_PARTY_DEFINITION_ID, null, ForcedDialogueTrigger.QUEST, SIMPLE_FORCED_OUTPUT,
                 List.of(LocalizedText.inline(line)), true, false, true, false, 0.0D, 1.0D,
                 0, 0, 1, 0L, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE,
-                Set.of(), Set.of(), Set.of(), 1, 5, false, false, false,
+                Set.of(), Set.of(), Set.of(), 1, 5, false, false, 0, false,
                 VillagerEquipmentCondition.empty(), VillagerPlayerItemCondition.empty(),
                 VillagerReputationCondition.empty(), 0, options, SIMPLE_LEAVE_OPTION, options,
                 DialogueEntryMetadata.EMPTY, List.of());
@@ -1426,6 +1431,7 @@ public final class ForcedDialogueService {
                 source.maxTradeLevel(),
                 source.requiresHeldTradeItem(),
                 source.requiresPlayerAimingAtWitness(),
+                source.requiredAimDurationTicks(),
                 source.requiresSameParty(),
                 source.witnessEquipmentCondition(),
                 source.playerItemCondition(),
@@ -1543,6 +1549,7 @@ public final class ForcedDialogueService {
                 optionDefinition.maxTradeLevel(),
                 optionDefinition.requiresHeldTradeItem(),
                 optionDefinition.requiresPlayerAimingAtWitness(),
+                optionDefinition.requiredAimDurationTicks(),
                 optionDefinition.requiresSameParty(),
                 optionDefinition.witnessEquipmentCondition(),
                 optionDefinition.playerItemCondition(),
@@ -2642,6 +2649,7 @@ public final class ForcedDialogueService {
                 source.maxTradeLevel(),
                 source.requiresHeldTradeItem(),
                 source.requiresPlayerAimingAtWitness(),
+                source.requiredAimDurationTicks(),
                 source.requiresSameParty(),
                 source.witnessEquipmentCondition(),
                 source.playerItemCondition(),

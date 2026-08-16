@@ -607,6 +607,8 @@
   "text.config.villagerretaliation.option.dialogue.enableNormalDialogueCameraFocus.tooltip": "Focuses the camera during regular player-started dialogue. Event-driven cinematic dialogue uses the main camera-focus setting above.",
   "text.config.villagerretaliation.option.dialogue.enablePlayerItemProximityForcedDialogue": "Quest-Item Proximity Dialogue",
   "text.config.villagerretaliation.option.dialogue.enablePlayerItemProximityForcedDialogue.tooltip": "Enables forced dialogue and chat callouts when nearby players carry matching held or worn items.",
+  "text.config.villagerretaliation.option.dialogue.enableWeaponAimingDialogueDelay": "Delayed Weapon-Aiming Dialogue",
+  "text.config.villagerretaliation.option.dialogue.enableWeaponAimingDialogueDelay.tooltip": "Controls whether your player honors data-driven required aim durations before villagers speak. Villagers may still draw weapons immediately. Disable for instant dialogue.",
   "text.config.villagerretaliation.option.dialogue.enableRetaliationForcedDialogue": "Retaliation Dialogue",
   "text.config.villagerretaliation.option.dialogue.enableRetaliationForcedDialogue.tooltip": "Enables forced dialogue and combat barks when villagers begin retaliation.",
   "text.config.villagerretaliation.option.dialogue.firstGreetingReputationGain": "First Greeting Reputation Gain",

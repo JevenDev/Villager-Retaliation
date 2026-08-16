@@ -22,13 +22,21 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "74";
+    private static final String PROTOCOL_VERSION = "75";
 
     private VillagerReputationNetworking() {
     }
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         ToucanNetwork network = ToucanNetwork.create(VillagerRetaliation.MOD_ID, PROTOCOL_VERSION, event);
+        network.playToServer(
+                WeaponAimingDialogueDelayPreferencePayload.TYPE,
+                WeaponAimingDialogueDelayPreferencePayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService
+                                        .setWeaponAimingDialogueDelayEnabled(player, payload.enabled())))
+        );
         network.safePlayToClientThreaded(
                 ServerConfigSyncPayload.TYPE,
                 ServerConfigSyncPayload.STREAM_CODEC,

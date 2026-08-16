@@ -54,6 +54,7 @@ public final class ForcedDialogueResources {
             "player_item_components", "held_item_components", "player_item_custom_data", "held_item_custom_data", "player_item_nbt", "held_item_nbt",
             "requires_held_trade_item", "requires_trade_item", "requires_matching_trade_item",
             "requires_player_aiming_at_witness", "requires_same_party",
+            "required_aim_duration_ticks", "required_aim_duration_seconds", "required_aim_duration_days",
             "min_trade_level", "max_trade_level", "min_villager_trade_level", "max_villager_trade_level",
             "min_player_item_durability", "max_player_item_durability", "min_player_item_durability_percent", "max_player_item_durability_percent",
             "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
@@ -358,6 +359,7 @@ public final class ForcedDialogueResources {
                 readTradeLevel(entry, "max_trade_level", "max_villager_trade_level", 5),
                 readRequiresHeldTradeItem(entry),
                 readBoolean(entry, "requires_player_aiming_at_witness"),
+                readRequiredAimDurationTicks(entry),
                 readBoolean(entry, "requires_same_party"),
                 VillagerEquipmentCondition.read(entry, "witness"),
                 VillagerPlayerItemCondition.read(entry),
@@ -383,6 +385,14 @@ public final class ForcedDialogueResources {
 
     private static long defaultCooldownTicks(ForcedDialogueTrigger trigger) {
         return trigger == ForcedDialogueTrigger.CONTAINER_THEFT ? 20L * 30L : 0L;
+    }
+
+    private static int readRequiredAimDurationTicks(JsonObject entry) {
+        if (!readBoolean(entry, "requires_player_aiming_at_witness")) {
+            return 0;
+        }
+        long duration = DatapackJsonReader.readDurationTicks(entry, "required_aim_duration", 0L);
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, duration));
     }
 
     private static int readDrawWeaponTicks(JsonObject entry) {
@@ -1199,6 +1209,7 @@ public final class ForcedDialogueResources {
             int maxTradeLevel,
             boolean requiresHeldTradeItem,
             boolean requiresPlayerAimingAtWitness,
+            int requiredAimDurationTicks,
             boolean requiresSameParty,
             VillagerEquipmentCondition witnessEquipmentCondition,
             VillagerPlayerItemCondition playerItemCondition,
@@ -1211,6 +1222,7 @@ public final class ForcedDialogueResources {
             List<DialogueCondition> conditions) {
         public ForcedDialogueDefinition {
             weight = Math.max(0, Math.min(10_000, weight));
+            requiredAimDurationTicks = Math.max(0, requiredAimDurationTicks);
             metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
         }
