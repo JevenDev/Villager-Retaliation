@@ -100,6 +100,10 @@ public final class VillagerQuestResources {
         QuestContentCatalogs.invalidate();
     }
 
+    public static boolean hasTestOverride(MinecraftServer server) {
+        return server != null && testOverride.server() == server;
+    }
+
     public static void installCompiledTestCatalog(MinecraftServer server, Collection<CompiledQuest> compiledQuests) {
         installCompiledTestCatalog(server, compiledQuests, QuestDialogueCatalog.empty());
     }

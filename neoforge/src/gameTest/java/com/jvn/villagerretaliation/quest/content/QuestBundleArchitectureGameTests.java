@@ -130,6 +130,24 @@ public final class QuestBundleArchitectureGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "quest_bundle_architecture")
+    public static void overridesCannotChangeQuestIdentity(GameTestHelper helper) {
+        List<QuestBundleTransactions.RawResource> resources = new ArrayList<>(introduce(
+                0, "base", NS, LINE, SLUG, quest(NS, LINE, SLUG, PREFIX),
+                locale(PREFIX + ".title", "Alpha")));
+        JsonObject renamed = quest(NS, LINE, SLUG, PREFIX);
+        renamed.addProperty("id", NS + ":renamed");
+        resources.add(raw(1, "high", NS, questPath(LINE, SLUG), renamed));
+        resources.add(raw(1, "high", NS, localePath(LINE, SLUG, "en_us"),
+                locale(PREFIX + ".title", "Renamed")));
+
+        QuestBundleTransactions.Result result = compile(resources);
+        helper.assertValueEqual(bundle(result, LINE, SLUG).questId(), id(NS + ":alpha"),
+                "quest ID override did not retain the lower bundle");
+        helper.assertTrue(diagnostic(result, "quest ID is immutable"), "quest ID change lacked a diagnostic");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "quest_bundle_architecture")
     public static void layersRollbackAtomicallyAndLocalesFallbackPerKey(GameTestHelper helper) {
         List<QuestBundleTransactions.RawResource> structural = new ArrayList<>(introduce(
                 0, "base", NS, LINE, SLUG, quest(NS, LINE, SLUG, PREFIX),

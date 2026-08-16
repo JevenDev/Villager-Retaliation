@@ -34,6 +34,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class QuestRewardBundleGameTests {
     private static final String NS = "villagerretaliation";
     private static final ResourceLocation PROBE_ID = id("villagerretaliation:quest/reward_probe");
+    private static final ResourceLocation COLLISION_ID = id("villagerretaliation:test/reward_collision");
     private static final ResourceLocation EXTERNAL_ID = id("villagerretaliation:test/external_reward");
 
     private QuestRewardBundleGameTests() {
@@ -83,6 +84,10 @@ public final class QuestRewardBundleGameTests {
                 wrapper(PROBE_ID, table("minecraft:generic", "minecraft:stick")),
                 QuestRewardRegistryContext.create(helper.getLevel().getServer()));
         helper.assertTrue(parsed.valid(), "probe reward failed to compile: " + parsed.errors());
+        BundledQuestReward.ParseResult collision = BundledQuestReward.parse(
+                wrapper(COLLISION_ID, table("minecraft:generic", "minecraft:stick")),
+                QuestRewardRegistryContext.create(helper.getLevel().getServer()));
+        helper.assertTrue(collision.valid(), "collision reward failed to compile: " + collision.errors());
         QuestContentCatalog installed = new QuestContentCatalog(
                 base.generation(),
                 base.compiledQuestCatalog(),
@@ -98,14 +103,23 @@ public final class QuestRewardBundleGameTests {
                 base.pools(),
                 base.bundles(),
                 base.localization(),
-                new QuestRewardCatalog(Map.of(PROBE_ID, parsed.reward())));
+                new QuestRewardCatalog(Map.of(
+                        PROBE_ID, parsed.reward(),
+                        COLLISION_ID, collision.reward())));
         QuestContentCatalogs.installForTests(server, installed, QuestContentCatalogs.loadReport(server));
         try {
-            QuestRewardResolver.Resolution resolution = QuestRewardResolver.resolve(server, PROBE_ID);
+            QuestRewardResolver.Resolution resolution = QuestRewardResolver.resolve(server, COLLISION_ID);
             helper.assertValueEqual(resolution.source(), QuestRewardResolver.Source.BUNDLED,
                     "external collision won over bundled reward");
 
             long seed = 0x6e591376L;
+            QuestRewardResolver.RollResult collisionRoll = QuestRewardResolver.roll(
+                    helper.getLevel(), 1.25F, COLLISION_ID, RandomSource.create(seed));
+            helper.assertValueEqual(count(collisionRoll.items(), Items.STICK), 1,
+                    "bundled collision table did not roll");
+            helper.assertValueEqual(count(collisionRoll.items(), Items.DIRT), 0,
+                    "external registry collision leaked through bundled precedence");
+
             QuestRewardResolver.RollResult execution = QuestRewardResolver.roll(
                     helper.getLevel(), 1.25F, PROBE_ID, RandomSource.create(seed));
             QuestRewardResolver.RollResult preview = QuestRewardResolver.rollPreview(
@@ -114,11 +128,9 @@ public final class QuestRewardBundleGameTests {
             helper.assertValueEqual(count(execution.items(), Items.STICK), 1, "bundled table did not roll");
             helper.assertValueEqual(count(execution.items(), Items.APPLE), 1,
                     "old-ID targeted GLM did not apply exactly once");
-            helper.assertValueEqual(count(execution.items(), Items.DIRT), 0,
-                    "external registry collision leaked through bundled precedence");
 
             List<QuestRewardPreviewResources.ItemPreview> staticPreview =
-                    QuestRewardPreviewResources.itemPreviews(server, PROBE_ID);
+                    QuestRewardPreviewResources.itemPreviews(server, COLLISION_ID);
             helper.assertTrue(staticPreview.stream().anyMatch(item -> item.itemId().equals("minecraft:stick"))
                             && staticPreview.stream().noneMatch(item -> item.itemId().equals("minecraft:dirt")),
                     "static preview did not use bundled-first source resolution");

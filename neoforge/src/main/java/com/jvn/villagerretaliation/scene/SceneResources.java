@@ -47,6 +47,10 @@ public final class SceneResources {
         QuestContentCatalogs.invalidate();
     }
 
+    public static boolean hasTestOverride(MinecraftServer server) {
+        return server != null && testOverride.server() == server;
+    }
+
     public static void installTestScenes(MinecraftServer server, List<CompiledScene> scenes) {
         Map<ResourceLocation, CompiledScene> values = new LinkedHashMap<>();
         if (scenes != null) scenes.stream().filter(java.util.Objects::nonNull)
