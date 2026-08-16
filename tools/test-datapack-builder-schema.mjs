@@ -462,6 +462,74 @@ function testAdvancedQuestRoundTrip(app) {
   assert(jsonFile(app.generatedFiles(), questPath).metadata.revision === 4, "Edited quest revision was not exported.");
 }
 
+function testCanonicalQuestBundleImport(app) {
+  app.state = app.createInitialState();
+  const questPath = "data/storypack/quests/routes/localized_import/quest.json";
+  const localePath = "data/storypack/quests/routes/localized_import/locales/en_us.json";
+  const prefix = "quest.routes.localized_import";
+  const quest = {
+    schema: "villagerretaliation:quest/v2",
+    id: "storypack:localized_import",
+    version: 2,
+    localization_prefix: prefix,
+    metadata: {
+      title: { key: "#title" },
+      questline: "routes"
+    },
+    entry_stage: "start",
+    stages: [{
+      id: "start",
+      objectives: [],
+      ui: { tracker_text: { key: "#stage.start.ui.tracker_text" } }
+    }]
+  };
+  const locale = {
+    schema: "villagerretaliation:quest_locale/v1",
+    messages: {
+      "quest.routes.localized_import.title": "Localized Import",
+      "quest.routes.localized_import.stage.start.ui.tracker_text": "Follow the localized road."
+    }
+  };
+
+  app.backend.ingestFiles(app.state, {
+    [questPath]: JSON.stringify(quest),
+    [localePath]: JSON.stringify(locale)
+  });
+  assert(app.state.quests.modules.length === 1, "Canonical quest bundle was not imported.");
+  const imported = app.state.quests.modules[0];
+  assert(imported.metadata.title === "Localized Import", "Canonical quest title was not materialized for editing.");
+  assert(imported.stages[0].ui.tracker_text === "Follow the localized road.", "Canonical quest tracker was not materialized for editing.");
+
+  const files = app.generatedFiles();
+  const exportedQuest = jsonFile(files, questPath);
+  const exportedLocale = jsonFile(files, localePath);
+  const materialized = app.questModel.materializeLocalizedDefinition(
+    exportedQuest,
+    exportedQuest.localization_prefix,
+    exportedLocale.messages
+  );
+  assert(materialized.metadata.title === imported.metadata.title, "Canonical quest title changed during import/export.");
+  assert(materialized.stages[0].ui.tracker_text === imported.stages[0].ui.tracker_text,
+    "Canonical quest tracker changed during import/export.");
+}
+
+function testLegacyQuestLayoutRejection(app) {
+  app.state = app.createInitialState();
+  const legacyPath = "data/storypack/quest_scenes/legacy_scene.json";
+  const legacyScene = {
+    schema: "villagerretaliation:scene/v1",
+    id: "storypack:legacy_scene",
+    ownership: "player",
+    entry_step: "done",
+    actors: [],
+    steps: [{ id: "done", type: "villagerretaliation:scene_complete" }]
+  };
+  assert(app.ingestKnownJson(legacyPath, JSON.stringify(legacyScene)), "Legacy quest layout import was not preserved for diagnosis.");
+  const issue = app.validate().find((check) => check.title === "Unsupported quest layout");
+  assert(issue?.type === "error" && issue.paths?.includes(legacyPath),
+    "Legacy quest layout was not rejected with its source path.");
+}
+
 function testBackendPathNormalization(app) {
   const normalized = app.backend.normalizeImportedPaths({
     "Example Pack/pack.mcmeta": "{}",
@@ -646,6 +714,8 @@ testCheckedInTemplateMatchesBuilder(app);
 testAllSurfaceGeneration(app);
 testSurfaceImportsAndEdits(app);
 testAdvancedQuestRoundTrip(app);
+testCanonicalQuestBundleImport(app);
+testLegacyQuestLayoutRejection(app);
 testBackendPathNormalization(app);
 testSceneResourceRoundTrip(app);
 testSkillTradeRoundTrip(app);

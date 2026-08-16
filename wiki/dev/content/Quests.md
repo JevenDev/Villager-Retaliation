@@ -39,6 +39,8 @@ File paths, JSON member ordering, pack names, and localized payloads do not chan
 
 The browser builder accepts the convenient inline authoring form below, then exports localized `quest.json` and `locales/en_us.json` files. Do not copy the inline form directly into a beta.13 datapack.
 
+Importing a canonical bundle's `quest.json` together with its sibling `locales/en_us.json` materializes localized references back into editable authoring text and preserves the canonical bundle paths on export. Imported loose quest files and legacy `quest_messages`, `quest_scenes`, `quest_encounters`, `quest_pools`, or `loot_table/quest` roots are retained only so the validator can report an **Unsupported quest layout** error; move or convert them before export.
+
 ```json
 {
   "schema": "villagerretaliation:quest/v2",
