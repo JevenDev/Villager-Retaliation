@@ -1,9 +1,6 @@
 # Changelog
 
-## 1.0.0-beta.13 - 2026-06-06
-
-Beta.13 is the Hired Help and Village Life update! It adds complete worker logistics, player parties, persistent village allegiance, player raids, protected villagers, duels, quest scenes and encounters, and a much larger quest catalog.
-
+## 1.0.0-beta.13 - 2026-08-16
 
 ### Added
 
