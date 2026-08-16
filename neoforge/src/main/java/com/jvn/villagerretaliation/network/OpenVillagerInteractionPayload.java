@@ -1,23 +1,18 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
-import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
-import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
-import com.jvn.villagerretaliation.dialogue.DialogueTreeReference;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
-import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
-import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
-import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -29,40 +24,155 @@ public record OpenVillagerInteractionPayload(
         String professionName,
         String genderName,
         boolean baby,
+        boolean canTrade,
+        boolean duelVisible,
         int reputation,
         VillagerReputationLevel reputationLevel,
         DialogueDisposition mood,
         VillagerMood primaryMood,
         boolean followingPlayer,
+        boolean stayingHere,
+        boolean followCommandAvailable,
+        boolean stayCommandAvailable,
+        long assignmentRevision,
+        boolean routineChatMuted,
         boolean forcedDialogue,
+        boolean clipboardMenu,
+        boolean clipboardSelectionAssigned,
+        boolean hiredByPlayer,
+        boolean hiredByOtherPlayer,
+        String hirerName,
+        int hiredRemainingDays,
+        boolean inventoryAvailable,
+        boolean jobInventoryAvailable,
+        boolean recruitedPartyVillager,
+        boolean partyVillagerAuthorized,
+        boolean partyVillagerPartyMember,
+        boolean partyRecruitAvailable,
+        boolean hireAvailable,
+        boolean mountFeatureAvailable,
+        boolean assignedMount,
+        boolean mountedTravelEnabled,
+        int partyRemainingDays,
+        int walletEmeralds,
+        int maxWalletEmeralds,
+        int lifetimeWalletEarned,
+        int lifetimeWalletDeposited,
+        String walletCurrencyName,
+        String walletCurrencyPluralName,
+        String walletCurrencyLabel,
+        ResourceLocation walletCurrencyIconSprite,
+        int walletCurrencyTextColor,
         boolean forceCameraTowardsVillager,
+        List<HiredVillagerRole> availableHiredRoles,
+        HiredVillagerRole activeHiredRole,
+        boolean activeBrewingOrder,
+        boolean activeBuilderTask,
+        boolean oneOffBuilderJob,
+        boolean farmingTillSoil,
+        boolean huntingAnimals,
+        boolean huntingHostiles,
+        boolean huntingPlayers,
+        List<String> selectedLoggingFilters,
+        boolean loggingStripLogs,
+        boolean loggingHarvestLeaves,
+        boolean loggingBonemealSaplings,
+        boolean loggingPlantSaplings,
+        boolean loggingPickUpDecayDrops,
+        List<String> selectedAnimalBreedingTargets,
+        int animalCullCap,
+        boolean animalShearing,
         List<DialogueOptionDefinition> dialogueOptions,
-        List<String> knownLikedGiftNames,
-        List<String> knownDislikedGiftNames,
+        List<GiftPreferenceView> giftPreferences,
+        VillageAllegianceView allegiance,
         VillagerFamilyTreeSnapshot familyTree,
         VillagerRelationshipSnapshot relationships)
         implements CustomPacketPayload {
+    private static final int MAX_HIRED_ROLES = 16;
+    private static final int MAX_FAMILY_MEMBERS = 64;
+    private static final int MAX_FAMILY_GENERATIONS = 16;
+    private static final int MAX_ROMANTIC_BONDS = 32;
+    private static final int VILLAGER_NAME_KEY_LENGTH = 256;
+    private static final int VILLAGER_NAME_FALLBACK_LENGTH = 128;
+    private static final int PROFESSION_NAME_LENGTH = 128;
+    private static final int GENDER_NAME_LENGTH = 32;
+    private static final int CURRENCY_LABEL_LENGTH = 64;
+    private static final int HIRER_NAME_LENGTH = 64;
     public static final Type<OpenVillagerInteractionPayload> TYPE = VillagerPayloads.type("open_villager_interaction");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerInteractionPayload> STREAM_CODEC =
             VillagerPayloads.codec(OpenVillagerInteractionPayload::encode, OpenVillagerInteractionPayload::decode);
 
     private static void encode(RegistryFriendlyByteBuf buffer, OpenVillagerInteractionPayload payload) {
         buffer.writeVarInt(payload.entityId());
-        buffer.writeUtf(payload.villagerNameKey());
-        buffer.writeUtf(payload.villagerNameFallback());
-        buffer.writeUtf(payload.professionName());
-        buffer.writeUtf(payload.genderName(), 32);
+        buffer.writeUtf(payload.villagerNameKey(), VILLAGER_NAME_KEY_LENGTH);
+        buffer.writeUtf(payload.villagerNameFallback(), VILLAGER_NAME_FALLBACK_LENGTH);
+        buffer.writeUtf(payload.professionName(), PROFESSION_NAME_LENGTH);
+        buffer.writeUtf(payload.genderName(), GENDER_NAME_LENGTH);
         buffer.writeBoolean(payload.baby());
+        buffer.writeBoolean(payload.canTrade());
+        buffer.writeBoolean(payload.duelVisible());
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
         buffer.writeEnum(payload.mood());
         buffer.writeEnum(payload.primaryMood());
         buffer.writeBoolean(payload.followingPlayer());
+        buffer.writeBoolean(payload.stayingHere());
+        buffer.writeBoolean(payload.followCommandAvailable());
+        buffer.writeBoolean(payload.stayCommandAvailable());
+        buffer.writeVarLong(payload.assignmentRevision());
+        buffer.writeBoolean(payload.routineChatMuted());
         buffer.writeBoolean(payload.forcedDialogue());
+        buffer.writeBoolean(payload.clipboardMenu());
+        buffer.writeBoolean(payload.clipboardSelectionAssigned());
+        buffer.writeBoolean(payload.hiredByPlayer());
+        buffer.writeBoolean(payload.hiredByOtherPlayer());
+        buffer.writeUtf(payload.hirerName(), HIRER_NAME_LENGTH);
+        buffer.writeVarInt(payload.hiredRemainingDays());
+        buffer.writeBoolean(payload.inventoryAvailable());
+        buffer.writeBoolean(payload.jobInventoryAvailable());
+        buffer.writeBoolean(payload.recruitedPartyVillager());
+        buffer.writeBoolean(payload.partyVillagerAuthorized());
+        buffer.writeBoolean(payload.partyVillagerPartyMember());
+        buffer.writeBoolean(payload.partyRecruitAvailable());
+        buffer.writeBoolean(payload.hireAvailable());
+        buffer.writeBoolean(payload.mountFeatureAvailable());
+        buffer.writeBoolean(payload.assignedMount());
+        buffer.writeBoolean(payload.mountedTravelEnabled());
+        buffer.writeVarInt(payload.partyRemainingDays());
+        buffer.writeVarInt(payload.walletEmeralds());
+        buffer.writeVarInt(payload.maxWalletEmeralds());
+        buffer.writeVarInt(payload.lifetimeWalletEarned());
+        buffer.writeVarInt(payload.lifetimeWalletDeposited());
+        buffer.writeUtf(payload.walletCurrencyName(), CURRENCY_LABEL_LENGTH);
+        buffer.writeUtf(payload.walletCurrencyPluralName(), CURRENCY_LABEL_LENGTH);
+        buffer.writeUtf(payload.walletCurrencyLabel(), CURRENCY_LABEL_LENGTH);
+        buffer.writeResourceLocation(payload.walletCurrencyIconSprite());
+        buffer.writeInt(payload.walletCurrencyTextColor());
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
-        writeDialogueOptions(buffer, payload.dialogueOptions());
-        writeStringList(buffer, payload.knownLikedGiftNames());
-        writeStringList(buffer, payload.knownDislikedGiftNames());
+        writeHiredRoles(buffer, payload.availableHiredRoles());
+        buffer.writeBoolean(payload.activeHiredRole() != null);
+        if (payload.activeHiredRole() != null) {
+            buffer.writeEnum(payload.activeHiredRole());
+        }
+        buffer.writeBoolean(payload.activeBrewingOrder());
+        buffer.writeBoolean(payload.activeBuilderTask());
+        buffer.writeBoolean(payload.oneOffBuilderJob());
+        buffer.writeBoolean(payload.farmingTillSoil());
+        buffer.writeBoolean(payload.huntingAnimals());
+        buffer.writeBoolean(payload.huntingHostiles());
+        buffer.writeBoolean(payload.huntingPlayers());
+        DialogueOptionPayloadCodec.writeStringList(buffer, payload.selectedLoggingFilters());
+        buffer.writeBoolean(payload.loggingStripLogs());
+        buffer.writeBoolean(payload.loggingHarvestLeaves());
+        buffer.writeBoolean(payload.loggingBonemealSaplings());
+        buffer.writeBoolean(payload.loggingPlantSaplings());
+        buffer.writeBoolean(payload.loggingPickUpDecayDrops());
+        DialogueOptionPayloadCodec.writeStringList(buffer, payload.selectedAnimalBreedingTargets());
+        buffer.writeVarInt(payload.animalCullCap());
+        buffer.writeBoolean(payload.animalShearing());
+        DialogueOptionPayloadCodec.writeDialogueOptions(buffer, payload.dialogueOptions());
+        DialogueOptionPayloadCodec.writeGiftPreferenceViews(buffer, payload.giftPreferences());
+        VillageAllegianceView.encode(buffer, payload.allegiance());
         writeFamilyTree(buffer, payload.familyTree());
         writeRelationships(buffer, payload.relationships());
     }
@@ -70,10 +180,12 @@ public record OpenVillagerInteractionPayload(
     private static OpenVillagerInteractionPayload decode(RegistryFriendlyByteBuf buffer) {
         return new OpenVillagerInteractionPayload(
                 buffer.readVarInt(),
-                buffer.readUtf(),
-                buffer.readUtf(),
-                buffer.readUtf(),
-                buffer.readUtf(32),
+                buffer.readUtf(VILLAGER_NAME_KEY_LENGTH),
+                buffer.readUtf(VILLAGER_NAME_FALLBACK_LENGTH),
+                buffer.readUtf(PROFESSION_NAME_LENGTH),
+                buffer.readUtf(GENDER_NAME_LENGTH),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readVarInt(),
                 buffer.readEnum(VillagerReputationLevel.class),
@@ -82,101 +194,78 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
-                readDialogueOptions(buffer),
-                readStringList(buffer),
-                readStringList(buffer),
+                buffer.readBoolean(),
+                buffer.readVarLong(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readUtf(HIRER_NAME_LENGTH),
+                buffer.readVarInt(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readVarInt(),
+                buffer.readVarInt(),
+                buffer.readVarInt(),
+                buffer.readVarInt(),
+                buffer.readVarInt(),
+                buffer.readUtf(CURRENCY_LABEL_LENGTH),
+                buffer.readUtf(CURRENCY_LABEL_LENGTH),
+                buffer.readUtf(CURRENCY_LABEL_LENGTH),
+                buffer.readResourceLocation(),
+                buffer.readInt(),
+                buffer.readBoolean(),
+                readHiredRoles(buffer),
+                buffer.readBoolean() ? buffer.readEnum(HiredVillagerRole.class) : null,
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                DialogueOptionPayloadCodec.readStringList(buffer),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                DialogueOptionPayloadCodec.readStringList(buffer),
+                buffer.readVarInt(),
+                buffer.readBoolean(),
+                DialogueOptionPayloadCodec.readDialogueOptions(buffer),
+                DialogueOptionPayloadCodec.readGiftPreferenceViews(buffer),
+                VillageAllegianceView.decode(buffer),
                 readFamilyTree(buffer),
                 readRelationships(buffer)
         );
     }
 
-    private static void writeDialogueOptions(RegistryFriendlyByteBuf buffer, List<DialogueOptionDefinition> options) {
-        buffer.writeVarInt(options.size());
-        for (DialogueOptionDefinition option : options) {
-            buffer.writeUtf(option.id(), 128);
-            buffer.writeUtf(option.label(), 128);
-            buffer.writeEnum(option.requestType());
-            buffer.writeBoolean(option.forceCameraTowardsVillager());
-            buffer.writeVarInt(option.order());
-        }
-    }
-
-    private static List<DialogueOptionDefinition> readDialogueOptions(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
-        List<DialogueOptionDefinition> options = new ArrayList<>(size);
+    private static void writeHiredRoles(RegistryFriendlyByteBuf buffer, List<HiredVillagerRole> roles) {
+        int size = Math.min(roles.size(), MAX_HIRED_ROLES);
+        buffer.writeVarInt(size);
         for (int i = 0; i < size; i++) {
-            options.add(new DialogueOptionDefinition(
-                    buffer.readUtf(128),
-                    null,
-                    DialogueEntryMetadata.EMPTY,
-                    DialogueQuestAction.EMPTY,
-                    DialogueTreeReference.EMPTY,
-                    buffer.readUtf(128),
-                    buffer.readEnum(DialogueRequestType.class),
-                    true,
-                    true,
-                    Set.of(),
-                    Set.of(),
-                    VillagerEquipmentCondition.empty(),
-                    VillagerPlayerItemCondition.empty(),
-                    VillagerReputationCondition.empty(),
-                    com.jvn.villagerretaliation.dialogue.DialogueItemPayment.empty(),
-                    buffer.readBoolean(),
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    List.of(),
-                    false,
-                    buffer.readVarInt()
-            ));
-        }
-        return options;
-    }
-
-    private static void writeStringList(RegistryFriendlyByteBuf buffer, List<String> values) {
-        buffer.writeVarInt(values.size());
-        for (String value : values) {
-            buffer.writeUtf(value, 128);
+            buffer.writeEnum(roles.get(i));
         }
     }
 
-    private static List<String> readStringList(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
-        List<String> values = new ArrayList<>(size);
+    private static List<HiredVillagerRole> readHiredRoles(RegistryFriendlyByteBuf buffer) {
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_HIRED_ROLES, "hired roles");
+        List<HiredVillagerRole> roles = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            values.add(buffer.readUtf(128));
+            roles.add(buffer.readEnum(HiredVillagerRole.class));
         }
-        return values;
+        return roles;
     }
 
     private static void writeFamilyTree(RegistryFriendlyByteBuf buffer, VillagerFamilyTreeSnapshot familyTree) {
@@ -217,8 +306,10 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static void writeFamilyMembers(RegistryFriendlyByteBuf buffer, List<VillagerFamilyTreeSnapshot.FamilyMember> members) {
-        buffer.writeVarInt(members.size());
-        for (VillagerFamilyTreeSnapshot.FamilyMember member : members) {
+        int size = Math.min(members.size(), MAX_FAMILY_MEMBERS);
+        buffer.writeVarInt(size);
+        for (int i = 0; i < size; i++) {
+            VillagerFamilyTreeSnapshot.FamilyMember member = members.get(i);
             buffer.writeUtf(member.name(), 128);
             buffer.writeEnum(member.gender());
             buffer.writeBoolean(member.alive());
@@ -226,7 +317,7 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static List<VillagerFamilyTreeSnapshot.FamilyMember> readFamilyMembers(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_FAMILY_MEMBERS, "family members");
         List<VillagerFamilyTreeSnapshot.FamilyMember> members = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             members.add(new VillagerFamilyTreeSnapshot.FamilyMember(
@@ -239,15 +330,17 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static void writeAncestry(RegistryFriendlyByteBuf buffer, List<VillagerFamilyTreeSnapshot.AncestorGeneration> ancestry) {
-        buffer.writeVarInt(ancestry.size());
-        for (VillagerFamilyTreeSnapshot.AncestorGeneration generation : ancestry) {
+        int size = Math.min(ancestry.size(), MAX_FAMILY_GENERATIONS);
+        buffer.writeVarInt(size);
+        for (int i = 0; i < size; i++) {
+            VillagerFamilyTreeSnapshot.AncestorGeneration generation = ancestry.get(i);
             buffer.writeVarInt(generation.generation());
             writeFamilyMembers(buffer, generation.ancestors());
         }
     }
 
     private static List<VillagerFamilyTreeSnapshot.AncestorGeneration> readAncestry(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_FAMILY_GENERATIONS, "ancestor generations");
         List<VillagerFamilyTreeSnapshot.AncestorGeneration> ancestry = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             ancestry.add(new VillagerFamilyTreeSnapshot.AncestorGeneration(buffer.readVarInt(), readFamilyMembers(buffer)));
@@ -256,15 +349,17 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static void writeDescendants(RegistryFriendlyByteBuf buffer, List<VillagerFamilyTreeSnapshot.DescendantGeneration> descendants) {
-        buffer.writeVarInt(descendants.size());
-        for (VillagerFamilyTreeSnapshot.DescendantGeneration generation : descendants) {
+        int size = Math.min(descendants.size(), MAX_FAMILY_GENERATIONS);
+        buffer.writeVarInt(size);
+        for (int i = 0; i < size; i++) {
+            VillagerFamilyTreeSnapshot.DescendantGeneration generation = descendants.get(i);
             buffer.writeVarInt(generation.generation());
             writeFamilyMembers(buffer, generation.descendants());
         }
     }
 
     private static List<VillagerFamilyTreeSnapshot.DescendantGeneration> readDescendants(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_FAMILY_GENERATIONS, "descendant generations");
         List<VillagerFamilyTreeSnapshot.DescendantGeneration> descendants = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             descendants.add(new VillagerFamilyTreeSnapshot.DescendantGeneration(buffer.readVarInt(), readFamilyMembers(buffer)));
@@ -286,8 +381,10 @@ public record OpenVillagerInteractionPayload(
             RegistryFriendlyByteBuf buffer,
             List<VillagerRelationshipSnapshot.RomanticBondView> bonds
     ) {
-        buffer.writeVarInt(bonds.size());
-        for (VillagerRelationshipSnapshot.RomanticBondView bond : bonds) {
+        int size = Math.min(bonds.size(), MAX_ROMANTIC_BONDS);
+        buffer.writeVarInt(size);
+        for (int i = 0; i < size; i++) {
+            VillagerRelationshipSnapshot.RomanticBondView bond = bonds.get(i);
             buffer.writeUtf(bond.partnerName(), 128);
             buffer.writeBoolean(bond.partnerAlive());
             buffer.writeEnum(bond.stage());
@@ -301,7 +398,7 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static List<VillagerRelationshipSnapshot.RomanticBondView> readRomanticBondViews(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_ROMANTIC_BONDS, "romantic bonds");
         List<VillagerRelationshipSnapshot.RomanticBondView> bonds = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             bonds.add(new VillagerRelationshipSnapshot.RomanticBondView(

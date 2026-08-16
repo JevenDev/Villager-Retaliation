@@ -1,0 +1,244 @@
+{
+  "allies": [
+    {
+      "affects_completion": true,
+      "cleanup_policy": "preserve",
+      "count": 1,
+      "entity": "minecraft:iron_golem",
+      "id": "village_guard",
+      "replacement_policy": "missing_if_loaded",
+      "revivable": true,
+      "revive_delay_ticks": 100
+    }
+  ],
+  "area": {
+    "leave_behavior": "warn",
+    "leave_timeout_ticks": 200,
+    "mob_behavior": "return",
+    "radius": 32,
+    "vertical_radius": 16
+  },
+  "boss_bar": true,
+  "cleanup_policy": "remove_survivors",
+  "completion_objectives": {
+    "mode": "all",
+    "objectives": [
+      {
+        "id": "clear_attackers",
+        "type": "all_defeated"
+      },
+      {
+        "id": "stop_captain",
+        "member": "raider_captain",
+        "type": "defeat_leader"
+      }
+    ]
+  },
+  "controller": "villagerretaliation:controlled",
+  "environment": {
+    "cues": [
+      {
+        "id": "alarm_bell",
+        "pitch": 0.8,
+        "sound": "minecraft:block.bell.use",
+        "type": "sound",
+        "volume": 1
+      },
+      {
+        "count": 32,
+        "height": 8,
+        "id": "watch_beacon",
+        "offset_y": 1,
+        "particle": "minecraft:end_rod",
+        "type": "glowing_column"
+      }
+    ],
+    "temporary_blocks": [
+      {
+        "block": "minecraft:light",
+        "id": "watch_light",
+        "offset_y": 3
+      }
+    ]
+  },
+  "extra_per_player": 0,
+  "failure": {
+    "max_attempts": 3,
+    "on_player_death": "reset_wave",
+    "on_protected_actor_death": "fail",
+    "retain_defeated": false,
+    "retry_delay_ticks": 200
+  },
+  "guidance": {
+    "arrival_message": "You have reached the watch position. Hold the line.",
+    "arrival_radius": 8,
+    "compass_target": true,
+    "coordinate_message": "The watch needs you in {dimension}. Follow the encounter marker; exact coordinates appear once you are within discovery range.",
+    "directional_particles": true,
+    "discovery_radius": 64,
+    "distance_tracker": true,
+    "exact_coordinates": "after_discovery",
+    "hud_marker": true,
+    "update_interval_ticks": 20
+  },
+  "id": "villagerretaliation:standing_watch",
+  "max_party_size": 4,
+  "phases": [
+    {
+      "actions": [
+        {
+          "id": "warn_defenders",
+          "text": {
+            "key": "villagerretaliation.shared.encounter.standing_watch.phase.captain_enters.action.warn_defenders.text"
+          },
+          "type": "notification"
+        }
+      ],
+      "id": "captain_enters",
+      "trigger": {
+        "type": "wave_started",
+        "wave": "raider_captain"
+      }
+    },
+    {
+      "actions": [
+        {
+          "id": "record_victory",
+          "scope": "quest",
+          "tag": "villagerretaliation:standing_watch_captain_defeated",
+          "type": "fact"
+        }
+      ],
+      "id": "captain_falls",
+      "trigger": {
+        "member": "raider_captain",
+        "type": "elite_defeated"
+      }
+    }
+  ],
+  "placement_attempts": 24,
+  "respawn_policy": "missing_if_loaded",
+  "rewards": {
+    "completion": [
+      {
+        "id": "watch_medal",
+        "item": "minecraft:emerald",
+        "trophy_name": {
+          "key": "villagerretaliation.shared.encounter.standing_watch.rewards.completion.watch_medal.trophy_name"
+        }
+      }
+    ],
+    "drop_policy": "trophy_only",
+    "phases": [
+      {
+        "count": 2,
+        "id": "captain_phase_token",
+        "item": "minecraft:iron_nugget",
+        "phase": "captain_falls"
+      }
+    ],
+    "trophies": [
+      {
+        "id": "captain_insignia",
+        "item": "minecraft:iron_nugget",
+        "member": "raider_captain",
+        "name": "Raider Captain's Insignia"
+      }
+    ],
+    "waves": [
+      {
+        "count": 4,
+        "id": "captain_wave_supplies",
+        "item": "minecraft:arrow",
+        "wave": "raider_captain"
+      }
+    ]
+  },
+  "schema": "villagerretaliation:encounter/v1",
+  "spawn_mode": "raid_waves",
+  "spawn_points": [
+    {
+      "actor": "watch_captain",
+      "id": "north_line",
+      "offset_x": 8,
+      "offset_z": -8,
+      "weight": 2
+    },
+    {
+      "actor": "watch_captain",
+      "id": "south_line",
+      "offset_x": -8,
+      "offset_z": 8,
+      "weight": 1
+    }
+  ],
+  "spawn_radius": 10,
+  "spawn_selection": "sequential",
+  "version": 11,
+  "waves": [
+    {
+      "boss_bar_title": {
+        "key": "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.boss_bar_title"
+      },
+      "delay_ticks": 0,
+      "id": "restless_dead",
+      "members": [
+        {
+          "count": 2,
+          "entity": "minecraft:zombie"
+        }
+      ],
+      "scene_actions": [
+        {
+          "id": "first_warning",
+          "text": {
+            "key": "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.scene_action.first_warning.text"
+          },
+          "type": "notification"
+        }
+      ],
+      "trigger": "all_defeated"
+    },
+    {
+      "boss_bar_title": {
+        "key": "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.boss_bar_title"
+      },
+      "delay_ticks": 80,
+      "dialogue_hook": {
+        "id": "captain_arrives",
+        "text": {
+          "key": "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.dialogue_hook.text"
+        }
+      },
+      "equipment": {
+        "mainhand": {
+          "drop_chance": 0,
+          "item": "minecraft:crossbow"
+        }
+      },
+      "id": "raider_captain",
+      "members": [
+        {
+          "armor": 8,
+          "attack_damage": 8,
+          "boss": true,
+          "boss_bar_color": "purple",
+          "boss_bar_overlay": "notched_10",
+          "count": 1,
+          "custom_name": {
+            "key": "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.member.raider_captain.custom_name"
+          },
+          "entity": "minecraft:pillager",
+          "glowing": true,
+          "health": 40,
+          "id": "raider_captain",
+          "knockback_resistance": 0.3,
+          "movement_speed": 0.32,
+          "name_visible": true,
+          "persistent": true
+        }
+      ],
+      "trigger": "all_defeated"
+    }
+  ]
+}

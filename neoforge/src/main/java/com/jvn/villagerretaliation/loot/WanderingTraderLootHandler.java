@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.loot;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
 import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -27,7 +28,7 @@ public final class WanderingTraderLootHandler {
 
         RandomSource random = trader.getRandom();
         if (VillagerRetaliationConfig.WANDERER_DROP_EMERALDS.get()) {
-            ToucanLivingDrops.addDrop(event, new ItemStack(Items.EMERALD, ToucanRandom.betweenInclusive(random, 1, 5)));
+            ToucanLivingDrops.addDrop(event, VillagerCurrencyResources.createStack(trader.level().getServer(), ToucanRandom.betweenInclusive(random, 1, 5)));
         }
 
         if (VillagerRetaliationConfig.WANDERER_DROP_INVISIBILITY_POTION.get()) {

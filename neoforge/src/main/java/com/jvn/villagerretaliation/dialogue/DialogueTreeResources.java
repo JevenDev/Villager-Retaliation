@@ -1,10 +1,21 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextVariant;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueUsagePolicy;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
@@ -22,7 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class DialogueTreeResources {
@@ -41,12 +51,17 @@ public final class DialogueTreeResources {
     }
 
     public static List<DialogueOptionDefinition> entryOptions(DialogueContext context, DialogueDisposition disposition) {
-        return trees(context.level().getServer(), context.locale()).stream()
+        LoadedTrees loaded = load(context.level().getServer(), context.locale());
+        return loaded.trees().values().stream()
+                .filter(tree -> !isSuppressedBuiltInLegacyQuestTree(context, tree, loaded.sources().get(tree.id())))
                 .filter(tree -> tree.matches(context))
                 .flatMap(tree -> tree.entries().stream()
                         .filter(entry -> entry.matches(context, disposition))
-                        .map(entry -> entry.toOption(tree.id())))
-                .sorted(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id))
+                        .map(entry -> new RankedOption(entry.toOption(context, tree.id(), tree.metadata()), entry.priority())))
+                .sorted(Comparator.comparingInt(RankedOption::priority).reversed()
+                        .thenComparingInt(value -> value.option().order())
+                        .thenComparing(value -> value.option().id()))
+                .map(RankedOption::option)
                 .toList();
     }
 
@@ -54,18 +69,42 @@ public final class DialogueTreeResources {
         if (id == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(load(server, locale).get(id));
+        DialogueTreeDefinition external = load(server, locale).trees().get(id);
+        if (external != null) {
+            return Optional.of(external);
+        }
+        return VillagerQuestResources.questDialogueCatalog(server).tree(id);
     }
 
-    private static Collection<DialogueTreeDefinition> trees(MinecraftServer server, String locale) {
-        return load(server, locale).values();
+    public static void installTestTrees(
+            MinecraftServer server,
+            String locale,
+            Collection<DialogueTreeDefinition> trees,
+            Set<ResourceLocation> builtInTreeIds) {
+        String normalizedLocale = VillagerLocale.normalize(locale);
+        Map<ResourceLocation, DialogueTreeDefinition> definitions = new LinkedHashMap<>();
+        Map<ResourceLocation, TreeSource> sources = new LinkedHashMap<>();
+        if (trees != null) {
+            for (DialogueTreeDefinition tree : trees) {
+                if (tree == null) {
+                    continue;
+                }
+                definitions.put(tree.id(), tree);
+                sources.put(tree.id(), new TreeSource(
+                        ResourceLocation.fromNamespaceAndPath(tree.id().getNamespace(), "test/" + tree.id().getPath()),
+                        builtInTreeIds != null && builtInTreeIds.contains(tree.id())));
+            }
+        }
+        cachedTrees = new CachedTrees(
+                server,
+                Map.of(normalizedLocale, new LoadedTrees(Map.copyOf(definitions), Map.copyOf(sources))));
     }
 
-    private static Map<ResourceLocation, DialogueTreeDefinition> load(MinecraftServer server, String locale) {
+    private static LoadedTrees load(MinecraftServer server, String locale) {
         String normalizedLocale = VillagerLocale.normalize(locale);
         CachedTrees current = cachedTrees;
         if (current.server() == server) {
-            Map<ResourceLocation, DialogueTreeDefinition> cached = current.treesByLocale().get(normalizedLocale);
+            LoadedTrees cached = current.treesByLocale().get(normalizedLocale);
             if (cached != null) {
                 return cached;
             }
@@ -73,60 +112,122 @@ public final class DialogueTreeResources {
 
         synchronized (DialogueTreeResources.class) {
             current = cachedTrees;
-            Map<String, Map<ResourceLocation, DialogueTreeDefinition>> treesByLocale = current.server() == server
+            Map<String, LoadedTrees> treesByLocale = current.server() == server
                     ? new LinkedHashMap<>(current.treesByLocale())
                     : new LinkedHashMap<>();
-            Map<ResourceLocation, DialogueTreeDefinition> cached = treesByLocale.get(normalizedLocale);
+            LoadedTrees cached = treesByLocale.get(normalizedLocale);
             if (cached != null) {
                 return cached;
             }
 
-            Map<ResourceLocation, DialogueTreeDefinition> trees = read(server, normalizedLocale);
+            LoadedTrees trees = read(server, normalizedLocale);
             treesByLocale.put(normalizedLocale, trees);
             cachedTrees = new CachedTrees(server, Map.copyOf(treesByLocale));
             return trees;
         }
     }
 
-    private static Map<ResourceLocation, DialogueTreeDefinition> read(MinecraftServer server, String locale) {
+    private static LoadedTrees read(MinecraftServer server, String locale) {
         Map<ResourceLocation, DialogueTreeDefinition> trees = new LinkedHashMap<>();
-        Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
+        Map<ResourceLocation, TreeSource> sources = new LinkedHashMap<>();
         readLocale(server, VillagerLocale.DEFAULT_LOCALE, trees, sources);
         if (!VillagerLocale.DEFAULT_LOCALE.equals(locale)) {
             readLocale(server, locale, trees, sources);
         }
-        return Map.copyOf(trees);
+        return new LoadedTrees(Map.copyOf(trees), Map.copyOf(sources));
     }
 
     private static void readLocale(
             MinecraftServer server,
             String locale,
             Map<ResourceLocation, DialogueTreeDefinition> trees,
-            Map<ResourceLocation, ResourceLocation> sources) {
+            Map<ResourceLocation, TreeSource> sources) {
         String root = RESOURCE_ROOT + locale;
-        DatapackResourceLoader.forEachJsonResource(
-                server,
-                root,
-                (location, resource) -> readFile(location, resource, locale, trees, sources));
+        List<LoadedTreeResource> resources = DatapackResourceLoader.jsonResources(server, root).stream()
+                .map(resource -> DatapackResourceLoader.readObject(resource.location(), "dialogue tree", resource.resource())
+                        .map(json -> new LoadedTreeResource(resource, json)))
+                .flatMap(Optional::stream)
+                .toList();
+        boolean replacementMode = resources.stream()
+                .anyMatch(resource -> DatapackJsonReader.readBoolean(resource.root(), "replace"));
+        if (replacementMode) {
+            trees.clear();
+            sources.clear();
+        }
+        for (LoadedTreeResource resource : resources) {
+            if (replacementMode
+                    && isBuiltInModResource(resource.resource())
+                    && !DatapackJsonReader.readBoolean(resource.root(), "replace")) {
+                continue;
+            }
+            readFile(resource.resource(), resource.root(), locale, trees, sources, replacementMode);
+        }
     }
 
     private static void readFile(
-            ResourceLocation location,
-            Resource resource,
+            DatapackResourceLoader.JsonResource resource,
+            JsonObject root,
             String locale,
             Map<ResourceLocation, DialogueTreeDefinition> trees,
-            Map<ResourceLocation, ResourceLocation> sources) {
-        DatapackResourceLoader.readObject(location, "dialogue tree", resource).ifPresent(root -> {
-            DialogueTreeDefinition definition = readTree(location, root, fallbackTreeId(location, locale));
-            if (definition == null) {
+            Map<ResourceLocation, TreeSource> sources,
+            boolean replacementMode) {
+        ResourceLocation location = resource.location();
+        ResourceLocation fallbackId = fallbackTreeId(location, locale);
+        if (DatapackJsonReader.readBoolean(root, "replace")) {
+            if (!replacementMode) {
+                trees.clear();
+                sources.clear();
+            }
+            if (isControlOnly(root, "replace", "metadata")) {
                 return;
             }
-            ResourceLocation previous = sources.put(definition.id(), location);
-            if (previous != null) {
-                DatapackDiagnostics.warnDuplicateId(location, "dialogue tree", definition.id().toString(), previous);
+        }
+        if (DatapackJsonReader.readBoolean(root, "remove")) {
+            ResourceLocation removeId = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
+            if (removeId != null) {
+                trees.remove(removeId);
+                sources.remove(removeId);
             }
-            trees.put(definition.id(), definition);
-        });
+            return;
+        }
+        DialogueTreeDefinition definition = readTree(location, root, fallbackId);
+        if (definition == null) {
+            return;
+        }
+        TreeSource previous = sources.put(definition.id(), new TreeSource(location, isBuiltInModResource(resource)));
+        if (previous != null) {
+            DatapackDiagnostics.warnDuplicateId(location, "dialogue tree", definition.id().toString(), previous.location());
+        }
+        trees.put(definition.id(), definition);
+    }
+
+    private static boolean isSuppressedBuiltInLegacyQuestTree(
+            DialogueContext context,
+            DialogueTreeDefinition tree,
+            TreeSource source) {
+        return source != null
+                && source.builtInModResource()
+                && VillagerQuestResources
+                        .questDialogueCatalog(context.level().getServer())
+                        .hasGeneratedQuestDialogue(tree.id());
+    }
+
+    private static boolean isBuiltInModResource(DatapackResourceLoader.JsonResource resource) {
+        return VillagerRetaliation.MOD_ID.equals(resource.location().getNamespace())
+                && resource.isFromPack(VillagerRetaliation.MOD_ID);
+    }
+
+    private record LoadedTreeResource(DatapackResourceLoader.JsonResource resource, JsonObject root) {
+    }
+
+    private static boolean isControlOnly(JsonObject root, String... allowedKeys) {
+        Set<String> allowed = new java.util.HashSet<>(List.of(allowedKeys));
+        for (String key : root.keySet()) {
+            if (!allowed.contains(key)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static DialogueTreeDefinition readTree(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
@@ -136,13 +237,13 @@ public final class DialogueTreeResources {
         }
         JsonObject display = DatapackJsonReader.readObject(root, "display");
         ResourceLocation defaultQuestId = defaultQuestId(location, root, defaultQuestIdFromQuestPath(location, id));
-        Map<String, DialogueTreeDefinition.Node> nodes = readNodes(location, root, defaultQuestId);
+        Map<String, DialogueTreeDefinition.Node> nodes = readNodes(location, root, defaultQuestId, id);
         if (nodes.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one node.");
             return null;
         }
 
-        List<DialogueTreeDefinition.Entry> entries = readEntries(location, root, defaultQuestId);
+        List<DialogueTreeDefinition.Entry> entries = readEntries(location, root, defaultQuestId, id);
         if (entries.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one entry.");
             return null;
@@ -182,10 +283,15 @@ public final class DialogueTreeResources {
         );
     }
 
+    public static DialogueTreeDefinition readGeneratedTree(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
+        return readTree(location, root, fallbackId);
+    }
+
     private static List<DialogueTreeDefinition.Entry> readEntries(
             ResourceLocation location,
             JsonObject root,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            ResourceLocation treeId) {
         JsonElement element = root.get("entries");
         if (element == null || element.isJsonNull()) {
             return List.of();
@@ -201,10 +307,17 @@ public final class DialogueTreeResources {
             if (child.isJsonObject()) {
                 JsonObject entry = child.getAsJsonObject();
                 String context = "dialogue tree entries[" + index + "]";
+                String entryId = firstNonBlank(DatapackJsonReader.readString(entry, "id"), "entry_" + index);
+                String label = DatapackJsonReader.readString(entry, "label");
+                if (!networkSafeOption(location, context, DialogueTreeService.entryOptionId(treeId, entryId), label)) {
+                    index++;
+                    continue;
+                }
                 ResourceLocation entryQuestId = defaultQuestId(location, entry, defaultQuestId);
                 entries.add(new DialogueTreeDefinition.Entry(
-                        firstNonBlank(DatapackJsonReader.readString(entry, "id"), "entry_" + index),
-                        DatapackJsonReader.readString(entry, "label"),
+                        entryId,
+                        label,
+                        DatapackJsonReader.readString(entry, "label_key"),
                         DialogueEntryMetadata.read(location, "dialogue tree entry", context, entry),
                         DatapackJsonReader.readString(entry, "start"),
                         DatapackJsonReader.readEnum(entry, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
@@ -214,7 +327,8 @@ public final class DialogueTreeResources {
                         readDispositions(entry),
                         DialogueCondition.readList(location, context, entry, entryQuestId),
                         DatapackJsonReader.readBoolean(entry, "force_camera_towards_villager"),
-                        DatapackJsonReader.readInt(entry, "order", index)
+                        DatapackJsonReader.readInt(entry, "order", index),
+                        DatapackJsonReader.readInt(entry, "priority", 0)
                 ));
             }
             index++;
@@ -225,7 +339,8 @@ public final class DialogueTreeResources {
     private static Map<String, DialogueTreeDefinition.Node> readNodes(
             ResourceLocation location,
             JsonObject root,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            ResourceLocation treeId) {
         JsonElement element = root.get("nodes");
         if (element == null || element.isJsonNull()) {
             return Map.of();
@@ -238,7 +353,8 @@ public final class DialogueTreeResources {
         }
         for (Map.Entry<String, JsonElement> child : element.getAsJsonObject().entrySet()) {
             if (child.getValue().isJsonObject()) {
-                DialogueTreeDefinition.Node node = readNode(location, child.getKey(), child.getValue().getAsJsonObject(), defaultQuestId);
+                DialogueTreeDefinition.Node node = readNode(
+                        location, child.getKey(), child.getValue().getAsJsonObject(), defaultQuestId, treeId);
                 nodes.put(node.id(), node);
             }
         }
@@ -249,16 +365,31 @@ public final class DialogueTreeResources {
             ResourceLocation location,
             String fallbackId,
             JsonObject node,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            ResourceLocation treeId) {
         String id = firstNonBlank(DatapackJsonReader.readString(node, "id"), fallbackId);
         String context = "dialogue tree node \"" + id + "\"";
         ResourceLocation nodeQuestId = defaultQuestId(location, node, defaultQuestId);
+        List<String> lines = DatapackJsonReader.readLines(node);
+        String textKey = DatapackJsonReader.readString(node, "text_key");
+        DialogueUsagePolicy usage = DialogueUsagePolicy.read(node, DialogueUsagePolicy.DEFAULT);
         return new DialogueTreeDefinition.Node(
                 id,
-                DatapackJsonReader.readLines(node),
+                lines,
+                textKey.isBlank()
+                        ? DialogueTextVariant.read(location, "dialogue tree", context,
+                                treeId + "/node/" + id,
+                                node.has("variants") ? node.get("variants") : node.get("lines"),
+                                nodeQuestId, DialogueEntryMetadata.EMPTY, usage)
+                        : DialogueTextVariant.legacy(
+                                treeId + "/node/" + id,
+                                lines.isEmpty() ? lines : List.of(lines.getFirst()),
+                                textKey,
+                                DialogueEntryMetadata.EMPTY,
+                                usage),
                 VillagerActionDefinition.readList(location, context, node, nodeQuestId),
                 DialogueCondition.readList(location, context, node, nodeQuestId),
-                readResponses(location, context, node, nodeQuestId),
+                readResponses(location, context, node, nodeQuestId, treeId),
                 DatapackJsonReader.readBoolean(node, "end", false)
         );
     }
@@ -267,7 +398,8 @@ public final class DialogueTreeResources {
             ResourceLocation location,
             String context,
             JsonObject node,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            ResourceLocation treeId) {
         JsonElement element = node.get("responses");
         if (element == null || element.isJsonNull()) {
             return List.of();
@@ -284,23 +416,70 @@ public final class DialogueTreeResources {
                 JsonObject response = child.getAsJsonObject();
                 String id = firstNonBlank(DatapackJsonReader.readString(response, "id"), "response_" + index);
                 String responseContext = context + ".responses[" + index + "]";
+                String label = DatapackJsonReader.readString(response, "label");
+                if (!networkSafeOption(location, responseContext, DialogueTreeService.responseOptionId(treeId, id), label)) {
+                    index++;
+                    continue;
+                }
                 ResourceLocation responseQuestId = defaultQuestId(location, response, defaultQuestId);
+                DialogueEntryMetadata metadata =
+                        DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response);
+                List<String> lines = DatapackJsonReader.readLines(response);
+                String textKey = DatapackJsonReader.readString(response, "text_key");
+                DialogueUsagePolicy usage = DialogueUsagePolicy.read(response, DialogueUsagePolicy.DEFAULT);
                 responses.add(new DialogueTreeDefinition.Response(
                         id,
-                        DatapackJsonReader.readString(response, "label"),
-                        DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response),
+                        label,
+                        DatapackJsonReader.readString(response, "label_key"),
+                        metadata,
                         DatapackJsonReader.readString(response, "next"),
                         DatapackJsonReader.readEnum(response, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
-                        DatapackJsonReader.readLines(response),
+                        lines,
+                        textKey.isBlank()
+                                ? DialogueTextVariant.read(location, "dialogue tree", responseContext,
+                                        treeId + "/response/" + id,
+                                        response.has("variants") ? response.get("variants") : response.get("lines"),
+                                        responseQuestId, metadata, usage)
+                                : DialogueTextVariant.legacy(
+                                        treeId + "/response/" + id,
+                                        lines.isEmpty() ? lines : List.of(lines.getFirst()),
+                                        textKey,
+                                        metadata,
+                                        usage),
                         VillagerActionDefinition.readList(location, responseContext, response, responseQuestId),
                         DialogueCondition.readList(location, responseContext, response, responseQuestId),
                         DatapackJsonReader.readBoolean(response, "end", false),
-                        DatapackJsonReader.readInt(response, "order", index)
+                        DatapackJsonReader.readInt(response, "order", index),
+                        DatapackJsonReader.readInt(response, "priority", 0)
                 ));
             }
             index++;
         }
         return List.copyOf(responses);
+    }
+
+    private static boolean networkSafeOption(
+            ResourceLocation location,
+            String context,
+            String optionId,
+            String label) {
+        if (!DialogueOptionDefinition.isNetworkSafeId(optionId)) {
+            DatapackDiagnostics.warnSkippedEntry(
+                    location,
+                    "dialogue tree option",
+                    context,
+                    "generated id must be at most " + DialogueOptionDefinition.MAX_NETWORK_ID_LENGTH + " characters.");
+            return false;
+        }
+        if (!DialogueOptionDefinition.isNetworkSafeLabel(label)) {
+            DatapackDiagnostics.warnSkippedEntry(
+                    location,
+                    "dialogue tree option",
+                    context,
+                    "label must be at most " + DialogueOptionDefinition.MAX_NETWORK_LABEL_LENGTH + " characters.");
+            return false;
+        }
+        return true;
     }
 
     private static Set<VillagerProfession> readProfessions(ResourceLocation location, String context, JsonObject entry) {
@@ -374,7 +553,18 @@ public final class DialogueTreeResources {
         return first == null || first.isBlank() ? fallback : first;
     }
 
-    private record CachedTrees(MinecraftServer server, Map<String, Map<ResourceLocation, DialogueTreeDefinition>> treesByLocale) {
+    private record LoadedTrees(
+            Map<ResourceLocation, DialogueTreeDefinition> trees,
+            Map<ResourceLocation, TreeSource> sources) {
+    }
+
+    private record TreeSource(ResourceLocation location, boolean builtInModResource) {
+    }
+
+    private record RankedOption(DialogueOptionDefinition option, int priority) {
+    }
+
+    private record CachedTrees(MinecraftServer server, Map<String, LoadedTrees> treesByLocale) {
         private static CachedTrees empty() {
             return new CachedTrees(null, Map.of());
         }

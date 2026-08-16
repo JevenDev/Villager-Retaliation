@@ -1,0 +1,10 @@
+{
+  "dialogue": {
+    "sounds": [
+      {
+        "name": "villagerretaliation:dialogue/dialogue_villager_01",
+        "volume": 1.0
+      }
+    ]
+  }
+}

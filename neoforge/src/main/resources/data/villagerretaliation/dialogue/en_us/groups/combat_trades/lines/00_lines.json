@@ -1,304 +1,405 @@
-[
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.combat_trades",
+      "section.lines"
+    ],
+    "topic": "groups.combat_trades.lines"
+  },
+  "lines": [
     {
-        "id":  "default_combat_survival_armorers_count_dents",
-        "request":  "combat_survival_report",
-        "professions":  [
-                            "armorer",
-                            "weaponsmith",
-                            "toolsmith"
-                        ],
-        "show_for_babies":  false,
-        "lines":  [
-                      "I made it back. Count the dents if you want the full story.",
-                      "The gear held, mostly. I will pretend that was confidence and not luck.",
-                      "I am alive, the metal is angry, and both of us need work.",
-                      "That fight left marks in places I cannot hammer flat.",
-                      "My tools survived. My pride may need a little more repairing.",
-                      "The armor caught the worst of it. I caught the rest.",
-                      "I walked away, which is more than some monsters can say.",
-                      "The blade stayed in my hand, even when my knees had other plans.",
-                      "I would call it a clean fight, but the dents disagree.",
-                      "I am still standing. Around here, that counts as a good report."
-                  ],
-        "weight":  30,
-        "metadata":  {
-                         "tags":  [
-                                      "content.dialogue",
-                                      "dialogue.ambient",
-                                      "scope.group.combat_trades",
-                                      "section.lines"
-                                  ]
-                     }
+      "id": "default_combat_survival_armorers_count_dents",
+      "request": "combat_survival_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "I made it back. Count the dents if you want the full story.",
+        "The gear held, mostly. I will pretend that was confidence and not luck.",
+        "I am alive, the metal is angry, and both of us need work.",
+        "That fight left marks in places I cannot hammer flat.",
+        "My tools survived. My pride may need a little more repairing.",
+        "The armor caught the worst of it. I caught the rest.",
+        "I walked away, which is more than some monsters can say.",
+        "The blade stayed in my hand, even when my knees had other plans.",
+        "I would call it a clean fight, but the dents disagree.",
+        "I am still standing. Around here, that counts as a good report.",
+        "My arms are steady again, but the hammer can wait until morning.",
+        "One strap snapped. Everything behind it stayed where it belonged.",
+        "I heard the blow before I felt it. The metal remembered both.",
+        "There is mud in every hinge and relief in every breath.",
+        "The fight ended before the last buckle gave out. Good timing.",
+        "I trusted the work in my hands, and it carried me home.",
+        "Nothing broke that cannot meet an anvil tomorrow.",
+        "My ears are still ringing louder than the forge.",
+        "I know exactly which plate saved me. I will never rush that piece again.",
+        "The gear needs repair. I only need rest."
+      ],
+      "weight": 30,
+      "metadata": {
+        "tags": [
+          "content.dialogue",
+          "dialogue.ambient",
+          "scope.group.combat_trades",
+          "section.lines"
+        ]
+      }
     },
     {
-        "id":  "default_gear_report_smiths_feedback",
-        "request":  "gear_report",
-        "professions":  [
-                            "armorer",
-                            "weaponsmith",
-                            "toolsmith",
-                            "fletcher"
-                        ],
-        "show_for_babies":  false,
-        "lines":  [
-                      "The gear changed how I stood. That matters more than it sounds.",
-                      "I used it. It did not make me brave, but it gave \u003cbold\u003ebravery\u003c/bold\u003e somewhere to put its hands.",
-                      "Tell whoever made this that the village noticed.",
-                      "It fit better than I expected. Good gear should feel like a promise.",
-                      "I trusted it when I had no time to think. That says enough.",
-                      "The balance felt right. Not flashy, just dependable.",
-                      "It held through mud, panic, and bad decisions. That is a fine start.",
-                      "Whoever made this understood what fear does to a grip.",
-                      "It did not win the fight for me, but it gave me room to win it myself.",
-                      "Good work leaves you alive long enough to complain about it."
-                  ],
-        "weight":  32,
-        "metadata":  {
-                         "tags":  [
-                                      "content.dialogue",
-                                      "dialogue.ambient",
-                                      "scope.group.combat_trades",
-                                      "section.lines"
-                                  ]
-                     }
+      "id": "default_gear_report_smiths_feedback",
+      "request": "gear_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith",
+        "fletcher"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "The gear changed how I stood. That matters more than it sounds.",
+        "I used it. It did not make me brave, but it gave <bold>bravery</bold> somewhere to put its hands.",
+        "Tell whoever made this that the village noticed.",
+        "It fit better than I expected. Good gear should feel like a promise.",
+        "I trusted it when I had no time to think. That says enough.",
+        "The balance felt right. Not flashy, just dependable.",
+        "It held through mud, panic, and bad decisions. That is a fine start.",
+        "Whoever made this understood what fear does to a grip.",
+        "It did not win the fight for me, but it gave me room to win it myself.",
+        "Good work leaves you alive long enough to complain about it.",
+        "The grip stayed firm when my hands did not.",
+        "I stopped noticing the weight once trouble started. That is good work.",
+        "Nothing caught, slipped, or failed when I needed it.",
+        "The fastenings held through more strain than I planned to give them.",
+        "Whoever balanced this knew what tired arms feel like.",
+        "I came home trusting this more than when I left.",
+        "A little wear is all it took from a very bad day.",
+        "This feels made for use, not for showing off.",
+        "The fit left me room to move without leaving a weak spot.",
+        "I would carry this again without a second thought."
+      ],
+      "weight": 32,
+      "metadata": {
+        "tags": [
+          "content.dialogue",
+          "dialogue.ambient",
+          "scope.group.combat_trades",
+          "section.lines"
+        ]
+      }
     },
     {
-        "id":  "default_village_defense_smith_respect",
-        "request":  "village_defense_report",
-        "professions":  [
-                            "armorer",
-                            "weaponsmith",
-                            "toolsmith",
-                            "fletcher"
-                        ],
-        "show_for_babies":  false,
-        "player_event_tags":  [
-                                  "player_defended_village",
-                                  "player_defended_raid"
-                              ],
-        "lines":  [
-                      "I saw what you did when danger came close. That is the part of a weapon no forge can make.",
-                      "You stood where \u003cshake\u003efear\u003c/shake\u003e wanted a gap. I will remember that.",
-                      "A village knows the difference between someone carrying steel and someone carrying responsibility.",
-                      "You did not run when the bell started calling names.",
-                      "There are brave words, and then there is what you did at the gate.",
-                      "You put yourself between trouble and our homes. That does not go unnoticed.",
-                      "I have seen plenty of people swing weapons. Fewer know when to stand their ground.",
-                      "The village feels safer today because you chose to stay.",
-                      "When danger came looking for an opening, you closed it.",
-                      "You fought like our lives were worth your trouble. That means something here."
-                  ],
-        "weight":  36,
-        "metadata":  {
-                         "tags":  [
-                                      "content.dialogue",
-                                      "dialogue.ambient",
-                                      "scope.group.combat_trades",
-                                      "section.lines"
-                                  ]
-                     }
+      "id": "default_village_defense_smith_respect",
+      "request": "village_defense_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith",
+        "fletcher"
+      ],
+      "show_for_babies": false,
+      "player_event_tags": [
+        "player_defended_village",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "I saw what you did when danger came close. That is the part of a weapon no forge can make.",
+        "You stood where <shake>fear</shake> wanted a gap. I will remember that.",
+        "A village knows the difference between someone carrying steel and someone carrying responsibility.",
+        "You did not run when the bell started calling names.",
+        "There are brave words, and then there is what you did at the gate.",
+        "You put yourself between trouble and our homes. That does not go unnoticed.",
+        "I have seen plenty of people swing weapons. Fewer know when to stand their ground.",
+        "The village feels safer today because you chose to stay.",
+        "When danger came looking for an opening, you closed it.",
+        "You fought like our lives were worth your trouble. That means something here.",
+        "You kept the line from reaching our doors.",
+        "I saw you check on others before checking your own wounds.",
+        "You gave frightened people somewhere safe to stand.",
+        "Steel means little without someone willing to hold it steady.",
+        "The gate survived because you refused to give ground.",
+        "Say what you mean without dressing it up.",
+        "When the bell rang, you moved toward it.",
+        "You made every shield behind you feel a little stronger.",
+        "The village had time to recover because you bought it for us.",
+        "I can forge protection, but what you gave us came from choice."
+      ],
+      "weight": 36,
+      "metadata": {
+        "tags": [
+          "content.dialogue",
+          "dialogue.ambient",
+          "scope.group.combat_trades",
+          "section.lines"
+        ]
+      }
     },
     {
-        "id":  "default_event_baby_hurt_guarded",
-        "request":  "village_event_report",
-        "professions":  [
-                            "armorer",
-                            "weaponsmith",
-                            "fletcher",
-                            "cleric"
-                        ],
-        "event_tags":  [
-                           "baby_villager_attacked"
-                       ],
-        "lines":  [
-                      "A child was hurt. I have no gentle way to store that memory.",
-                      "The little one cried and every adult in earshot became \u003cbold\u003esharper\u003c/bold\u003e.",
-                      "There are lines a village draws without needing a meeting. Hurting children is one of them.",
-                      "No one slept easy after that. Not with a child still shaking.",
-                      "You can hear a village change when a child cries like that.",
-                      "Some wounds are small to look at and heavy to carry.",
-                      "The adults are speaking softly, but their hands are not far from their tools.",
-                      "A village forgives many things slowly. That is not one of them.",
-                      "The child is safe now, but safe is not the same as unharmed.",
-                      "Everyone saw it. Everyone remembers."
-                  ],
-        "weight":  40,
-        "metadata":  {
-                         "tags":  [
-                                      "content.dialogue",
-                                      "dialogue.ambient",
-                                      "scope.group.combat_trades",
-                                      "section.lines"
-                                  ]
-                     }
+      "id": "default_event_baby_hurt_guarded",
+      "request": "village_event_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "fletcher",
+        "cleric"
+      ],
+      "event_tags": [
+        "baby_villager_attacked"
+      ],
+      "lines": [
+        "A child was hurt. I have no gentle way to store that memory.",
+        "The little one cried and every adult in earshot became <bold>sharper</bold>.",
+        "There are lines a village draws without needing a meeting. Hurting children is one of them.",
+        "No one slept easy after that. Not with a child still shaking.",
+        "You can hear a village change when a child cries like that.",
+        "Some wounds are small to look at and heavy to carry.",
+        "The adults are speaking softly, but their hands are not far from their tools.",
+        "A village forgives many things slowly. That is not one of them.",
+        "The child is safe now, but safe is not the same as unharmed.",
+        "Everyone saw it. Everyone remembers.",
+        "The whole village went quiet when we heard.",
+        "We checked every door after that. Nobody wanted another child near danger.",
+        "A small bandage should never feel that heavy.",
+        "The forge can fix iron. It cannot make that sight easier.",
+        "Every guard is watching the paths more closely now.",
+        "The child is resting, and half the village is pretending not to hover.",
+        "No one had to ask us to tighten the watch.",
+        "That cry reached every corner of the square.",
+        "We moved the sharp tools higher and the sentries closer.",
+        "Children should learn courage from stories, not wounds."
+      ],
+      "weight": 40,
+      "metadata": {
+        "tags": [
+          "content.dialogue",
+          "dialogue.ambient",
+          "scope.group.combat_trades",
+          "section.lines"
+        ]
+      }
     },
     {
-        "id":  "default_event_golem_defeated_mob_relief",
-        "request":  "village_event_report",
-        "professions":  [
-                            "armorer",
-                            "weaponsmith",
-                            "toolsmith",
-                            "mason"
-                        ],
-        "event_tags":  [
-                           "iron_golem_defeated_mob"
-                       ],
-        "lines":  [
-                      "The golem did its work. I heard iron move like a closing gate.",
-                      "One less monster near our doors. Remind me to check the golem for cracks.",
-                      "Iron stood between us and teeth. That sound \u003cpulse\u003estays with you\u003c/pulse\u003e.",
-                      "The square went quiet after the last hit. Quiet in the good way.",
-                      "Our golem made short work of it, but I still counted every step.",
-                      "There is comfort in hearing iron walk toward trouble instead of away from it.",
-                      "The monster did not get far. The golem made sure of that.",
-                      "I saw the golem turn, lift its arms, and end the argument.",
-                      "The village owes that pile of iron more thanks than it understands.",
-                      "For a moment, every door stayed closed and every heart kept beating."
-                  ],
-        "weight":  34,
-        "metadata":  {
-                         "tags":  [
-                                      "content.dialogue",
-                                      "dialogue.ambient",
-                                      "scope.group.combat_trades",
-                                      "section.lines"
-                                  ]
-                     }
+      "id": "default_event_golem_defeated_mob_relief",
+      "request": "village_event_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith",
+        "mason"
+      ],
+      "event_tags": [
+        "iron_golem_defeated_mob"
+      ],
+      "lines": [
+        "The golem did its work. I heard iron move like a closing gate.",
+        "One less monster near our doors. Remind me to check the golem for cracks.",
+        "Iron stood between us and teeth. That sound <pulse>stays with you</pulse>.",
+        "The square went quiet after the last hit. Quiet in the good way.",
+        "Our golem made short work of it, but I still counted every step.",
+        "There is comfort in hearing iron walk toward trouble instead of away from it.",
+        "The monster did not get far. The golem made sure of that.",
+        "I saw the golem turn, lift its arms, and end the argument.",
+        "The village owes that pile of iron more thanks than it understands.",
+        "For a moment, every door stayed closed and every heart kept beating.",
+        "The golem came back scratched, which means the creature did not.",
+        "I found a new dent in its shoulder and felt grateful for it.",
+        "The square is quieter now that the threat is gone.",
+        "Iron feet returned before the doors opened again.",
+        "Whatever attacked us learned why the golem stands watch.",
+        "We will mend the frame before the next sunset.",
+        "The golem held the danger far from sleeping villagers.",
+        "I heard one final crash, then the sound of everyone breathing.",
+        "Its arms need work, but its duty is finished.",
+        "The village owes that iron guard another careful repair."
+      ],
+      "weight": 34,
+      "metadata": {
+        "tags": [
+          "content.dialogue",
+          "dialogue.ambient",
+          "scope.group.combat_trades",
+          "section.lines"
+        ]
+      }
     },
     {
-        "id":  "default_event_golem_killed_alarm",
-        "request":  "village_event_report",
-        "professions":  [
-                            "armorer",
-                            "weaponsmith",
-                            "toolsmith",
-                            "mason",
-                            "librarian"
-                        ],
-        "event_tags":  [
-                           "golem_killed"
-                       ],
-        "lines":  [
-                      "The golem fell. Every door in the village feels thinner now.",
-                      "When iron stops moving, everyone hears what \u003cshake\u003esilence\u003c/shake\u003e costs.",
-                      "We lost more than a guard. We lost the confidence that stood in the square.",
-                      "The square looks too open without it.",
-                      "I keep expecting to hear heavy footsteps. I keep hearing nothing.",
-                      "A village gets used to being watched over. Losing that leaves a cold space.",
-                      "The children noticed first. That made it worse.",
-                      "We can build another one, maybe. That does not make this one less gone.",
-                      "Iron can be replaced. Trust takes longer.",
-                      "Every shadow near the village feels larger now."
-                  ],
-        "weight":  42,
-        "metadata":  {
-                         "tags":  [
-                                      "content.dialogue",
-                                      "dialogue.ambient",
-                                      "scope.group.combat_trades",
-                                      "section.lines"
-                                  ]
-                     }
+      "id": "default_event_golem_killed_alarm",
+      "request": "village_event_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith",
+        "mason",
+        "librarian"
+      ],
+      "event_tags": [
+        "golem_killed"
+      ],
+      "lines": [
+        "The golem fell. Every door in the village feels thinner now.",
+        "When iron stops moving, everyone hears what <shake>silence</shake> costs.",
+        "We lost more than a guard. We lost the confidence that stood in the square.",
+        "The square looks too open without it.",
+        "I keep expecting to hear heavy footsteps. I keep hearing nothing.",
+        "A village gets used to being watched over. Losing that leaves a cold space.",
+        "The children noticed first. That made it worse.",
+        "We can build another one, maybe. That does not make this one less gone.",
+        "Iron can be replaced. Trust takes longer.",
+        "Every shadow near the village feels larger now.",
+        "We are taking turns on watch until another guard can stand there.",
+        "The empty place in the square draws every eye.",
+        "I gathered what iron I could, but it did not feel like scrap.",
+        "Doors were barred early after the golem fell.",
+        "Children keep asking when it will walk again.",
+        "Every night sound feels closer without those heavy footsteps.",
+        "We lost the one guard that never needed sleep.",
+        "The cracks in that frame tell an ugly story.",
+        "Nobody passes the center of town without noticing the silence.",
+        "We need iron, hands, and time before the village feels guarded again."
+      ],
+      "weight": 42,
+      "metadata": {
+        "tags": [
+          "content.dialogue",
+          "dialogue.ambient",
+          "scope.group.combat_trades",
+          "section.lines"
+        ]
+      }
     },
     {
-        "id":  "default_event_raid_trade_memory",
-        "request":  "village_event_report",
-        "professions":  [
-                            "cartographer",
-                            "fletcher",
-                            "weaponsmith",
-                            "armorer",
-                            "librarian"
-                        ],
-        "event_tags":  [
-                           "raid"
-                       ],
-        "lines":  [
-                      "Raiders came with banners and left us with repairs.",
-                      "A raid turns every profession into lookout work.",
-                      "The bell did not sound like metal. It sounded like \u003cpulse\u003eevery name\u003c/pulse\u003e in the village at once.",
-                      "I still hear the horn when the wind hits the rooftops wrong.",
-                      "Everyone had a job during the raid, even if that job was fear.",
-                      "The banners are gone, but the village is still putting itself back together.",
-                      "A raid teaches you which doors hold and which people do.",
-                      "We counted survivors before we counted damage.",
-                      "The square looked different after the fighting. Smaller, somehow.",
-                      "Trade can wait after a raid. First, you make sure everyone answers their name."
-                  ],
-        "weight":  40,
-        "metadata":  {
-                         "tags":  [
-                                      "content.dialogue",
-                                      "dialogue.ambient",
-                                      "scope.group.combat_trades",
-                                      "section.lines"
-                                  ]
-                     }
+      "id": "default_event_raid_trade_memory",
+      "request": "village_event_report",
+      "professions": [
+        "cartographer",
+        "fletcher",
+        "weaponsmith",
+        "armorer",
+        "librarian"
+      ],
+      "event_tags": [
+        "raid"
+      ],
+      "lines": [
+        "Raiders came with banners and left us with repairs.",
+        "A raid turns every profession into lookout work.",
+        "The bell did not sound like metal. It sounded like <pulse>every name</pulse> in the village at once.",
+        "I still hear the horn when the wind hits the rooftops wrong.",
+        "Everyone had a job during the raid, even if that job was fear.",
+        "The banners are gone, but the village is still putting itself back together.",
+        "A raid teaches you which doors hold and which people do.",
+        "We counted survivors before we counted damage.",
+        "The square looked different after the fighting. Smaller, somehow.",
+        "Trade can wait after a raid. First, you make sure everyone answers their name.",
+        "My hands remember the bell better than my ears do.",
+        "We spent the next morning sorting damage by what could wait.",
+        "The raiders broke windows and found every stubborn person inside.",
+        "No one stayed only a smith or mapmaker once the gates shook.",
+        "Smoke hid the road long after the last banner left.",
+        "We learned which walls were strong and which neighbors were stronger.",
+        "The square looked smaller with everyone pressed behind cover.",
+        "I still check the horizon when the bell moves in the wind.",
+        "Repairs are nearly done. The memory is taking longer.",
+        "They wanted an easy village. They chose poorly."
+      ],
+      "weight": 40,
+      "metadata": {
+        "tags": [
+          "content.dialogue",
+          "dialogue.ambient",
+          "scope.group.combat_trades",
+          "section.lines"
+        ]
+      }
     },
     {
-        "id":  "default_event_retaliation_started_combat_trades",
-        "request":  "village_event_report",
-        "professions":  [
-                            "armorer",
-                            "weaponsmith",
-                            "fletcher",
-                            "toolsmith"
-                        ],
-        "event_tags":  [
-                           "villager_retaliation_started"
-                       ],
-        "lines":  [
-                      "When a villager decides to fight back, the whole square feels it.",
-                      "Retaliation is not clean. It is what happens after warnings run out.",
-                      "Someone pushed too far, and now the village is answering in a \u003cbold\u003eharder language\u003c/bold\u003e.",
-                      "We are not soldiers, but even peaceful hands can close into fists.",
-                      "Nobody wanted it to come to this. That does not mean we will stand still.",
-                      "A cornered village learns quickly.",
-                      "There is a point where fear stops moving backward.",
-                      "Tools, bows, blades, stones. People grab what they know.",
-                      "The first swing changes the air. After that, everyone understands.",
-                      "A village can be patient for a long time. Not forever."
-                  ],
-        "weight":  36,
-        "metadata":  {
-                         "tags":  [
-                                      "content.dialogue",
-                                      "dialogue.ambient",
-                                      "scope.group.combat_trades",
-                                      "section.lines"
-                                  ]
-                     }
+      "id": "default_event_retaliation_started_combat_trades",
+      "request": "village_event_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "fletcher",
+        "toolsmith"
+      ],
+      "event_tags": [
+        "villager_retaliation_started"
+      ],
+      "lines": [
+        "When a villager decides to fight back, the whole square feels it.",
+        "Retaliation is not clean. It is what happens after warnings run out.",
+        "Someone pushed too far, and now the village is answering in a <bold>harder language</bold>.",
+        "We are not soldiers, but even peaceful hands can close into fists.",
+        "Nobody wanted it to come to this. That does not mean we will stand still.",
+        "A cornered village learns quickly.",
+        "There is a point where fear stops moving backward.",
+        "Tools, bows, blades, stones. People grab what they know.",
+        "The first swing changes the air. After that, everyone understands.",
+        "A village can be patient for a long time. Not forever.",
+        "We put away patience when they mistook it for weakness.",
+        "The first counterstrike sounded different from a warning.",
+        "Nobody cheered when we armed ourselves. We simply got ready.",
+        "The village did not choose this fight quickly.",
+        "Every tool near the square suddenly had another purpose.",
+        "We are protecting our own now, and the enemy knows it.",
+        "Anger brought us to the line. Discipline has to carry us through.",
+        "Once the decision was made, fear had less room to speak.",
+        "We tried doors, bells, and warnings before we raised weapons.",
+        "The village is done waiting for the next blow."
+      ],
+      "weight": 36,
+      "metadata": {
+        "tags": [
+          "content.dialogue",
+          "dialogue.ambient",
+          "scope.group.combat_trades",
+          "section.lines"
+        ]
+      }
     },
     {
-        "id":  "default_joke_profession_smiths",
-        "request":  "joke",
-        "professions":  [
-                            "armorer",
-                            "toolsmith",
-                            "weaponsmith"
-                        ],
-        "show_for_babies":  false,
-        "lines":  [
-                      "That joke needs tempering. Right now it would bend in a light breeze.",
-                      "I have heard \u003citalic\u003esharper\u003c/italic\u003e things from a spoon.",
-                      "Not bad. Needs a better edge and fewer dents.",
-                      "Give me a forge, a hammer, and three days. I might make that funny.",
-                      "That one cracked before it cooled.",
-                      "I respect the attempt. I do not respect the result.",
-                      "If that was meant to cut, you forgot the edge.",
-                      "Careful. A joke that dull can still hurt someone.",
-                      "I have scrap metal with better timing.",
-                      "Try that again after you sharpen it."
-                  ],
-        "weight":  22,
-        "metadata":  {
-                         "tags":  [
-                                      "content.dialogue",
-                                      "dialogue.ambient",
-                                      "scope.group.combat_trades",
-                                      "section.lines"
-                                  ]
-                     }
+      "id": "default_joke_profession_smiths",
+      "request": "joke",
+      "professions": [
+        "armorer",
+        "toolsmith",
+        "weaponsmith"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "That joke needs tempering. Right now it would bend in a light breeze.",
+        "I have heard <italic>sharper</italic> things from a spoon.",
+        "Not bad. Needs a better edge and fewer dents.",
+        "Give me a forge, a hammer, and three days. I might make that funny.",
+        "That one cracked before it cooled.",
+        "I respect the attempt. I do not respect the result.",
+        "If that was meant to cut, you forgot the edge.",
+        "Careful. A joke that dull can still hurt someone.",
+        "I have scrap metal with better timing.",
+        "Try that again after you sharpen it.",
+        "That punchline came out softer than untempered iron.",
+        "Give me a hammer and I might flatten the rough parts.",
+        "The joke held together, but I would not trust it under strain.",
+        "I laughed once. It may have been a spark in my eye.",
+        "Your timing needs another turn in the forge.",
+        "A dull joke can still be useful for scraping silence.",
+        "That one rang badly, though at least it rang.",
+        "Try quenching the ending before it bends again.",
+        "I have fixed cracked blades with cleaner edges than that punchline.",
+        "Keep working it. Even scrap can become something."
+      ],
+      "weight": 22,
+      "metadata": {
+        "tags": [
+          "content.dialogue",
+          "dialogue.ambient",
+          "scope.group.combat_trades",
+          "section.lines"
+        ]
+      }
     }
-]
+  ]
+}

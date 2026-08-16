@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.clay_repairs.description": {
+      "lines": [
+        "Bring clay for small repairs around wells, ovens, and cracked walls."
+      ]
+    },
+    "quest.village_supply.clay_repairs.dialogue.already_completed": {
+      "lines": [
+        "We settled this one already. We already settled Clay Repairs.",
+        "I will not reopen a finished account. The repair bench has the clay you brought.",
+        "You finished what I asked. I counted your 16 clay balls. We are square.",
+        "Nothing remains to be earned from this. The masons already put that delivery to work.",
+        "Your earlier work still stands. You solved the problem of repairs drying out unfinished.",
+        "There is no second payment here. There is no reason to gather another load of clay.",
+        "Your earlier work still stands. Clay Repairs is crossed off the clay work list.",
+        "I remember your first return. Your part in helping us patch wells and oven seams is finished.",
+        "I remember your first return. The last clay batch is still serving the village.",
+        "There is no second payment here. I remember who filled the clay order, and it was you.",
+        "What was owed has been paid. The reward was paid when the clay delivery came in.",
+        "That chapter is closed. You did enough the first time. I will leave the old entry filed under Clay Repairs.",
+        "What was owed has been paid. We can stop small cracks from spreading because you answered Clay Repairs.",
+        "Nothing remains to be earned from this. The full clay count reached the repair bench. Nothing is missing.",
+        "Leave the old tally alone. The masons would object if I asked you twice.",
+        "What was owed has been paid. Your clay delivery passed inspection and went into use.",
+        "No one needs this done twice. That empty spot in the repair bench belongs to yesterday.",
+        "Leave the old tally alone. The record shows 16 clay balls received from you.",
+        "I will not reopen a finished account. You did the quiet clay work that keeps everyone going.",
+        "There is no second payment here. The first ending was good enough for Clay Repairs."
+      ]
+    },
+    "quest.village_supply.clay_repairs.dialogue.inactive": {
+      "lines": [
+        "I will post it when it matters. The repair bench is not taking clay right now.",
+        "Nothing calls for this work today. There is no open order for clay today.",
+        "The board can wait. The repair bench is being counted before I ask for more.",
+        "Not today. The masons have not posted a fresh request.",
+        "I will post it when it matters. Hold off on the clay. We have nowhere useful to put it.",
+        "I will post it when it matters. The need to patch wells and oven seams will return, but not today.",
+        "Nothing calls for this work today. I am waiting for the next tally before opening Clay Repairs.",
+        "We have no need of it yet. Bringing 16 clay balls now would crowd the stores.",
+        "The village can wait on this one. The last clay batch has not been used up yet.",
+        "Leave that work alone for now. Ask again after the masons check what remains.",
+        "For now, let the matter rest. I will not invent an urgent need for clay.",
+        "For now, let the matter rest. The repair bench is quiet, so this can wait.",
+        "We have no need of it yet. We are between work orders for clay.",
+        "The board can wait. Nothing is wrong at the repair bench. The timing is simply off.",
+        "The village can wait on this one. Save your effort until we actually need clay.",
+        "The board can wait. The board has no current mark beside Clay Repairs.",
+        "Ask me after the stores change. Today is not the day for another clay run.",
+        "Nothing calls for this work today. Once repairs drying out unfinished becomes a concern, I will reopen this.",
+        "Ask me after the stores change. I would rather delay than waste good clay.",
+        "I will post it when it matters. Wait for the stores to change before asking me about Clay Repairs."
+      ]
+    },
+    "quest.village_supply.clay_repairs.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current clay order. Ask again after the repair bench has been checked.",
+        "The repair bench tally is missing, so I will not ask you to gather clay balls yet.",
+        "No one has confirmed how much clay balls the repair bench needs today.",
+        "The work note is incomplete. Let me settle the clay count first.",
+        "I will not send you after clay balls until the village confirms the order.",
+        "The repair bench has not posted a trustworthy clay count.",
+        "I checked the work slate twice; the clay request is not ready.",
+        "This order can wait until I have a current clay tally.",
+        "Someone needs to check the repair bench before I hand you this order.",
+        "The village has not agreed on the clay count yet.",
+        "I have an old clay tally and no current one.",
+        "The repair bench may need clay balls, but I will not turn a guess into work.",
+        "Come back after the repair bench finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the repair bench tally.",
+        "Let me confirm who needs the clay balls before you start gathering.",
+        "No work yet. The village has not approved this clay request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the clay order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.clay_repairs.dialogue.missing_proof": {
+      "lines": [
+        "I believe you went, but that is not enough. Bring the clay before I mix the patchwork.",
+        "Your word is not the missing piece. I need the clay here before I sign this off.",
+        "Your word is not the missing piece. A promise does not fill the repair bench. Bring the clay delivery.",
+        "Your word is not the missing piece. You may have gathered it, but the masons have not received it.",
+        "The proof has to reach my hands. Set the 16 clay balls down here and I can close the clay order.",
+        "The evidence still matters. Handing over the clay is the proof on this supply job.",
+        "A story cannot close the ledger. I cannot inspect clean workable clay while your hands are empty.",
+        "You returned without the one thing I asked for. Your report sounds fine. I still need the actual clay.",
+        "The last requirement is still missing. Nothing has reached the repair bench yet.",
+        "The evidence still matters. Bring what you collected before we discuss the Clay Repairs reward.",
+        "A story cannot close the ledger. The repair bench needs usable clay, not a story about it.",
+        "Show me what came back with you. I will count the clay as soon as you place it here.",
+        "A story cannot close the ledger. Do not leave the clay delivery in another chest.",
+        "Your word is not the missing piece. The masons are waiting on the clay bundle itself.",
+        "Show me what came back with you. The last step is simple. Hand over the clay.",
+        "What you carried home decides this. I cannot patch wells and oven seams with an empty counter.",
+        "I cannot sign off on an empty return. Come back carrying the clay order, and we will be done.",
+        "I cannot sign off on an empty return. The clay work counts once the repair bench receives it.",
+        "Bring back something the village can verify. You are one handoff away from finishing Clay Repairs.",
+        "Bring back something the village can verify. Let me see the clay before I call this complete."
+      ]
+    },
+    "quest.village_supply.clay_repairs.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the clay balls.",
+        "I counted twice; the full order of 16 clay balls is not here yet.",
+        "This helps, but the repair bench still needs the remaining clay balls.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 16 clay balls; the pile is still short.",
+        "Bring the missing clay balls, and then I can settle the order.",
+        "The repair bench has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The repair bench is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 16 clay balls.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the repair bench short.",
+        "The order stays open until all 16 clay balls are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The repair bench is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.clay_repairs.dialogue.reminder": {
+      "lines": [
+        "The job still has loose ends. Sixteen clay balls. Damp is fine. Mud with ambition is still useful.",
+        "Remember what the village is waiting for. I am still waiting on 16 clay balls for the repair bench.",
+        "Stay with the work you accepted. Look for clean workable clay. Bad supplies only move the problem.",
+        "Do not let one finished step distract you. The masons need those clay to patch wells and oven seams.",
+        "The next step still matters. The count is 16 clay balls. Check it before returning.",
+        "Do not lose the thread now. This clay delivery means we can stop small cracks from spreading.",
+        "Do not lose the thread now. If you are choosing between loads, bring the clay first.",
+        "Hold to the instructions I gave you. Keep the clay order together so the clay tally stays easy.",
+        "Do not lose the thread now. The repair bench has space waiting for the full bundle.",
+        "Bring this to a proper finish. Do not let a simple request turn into repairs drying out unfinished.",
+        "Keep the whole task in mind. There is no hidden part to Clay Repairs. Bring the agreed clay count.",
+        "Before you leave, hear this again. Handle it carefully. I want clean workable clay.",
+        "Stay with the work you accepted. Bring all the clay at once if you can manage it.",
+        "Bring this to a proper finish. The masons are planning their next work around your return.",
+        "Do not let one finished step distract you. I wrote 16 clay balls on the clay slate so neither of us has to guess.",
+        "Do not let one finished step distract you. The sooner this arrive, the sooner we can patch wells and oven seams.",
+        "Before you leave, hear this again. Nothing else is missing from the clay order.",
+        "Do not let one finished step distract you. Return when the clay is ready to hand over.",
+        "Hold to the instructions I gave you. You know how many clay the repair bench needs. The rest is gathering.",
+        "Do not lose the thread now. A complete clay bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.clay_repairs.dialogue.start": {
+      "lines": [
+        "Let us be clear about the job. Bring 16 clay balls. I can patch three problems before they become one expensive one.",
+        "Listen closely. The clay order needs 16 clay balls. Can you handle that?",
+        "Take the task only if you are ready. The masons are trying to patch wells and oven seams, and supplies are thin.",
+        "Take this seriously. Bring me 16 clay balls. I want clean workable clay.",
+        "Listen closely. I have a plain job with a useful result. Find 16 clay balls.",
+        "This needs a careful hand. We can stop small cracks from spreading if you fill the clay order.",
+        "I need you to see this through. Repairs drying out unfinished is a small problem until everyone needs the same thing.",
+        "Before you agree, hear all of it. The count on the clay slate is 16 clay balls.",
+        "The village has work for you. Gather the clay and bring the whole delivery here.",
+        "This needs a careful hand. Stocking the repair bench is not glory, but it matters.",
+        "The village has work for you. The masons asked me to find someone reliable for this run.",
+        "Take the task only if you are ready. I need a clean delivery for the repair bench.",
+        "The village has work for you. If you can spare the time, 16 clay balls would settle the clay shortage.",
+        "Here is the work. The need is real, which makes the instructions for Clay Repairs simple.",
+        "There is a reason I chose you. Bring the clay when you have the complete count.",
+        "This needs a careful hand. Good clay will let us patch wells and oven seams.",
+        "I am trusting you with something important. The village should not reach repairs drying out unfinished before we act.",
+        "Take this seriously. Take care with the clay bundle. We need clean workable clay.",
+        "I am trusting you with something important. I will pay when the repair bench receives the full order.",
+        "There is a reason I chose you. Find 16 clay balls, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.clay_repairs.dialogue.turn_in": {
+      "lines": [
+        "That settles what I asked of you. That will patch the little cracks before they learn confidence.",
+        "The hard part is behind us. The count is right. I will get this to the repair bench.",
+        "Good, you made it back. The masons can patch wells and oven seams now.",
+        "I am glad to see you home. This is clean workable clay. You chose well.",
+        "This return was worth waiting for. That delivery keeps us from repairs drying out unfinished.",
+        "That is the result I needed. Good work. All the clay arrived together.",
+        "The hard part is behind us. I have your clay, and you earned the Clay Repairs reward.",
+        "The village can use this. The repair bench looks less bare already.",
+        "You saw it through. This will help us stop small cracks from spreading.",
+        "You saw it through. You saved the masons from making do with scraps.",
+        "I am glad to see you home. Everything on the clay slate is here.",
+        "You delivered exactly what was needed. A useful clay job, done without fuss. Thank you.",
+        "The hard part is behind us. I will put the clay away before someone borrows it.",
+        "The hard part is behind us. The village is better stocked because you completed Clay Repairs.",
+        "You delivered exactly what was needed. You brought exactly the clay I asked for.",
+        "The village can use this. The clay delivery is sound from top to bottom.",
+        "You saw it through. The repair bench has one less shortage waiting to surprise us.",
+        "This will make a real difference. The village may not cheer for clay, but it would notice their absence.",
+        "The hard part is behind us. Take your payment. The clay count gives me no complaint.",
+        "You delivered exactly what was needed. I can hand the clay order to the masons with confidence."
+      ]
+    },
+    "quest.village_supply.clay_repairs.dialogue.unavailable": {
+      "lines": [
+        "You are not ready for this request. The clay repair request is closed for now.",
+        "Come back after you have earned more trust. I cannot hand you the work filed under Clay Repairs yet.",
+        "This calls for someone we know better. The clay order is for someone the repair bench already knows.",
+        "Some work must wait until trust catches up. The masons need a delivery they can count on.",
+        "The village needs a steadier hand. Show the village steadier work before taking Clay Repairs.",
+        "The village needs a steadier hand. The clay matters too much to gamble on a stranger.",
+        "This work is not yours today. I am not opening the clay slate to you today.",
+        "Come back after you have earned more trust. Build some trust, then ask about Clay Repairs again.",
+        "This calls for someone we know better. I need someone who will return with the whole 16 clay balls.",
+        "This calls for someone we know better. Gathering clay is simple, but reliability is not optional.",
+        "This work is not yours today. For now, the clay order stays with regular hands.",
+        "I will not place this burden on you. I cannot promise the repair bench a delivery from you yet.",
+        "This work is not yours today. There will be other work before we trust you with the repair bench.",
+        "I cannot trust you with this yet. The village has not cleared you for this clay run.",
+        "The village needs a steadier hand. I would rather wait than risk repairs drying out unfinished.",
+        "This work is not yours today. This is not punishment. Show better judgment before I open Clay Repairs.",
+        "I cannot trust you with this yet. The masons asked for a familiar runner this time.",
+        "I cannot trust you with this yet. Come back for the clay order after your name carries more weight.",
+        "This calls for someone we know better. I am not taking new help for Clay Repairs.",
+        "This calls for someone we know better. Earn some confidence here, and we can revisit Clay Repairs."
+      ]
+    },
+    "quest.village_supply.clay_repairs.objective.bring_clay.complete_text": {
+      "lines": [
+        "The clay is ready for patching."
+      ]
+    },
+    "quest.village_supply.clay_repairs.objective.bring_clay.text": {
+      "lines": [
+        "Bring 16 clay balls for village repairs."
+      ]
+    },
+    "quest.village_supply.clay_repairs.stage.return.dialogue.turn_in.label": "About Clay Repairs",
+    "quest.village_supply.clay_repairs.stage.return.dialogue.turn_in.lines": [
+      "That clay will close the cracks before the next storm opens them wider.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.clay_repairs.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.clay_repairs.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.clay_repairs.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "That clay will close the cracks before the next storm opens them wider.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.clay_repairs.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.clay_repairs.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.clay_repairs.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.clay_repairs.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Clay Repairs is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.clay_repairs.stage.return.scene.turn_in_wait.lines": [
+      "Bring 16 clay balls for cracked walls and pots",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.clay_repairs.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.clay_repairs.stage.work.dialogue.offer.label": "Clay Repairs",
+    "quest.village_supply.clay_repairs.stage.work.dialogue.offer.lines": [
+      "Rain found every crack the mason missed.",
+      "Bring 16 clay balls for cracked walls and pots, and the shelves will look less worried.",
+      "Bring 16 clay balls for cracked walls and pots. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.clay_repairs.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.clay_repairs.stage.work.dialogue.reminder.label": "About Clay Repairs",
+    "quest.village_supply.clay_repairs.stage.work.dialogue.reminder.lines": [
+      "Bring 16 clay balls for cracked walls and pots",
+      "Bring 16 clay balls for cracked walls and pots.",
+      "Bring 16 clay balls for cracked walls and pots, and the shelves will look less worried."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.clay_repairs.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.clay_repairs.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.clay_repairs.stage.work.scene.abandon_confirm.lines": [
+      "Put Clay Repairs aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.clay_repairs.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.clay_repairs.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Clay Repairs is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.leave.lines": [
+      "Bring 16 clay balls for cracked walls and pots",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 16 clay balls for cracked walls and pots",
+      "Bring 16 clay balls for cracked walls and pots.",
+      "Bring 16 clay balls for cracked walls and pots, and the shelves will look less worried."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Clay Repairs is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Clay Repairs is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 16 clay balls for cracked walls and pots. Keep the full count together on the road back.",
+      "Bring 16 clay balls for cracked walls and pots.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Clay Repairs is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.clay_repairs.stage.work.ui.tracker_text": "Bring 16 clay balls for cracked walls and pots.",
+    "quest.village_supply.clay_repairs.title": {
+      "lines": [
+        "Clay Repairs"
+      ]
+    },
+    "quest.village_supply.clay_repairs.tracker.proof.text": {
+      "lines": [
+        "Bring 16 clay balls for village repairs."
+      ]
+    },
+    "quest.village_supply.clay_repairs.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the clay ball."
+      ]
+    },
+    "quest.village_supply.clay_repairs.tracker.title": {
+      "lines": [
+        "Clay Repairs"
+      ]
+    }
+  }
+}

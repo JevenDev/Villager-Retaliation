@@ -14,13 +14,7 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import org.joml.Matrix4f;
 
 public final class VillagerInteractionScreenShaderRenderer {
-    private static final float DITHER_CELL_SIZE = 1.0F;
-    private static final float DITHER_ARC_DEPTH = 30.0F;
-
-    private static ShaderInstance interactionVeilShader;
-    private static ShaderInstance experimentalChromeShader;
-    private static ShaderInstance experimentalNotificationShader;
-    private static ShaderInstance experimentalSkillsShader;
+    private static ShaderInstance dialogueCinematicBarsShader;
 
     private VillagerInteractionScreenShaderRenderer() {
     }
@@ -31,449 +25,40 @@ public final class VillagerInteractionScreenShaderRenderer {
         }
     }
 
-    public record ExperimentalNotificationPanel(
-            ShaderRect rect,
-            int accentColor,
-            float alpha,
-            float elapsedTicks,
-            float direction,
-            float slant) {
-        private static final float DEFAULT_SLANT = 9.0F;
-
-        public ExperimentalNotificationPanel(
-                ShaderRect rect,
-                int accentColor,
-                float alpha,
-                float elapsedTicks,
-                float direction) {
-            this(rect, accentColor, alpha, elapsedTicks, direction, DEFAULT_SLANT);
-        }
-    }
-
-    public record ExperimentalSkillsPanel(
-            ShaderRect rect,
-            int accentColor,
-            float fillProgress,
-            float alpha,
-            float elapsedTicks,
-            float elapsedMillis,
-            float exitElapsedMillis,
-            float chromeElapsedMillis,
-            float chromeExitElapsedMillis,
-            int screenWidth,
-            int screenHeight,
-            int mouseX,
-            int mouseY,
-            int darkColor,
-            int lightColor,
-            boolean clipMainChrome,
-            boolean hovered) {
-        public static ExperimentalSkillsPanel backdrop(
-                ShaderRect rect,
-                float alpha,
-                float elapsedTicks,
-                float elapsedMillis,
-                float exitElapsedMillis,
-                float chromeElapsedMillis,
-                float chromeExitElapsedMillis,
-                int screenWidth,
-                int screenHeight,
-                int mouseX,
-                int mouseY,
-                boolean clipMainChrome) {
-            return backdrop(
-                    rect,
-                    alpha,
-                    elapsedTicks,
-                    elapsedMillis,
-                    exitElapsedMillis,
-                    chromeElapsedMillis,
-                    chromeExitElapsedMillis,
-                    screenWidth,
-                    screenHeight,
-                    mouseX,
-                    mouseY,
-                    VillagerProfessionUiColors.DEFAULT_COLORS,
-                    clipMainChrome);
-        }
-
-        public static ExperimentalSkillsPanel backdrop(
-                ShaderRect rect,
-                float alpha,
-                float elapsedTicks,
-                float elapsedMillis,
-                float exitElapsedMillis,
-                float chromeElapsedMillis,
-                float chromeExitElapsedMillis,
-                int screenWidth,
-                int screenHeight,
-                int mouseX,
-                int mouseY,
-                VillagerProfessionUiColors.ColorPair colors,
-                boolean clipMainChrome) {
-            return new ExperimentalSkillsPanel(
-                    rect,
-                    0,
-                    1.0F,
-                    alpha,
-                    elapsedTicks,
-                    elapsedMillis,
-                    exitElapsedMillis,
-                    chromeElapsedMillis,
-                    chromeExitElapsedMillis,
-                    screenWidth,
-                    screenHeight,
-                    mouseX,
-                    mouseY,
-                    colors.dark(),
-                    colors.light(),
-                    clipMainChrome,
-                    false);
-        }
-
-        public static ExperimentalSkillsPanel bar(
-                ShaderRect rect,
-                int accentColor,
-                float fillProgress,
-                float alpha,
-                float elapsedTicks,
-                boolean hovered) {
-            return new ExperimentalSkillsPanel(
-                    rect,
-                    accentColor,
-                    fillProgress,
-                    alpha,
-                    elapsedTicks,
-                    0.0F,
-                    -1.0F,
-                    0.0F,
-                    -1.0F,
-                    1,
-                    1,
-                    0,
-                    0,
-                    VillagerProfessionUiColors.DEFAULT_COLORS.dark(),
-                    VillagerProfessionUiColors.DEFAULT_COLORS.light(),
-                    true,
-                    hovered);
-        }
-    }
-
     public static void registerShaders(RegisterShadersEvent event) {
         try {
             event.registerShader(
                     new ShaderInstance(
                             event.getResourceProvider(),
-                            VillagerRetaliationClientAssets.INTERACTION_VEIL_SHADER,
+                            VillagerRetaliationClientAssets.DIALOGUE_CINEMATIC_BARS_SHADER,
                             DefaultVertexFormat.POSITION
                     ),
-                    shader -> interactionVeilShader = shader
-            );
-            event.registerShader(
-                    new ShaderInstance(
-                            event.getResourceProvider(),
-                            VillagerRetaliationClientAssets.EXPERIMENTAL_CHROME_SHADER,
-                            DefaultVertexFormat.POSITION
-                    ),
-                    shader -> experimentalChromeShader = shader
-            );
-            event.registerShader(
-                    new ShaderInstance(
-                            event.getResourceProvider(),
-                            VillagerRetaliationClientAssets.EXPERIMENTAL_NOTIFICATION_SHADER,
-                            DefaultVertexFormat.POSITION
-                    ),
-                    shader -> experimentalNotificationShader = shader
-            );
-            event.registerShader(
-                    new ShaderInstance(
-                            event.getResourceProvider(),
-                            VillagerRetaliationClientAssets.EXPERIMENTAL_SKILLS_SHADER,
-                            DefaultVertexFormat.POSITION
-                    ),
-                    shader -> experimentalSkillsShader = shader
+                    shader -> dialogueCinematicBarsShader = shader
             );
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to register interaction screen shaders", exception);
         }
     }
 
-    public static void renderInteractionVeil(GuiGraphics graphics, int width, int height, float veilTop, float fadeHeight) {
-        if (interactionVeilShader == null) {
-            return;
-        }
-
-        setUniform(interactionVeilShader, "VeilTop", veilTop);
-        setUniform(interactionVeilShader, "FadeHeight", fadeHeight);
-        setUniform(interactionVeilShader, "CellSize", DITHER_CELL_SIZE);
-        setUniform(interactionVeilShader, "ScreenWidth", (float) width);
-        setUniform(interactionVeilShader, "ArcDepth", DITHER_ARC_DEPTH);
-        drawQuad(graphics, interactionVeilShader, new ShaderRect(0.0F, Math.max(0.0F, veilTop), width, height));
-    }
-
-    public static boolean renderExperimentalChrome(
+    public static boolean renderDialogueCinematicBars(
             GuiGraphics graphics,
             int width,
             int height,
-            float elapsedMillis,
-            float exitElapsedMillis,
-            int mouseX,
-            int mouseY) {
-        return renderExperimentalChrome(
-                graphics,
-                width,
-                height,
-                elapsedMillis,
-                exitElapsedMillis,
-                mouseX,
-                mouseY,
-                VillagerProfessionUiColors.DEFAULT_COLORS);
-    }
-
-    public static boolean renderExperimentalChrome(
-            GuiGraphics graphics,
-            int width,
-            int height,
-            float elapsedMillis,
-            float exitElapsedMillis,
-            int mouseX,
-            int mouseY,
-            VillagerProfessionUiColors.ColorPair colors) {
-        if (experimentalChromeShader == null) {
+            float barHeight,
+            float slant,
+            float progress) {
+        if (dialogueCinematicBarsShader == null) {
             return false;
         }
 
-        setUniform(experimentalChromeShader, "ScreenWidth", (float) width);
-        setUniform(experimentalChromeShader, "ScreenHeight", (float) height);
-        setUniform(experimentalChromeShader, "MouseX", (float) mouseX);
-        setUniform(experimentalChromeShader, "MouseY", (float) mouseY);
-        setUniform(experimentalChromeShader, "ElapsedMillis", elapsedMillis);
-        setUniform(experimentalChromeShader, "ExitElapsedMillis", exitElapsedMillis);
-        setChromeColorUniforms(experimentalChromeShader, colors);
+        ShaderRect rect = new ShaderRect(0, 0, width, height);
+        setRectUniforms(dialogueCinematicBarsShader, rect);
+        setUniform(dialogueCinematicBarsShader, "BarHeight", barHeight);
+        setUniform(dialogueCinematicBarsShader, "Slant", slant);
+        setUniform(dialogueCinematicBarsShader, "Progress", progress);
+        setUniform(dialogueCinematicBarsShader, "Alpha", 1.0F);
 
-        drawQuad(graphics, experimentalChromeShader, new ShaderRect(0, 0, width, height));
-        return true;
-    }
-
-    public static boolean renderExperimentalNotification(
-            GuiGraphics graphics,
-            int left,
-            int top,
-            int right,
-            int bottom,
-            int accentColor,
-            float alpha,
-            float elapsedTicks,
-            float direction) {
-        return renderExperimentalNotification(
-                graphics,
-                left,
-                top,
-                right,
-                bottom,
-                accentColor,
-                alpha,
-                elapsedTicks,
-                direction,
-                9.0F);
-    }
-
-    public static boolean renderExperimentalNotification(
-            GuiGraphics graphics,
-            int left,
-            int top,
-            int right,
-            int bottom,
-            int accentColor,
-            float alpha,
-            float elapsedTicks,
-            float direction,
-            float slant) {
-        return renderExperimentalNotification(
-                graphics,
-                new ExperimentalNotificationPanel(
-                        new ShaderRect(left, top, right, bottom),
-                        accentColor,
-                        alpha,
-                        elapsedTicks,
-                        direction,
-                        slant));
-    }
-
-    public static boolean renderExperimentalNotification(
-            GuiGraphics graphics,
-            ExperimentalNotificationPanel panel) {
-        if (experimentalNotificationShader == null) {
-            return false;
-        }
-
-        setRectUniforms(experimentalNotificationShader, panel.rect());
-        setAccentUniforms(experimentalNotificationShader, panel.accentColor());
-        setUniform(experimentalNotificationShader, "Alpha", panel.alpha());
-        setUniform(experimentalNotificationShader, "ElapsedTicks", panel.elapsedTicks());
-        setUniform(experimentalNotificationShader, "Direction", panel.direction());
-        setUniform(experimentalNotificationShader, "Slant", panel.slant());
-
-        drawQuad(graphics, experimentalNotificationShader, panel.rect());
-        return true;
-    }
-
-    public static boolean renderExperimentalSkillsPanel(
-            GuiGraphics graphics,
-            int left,
-            int top,
-            int right,
-            int bottom,
-            float alpha,
-            float elapsedTicks,
-            float elapsedMillis,
-            float exitElapsedMillis,
-            float chromeElapsedMillis,
-            float chromeExitElapsedMillis,
-            int screenWidth,
-            int screenHeight,
-            int mouseX,
-            int mouseY) {
-        return renderExperimentalSkillsPanel(
-                graphics,
-                left,
-                top,
-                right,
-                bottom,
-                alpha,
-                elapsedTicks,
-                elapsedMillis,
-                exitElapsedMillis,
-                chromeElapsedMillis,
-                chromeExitElapsedMillis,
-                screenWidth,
-                screenHeight,
-                mouseX,
-                mouseY,
-                true);
-    }
-
-    public static boolean renderExperimentalSkillsPanel(
-            GuiGraphics graphics,
-            int left,
-            int top,
-            int right,
-            int bottom,
-            float alpha,
-            float elapsedTicks,
-            float elapsedMillis,
-            float exitElapsedMillis,
-            float chromeElapsedMillis,
-            float chromeExitElapsedMillis,
-            int screenWidth,
-            int screenHeight,
-            int mouseX,
-            int mouseY,
-            boolean clipMainChrome) {
-        return renderExperimentalSkillsPanel(
-                graphics,
-                left,
-                top,
-                right,
-                bottom,
-                alpha,
-                elapsedTicks,
-                elapsedMillis,
-                exitElapsedMillis,
-                chromeElapsedMillis,
-                chromeExitElapsedMillis,
-                screenWidth,
-                screenHeight,
-                mouseX,
-                mouseY,
-                VillagerProfessionUiColors.DEFAULT_COLORS,
-                clipMainChrome);
-    }
-
-    public static boolean renderExperimentalSkillsPanel(
-            GuiGraphics graphics,
-            int left,
-            int top,
-            int right,
-            int bottom,
-            float alpha,
-            float elapsedTicks,
-            float elapsedMillis,
-            float exitElapsedMillis,
-            float chromeElapsedMillis,
-            float chromeExitElapsedMillis,
-            int screenWidth,
-            int screenHeight,
-            int mouseX,
-            int mouseY,
-            VillagerProfessionUiColors.ColorPair colors,
-            boolean clipMainChrome) {
-        return renderExperimentalSkillsPanel(
-                graphics,
-                ExperimentalSkillsPanel.backdrop(
-                        new ShaderRect(left, top, right, bottom),
-                        alpha,
-                        elapsedTicks,
-                        elapsedMillis,
-                        exitElapsedMillis,
-                        chromeElapsedMillis,
-                        chromeExitElapsedMillis,
-                        screenWidth,
-                        screenHeight,
-                        mouseX,
-                        mouseY,
-                        colors,
-                        clipMainChrome));
-    }
-
-    public static boolean renderExperimentalSkillBar(
-            GuiGraphics graphics,
-            int left,
-            int top,
-            int right,
-            int bottom,
-            int accentColor,
-            float fillProgress,
-            float alpha,
-            float elapsedTicks,
-            boolean hovered) {
-        return renderExperimentalSkillsPanel(
-                graphics,
-                ExperimentalSkillsPanel.bar(
-                        new ShaderRect(left, top, right, bottom),
-                        accentColor,
-                        fillProgress,
-                        alpha,
-                        elapsedTicks,
-                        hovered));
-    }
-
-    public static boolean renderExperimentalSkillsPanel(
-            GuiGraphics graphics,
-            ExperimentalSkillsPanel panel) {
-        if (experimentalSkillsShader == null) {
-            return false;
-        }
-
-        setRectUniforms(experimentalSkillsShader, panel.rect());
-        setAccentUniforms(experimentalSkillsShader, panel.accentColor());
-        setUniform(experimentalSkillsShader, "FillProgress", panel.fillProgress());
-        setUniform(experimentalSkillsShader, "Alpha", panel.alpha());
-        setUniform(experimentalSkillsShader, "ElapsedTicks", panel.elapsedTicks());
-        setUniform(experimentalSkillsShader, "ElapsedMillis", panel.elapsedMillis());
-        setUniform(experimentalSkillsShader, "ExitElapsedMillis", panel.exitElapsedMillis());
-        setUniform(experimentalSkillsShader, "ChromeElapsedMillis", panel.chromeElapsedMillis());
-        setUniform(experimentalSkillsShader, "ChromeExitElapsedMillis", panel.chromeExitElapsedMillis());
-        setUniform(experimentalSkillsShader, "ScreenWidth", (float) panel.screenWidth());
-        setUniform(experimentalSkillsShader, "ScreenHeight", (float) panel.screenHeight());
-        setUniform(experimentalSkillsShader, "MouseX", (float) panel.mouseX());
-        setUniform(experimentalSkillsShader, "MouseY", (float) panel.mouseY());
-        setUniform(experimentalSkillsShader, "Hovered", panel.hovered() ? 1.0F : 0.0F);
-        setUniform(experimentalSkillsShader, "Mode", panel.accentColor() == 0 ? 0.0F : 1.0F);
-        setUniform(experimentalSkillsShader, "ClipMainChrome", panel.clipMainChrome() ? 1.0F : 0.0F);
-        setChromeColorUniforms(experimentalSkillsShader, new VillagerProfessionUiColors.ColorPair(panel.darkColor(), panel.lightColor()));
-
-        drawQuad(graphics, experimentalSkillsShader, panel.rect());
+        drawQuad(graphics, dialogueCinematicBarsShader, rect);
         return true;
     }
 
@@ -482,23 +67,6 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(shader, "RectTop", rect.top());
         setUniform(shader, "RectRight", rect.right());
         setUniform(shader, "RectBottom", rect.bottom());
-    }
-
-    private static void setAccentUniforms(ShaderInstance shader, int accentColor) {
-        setUniform(shader, "AccentRed", ((accentColor >> 16) & 0xFF) / 255.0F);
-        setUniform(shader, "AccentGreen", ((accentColor >> 8) & 0xFF) / 255.0F);
-        setUniform(shader, "AccentBlue", (accentColor & 0xFF) / 255.0F);
-    }
-
-    private static void setChromeColorUniforms(ShaderInstance shader, VillagerProfessionUiColors.ColorPair colors) {
-        setColorUniforms(shader, "Dark", colors.dark());
-        setColorUniforms(shader, "Light", colors.light());
-    }
-
-    private static void setColorUniforms(ShaderInstance shader, String prefix, int color) {
-        setUniform(shader, prefix + "Red", ((color >> 16) & 0xFF) / 255.0F);
-        setUniform(shader, prefix + "Green", ((color >> 8) & 0xFF) / 255.0F);
-        setUniform(shader, prefix + "Blue", (color & 0xFF) / 255.0F);
     }
 
     private static void drawQuad(GuiGraphics graphics, ShaderInstance shader, ShaderRect rect) {

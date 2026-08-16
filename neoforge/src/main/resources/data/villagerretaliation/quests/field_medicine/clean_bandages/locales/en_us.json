@@ -1,0 +1,88 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.field_medicine.clean_bandages.description": "Help prepare simple medical supplies before the next village injury.",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.dialogue.offer.label": "Bandages",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.dialogue.offer.lines": [
+      "When someone is hurt, everyone suddenly believes in preparation.",
+      "I would rather prepare before the shouting. Bring clean wool and string first; rough hands can still be careful hands."
+    ],
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.dialogue.offer.response.accept.label": "I will gather the cloth.",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.dialogue.offer.response.decline.label": "Not now.",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.dialogue.reminder.label": "About Bandages",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.dialogue.reminder.lines": [
+      "Clean cloth first. It is dull work until the moment it is everything."
+    ],
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.dialogue.reminder.response.details.label": "Repeat the cloth list.",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.dialogue.reminder.response.leave.label": "I will bring it.",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.objective.bring_string.tracker.complete_text": "The binding string is ready.",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.objective.bring_string.tracker.text": "Bring 6 string to tie splints and wraps.",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.objective.bring_wool.tracker.complete_text": "The clean cloth is ready.",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.objective.bring_wool.tracker.text": "Bring 8 white wool for clean bandages.",
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.scene.decline.lines": [
+      "Then I will keep folding what little we have and hope not to need it."
+    ],
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.scene.leave.lines": [
+      "Keep it clean if you can. Dirt always arrives without being invited."
+    ],
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 8 white wool and 6 string for clean bandages."
+    ],
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.scene.reminder_details.action.remind.lines.unavailable": [
+      "The bandage kit is not ready for that work right now."
+    ],
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.scene.start_quest.action.start.lines.already_completed": [
+      "The bandage kit is already prepared."
+    ],
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.scene.start_quest.action.start.lines.started": [
+      "Bring 8 white wool and 6 string. Quiet supplies save loud minutes."
+    ],
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.scene.start_quest.action.start.lines.unavailable": [
+      "The medicine kit is not ready to ask for help right now."
+    ],
+    "quest.field_medicine.clean_bandages.stage.clean_cloth.ui.tracker_text": "Bring 8 white wool and 6 string.",
+    "quest.field_medicine.clean_bandages.stage.return.dialogue.turn_in.label": "About Bandages",
+    "quest.field_medicine.clean_bandages.stage.return.dialogue.turn_in.lines": [
+      "Clean cloth, tied wraps, sealed bottles. This is the kind of mercy that fits on a shelf."
+    ],
+    "quest.field_medicine.clean_bandages.stage.return.dialogue.turn_in.response.complete.label": "Stock the field kit.",
+    "quest.field_medicine.clean_bandages.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.field_medicine.clean_bandages.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good. No one will cheer for a stocked medicine kit, and that is how I prefer it."
+    ],
+    "quest.field_medicine.clean_bandages.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The kit still needs its cloth, string, honey, or clean bottles before we seal it."
+    ],
+    "quest.field_medicine.clean_bandages.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the medical supplies here so I can count them cleanly."
+    ],
+    "quest.field_medicine.clean_bandages.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the medicine kit right now."
+    ],
+    "quest.field_medicine.clean_bandages.stage.return.scene.leave.lines": [
+      "Care left half-done has a way of being noticed at the worst possible moment."
+    ],
+    "quest.field_medicine.clean_bandages.stage.return.ui.tracker_text": "Return with the field medicine supplies.",
+    "quest.field_medicine.clean_bandages.stage.seal_jars.dialogue.reminder.label": "About Bandages",
+    "quest.field_medicine.clean_bandages.stage.seal_jars.dialogue.reminder.lines": [
+      "The wraps are ready. Now we need sealed bottles and honey, the kind of simple medicine no one praises until they can breathe again."
+    ],
+    "quest.field_medicine.clean_bandages.stage.seal_jars.dialogue.reminder.response.details.label": "Repeat the bottle list.",
+    "quest.field_medicine.clean_bandages.stage.seal_jars.dialogue.reminder.response.leave.label": "I will bring it.",
+    "quest.field_medicine.clean_bandages.stage.seal_jars.objective.bring_glass_bottles.tracker.complete_text": "The clean bottles are ready.",
+    "quest.field_medicine.clean_bandages.stage.seal_jars.objective.bring_glass_bottles.tracker.text": "Bring 4 glass bottles for clean mixtures.",
+    "quest.field_medicine.clean_bandages.stage.seal_jars.objective.bring_honey.tracker.complete_text": "The honey bottles are ready.",
+    "quest.field_medicine.clean_bandages.stage.seal_jars.objective.bring_honey.tracker.text": "Bring 2 honey bottles for the field kit.",
+    "quest.field_medicine.clean_bandages.stage.seal_jars.scene.leave.lines": [
+      "Label the bottles by memory if you must, but do not trust memory alone."
+    ],
+    "quest.field_medicine.clean_bandages.stage.seal_jars.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 2 honey bottles and 4 glass bottles for the field kit."
+    ],
+    "quest.field_medicine.clean_bandages.stage.seal_jars.scene.reminder_details.action.remind.lines.unavailable": [
+      "The jars can wait until the cloth and string are ready."
+    ],
+    "quest.field_medicine.clean_bandages.stage.seal_jars.ui.tracker_text": "Bring 2 honey bottles and 4 glass bottles.",
+    "quest.field_medicine.clean_bandages.title": "Bandages"
+  }
+}

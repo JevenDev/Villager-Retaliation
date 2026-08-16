@@ -1,0 +1,372 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.old_roads.sunken_ledger.description": {
+      "lines": [
+        "Search a shipwreck and return with a compass and paper before the route is forgotten."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.dialogue.already_completed": {
+      "lines": [
+        "I remember your first return. We already settled Sunken Ledger.",
+        "Nothing remains to be earned from this. You already came back from the shipwreck with what we needed.",
+        "What was owed has been paid. Sunken Ledger is closed. I am not sending you through deep water and drowned twice.",
+        "The matter ended well enough. Your route to the shipwreck is already in the copied ledger.",
+        "Leave the old tally alone. I remember the day you returned with the compass.",
+        "We settled this one already. You earned the reward for Sunken Ledger, and it was paid.",
+        "I will not reopen a finished account. We have the lost bearing because you finished the journey to the shipwreck.",
+        "Nothing remains to be earned from this. Nothing remains to be recovered from the wreck.",
+        "You finished what I asked. What you brought from the shipwreck is still helping the village.",
+        "What was owed has been paid. You proved the wreck route once. That is enough.",
+        "The matter ended well enough. The copied ledger carries your name beside the completed mark.",
+        "We settled this one already. Leave Sunken Ledger in the past where it belongs.",
+        "That chapter is closed. You settled every part of Sunken Ledger on your first return.",
+        "We settled this one already. The shipwreck was reached and the compass evidence delivered.",
+        "Leave the old tally alone. I will find you a road beyond the shipwreck before sending you back there.",
+        "No one needs this done twice. Nobody forgot what the journey to the shipwreck cost you.",
+        "That chapter is closed. Sunken Ledger at the shipwreck needs no second visit from you.",
+        "There is no second payment here. You gave us the compass, not another rumor.",
+        "No one needs this done twice. Sunken Ledger ended properly, and it stays ended.",
+        "What was owed has been paid. We can look ahead now. Sunken Ledger is done."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.dialogue.inactive": {
+      "lines": [
+        "The village can wait on this one. The conditions for Sunken Ledger are not right at the moment.",
+        "For now, let the matter rest. The mark for the shipwreck is not open today.",
+        "Nothing calls for this work today. I have no reason to risk you against deep water and drowned just now.",
+        "Nothing calls for this work today. The village is not ready to use a compass and 8 paper.",
+        "Nothing calls for this work today. Wait until the copied ledger calls for the journey to the shipwreck.",
+        "For now, let the matter rest. A trip to the shipwreck without a need is only danger.",
+        "Nothing calls for this work today. The wreck route can stay folded until the timing improves.",
+        "Ask me after the stores change. I am holding Sunken Ledger off the board for now.",
+        "We have no need of it yet. Nothing at the shipwreck needs our answer today.",
+        "I am keeping this off the board. Keep your gear ready for the shipwreck, but do not leave yet.",
+        "The village can wait on this one. Sunken Ledger is real. The moment for it is not.",
+        "For now, let the matter rest. I will not send you toward deep water and drowned to satisfy an old note.",
+        "We have no need of it yet. The shipwreck can wait until we have a use for the return.",
+        "For now, let the matter rest. Ask again after the village reviews the copied ledger.",
+        "I will post it when it matters. There is no active claim on the compass today.",
+        "Leave that work alone for now. The road toward the shipwreck is quiet, and I mean to leave it that way.",
+        "The village can wait on this one. Starting Sunken Ledger now would spend courage for no useful result.",
+        "The board can wait. Sunken Ledger has not been posted to any traveler.",
+        "Ask me after the stores change. Give Sunken Ledger time to become necessary.",
+        "There is no reason to begin yet. For the moment, stay on this side of the journey to the shipwreck."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.dialogue.locate_failed": {
+      "lines": [
+        "A doubtful map is too much risk. The coast is not answering. I cannot find a wreck worth sending you to.",
+        "My map has failed us. I cannot put a trustworthy mark on the shipwreck.",
+        "A doubtful map is too much risk. Every route I checked breaks down before the wreck.",
+        "The trail has gone cold. The shipwreck maps disagree, and deep water and drowned leave no room for guessing.",
+        "A doubtful map is too much risk. I found rumors of the shipwreck, but no road I would hand you.",
+        "The trail has gone cold. The shipwreck has slipped beyond my shipwreck charts.",
+        "My map has failed us. Without a firm bearing, Sunken Ledger would be wandering.",
+        "I will not guess at a route. My best map is blank where the wreck should be.",
+        "Until I know the way, you stay here. I traced three routes toward the shipwreck and trusted none.",
+        "I found no safe bearing to give you. The old shipwreck directions end before danger begins.",
+        "The search turned up nothing solid. I will not pretend a guess can mark the shipwreck.",
+        "The search turned up nothing solid. No scout has confirmed the mark for the shipwreck.",
+        "Something is wrong with the chart. The trail to the shipwreck went cold before I could mark it.",
+        "We need a trustworthy route first. I need shipwreck coordinates, not campfire stories.",
+        "A doubtful map is too much risk. The shipwreck may be there, but I cannot prove where.",
+        "A doubtful map is too much risk. None of the shipwreck bearings lead to the same ground.",
+        "No mark is better than a false one. Let me find an honest wreck route before you prepare to leave.",
+        "I will not guess at a route. The copied ledger offers warnings today, not directions.",
+        "My map has failed us. The shipwreck map gives me doubt when I need certainty.",
+        "No mark is better than a false one. Come back after the road to the shipwreck gives us an answer."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.dialogue.missing_proof": {
+      "lines": [
+        "The last requirement is still missing. Bring me a compass from the wreck. Direction is the point of this errand.",
+        "I believe you went, but that is not enough. The compass is still missing from your return.",
+        "I cannot sign off on an empty return. I cannot close the copied ledger without the agreed compass evidence.",
+        "The evidence still matters. You faced the shipwreck, but the village still needs the compass.",
+        "I need something I can hold. Bring back a compass and 8 paper before we settle Sunken Ledger.",
+        "Bring back something the village can verify. Your story may be true. I still need the compass.",
+        "I believe you went, but that is not enough. The journey to the shipwreck ends here when the compass changes hands.",
+        "Bring back something the village can verify. Do not reach the shipwreck and forget the compass that verifies it.",
+        "You returned without the one thing I asked for. I know you traveled. I need a result from the shipwreck.",
+        "The proof has to reach my hands. The Sunken Ledger reward waits on the compass evidence, not the telling.",
+        "I cannot sign off on an empty return. Show me the compass, and Sunken Ledger can close.",
+        "I believe you went, but that is not enough. The empty place in the copied ledger waits for what you recovered.",
+        "You returned without the one thing I asked for. Words cannot stand in for the lost bearing.",
+        "I believe you went, but that is not enough. Check your packs before you make the journey to the shipwreck twice.",
+        "The evidence still matters. Sunken Ledger named its proof from the beginning.",
+        "What you carried home decides this. Bring the compass evidence here rather than leaving it in storage.",
+        "The proof has to reach my hands. The village asked for a compass and 8 paper, and that remains unfinished.",
+        "The evidence still matters. I can record the wreck route after I see what came from it.",
+        "Your word is not the missing piece. One compass handoff separates Sunken Ledger from completion.",
+        "The last requirement is still missing. Return when the compass is in your hands."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.dialogue.missing_target": {
+      "lines": [
+        "The journey stopped too soon. The compass matters after you reach the wreck itself.",
+        "The map still shows unfinished travel. You have not confirmed the shipwreck itself.",
+        "Finish the outward journey first. The cargo means little if the shipwreck was never reached.",
+        "The road must end where I sent you. Sunken Ledger includes the road as well as the return.",
+        "The journey stopped too soon. Set foot in the wreck before you bring me evidence.",
+        "You still owe the road its last mile. I asked for proof from the shipwreck, not somewhere else.",
+        "The journey stopped too soon. The shipwreck remains untouched in the copied ledger.",
+        "The place itself must be reached. Finish the outward journey before claiming the Sunken Ledger reward.",
+        "You still owe the road its last mile. A borrowed compass cannot replace reaching the shipwreck.",
+        "Reaching the mark is part of the promise. The shipwreck map still says you stopped short.",
+        "You still owe the road its last mile. Go to the marked place and see Sunken Ledger through there.",
+        "You still owe the road its last mile. The wreck route must end at the shipwreck, not near it.",
+        "Reaching the mark is part of the promise. I need your eyes on the shipwreck before I trust the report.",
+        "Finish the outward journey first. Do not skip the part that puts deep water and drowned in front of you.",
+        "I need the site confirmed. The village asked you to confirm the wreck existed.",
+        "Reaching the mark is part of the promise. Your return is early. the shipwreck still waits.",
+        "Finish the outward journey first. Reach the shipwreck, then recover a compass and 8 paper.",
+        "The map still shows unfinished travel. The journey to the shipwreck is not complete while the final mark is unvisited.",
+        "You have not gone far enough yet. The copied ledger needs a confirmed place, not only an item.",
+        "Reaching the mark is part of the promise. Turn back toward the shipwreck and finish what you began."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.dialogue.reminder": {
+      "lines": [
+        "Stay with the work you accepted. Shipwreck near {target_x}, {target_z}. Compass for proof, paper for the ledger.",
+        "Keep the whole task in mind. The shipwreck is still near {target_x}, {target_z}.",
+        "Before you leave, hear this again. The mark remains near {target_x}, {target_z}, so keep to the planned wreck route.",
+        "Keep the whole task in mind. Check the map again. shipwreck is still near {target_x}, {target_z}.",
+        "You are not finished yet. Sunken Ledger still calls for a compass and 8 paper.",
+        "Remember what the village is waiting for. Watch for deep water and drowned on the way in.",
+        "Do not let one finished step distract you. Do not leave the shipwreck without the compass.",
+        "Keep the return trip in your plans. Your return should give us the lost bearing.",
+        "Before you leave, hear this again. Check the shipwreck bearing at {target_x}, {target_z} before landmarks blur.",
+        "Hold to the instructions I gave you. Keep the compass safe once you recover it.",
+        "The next step still matters. The copied ledger stays open until you come home.",
+        "Stay with the work you accepted. Do not rush blind toward the shipwreck. Follow the mark and return whole.",
+        "Bring this to a proper finish. The shipwreck has not moved from {target_x}, {target_z}.",
+        "Stay with the work you accepted. Remember why you are going. We need to save a drowned route from being forgotten.",
+        "The job still has loose ends. If the wreck route feels wrong, check your position against {target_x}, {target_z}.",
+        "Bring this to a proper finish. The hard part is reaching the wreck and leaving with evidence.",
+        "Stay with the work you accepted. shipwreck still waits near {target_x}, {target_z}.",
+        "Stay with the work you accepted. Bring every part of a compass and 8 paper back together.",
+        "You are not finished yet. I would rather wait than receive half the agreed compass.",
+        "Keep the whole task in mind. Find the shipwreck, do Sunken Ledger there, and return to me."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.dialogue.start": {
+      "lines": [
+        "This needs a careful hand. The wreck should be {direction}, about {distance} blocks away, near {target_x}, {target_z}. Bring a compass and 8 paper for the copy.",
+        "Here is the work. I marked the shipwreck near {target_x}, {target_z}.",
+        "Before you agree, hear all of it. Travel {direction} for about {distance} blocks and look for the wreck.",
+        "Take the task only if you are ready. The job is to save a drowned route from being forgotten.",
+        "Take the task only if you are ready. Come home with a compass and 8 paper so the village has more than rumors.",
+        "Let us be clear about the job. The road leads through deep water and drowned, so prepare before leaving.",
+        "Here is the work. I need someone willing to reach the shipwreck and return with proof.",
+        "There is a reason I chose you. The shipwreck sits near {target_x}, {target_z}, according to my map.",
+        "Listen closely. Follow the {direction} bearing and keep the copied ledger dry.",
+        "The village has work for you. Sunken Ledger begins at the shipwreck and ends when the compass reaches me.",
+        "I have a difficult request. The shipwreck mark is about {distance} blocks away. Do not mistake speed for care.",
+        "Take this seriously. Bring a compass and 8 paper, and I can turn this risk into something useful.",
+        "Take this seriously. The village needs the lost bearing, not boasting at the fire.",
+        "Here is the work. I trust you with the wreck route because it is not kind.",
+        "I need you to see this through. Make for {target_x}, {target_z} and confirm the shipwreck yourself.",
+        "Listen closely. Prepare for deep water and drowned before crossing the last safe ground.",
+        "Here is the work. The outward journey proves the shipwreck map. The return proves you.",
+        "Take the task only if you are ready. Do not come back empty from the wreck.",
+        "I have a difficult request. Take Sunken Ledger only if you mean to finish the travel and recovery.",
+        "I need you to see this through. When you have a compass and 8 paper, bring it straight here."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.dialogue.turn_in": {
+      "lines": [
+        "Now I can close the ledger. A compass from the wreck and pages to save the route. Good. The water can keep the rest.",
+        "Good, you made it back. You reached the shipwreck and brought the compass home.",
+        "The hard part is behind us. The copied ledger finally has a true ending.",
+        "You delivered exactly what was needed. This is the lost bearing, solid enough to hold.",
+        "Now I can close the ledger. The village can save a drowned route from being forgotten because you took the risk.",
+        "The hard part is behind us. I asked for a compass and 8 paper, and you returned with every part.",
+        "Good, you made it back. You went through deep water and drowned and kept your head.",
+        "The village can use this. The wreck route is confirmed now, not merely drawn.",
+        "The hard part is behind us. I can pay Sunken Ledger without a doubt.",
+        "That settles what I asked of you. The compass tells the story better than any boast.",
+        "The hard part is behind us. You made the dangerous road to the shipwreck useful to everyone here.",
+        "I am glad to see you home. The shipwreck is no longer just a warning on a map.",
+        "That is the result I needed. I will put your shipwreck findings where the village can study them.",
+        "Good, you made it back. Sunken Ledger is clean, even if the journey to the shipwreck was not.",
+        "This return was worth waiting for. That is the compass evidence I hoped to see.",
+        "You brought the work to a proper end. You returned from the shipwreck with more than survival. You brought an answer.",
+        "That is the result I needed. Sunken Ledger closes with the village better prepared.",
+        "That is the result I needed. The next traveler to the shipwreck will have your route.",
+        "Good, you made it back. Take the Sunken Ledger reward. You earned it beyond the safe roads.",
+        "You saw it through. I am glad to see both the compass and person carrying it."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.dialogue.unavailable": {
+      "lines": [
+        "No, the risk is too high. Not every villager should trust you with <aqua><wavy>drowned</wavy></aqua> records yet.",
+        "No, the risk is too high. Sunken Ledger demands trust I do not have in you yet.",
+        "I cannot trust you with this yet. I cannot hand you a route through deep water and drowned today.",
+        "I need proof of your judgment first. The shipwreck is no ground for an untested ally.",
+        "Earn our confidence before asking again. Do steadier work here before asking for the shipwreck map.",
+        "Come back after you have earned more trust. I need someone I can trust to return from the shipwreck.",
+        "This calls for someone we know better. The copied ledger stays closed to you for now.",
+        "Some work must wait until trust catches up. Sunken Ledger risks more than the traveler's life.",
+        "Some work must wait until trust catches up. Earn our confidence, then ask about the wreck again.",
+        "The village needs a steadier hand. I will not send a stranger after the lost bearing.",
+        "This work is not yours today. The shipwreck is dangerous enough without doubt between us.",
+        "Some work must wait until trust catches up. Your name has not reached the trusted page of the copied ledger.",
+        "You are not ready for this request. There are safer tasks than Sunken Ledger that can show me how you work.",
+        "Some work must wait until trust catches up. I need proof of judgment before offering the journey to the shipwreck.",
+        "I will not place this burden on you. For now, the shipwreck map remains folded.",
+        "Come back after you have earned more trust. The village is not ready to stake save a drowned route from being forgotten on you.",
+        "No, the risk is too high. Ask about the shipwreck after you have stood with us longer.",
+        "The village needs a steadier hand. Courage may reach the shipwreck. Reliability brings the compass home.",
+        "I cannot trust you with this yet. Sunken Ledger stays with proven hands.",
+        "The answer is no for now. I will tell you when we trust you with the road to the shipwreck."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.objective.bring_paper.complete_text": {
+      "lines": [
+        "The blank pages are dry and ready."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.objective.bring_paper.text": {
+      "lines": [
+        "Bring 8 paper to copy the damaged ledger."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.stage.return.dialogue.turn_in.label": "About Sunken Ledger",
+    "quest.old_roads.sunken_ledger.stage.return.dialogue.turn_in.lines": [
+      "The ink wandered, but the route did not. This ledger can guide boats again.",
+      "A road under water is still a road once someone remembers it.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.old_roads.sunken_ledger.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.old_roads.sunken_ledger.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.old_roads.sunken_ledger.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The ink wandered, but the route did not. This ledger can guide boats again.",
+      "A road under water is still a road once someone remembers it."
+    ],
+    "quest.old_roads.sunken_ledger.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.old_roads.sunken_ledger.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.old_roads.sunken_ledger.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.old_roads.sunken_ledger.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Sunken Ledger is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.old_roads.sunken_ledger.stage.return.scene.turn_in_wait.lines": [
+      "The shipwreck bearing, one compass, and eight dry sheets for the copy.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.old_roads.sunken_ledger.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.old_roads.sunken_ledger.stage.work.dialogue.offer.label": "Sunken Ledger",
+    "quest.old_roads.sunken_ledger.stage.work.dialogue.offer.lines": [
+      "A fisher pulled a waterlogged ledger from a wreck, but half its route has washed away.",
+      "Find the wreck's true bearing and bring dry paper so the surviving marks can be copied.",
+      "Reach the marked shipwreck and return with a compass and 8 paper."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.old_roads.sunken_ledger.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.old_roads.sunken_ledger.stage.work.dialogue.reminder.label": "About Sunken Ledger",
+    "quest.old_roads.sunken_ledger.stage.work.dialogue.reminder.lines": [
+      "The shipwreck bearing, one compass, and eight dry sheets for the copy.",
+      "Reach the marked shipwreck and return with a compass and 8 paper.",
+      "Find the wreck's true bearing and bring dry paper so the surviving marks can be copied."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.old_roads.sunken_ledger.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.old_roads.sunken_ledger.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.old_roads.sunken_ledger.stage.work.objective.bring_paper.tracker.complete_text": "The dry paper is ready.",
+    "quest.old_roads.sunken_ledger.stage.work.objective.bring_paper.tracker.text": "Bring 8 paper to copy the ledger.",
+    "quest.old_roads.sunken_ledger.stage.work.objective.carry_compass.tracker.complete_text": "The compass bearing is ready.",
+    "quest.old_roads.sunken_ledger.stage.work.objective.carry_compass.tracker.text": "Carry 1 compass to fix the wreck's bearing.",
+    "quest.old_roads.sunken_ledger.stage.work.objective.visit_wreck.tracker.complete_text": "The shipwreck has been surveyed.",
+    "quest.old_roads.sunken_ledger.stage.work.objective.visit_wreck.tracker.text": "Reach the marked shipwreck.",
+    "quest.old_roads.sunken_ledger.stage.work.scene.abandon_confirm.lines": [
+      "Put Sunken Ledger aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.old_roads.sunken_ledger.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.old_roads.sunken_ledger.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Sunken Ledger is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.decline.lines": [
+      "Then the tide keeps the ledger's missing half."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.leave.lines": [
+      "The shipwreck bearing, one compass, and eight dry sheets for the copy.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "The shipwreck bearing, one compass, and eight dry sheets for the copy.",
+      "Reach the marked shipwreck and return with a compass and 8 paper.",
+      "Find the wreck's true bearing and bring dry paper so the surviving marks can be copied."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Sunken Ledger is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Sunken Ledger is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.start_quest.action.start.lines.started": [
+      "Keep the paper above the waterline. We already have one drowned ledger.",
+      "Reach the marked shipwreck and return with a compass and 8 paper."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Sunken Ledger is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.old_roads.sunken_ledger.stage.work.ui.tracker_text": "Survey the shipwreck and return with a compass and 8 paper.",
+    "quest.old_roads.sunken_ledger.title": {
+      "lines": [
+        "Sunken Ledger"
+      ]
+    },
+    "quest.old_roads.sunken_ledger.tracker.bring_paper.text": {
+      "lines": [
+        "Collect 8 paper for a clean copy."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.tracker.proof.text": {
+      "lines": [
+        "Bring a compass and 8 paper."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the compass and paper."
+      ]
+    },
+    "quest.old_roads.sunken_ledger.tracker.title": {
+      "lines": [
+        "Sunken Ledger"
+      ]
+    },
+    "quest.old_roads.sunken_ledger.tracker.travel.text": {
+      "lines": [
+        "Reach the shipwreck near {target_x}, {target_z}."
+      ]
+    }
+  }
+}

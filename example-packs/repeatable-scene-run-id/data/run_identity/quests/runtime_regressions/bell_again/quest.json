@@ -1,0 +1,101 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "run_identity:bell_again",
+  "metadata": {
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
+    },
+    "questline": "runtime_regressions",
+    "tags": [
+      "example",
+      "repeatable",
+      "scene_identity"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:librarian"
+      ]
+    }
+  },
+  "availability": {
+    "repeatable": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "consume_on_completion": false,
+    "locked_to_villager": true,
+    "cross_villager_compatible": true,
+    "abandonment": "allow_repickup"
+  },
+  "entry_stage": "ring",
+  "stages": [
+    {
+      "id": "ring",
+      "title": {
+        "key": "#stage.ring.title"
+      },
+      "description": {
+        "key": "#stage.ring.description"
+      },
+      "objectives": [],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.ring.dialogue.offer.label"
+          },
+          "request": "question",
+          "lines": {
+            "key": "#stage.ring.dialogue.offer.lines"
+          },
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.ring.dialogue.offer.response.accept.label"
+              },
+              "actions": [
+                {
+                  "type": "quest",
+                  "action": "start"
+                },
+                {
+                  "type": "start_scene",
+                  "scene": "run_identity:bell_scene",
+                  "operation_id": "bell_once_per_run",
+                  "wait_for_result": false
+                },
+                {
+                  "type": "start_scene",
+                  "scene": "run_identity:bell_scene",
+                  "operation_id": "bell_once_per_run",
+                  "wait_for_result": false
+                }
+              ]
+            }
+          ]
+        },
+        "turn_in": {
+          "lines": {
+            "key": "#stage.ring.dialogue.turn_in.lines"
+          }
+        }
+      }
+    }
+  ],
+  "ui": {
+    "title": {
+      "key": "#ui.title"
+    },
+    "tracker_text": {
+      "key": "#ui.tracker_text"
+    },
+    "icon": "minecraft:bell",
+    "color": "#d6a84f"
+  },
+  "localization_prefix": "run_identity.quest.bell_again"
+}

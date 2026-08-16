@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.util;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,8 +21,19 @@ import net.minecraft.world.item.Items;
 
 public record VillagerInventoryItemRemoval(
         List<ItemSelector> selectors,
-        int count) {
-    private static final VillagerInventoryItemRemoval EMPTY = new VillagerInventoryItemRemoval(List.of(), 0);
+        int count,
+        ItemStackPredicate stackPredicate) {
+    private static final VillagerInventoryItemRemoval EMPTY =
+            new VillagerInventoryItemRemoval(List.of(), 0, ItemStackPredicate.ANY);
+
+    public VillagerInventoryItemRemoval(List<ItemSelector> selectors, int count) {
+        this(selectors, count, ItemStackPredicate.ANY);
+    }
+
+    public VillagerInventoryItemRemoval {
+        selectors = selectors == null ? List.of() : List.copyOf(selectors);
+        stackPredicate = stackPredicate == null ? ItemStackPredicate.ANY : stackPredicate;
+    }
 
     public static VillagerInventoryItemRemoval empty() {
         return EMPTY;
@@ -38,7 +51,15 @@ public record VillagerInventoryItemRemoval(
         if (count <= 0 || selectors.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(new VillagerInventoryItemRemoval(List.copyOf(selectors), count));
+        ItemStackPredicate stackPredicate = ItemStackPredicateParser.parse(
+                ItemStackPredicateParser.DEFAULT_REGISTRIES,
+                object,
+                selectors.stream().map(ItemSelector::item).filter(java.util.Objects::nonNull).toList(),
+                "components",
+                "durability",
+                "custom_data",
+                "nbt");
+        return Optional.of(new VillagerInventoryItemRemoval(selectors, count, stackPredicate));
     }
 
     public boolean isEmpty() {
@@ -121,7 +142,8 @@ public record VillagerInventoryItemRemoval(
     }
 
     private boolean matches(ItemStack stack) {
-        return this.selectors.stream().anyMatch(selector -> selector.matches(stack));
+        return this.stackPredicate.matches(stack)
+                && this.selectors.stream().anyMatch(selector -> selector.matches(stack));
     }
 
     private String describeItems() {

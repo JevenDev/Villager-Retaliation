@@ -1,0 +1,1483 @@
+package com.jvn.villagerretaliation.party;
+
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
+import com.jvn.villagerretaliation.combat.VillagerCombatBehavior;
+import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.duel.DuelService;
+import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
+import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
+import com.jvn.villagerretaliation.interaction.work.HiredPathResult;
+import com.jvn.villagerretaliation.interaction.work.HiredRouteNavigator;
+import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
+import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
+import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
+import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
+import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
+import com.jvn.villagerretaliation.util.VillagerEntityResolver;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
+import com.jvn.villagerretaliation.villager.VillagerItemPickupReach;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+
+public final class PartyQuickCommandService {
+    private static final double MAX_TARGET_DISTANCE = 64.0D;
+    private static final double ATTACK_TARGET_DISTANCE = 32.0D;
+    private static final double TRANSMITTED_TARGET_TOLERANCE = 0.85D;
+    private static final double ARRIVAL_DISTANCE_SQR = 1.75D * 1.75D;
+    private static final double REGROUP_ARRIVAL_DISTANCE_SQR = 2.5D * 2.5D;
+    private static final int MOVE_TO_RETURN_RADIUS = 3;
+    private static final double MOVE_SPEED = com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
+    private static final double REGROUP_SPEED = com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.RUN_SPEED_MODIFIER;
+    private static final double GATHER_SPEED = com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
+    private static final double ITEM_PICKUP_DISTANCE_SQR = 1.5D * 1.5D;
+    private static final double DROP_SEARCH_HORIZONTAL_RADIUS = 32.0D;
+    private static final double DROP_SEARCH_VERTICAL_RADIUS = 12.0D;
+    private static final long PATH_REFRESH_TICKS = 8L;
+    private static final int MAX_BACKGROUND_PATH_FAILURES = 12;
+    private static final int MAX_PICKUP_WAIT_TICKS = 100;
+
+    private static final Map<UUID, RuntimeOrder> RUNTIME_ORDERS = new HashMap<>();
+    private static final Map<UUID, UUID> MANUAL_ATTACK_TARGETS = new HashMap<>();
+    private static final Set<UUID> STAND_GUARD_VILLAGERS = new HashSet<>();
+    private static final Map<UUID, UUID> DROP_CLAIMS = new HashMap<>();
+    private static final Map<ContainerClaim, UUID> CONTAINER_CLAIMS = new HashMap<>();
+
+    private PartyQuickCommandService() {
+    }
+
+    public static void handle(ServerPlayer player, PartyQuickCommandRequestPayload payload) {
+        if (player == null || payload == null || payload.command() == null || !player.isAlive()) {
+            return;
+        }
+        PartyRecord party = commandedParty(player);
+        if (party == null) {
+            notice(player, "villagerretaliation.party.error.admin_privileges_required");
+            return;
+        }
+        List<PartyVillagerRecord> participants = party.villagers().stream()
+                .filter(PartyVillagerRecord::quickCommandsEnabled)
+                .filter(record -> payload.commandedVillagerId() == null
+                        || record.villagerId().equals(payload.commandedVillagerId()))
+                .toList();
+        if (participants.isEmpty()) {
+            notice(player, "villagerretaliation.party.quick_command.none_enabled");
+            return;
+        }
+
+        boolean loweringShields = payload.command() == PartyQuickCommand.STAND_GUARD
+                && participants.stream().anyMatch(record ->
+                        STAND_GUARD_VILLAGERS.contains(record.villagerId()));
+        int affected = switch (payload.command()) {
+            case ATTACK -> attack(player, participants, payload.targetEntityId());
+            case MOVE_TO -> moveTo(player, participants, payload.targetPosition());
+            case STAY_HERE -> stayHere(player, participants);
+            case REGROUP -> regroup(player, party, participants);
+            case STAND_GUARD -> standGuard(player, participants);
+            case RANGE -> setWeaponPreference(player, participants, PartyWeaponPreference.RANGED);
+            case MELEE -> setWeaponPreference(player, participants, PartyWeaponPreference.MELEE);
+            case HEAL -> heal(player, participants);
+            case PICK_UP_DROPS -> pickUpDrops(player, participants);
+            case LOOT_CONTAINERS -> lootContainers(player, participants, payload.targetPosition());
+            case UNEQUIP_WEAPONS -> unequipWeapons(player, participants);
+            case REEQUIP_WEAPONS -> reequipWeapons(player, participants);
+            case RIDE_MOUNT -> setMountMode(player, party, participants, true);
+            case DISMOUNT_MOUNT -> setMountMode(player, party, participants, false);
+        };
+        if (affected <= 0) {
+            notice(player, targetRequired(payload.command())
+                    ? "villagerretaliation.party.quick_command.invalid_target"
+                    : "villagerretaliation.party.quick_command.none_available");
+            return;
+        }
+        PartyService.markChanged(player.serverLevel());
+        PartySyncService.syncParty(player.getServer(), party.id());
+        player.displayClientMessage(Component.translatable(
+                "villagerretaliation.party.quick_command.sent",
+                Component.translatable(loweringShields
+                        ? "villagerretaliation.party.quick_command.lower_shields"
+                        : translationKey(payload.command())),
+                affected), true);
+    }
+
+    public static void setParticipation(ServerPlayer player, UUID villagerId, boolean enabled) {
+        PartyRecord party = commandedParty(player);
+        PartyVillagerRecord record = party == null || villagerId == null ? null : party.villager(villagerId);
+        if (record == null) {
+            notice(player, "villagerretaliation.party.error.admin_privileges_required");
+            return;
+        }
+        record.setQuickCommandsEnabled(enabled);
+        if (!enabled) {
+            record.setRegrouping(false);
+            record.clearMoveToReturnCommander();
+            Villager loaded = VillagerEntityResolver.active(player.getServer(), villagerId);
+            if (loaded == null) {
+                clearAllOrders(villagerId);
+            } else {
+                clearAllOrders(loaded);
+            }
+        }
+        PartyService.markChanged(player.serverLevel());
+        PartySyncService.syncParty(player.getServer(), party.id());
+    }
+
+    public static void onVillagerTickPost(Villager villager) {
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        UUID villagerId = villager.getUUID();
+        RuntimeOrder order = RUNTIME_ORDERS.get(villagerId);
+        boolean standingGuard = STAND_GUARD_VILLAGERS.contains(villagerId);
+        if (order == null
+                && !standingGuard
+                && !PartyVillagerContractService.hasPartyEntityReference(villager)) {
+            return;
+        }
+        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+        if (record == null || !record.quickCommandsEnabled() || !villager.isAlive()) {
+            clearAllOrders(villager);
+            return;
+        }
+        if (record.moveToReturnCommanderId() != null
+                && record.stayPosition() != null
+                && level.dimension().location().equals(record.stayDimension())) {
+            ServerPlayer commander = level.getServer().getPlayerList()
+                    .getPlayer(record.moveToReturnCommanderId());
+            if (record.moveToHolding()
+                    && commanderAtMoveTarget(commander, level, record.stayPosition())) {
+                beginAutomaticRegroup(level, villager, party, record, commander);
+                order = RUNTIME_ORDERS.get(villagerId);
+            } else if (order == null) {
+                order = RuntimeOrder.moveTo(
+                        record.stayPosition(),
+                        record.moveToReturnCommanderId(),
+                        commander,
+                        record.stayDimension());
+                RUNTIME_ORDERS.put(villagerId, order);
+            }
+        }
+        if (record.regrouping() && (order == null || order.type() != RuntimeOrderType.REGROUP)) {
+            record.setRegrouping(false);
+            PartyService.markChanged(level);
+            syncRuntimeState(villager, party);
+        }
+
+        if (record.regrouping()) {
+            releaseRegroupSuppressionIfArrived(level, villager, party, record);
+        }
+        if (order == null && !standingGuard) {
+            return;
+        }
+
+        // Match ordinary recruited follow behavior: active retaliation owns movement until
+        // combat finishes. In particular, a regroup route must not keep replacing combat
+        // navigation with its higher catch-up speed every tick.
+        if (order != null && !order.type().background()
+                && VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)) {
+            return;
+        }
+        if ((standingGuard || order != null && order.type().background())
+                && com.jvn.villagerretaliation.villager.VillagerRecoveryService.isForcingRecovery(villager)) {
+            return;
+        }
+        if (order != null && order.type().background()) {
+            VillagerRetaliationHandler.suppressCombatForPartyOrder(villager);
+        }
+        if (order != null) {
+            switch (order.type()) {
+                case MOVE_TO -> tickMoveTo(level, villager, order, party);
+                case REGROUP -> tickRegroup(level, villager, order, party);
+                case PICK_UP_DROPS -> tickPickUpDrops(level, villager, order, party);
+                case LOOT_CONTAINERS -> tickLootContainers(level, villager, order, party);
+            }
+        }
+        if (standingGuard) {
+            tickStandGuard(villager, party);
+        }
+    }
+
+    public static boolean isStandingGuard(Villager villager) {
+        return villager != null && STAND_GUARD_VILLAGERS.contains(villager.getUUID());
+    }
+
+    public static void prepareGuardAttack(Villager villager) {
+        if (!isStandingGuard(villager) || !villager.getMainHandItem().is(Items.SHIELD)) {
+            return;
+        }
+        if (villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD)) {
+            villager.stopUsingItem();
+        }
+        com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.returnGuardShield(villager);
+    }
+
+    public static boolean overridesRecruitmentMovement(Villager villager) {
+        if (villager == null) {
+            return false;
+        }
+        RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
+        return order != null
+                || VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)
+                || com.jvn.villagerretaliation.villager.VillagerRecoveryService.isForcingRecovery(villager);
+    }
+
+    public static boolean hasActiveMoveToOrder(Villager villager) {
+        if (villager == null) {
+            return false;
+        }
+        RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
+        return order != null && order.type() == RuntimeOrderType.MOVE_TO;
+    }
+    public static boolean isMoveToTraveling(Villager villager) {
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+        return record != null
+                && record.moveToReturnCommanderId() != null
+                && !record.moveToHolding();
+    }
+
+    public static boolean suppressesPartyTargetAcquisition(Villager villager) {
+        if (villager == null) {
+            return false;
+        }
+        RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
+        boolean runtimeSuppression = order != null
+                && (order.type() == RuntimeOrderType.REGROUP || order.type().background());
+        if (runtimeSuppression
+                || com.jvn.villagerretaliation.villager.VillagerRecoveryService.isForcingRecovery(villager)) {
+            return true;
+        }
+        if (!PartyVillagerContractService.hasPartyEntityReference(villager)
+                || !(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+        return record != null && record.quickCommandsEnabled() && record.regrouping();
+    }
+
+    public static boolean hasWeaponsUnequipped(Villager villager) {
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        return PartyService.getPartyForVillager(level, villager.getUUID())
+                .map(party -> party.villager(villager.getUUID()))
+                .map(PartyVillagerRecord::weaponsUnequipped)
+                .orElse(false);
+    }
+
+    private static int setMountMode(
+            ServerPlayer player,
+            PartyRecord party,
+            List<PartyVillagerRecord> participants,
+            boolean enabled) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            return 0;
+        }
+        int affected = (int) participants.stream()
+                .filter(record -> VillagerMountAssignmentService.hasAssignment(
+                        player.serverLevel(), record.villagerId()))
+                .count();
+        if (affected > 0) {
+            party.setMountMode(enabled);
+        }
+        return affected;
+    }
+
+    public static boolean overridesCombatTargeting(Villager villager) {
+        if (villager == null) {
+            return false;
+        }
+        RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
+        return order != null && order.type().background();
+    }
+
+    public static void maintainManualAttackAuthorization(Villager villager) {
+        UUID targetId = villager == null ? null : MANUAL_ATTACK_TARGETS.get(villager.getUUID());
+        if (targetId == null || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        Entity entity = level.getEntity(targetId);
+        if (!(entity instanceof LivingEntity target)
+                || !target.isAlive()
+                || !VillagerRetaliationHandler.hasRetaliationTarget(villager, target)) {
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            return;
+        }
+        if (VillageCombatAuthorizationService.isAuthorized(villager, target)) {
+            return;
+        }
+        var decision = VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false);
+        if (decision.denied()
+                || decision.action() == com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision.Action.ALLOW
+                && !VillageCombatAuthorizationService.authorize(level, villager, target)) {
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+        }
+    }
+
+    public static BlockPos moveTarget(PartyRecord party) {
+        MoveTarget target = displayedMoveTarget(party);
+        return target == null ? null : target.position().below();
+    }
+
+    public static ResourceLocation moveTargetDimension(PartyRecord party) {
+        MoveTarget target = displayedMoveTarget(party);
+        return target == null ? null : target.dimension();
+    }
+
+    private static MoveTarget displayedMoveTarget(PartyRecord party) {
+        if (party == null) {
+            return null;
+        }
+        for (PartyVillagerRecord record : party.villagers()) {
+            RuntimeOrder order = RUNTIME_ORDERS.get(record.villagerId());
+            if (order != null
+                    && order.type() == RuntimeOrderType.MOVE_TO
+                    && order.targetPosition() != null
+                    && order.targetDimension() != null) {
+                return new MoveTarget(order.targetDimension(), order.targetPosition());
+            }
+            if (record.moveToReturnCommanderId() != null
+                    && record.stayPosition() != null
+                    && record.stayDimension() != null) {
+                return new MoveTarget(record.stayDimension(), record.stayPosition());
+            }
+        }
+        return null;
+    }
+
+    public static boolean isStandGuardActive(PartyRecord party) {
+        if (party == null) {
+            return false;
+        }
+        return party.villagers().stream()
+                .anyMatch(record -> STAND_GUARD_VILLAGERS.contains(record.villagerId()));
+    }
+
+    public static void onVillagerUnloaded(Villager villager) {
+        if (villager == null) {
+            return;
+        }
+        if (villager.level() instanceof ServerLevel level) {
+            PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+            PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+            if (record != null && record.regrouping()) {
+                record.setRegrouping(false);
+                PartyService.markChanged(level);
+            }
+        }
+        clearAllOrders(villager);
+    }
+
+    public static void clearRuntimeState() {
+        RUNTIME_ORDERS.clear();
+        MANUAL_ATTACK_TARGETS.clear();
+        STAND_GUARD_VILLAGERS.clear();
+        DROP_CLAIMS.clear();
+        CONTAINER_CLAIMS.clear();
+    }
+
+    private static int attack(
+            ServerPlayer player,
+            List<PartyVillagerRecord> records,
+            int transmittedTargetId) {
+        LivingEntity target = attackTargetAtCrosshair(player, records, transmittedTargetId);
+        if (target == null) {
+            return 0;
+        }
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
+            if (!canReceiveAttackOrder(player.serverLevel(), villager, record, target)) {
+                continue;
+            }
+            var decision = VillageAllegianceCombatPolicy.evaluate(
+                    player.serverLevel(), villager, target, AllegianceCombatContext.PARTY_ATTACK, false);
+            if (decision.denied()) {
+                continue;
+            }
+            if (decision.action() == com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision.Action.ALLOW
+                    && !VillageCombatAuthorizationService.authorize(player.serverLevel(), villager, target)) {
+                continue;
+            }
+            if (VillagerRetaliationHandler.engageCustomTarget(villager, target, false)) {
+                clearMovementOrder(villager);
+                record.clearMoveToReturnCommander();
+                com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
+                record.setRegrouping(false);
+                MANUAL_ATTACK_TARGETS.put(villager.getUUID(), target.getUUID());
+                affected++;
+            }
+        }
+        return affected;
+    }
+
+    private static LivingEntity attackTargetAtCrosshair(
+            ServerPlayer player,
+            List<PartyVillagerRecord> records,
+            int transmittedTargetId) {
+        ServerLevel level = player.serverLevel();
+        Vec3 eye = player.getEyePosition();
+        Vec3 rayEnd = eye.add(player.getViewVector(1.0F).scale(ATTACK_TARGET_DISTANCE));
+        HitResult blockHit = level.clip(new ClipContext(
+                eye,
+                rayEnd,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                player));
+        Vec3 visibleEnd = blockHit.getType() == HitResult.Type.BLOCK
+                ? blockHit.getLocation()
+                : rayEnd;
+        Entity transmitted = transmittedTargetId == PartyQuickCommandRequestPayload.NO_ENTITY
+                ? null
+                : level.getEntity(transmittedTargetId);
+        if (transmitted instanceof LivingEntity captured
+                && captured != player
+                && captured.isAlive()
+                && captured.isPickable()
+                && player.hasLineOfSight(captured)
+                && canReceiveAnyAttackOrder(level, records, captured)
+                && captured.getBoundingBox().inflate(TRANSMITTED_TARGET_TOLERANCE).clip(eye, visibleEnd).isPresent()) {
+            return captured;
+        }
+        AABB search = player.getBoundingBox()
+                .expandTowards(visibleEnd.subtract(eye))
+                .inflate(1.0D);
+
+        LivingEntity nearest = null;
+        double nearestDistanceSqr = Double.MAX_VALUE;
+        for (Entity entity : level.getEntities(player, search, candidate ->
+                candidate instanceof LivingEntity living
+                        && living.isAlive()
+                        && candidate.isPickable())) {
+            LivingEntity candidate = (LivingEntity) entity;
+            if (!canReceiveAnyAttackOrder(level, records, candidate)) {
+                continue;
+            }
+            AABB bounds = candidate.getBoundingBox();
+            Optional<Vec3> intersection = bounds.contains(eye)
+                    ? Optional.of(eye)
+                    : bounds.clip(eye, visibleEnd);
+            if (intersection.isEmpty()) {
+                continue;
+            }
+            double distanceSqr = eye.distanceToSqr(intersection.get());
+            if (distanceSqr < nearestDistanceSqr) {
+                nearest = candidate;
+                nearestDistanceSqr = distanceSqr;
+            }
+        }
+        return nearest;
+    }
+
+    private static boolean canReceiveAnyAttackOrder(
+            ServerLevel level,
+            List<PartyVillagerRecord> records,
+            LivingEntity target) {
+        for (PartyVillagerRecord record : records) {
+            Villager villager = VillagerEntityResolver.active(level, record.villagerId());
+            if (canReceiveAttackOrder(level, villager, record, target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean canReceiveAttackOrder(
+            ServerLevel level,
+            Villager villager,
+            PartyVillagerRecord record,
+            LivingEntity target) {
+        boolean playerRaidOpponents = villager != null
+                && target != null
+                && PlayerRaidService.areOpposingParticipants(villager, target);
+        if (villager == null
+                || !villager.isAlive()
+                || target == null
+                || target == villager
+                || DuelService.isParticipant(target)
+                || !target.isAlive()
+                || !villager.canAttack(target)
+                || !playerRaidOpponents && target.isAlliedTo(villager)
+                || !playerRaidOpponents && PartyService.areInSameOrAlliedParty(villager, target)
+                || !playerRaidOpponents && !PartyTargetPolicy.allows(record.attackMode(), villager, target)) {
+            return false;
+        }
+        return playerRaidOpponents || !VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false).denied();
+    }
+
+    private static int moveTo(ServerPlayer player, List<PartyVillagerRecord> records, BlockPos requestedTarget) {
+        BlockPos target = validatedTarget(player, requestedTarget);
+        if (target == null) {
+            return 0;
+        }
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            record.setStaying(player.serverLevel().dimension().location(), target);
+            record.setMoveToReturnCommander(player.getUUID());
+            record.setRegrouping(false);
+            Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
+            if (villager == null) {
+                clearMovementOrder(record.villagerId());
+                MANUAL_ATTACK_TARGETS.remove(record.villagerId());
+                affected++;
+                continue;
+            }
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            replaceMovementOrder(villager, RuntimeOrder.moveTo(
+                    target,
+                    player.getUUID(),
+                    player,
+                    player.serverLevel().dimension().location()));
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int pickUpDrops(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        BlockPos center = player.blockPosition().immutable();
+        for (PartyVillagerRecord record : records) {
+            Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
+            if (villager == null) {
+                continue;
+            }
+            record.setRegrouping(false);
+            record.clearMoveToReturnCommander();
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            replaceMovementOrder(villager, RuntimeOrder.pickUpDrops(
+                    center,
+                    player.serverLevel().dimension().location()));
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int lootContainers(
+            ServerPlayer player,
+            List<PartyVillagerRecord> records,
+            BlockPos requestedTarget) {
+        BlockPos center = validatedSearchCenter(player, requestedTarget);
+        if (center == null) {
+            return 0;
+        }
+        List<BlockPos> containers = PartyContainerLootService.findContainersNear(player.serverLevel(), center, player);
+        if (containers.isEmpty()) {
+            return 0;
+        }
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
+            if (villager == null) {
+                continue;
+            }
+            record.setRegrouping(false);
+            record.clearMoveToReturnCommander();
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            replaceMovementOrder(villager, RuntimeOrder.lootContainers(
+                    center,
+                    player,
+                    player.serverLevel().dimension().location(),
+                    containers));
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int regroup(
+            ServerPlayer player,
+            PartyRecord party,
+            List<PartyVillagerRecord> records) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            record.setRegrouping(false);
+            record.setFollowing();
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
+            if (villager == null) {
+                clearMovementOrder(record.villagerId());
+                MANUAL_ATTACK_TARGETS.remove(record.villagerId());
+                affected++;
+                continue;
+            }
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            if (villager.level() == player.serverLevel()) {
+                record.setRegrouping(true);
+                replaceMovementOrder(villager, RuntimeOrder.regroup(player.getUUID()));
+            } else {
+                clearMovementOrder(villager);
+            }
+            if (villager.level() instanceof ServerLevel level) {
+                VillagerRecruitmentService.applyPartyFollowing(level, villager, party.leaderId());
+            }
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int stayHere(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
+            if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+                continue;
+            }
+            BlockPos target = villager.blockPosition().immutable();
+            record.setStaying(level.dimension().location(), target);
+            record.setRegrouping(false);
+            clearMovementOrder(villager);
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            VillagerRecruitmentService.applyPartyStay(level, villager, player.getUUID(), target);
+            com.jvn.villagerretaliation.mount.VillagerMountTravelService
+                    .stopAssignedMountNavigation(villager);
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int setWeaponPreference(
+            ServerPlayer player,
+            List<PartyVillagerRecord> records,
+            PartyWeaponPreference preference) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            record.setWeaponPreference(preference);
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
+            if (villager != null) {
+                com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService.applyPreference(villager, preference);
+            }
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int unequipWeapons(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            if (record.weaponsUnequipped()) {
+                continue;
+            }
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
+            if (villager == null || !villager.isAlive()) {
+                continue;
+            }
+            int stowed = PartyWeaponEquipmentService.unequip(villager);
+            if (stowed > 0) {
+                clearStandGuard(villager);
+                VillagerRetaliationHandler.clearCustomTarget(villager);
+                MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+                record.setWeaponsUnequipped(true);
+                affected++;
+            }
+        }
+        return affected;
+    }
+
+    private static int reequipWeapons(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            if (!record.weaponsUnequipped()) {
+                continue;
+            }
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
+            if (villager == null || !villager.isAlive()) {
+                continue;
+            }
+            int equipped = PartyWeaponEquipmentService.reequip(villager);
+            boolean stillStowed = PartyWeaponEquipmentService.hasStowedWeapons(villager);
+            if (equipped > 0 || record.weaponsUnequipped() != stillStowed) {
+                record.setWeaponsUnequipped(stillStowed);
+                affected++;
+            }
+        }
+        return affected;
+    }
+
+    private static int heal(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
+            if (villager == null || !villager.isAlive() || villager.getHealth() >= villager.getMaxHealth()) {
+                continue;
+            }
+            boolean urgent = VillagerRetaliationHandler.hasActiveRetaliationTarget(villager);
+            record.clearMoveToReturnCommander();
+            clearMovementOrder(villager);
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            if (com.jvn.villagerretaliation.villager.VillagerRecoveryService.beginForcedRecovery(villager, urgent)) {
+                record.setRegrouping(false);
+                affected++;
+            }
+        }
+        return affected;
+    }
+
+    private static int standGuard(ServerPlayer player, List<PartyVillagerRecord> records) {
+        List<Villager> loaded = records.stream()
+                .filter(record -> !record.weaponsUnequipped())
+                .map(record -> VillagerEntityResolver.active(player.serverLevel(), record.villagerId()))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        boolean lowerShields = loaded.stream()
+                .anyMatch(villager -> STAND_GUARD_VILLAGERS.contains(villager.getUUID()));
+        if (lowerShields) {
+            int affected = 0;
+            for (Villager villager : loaded) {
+                if (STAND_GUARD_VILLAGERS.contains(villager.getUUID())) {
+                    clearStandGuard(villager);
+                    affected++;
+                }
+            }
+            return affected;
+        }
+        int affected = 0;
+        for (Villager villager : loaded) {
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            STAND_GUARD_VILLAGERS.add(villager.getUUID());
+            affected++;
+        }
+        return affected;
+    }
+
+    private static void tickMoveTo(
+            ServerLevel level,
+            Villager villager,
+            RuntimeOrder order,
+            PartyRecord party) {
+        BlockPos target = order.targetPosition();
+        ServerPlayer commander = order.commander() != null
+                ? order.commander()
+                : level.getServer().getPlayerList().getPlayer(order.commanderId());
+        if (target == null) {
+            clearMovementOrderAndSync(villager, party);
+            return;
+        }
+        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+        if (record != null
+                && record.moveToHolding()
+                && commanderAtMoveTarget(commander, level, target)) {
+            beginAutomaticRegroup(level, villager, party, record, commander);
+            return;
+        }
+        if (villager.distanceToSqr(
+                target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D) <= ARRIVAL_DISTANCE_SQR) {
+            beginMoveToHold(level, villager, party, record, target);
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            com.jvn.villagerretaliation.mount.VillagerMountTravelService
+                    .stopAssignedMountNavigation(villager);
+            return;
+        }
+        VillagerRetaliationHandler.clearCustomTarget(villager);
+        HiredRouteNavigator.NodeMovement movement = moveAlongSharedRoute(
+                level,
+                villager,
+                order,
+                target,
+                MOVE_SPEED,
+                ARRIVAL_DISTANCE_SQR);
+        if (movement == HiredRouteNavigator.NodeMovement.ARRIVED) {
+            beginMoveToHold(level, villager, party, record, target);
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            com.jvn.villagerretaliation.mount.VillagerMountTravelService
+                    .stopAssignedMountNavigation(villager);
+        }
+    }
+
+    private static void beginMoveToHold(
+            ServerLevel level,
+            Villager villager,
+            PartyRecord party,
+            PartyVillagerRecord record,
+            BlockPos target) {
+        if (record == null || record.moveToHolding()) {
+            return;
+        }
+        record.setMoveToHolding(true);
+        VillagerRecruitmentService.applyPartyStay(level, villager, party.leaderId(), target);
+        PartyService.markChanged(level);
+        syncRuntimeState(villager, party);
+    }
+
+    private static boolean commanderAtMoveTarget(
+            ServerPlayer commander,
+            ServerLevel level,
+            BlockPos target) {
+        if (commander == null || commander.serverLevel() != level || !commander.isAlive()) {
+            return false;
+        }
+        BlockPos commanderPos = commander.blockPosition();
+        return Math.abs(commanderPos.getX() - target.getX()) <= MOVE_TO_RETURN_RADIUS
+                && Math.abs(commanderPos.getZ() - target.getZ()) <= MOVE_TO_RETURN_RADIUS;
+    }
+
+    private static void beginAutomaticRegroup(
+            ServerLevel level,
+            Villager villager,
+            PartyRecord party,
+            PartyVillagerRecord record,
+            ServerPlayer commander) {
+        record.setFollowing();
+        record.setRegrouping(true);
+        replaceMovementOrder(villager, RuntimeOrder.regroup(commander.getUUID()));
+        VillagerRecruitmentService.applyPartyFollowing(level, villager, party.leaderId());
+        PartyService.markChanged(level);
+        syncRuntimeState(villager, party);
+    }
+
+    private static HiredRouteNavigator.NodeMovement moveAlongSharedRoute(
+            ServerLevel level,
+            Villager villager,
+            RuntimeOrder order,
+            BlockPos target,
+            double speed,
+            double arrivalDistanceSqr) {
+        long gameTime = level.getGameTime();
+        if (gameTime < order.nextPathRefreshGameTime()) {
+            return HiredRouteNavigator.NodeMovement.FAILED;
+        }
+        VillagerTaskNavigationUtil.enableHiredWaterTraversal(villager);
+        HiredRouteNavigator.NodeMovement movement = HiredRouteNavigator.moveToRouteNode(
+                level,
+                villager,
+                target,
+                VillagerMountSpeedPolicy.toward(villager, target, speed),
+                arrivalDistanceSqr);
+        if (movement == HiredRouteNavigator.NodeMovement.FAILED) {
+            order.setNextPathRefreshGameTime(gameTime + PATH_REFRESH_TICKS);
+        }
+        return movement;
+    }
+
+    private static void finishRegroup(
+            ServerLevel level,
+            Villager villager,
+            PartyRecord party) {
+        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+        if (record != null) {
+            record.setRegrouping(false);
+        }
+        PartyService.markChanged(level);
+        clearMovementOrderAndSync(villager, party);
+    }
+
+    private static void tickRegroup(
+            ServerLevel level,
+            Villager villager,
+            RuntimeOrder order,
+            PartyRecord party) {
+        ServerPlayer commander = level.getServer().getPlayerList().getPlayer(order.commanderId());
+        if (commander == null || commander.serverLevel() != level || !commander.isAlive()) {
+            clearMovementOrder(villager);
+            return;
+        }
+        if (villager.distanceToSqr(commander) <= REGROUP_ARRIVAL_DISTANCE_SQR) {
+            finishRegroup(level, villager, party);
+            return;
+        }
+        VillagerRetaliationHandler.clearCustomTarget(villager);
+        HiredRouteNavigator.NodeMovement movement = moveAlongSharedRoute(
+                level,
+                villager,
+                order,
+                commander.blockPosition(),
+                REGROUP_SPEED,
+                REGROUP_ARRIVAL_DISTANCE_SQR);
+        if (movement == HiredRouteNavigator.NodeMovement.ARRIVED) {
+            finishRegroup(level, villager, party);
+        }
+    }
+
+    private static void tickPickUpDrops(
+            ServerLevel level,
+            Villager villager,
+            RuntimeOrder order,
+            PartyRecord party) {
+        Entity drop = order.activeEntityTarget() == null
+                ? null
+                : level.getEntity(order.activeEntityTarget());
+        if (!isGatherableDrop(villager, drop, order)) {
+            clearActiveTarget(villager.getUUID(), order);
+            drop = nearestUnclaimedDrop(level, villager, order);
+            if (drop == null) {
+                clearMovementOrderAndSync(villager, party);
+                return;
+            }
+            if (!claimDrop(villager.getUUID(), order, drop.getUUID())) {
+                return;
+            }
+        }
+
+        if (VillagerItemPickupReach.isWithinReach(villager, drop, ITEM_PICKUP_DISTANCE_SQR)) {
+            boolean waitingForPickup = drop instanceof ItemEntity item && item.hasPickUpDelay()
+                    || drop instanceof AbstractArrow arrow
+                    && !PartyVillagerDropCollection.isRecoverableArrow(villager, arrow);
+            if (waitingForPickup) {
+                if (order.incrementTargetWaitTicks() > MAX_PICKUP_WAIT_TICKS) {
+                    order.skipEntity(drop.getUUID());
+                    clearActiveTarget(villager.getUUID(), order);
+                }
+                return;
+            }
+            int countBefore = drop instanceof ItemEntity item ? item.getItem().getCount() : 1;
+            int moved = drop instanceof ItemEntity item
+                    ? PartyVillagerDropCollection.collectAny(villager, item)
+                    : PartyVillagerDropCollection.collectArrow(villager, (AbstractArrow) drop);
+            clearActiveTarget(villager.getUUID(), order);
+            if (moved <= 0 || moved < countBefore && drop.isAlive()) {
+                clearMovementOrderAndSync(villager, party);
+            }
+            return;
+        }
+
+        boolean attemptedPathRefresh = level.getGameTime() >= order.nextPathRefreshGameTime();
+        HiredRouteNavigator.NodeMovement movement = moveAlongSharedRoute(
+                level,
+                villager,
+                order,
+                drop.blockPosition(),
+                GATHER_SPEED,
+                ITEM_PICKUP_DISTANCE_SQR);
+        if (attemptedPathRefresh
+                && movement == HiredRouteNavigator.NodeMovement.FAILED
+                && order.incrementPathFailures() >= MAX_BACKGROUND_PATH_FAILURES) {
+            order.skipEntity(drop.getUUID());
+            clearActiveTarget(villager.getUUID(), order);
+        }
+    }
+
+    private static Entity nearestUnclaimedDrop(ServerLevel level, Villager villager, RuntimeOrder order) {
+        BlockPos center = order.targetPosition();
+        if (center == null) {
+            return null;
+        }
+        AABB search = new AABB(center).inflate(
+                DROP_SEARCH_HORIZONTAL_RADIUS,
+                DROP_SEARCH_VERTICAL_RADIUS,
+                DROP_SEARCH_HORIZONTAL_RADIUS);
+        Entity nearest = null;
+        double nearestDistance = Double.MAX_VALUE;
+        for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, search, candidate ->
+                isGatherableDrop(villager, candidate, order)
+                        && !isDropClaimedByOther(villager.getUUID(), candidate.getUUID()))) {
+            double distance = villager.distanceToSqr(item);
+            if (distance < nearestDistance) {
+                nearest = item;
+                nearestDistance = distance;
+            }
+        }
+        for (AbstractArrow arrow : level.getEntitiesOfClass(AbstractArrow.class, search, candidate ->
+                isGatherableDrop(villager, candidate, order)
+                        && !isDropClaimedByOther(villager.getUUID(), candidate.getUUID()))) {
+            double distance = villager.distanceToSqr(arrow);
+            if (distance < nearestDistance) {
+                nearest = arrow;
+                nearestDistance = distance;
+            }
+        }
+        return nearest;
+    }
+
+    private static boolean isGatherableDrop(Villager villager, Entity drop, RuntimeOrder order) {
+        return drop != null
+                && drop.isAlive()
+                && !order.skippedEntities().contains(drop.getUUID())
+                && (drop instanceof ItemEntity item && !item.getItem().isEmpty()
+                || drop instanceof AbstractArrow arrow
+                && PartyVillagerDropCollection.isOwnedRecoverableArrow(villager, arrow));
+    }
+
+    private static boolean isDropClaimedByOther(UUID villagerId, UUID itemId) {
+        UUID claimant = DROP_CLAIMS.get(itemId);
+        return claimant != null && !claimant.equals(villagerId);
+    }
+
+    private static void tickLootContainers(
+            ServerLevel level,
+            Villager villager,
+            RuntimeOrder order,
+            PartyRecord party) {
+        ServerPlayer onlineCommander = order.commanderId() == null
+                ? null
+                : level.getServer().getPlayerList().getPlayer(order.commanderId());
+        ServerPlayer commander = onlineCommander != null
+                ? onlineCommander
+                : order.commander() != null && !order.commander().isRemoved() ? order.commander() : null;
+        if (order.activeBlockTarget() == null) {
+            List<BlockPos> available = order.containerTargets().stream()
+                    .filter(pos -> !order.visitedBlocks().contains(pos))
+                    .filter(pos -> !isContainerClaimedByOther(
+                            villager.getUUID(), level.dimension().location(), pos))
+                    .filter(pos -> PartyContainerLootService.isAvailable(level, pos, commander))
+                    .toList();
+            HiredPathResult result = new HiredMoveToBlockFaceJob(level, villager, available, 16).search();
+            if (result.target() == null) {
+                clearMovementOrderAndSync(villager, party);
+                return;
+            }
+            if (!claimContainer(
+                    villager.getUUID(),
+                    order,
+                    result.target().blockPos(),
+                    result.target().approachPos())) {
+                return;
+            }
+        }
+
+        BlockPos containerPos = order.activeBlockTarget();
+        PartyContainerLootService.LootResult lootResult =
+                PartyContainerLootService.loot(level, villager, containerPos, commander);
+        if (lootResult != PartyContainerLootService.LootResult.OUT_OF_REACH) {
+            order.visitBlock(containerPos);
+            clearActiveTarget(villager.getUUID(), order);
+            if (lootResult == PartyContainerLootService.LootResult.FULL) {
+                clearMovementOrderAndSync(villager, party);
+            }
+            return;
+        }
+
+        BlockPos approach = order.approachPosition();
+        boolean attemptedPathRefresh = level.getGameTime() >= order.nextPathRefreshGameTime();
+        HiredRouteNavigator.NodeMovement movement = moveAlongSharedRoute(
+                level,
+                villager,
+                order,
+                approach,
+                GATHER_SPEED,
+                ARRIVAL_DISTANCE_SQR);
+        if (attemptedPathRefresh
+                && movement == HiredRouteNavigator.NodeMovement.FAILED
+                && order.incrementPathFailures() >= MAX_BACKGROUND_PATH_FAILURES) {
+            order.visitBlock(containerPos);
+            clearActiveTarget(villager.getUUID(), order);
+        }
+    }
+
+    private static boolean isContainerClaimedByOther(
+            UUID villagerId,
+            ResourceLocation dimension,
+            BlockPos containerPos) {
+        UUID claimant = CONTAINER_CLAIMS.get(new ContainerClaim(dimension, containerPos));
+        return claimant != null && !claimant.equals(villagerId);
+    }
+
+    private static void releaseRegroupSuppressionIfArrived(
+            ServerLevel level,
+            Villager villager,
+            PartyRecord party,
+            PartyVillagerRecord record) {
+        ServerPlayer leader = level.getServer().getPlayerList().getPlayer(party.leaderId());
+        if (leader == null || leader.serverLevel() != level
+                || villager.distanceToSqr(leader) > REGROUP_ARRIVAL_DISTANCE_SQR) {
+            return;
+        }
+        record.setRegrouping(false);
+        PartyService.markChanged(level);
+        syncRuntimeState(villager, party);
+    }
+
+    private static void tickStandGuard(Villager villager, PartyRecord party) {
+        if (com.jvn.villagerretaliation.inventory.VillagerInventoryAccess.hasOpenInventory(villager)) {
+            return;
+        }
+        if (villager.isUsingItem() && !villager.getUseItem().is(Items.SHIELD)) {
+            return;
+        }
+        if (!VillagerCombatBehavior.canRaiseShield(villager)) {
+            if (villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD)) {
+                villager.stopUsingItem();
+            }
+            return;
+        }
+        ensureGuardShield(villager);
+        InteractionHand shieldHand = villager.getMainHandItem().is(Items.SHIELD)
+                ? InteractionHand.MAIN_HAND
+                : villager.getOffhandItem().is(Items.SHIELD) ? InteractionHand.OFF_HAND : null;
+        if (shieldHand != null && !villager.isUsingItem()) {
+            villager.startUsingItem(shieldHand);
+        }
+    }
+
+    private static void ensureGuardShield(Villager villager) {
+        if (villager.getMainHandItem().is(Items.SHIELD)
+                || villager.getOffhandItem().is(Items.SHIELD)
+                && !villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING)) {
+            return;
+        }
+        com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.ensureGuardShield(villager);
+    }
+
+    private static boolean claimDrop(UUID villagerId, RuntimeOrder order, UUID dropId) {
+        UUID claimant = DROP_CLAIMS.putIfAbsent(dropId, villagerId);
+        if (claimant != null && !claimant.equals(villagerId)) {
+            return false;
+        }
+        order.setActiveEntityTarget(dropId);
+        return true;
+    }
+
+    private static boolean claimContainer(
+            UUID villagerId,
+            RuntimeOrder order,
+            BlockPos containerPos,
+            BlockPos approachPos) {
+        BlockPos immutablePos = containerPos.immutable();
+        ContainerClaim claim = new ContainerClaim(order.targetDimension(), immutablePos);
+        UUID claimant = CONTAINER_CLAIMS.putIfAbsent(claim, villagerId);
+        if (claimant != null && !claimant.equals(villagerId)) {
+            return false;
+        }
+        order.setActiveBlockTarget(immutablePos, approachPos);
+        return true;
+    }
+
+    private static void clearActiveTarget(UUID villagerId, RuntimeOrder order) {
+        if (order.activeEntityTarget() != null) {
+            DROP_CLAIMS.remove(order.activeEntityTarget(), villagerId);
+        }
+        if (order.activeBlockTarget() != null) {
+            CONTAINER_CLAIMS.remove(
+                    new ContainerClaim(order.targetDimension(), order.activeBlockTarget()), villagerId);
+        }
+        order.clearActiveTarget();
+    }
+
+    private static void replaceMovementOrder(Villager villager, RuntimeOrder replacement) {
+        clearMovementOrder(villager);
+        RUNTIME_ORDERS.put(villager.getUUID(), replacement);
+    }
+
+    private static void clearMovementOrder(UUID villagerId) {
+        RuntimeOrder removed = RUNTIME_ORDERS.remove(villagerId);
+        if (removed != null) {
+            clearActiveTarget(villagerId, removed);
+        }
+    }
+
+    private static void clearMovementOrder(Villager villager) {
+        UUID villagerId = villager.getUUID();
+        RuntimeOrder removed = RUNTIME_ORDERS.remove(villagerId);
+        if (removed == null) {
+            return;
+        }
+        clearActiveTarget(villagerId, removed);
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
+        HiredPathMemory.clearNavigationProgress(villager);
+    }
+
+    private static void clearStandGuard(Villager villager) {
+        boolean removed = STAND_GUARD_VILLAGERS.remove(villager.getUUID());
+        if (removed && villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD)) {
+            villager.stopUsingItem();
+        }
+        if (removed) {
+            prepareGuardAttackAfterRemoval(villager);
+        }
+    }
+
+    private static void prepareGuardAttackAfterRemoval(Villager villager) {
+        if (!villager.getMainHandItem().is(Items.SHIELD)) {
+            return;
+        }
+        com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.returnGuardShield(villager);
+    }
+
+    private static void clearAllOrders(UUID villagerId) {
+        clearMovementOrder(villagerId);
+        MANUAL_ATTACK_TARGETS.remove(villagerId);
+        STAND_GUARD_VILLAGERS.remove(villagerId);
+    }
+
+    private static void clearAllOrders(Villager villager) {
+        clearMovementOrder(villager);
+        MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+        clearStandGuard(villager);
+    }
+
+    private static void clearMovementOrderAndSync(Villager villager, PartyRecord party) {
+        clearMovementOrder(villager);
+        syncRuntimeState(villager, party);
+    }
+
+    private static void syncRuntimeState(Villager villager, PartyRecord party) {
+        if (party != null && villager.level().getServer() != null) {
+            PartySyncService.syncParty(villager.level().getServer(), party.id());
+        }
+    }
+
+    private static BlockPos validatedTarget(ServerPlayer player, BlockPos requested) {
+        BlockPos center = validatedSearchCenter(player, requested);
+        return center == null ? null : findStandablePosition(player.serverLevel(), center);
+    }
+
+    private static BlockPos validatedSearchCenter(ServerPlayer player, BlockPos requested) {
+        if (requested == null || !player.serverLevel().isInWorldBounds(requested)
+                || player.distanceToSqr(
+                        requested.getX() + 0.5D,
+                        requested.getY() + 0.5D,
+                        requested.getZ() + 0.5D) > MAX_TARGET_DISTANCE * MAX_TARGET_DISTANCE
+                || !player.serverLevel().isLoaded(requested)) {
+            return null;
+        }
+        return requested.immutable();
+    }
+
+    private static BlockPos findStandablePosition(ServerLevel level, BlockPos requested) {
+        for (int offset : new int[]{0, 1, -1, 2, -2}) {
+            BlockPos candidate = requested.offset(0, offset, 0);
+            if (level.getBlockState(candidate).getCollisionShape(level, candidate).isEmpty()
+                    && level.getBlockState(candidate.above()).getCollisionShape(level, candidate.above()).isEmpty()
+                    && !level.getBlockState(candidate.below()).getCollisionShape(level, candidate.below()).isEmpty()) {
+                return candidate.immutable();
+            }
+        }
+        return null;
+    }
+
+    private static PartyRecord commandedParty(ServerPlayer player) {
+        if (player == null) {
+            return null;
+        }
+        PartyRecord party = PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).orElse(null);
+        return party != null && party.hasAdminPrivileges(player.getUUID()) ? party : null;
+    }
+
+    private static boolean targetRequired(PartyQuickCommand command) {
+        return command == PartyQuickCommand.ATTACK
+                || command == PartyQuickCommand.MOVE_TO
+                || command == PartyQuickCommand.LOOT_CONTAINERS;
+    }
+
+    private static String translationKey(PartyQuickCommand command) {
+        return "villagerretaliation.party.quick_command." + command.name().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private static void notice(ServerPlayer player, String key) {
+        if (player != null) {
+            player.displayClientMessage(Component.translatable(key), true);
+        }
+    }
+
+    private enum RuntimeOrderType {
+        MOVE_TO,
+        REGROUP,
+        PICK_UP_DROPS,
+        LOOT_CONTAINERS;
+
+        boolean background() {
+            return this == PICK_UP_DROPS || this == LOOT_CONTAINERS;
+        }
+    }
+
+    private record MoveTarget(ResourceLocation dimension, BlockPos position) {
+    }
+
+    private record ContainerClaim(ResourceLocation dimension, BlockPos position) {
+        private ContainerClaim {
+            position = position.immutable();
+        }
+    }
+
+    private static final class RuntimeOrder {
+        private final RuntimeOrderType type;
+        private final BlockPos targetPosition;
+        private final UUID commanderId;
+        private final ServerPlayer commander;
+        private final ResourceLocation targetDimension;
+        private final List<BlockPos> containerTargets;
+        private final Set<BlockPos> visitedBlocks = new HashSet<>();
+        private final Set<UUID> skippedEntities = new HashSet<>();
+        private UUID activeEntityTarget;
+        private BlockPos activeBlockTarget;
+        private BlockPos approachPosition;
+        private long nextPathRefreshGameTime;
+        private int pathFailures;
+        private int targetWaitTicks;
+
+        private RuntimeOrder(
+                RuntimeOrderType type,
+                BlockPos targetPosition,
+                UUID commanderId,
+                ServerPlayer commander,
+                ResourceLocation targetDimension,
+                List<BlockPos> containerTargets) {
+            this.type = type;
+            this.targetPosition = targetPosition;
+            this.commanderId = commanderId;
+            this.commander = commander;
+            this.targetDimension = targetDimension;
+            this.containerTargets = containerTargets == null ? List.of() : List.copyOf(containerTargets);
+        }
+
+        static RuntimeOrder moveTo(
+                BlockPos target,
+                UUID commanderId,
+                ServerPlayer commander,
+                ResourceLocation dimension) {
+            return new RuntimeOrder(
+                    RuntimeOrderType.MOVE_TO,
+                    target.immutable(),
+                    commanderId,
+                    commander,
+                    dimension,
+                    List.of());
+        }
+
+        static RuntimeOrder regroup(UUID commanderId) {
+            return new RuntimeOrder(RuntimeOrderType.REGROUP, null, commanderId, null, null, List.of());
+        }
+
+        static RuntimeOrder pickUpDrops(BlockPos center, ResourceLocation dimension) {
+            return new RuntimeOrder(RuntimeOrderType.PICK_UP_DROPS, center.immutable(), null, null, dimension, List.of());
+        }
+
+        static RuntimeOrder lootContainers(
+                BlockPos center,
+                ServerPlayer commander,
+                ResourceLocation dimension,
+                List<BlockPos> containers) {
+            return new RuntimeOrder(
+                    RuntimeOrderType.LOOT_CONTAINERS,
+                    center.immutable(),
+                    commander.getUUID(),
+                    commander,
+                    dimension,
+                    containers);
+        }
+
+        RuntimeOrderType type() {
+            return this.type;
+        }
+
+        BlockPos targetPosition() {
+            return this.targetPosition;
+        }
+
+        UUID commanderId() {
+            return this.commanderId;
+        }
+
+        ServerPlayer commander() {
+            return this.commander;
+        }
+
+        ResourceLocation targetDimension() {
+            return this.targetDimension;
+        }
+
+        long nextPathRefreshGameTime() {
+            return this.nextPathRefreshGameTime;
+        }
+
+        void setNextPathRefreshGameTime(long nextPathRefreshGameTime) {
+            this.nextPathRefreshGameTime = nextPathRefreshGameTime;
+        }
+
+        List<BlockPos> containerTargets() {
+            return this.containerTargets;
+        }
+
+        Set<BlockPos> visitedBlocks() {
+            return this.visitedBlocks;
+        }
+
+        Set<UUID> skippedEntities() {
+            return this.skippedEntities;
+        }
+
+        UUID activeEntityTarget() {
+            return this.activeEntityTarget;
+        }
+
+        void setActiveEntityTarget(UUID target) {
+            this.activeEntityTarget = target;
+            resetTargetProgress();
+        }
+
+        BlockPos activeBlockTarget() {
+            return this.activeBlockTarget;
+        }
+
+        BlockPos approachPosition() {
+            return this.approachPosition;
+        }
+
+        void setActiveBlockTarget(BlockPos target, BlockPos approach) {
+            this.activeBlockTarget = target == null ? null : target.immutable();
+            this.approachPosition = approach == null ? null : approach.immutable();
+            resetTargetProgress();
+        }
+
+        int incrementPathFailures() {
+            return ++this.pathFailures;
+        }
+
+        int incrementTargetWaitTicks() {
+            return ++this.targetWaitTicks;
+        }
+
+        void skipEntity(UUID entityId) {
+            if (entityId != null) {
+                this.skippedEntities.add(entityId);
+            }
+        }
+
+        void visitBlock(BlockPos pos) {
+            if (pos != null) {
+                this.visitedBlocks.add(pos.immutable());
+            }
+        }
+
+        void clearActiveTarget() {
+            this.activeEntityTarget = null;
+            this.activeBlockTarget = null;
+            this.approachPosition = null;
+            resetTargetProgress();
+        }
+
+        private void resetTargetProgress() {
+            this.pathFailures = 0;
+            this.targetWaitTicks = 0;
+            this.nextPathRefreshGameTime = 0L;
+        }
+    }
+}

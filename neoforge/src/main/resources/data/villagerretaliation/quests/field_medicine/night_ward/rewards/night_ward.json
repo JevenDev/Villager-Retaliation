@@ -1,0 +1,63 @@
+{
+  "schema": "villagerretaliation:quest_reward/v1",
+  "id": "villagerretaliation:quest/night_ward",
+  "table": {
+    "pools": [
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 10,
+                  "min": 6,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:emerald",
+            "type": "minecraft:item"
+          }
+        ],
+        "rolls": 1
+      },
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 5,
+                  "min": 2,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:golden_carrot",
+            "type": "minecraft:item"
+          },
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 4,
+                  "min": 2,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:glass_bottle",
+            "type": "minecraft:item"
+          }
+        ],
+        "rolls": 1
+      }
+    ],
+    "type": "minecraft:generic"
+  }
+}

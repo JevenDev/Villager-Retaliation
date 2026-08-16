@@ -1,0 +1,34 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "example:lasting_guide",
+  "metadata": {
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
+    },
+    "questline": "example"
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "death_protection": "after_start",
+    "filters": {
+      "professions": [
+        "minecraft:librarian"
+      ]
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "locked_to_villager": true
+  },
+  "entry_stage": "begin",
+  "stages": [
+    {
+      "id": "begin",
+      "objectives": []
+    }
+  ],
+  "localization_prefix": "example.quest.lasting_guide"
+}

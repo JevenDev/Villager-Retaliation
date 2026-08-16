@@ -28,7 +28,17 @@
         "The village notices new arrivals. What brings you to us?",
         "You do not look familiar. Are you here for trade, shelter, or trouble?",
         "Welcome, if you mean well. What do you need?",
-        "New faces make people curious. Yours has done that already."
+        "New faces make people curious. Yours has done that already.",
+        "Welcome. Is this your first time inside our walls?",
+        "You look unfamiliar with the paths. What brought you to the village?",
+        "New arrival? The square is ahead if you need your bearings.",
+        "I do not recognize you. Are you passing through or looking to stay?",
+        "Travelers usually come for trade, shelter, or news. Which is it for you?",
+        "You found us. What did you hear before coming here?",
+        "Mind the bell and respect the houses. Now, what do you need?",
+        "The guards let you through, so I suppose we can start with your name.",
+        "Long road behind you? You can catch your breath while we talk.",
+        "Our village notices every new face. Tell me what brings yours here."
       ],
       "show_for_babies": false
     },
@@ -43,15 +53,25 @@
       "id": "global_new_villager_opening",
       "lines": [
         "I have not seen you before. What brings you here?",
-        "I do not know your face yet. What brings you here?",
-        "New <pulse>footsteps</pulse> in the village. What do you need?",
+        "I recognize you from the paths, though we have never spoken.",
+        "We have shared a village without sharing a conversation. What do you need?",
         "I do not think we have spoken before.",
         "You are new to me. What can I do for you?",
         "First time talking, is it? Then speak plainly.",
         "I remember most faces. Yours is not one of them yet.",
         "You have my attention. Let us see what kind of first impression this is.",
         "I do not know you yet, but I can listen.",
-        "New voice, new face. What brings you to my door?"
+        "New voice, new face. What brings you to my door?",
+        "We have crossed paths before, but I do not think we have spoken.",
+        "You know the village, though you do not know me yet. What can I do for you?",
+        "I have seen you near the square. I am glad we finally meet.",
+        "Another familiar face with an unfamiliar name. Hello.",
+        "You must live on the other side of the village. What brings you over?",
+        "I recognize your work clothes, but not your voice.",
+        "We share these paths, so introductions are overdue.",
+        "I have heard your name from neighbors. What did you want to ask?",
+        "Funny that it took this long for us to speak.",
+        "Hello. I suppose we should stop being strangers now."
       ],
       "show_for_babies": false
     },
@@ -74,7 +94,17 @@
         "Did the road bring you here on purpose?",
         "Are you here to meet people? I am people.",
         "You look like someone the grown-ups have not explained yet.",
-        "<jump>Hi!</jump> Are you new to our village?"
+        "<jump>Hi!</jump> Are you new to our village?",
+        "Are you visiting our village for the first time?",
+        "You look lost. The well is in the middle, so I use that to find things.",
+        "Did you come from very far away?",
+        "I have never seen your clothes around here before.",
+        "Are you staying for dinner or leaving before dark?",
+        "The bell is over there. Grown-ups say new people should know that.",
+        "Did you find the village by following the path?",
+        "You can ask me where things are, but I only know some things.",
+        "Are there children where you came from?",
+        "Welcome! Do not step in the puddle behind you."
       ],
       "show_for_adults": false
     },
@@ -97,7 +127,17 @@
         "Hello! Are you a visitor?",
         "Did you come here from somewhere exciting?",
         "You have a new face. Not a bad one, just new.",
-        "<jump>Hi!</jump> I am saying hello first this time."
+        "<jump>Hi!</jump> I am saying hello first this time.",
+        "I see you around, but I do not know your name.",
+        "Do you live near the farms or near the bell?",
+        "You are the villager everybody said moved in, right?",
+        "I think we use the same path in the morning.",
+        "Are you old enough to have a job already?",
+        "Which house is yours? You do not have to point if it is secret.",
+        "I was going to say hello yesterday, but you looked busy.",
+        "Do you know any good games from your part of the village?",
+        "You are not new here, just new to me.",
+        "Hello! Now we are not strangers anymore."
       ],
       "show_for_adults": false
     },
@@ -109,7 +149,7 @@
       "id": "global_friendly_opening",
       "lines": [
         "Good to <pulse>see you</pulse>. What can I do for you?",
-        "Good to see you. What do you need?",
+        "I am glad you stopped by. How can I help?",
         "Hello again. How can I help?",
         "There you are. What brings you by?",
         "Always easier to greet a familiar face.",
@@ -117,7 +157,17 @@
         "Welcome back. What is on your mind?",
         "You are a welcome sight today. Need something?",
         "Come closer, then. What can I help with?",
-        "Good to see you walking these paths again."
+        "Good to see you walking these paths again.",
+        "There you are. How have you been?",
+        "Good timing. I was hoping to see a friendly face.",
+        "Come over. I have a moment before the next chore.",
+        "Hello again. What has the road been doing to you?",
+        "I saved a little news in case you stopped by.",
+        "Good to see you upright and unhurried. What do you need?",
+        "You are always welcome to ask.",
+        "I was just thinking it had been too long since we spoke.",
+        "Hello, friend. Stay for a moment if you can.",
+        "The day improved when I recognized you. What brings you by?"
       ],
       "show_for_babies": false
     },
@@ -137,15 +187,24 @@
         "If you need something, say it plainly.",
         "I am listening, for now.",
         "You came over with purpose. What is it?",
-        "All right. What brings you to me?"
+        "All right. What brings you to me?",
+        "You have my attention. What do you need?",
+        "Hello. Is this about trade or something else?",
+        "I can spare a moment. Go ahead.",
+        "Good day. What did you come to discuss?",
+        "Speak plainly and I will do the same.",
+        "I was in the middle of a chore, but this can wait briefly.",
+        "Go ahead. I was already taking a break.",
+        "Hello. Let us keep this conversation simple.",
+        "You found me. What now?",
+        "Go ahead. What did you need?"
       ],
       "show_for_babies": false
     },
     {
       "dispositions": [
         "rude",
-        "hostile",
-        "fearful"
+        "hostile"
       ],
       "id": "global_hostile_opening",
       "lines": [
@@ -158,7 +217,46 @@
         "I will hear you out, but only briefly.",
         "This had better be important.",
         "Say it from there. That is close enough.",
-        "I am listening, but do not mistake that for welcome."
+        "I am listening, but do not mistake that for welcome.",
+        "The guard is close enough to hear me, so choose your words carefully.",
+        "Do not make me regret stopping.",
+        "You have one chance to explain why you are here.",
+        "Keep your hands where I can see them while you talk.",
+        "I would rather be working than listening to you.",
+        "Make the question quick and the answer may be quicker.",
+        "Nobody invited you to linger.",
+        "Stand there. I can hear you well enough.",
+        "Your welcome ran out before this conversation began.",
+        "Talk, then leave."
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "fearful"
+      ],
+      "id": "global_feared_opening",
+      "lines": [
+        "<shake>Please do not hurt me.</shake> What do you want?",
+        "You can speak from there. Please, do not come any closer.",
+        "I will listen. Just keep your hands where I can see them.",
+        "Please make this quick. I need to get somewhere safe.",
+        "<shake>I am listening.</shake> Please give me no reason to run.",
+        "What do you need? Say it calmly, and then let me go.",
+        "I do not want trouble. Please keep your distance.",
+        "I will answer if I can. Just do not hurt me.",
+        "Everyone knows what you can do. Please, speak and leave peacefully.",
+        "I am afraid for my life right now. What do you want?",
+        "Please keep your distance while you speak.",
+        "Stop there. I can hear you from here.",
+        "What do you want? I do not have anything worth hurting me for.",
+        "I will listen if you keep your hands still.",
+        "Please do not block the path back to my house.",
+        "Say it quietly. I do not want anyone startled.",
+        "The guards know you are here, just so you know.",
+        "I am not running. Please give me no reason to.",
+        "You can ask from the other side of the square.",
+        "Tell me what you need, then let me go."
       ],
       "show_for_babies": false
     },
@@ -178,7 +276,17 @@
         "Are you here because I am interesting?",
         "Hello! I can talk for a little bit.",
         "Hi! Did you bring a story?",
-        "<jump>Hi!</jump> I was just about to be very busy."
+        "<jump>Hi!</jump> I was just about to be very busy.",
+        "Hi! I was hoping you would come back.",
+        "You are here! Did anything fun happen?",
+        "Hello! I saved a question for you.",
+        "Hi again. Do you have time before the grown-ups find a chore?",
+        "I know you! Come talk to me.",
+        "You came at a good time. I was getting bored.",
+        "Hello! Did you bring a story?",
+        "I saw you from across the square and waved. Did you see?",
+        "Hi! We can talk until someone calls me.",
+        "There you are. What are we doing?"
       ],
       "show_for_adults": false
     },
@@ -199,7 +307,17 @@
         "I am listening from this spot.",
         "Are you going to be nice this time?",
         "I can answer if it is not scary.",
-        "<wavy>Um...</wavy> what do you need?"
+        "<wavy>Um...</wavy> what do you need?",
+        "Hello. You can stay over there while we talk.",
+        "I know your face, but I am still being careful.",
+        "What did you want? I have to go home soon.",
+        "I can listen from beside this door.",
+        "Please do not come closer without asking.",
+        "Are you here to ask something or just looking around?",
+        "I am not supposed to wander off with anyone.",
+        "Talk quietly and I will stay.",
+        "The golem is nearby, so I am allowed to speak to you.",
+        "All right. What do you need?"
       ],
       "show_for_adults": false
     },
@@ -219,7 +337,17 @@
         "Say it quickly, please.",
         "I am listening, but my feet want to leave.",
         "I will answer if you do not sound scary.",
-        "<shake>Okay...</shake> but I am going inside after this."
+        "<shake>Okay...</shake> but I am going inside after this.",
+        "I am going inside if you shout.",
+        "Please stay where I can see you.",
+        "I do not want to talk alone.",
+        "You can say it before I call a grown-up.",
+        "Do not come between me and the door.",
+        "I know who to call if you get closer.",
+        "My family said I should not speak to you.",
+        "I will listen, but only for a little bit.",
+        "The golem is right over there.",
+        "What do you want from me?"
       ],
       "show_for_adults": false
     }

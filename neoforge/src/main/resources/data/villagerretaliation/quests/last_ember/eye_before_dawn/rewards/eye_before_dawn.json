@@ -1,0 +1,63 @@
+{
+  "schema": "villagerretaliation:quest_reward/v1",
+  "id": "villagerretaliation:quest/eye_before_dawn",
+  "table": {
+    "pools": [
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 15,
+                  "min": 10,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:emerald",
+            "type": "minecraft:item"
+          }
+        ],
+        "rolls": 1
+      },
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 3,
+                  "min": 1,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:ender_pearl",
+            "type": "minecraft:item"
+          },
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 8,
+                  "min": 4,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:obsidian",
+            "type": "minecraft:item"
+          }
+        ],
+        "rolls": 1
+      }
+    ],
+    "type": "minecraft:generic"
+  }
+}

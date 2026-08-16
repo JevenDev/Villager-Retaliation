@@ -2,17 +2,18 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.DialogueTextEffects;
-import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
+import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
 import com.jvn.villagerretaliation.network.VillagerNameSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,9 +25,11 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 
 public final class VillagerInteractionClientHandler {
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
@@ -58,52 +61,122 @@ public final class VillagerInteractionClientHandler {
     private VillagerInteractionClientHandler() {
     }
 
+    public static void acceptDuelStatus(OpenVillagerDuelPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
+        VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (screen != null) {
+            screen.updateDuelStatus(payload);
+        }
+    }
+
     public static void open(OpenVillagerInteractionPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!(minecraft.screen instanceof VillagerInteractionSessionScreen)) {
+            VillagerChatEffectRenderer.startDisappearFade();
+        }
+        openNow(payload);
+    }
+
+    private static void openNow(OpenVillagerInteractionPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(payload.entityId());
         String villagerName = resolveVillagerName(payload.villagerNameKey(), payload.villagerNameFallback());
         String professionName = resolveProfessionName(entity, payload.professionName(), payload.baby());
-        VillagerProfessionUiColors.ColorPair professionUiColors = resolveProfessionUiColors(entity, payload.baby());
-        String genderName = resolveGenderName(payload.genderName());
         VillagerNameClientCache.accept(new VillagerNameSyncPayload(
                 payload.entityId(),
                 entity == null ? new UUID(0L, 0L) : entity.getUUID(),
                 payload.villagerNameKey(),
-                villagerName
+                villagerName,
+                payload.hiredByPlayer() || payload.hiredByOtherPlayer()
         ));
         ClientVillagerConversationState.rememberSpeakerLabel(
                 payload.entityId(),
                 formatSpeakerLabel(villagerName, professionName)
         );
         resetVillagerChatGroup();
-        boolean replacingInteractionScreen = minecraft.screen instanceof VillagerInteractionSessionScreen;
-        if (!replacingInteractionScreen) {
-            VillagerInteractionChatVisibility.hidePreviousVillagerMessages(minecraft);
-        }
-        if (replacingInteractionScreen) {
-            VillagerInteractionSessionScreen interactionScreen = (VillagerInteractionSessionScreen) minecraft.screen;
-            interactionScreen.replaceFromServer();
+        VillagerInteractionSessionScreen previousInteractionScreen =
+                minecraft.screen instanceof VillagerInteractionSessionScreen interactionScreen
+                        ? interactionScreen
+                        : null;
+        boolean replacingInteractionScreen = previousInteractionScreen != null;
+        boolean replacingSameVillager = previousInteractionScreen != null
+                && previousInteractionScreen.matchesVillager(payload.entityId());
+        if (previousInteractionScreen != null) {
+            previousInteractionScreen.replaceFromServer();
         }
         VillagerInteractionScreen screen = new VillagerInteractionScreen(
                 payload.entityId(),
                 villagerName,
                 professionName,
-                professionUiColors,
-                genderName,
                 payload.baby(),
+                payload.genderName(),
+                payload.canTrade(),
+                payload.duelVisible(),
                 payload.reputation(),
                 payload.reputationLevel(),
                 payload.mood(),
                 payload.primaryMood(),
                 payload.followingPlayer(),
+                payload.stayingHere(),
+                payload.followCommandAvailable(),
+                payload.stayCommandAvailable(),
+                payload.assignmentRevision(),
                 payload.forcedDialogue(),
+                payload.clipboardMenu(),
+                payload.clipboardSelectionAssigned(),
+                payload.hiredByPlayer(),
+                payload.hiredByOtherPlayer(),
+                payload.hirerName(),
+                payload.hiredRemainingDays(),
+                payload.inventoryAvailable(),
+                payload.jobInventoryAvailable(),
+                payload.recruitedPartyVillager(),
+                payload.partyVillagerAuthorized(),
+                payload.partyVillagerPartyMember(),
+                payload.partyRecruitAvailable(),
+                payload.hireAvailable(),
+                payload.mountFeatureAvailable(),
+                payload.assignedMount(),
+                payload.mountedTravelEnabled(),
+                payload.partyRemainingDays(),
+                payload.walletEmeralds(),
+                payload.maxWalletEmeralds(),
+                payload.walletCurrencyPluralName(),
+                payload.walletCurrencyLabel(),
+                payload.walletCurrencyIconSprite(),
+                payload.walletCurrencyTextColor(),
                 payload.forceCameraTowardsVillager(),
+                payload.availableHiredRoles(),
+                payload.activeHiredRole(),
+                payload.activeBrewingOrder(),
+                payload.activeBuilderTask(),
+                payload.oneOffBuilderJob(),
+                payload.farmingTillSoil(),
+                payload.huntingAnimals(),
+                payload.huntingHostiles(),
+                payload.huntingPlayers(),
+                payload.selectedLoggingFilters(),
+                payload.loggingStripLogs(),
+                payload.loggingHarvestLeaves(),
+                payload.loggingBonemealSaplings(),
+                payload.loggingPlantSaplings(),
+                payload.loggingPickUpDecayDrops(),
+                payload.selectedAnimalBreedingTargets(),
+                payload.animalCullCap(),
+                payload.animalShearing(),
                 payload.dialogueOptions(),
-                payload.knownLikedGiftNames(),
-                payload.knownDislikedGiftNames(),
+                payload.giftPreferences(),
+                payload.allegiance(),
                 payload.familyTree(),
                 payload.relationships()
         );
+        if (shouldPreserveDialogueOnReplacement(payload, replacingSameVillager)) {
+            previousInteractionScreen.copyCurrentDialogueTo(screen);
+        }
+        if (replacingSameVillager && !payload.forcedDialogue() && !payload.clipboardMenu()) {
+            previousInteractionScreen.prepareReplacementTransition(screen);
+            screen.continueOpenSession();
+        }
         minecraft.setScreen(screen);
         boolean forceCamera = payload.forcedDialogue() || payload.forceCameraTowardsVillager();
         if (replacingInteractionScreen && ClientVillagerConversationState.active()) {
@@ -111,6 +184,12 @@ public final class VillagerInteractionClientHandler {
         } else {
             ClientVillagerConversationState.start(payload.entityId(), forceCamera);
         }
+    }
+
+    private static boolean shouldPreserveDialogueOnReplacement(
+            OpenVillagerInteractionPayload payload,
+            boolean replacingSameVillager) {
+        return replacingSameVillager && !payload.forcedDialogue() && !payload.clipboardMenu();
     }
 
     public static void acceptDialogue(VillagerDialogueResponsePayload payload) {
@@ -124,14 +203,27 @@ public final class VillagerInteractionClientHandler {
                 payload.primaryMood(),
                 payload.forceCameraTowardsVillager(),
                 payload.dialogueOptions(),
-                payload.knownLikedGiftNames(),
-                payload.knownDislikedGiftNames()
+                payload.giftPreferences()
             );
         }
     }
 
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
-        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
+        Minecraft minecraft = Minecraft.getInstance();
+        VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (screen != null) {
+            screen.acceptVillagerDialogue(payload.text(), payload.textSegments());
+            return;
+        }
+        pushVillagerChatMessage(minecraft, payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
+    }
+
+    public static void acceptRecruitmentResult(RecruitmentResultPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
+        VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (screen != null) {
+            screen.acceptRecruitmentResult(payload);
+        }
     }
 
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
@@ -142,6 +234,11 @@ public final class VillagerInteractionClientHandler {
         }
         ClientVillagerConversationState.forgetSpeakerLabel(payload.entityId());
         resetVillagerChatGroup(payload.entityId());
+    }
+
+    public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        ClientVillagerConversationState.clear();
+        resetVillagerChatGroup();
     }
 
     private static VillagerInteractionSessionScreen activeInteractionScreen(Screen screen, int villagerEntityId) {
@@ -161,6 +258,11 @@ public final class VillagerInteractionClientHandler {
         if (minecraft.player == null || text == null || text.isBlank()) {
             return;
         }
+        List<DialogueTextSegment> resolvedSegments = resolveChatSegments(text.strip(), textSegments);
+        String resolvedText = DialogueTextSegment.plainText(resolvedSegments);
+        if (resolvedText.isBlank()) {
+            return;
+        }
         String resolvedSpeaker = speakerLabel == null || speakerLabel.isBlank()
                 ? resolveVillagerSpeakerName(minecraft, entityId)
                 : speakerLabel;
@@ -168,18 +270,18 @@ public final class VillagerInteractionClientHandler {
         boolean startsChatGroup = shouldStartVillagerChatGroup(entityId, resolvedSpeaker);
         if (startsChatGroup) {
             currentChatGroupMessageIndex = 0;
-            addVillagerChatSpeakerSeparator(minecraft, accentColor);
+            addVillagerChatSpeakerSeparator(minecraft);
         }
         if (shouldSeparateVillagerChatMessage()) {
-            addVillagerChatSeparator(minecraft, accentColor);
+            addVillagerChatSeparator(minecraft);
         }
         String displayedSpeaker = startsChatGroup ? resolvedSpeaker : "";
         List<DialogueTextSegment> displayedSegments = dialogueTextEffectsDisabled()
                 ? List.of()
-                : displayedChatSegments(text.strip(), displayedSpeaker, textSegments);
+                : displayedChatSegments(displayedSpeaker, resolvedSegments);
         addVillagerChatMessage(
                 minecraft,
-                formatVillagerChatMessage(text.strip(), currentChatGroupMessageIndex, displayedSpeaker, accentColor, textSegments),
+                formatVillagerChatMessage(resolvedText, currentChatGroupMessageIndex, displayedSpeaker, accentColor, resolvedSegments),
                 accentColor,
                 displayedSegments
         );
@@ -187,9 +289,6 @@ public final class VillagerInteractionClientHandler {
         rememberVillagerChatGroup(entityId, resolvedSpeaker);
     }
 
-    private static void addVillagerChatMessage(Minecraft minecraft, Component message, int accentColor) {
-        addVillagerChatMessage(minecraft, message, accentColor, List.of());
-    }
 
     private static void addVillagerChatMessage(
             Minecraft minecraft,
@@ -200,13 +299,13 @@ public final class VillagerInteractionClientHandler {
         VillagerAnimatedChatText.remember(textSegments);
     }
 
-    private static void addVillagerChatSeparator(Minecraft minecraft, int accentColor) {
+    private static void addVillagerChatSeparator(Minecraft minecraft) {
         if (VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_MESSAGES.get()) {
             addVillagerChatSpacer(minecraft);
         }
     }
 
-    private static void addVillagerChatSpeakerSeparator(Minecraft minecraft, int accentColor) {
+    private static void addVillagerChatSpeakerSeparator(Minecraft minecraft) {
         if (VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_SPEAKERS.get()) {
             addVillagerChatSpacer(minecraft);
         }
@@ -272,108 +371,32 @@ public final class VillagerInteractionClientHandler {
             message.append(Component.literal(text).withStyle(style -> style.withColor(color)));
             return message;
         }
-        List<DialogueTextSegment> safeSegments = textSegments == null || textSegments.isEmpty()
-                ? DialogueTextSegment.plain(text, DialogueTextEffects.NONE)
-                : textSegments;
-        for (DialogueTextSegment segment : safeSegments) {
-            appendStyledSegment(message, segment, color);
-        }
+        message.append(VillagerStyledTextRenderer.component(textSegments, Style.EMPTY, color));
         return message;
     }
 
-    private static void appendStyledSegment(MutableComponent message, DialogueTextSegment segment, int fallbackColor) {
-        DialogueTextEffects effects = segment.effects();
-        if (effects.rainbow()) {
-            int index = 0;
-            int length = Math.max(1, segment.text().codePointCount(0, segment.text().length()));
-            for (int offset = 0; offset < segment.text().length(); ) {
-                int codePoint = segment.text().codePointAt(offset);
-                String glyph = new String(Character.toChars(codePoint));
-                int color = rainbowColor(index / (float) length);
-                message.append(styledText(glyph, effects, color));
-                offset += Character.charCount(codePoint);
-                index++;
-            }
-            return;
-        }
-        if (effects.hasGradient()) {
-            int length = Math.max(1, segment.text().codePointCount(0, segment.text().length()) - 1);
-            int index = 0;
-            for (int offset = 0; offset < segment.text().length(); ) {
-                int codePoint = segment.text().codePointAt(offset);
-                String glyph = new String(Character.toChars(codePoint));
-                int color = lerpColor(effects.gradientStartColor(), effects.gradientEndColor(), length == 0 ? 0.0F : index / (float) length);
-                message.append(styledText(glyph, effects, color));
-                offset += Character.charCount(codePoint);
-                index++;
-            }
-            return;
-        }
-        message.append(styledText(segment.text(), effects, effects.color() == null ? fallbackColor : effects.color()));
-    }
-
-    private static Component styledText(String text, DialogueTextEffects effects, int color) {
-        return Component.literal(text).withStyle(style -> style
-                .withColor(VillagerChatEffectRenderer.usesAnimatedRenderer(effects)
-                        ? VillagerChatEffectRenderer.STATIC_EFFECT_TEXT_COLOR
-                        : color)
-                .withItalic(effects.italic())
-                .withBold(effects.bold())
-                .withUnderlined(effects.underlined())
-                .withStrikethrough(effects.strikethrough())
-                .withObfuscated(effects.obfuscated()));
-    }
-
-    private static int lerpColor(int start, int end, float progress) {
-        float clamped = Math.clamp(progress, 0.0F, 1.0F);
-        int red = Math.round(((start >> 16) & 0xFF) + (((end >> 16) & 0xFF) - ((start >> 16) & 0xFF)) * clamped);
-        int green = Math.round(((start >> 8) & 0xFF) + (((end >> 8) & 0xFF) - ((start >> 8) & 0xFF)) * clamped);
-        int blue = Math.round((start & 0xFF) + ((end & 0xFF) - (start & 0xFF)) * clamped);
-        return (red << 16) | (green << 8) | blue;
-    }
-
-    private static int rainbowColor(float progress) {
-        float hue = progress - (float) Math.floor(progress);
-        float scaled = hue * 6.0F;
-        int sector = (int) Math.floor(scaled);
-        float fraction = scaled - sector;
-        float saturation = 0.85F;
-        float value = 1.0F;
-        float p = value * (1.0F - saturation);
-        float q = value * (1.0F - saturation * fraction);
-        float t = value * (1.0F - saturation * (1.0F - fraction));
-        return switch (Math.floorMod(sector, 6)) {
-            case 0 -> rgb(value, t, p);
-            case 1 -> rgb(q, value, p);
-            case 2 -> rgb(p, value, t);
-            case 3 -> rgb(p, q, value);
-            case 4 -> rgb(t, p, value);
-            default -> rgb(value, p, q);
-        };
-    }
-
-    private static int rgb(float red, float green, float blue) {
-        return (Math.round(red * 255.0F) << 16)
-                | (Math.round(green * 255.0F) << 8)
-                | Math.round(blue * 255.0F);
-    }
-
     private static List<DialogueTextSegment> displayedChatSegments(
-            String text,
             String speakerLabel,
             List<DialogueTextSegment> textSegments) {
         List<DialogueTextSegment> displayedSegments = new java.util.ArrayList<>();
         if (speakerLabel != null && !speakerLabel.isBlank()) {
             displayedSegments.add(new DialogueTextSegment(gui("chat.speaker_prefix", speakerLabel), DialogueTextEffects.NONE));
         }
-        displayedSegments.addAll(textSegments == null || textSegments.isEmpty()
-                ? DialogueTextSegment.plain(text, DialogueTextEffects.NONE)
-                : textSegments);
+        displayedSegments.addAll(textSegments);
         return List.copyOf(displayedSegments);
     }
 
+    private static List<DialogueTextSegment> resolveChatSegments(
+            String text,
+            List<DialogueTextSegment> textSegments) {
+        List<DialogueTextSegment> resolved = DialogueTextSegment.forNetwork(text, textSegments);
+        return resolved.isEmpty()
+                ? DialogueTextSegment.plain(text, DialogueTextEffects.NONE)
+                : resolved;
+    }
+
     private static boolean dialogueTextEffectsDisabled() {
-        return VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get();
+        return !VillagerChatEffectRenderer.animatedChatEffectsEnabled();
     }
 
     private static int villagerChatAccentColor(Minecraft minecraft, int entityId) {
@@ -387,12 +410,6 @@ public final class VillagerInteractionClientHandler {
         return professionAccentColor(villager.getVillagerData().getProfession());
     }
 
-    private static VillagerProfessionUiColors.ColorPair resolveProfessionUiColors(Entity entity, boolean baby) {
-        if (!(entity instanceof Villager villager) || baby || villager.isBaby()) {
-            return VillagerProfessionUiColors.DEFAULT_COLORS;
-        }
-        return VillagerProfessionUiColors.colorsFor(villager.getVillagerData().getProfession());
-    }
 
     private static int professionAccentColor(VillagerProfession profession) {
         return PROFESSION_ACCENT_COLORS.getOrDefault(profession, DEFAULT_PROFESSION_ACCENT_COLOR);
@@ -480,13 +497,6 @@ public final class VillagerInteractionClientHandler {
         return VillagerProfessionUtil.translationKey(profession, guiKey("profession.unemployed"));
     }
 
-    private static String resolveGenderName(String genderName) {
-        if (genderName == null || genderName.isBlank()) {
-            return gui("gender.unknown");
-        }
-        String key = guiKey("gender." + genderName.trim().toLowerCase(Locale.ROOT));
-        return I18n.exists(key) ? I18n.get(key) : genderName;
-    }
 
     private static boolean isGenericProfession(String profession) {
         return profession.equals(gui("speaker.villager"))

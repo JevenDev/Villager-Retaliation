@@ -1,13 +1,20 @@
 package com.jvn.villagerretaliation.reputation;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceEntityClassifier;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.skill.VillagerSkillGrowthResult;
 import com.jvn.villagerretaliation.skill.VillagerSkillGrowthService;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
+import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
+import com.jvn.villagerretaliation.trade.VillagerTradeWalletService;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageMembership;
@@ -63,7 +70,9 @@ public final class VillagerReputationEvents {
     private static final long NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS = 20L * 10L;
     private static final long NEGATIVE_REPUTATION_BELL_CACHE_TICKS = 20L * 5L;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_RADIUS = 32;
-    private static final int CURED_VILLAGER_REPUTATION = 100;
+    private static final int NEW_CURED_VILLAGER_REPUTATION = 100;
+    private static final float CURED_REPUTATION_MIN_LOSS = 0.30F;
+    private static final float CURED_REPUTATION_MAX_LOSS = 0.50F;
     private static final Map<UUID, PlayerContribution> HOSTILE_PLAYER_CONTRIBUTIONS = new HashMap<>();
     private static final Map<UUID, Long> NEGATIVE_REPUTATION_BELL_COOLDOWNS = new HashMap<>();
     private static final Map<BellSearchKey, BellSearchResult> NEGATIVE_REPUTATION_BELL_CACHE = new HashMap<>();
@@ -72,12 +81,22 @@ public final class VillagerReputationEvents {
     private VillagerReputationEvents() {
     }
 
+    public static void clearRuntimeState() {
+        HOSTILE_PLAYER_CONTRIBUTIONS.clear();
+        NEGATIVE_REPUTATION_BELL_COOLDOWNS.clear();
+        NEGATIVE_REPUTATION_BELL_CACHE.clear();
+        NEGATIVE_REPUTATION_BELL_POSITION_COOLDOWNS.clear();
+    }
+
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof LivingEntity living
+                && com.jvn.villagerretaliation.duel.DuelService.isDuelDamage(living, event.getSource())) return;
+
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || event.getNewDamage() <= 0.0F
                 || !(event.getEntity().level() instanceof ServerLevel level)
                 || !(event.getEntity() instanceof LivingEntity damaged)
-                || !(VillagerRetaliationVillagerCombatUtil.resolveAttacker(damaged, event.getSource()).orElse(null) instanceof Player player)) {
+                || !(VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(damaged, event.getSource()).orElse(null) instanceof Player player)) {
             return;
         }
 
@@ -208,16 +227,30 @@ public final class VillagerReputationEvents {
                 if (serverPlayer != null) {
                     storeTradePayments(level, villageResident, serverPlayer, event.getMerchantOffer());
                 }
+                VillagerTradeWalletService.onTradeCompleted(level, villageResident, event.getMerchantOffer());
+                if (serverPlayer != null) {
+                    VillagerTradeWalletService.syncOffers(serverPlayer, villageResident);
+                }
             }
             VillagerAmbientIndicatorService.onTradeCompleted(level, villager, event.getEntity());
             if (event.getEntity() instanceof ServerPlayer serverPlayer) {
                 VillagerReputationAdvancements.onTradeCompleted(level, serverPlayer, villager);
+                VillagerQuestService.onTradeCompleted(level, serverPlayer, villager, event.getMerchantOffer());
             }
-            VillagerSkillGrowthService.onTradeCompleted(
+            VillagerSkillGrowthResult skillGrowthResult = VillagerSkillGrowthService.onTradeCompleted(
                     level,
                     villager,
                     event.getEntity() instanceof ServerPlayer serverPlayer ? serverPlayer : null,
+                    event.getMerchantOffer(),
                     completedTradeCount);
+            if (villager instanceof Villager villageResident
+                    && event.getEntity() instanceof ServerPlayer serverPlayer
+                    && !skillGrowthResult.changed()) {
+                VillagerReputationNetworking.sendProfile(
+                        serverPlayer,
+                        villageResident,
+                        VillagerProfileManager.getOrCreateProfile(level, villageResident));
+            }
         }
     }
 
@@ -246,8 +279,15 @@ public final class VillagerReputationEvents {
         AABB area = player.getBoundingBox().inflate(8.0D);
         for (AbstractVillager villager : level.getEntitiesOfClass(AbstractVillager.class, area)) {
             if (villager.getTradingPlayer() == player) {
+                if (villager instanceof Villager villageResident) {
+                    VillagerTradeWalletService.refreshWalletStock(level, villageResident);
+                }
                 VillagerTradeUseTracker.snapshotOffers(villager);
                 VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+                if (villager instanceof Villager villageResident && player instanceof ServerPlayer serverPlayer) {
+                    VillagerTradeWalletService.syncOffers(serverPlayer, villageResident);
+                    VillagerTradeRefreshService.sendState(serverPlayer, villageResident);
+                }
                 VillagerReputationManager.syncToTrackingPlayer(level, villager, player.getUUID());
                 if (player instanceof ServerPlayer serverPlayer) {
                     VillagerReputationNetworking.sendProfile(
@@ -269,12 +309,12 @@ public final class VillagerReputationEvents {
         }
 
         long gameTime = level.getGameTime();
-        if (gameTime % SIGHT_SCAN_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getLeastSignificantBits(), SIGHT_SCAN_INTERVAL_TICKS)) {
+        if (TickThrottle.isSpreadTick(villager.getUUID(), gameTime, SIGHT_SCAN_INTERVAL_TICKS)) {
             scanReputationReactions(level, villager);
         }
         VillagerAmbientIndicatorService.maybeMurmurNearPlayers(level, villager);
         if (VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
-                && gameTime % DEBUG_SYNC_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getMostSignificantBits(), DEBUG_SYNC_INTERVAL_TICKS)) {
+                && TickThrottle.isSpreadTick(villager.getUUID().getMostSignificantBits(), gameTime, DEBUG_SYNC_INTERVAL_TICKS)) {
             syncNearbyDebug(level, villager);
         }
     }
@@ -287,8 +327,6 @@ public final class VillagerReputationEvents {
 
         if (gameTime % VillagerRetaliationConfig.REPUTATION_DECAY_INTERVAL.get() == 0L) {
             VillagerReputationManager.pruneOldEntries(event.getServer().overworld());
-            pruneHostileContributions(gameTime);
-            pruneNegativeReputationBellState(gameTime);
         }
 
         if (gameTime % COMMONFOLK_VILLAGE_SCAN_INTERVAL_TICKS == 0L) {
@@ -298,6 +336,8 @@ public final class VillagerReputationEvents {
         }
 
         if (gameTime % SIGHT_SCAN_INTERVAL_TICKS == 0L) {
+            pruneHostileContributions(gameTime);
+            pruneNegativeReputationBellState(gameTime);
             for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
                 VillagerReputationAdvancements.onPlayerHostilityCheck(player.serverLevel(), player);
             }
@@ -335,7 +375,10 @@ public final class VillagerReputationEvents {
         if (source instanceof ZombieVillager
                 && outcome instanceof Villager curedVillager
                 && curingPlayerId != null) {
-            VillagerReputationManager.setReputation(level, curedVillager, curingPlayerId, CURED_VILLAGER_REPUTATION);
+            int curedReputation = hadKnownReputationBeforeCure
+                    ? reputationAfterCure(curedVillager, VillagerReputationManager.getReputation(level, curedVillager, curingPlayerId))
+                    : NEW_CURED_VILLAGER_REPUTATION;
+            VillagerReputationManager.setReputation(level, curedVillager, curingPlayerId, curedReputation);
             VillageEventMemory.rememberCuredVillager(
                     level,
                     curedVillager.blockPosition(),
@@ -351,6 +394,19 @@ public final class VillagerReputationEvents {
                 VillagerReputationAdvancements.onCuredKnownZombieVillager(serverPlayer);
             }
         }
+    }
+
+    private static int reputationAfterCure(Villager curedVillager, int previousReputation) {
+        if (previousReputation == 0) {
+            return 0;
+        }
+
+        float loss = CURED_REPUTATION_MIN_LOSS
+                + curedVillager.getRandom().nextFloat() * (CURED_REPUTATION_MAX_LOSS - CURED_REPUTATION_MIN_LOSS);
+        if (previousReputation > 0) {
+            return Math.max(0, Math.round(previousReputation * (1.0F - loss)));
+        }
+        return Math.round(previousReputation * (1.0F + loss));
     }
 
     private static Optional<PlayerCredit> creditedPlayer(ServerLevel level, LivingDeathEvent event) {
@@ -428,6 +484,10 @@ public final class VillagerReputationEvents {
             if (VillagerRetaliationConfig.VANILLA_GOSSIP_REQUIRES_LINE_OF_SIGHT.get() && !witness.hasLineOfSight(source)) {
                 continue;
             }
+            if (AllegianceEntityClassifier.bearsAllegiance(source)
+                    && !VillageAllegianceRelations.sharesCommunity(level, source, witness)) {
+                continue;
+            }
             witnesses.add(witness);
         }
         return witnesses;
@@ -474,7 +534,7 @@ public final class VillagerReputationEvents {
         AABB area = villager.getBoundingBox().inflate(radius);
         List<NearbyPlayerReputation> players = new ArrayList<>();
         for (Player player : level.getEntitiesOfClass(Player.class, area)) {
-            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+            if (!player.isAlive() || player.isInvisible() || player.isCreative() || player.isSpectator()) {
                 continue;
             }
             double distanceSqr = villager.distanceToSqr(player);
@@ -503,6 +563,9 @@ public final class VillagerReputationEvents {
 
         for (NearbyPlayerReputation nearbyPlayer : nearbyPlayers) {
             if (!nearbyPlayer.visible() || nearbyPlayer.reputationLevel() != VillagerReputationLevel.DESPISED) {
+                continue;
+            }
+            if (!VillagerAggressionPolicy.shouldProactivelyAttackOnSight(villager, nearbyPlayer.player())) {
                 continue;
             }
             triggerNegativeReputationBell(level, villager, VillagerReputationLevel.DESPISED);
@@ -564,29 +627,55 @@ public final class VillagerReputationEvents {
             List<NearbyPlayerReputation> nearbyPlayers,
             double radius,
             double radiusSqr) {
-        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || !VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.get()) {
             return;
         }
 
+        List<IronGolem> nearbyGolems = null;
         for (NearbyPlayerReputation nearbyPlayer : nearbyPlayers) {
-            if (!nearbyPlayer.visible() || !isBellAlertTier(nearbyPlayer.reputationLevel())) {
+            if (!nearbyPlayer.visible()
+                    || !VillagerAggressionPolicy.shouldIronGolemsTargetNegativeReputationPlayer(
+                            villager, nearbyPlayer.player())) {
                 continue;
             }
-            if (aggroNearbyIronGolems(villager, nearbyPlayer.player(), radius, radiusSqr)) {
+            if (nearbyGolems == null) {
+                nearbyGolems = nearbyIronGolems(villager, radius);
+                if (nearbyGolems.isEmpty()) {
+                    return;
+                }
+            }
+            if (aggroNearbyIronGolems(nearbyGolems, nearbyPlayer.player(), radiusSqr)) {
                 triggerNegativeReputationBell(level, villager, nearbyPlayer.reputationLevel());
                 return;
             }
         }
     }
 
-    private static boolean aggroNearbyIronGolems(AbstractVillager villager, Player player, double radius, double radiusSqr) {
+    private static List<IronGolem> nearbyIronGolems(AbstractVillager villager, double radius) {
         ServerLevel level = (ServerLevel) villager.level();
         AABB area = villager.getBoundingBox().inflate(radius);
+        return level.getEntitiesOfClass(
+                IronGolem.class,
+                area,
+                ironGolem -> ironGolem.isAlive()
+                        && !ironGolem.isPlayerCreated()
+                        && VillageAllegianceRelations.sameCanonical(level, villager, ironGolem));
+    }
+
+    private static boolean aggroNearbyIronGolems(List<IronGolem> nearbyGolems, Player player, double radiusSqr) {
         boolean aggroedAny = false;
-        for (IronGolem ironGolem : level.getEntitiesOfClass(IronGolem.class, area)) {
-            if (!ironGolem.isAlive()
-                    || ironGolem.distanceToSqr(player) > radiusSqr
-                    || !ironGolem.hasLineOfSight(player)) {
+        for (IronGolem ironGolem : nearbyGolems) {
+            LivingEntity currentTarget = ironGolem.getTarget();
+            UUID persistentTarget = ironGolem.getPersistentAngerTarget();
+            if (ironGolem.distanceToSqr(player) > radiusSqr
+                    || !ironGolem.hasLineOfSight(player)
+                    || !ironGolem.canAttack(player)
+                    || !ironGolem.canAttackType(player.getType())
+                    || currentTarget != null && currentTarget.isAlive() && currentTarget != player
+                    || ironGolem.isAngry()
+                            && persistentTarget != null
+                            && !persistentTarget.equals(player.getUUID())) {
                 continue;
             }
             ironGolem.setTarget(player);

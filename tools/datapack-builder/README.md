@@ -2,9 +2,9 @@
 
 Open [Villager Retaliation Datapack Generator](https://jevendev.github.io/Villager-Retaliation/) to create, import, preview, and export Villager Retaliation datapacks.
 
-The builder is a static site. It emits the selected Villager Retaliation pack version's wiki paths for dialogue, forced dialogue events, chat event lines, notifications, gifts, pacification payments, story discovery, preset names, and `pack.mcmeta`, then exports them as a datapack zip with root-level `pack.mcmeta`.
+The builder is a static site. It emits the selected Villager Retaliation pack version's wiki paths for quest module v2 files, persistent scene v1 and encounter v1 resources, dialogue, forced dialogue events, chat event lines, notifications, gifts, pacification payments, story discovery, preset names, and `pack.mcmeta`, then exports them as a datapack zip with root-level `pack.mcmeta`.
 
-The generator backend lives in `backend.js`. `app.js` owns interaction and rendering, while `backend.js` owns initial state, pack metadata, path derivation, JSON generation, import normalization, preview edit application, known-kind detection, and zip creation across every datapack surface.
+The generator backend lives in `backend.js`. `app.js` owns interaction and rendering, while `backend.js` owns initial state, pack metadata, quest module path derivation, JSON generation, import normalization, preview edit application, known-kind detection, and zip creation across every datapack surface.
 
 The Wiki button opens a versioned, built-in wiki snapshot for the selected Villager Retaliation pack version. Press `Alt+Q` to open or close it. The wiki window can be dragged, resized, closed, and reopened at its previous position. Beta.11 and beta.12 snapshots are kept separate so beta.11 authors do not see beta.12-only mood and Social Attribute fields as current for their target.
 
@@ -14,7 +14,7 @@ When editing files under `tools/datapack-builder/wiki/`, regenerate the bundled 
 node tools/datapack-builder/build-wiki-snapshot.mjs
 ```
 
-Use `node tools/datapack-builder/build-wiki-snapshot.mjs --check` in validation scripts to fail if the markdown and bundled wiki have drifted.
+The generated snapshot is committed so the static builder works without a build step. Do not edit `wiki-snapshot.js` directly. Run `node tools/verify.mjs` to fail if the Markdown and bundled wiki have drifted.
 
 Exports from beta.11 onward include a `villagerretaliation.pack_version` marker in `pack.mcmeta`. Import uses that marker to restore the target VR version automatically. If an older or hand-written pack does not include the marker, choose the intended VR version in Pack Setup before editing or exporting.
 
@@ -22,7 +22,11 @@ The builder does not offer beta.11 to beta.12 migration support. Beta.12 is a ma
 
 The Preset button opens a template picker. `Starter Pack` loads a small editable beta.12 example, and `Dialogue Folder Template` loads the beta.12 folderized skeleton that mirrors `example-packs/dialogue-folder-template/` with one `example` option and line for every dialogue request.
 
-Import follows the same strict folder rules as the game for known Villager Retaliation roots. Dialogue files stay dialogue, notification files stay notifications, and forced-dialogue files stay forced dialogue; mixed old packs should be split into the documented folders before export.
+Import follows the same strict folder rules as the game for known Villager Retaliation roots. Exact bundle `quest.json` files become editable entries; sibling locales and private/shared companions keep their paths. Loose quest JSON and old companion roots are preserved only to show an unsupported-layout error and do not make a valid beta.13 export.
+
+The Quests tab authors `villagerretaliation:quest/v2` structure with convenient inline English, then exports `data/<namespace>/quests/<questline>/<quest-slug>/quest.json` plus exhaustive `locales/en_us.json`. It validates bundled scene, encounter, locale, and reward schemas, warns about duplicate paths and legacy layouts, and preserves unknown imported fields during round-trip.
+
+The generated quest schema validates provider `death_protection` (`none`, `while_active`, `after_start`) and the opt-in boolean `blocks_hiring`. When `provider.blocks_hiring` is `true`, villagers matching that provider's filters cannot begin a new paid hire contract, regardless of a player's quest progress or current offer availability; existing contracts and party recruitment are unchanged. The scene schema validates actor `lethal_damage_policy` (`normal`, `downed`). The browser editor preserves these fields when importing and exporting packs.
 
 The builder writes beta.12 dialogue through the Dialogue tab's Layout selector. `Typed folders` creates section paths such as `<folder>/options/00_*.json` and `<folder>/lines/00_*.json`, while `Single bundle file` keeps all dialogue sections in one JSON file. The builder also imports beta.12 typed `options/` files where `type` is omitted and infers custom profession defaults from paths such as `professions/examplemod/alchemist/lines/...json`. It writes event chat through `output.mode: "chat"` on normal forced-dialogue triggers. It supports watched-container events, `retaliation_started` chat lines, and `player_item_proximity` item callouts. Entry forms adapt to the selected VR version: beta.11 hides beta.12-only fields, while beta.12 shows option and line `conditions`, line `mood` / `moods`, `min_mood_intensity`, `requires_high_*`, exact Social Attribute score ranges, priority/category selection metadata, narrative metadata for quest organization, and `text_key` message indirection. The beta.12 wiki snapshot also documents the folderized dialogue layout and the data-driven `trade_refresh` forced-dialogue option templates used by villager trade refresh requests.
 

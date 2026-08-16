@@ -1,0 +1,113 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.end_survey.city_lantern.description": "Complete this End City branch with rods, shells, and a concluding tower survey.",
+    "quest.end_survey.city_lantern.stage.return.dialogue.turn_in.label": "About The Way Home",
+    "quest.end_survey.city_lantern.stage.return.dialogue.turn_in.lines": [
+      "The pale towers and the road home share one map now. The city branch is complete.",
+      "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.end_survey.city_lantern.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.end_survey.city_lantern.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.end_survey.city_lantern.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The pale towers and the road home share one map now. The city branch is complete.",
+      "The End City has a bearing, a lit return, and two fewer shulkers' worth of secrets."
+    ],
+    "quest.end_survey.city_lantern.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.end_survey.city_lantern.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.end_survey.city_lantern.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.end_survey.city_lantern.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The Way Home is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.end_survey.city_lantern.stage.return.scene.turn_in_wait.lines": [
+      "The tower survey, twelve End rods placed, two shells returned.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.end_survey.city_lantern.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.end_survey.city_lantern.stage.work.dialogue.offer.label": "The Way Home",
+    "quest.end_survey.city_lantern.stage.work.dialogue.offer.lines": [
+      "One city light is marked. The concluding survey for this expedition must make the road home visible too.",
+      "Climb the tower, set End rods along the return, and recover shells for the archive.",
+      "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
+    ],
+    "quest.end_survey.city_lantern.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.end_survey.city_lantern.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.end_survey.city_lantern.stage.work.dialogue.reminder.label": "About The Way Home",
+    "quest.end_survey.city_lantern.stage.work.dialogue.reminder.lines": [
+      "The tower survey, twelve End rods placed, two shells returned.",
+      "Survey the marked End City, place 12 End rods, and bring 2 shulker shells.",
+      "Climb the tower, set End rods along the return, and recover shells for the archive."
+    ],
+    "quest.end_survey.city_lantern.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.end_survey.city_lantern.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.end_survey.city_lantern.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.end_survey.city_lantern.stage.work.objective.bring_shells.tracker.complete_text": "The shulker shells are ready.",
+    "quest.end_survey.city_lantern.stage.work.objective.bring_shells.tracker.text": "Bring 2 shulker shells for the archive.",
+    "quest.end_survey.city_lantern.stage.work.objective.place_rods.tracker.complete_text": "The return markers are lit.",
+    "quest.end_survey.city_lantern.stage.work.objective.place_rods.tracker.text": "Place 12 End rods as return markers.",
+    "quest.end_survey.city_lantern.stage.work.objective.survey_city.tracker.complete_text": "The End City tower is surveyed.",
+    "quest.end_survey.city_lantern.stage.work.objective.survey_city.tracker.text": "Survey the marked End City tower.",
+    "quest.end_survey.city_lantern.stage.work.scene.abandon_confirm.lines": [
+      "Put The Way Home aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.end_survey.city_lantern.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.end_survey.city_lantern.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "The Way Home is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.decline.lines": [
+      "Then do not climb a tower you cannot find your way down from."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.leave.lines": [
+      "The tower survey, twelve End rods placed, two shells returned.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "The tower survey, twelve End rods placed, two shells returned.",
+      "Survey the marked End City, place 12 End rods, and bring 2 shulker shells.",
+      "Climb the tower, set End rods along the return, and recover shells for the archive."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "The Way Home is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "The Way Home is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.start_quest.action.start.lines.started": [
+      "Place the first rod where the gateway disappears behind you. Pride is a poor return marker.",
+      "Survey the marked End City, place 12 End rods, and bring 2 shulker shells."
+    ],
+    "quest.end_survey.city_lantern.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "The Way Home is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.end_survey.city_lantern.stage.work.ui.tracker_text": "Survey the marked End City, place 12 End rods, and bring 2 shulker shells.",
+    "quest.end_survey.city_lantern.title": "The Way Home"
+  }
+}

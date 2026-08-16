@@ -2,7 +2,8 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -29,6 +30,17 @@ public final class InteractionRequestValidator {
                 player,
                 entityId,
                 "interaction.trade_unavailable",
+                "interaction.conversation_ended",
+                false,
+                false
+        );
+    }
+
+    public static Optional<InteractionTargetContext> requireRoutineChatConversation(ServerPlayer player, int entityId) {
+        return requireActiveConversation(
+                player,
+                entityId,
+                "interaction.unavailable",
                 "interaction.conversation_ended",
                 false,
                 false
@@ -62,6 +74,17 @@ public final class InteractionRequestValidator {
                 player,
                 entityId,
                 "interaction.recruit_unavailable",
+                "interaction.conversation_ended",
+                false,
+                false
+        );
+    }
+
+    public static Optional<InteractionTargetContext> requireStudyConversation(ServerPlayer player, int entityId) {
+        return requireActiveConversation(
+                player,
+                entityId,
+                "interaction.study.unavailable",
                 "interaction.conversation_ended",
                 false,
                 false
@@ -111,6 +134,12 @@ public final class InteractionRequestValidator {
         Entity entity = player.serverLevel().getEntity(entityId);
         if (!(entity instanceof Villager villager)) {
             VillagerInteractionService.sendNotice(player, entityId, unavailableNoticeKey);
+            return Optional.empty();
+        }
+        if (VillagerBehaviorSuppressionPolicy.suppresses(
+                villager, VillagerBehaviorSuppressionPolicy.Behavior.INTERACTION_MENUS)) {
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.incapacitated");
             return Optional.empty();
         }
         boolean canUseNormalTarget = VillagerInteractionService.canUseInteractionSystem(player, villager);

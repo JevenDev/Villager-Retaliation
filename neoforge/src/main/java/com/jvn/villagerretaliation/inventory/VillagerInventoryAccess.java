@@ -1,10 +1,15 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.duel.DuelService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
@@ -16,21 +21,132 @@ public final class VillagerInventoryAccess {
     private VillagerInventoryAccess() {
     }
 
+    public static void clearRuntimeState() {
+        VillagerInventoryContainer.clearRuntimeState();
+        VillagerInventoryOverflowService.clearRuntimeState();
+    }
+
+    public static void onServerTick(MinecraftServer server) {
+        VillagerInventoryOverflowService.tickContainerFeedback(server.getAllLevels());
+    }
+
     public static boolean canAccess(ServerLevel level, Villager villager, ServerPlayer player) {
         return !villager.isBaby()
                 && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
                 >= VillagerReputationLevel.REVERED.trustRank();
     }
 
-    public static void open(ServerPlayer player, Villager villager) {
+    public static boolean open(ServerPlayer player, Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level) || !canAccess(level, villager, player)) {
+            return false;
+        }
+        open(
+                player,
+                villager,
+                VillagerInventoryMenu.ViewMode.PERSONAL,
+                true,
+                VillagerJobInventoryAuthorization.canAccess(level, villager, player));
+        return true;
+    }
+
+    public static boolean openPreferred(ServerPlayer player, Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        VillagerInventoryMenu.ViewMode viewMode = preferredViewMode(level, villager, player);
+        boolean personalInventoryAccess = canAccess(level, villager, player);
+        boolean jobInventoryAccess = VillagerJobInventoryAuthorization.canAccess(level, villager, player);
+        if (viewMode == VillagerInventoryMenu.ViewMode.PERSONAL && !personalInventoryAccess) {
+            return false;
+        }
+        open(player, villager, viewMode, personalInventoryAccess, jobInventoryAccess);
+        return true;
+    }
+
+    public static boolean canOpenPreferred(ServerLevel level, Villager villager, ServerPlayer player) {
+        return preferredViewMode(level, villager, player).isWorkInventory()
+                || canAccess(level, villager, player);
+    }
+
+    public static boolean openJobInventory(ServerPlayer player, Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !com.jvn.villagerretaliation.interaction.VillagerInteractionService.canUseInteractionSystem(player, villager)
+                || !VillagerJobInventoryAuthorization.canAccess(level, villager, player)) {
+            return false;
+        }
+        boolean personalInventoryAccess = canAccess(level, villager, player);
+        open(player, villager, VillagerInventoryMenu.ViewMode.JOB, personalInventoryAccess, true);
+        return true;
+    }
+
+    static VillagerInventoryMenu.ViewMode preferredViewMode(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player) {
+        if (VillagerJobInventoryAuthorization.canAccess(level, villager, player)) {
+            return com.jvn.villagerretaliation.party.PartyVillagerContractService.isActivePartyVillager(level, villager)
+                    || com.jvn.villagerretaliation.party.PartyVillagerContractService.isRetainedPartyInventory(
+                            level, villager, player)
+                    ? VillagerInventoryMenu.ViewMode.PARTY
+                    : VillagerInventoryMenu.ViewMode.JOB;
+        }
+        return VillagerInventoryMenu.ViewMode.PERSONAL;
+    }
+
+    private static void open(
+            ServerPlayer player,
+            Villager villager,
+            VillagerInventoryMenu.ViewMode viewMode,
+            boolean personalInventoryAccess,
+            boolean jobInventoryAccess) {
+        VillagerInventoryMenu.ViewMode workInventoryViewMode =
+                com.jvn.villagerretaliation.party.PartyVillagerContractService.isActivePartyVillager(
+                        player.serverLevel(),
+                        villager)
+                        || com.jvn.villagerretaliation.party.PartyVillagerContractService.isRetainedPartyInventory(
+                                player.serverLevel(), villager, player)
+                        ? VillagerInventoryMenu.ViewMode.PARTY
+                        : VillagerInventoryMenu.ViewMode.JOB;
+        VillagerInventoryMenu.ViewMode resolvedViewMode = viewMode.isWorkInventory()
+                ? workInventoryViewMode
+                : viewMode;
         Component title = Component.translatable(
-                "container.villagerretaliation.villager_inventory",
+                resolvedViewMode == VillagerInventoryMenu.ViewMode.PARTY
+                        ? "container.villagerretaliation.party_inventory"
+                        : resolvedViewMode == VillagerInventoryMenu.ViewMode.JOB
+                                ? "container.villagerretaliation.job_inventory"
+                                : "container.villagerretaliation.villager_inventory",
                 VillagerPresetNameRegistry.resolveDisplayName(villager)
         );
         player.openMenu(
-                new SimpleMenuProvider((containerId, inventory, owner) -> new VillagerInventoryMenu(containerId, inventory, villager), title),
-                buffer -> buffer.writeVarInt(villager.getId())
+                new SimpleMenuProvider(
+                        (containerId, inventory, owner) -> new VillagerInventoryMenu(
+                                containerId,
+                                inventory,
+                                villager,
+                                resolvedViewMode,
+                                personalInventoryAccess,
+                                jobInventoryAccess),
+                        title),
+                buffer -> {
+                    buffer.writeVarInt(villager.getId());
+                    buffer.writeEnum(resolvedViewMode);
+                    buffer.writeEnum(workInventoryViewMode);
+                    buffer.writeBoolean(personalInventoryAccess);
+                    buffer.writeBoolean(jobInventoryAccess);
+                    var partyEnd = com.jvn.villagerretaliation.party.PartyVillagerContractService
+                            .getPartyEndGameTime(player.serverLevel(), villager);
+                    var contractEnd = partyEnd.isPresent()
+                            ? partyEnd
+                            : HiredVillagerContractService.getHireEndGameTime(player.serverLevel(), villager);
+                    buffer.writeBoolean(contractEnd.isPresent());
+                    if (contractEnd.isPresent()) {
+                        buffer.writeVarLong(contractEnd.getAsLong());
+                    }
+                }
         );
+        com.jvn.villagerretaliation.network.VillagerReputationNetworking.sendHunger(
+                player, villager, com.jvn.villagerretaliation.villager.VillagerRecoveryService.foodLevel(villager));
     }
 
     public static void dropExtraInventory(Villager villager) {
@@ -39,6 +155,14 @@ public final class VillagerInventoryAccess {
 
     public static ItemStack addItem(Villager villager, ItemStack stack) {
         return VillagerInventoryContainer.addItem(villager, stack);
+    }
+
+    public static List<ItemStack> captureFullInventory(Villager villager) {
+        return VillagerInventoryContainer.captureFullInventory(villager);
+    }
+
+    public static void replaceFullInventory(Villager villager, List<ItemStack> items) {
+        VillagerInventoryContainer.replaceFullInventory(villager, items);
     }
 
     public static boolean canAddItems(Villager villager, List<ItemStack> stacks) {
@@ -54,15 +178,45 @@ public final class VillagerInventoryAccess {
     }
 
     public static boolean maintainBorrowedCombatWeapon(Villager villager) {
-        return VillagerInventoryContainer.maintainBorrowedCombatWeapon(villager);
+        return !VillagerRecoveryService.isForcingRecovery(villager)
+                && VillagerInventoryContainer.maintainBorrowedCombatWeapon(villager);
     }
 
     public static boolean tryBorrowCombatWeapon(Villager villager) {
-        return VillagerInventoryContainer.tryBorrowCombatWeapon(villager);
+        return !VillagerRecoveryService.isForcingRecovery(villager)
+                && VillagerInventoryContainer.tryBorrowCombatWeapon(villager);
+    }
+
+    public static boolean tryBorrowCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
+        return !VillagerRecoveryService.isForcingRecovery(villager)
+                && VillagerInventoryContainer.tryBorrowCombatWeapon(villager, predicate);
+    }
+
+    public static boolean hasCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
+        if (!DuelService.isParticipant(villager)
+                && HiredJobInventory.isJobInventoryAvailable(villager)
+                && !HiredJobInventory.getJobInventory(villager).findSupply(predicate).isEmpty()) {
+            return true;
+        }
+        return VillagerInventoryContainer.hasCarriedItem(villager, predicate);
+    }
+
+    public static ItemStack takeCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
+        if (!DuelService.isParticipant(villager)
+                && HiredJobInventory.isJobInventoryAvailable(villager)) {
+            HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+            ItemStack available = jobInventory.findSupply(predicate);
+            if (!available.isEmpty() && jobInventory.consumeSupply(predicate, 1) > 0) {
+                return available.copyWithCount(1);
+            }
+        }
+        return VillagerInventoryContainer.takeFirstCarriedItem(villager, predicate);
     }
 
     public static void returnBorrowedCombatWeapon(Villager villager) {
-        VillagerInventoryContainer.returnBorrowedCombatWeapon(villager);
+        if (!VillagerRecoveryService.isForcingRecovery(villager)) {
+            VillagerInventoryContainer.returnBorrowedCombatWeapon(villager);
+        }
     }
 
     public static void clearBorrowedCombatWeapon(Villager villager) {

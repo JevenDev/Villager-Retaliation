@@ -2,9 +2,11 @@ package com.jvn.villagerretaliation.social;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -35,7 +37,8 @@ public final class VillagerSocialGraphService {
         if (event.getLevel() instanceof ServerLevel level && event.getEntity() instanceof Villager villager) {
             PENDING_JOIN_PROFILE_TICKS.put(
                     villager.getUUID(),
-                    level.getGameTime() + profileRefreshOffset(villager.getUUID())
+                    level.getGameTime()
+                            + TickThrottle.spreadOffset(villager.getUUID(), PROFILE_REFRESH_INTERVAL_TICKS)
             );
         }
     }
@@ -59,7 +62,7 @@ public final class VillagerSocialGraphService {
             return;
         }
 
-        if (gameTime % PROFILE_REFRESH_INTERVAL_TICKS != profileRefreshOffset(villagerId)) {
+        if (!TickThrottle.isSpreadTick(villagerId, gameTime, PROFILE_REFRESH_INTERVAL_TICKS)) {
             return;
         }
 
@@ -144,11 +147,39 @@ public final class VillagerSocialGraphService {
         return VillagerSocialGraphSavedData.get(level).familySnapshot(level, villager);
     }
 
+    public static VillagerFamilyTreeSnapshot familySnapshot(ServerLevel level, UUID villagerId) {
+        if (villagerId == null || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return VillagerFamilyTreeSnapshot.EMPTY;
+        }
+        return VillagerSocialGraphSavedData.get(level).familySnapshot(level, villagerId);
+    }
+
     public static VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, Villager villager) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
             return VillagerRelationshipSnapshot.EMPTY;
         }
         return VillagerSocialGraphSavedData.get(level).relationshipSnapshot(level, villager);
+    }
+
+    public static VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, UUID villagerId) {
+        if (villagerId == null || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return VillagerRelationshipSnapshot.EMPTY;
+        }
+        return VillagerSocialGraphSavedData.get(level).relationshipSnapshot(level, villagerId);
+    }
+
+    public static Optional<Boolean> knownBaby(ServerLevel level, UUID villagerId) {
+        if (villagerId == null || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return Optional.empty();
+        }
+        return VillagerSocialGraphSavedData.get(level).knownBaby(villagerId);
+    }
+
+    public static Optional<String> knownVillage(ServerLevel level, UUID villagerId) {
+        if (villagerId == null || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return Optional.empty();
+        }
+        return VillagerSocialGraphSavedData.get(level).knownVillage(villagerId);
     }
 
     private static String deathCause(DamageSource source) {
@@ -160,7 +191,4 @@ public final class VillagerSocialGraphService {
         return cause;
     }
 
-    private static long profileRefreshOffset(UUID villagerId) {
-        return Math.floorMod(villagerId.getLeastSignificantBits(), PROFILE_REFRESH_INTERVAL_TICKS);
-    }
 }

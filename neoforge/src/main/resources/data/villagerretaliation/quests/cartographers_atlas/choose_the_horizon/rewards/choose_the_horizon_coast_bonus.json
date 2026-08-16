@@ -1,0 +1,25 @@
+{
+  "schema": "villagerretaliation:quest_reward/v1",
+  "id": "villagerretaliation:quest/choose_the_horizon_coast_bonus",
+  "table": {
+    "pools": [
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "name": "minecraft:heart_of_the_sea",
+            "type": "minecraft:item",
+            "weight": 1
+          },
+          {
+            "name": "minecraft:nautilus_shell",
+            "type": "minecraft:item",
+            "weight": 3
+          }
+        ],
+        "rolls": 1
+      }
+    ],
+    "type": "minecraft:generic"
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.redstone_works.power_the_gate.description": "Choose daylight or sculk to control the village gate.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.offer.label": "Power the Gate",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.offer.lines": [
+      "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
+      "This choice closes the other design. Daylight stays local and pays modestly; sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
+    ],
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.offer.response.decline.label": "Not yet.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.offer.response.sunlight.action.notification.text": "You chose a daylight circuit for the village gate.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.offer.response.sunlight.label": "Follow the sun",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.offer.response.sunlight.text": "Sunlight, then. The gate will keep honest hours and make its workings plain.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.offer.response.whisper.action.notification.text": "You chose a sculk circuit for the village gate.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.offer.response.whisper.label": "Listen through sculk",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.offer.response.whisper.text": "Sculk, then. The gate will listen, but wool must teach it what to ignore.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.label": "About Power the Gate",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.lines": [
+      "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
+      "This choice closes the other design. Daylight stays local and pays modestly; sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
+    ],
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.response.decline.label": "Not yet.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.response.details.label": "Repeat the choice.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.response.sunlight.action.notification.text": "You chose a daylight circuit for the village gate.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.response.sunlight.label": "Follow the sun",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.response.sunlight.text": "Sunlight, then. The gate will keep honest hours and make its workings plain.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.response.whisper.action.notification.text": "You chose a sculk circuit for the village gate.",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.response.whisper.label": "Listen through sculk",
+    "quest.redstone_works.power_the_gate.stage.choose.dialogue.reminder.response.whisper.text": "Sculk, then. The gate will listen, but wool must teach it what to ignore.",
+    "quest.redstone_works.power_the_gate.stage.choose.objective.choose_route.tracker.complete_text": "Route chosen: {objective_choice_value}.",
+    "quest.redstone_works.power_the_gate.stage.choose.objective.choose_route.tracker.text": "Choose the route with the quest giver.",
+    "quest.redstone_works.power_the_gate.stage.choose.scene.decline.lines": [
+      "Then the gate keeps one reliable part: the villager standing beside it."
+    ],
+    "quest.redstone_works.power_the_gate.stage.choose.scene.reminder_details.action.remind.lines.reminder": [
+      "The gate can follow daylight, or listen for footsteps through sculk. Both work, but they do not fail the same way.",
+      "This choice closes the other design. Daylight stays local and pays modestly; sculk commits the next job to an Ancient City, with greater reputation and rare sculk rewards."
+    ],
+    "quest.redstone_works.power_the_gate.stage.choose.scene.reminder_details.action.remind.lines.unavailable": [
+      "That choice is not open right now."
+    ],
+    "quest.redstone_works.power_the_gate.stage.choose.ui.tracker_text": "Choose a route.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.dialogue.turn_in.label": "About Power the Gate",
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.dialogue.turn_in.lines": [
+      "The lamps follow the sky cleanly. Everyone can see when the gate thinks it is night.",
+      "The daylight circuit works. The gate's next lesson will come from the sun."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The daylight circuit works. The gate's next lesson will come from the sun.",
+      "The lamps follow the sky cleanly. Everyone can see when the gate thinks it is night."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Two daylight detectors and four redstone lamps for the gate circuit."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.dialogue.reminder.label": "About Power the Gate",
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.dialogue.reminder.lines": [
+      "Two daylight detectors and four redstone lamps for the gate circuit.",
+      "Sunlight, then. The gate will keep honest hours and make its workings plain."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.objective.bring_detectors.tracker.complete_text": "The daylight detectors are ready.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.objective.bring_detectors.tracker.text": "Bring 2 daylight detectors.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.objective.bring_lamps.tracker.complete_text": "The redstone lamps are ready.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.objective.bring_lamps.tracker.text": "Bring 4 redstone lamps.",
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Two daylight detectors and four redstone lamps for the gate circuit.",
+      "Sunlight, then. The gate will keep honest hours and make its workings plain."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.redstone_works.power_the_gate.stage.sunlight_work.ui.tracker_text": "Two daylight detectors and four redstone lamps for the gate circuit.",
+    "quest.redstone_works.power_the_gate.stage.whisper_return.dialogue.turn_in.label": "About Power the Gate",
+    "quest.redstone_works.power_the_gate.stage.whisper_return.dialogue.turn_in.lines": [
+      "The sensor hears the path and ignores the workshop. Clever, and a little unsettling.",
+      "The listening circuit works. The gate's next lesson will come from whispers."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.redstone_works.power_the_gate.stage.whisper_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.redstone_works.power_the_gate.stage.whisper_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The listening circuit works. The gate's next lesson will come from whispers.",
+      "The sensor hears the path and ignores the workshop. Clever, and a little unsettling."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Two sculk sensors and sixteen white wool to quiet the wrong footsteps."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.redstone_works.power_the_gate.stage.whisper_work.dialogue.reminder.label": "About Power the Gate",
+    "quest.redstone_works.power_the_gate.stage.whisper_work.dialogue.reminder.lines": [
+      "Two sculk sensors and sixteen white wool to quiet the wrong footsteps.",
+      "Sculk, then. The gate will listen, but wool must teach it what to ignore."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.redstone_works.power_the_gate.stage.whisper_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.redstone_works.power_the_gate.stage.whisper_work.objective.bring_sensors.tracker.complete_text": "The sculk sensors are ready.",
+    "quest.redstone_works.power_the_gate.stage.whisper_work.objective.bring_sensors.tracker.text": "Bring 2 sculk sensors.",
+    "quest.redstone_works.power_the_gate.stage.whisper_work.objective.bring_wool.tracker.complete_text": "The wool shielding is ready.",
+    "quest.redstone_works.power_the_gate.stage.whisper_work.objective.bring_wool.tracker.text": "Bring 16 white wool for vibration shielding.",
+    "quest.redstone_works.power_the_gate.stage.whisper_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Two sculk sensors and sixteen white wool to quiet the wrong footsteps.",
+      "Sculk, then. The gate will listen, but wool must teach it what to ignore."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.redstone_works.power_the_gate.stage.whisper_work.ui.tracker_text": "Two sculk sensors and sixteen white wool to quiet the wrong footsteps.",
+    "quest.redstone_works.power_the_gate.title": "Power the Gate"
+  }
+}

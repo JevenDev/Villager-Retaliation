@@ -398,7 +398,6 @@
                        "Sylvester",
                        "Kim",
                        "Roosevelt",
-                       "Israel",
                        "Jermaine",
                        "Forrest",
                        "Wilbert",
@@ -641,7 +640,6 @@
                        "Loyd",
                        "Diego",
                        "Alexis",
-                       "Adolph",
                        "Norris",
                        "Millard",
                        "Rocco",
@@ -1140,7 +1138,6 @@
                        "Francesco",
                        "Manual",
                        "Jae",
-                       "Gaylord",
                        "Gaston",
                        "Filiberto",
                        "Deangelo",
@@ -1224,7 +1221,11 @@
                        "Ahsokie",
                        "Dani",
                        "Bear",
-                       "Sty"
+                       "Sty",
+                       "Sakti",
+                       "Pink",
+                       "Schmidley",
+                       "karlos"
                    ],
     "female_names":  [
                          "Mary",
@@ -2021,7 +2022,6 @@
                          "Jordan",
                          "Lilia",
                          "Alana",
-                         "Gay",
                          "Clare",
                          "Alejandra",
                          "Elinor",
@@ -2195,12 +2195,10 @@
                          "Francesca",
                          "Britney",
                          "Kaitlin",
-                         "Lolita",
                          "Florine",
                          "Rowena",
                          "Reyna",
                          "Twila",
-                         "Fanny",
                          "Janell",
                          "Ines",
                          "Concetta",
@@ -2409,6 +2407,9 @@
                          "India",
                          "Delois",
                          "Dani",
-                         "Sty"
-                     ]
+                         "Sty",
+                         "Dove",
+                         "Sakti",
+                         "Pink"
+    ]
 }

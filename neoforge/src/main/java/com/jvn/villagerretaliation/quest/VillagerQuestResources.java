@@ -1,19 +1,44 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
+
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEventKind;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
-import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextVariant;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueUsagePolicy;
+import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog;
+import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCompiler;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestCatalog;
+import com.jvn.villagerretaliation.quest.compiled.QuestSourcePointer;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalog;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleRuntimeMaterializer;
+import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
+import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
+import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
+import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
+import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
+import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Resource;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
-import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,6 +47,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.tags.TagKey;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ByteTag;
 import net.minecraft.nbt.CompoundTag;
@@ -34,8 +63,9 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
 public final class VillagerQuestResources {
@@ -43,78 +73,413 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_STRUCTURE_SEARCH_RADIUS = 256;
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
-    private static volatile CachedQuests cachedQuests = new CachedQuests(null, Map.of());
+    private static volatile CachedQuests testOverride = emptyCache();
 
     private VillagerQuestResources() {
     }
 
+    private static CachedQuests emptyCache() {
+        return new CachedQuests(
+                null,
+                new CompiledQuestCatalog(Map.of()),
+                QuestDialogueCatalog.empty(),
+                Map.of(),
+                Map.of(),
+                Set.of(),
+                Map.of(),
+                Map.of(),
+                Map.of());
+    }
+
     public static void warm(MinecraftServer server) {
-        quests(server);
+        QuestContentCatalogs.warm(server);
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of());
+        testOverride = emptyCache();
+        QuestContentCatalogs.invalidate();
+    }
+
+    public static boolean hasTestOverride(MinecraftServer server) {
+        return server != null && testOverride.server() == server;
+    }
+
+    public static void installCompiledTestCatalog(MinecraftServer server, Collection<CompiledQuest> compiledQuests) {
+        installCompiledTestCatalog(server, compiledQuests, QuestDialogueCatalog.empty());
+    }
+
+    public static void installCompiledTestCatalog(
+            MinecraftServer server,
+            Collection<CompiledQuest> compiledQuests,
+            QuestDialogueCatalog dialogueCatalog) {
+        Map<ResourceLocation, CompiledQuest> compiled = new LinkedHashMap<>();
+        Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
+        if (compiledQuests != null) {
+            for (CompiledQuest quest : compiledQuests) {
+                if (quest == null) {
+                    continue;
+                }
+                compiled.put(quest.id(), quest);
+                quests.put(quest.id(), quest.asQuestDefinition());
+            }
+        }
+        CompiledQuestCatalog catalog = new CompiledQuestCatalog(compiled);
+        Map<ResourceLocation, QuestDefinition> frozenQuests = freezeOrderedResourceMap(quests);
+        testOverride = new CachedQuests(
+                server,
+                catalog,
+                dialogueCatalog == null ? QuestDialogueCatalog.empty() : dialogueCatalog,
+                frozenQuests,
+                objectiveEventQuestIds(frozenQuests),
+                objectiveQuestIds(frozenQuests, QuestDefinition.ObjectiveType.FACT),
+                memoryEventQuestIds(frozenQuests),
+                exclusiveGroupQuestIds(frozenQuests),
+                triggerEventQuestIds(catalog));
+        QuestContentCatalogs.invalidate();
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
-        return load(server).values();
+        return QuestContentCatalogs.current(server).questDefinitions();
+    }
+
+    public static Collection<CompiledQuest> compiledQuests(MinecraftServer server) {
+        return QuestContentCatalogs.current(server).compiledQuests();
+    }
+
+    public static QuestDialogueCatalog questDialogueCatalog(MinecraftServer server) {
+        return QuestContentCatalogs.current(server).dialogueCatalog();
     }
 
     public static Optional<QuestDefinition> quest(MinecraftServer server, ResourceLocation id) {
-        if (id == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(load(server).get(id));
+        return QuestContentCatalogs.current(server).quest(id);
     }
 
-    private static Map<ResourceLocation, QuestDefinition> load(MinecraftServer server) {
-        CachedQuests current = cachedQuests;
-        if (current.server() == server) {
-            return current.quests();
-        }
-
-        synchronized (VillagerQuestResources.class) {
-            current = cachedQuests;
-            if (current.server() == server) {
-                return current.quests();
-            }
-
-            Map<ResourceLocation, QuestDefinition> quests = read(server);
-            cachedQuests = new CachedQuests(server, quests);
-            return quests;
-        }
+    public static Optional<CompiledQuest> compiledQuest(MinecraftServer server, ResourceLocation id) {
+        return QuestContentCatalogs.current(server).compiledQuest(id);
     }
 
-    private static Map<ResourceLocation, QuestDefinition> read(MinecraftServer server) {
-        Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
-        Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
-        DatapackResourceLoader.forEachJsonResource(
+    public static Optional<QuestSourcePointer> objectiveSource(
+            MinecraftServer server,
+            ResourceLocation questId,
+            String objectiveId) {
+        return QuestContentCatalogs.current(server).objectiveSource(questId, objectiveId);
+    }
+
+    public static Optional<QuestTriggerIndex> questTriggerIndex(MinecraftServer server, ResourceLocation id) {
+        return QuestContentCatalogs.current(server).questTriggerIndex(id);
+    }
+
+    public static boolean hasMobKillObjectives(MinecraftServer server, ResourceLocation id) {
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.MOB_KILL);
+    }
+
+    public static boolean hasBlockBreakObjectives(MinecraftServer server, ResourceLocation id) {
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.BLOCK_BREAK);
+    }
+
+    public static boolean hasBlockPlaceObjectives(MinecraftServer server, ResourceLocation id) {
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.BLOCK_PLACE);
+    }
+
+    public static boolean hasBlockInteractObjectives(MinecraftServer server, ResourceLocation id) {
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.BLOCK_INTERACT);
+    }
+
+    public static Set<ResourceLocation> memoryEventQuestIds(
+            MinecraftServer server, ResourceLocation memoryTag) {
+        return QuestContentCatalogs.current(server).memoryEventQuestIds(memoryTag);
+    }
+
+    public static boolean hasFactObjectives(MinecraftServer server, ResourceLocation id) {
+        return id != null && QuestContentCatalogs.current(server).factQuestIds().contains(id);
+    }
+
+    public static boolean hasGiftObjectives(MinecraftServer server, ResourceLocation id) {
+        return hasObjectiveEvent(server, id, QuestObjectiveEventKind.GIFT);
+    }
+
+    public static Set<ResourceLocation> questIdsForObjectiveEvent(
+            MinecraftServer server,
+            QuestObjectiveEventKind kind) {
+        return QuestContentCatalogs.current(server).questIdsForObjectiveEvent(kind);
+    }
+
+    public static Set<ResourceLocation> questIdsWithObjective(
+            MinecraftServer server,
+            QuestDefinition.ObjectiveType type) {
+        QuestContentCatalog catalog = QuestContentCatalogs.current(server);
+        return switch (type) {
+            case MOB_KILL -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.MOB_KILL);
+            case BLOCK_BREAK -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.BLOCK_BREAK);
+            case BLOCK_PLACE -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.BLOCK_PLACE);
+            case BLOCK_INTERACT -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.BLOCK_INTERACT);
+            case FACT -> catalog.factQuestIds();
+            case TRADE -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.TRADE);
+            case GIFT -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.GIFT);
+            case MEMORY_EVENT -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.MEMORY_EVENT);
+            case REPUTATION -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.REPUTATION);
+            case CRITERION -> catalog.questIdsForObjectiveEvent(QuestObjectiveEventKind.CRITERION);
+            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, CHOICE, CONDITION -> Set.of();
+        };
+    }
+
+    public static Set<ResourceLocation> exclusiveGroupQuestIds(
+            MinecraftServer server, ResourceLocation group) {
+        return QuestContentCatalogs.current(server).exclusiveGroupQuestIds(group);
+    }
+
+    public static boolean hasQuestTrigger(
+            MinecraftServer server,
+            ResourceLocation id,
+            QuestDefinition.TriggerEvent event) {
+        return QuestContentCatalogs.current(server).hasQuestTrigger(id, event);
+    }
+
+    public static ContentSnapshot snapshotForCatalog(MinecraftServer server) {
+        return snapshotForCatalog(server, new QuestBundleTransactions.Result(Map.of(), List.of()));
+    }
+
+    public static ContentSnapshot snapshotForCatalog(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles) {
+        CachedQuests snapshot = loadCache(server, bundles);
+        return new ContentSnapshot(
+                snapshot.compiledCatalog(),
+                snapshot.dialogueCatalog(),
+                snapshot.quests(),
+                snapshot.objectiveEventQuestIds(),
+                snapshot.factQuestIds(),
+                snapshot.memoryEventQuestIds(),
+                snapshot.exclusiveGroupQuestIds(),
+                snapshot.triggerEventQuestIds());
+    }
+
+    private static boolean hasObjectiveEvent(
+            MinecraftServer server,
+            ResourceLocation id,
+            QuestObjectiveEventKind kind) {
+        return id != null
+                && QuestContentCatalogs.current(server).questIdsForObjectiveEvent(kind).contains(id);
+    }
+
+    private static CachedQuests loadCache(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles) {
+        VillagerRetaliationRegistries.freezeForDatapackCompilation();
+        CachedQuests override = testOverride;
+        if (override.server() == server) {
+            return override;
+        }
+        LoadedQuestCatalog catalog = read(server, bundles);
+        Map<ResourceLocation, QuestDefinition> quests = catalog.questDefinitions();
+        return new CachedQuests(
                 server,
-                RESOURCE_ROOT,
-                (location, resource) -> readFile(location, resource, quests, sources));
-        return Map.copyOf(quests);
+                catalog.compiledCatalog(),
+                catalog.dialogueCatalog(),
+                quests,
+                objectiveEventQuestIds(quests),
+                objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
+                memoryEventQuestIds(quests),
+                exclusiveGroupQuestIds(quests),
+                triggerEventQuestIds(catalog.compiledCatalog()));
     }
 
-    private static void readFile(
-            ResourceLocation location,
-            Resource resource,
+    private static Set<ResourceLocation> objectiveQuestIds(
             Map<ResourceLocation, QuestDefinition> quests,
-            Map<ResourceLocation, ResourceLocation> sources) {
-        DatapackResourceLoader.readObject(location, "quest", resource).ifPresent(root -> {
-            ResourceLocation fallbackId = fallbackQuestId(location);
-            QuestDefinition definition = readQuest(location, root, fallbackId);
-            if (definition == null) {
-                return;
+            QuestDefinition.ObjectiveType type) {
+        Set<ResourceLocation> ids = new LinkedHashSet<>();
+        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
+            boolean hasObjective = entry.getValue().objectives().stream()
+                    .anyMatch(objective -> objective.type() == type);
+            if (hasObjective) {
+                ids.add(entry.getKey());
             }
-            ResourceLocation previous = sources.put(definition.id(), location);
-            if (previous != null) {
-                DatapackDiagnostics.warnDuplicateId(location, "quest", definition.id().toString(), previous);
-            }
-            quests.put(definition.id(), definition);
-        });
+        }
+        return Set.copyOf(ids);
     }
 
-    private static QuestDefinition readQuest(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
+    private static Map<QuestObjectiveEventKind, Set<ResourceLocation>> objectiveEventQuestIds(
+            Map<ResourceLocation, QuestDefinition> quests) {
+        Map<QuestObjectiveEventKind, Set<ResourceLocation>> idsByEvent = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
+            for (QuestDefinition.Objective objective : entry.getValue().objectives()) {
+                for (QuestObjectiveEventKind eventKind : QuestObjectiveRegistry.eventKinds(objective)) {
+                    idsByEvent.computeIfAbsent(eventKind, ignored -> new LinkedHashSet<>()).add(entry.getKey());
+                }
+            }
+        }
+        Map<QuestObjectiveEventKind, Set<ResourceLocation>> frozen = new LinkedHashMap<>();
+        for (Map.Entry<QuestObjectiveEventKind, Set<ResourceLocation>> entry : idsByEvent.entrySet()) {
+            frozen.put(entry.getKey(), Set.copyOf(entry.getValue()));
+        }
+        return Map.copyOf(frozen);
+    }
+
+    private static Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds(Map<ResourceLocation, QuestDefinition> quests) {
+        Map<ResourceLocation, Set<ResourceLocation>> idsByMemoryTag = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
+            for (QuestDefinition.Objective objective : entry.getValue().objectives()) {
+                if (!QuestObjectiveRegistry.eventKinds(objective).contains(QuestObjectiveEventKind.MEMORY_EVENT)) {
+                    continue;
+                }
+                for (ResourceLocation memoryTag : QuestObjectiveRegistry.eventSubscriptionKeys(objective)) {
+                    idsByMemoryTag.computeIfAbsent(memoryTag, ignored -> new LinkedHashSet<>()).add(entry.getKey());
+                }
+            }
+        }
+
+        Map<ResourceLocation, Set<ResourceLocation>> frozen = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, Set<ResourceLocation>> entry : idsByMemoryTag.entrySet()) {
+            frozen.put(entry.getKey(), Set.copyOf(entry.getValue()));
+        }
+        return Map.copyOf(frozen);
+    }
+
+    private static Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds(Map<ResourceLocation, QuestDefinition> quests) {
+        Map<ResourceLocation, Set<ResourceLocation>> groups = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
+            ResourceLocation group = entry.getValue().rules().branching().exclusiveGroup();
+            if (group != null) {
+                groups.computeIfAbsent(group, ignored -> new LinkedHashSet<>()).add(entry.getKey());
+            }
+        }
+
+        Map<ResourceLocation, Set<ResourceLocation>> frozen = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, Set<ResourceLocation>> entry : groups.entrySet()) {
+            frozen.put(entry.getKey(), Set.copyOf(entry.getValue()));
+        }
+        return Map.copyOf(frozen);
+    }
+
+    private static Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds(
+            CompiledQuestCatalog catalog) {
+        Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> idsByEvent =
+                new EnumMap<>(QuestDefinition.TriggerEvent.class);
+        for (CompiledQuest quest : catalog.quests()) {
+            for (QuestDefinition.TriggerEvent event : quest.triggerIndex().events()) {
+                idsByEvent.computeIfAbsent(event, ignored -> new LinkedHashSet<>()).add(quest.id());
+            }
+        }
+
+        Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> frozen =
+                new EnumMap<>(QuestDefinition.TriggerEvent.class);
+        for (Map.Entry<QuestDefinition.TriggerEvent, Set<ResourceLocation>> entry : idsByEvent.entrySet()) {
+            frozen.put(entry.getKey(), Set.copyOf(entry.getValue()));
+        }
+        return Map.copyOf(frozen);
+    }
+
+    private static LoadedQuestCatalog read(
+            MinecraftServer server,
+            QuestBundleTransactions.Result bundles) {
+        Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
+        Map<ResourceLocation, CompiledQuest> compiledQuests = new LinkedHashMap<>();
+        Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
+        List<QuestDialogueCatalog> dialogueCatalogs = new ArrayList<>();
+        readBundles(server.registryAccess(), bundles, quests, compiledQuests, sources, dialogueCatalogs);
+        validatePrerequisiteReferences(quests, compiledQuests);
+        return new LoadedQuestCatalog(
+                freezeOrderedResourceMap(quests),
+                new CompiledQuestCatalog(compiledQuests),
+                QuestDialogueCatalog.merge(dialogueCatalogs));
+    }
+
+    private static void readBundles(
+            HolderLookup.Provider registries,
+            QuestBundleTransactions.Result bundles,
+            Map<ResourceLocation, QuestDefinition> quests,
+            Map<ResourceLocation, CompiledQuest> compiledQuests,
+            Map<ResourceLocation, ResourceLocation> sources,
+            List<QuestDialogueCatalog> dialogueCatalogs) {
+        if (bundles == null) {
+            return;
+        }
+        for (QuestBundleTransactions.EffectiveBundle bundle : bundles.bundles().values()) {
+            if (bundle.owner().shared() || bundle.questId() == null) {
+                continue;
+            }
+            QuestBundleRuntimeMaterializer.Result materialized = QuestBundleRuntimeMaterializer.materialize(bundle);
+            ResourceLocation source = ResourceLocation.fromNamespaceAndPath(
+                    bundle.owner().namespace(),
+                    RESOURCE_ROOT + "/" + bundle.owner().questline() + "/"
+                            + bundle.owner().slug() + "/quest.json");
+            if (!materialized.valid()) {
+                materialized.errors().forEach(error -> DatapackDiagnostics.warnSkippedEntry(
+                        source, "quest bundle", "localization", error));
+                continue;
+            }
+            QuestResourceEnvelope.read(
+                            source,
+                            materialized.quest(),
+                            new QuestResourceSource(source, "quest_bundle"))
+                    .ifPresent(envelope -> readV2File(
+                            registries, envelope, quests, compiledQuests, sources, dialogueCatalogs));
+        }
+    }
+
+    private static void validatePrerequisiteReferences(
+            Map<ResourceLocation, QuestDefinition> quests,
+            Map<ResourceLocation, CompiledQuest> compiledQuests) {
+        for (CompiledQuest quest : compiledQuests.values()) {
+            if (quest.schemaVersion() != QuestSchemaVersion.V2) {
+                continue;
+            }
+            for (int index = 0; index < quest.prerequisites().size(); index++) {
+                ResourceLocation prerequisite = quest.prerequisites().get(index);
+                if (!quests.containsKey(prerequisite)) {
+                    DatapackDiagnostics.warnQuestV2Validation(
+                            quest.source().resource(),
+                            "/availability/prerequisites/" + index,
+                            "prerequisite quest id \"" + prerequisite + "\" does not exist.",
+                            "Declare the referenced quest or remove it from availability.prerequisites.",
+                            Set.of(quest.id().toString(), prerequisite.toString()));
+                }
+            }
+        }
+    }
+
+    private static void readV2File(
+            HolderLookup.Provider registries,
+            QuestResourceEnvelope resource,
+            Map<ResourceLocation, QuestDefinition> quests,
+            Map<ResourceLocation, CompiledQuest> compiledQuests,
+            Map<ResourceLocation, ResourceLocation> sources,
+            List<QuestDialogueCatalog> dialogueCatalogs) {
+        Optional<QuestV2Resource> parsed = QuestV2Parser.parse(resource);
+        if (parsed.isEmpty()) {
+            return;
+        }
+        Optional<CompiledQuest> compiled = QuestV2Compiler.compile(parsed.get(), resource, registries);
+        if (compiled.isEmpty()) {
+            return;
+        }
+        CompiledQuest quest = compiled.get();
+        ResourceLocation previous = sources.put(quest.id(), resource.location());
+        if (previous != null) {
+            DatapackDiagnostics.warnDuplicateId(resource.location(), "quest", quest.id().toString(), previous);
+        }
+        quests.put(quest.id(), quest.asQuestDefinition());
+        compiledQuests.put(quest.id(), quest);
+        dialogueCatalogs.add(QuestDialogueCompiler.compile(parsed.get(), resource));
+    }
+
+    static QuestDefinition readCanonicalQuest(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
+        return readQuest(location, root, fallbackId, ItemStackPredicateParser.DEFAULT_REGISTRIES);
+    }
+
+    static QuestDefinition readCanonicalQuest(
+            ResourceLocation location,
+            JsonObject root,
+            ResourceLocation fallbackId,
+            HolderLookup.Provider registries) {
+        return readQuest(location, root, fallbackId, registries);
+    }
+
+    private static QuestDefinition readQuest(
+            ResourceLocation location,
+            JsonObject root,
+            ResourceLocation fallbackId,
+            HolderLookup.Provider registries) {
         ResourceLocation id = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
         if (id == null) {
             return null;
@@ -123,28 +488,88 @@ public final class VillagerQuestResources {
         JsonObject display = DatapackJsonReader.readObject(root, "display");
         String title = display == null ? "" : DatapackJsonReader.readString(display, "title");
         String description = display == null ? "" : DatapackJsonReader.readString(display, "description");
+        String titleKey = display == null ? "" : DatapackJsonReader.readString(display, "title_key");
+        String descriptionKey = display == null ? "" : DatapackJsonReader.readString(display, "description_key");
         ResourceLocation parent = DatapackJsonReader.readResourceLocation(root, "parent").orElse(null);
+        List<ResourceLocation> prerequisites = readQuestPrerequisites(root, parent);
+        QuestDefinition.Target target;
+        List<QuestDefinition.Objective> objectives;
+        try {
+            target = readTarget(root, registries);
+            objectives = readObjectives(location, root, id, registries);
+        } catch (IllegalArgumentException exception) {
+            DatapackDiagnostics.warnSkippedEntry(location, "quest", id.toString(), exception.getMessage());
+            return null;
+        }
 
         return new QuestDefinition(
                 id,
                 title,
                 description,
-                DatapackJsonReader.readString(root, "questline"),
+                titleKey,
+                descriptionKey,
+                firstNonBlank(DatapackJsonReader.readString(root, "questline"), inferQuestline(location)),
+                readQuestTags(root),
                 parent,
-                readOffer(location, root),
-                readTarget(root),
-                readObjectives(location, root, id),
+                prerequisites,
+                DatapackJsonReader.readBoolean(root, "show_locked_adventure_hint", true),
+                readOffer(location, root, id),
+                target,
+                objectives,
                 readRules(location, root, id),
                 readTracker(root),
+                DatapackJsonReader.readString(root, "entry_stage"),
+                readStages(location, root, id),
                 readTriggers(location, root, id),
                 readRewards(root),
-                readDialogue(root),
+                readDialogue(location, id, root),
                 DialogueEntryMetadata.read(location, "quest", "quest", root),
-                readLinks(root)
+                readLinks(root),
+                readRevision(root)
         );
     }
 
-    private static QuestDefinition.Offer readOffer(ResourceLocation location, JsonObject root) {
+    private static QuestDefinition.Revision readRevision(JsonObject root) {
+        JsonElement revisionElement = root.get("revision");
+        JsonObject revisionObject = revisionElement != null && revisionElement.isJsonObject()
+                ? revisionElement.getAsJsonObject()
+                : null;
+        int number = revisionObject == null
+                ? DatapackJsonReader.readInt(root, "revision", 1)
+                : DatapackJsonReader.readInt(revisionObject, "number", 1);
+        JsonObject migration = DatapackJsonReader.readObject(root, "migration");
+        if (migration == null && revisionObject != null) {
+            migration = DatapackJsonReader.readObject(revisionObject, "migration");
+        }
+        return new QuestDefinition.Revision(
+                number,
+                QuestDefinition.RevisionPolicy.bySerializedName(
+                        migration == null ? "" : DatapackJsonReader.readString(migration, "active_policy", "on_active_change")),
+                migration == null ? Map.of() : readStringMap(DatapackJsonReader.readObject(migration, "stage_aliases")),
+                migration == null ? Map.of() : readStringMap(DatapackJsonReader.readObject(migration, "objective_aliases")));
+    }
+
+    private static List<ResourceLocation> readQuestPrerequisites(JsonObject root, ResourceLocation parent) {
+        List<ResourceLocation> prerequisites = new ArrayList<>();
+        for (String value : DatapackJsonReader.readStringList(root, "prerequisites")) {
+            DatapackJsonReader.parseResourceLocation(value).ifPresent(prerequisites::add);
+        }
+        if (prerequisites.isEmpty() && parent != null) {
+            prerequisites.add(parent);
+        }
+        return List.copyOf(prerequisites);
+    }
+
+    private static Set<String> readQuestTags(JsonObject root) {
+        Set<String> tags = new LinkedHashSet<>(DatapackJsonReader.readStringList(root, "tag", "tags"));
+        String group = DatapackJsonReader.readString(root, "group");
+        if (!group.isBlank()) {
+            tags.add("group." + group);
+        }
+        return Set.copyOf(tags);
+    }
+
+    private static QuestDefinition.Offer readOffer(ResourceLocation location, JsonObject root, ResourceLocation defaultQuestId) {
         JsonObject offer = DatapackJsonReader.readObject(root, "offer");
         if (offer == null) {
             return QuestDefinition.Offer.any();
@@ -164,7 +589,9 @@ public final class VillagerQuestResources {
         return new QuestDefinition.Offer(
                 professions,
                 minLevel,
-                readSkillRequirements(offer)
+                readSkillRequirements(offer),
+                DialogueCondition.readList(location, "quest offer", offer, defaultQuestId),
+                DatapackJsonReader.readInt(offer, "weight", DatapackJsonReader.readInt(offer, "selection_weight", 1))
         );
     }
 
@@ -190,7 +617,7 @@ public final class VillagerQuestResources {
         return Map.copyOf(skills);
     }
 
-    private static QuestDefinition.Target readTarget(JsonObject root) {
+    private static QuestDefinition.Target readTarget(JsonObject root, HolderLookup.Provider registries) {
         JsonObject target = DatapackJsonReader.readObject(root, "target");
         ResourceLocation structure = target == null
                 ? null
@@ -210,14 +637,32 @@ public final class VillagerQuestResources {
         ResourceLocation proofItem = target == null
                 ? null
                 : DatapackJsonReader.readResourceLocation(target, "proof_item").orElse(null);
+        ItemStackPredicate proofItemPredicate = proofItem == null
+                ? ItemStackPredicate.ANY
+                : ItemStackPredicateParser.parse(
+                        registries,
+                        target,
+                        BuiltInRegistries.ITEM.getOptional(proofItem).stream().toList(),
+                        "proof_item_components",
+                        "proof_item_durability",
+                        "proof_item_custom_data",
+                        "proof_item_nbt");
 
-        return new QuestDefinition.Target(structure, dimension, pieces, searchRadius, discoveryRadius, proofItem);
+        return new QuestDefinition.Target(
+                structure,
+                dimension,
+                pieces,
+                searchRadius,
+                discoveryRadius,
+                proofItem,
+                proofItemPredicate);
     }
 
     private static List<QuestDefinition.Objective> readObjectives(
             ResourceLocation location,
             JsonObject root,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            HolderLookup.Provider registries) {
         JsonElement element = root.get("objectives");
         if (element == null || element.isJsonNull()) {
             return List.of();
@@ -228,10 +673,20 @@ public final class VillagerQuestResources {
         }
 
         List<QuestDefinition.Objective> objectives = new ArrayList<>();
+        Set<String> objectiveIds = new LinkedHashSet<>();
         int index = 0;
         for (JsonElement child : element.getAsJsonArray()) {
             if (child.isJsonObject()) {
-                readObjective(location, child.getAsJsonObject(), index, defaultQuestId).ifPresent(objectives::add);
+                readObjective(location, child.getAsJsonObject(), index, defaultQuestId, registries).ifPresent(objective -> {
+                    if (!objectiveIds.add(objective.id())) {
+                        DatapackDiagnostics.warnInvalidDialogueCondition(
+                                location,
+                                "quest objective \"" + objective.id() + "\"",
+                                "duplicate objective id; later duplicate is ignored.");
+                        return;
+                    }
+                    objectives.add(objective);
+                });
             }
             index++;
         }
@@ -242,7 +697,8 @@ public final class VillagerQuestResources {
             ResourceLocation location,
             JsonObject entry,
             int index,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            HolderLookup.Provider registries) {
         String id = firstNonBlank(DatapackJsonReader.readString(entry, "id"), "objective_" + index);
         String context = "quest objective \"" + id + "\"";
         QuestDefinition.ObjectiveType type = QuestDefinition.ObjectiveType.bySerializedName(
@@ -254,51 +710,520 @@ public final class VillagerQuestResources {
 
         ResourceLocation structure = DatapackJsonReader.readResourceLocation(entry, "structure").orElse(null);
         ResourceKey<Level> dimension = readDimension(entry);
+        BlockPos objectiveLocation = readLocation(entry);
         ResourceLocation item = DatapackJsonReader.readResourceLocation(entry, "item").orElse(null);
+        ItemSelection itemSelection = readItemSelection(location, context, entry, type, item);
+        if (!itemSelection.valid()) {
+            return Optional.empty();
+        }
+        EntitySelectors entitySelectors = readEntitySelectors(location, context, entry);
+        BlockSelectors blockSelectors = readBlockSelectors(location, context, entry);
+        MemoryEventSelectors memoryEventSelectors = readMemoryEventSelectors(location, context, entry);
+        Set<String> giftReactions = readGiftReactions(location, context, entry);
+        ReputationObjective reputationObjective = readReputationObjective(location, context, entry);
+        FactObjective factObjective = readFactObjective(location, context, entry, defaultQuestId);
+        ResourceLocation criterion = DatapackJsonReader.readResourceLocation(entry, "criterion").orElse(null);
+        Map<String, String> criterionData = readCriterionData(location, context, entry);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
-        if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "structure_visit objective must define structure.");
-            return Optional.empty();
-        }
-        if (type == QuestDefinition.ObjectiveType.ITEM_CHECK && item == null) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "item_check objective must define item or proof_item.");
-            return Optional.empty();
-        }
-        if (type == QuestDefinition.ObjectiveType.CONDITION && conditions.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "condition objective must define conditions.");
-            return Optional.empty();
-        }
 
-        return Optional.of(new QuestDefinition.Objective(
+        QuestDefinition.Objective objective = new QuestDefinition.Objective(
                 id,
                 type,
                 DatapackJsonReader.readBoolean(entry, "optional", false),
                 structure,
                 dimension,
+                objectiveLocation,
+                DatapackJsonReader.readInt(entry, "radius", 8),
                 DatapackJsonReader.readStringList(entry, "pieces"),
                 DatapackJsonReader.readInt(entry, "search_radius", DEFAULT_STRUCTURE_SEARCH_RADIUS),
                 DatapackJsonReader.readInt(entry, "discovery_radius", DEFAULT_DISCOVERY_RADIUS),
                 item,
+                entitySelectors.entityTypes(),
+                entitySelectors.entityTags(),
+                blockSelectors.blockTypes(),
+                blockSelectors.blockTags(),
+                memoryEventSelectors.memoryTags(),
+                giftReactions,
+                reputationObjective.levels(),
+                reputationObjective.min(),
+                reputationObjective.max(),
+                factObjective.scope(),
+                factObjective.questId(),
+                factObjective.tags(),
+                factObjective.key(),
+                factObjective.values(),
+                factObjective.min(),
+                factObjective.max(),
+                criterion,
+                criterionData,
                 DatapackJsonReader.readInt(entry, "count", 1),
                 DatapackJsonReader.readBoolean(entry, "consume", true),
-                readObjectiveItemRequirements(entry),
+                readObjectiveItemRequirements(entry, registries, itemSelection.entries()),
                 conditions,
-                readObjectiveTracker(entry)));
+                readObjectiveTracker(entry),
+                itemSelection.entries(),
+                itemSelection.mode());
+        Optional<String> registryValidation = QuestObjectiveRegistry.validationError(objective);
+        if (registryValidation.isPresent()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, registryValidation.get());
+            return Optional.empty();
+        }
+        return Optional.of(objective);
     }
 
-    private static QuestDefinition.ItemRequirements readObjectiveItemRequirements(JsonObject entry) {
+    private static ItemSelection readItemSelection(
+            ResourceLocation location,
+            String context,
+            JsonObject objective,
+            QuestDefinition.ObjectiveType type,
+            ResourceLocation fixedItem) {
+        String selection = DatapackJsonReader.readString(objective, "selection").trim();
+        JsonElement items = objective.get("items");
+        boolean hasItems = items != null && !items.isJsonNull();
+        if (selection.isBlank() && !hasItems) {
+            return ItemSelection.fixed();
+        }
+        if (type != QuestDefinition.ObjectiveType.ITEM_CHECK) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "selection and items are only supported by item_check objectives.");
+            return ItemSelection.invalid();
+        }
+        if (!"random".equalsIgnoreCase(selection)) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "items requires selection to be random.");
+            return ItemSelection.invalid();
+        }
+        if (fixedItem != null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "random item_check objectives cannot combine item with items.");
+            return ItemSelection.invalid();
+        }
+        if (items == null || !items.isJsonArray() || items.getAsJsonArray().isEmpty()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "random item_check objectives require a non-empty items array.");
+            return ItemSelection.invalid();
+        }
+
+        List<QuestDefinition.ItemSelectionEntry> entries = new ArrayList<>();
+        int index = 0;
+        for (JsonElement element : items.getAsJsonArray()) {
+            QuestDefinition.ItemSelectionEntry entry = readItemSelectionEntry(
+                    location, context + " items[" + index + "]", element);
+            if (entry == null) {
+                return ItemSelection.invalid();
+            }
+            entries.add(entry);
+            index++;
+        }
+        return new ItemSelection(List.copyOf(entries), QuestDefinition.ItemSelectionMode.RANDOM, true);
+    }
+
+    private static QuestDefinition.ItemSelectionEntry readItemSelectionEntry(
+            ResourceLocation location,
+            String context,
+            JsonElement element) {
+        String itemValue = "";
+        String tagValue = "";
+        int weight = 1;
+        if (element != null && element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            String value = element.getAsString().trim();
+            if (value.startsWith("#")) {
+                tagValue = value.substring(1).trim();
+            } else {
+                itemValue = value;
+            }
+        } else if (element != null && element.isJsonObject()) {
+            JsonObject object = element.getAsJsonObject();
+            for (String key : object.keySet()) {
+                if (!Set.of("item", "tag", "weight").contains(key)) {
+                    DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location, context, "unsupported random item entry field: " + key);
+                    return null;
+                }
+            }
+            itemValue = DatapackJsonReader.readString(object, "item").trim();
+            tagValue = DatapackJsonReader.readString(object, "tag").trim();
+            if (tagValue.startsWith("#")) {
+                tagValue = tagValue.substring(1).trim();
+            }
+            JsonElement rawWeight = object.get("weight");
+            if (rawWeight != null) {
+                if (!rawWeight.isJsonPrimitive() || !rawWeight.getAsJsonPrimitive().isNumber()) {
+                    DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location, context, "weight must be a positive integer.");
+                    return null;
+                }
+                double numericWeight = rawWeight.getAsDouble();
+                if (!Double.isFinite(numericWeight) || numericWeight < 1.0D || numericWeight != Math.rint(numericWeight)
+                        || numericWeight > Integer.MAX_VALUE) {
+                    DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location, context, "weight must be a positive integer.");
+                    return null;
+                }
+                weight = (int) numericWeight;
+            }
+        } else {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "entry must be an item/tag string or an object.");
+            return null;
+        }
+
+        if (itemValue.isBlank() == tagValue.isBlank()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "entry must define exactly one of item or tag.");
+            return null;
+        }
+        if (!itemValue.isBlank()) {
+            ResourceLocation itemId = ResourceLocation.tryParse(itemValue);
+            if (itemId == null || BuiltInRegistries.ITEM.getOptional(itemId).filter(item -> item != Items.AIR).isEmpty()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(
+                        location, context, "unknown item: " + itemValue);
+                return null;
+            }
+            return new QuestDefinition.ItemSelectionEntry(itemId, null, weight);
+        }
+
+        ResourceLocation tagId = ResourceLocation.tryParse(tagValue);
+        if (tagId == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "invalid item tag: " + tagValue);
+            return null;
+        }
+        TagKey<Item> tag = TagKey.create(Registries.ITEM, tagId);
+        boolean populated = BuiltInRegistries.ITEM.getTag(tag)
+                .map(values -> values.stream().anyMatch(holder -> holder.value() != Items.AIR))
+                .orElse(false);
+        if (!populated) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location, context, "item tag is missing or empty: " + tagValue);
+            return null;
+        }
+        return new QuestDefinition.ItemSelectionEntry(null, tagId, weight);
+    }
+
+    private record ItemSelection(
+            List<QuestDefinition.ItemSelectionEntry> entries,
+            QuestDefinition.ItemSelectionMode mode,
+            boolean valid) {
+        private static ItemSelection fixed() {
+            return new ItemSelection(List.of(), QuestDefinition.ItemSelectionMode.FIXED, true);
+        }
+
+        private static ItemSelection invalid() {
+            return new ItemSelection(List.of(), QuestDefinition.ItemSelectionMode.FIXED, false);
+        }
+    }
+
+    private static Map<String, String> readCriterionData(
+            ResourceLocation location,
+            String context,
+            JsonObject entry) {
+        JsonElement match = entry.get("match");
+        if (match == null || match.isJsonNull()) {
+            return Map.of();
+        }
+        if (!match.isJsonObject()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "match must be an object.");
+            return Map.of();
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> child : match.getAsJsonObject().entrySet()) {
+            if (child.getValue().isJsonPrimitive()) {
+                result.put(child.getKey(), child.getValue().getAsString());
+            } else {
+                DatapackDiagnostics.warnInvalidDialogueCondition(
+                        location,
+                        context,
+                        "match values must be strings, numbers, or booleans; ignored key " + child.getKey() + ".");
+            }
+        }
+        return Map.copyOf(result);
+    }
+
+    private static BlockPos readLocation(JsonObject entry) {
+        Integer x = DatapackJsonReader.readNullableInt(entry, "x");
+        Integer y = DatapackJsonReader.readNullableInt(entry, "y");
+        Integer z = DatapackJsonReader.readNullableInt(entry, "z");
+        if (x == null || y == null || z == null) {
+            JsonElement pos = entry.get("pos");
+            if (pos != null && pos.isJsonArray() && pos.getAsJsonArray().size() >= 3) {
+                x = DatapackJsonReader.readInt(pos.getAsJsonArray().get(0), Integer.MIN_VALUE);
+                y = DatapackJsonReader.readInt(pos.getAsJsonArray().get(1), Integer.MIN_VALUE);
+                z = DatapackJsonReader.readInt(pos.getAsJsonArray().get(2), Integer.MIN_VALUE);
+                if (x == Integer.MIN_VALUE || y == Integer.MIN_VALUE || z == Integer.MIN_VALUE) {
+                    return null;
+                }
+            }
+        }
+        return x == null || y == null || z == null ? null : new BlockPos(x, y, z);
+    }
+
+    private static EntitySelectors readEntitySelectors(ResourceLocation location, String context, JsonObject entry) {
+        Set<ResourceLocation> entityTypes = new LinkedHashSet<>();
+        Set<ResourceLocation> entityTags = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(entry, "entity", "entities")) {
+            readEntitySelector(location, context, value, entityTypes, entityTags);
+        }
+        for (String value : DatapackJsonReader.readStringList(entry, "entity_tag", "entity_tags")) {
+            readEntityTag(location, context, value, entityTags);
+        }
+        return new EntitySelectors(Set.copyOf(entityTypes), Set.copyOf(entityTags));
+    }
+
+    private static BlockSelectors readBlockSelectors(ResourceLocation location, String context, JsonObject entry) {
+        Set<ResourceLocation> blockTypes = new LinkedHashSet<>();
+        Set<ResourceLocation> blockTags = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(entry, "block", "blocks")) {
+            ResourceLocation blockId = ResourceLocation.tryParse(value.startsWith("#") ? value.substring(1) : value);
+            if (blockId == null) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "block selector \"" + value + "\" is not a valid resource location.");
+            } else if (value.startsWith("#")) {
+                blockTags.add(blockId);
+            } else {
+                blockTypes.add(blockId);
+            }
+        }
+        for (String value : DatapackJsonReader.readStringList(entry, "block_tag", "block_tags")) {
+            ResourceLocation tagId = ResourceLocation.tryParse(value.startsWith("#") ? value.substring(1) : value);
+            if (tagId == null) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "block tag selector \"" + value + "\" is not a valid resource location.");
+            } else {
+                blockTags.add(tagId);
+            }
+        }
+        return new BlockSelectors(Set.copyOf(blockTypes), Set.copyOf(blockTags));
+    }
+
+    private static MemoryEventSelectors readMemoryEventSelectors(ResourceLocation location, String context, JsonObject entry) {
+        Set<ResourceLocation> memoryTags = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(
+                entry,
+                "memory",
+                "memories",
+                "memory_event",
+                "memory_events",
+                "memory_tag",
+                "memory_tags",
+                "event",
+                "events")) {
+            Optional<ResourceLocation> memoryTag = VillageEventMemory.parseTagId(value);
+            if (memoryTag.isEmpty()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "memory event selector \"" + value + "\" is not a valid village memory tag.");
+            } else {
+                memoryTags.add(memoryTag.get());
+            }
+        }
+        return new MemoryEventSelectors(Set.copyOf(memoryTags));
+    }
+
+    private static Set<String> readGiftReactions(ResourceLocation location, String context, JsonObject entry) {
+        Set<String> reactions = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(entry, "reaction", "reactions", "gift_reaction", "gift_reactions")) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+            if (normalized.isBlank()) {
+                continue;
+            }
+            if (!Set.of("loved", "liked", "neutral", "disliked", "hated").contains(normalized)) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "gift reaction \"" + value + "\" must be loved, liked, neutral, disliked, or hated.");
+            } else {
+                reactions.add(normalized);
+            }
+        }
+        return Set.copyOf(reactions);
+    }
+
+    private static ReputationObjective readReputationObjective(ResourceLocation location, String context, JsonObject entry) {
+        Set<VillagerReputationLevel> levels = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(
+                entry,
+                "level",
+                "levels",
+                "reputation_level",
+                "reputation_levels")) {
+            readReputationLevel(value).ifPresentOrElse(
+                    levels::add,
+                    () -> DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location,
+                            context,
+                            "reputation level \"" + value + "\" must be royalty, revered, respected, trusted, neutral, suspicious, hostile, despised, or feared."));
+        }
+        Integer min = DatapackJsonReader.readNullableInt(entry, "min_reputation");
+        if (min == null) {
+            min = DatapackJsonReader.readNullableInt(entry, "min");
+        }
+        Integer max = DatapackJsonReader.readNullableInt(entry, "max_reputation");
+        if (max == null) {
+            max = DatapackJsonReader.readNullableInt(entry, "max");
+        }
+        return new ReputationObjective(Set.copyOf(levels), min, max);
+    }
+
+    private static Optional<VillagerReputationLevel> readReputationLevel(String value) {
+        String normalized = value == null
+                ? ""
+                : value.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+        if (normalized.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(VillagerReputationLevel.valueOf(normalized));
+        } catch (IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private static FactObjective readFactObjective(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = defaultQuestId;
+        String questValue = firstNonBlank(
+                DatapackJsonReader.readString(entry, "quest"),
+                DatapackJsonReader.readString(entry, "quest_id"));
+        if (!questValue.isBlank()) {
+            questId = QuestIds.parse(questValue, location);
+            if (questId == null) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective quest \"" + questValue + "\" is not a valid quest id.");
+            }
+        }
+        QuestFactScope fallbackScope = questId == null ? QuestFactScope.PLAYER : QuestFactScope.QUEST;
+        QuestFactScope scope = QuestFactScope.bySerializedName(DatapackJsonReader.readString(entry, "scope"), fallbackScope);
+
+        Set<ResourceLocation> tags = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(entry, "tag", "tags", "fact_tag", "quest_tag")) {
+            ResourceLocation tag = ResourceLocation.tryParse(value);
+            if (tag == null) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective tag \"" + value + "\" is not a valid resource location.");
+            } else {
+                tags.add(tag);
+            }
+        }
+
+        String key = firstNonBlank(
+                DatapackJsonReader.readString(entry, "key"),
+                firstNonBlank(
+                        DatapackJsonReader.readString(entry, "variable"),
+                        firstNonBlank(
+                                DatapackJsonReader.readString(entry, "counter"),
+                                DatapackJsonReader.readString(entry, "fact"))));
+        Set<String> stageValues = new LinkedHashSet<>(DatapackJsonReader.readStringList(entry, "stage", "stages"));
+        if (key.isBlank() && !stageValues.isEmpty()) {
+            key = "stage";
+        }
+        Set<String> values = new LinkedHashSet<>(DatapackJsonReader.readStringList(entry, "value", "values"));
+        Set<String> choiceValues = new LinkedHashSet<>(DatapackJsonReader.readStringList(entry, "choice", "choices"));
+        if (key.isBlank() && !choiceValues.isEmpty()) {
+            key = "choice";
+        }
+        values.addAll(stageValues);
+        values.addAll(choiceValues);
+
+        if (scope == QuestFactScope.QUEST && questId == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective with quest scope must define quest or have a default quest.");
+        }
+        return new FactObjective(
+                scope,
+                questId,
+                Set.copyOf(tags),
+                key,
+                Set.copyOf(values),
+                DatapackJsonReader.readNullableInt(entry, "min"),
+                DatapackJsonReader.readNullableInt(entry, "max"));
+    }
+
+    private static void readEntitySelector(
+            ResourceLocation location,
+            String context,
+            String value,
+            Set<ResourceLocation> entityTypes,
+            Set<ResourceLocation> entityTags) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        if (value.startsWith("#")) {
+            readEntityTag(location, context, value.substring(1), entityTags);
+            return;
+        }
+        ResourceLocation entityType = ResourceLocation.tryParse(value);
+        if (entityType == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "mob_kill entity \"" + value + "\" is not a valid resource location.");
+            return;
+        }
+        entityTypes.add(entityType);
+    }
+
+    private static void readEntityTag(
+            ResourceLocation location,
+            String context,
+            String value,
+            Set<ResourceLocation> entityTags) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        String normalized = value.startsWith("#") ? value.substring(1) : value;
+        ResourceLocation tag = ResourceLocation.tryParse(normalized);
+        if (tag == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "mob_kill entity tag \"" + value + "\" is not a valid resource location.");
+            return;
+        }
+        entityTags.add(tag);
+    }
+
+    private static QuestDefinition.ItemRequirements readObjectiveItemRequirements(
+            JsonObject entry,
+            HolderLookup.Provider registries,
+            List<QuestDefinition.ItemSelectionEntry> selections) {
         OptionalInt minEnchantmentLevel = readOptionalInt(entry, "min_enchantment_level");
         OptionalInt maxEnchantmentLevel = readOptionalInt(entry, "max_enchantment_level");
         List<QuestDefinition.EnchantmentRequirement> enchantments = new ArrayList<>();
         readEnchantmentRequirements(entry.get("enchantment"), minEnchantmentLevel, maxEnchantmentLevel, enchantments);
         readEnchantmentRequirements(entry.get("enchantments"), minEnchantmentLevel, maxEnchantmentLevel, enchantments);
+        JsonObject predicateEntry = entry.deepCopy();
+        if (!predicateEntry.has("durability")
+                && (predicateEntry.has("min_durability") || predicateEntry.has("max_durability"))) {
+            JsonObject durability = new JsonObject();
+            if (predicateEntry.has("min_durability")) {
+                durability.add("min", predicateEntry.get("min_durability").deepCopy());
+            }
+            if (predicateEntry.has("max_durability")) {
+                durability.add("max", predicateEntry.get("max_durability").deepCopy());
+            }
+            predicateEntry.add("durability", durability);
+        }
+        ResourceLocation itemId = DatapackJsonReader.readResourceLocation(entry, "item").orElse(null);
+        List<Item> predicateItems = new ArrayList<>(itemId == null
+                ? List.of()
+                : BuiltInRegistries.ITEM.getOptional(itemId).stream().toList());
+        for (QuestDefinition.ItemSelectionEntry selection : selections == null
+                ? List.<QuestDefinition.ItemSelectionEntry>of()
+                : selections) {
+            if (selection.item() != null) {
+                BuiltInRegistries.ITEM.getOptional(selection.item()).ifPresent(predicateItems::add);
+            } else if (selection.tag() != null) {
+                BuiltInRegistries.ITEM.getTag(TagKey.create(Registries.ITEM, selection.tag()))
+                        .ifPresent(values -> values.stream()
+                                .map(holder -> holder.value())
+                                .filter(candidate -> candidate != Items.AIR)
+                                .forEach(predicateItems::add));
+            }
+        }
+        ItemStackPredicate stackPredicate = ItemStackPredicateParser.parse(
+                registries,
+                predicateEntry,
+                predicateItems.stream().distinct().toList(),
+                "components",
+                "durability",
+                "custom_data",
+                "nbt");
         return new QuestDefinition.ItemRequirements(
                 enchantments,
                 readOptionalInt(entry, "min_durability"),
                 readOptionalInt(entry, "max_durability"),
                 readOptionalInt(entry, "min_durability_percent"),
                 readOptionalInt(entry, "max_durability_percent"),
-                readCustomData(entry));
+                readCustomData(entry),
+                stackPredicate);
     }
 
     private static void readEnchantmentRequirements(
@@ -452,10 +1377,12 @@ public final class VillagerQuestResources {
         }
         String text = DatapackJsonReader.readString(tracker, "text");
         String completeText = DatapackJsonReader.readString(tracker, "complete_text");
+        String textKey = DatapackJsonReader.readString(tracker, "text_key");
+        String completeTextKey = DatapackJsonReader.readString(tracker, "complete_text_key");
         boolean showProgress = DatapackJsonReader.readBoolean(tracker, "show_progress", true);
         float progress = (float) DatapackJsonReader.readDouble(tracker, "progress", -1.0D);
         Map<String, String> metadata = readStringMap(DatapackJsonReader.readObject(tracker, "metadata"));
-        return new QuestDefinition.ObjectiveTracker(text, completeText, showProgress, progress, metadata);
+        return new QuestDefinition.ObjectiveTracker(text, completeText, textKey, completeTextKey, showProgress, progress, metadata);
     }
 
     private static QuestDefinition.Rewards readRewards(JsonObject root) {
@@ -468,7 +1395,9 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readInt(rewards, "reputation", 0),
                 DatapackJsonReader.readInt(rewards, "gossip_reputation", 0),
                 DatapackJsonReader.readResourceLocation(rewards, "loot_table").orElse(null),
-                readMemoryEvent(rewards)
+                readMemoryEvent(rewards),
+                VillageEventMemory.MemoryScope.parse(DatapackJsonReader.readString(rewards, "memory_scope"))
+                        .orElse(VillageEventMemory.MemoryScope.BOTH)
         );
     }
 
@@ -481,21 +1410,77 @@ public final class VillagerQuestResources {
         boolean repeatable = DatapackJsonReader.readBoolean(rules, "repeatable", false);
         int maxStarts = Math.max(0, DatapackJsonReader.readInt(rules, "max_starts", repeatable ? 0 : 1));
         int maxCompletions = Math.max(0, DatapackJsonReader.readInt(rules, "max_completions", repeatable ? 0 : 1));
+        Map<String, Integer> maxActiveByTag = new LinkedHashMap<>();
+        JsonObject activeTagCaps = DatapackJsonReader.readObject(rules, "max_active_by_tag");
+        if (activeTagCaps != null) {
+            activeTagCaps.entrySet().forEach(entry -> {
+                if (entry.getValue().isJsonPrimitive()) {
+                    maxActiveByTag.put(entry.getKey(), Math.max(0, entry.getValue().getAsInt()));
+                }
+            });
+        }
         return new QuestDefinition.Rules(
                 repeatable,
                 DatapackJsonReader.readBoolean(rules, "locked_to_villager", true),
                 DatapackJsonReader.readBoolean(rules, "cross_villager_compatible", false),
                 maxStarts,
                 maxCompletions,
+                QuestDefinition.CompletionScope.bySerializedName(
+                        DatapackJsonReader.readString(rules, "completion_scope", "scope")),
                 DatapackJsonReader.readDurationTicks(rules, "completion_cooldown", 0L),
+                DatapackJsonReader.readDurationTicks(rules, "prerequisite_cooldown", 0L),
                 QuestDefinition.AbandonmentMode.bySerializedName(
                         DatapackJsonReader.readString(rules, "abandonment")),
                 DatapackJsonReader.readDurationTicks(rules, "abandonment_cooldown", 0L),
                 DatapackJsonReader.readBoolean(rules, "consume_on_completion", false),
                 DatapackJsonReader.readBoolean(rules, "consume_on_abandonment", false),
                 readActiveState(location, rules, defaultQuestId),
-                readExpiration(location, rules, defaultQuestId)
+                readExpiration(location, rules, defaultQuestId),
+                readBranching(rules),
+                DatapackJsonReader.readInt(rules, "max_active_quests", 0),
+                maxActiveByTag
         );
+    }
+
+    private static QuestDefinition.Branching readBranching(JsonObject rules) {
+        JsonObject branch = DatapackJsonReader.readObject(rules, "branch");
+        ResourceLocation exclusiveGroup = firstResourceLocation(branch, "exclusive_group", "group");
+        if (exclusiveGroup == null) {
+            exclusiveGroup = firstResourceLocation(rules, "exclusive_group", "branch_group");
+        }
+        QuestDefinition.BranchLockEvent exclusiveOn = QuestDefinition.BranchLockEvent.bySerializedName(firstNonBlank(
+                firstString(branch, "exclusive_on", "lock_on"),
+                firstString(rules, "exclusive_on", "exclusive_lock_on")));
+
+        Set<ResourceLocation> blocksOnStart = new LinkedHashSet<>();
+        blocksOnStart.addAll(DatapackJsonReader.readResourceLocations(rules, "blocks_on_start", "lock_on_start"));
+        if (branch != null) {
+            blocksOnStart.addAll(DatapackJsonReader.readResourceLocations(branch, "blocks_on_start", "lock_on_start"));
+        }
+
+        Set<ResourceLocation> blocksOnCompletion = new LinkedHashSet<>();
+        blocksOnCompletion.addAll(DatapackJsonReader.readResourceLocations(
+                rules,
+                "blocks",
+                "blocks_on_completion",
+                "blocks_on_complete",
+                "lock_on_completion",
+                "lock_on_complete"));
+        if (branch != null) {
+            blocksOnCompletion.addAll(DatapackJsonReader.readResourceLocations(
+                    branch,
+                    "blocks",
+                    "blocks_on_completion",
+                    "blocks_on_complete",
+                    "lock_on_completion",
+                    "lock_on_complete"));
+        }
+
+        return new QuestDefinition.Branching(
+                exclusiveGroup,
+                exclusiveOn,
+                Set.copyOf(blocksOnStart),
+                Set.copyOf(blocksOnCompletion));
     }
 
     private static QuestDefinition.ActiveState readActiveState(
@@ -533,7 +1518,8 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readBoolean(expiration, "allow_repickup", true),
                 DatapackJsonReader.readBoolean(expiration, "notify", true),
                 firstNonBlank(DatapackJsonReader.readString(expiration, "notification"), "quest.expired"),
-                firstNonBlank(DatapackJsonReader.readString(expiration, "text"), "Quest expired: {quest}")
+                firstNonBlank(DatapackJsonReader.readString(expiration, "text"), "Quest expired: {quest}"),
+                DatapackJsonReader.readString(expiration, "text_key", "notification_text_key")
         );
     }
 
@@ -555,14 +1541,21 @@ public final class VillagerQuestResources {
 
         return new QuestDefinition.Tracker(
                 DatapackJsonReader.readString(tracker, "title"),
+                DatapackJsonReader.readString(tracker, "title_key"),
                 steps,
-                readStringMap(DatapackJsonReader.readObject(tracker, "metadata"))
+                readStringMap(DatapackJsonReader.readObject(tracker, "metadata")),
+                DatapackJsonReader.readResourceLocation(tracker, "icon").orElse(null),
+                DatapackJsonReader.readString(tracker, "color"),
+                DatapackJsonReader.readString(tracker, "outline_color"),
+                DatapackJsonReader.readInt(tracker, "priority", 0),
+                DatapackJsonReader.readBoolean(tracker, "hidden", false)
         );
     }
 
     private static QuestDefinition.Step readTrackerStep(JsonObject step) {
         return new QuestDefinition.Step(
                 DatapackJsonReader.readString(step, "text"),
+                DatapackJsonReader.readString(step, "text_key"),
                 DatapackJsonReader.readBoolean(step, "show_progress", true),
                 (float) DatapackJsonReader.readDouble(step, "progress", -1.0D),
                 readStringMap(DatapackJsonReader.readObject(step, "metadata"))
@@ -582,6 +1575,300 @@ public final class VillagerQuestResources {
         return Map.copyOf(values);
     }
 
+    private static Map<String, QuestDefinition.Stage> readStages(
+            ResourceLocation location,
+            JsonObject root,
+            ResourceLocation defaultQuestId) {
+        JsonElement element = root.get("stages");
+        if (element == null || element.isJsonNull()) {
+            return Map.of();
+        }
+        if (!element.isJsonObject()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest stages", "stages must be an object keyed by stage id.");
+            return Map.of();
+        }
+
+        Map<String, QuestDefinition.Stage> stages = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
+            String stageId = entry.getKey() == null ? "" : entry.getKey().trim();
+            if (stageId.isBlank()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest stages", "stage id must not be blank.");
+                continue;
+            }
+            if (!entry.getValue().isJsonObject()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest stage \"" + stageId + "\"", "stage must be an object.");
+                continue;
+            }
+            if (stages.containsKey(stageId)) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest stage \"" + stageId + "\"", "duplicate stage id; later duplicate is ignored.");
+                continue;
+            }
+            stages.put(stageId, readStage(location, stageId, entry.getValue().getAsJsonObject(), defaultQuestId));
+        }
+        return java.util.Collections.unmodifiableMap(stages);
+    }
+
+    private static QuestDefinition.Stage readStage(
+            ResourceLocation location,
+            String stageId,
+            JsonObject stage,
+            ResourceLocation defaultQuestId) {
+        String context = "quest stage \"" + stageId + "\"";
+        JsonObject completion = DatapackJsonReader.readObject(stage, "completion");
+        return new QuestDefinition.Stage(
+                stageId,
+                DatapackJsonReader.readStringList(stage, "objective", "objectives"),
+                readStagePredicates(location, context + ".complete_when", stage.get("complete_when"), defaultQuestId),
+                QuestDefinition.CompletionMode.bySerializedName(firstNonBlank(
+                        completion == null ? "" : DatapackJsonReader.readString(completion, "mode"),
+                        DatapackJsonReader.readString(stage, "completion_mode"))),
+                completion == null
+                        ? DatapackJsonReader.readInt(stage, "completion_count", 1)
+                        : DatapackJsonReader.readInt(completion, "count", 1),
+                firstNonBlank(
+                        DatapackJsonReader.readString(stage, "next"),
+                        DatapackJsonReader.readString(stage, "next_stage")),
+                readActionsFromKey(location, context + ".entry_actions", stage, "entry_actions", defaultQuestId),
+                readActionsFromKey(location, context + ".exit_actions", stage, "exit_actions", defaultQuestId),
+                readStageBranches(location, context, stage.get("branches"), defaultQuestId),
+                readBonusOutcomes(location, context, stage.get("bonuses"), defaultQuestId),
+                readStringMap(DatapackJsonReader.readObject(stage, "metadata")));
+    }
+
+    private static List<QuestDefinition.BonusOutcome> readBonusOutcomes(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".bonuses", "bonuses must be an array.");
+            return List.of();
+        }
+        List<QuestDefinition.BonusOutcome> bonuses = new ArrayList<>();
+        Set<String> ids = new LinkedHashSet<>();
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (!child.isJsonObject()) {
+                index++;
+                continue;
+            }
+            JsonObject bonus = child.getAsJsonObject();
+            String id = firstNonBlank(DatapackJsonReader.readString(bonus, "id"), "bonus_" + index);
+            if (!ids.add(id)) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".bonuses", "duplicate bonus id " + id + ".");
+                index++;
+                continue;
+            }
+            List<QuestDefinition.StagePredicate> when = readStagePredicates(
+                    location,
+                    context + ".bonuses[" + id + "].when",
+                    bonus.get("when"),
+                    defaultQuestId);
+            if (when.isEmpty()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".bonuses[" + id + "]", "bonus requires when predicates.");
+                index++;
+                continue;
+            }
+            bonuses.add(new QuestDefinition.BonusOutcome(
+                    id,
+                    when,
+                    QuestDefinition.CompletionMode.bySerializedName(DatapackJsonReader.readString(bonus, "mode")),
+                    DatapackJsonReader.readInt(bonus, "count", 1),
+                    readActionsFromKey(location, context + ".bonuses[" + id + "].actions", bonus, "actions", defaultQuestId)));
+            index++;
+        }
+        return List.copyOf(bonuses);
+    }
+
+    private static List<VillagerActionDefinition> readActionsFromKey(
+            ResourceLocation location,
+            String context,
+            JsonObject source,
+            String key,
+            ResourceLocation defaultQuestId) {
+        JsonElement actions = source.get(key);
+        if (actions == null || actions.isJsonNull()) {
+            return List.of();
+        }
+        if (!actions.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, key + " must be an array of actions.");
+            return List.of();
+        }
+        JsonObject wrapper = new JsonObject();
+        wrapper.add("actions", actions);
+        return VillagerActionDefinition.readList(location, context, wrapper, defaultQuestId);
+    }
+
+    private static List<QuestDefinition.StagePredicate> readStagePredicates(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        List<QuestDefinition.StagePredicate> predicates = new ArrayList<>();
+        if (element.isJsonPrimitive() || element.isJsonObject()) {
+            predicates.addAll(readStagePredicate(location, context, element, defaultQuestId));
+            return List.copyOf(predicates);
+        }
+        if (!element.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "complete_when must be a string, object, or array.");
+            return List.of();
+        }
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            predicates.addAll(readStagePredicate(location, context + "[" + index + "]", child, defaultQuestId));
+            index++;
+        }
+        return List.copyOf(predicates);
+    }
+
+    private static List<QuestDefinition.StagePredicate> readStagePredicate(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (element.isJsonPrimitive()) {
+            String objectiveId = element.getAsString().trim();
+            return objectiveId.isBlank()
+                    ? List.of()
+                    : List.of(new QuestDefinition.StagePredicate(objectiveId, List.of()));
+        }
+        if (!element.isJsonObject()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "stage predicate must be a string or object.");
+            return List.of();
+        }
+
+        JsonObject predicate = element.getAsJsonObject();
+        String type = DatapackJsonReader.readString(predicate, "type").trim().toLowerCase(Locale.ROOT);
+        List<String> objectiveIds = new ArrayList<>();
+        String objectiveId = firstNonBlank(
+                DatapackJsonReader.readString(predicate, "objective"),
+                DatapackJsonReader.readString(predicate, "objective_id"));
+        if (objectiveId.isBlank() && ("objective".equals(type) || "objectives".equals(type))) {
+            objectiveId = DatapackJsonReader.readString(predicate, "id");
+        }
+        if (!objectiveId.isBlank()) {
+            objectiveIds.add(objectiveId);
+        }
+        objectiveIds.addAll(DatapackJsonReader.readStringList(predicate, "objectives"));
+        if (!objectiveIds.isEmpty()) {
+            return objectiveIds.stream()
+                    .filter(id -> id != null && !id.isBlank())
+                    .map(id -> new QuestDefinition.StagePredicate(id.trim(), List.<DialogueCondition>of()))
+                    .toList();
+        }
+
+        JsonObject condition = predicate;
+        if (type.isBlank() && looksLikeQuestFactPredicate(predicate)) {
+            condition = predicate.deepCopy();
+            condition.addProperty("type", "quest_fact");
+        }
+        if (condition.has("conditions")) {
+            List<DialogueCondition> conditions = DialogueCondition.readList(location, context, condition, defaultQuestId);
+            return conditions.isEmpty() ? List.of() : List.of(new QuestDefinition.StagePredicate("", conditions));
+        }
+        com.google.gson.JsonArray conditionsArray = new com.google.gson.JsonArray();
+        conditionsArray.add(condition);
+        JsonObject wrapper = new JsonObject();
+        wrapper.add("conditions", conditionsArray);
+        List<DialogueCondition> conditions = DialogueCondition.readList(location, context, wrapper, defaultQuestId);
+        return conditions.isEmpty() ? List.of() : List.of(new QuestDefinition.StagePredicate("", conditions));
+    }
+
+    private static boolean looksLikeQuestFactPredicate(JsonObject predicate) {
+        return predicate.has("tag")
+                || predicate.has("tags")
+                || predicate.has("fact_tag")
+                || predicate.has("quest_tag")
+                || predicate.has("key")
+                || predicate.has("variable")
+                || predicate.has("counter")
+                || predicate.has("fact")
+                || predicate.has("stage")
+                || predicate.has("stages");
+    }
+
+    private static List<QuestDefinition.StageBranch> readStageBranches(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".branches", "branches must be an array.");
+            return List.of();
+        }
+        List<QuestDefinition.StageBranch> branches = new ArrayList<>();
+        Set<String> ids = new LinkedHashSet<>();
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (!child.isJsonObject()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".branches[" + index + "]", "branch must be an object.");
+                index++;
+                continue;
+            }
+            JsonObject branch = child.getAsJsonObject();
+            String id = firstNonBlank(DatapackJsonReader.readString(branch, "id"), "branch_" + index);
+            if (!ids.add(id)) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".branches[" + index + "]", "duplicate branch id; later duplicate is ignored.");
+                index++;
+                continue;
+            }
+            branches.add(new QuestDefinition.StageBranch(
+                    id,
+                    DatapackJsonReader.readString(branch, "label"),
+                    DatapackJsonReader.readString(branch, "label_key"),
+                    DialogueCondition.readList(location, context + ".branches[" + id + "]", branch, defaultQuestId),
+                    readActionsFromKey(location, context + ".branches[" + id + "].actions", branch, "actions", defaultQuestId),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(branch, "next"),
+                            DatapackJsonReader.readString(branch, "next_stage")),
+                    readStageBranchBlockers(location, context + ".branches[" + id + "]", branch.get("blocked_by"), defaultQuestId)));
+            index++;
+        }
+        return List.copyOf(branches);
+    }
+
+    private static List<QuestDefinition.StageBranchBlocker> readStageBranchBlockers(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".blocked_by", "blocked_by must be an array.");
+            return List.of();
+        }
+        List<QuestDefinition.StageBranchBlocker> blockers = new ArrayList<>();
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (!child.isJsonObject()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".blocked_by[" + index + "]", "blocked_by entry must be an object.");
+                index++;
+                continue;
+            }
+            JsonObject blocker = child.getAsJsonObject();
+            blockers.add(new QuestDefinition.StageBranchBlocker(
+                    DialogueCondition.readList(location, context + ".blocked_by[" + index + "]", blocker, defaultQuestId),
+                    DatapackJsonReader.readString(blocker, "reason"),
+                    DatapackJsonReader.readString(blocker, "reason_key")));
+            index++;
+        }
+        return List.copyOf(blockers);
+    }
+
     private static List<QuestDefinition.Trigger> readTriggers(
             ResourceLocation location,
             JsonObject root,
@@ -595,10 +1882,20 @@ public final class VillagerQuestResources {
         }
 
         List<QuestDefinition.Trigger> triggers = new ArrayList<>();
+        Set<String> triggerIds = new LinkedHashSet<>();
         int index = 0;
         for (JsonElement child : element.getAsJsonArray()) {
             if (child.isJsonObject()) {
-                readTrigger(location, child.getAsJsonObject(), index, defaultQuestId).ifPresent(triggers::add);
+                readTrigger(location, child.getAsJsonObject(), index, defaultQuestId).ifPresent(trigger -> {
+                    if (!triggerIds.add(trigger.id())) {
+                        DatapackDiagnostics.warnInvalidDialogueCondition(
+                                location,
+                                "quest trigger \"" + trigger.id() + "\"",
+                                "duplicate trigger id; later duplicate is ignored.");
+                        return;
+                    }
+                    triggers.add(trigger);
+                });
             }
             index++;
         }
@@ -638,10 +1935,26 @@ public final class VillagerQuestResources {
                 event,
                 DialogueCondition.readList(location, "quest trigger \"" + id + "\"", trigger, defaultQuestId),
                 actions,
+                readTriggerStages(trigger),
                 DatapackJsonReader.readDurationTicks(trigger, "cooldown", defaultTriggerCooldown(event)),
                 DatapackJsonReader.readDouble(trigger, "radius", 10.0D),
-                repeatable
+                repeatable,
+                DatapackJsonReader.readInt(trigger, "priority", 0),
+                DatapackJsonReader.readDouble(trigger, "chance", 1.0D),
+                DatapackJsonReader.readBoolean(trigger, "exclusive", false),
+                DatapackJsonReader.readInt(trigger, "weight", 1)
         ));
+    }
+
+    private static Set<String> readTriggerStages(JsonObject trigger) {
+        Set<String> stages = new LinkedHashSet<>();
+        for (String stage : DatapackJsonReader.readStringList(trigger, "stage", "stages")) {
+            String normalized = stage == null ? "" : stage.trim();
+            if (!normalized.isBlank()) {
+                stages.add(normalized);
+            }
+        }
+        return Set.copyOf(stages);
     }
 
     private static boolean defaultTriggerRepeatable(List<VillagerActionDefinition> actions) {
@@ -649,7 +1962,7 @@ public final class VillagerQuestResources {
     }
 
     private static long defaultTriggerCooldown(QuestDefinition.TriggerEvent event) {
-        return event.isContinuous() ? 20L * 30L : 0L;
+        return QuestTriggerRegistry.defaultCooldownTicks(event);
     }
 
     private static ResourceLocation readMemoryEvent(JsonObject rewards) {
@@ -660,22 +1973,58 @@ public final class VillagerQuestResources {
         return VillageEventMemory.parseTagId(value).orElse(null);
     }
 
-    private static QuestDefinition.Dialogue readDialogue(JsonObject root) {
+    private static QuestDefinition.Dialogue readDialogue(ResourceLocation location, ResourceLocation questId, JsonObject root) {
         JsonObject dialogue = DatapackJsonReader.readObject(root, "dialogue");
         if (dialogue == null) {
             return QuestDefinition.Dialogue.EMPTY;
         }
         return new QuestDefinition.Dialogue(
                 readLines(dialogue, "start"),
+                readLineKeys(dialogue, "start"),
                 readLines(dialogue, "reminder"),
+                readLineKeys(dialogue, "reminder"),
                 readLines(dialogue, "turn_in"),
+                readLineKeys(dialogue, "turn_in"),
                 readLines(dialogue, "already_completed"),
+                readLineKeys(dialogue, "already_completed"),
                 readLines(dialogue, "unavailable"),
+                readLineKeys(dialogue, "unavailable"),
                 readLines(dialogue, "inactive"),
+                readLineKeys(dialogue, "inactive"),
                 readLines(dialogue, "missing_target"),
+                readLineKeys(dialogue, "missing_target"),
                 readLines(dialogue, "missing_proof"),
-                readLines(dialogue, "locate_failed")
+                readLineKeys(dialogue, "missing_proof"),
+                readLines(dialogue, "locate_failed"),
+                readLineKeys(dialogue, "locate_failed"),
+                readDialogueVariants(location, questId, dialogue)
         );
+    }
+
+    private static Map<String, List<DialogueTextVariant>> readDialogueVariants(
+            ResourceLocation location, ResourceLocation questId, JsonObject dialogue) {
+        Map<String, List<DialogueTextVariant>> variants = new LinkedHashMap<>();
+        for (String slot : List.of("start", "reminder", "turn_in", "already_completed", "unavailable",
+                "inactive", "missing_target", "missing_proof", "locate_failed")) {
+            JsonElement element = dialogue.get(slot);
+            if (element == null || !containsDialogueVariantObject(element)) {
+                continue;
+            }
+            List<DialogueTextVariant> parsed = DialogueTextVariant.read(
+                    location, "quest dialogue", "dialogue." + slot, questId + "/dialogue/" + slot,
+                    element, questId, DialogueEntryMetadata.EMPTY, DialogueUsagePolicy.DEFAULT);
+            if (!parsed.isEmpty()) {
+                variants.put(slot, parsed);
+            }
+        }
+        return Map.copyOf(variants);
+    }
+
+    private static boolean containsDialogueVariantObject(JsonElement element) {
+        if (element.isJsonObject()) {
+            return true;
+        }
+        return element.isJsonArray() && element.getAsJsonArray().asList().stream().anyMatch(JsonElement::isJsonObject);
     }
 
     private static QuestDefinition.Links readLinks(JsonObject root) {
@@ -719,6 +2068,19 @@ public final class VillagerQuestResources {
         return List.of();
     }
 
+    private static List<String> readLineKeys(JsonObject root, String key) {
+        List<String> keys = new ArrayList<>();
+        keys.addAll(DatapackJsonReader.readStringList(root, key + "_key", key + "_keys"));
+        JsonElement element = root.get(key);
+        if (element != null && element.isJsonObject()) {
+            keys.addAll(DatapackJsonReader.readStringList(element.getAsJsonObject(), "text_key", "text_keys"));
+        }
+        return keys.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .distinct()
+                .toList();
+    }
+
     private static ResourceLocation fallbackQuestId(ResourceLocation location) {
         String path = location.getPath();
         if (!path.startsWith(RESOURCE_ROOT + "/") || !path.endsWith(".json")) {
@@ -726,6 +2088,16 @@ public final class VillagerQuestResources {
         }
         String questPath = path.substring((RESOURCE_ROOT + "/").length(), path.length() - ".json".length());
         return ResourceLocation.tryParse(location.getNamespace() + ":" + questPath);
+    }
+
+    private static String inferQuestline(ResourceLocation location) {
+        String path = location.getPath();
+        if (!path.startsWith(RESOURCE_ROOT + "/")) {
+            return "";
+        }
+        String questPath = path.substring((RESOURCE_ROOT + "/").length());
+        int slash = questPath.indexOf('/');
+        return slash <= 0 ? "" : questPath.substring(0, slash);
     }
 
     private static int readVillagerLevel(JsonObject object, String key, int fallback) {
@@ -753,6 +2125,105 @@ public final class VillagerQuestResources {
         return first == null || first.isBlank() ? second : first;
     }
 
-    private record CachedQuests(MinecraftServer server, Map<ResourceLocation, QuestDefinition> quests) {
+    private static <T> Map<ResourceLocation, T> freezeOrderedResourceMap(Map<ResourceLocation, T> values) {
+        if (values == null || values.isEmpty()) {
+            return Map.of();
+        }
+        return Collections.unmodifiableMap(new LinkedHashMap<>(values));
+    }
+
+    private static String firstString(JsonObject object, String... keys) {
+        if (object == null) {
+            return "";
+        }
+        for (String key : keys) {
+            String value = DatapackJsonReader.readString(object, key);
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
+    }
+
+    private static ResourceLocation firstResourceLocation(JsonObject object, String... keys) {
+        if (object == null) {
+            return null;
+        }
+        for (String key : keys) {
+            ResourceLocation location = DatapackJsonReader.readResourceLocation(object, key).orElse(null);
+            if (location != null) {
+                return location;
+            }
+        }
+        return null;
+    }
+
+    private record EntitySelectors(Set<ResourceLocation> entityTypes, Set<ResourceLocation> entityTags) {
+        private boolean isEmpty() {
+            return this.entityTypes.isEmpty() && this.entityTags.isEmpty();
+        }
+    }
+
+    private record BlockSelectors(Set<ResourceLocation> blockTypes, Set<ResourceLocation> blockTags) {
+        private boolean isEmpty() {
+            return this.blockTypes.isEmpty() && this.blockTags.isEmpty();
+        }
+    }
+
+    private record MemoryEventSelectors(Set<ResourceLocation> memoryTags) {
+        private boolean isEmpty() {
+            return this.memoryTags.isEmpty();
+        }
+    }
+
+    private record ReputationObjective(
+            Set<VillagerReputationLevel> levels,
+            Integer min,
+            Integer max) {
+        private boolean isEmpty() {
+            return this.levels.isEmpty() && this.min == null && this.max == null;
+        }
+    }
+
+    private record FactObjective(
+            QuestFactScope scope,
+            ResourceLocation questId,
+            Set<ResourceLocation> tags,
+            String key,
+            Set<String> values,
+            Integer min,
+            Integer max) {
+        private boolean isEmpty() {
+            return this.tags.isEmpty() && (this.key == null || this.key.isBlank());
+        }
+    }
+
+    public record ContentSnapshot(
+            CompiledQuestCatalog compiledCatalog,
+            QuestDialogueCatalog dialogueCatalog,
+            Map<ResourceLocation, QuestDefinition> quests,
+            Map<QuestObjectiveEventKind, Set<ResourceLocation>> objectiveEventQuestIds,
+            Set<ResourceLocation> factQuestIds,
+            Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
+            Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
+            Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds) {
+    }
+
+    private record CachedQuests(
+            MinecraftServer server,
+            CompiledQuestCatalog compiledCatalog,
+            QuestDialogueCatalog dialogueCatalog,
+            Map<ResourceLocation, QuestDefinition> quests,
+            Map<QuestObjectiveEventKind, Set<ResourceLocation>> objectiveEventQuestIds,
+            Set<ResourceLocation> factQuestIds,
+            Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
+            Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
+            Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds) {
+    }
+
+    private record LoadedQuestCatalog(
+            Map<ResourceLocation, QuestDefinition> questDefinitions,
+            CompiledQuestCatalog compiledCatalog,
+            QuestDialogueCatalog dialogueCatalog) {
     }
 }

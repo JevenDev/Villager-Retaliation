@@ -16,14 +16,32 @@ public final class VillagerRetaliationClient {
     public VillagerRetaliationClient(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, (IConfigScreenFactory) VillagerRetaliationClient::createConfigScreen);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerRenderers);
+        modEventBus.addListener(VillagerRetaliationClient::registerClientExtensions);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerLayerDefinitions);
         modEventBus.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings::register);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintKeyMappings::register);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagKeyMappings::register);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandKeyMappings::register);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::registerGuiLayer);
+        com.jvn.villagerretaliation.client.item.VillagerFishingRodItemProperties.register();
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.config.WeaponAimingDialogueDelayClientPreference::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.config.WeaponAimingDialogueDelayClientPreference::onLoggingOut);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintItemProperties::register);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::registerShaders);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerHungerClientCache::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerStudyClientCache::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerHungerClientCache::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerWorkAnimationClientCache::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerWorkAnimationClientCache::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache::onEntitySize);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationDebugOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationTradeScreenOverlay::onScreenRender);
-        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.trade.VillagerTradeScreenBackground::onBackgroundRender);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.trade.VillagerTradeRefreshButtons::onScreenRender);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.trade.VillagerTradeRefreshButtons::onMousePressed);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationHoverTooltipOverlay::onRenderGuiLayer);
@@ -36,32 +54,112 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay::onRenderGuiLayer);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.BuilderStructureCatalogClient::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onRenderGuiLayer);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onContainerForeground);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onItemTooltip);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.BannerHelmetTooltip::onItemTooltip);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerWorldTextIndicatorClient::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestIndicatorRenderer::onRenderLivingPost);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionHudHider::onRenderGuiPre);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionHudHider::onRenderGuiPost);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionHudHider::onRenderGuiLayerPre);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionHudHider::onRenderGuiLayerPost);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerChatTextFormatter::onClientChatReceived);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelInventoryClientState::onScreenClosing);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelInventoryClientState::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onRenderGuiPost);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onScreenRenderPost);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onItemTooltip);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.SellBoxClientState::onItemTooltip);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.SellBoxClientState::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onKeyPressed);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageBoundsDebugRenderer::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageBoundsDebugRenderer::onRenderGuiLayer);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageBoundsDebugRenderer::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageBoundsDebugRenderer::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPlacementClient::onMouseScroll);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPlacementClient::onMouseButtonPressed);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPlacementClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardModeClient::onMouseScroll);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardModeClient::onMouseButtonPressed);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ItemFilterModeClient::onMouseScroll);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ItemFilterModeClient::onMouseButtonPressed);
+        NeoForge.EVENT_BUS.addListener(
+                net.neoforged.bus.api.EventPriority.HIGHEST,
+                com.jvn.villagerretaliation.client.party.PartyInventoryOverlay::onMousePressed);
+        com.jvn.villagerretaliation.client.party.AccessoriesPartyTabsCompat.register();
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyRosterClient::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onClientTickPre);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onClientTickPost);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onMouseButton);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onMouseScroll);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandTargetRenderer::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::onKey);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onComputeFov);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onComputeCameraAngles);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onClientTick);
         modEventBus.addListener(VillagerRetaliationClient::registerTooltipComponents);
         modEventBus.addListener(VillagerRetaliationClient::registerMenuScreens);
         modEventBus.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer::registerShaders);
-        modEventBus.addListener(com.jvn.villagerretaliation.client.interaction.VillagerProfessionUiColors::registerReloadListener);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::registerReloadListener);
     }
 
+
+    private static void registerClientExtensions(
+            net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
+        net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+        net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer renderer =
+                new com.jvn.villagerretaliation.client.renderer.SellBoxItemRenderer(
+                        minecraft.getBlockEntityRenderDispatcher(),
+                        minecraft.getEntityModels());
+        event.registerItem(
+                new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+                    @Override
+                    public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                        return renderer;
+                    }
+                },
+                com.jvn.villagerretaliation.item.VillagerRetaliationItems.SELL_BOX.get());
+    }
     private static void registerMenuScreens(RegisterMenuScreensEvent event) {
         event.register(
                 com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.VILLAGER_INVENTORY.get(),
                 com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen::new
+        );
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.PAYMENT_BOX.get(),
+                com.jvn.villagerretaliation.client.inventory.PaymentBoxScreen::new
+        );
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.SELL_BOX.get(),
+                com.jvn.villagerretaliation.client.inventory.SellBoxScreen::new
+        );
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.ITEM_FILTER.get(),
+                com.jvn.villagerretaliation.client.inventory.VillagerItemFilterScreen::new
+        );
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.ATTRIBUTE_FILTER.get(),
+                com.jvn.villagerretaliation.client.inventory.VillagerAttributeFilterScreen::new
+        );
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.RECIPE_FILTER.get(),
+                com.jvn.villagerretaliation.client.inventory.VillagerRecipeFilterScreen::new
         );
     }
 

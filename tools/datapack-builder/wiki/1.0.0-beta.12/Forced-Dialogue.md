@@ -8,6 +8,17 @@ Forced dialogue is for event-driven villager reactions that should interrupt the
 data/<namespace>/forced_dialogue/<file>.json
 ```
 
+For larger packs, split forced dialogue by event so authors can find the rule they are changing:
+
+```text
+data/my_pack/forced_dialogue/events/container_theft.json
+data/my_pack/forced_dialogue/events/container_opened.json
+data/my_pack/forced_dialogue/events/retaliation_started.json
+data/my_pack/forced_dialogue/quests/lost_civilization.json
+```
+
+The built-in files follow this pattern under `forced_dialogue/events/`.
+
 ## Output Modes
 
 | Mode | Use it for |
@@ -71,6 +82,64 @@ Forced-dialogue options can take items directly from the player.
 }
 ```
 
+`take_items` removes matching items from the player's inventory. Its default `destination` is `discard`, which is best for fees, bribes, and abstract payments. `take_stolen_items` or `return_stolen_items` returns the exact stolen stacks; its default `destination` is `villager_inventory_then_source_container`.
+
+Destination values:
+
+| Value | Result |
+| --- | --- |
+| `discard` | Remove the items without placing them anywhere. |
+| `villager_inventory` | Put the items in the speaking villager's inventory. |
+| `villager_inventory_then_source_container` | Try villager inventory first, then the source container. |
+| `source_container` | Put the items back into the watched container. |
+| `drop_at_villager` | Drop leftovers at the villager. |
+| `drop_at_container` | Drop leftovers at the watched container position. |
+
+Use `overflow_destination` when the main destination might not fit. With `require_space: true`, the option fails if neither destination can accept the full stack. With `require_space: false`, the option can still succeed after partial placement.
+
+## Locale-Friendly Text
+
+Forced dialogue can keep inline English as fallback text while using datapack message keys as the translation surface. The easiest form is `message_prefix`, which generates keys from the entry and option structure:
+
+```json
+{
+  "id": "my_pack.container_theft.warning",
+  "message_prefix": "forced.my_pack.container_theft.warning",
+  "trigger": "container_theft",
+  "line": "Hands off that {container}. I saw what you took.",
+  "options": [
+    {
+      "id": "apologize",
+      "label": "Apologize",
+      "response": "Then prove it next time before the village has to ask."
+    }
+  ]
+}
+```
+
+That example looks up these message keys first, then falls back to the inline text if a key is missing:
+
+| Text | Generated key |
+| --- | --- |
+| entry line | `forced.my_pack.container_theft.warning.line` |
+| option label | `forced.my_pack.container_theft.warning.option.apologize.label` |
+| option response | `forced.my_pack.container_theft.warning.option.apologize.response` |
+| leave label | `forced.my_pack.container_theft.warning.leave.label` |
+| payment success | `forced.my_pack.container_theft.warning.option.apologize.take_items.success` |
+| stolen-item return failure | `forced.my_pack.container_theft.warning.option.apologize.take_stolen_items.failure` |
+
+Supported key fields:
+
+| Place | Key fields |
+| --- | --- |
+| entry line | `line_key`, `line_keys`, `text_key`, `text_keys` |
+| option label | `label_key` |
+| option response | `response_key`, `response_keys` |
+| payment or stolen-item success | `success_response_key`, `success_response_keys` |
+| payment or stolen-item failure | `failure_response_key`, `failure_response_keys` |
+
+When a key is present, the keyed message is used first and the inline text is only a fallback. Explicit key fields win over `message_prefix`; use explicit keys when several filtered options should share one label but use separate response prefixes.
+
 ## Example: Chat Bark
 
 ```json
@@ -103,3 +172,24 @@ Use forced dialogue when:
 - you want a reactive bark tied to a trigger instead of a Talk menu request
 
 Use normal [Dialogue](Dialogue.md) when the player chooses to ask something on purpose.
+
+## Replacing Or Removing Built-Ins
+
+Use top-level `replace: true` when a pack wants to replace the built-in forced-dialogue set instead of adding to it:
+
+```json
+{ "replace": true }
+```
+
+When any forced-dialogue resource in the reload uses `replace: true`, VR skips its built-in forced-dialogue resources before add-on content is applied. This makes total conversion packs predictable even when the add-on namespace sorts before `villagerretaliation`.
+
+Use `remove: true` with an `id` to remove one definition:
+
+```json
+{
+  "id": "player_item_proximity_diamond_sword_warning",
+  "remove": true
+}
+```
+
+Inside an `entries` array, `remove: true` removes that entry. Without an explicit `id`, the fallback id is inferred from the file path and entry index.

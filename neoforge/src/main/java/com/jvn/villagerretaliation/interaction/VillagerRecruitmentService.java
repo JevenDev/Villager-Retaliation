@@ -1,19 +1,18 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
-import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
-import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
-import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
-import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,125 +21,174 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ai.Brain;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.schedule.Activity;
-import net.minecraft.world.entity.vehicle.Boat;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerRecruitmentService {
-    private static final String FOLLOWING_PLAYER_KEY = "VillagerRetaliationFollowingPlayer";
-    private static final String FOLLOW_START_HEALTH_KEY = "VillagerRetaliationFollowStartHealth";
-    private static final String FOLLOW_MIN_HEALTH_KEY = "VillagerRetaliationFollowMinHealth";
-    private static final String FOLLOW_START_X_KEY = "VillagerRetaliationFollowStartX";
-    private static final String FOLLOW_START_Y_KEY = "VillagerRetaliationFollowStartY";
-    private static final String FOLLOW_START_Z_KEY = "VillagerRetaliationFollowStartZ";
-    private static final String FOLLOW_START_BIOME_KEY = "VillagerRetaliationFollowStartBiome";
-    private static final String FOLLOW_MAX_DISTANCE_KEY = "VillagerRetaliationFollowMaxDistance";
-    private static final String FOLLOW_USED_BOAT_KEY = "VillagerRetaliationFollowUsedBoat";
-    private static final String FOLLOW_CROSSED_OCEAN_KEY = "VillagerRetaliationFollowCrossedOcean";
-    private static final String HIRED_PLAYER_KEY = "VillagerRetaliationHiredPlayer";
-    private static final double FOLLOW_START_DISTANCE_SQR = 5.0D * 5.0D;
-    private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
-    private static final double FOLLOW_SPEED = 0.62D;
-    private static final int FOLLOW_PATH_RECALCULATION_MIN_TICKS = 4;
-    private static final int FOLLOW_PATH_RECALCULATION_RANDOM_TICKS = 7;
-    private static final double FOLLOW_TARGET_MOVED_DISTANCE_SQR = 1.0D;
-    private static final long FOLLOW_TRAVEL_MEMORY_INTERVAL_TICKS = 20L;
-    private static final long FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS = 40L;
     private static final long LEFT_BEHIND_PROXIMITY_SCAN_INTERVAL_TICKS = 20L;
-    private static final double FOLLOW_VEHICLE_BOARD_DISTANCE_SQR = 4.0D * 4.0D;
     private static final long RECENT_BETRAYED_FOLLOWER_DEATH_NOTICE_TICKS = 200L;
     private static final String LEFT_BEHIND_SCENARIO = "left_behind";
     private static final String LEFT_BEHIND_OPTION_ID = "recruitment_left_behind";
     private static final Map<UUID, RecentRecruitmentOwner> RECENT_BETRAYED_FOLLOWERS = new HashMap<>();
-    private static final Map<UUID, Long> NEXT_FOLLOW_TRAVEL_MEMORY_TICKS = new HashMap<>();
-    private static final Map<UUID, Long> NEXT_FOLLOW_REPUTATION_CHECK_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS = new HashMap<>();
-    private static final Map<UUID, Long> LAST_FOLLOWER_AI_SUPPRESSION_TICKS = new HashMap<>();
-    private static final Map<UUID, FollowPathState> FOLLOW_PATH_STATES = new HashMap<>();
     private static final Map<RecruitmentDialogueKey, Long> LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES = new HashMap<>();
 
     private VillagerRecruitmentService() {
     }
 
     public static boolean canRecruit(ServerLevel level, Villager villager, ServerPlayer player) {
-        return !villager.isBaby()
-                && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
-                >= VillagerReputationLevel.NEUTRAL.trustRank();
+        return RecruitmentPolicy.mayHire(level, villager, player).allowed();
+    }
+
+    public static boolean canFollow(ServerLevel level, Villager villager, ServerPlayer player) {
+        return RecruitmentPolicy.mayCommand(level, villager, player, VillagerAssignmentCommand.FOLLOW).allowed();
+    }
+
+    public static boolean canCommandStayHere(ServerLevel level, Villager villager, ServerPlayer player) {
+        return RecruitmentPolicy.mayCommand(level, villager, player, VillagerAssignmentCommand.STAY).allowed();
     }
 
     public static boolean isFollowing(Villager villager, ServerPlayer player) {
-        return villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
-                && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(player.getUUID());
+        return player != null
+                && VillagerAssignmentStore.commandOwner(villager).filter(player.getUUID()::equals).isPresent()
+                && VillagerAssignmentStore.isFollowing(villager);
+    }
+
+    public static boolean isStayingHere(Villager villager, ServerPlayer player) {
+        return player != null
+                && VillagerAssignmentStore.commandOwner(villager).filter(player.getUUID()::equals).isPresent()
+                && VillagerAssignmentStore.isStaying(villager);
     }
 
     public static boolean isFollowingAnyPlayer(Villager villager) {
-        return villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY);
+        return VillagerAssignmentStore.commandOwner(villager).isPresent();
+    }
+
+    public static boolean isActivelyFollowingAnyPlayer(Villager villager) {
+        return villager != null && VillagerAssignmentStore.isFollowing(villager);
+    }
+
+    public static boolean isOrderedToStay(Villager villager) {
+        return villager != null && VillagerAssignmentStore.isStaying(villager);
     }
 
     public static Optional<UUID> followingPlayerId(Villager villager) {
-        if (!villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
-            return Optional.empty();
-        }
-        return Optional.of(villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY));
+        return VillagerAssignmentStore.commandOwner(villager);
     }
 
     public static boolean isHiredAnyPlayer(Villager villager) {
-        return villager.getPersistentData().hasUUID(HIRED_PLAYER_KEY);
+        return villager.level() instanceof ServerLevel level
+                && HiredVillagerContractService.isHired(level, villager);
     }
 
-    public static boolean toggleFollow(ServerLevel level, Villager villager, ServerPlayer player) {
-        if (isFollowing(villager, player)) {
-            stopFollowing(level, villager, player);
-            sendNoLongerFollowingNotice(player, villager);
+    public static boolean startFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!RecruitmentPolicy.mayCommand(level, villager, player, VillagerAssignmentCommand.FOLLOW).allowed()) {
             return false;
         }
-        beginFollowing(level, villager, player);
+        VillagerCommandController.beginFollow(level, villager, player.getUUID());
         sendFollowingNotice(player, villager);
         return true;
     }
 
-    public static void stopFollowing(Villager villager) {
-        clearFollowTarget(villager);
+    public static boolean stayHere(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!RecruitmentPolicy.mayCommand(level, villager, player, VillagerAssignmentCommand.STAY).allowed()) {
+            return false;
+        }
+        VillagerCommandController.beginStay(level, villager, player.getUUID(), villager.blockPosition());
+        sendStayingHereNotice(player, villager);
+        return true;
     }
 
-    public static void stopFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+    public static void stopFollowing(Villager villager) {
+        VillagerCommandController.clear(villager);
+    }
+
+    public static void clearInheritedStateForNewborn(Villager child) {
+        if (child != null) {
+            VillagerCommandController.clear(child);
+            VillagerAssignmentStore.clearInheritedStateForNewborn(child);
+        }
+    }
+
+    public static void applyPartyFollowing(ServerLevel level, Villager villager, ServerPlayer leader) {
+        applyPartyFollowing(level, villager, leader == null ? null : leader.getUUID());
+    }
+
+    public static void applyPartyFollowing(ServerLevel level, Villager villager, UUID leaderId) {
+        if (level == null || villager == null || leaderId == null
+                || !PartyVillagerContractService.hasPartyEntityReference(villager)) {
+            return;
+        }
+        VillagerCommandController.beginFollow(level, villager, leaderId);
+        villager.setPersistenceRequired();
+    }
+
+    public static void applyPartyStay(ServerLevel level, Villager villager, ServerPlayer leader) {
+        applyPartyStay(level, villager, leader, villager == null ? null : villager.blockPosition());
+    }
+
+    public static void applyPartyStay(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer leader,
+            BlockPos anchor) {
+        applyPartyStay(level, villager, leader == null ? null : leader.getUUID(), anchor);
+    }
+
+    public static void applyPartyStay(
+            ServerLevel level,
+            Villager villager,
+            UUID leaderId,
+            BlockPos anchor) {
+        if (level == null || villager == null || leaderId == null || anchor == null
+                || !PartyVillagerContractService.hasPartyEntityReference(villager)) {
+            return;
+        }
+        VillagerCommandController.beginStay(level, villager, leaderId, anchor);
+        villager.setPersistenceRequired();
+    }
+
+    public static void clearPartyFollowing(Villager villager) {
+        if (PartyVillagerContractService.hasPartyEntityReference(villager)) {
+            VillagerCommandController.clear(villager);
+            villager.setPersistenceRequired();
+        }
+    }
+
+    public static boolean stopFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (VillagerAssignmentStore.commandOwner(villager).filter(player.getUUID()::equals).isEmpty()) {
+            return false;
+        }
         if (isFollowing(villager, player)) {
-            String scenario = wasFollowerInjured(villager) ? "injured" : "safe";
+            String scenario = VillagerAssignmentStore.wasInjured(villager) ? "injured" : "safe";
             rememberRecruitmentMemory(level, villager, player, scenario);
             VillagerInteractionTracker.rememberRecruitmentFollowup(level, villager, player, scenario);
         }
-        clearFollowTarget(villager);
+        VillagerCommandController.clear(villager);
+        return true;
     }
 
     public static void rememberFollowerDamage(Villager villager) {
-        if (!villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
-            return;
-        }
-        float currentMin = villager.getPersistentData().contains(FOLLOW_MIN_HEALTH_KEY)
-                ? villager.getPersistentData().getFloat(FOLLOW_MIN_HEALTH_KEY)
-                : villager.getHealth();
-        villager.getPersistentData().putFloat(FOLLOW_MIN_HEALTH_KEY, Math.min(currentMin, villager.getHealth()));
+        VillagerAssignmentStore.rememberDamage(villager);
     }
 
     public static void stopFollowingIfFollowingAttacker(Villager villager, Player attacker) {
+        if (attacker != null && PartyService.areInSameParty(villager, attacker)) {
+            return;
+        }
         if (attacker != null
-                && villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
-                && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(attacker.getUUID())) {
+                && VillagerAssignmentStore.commandOwner(villager).filter(attacker.getUUID()::equals).isPresent()) {
             rememberBetrayedFollower(villager, attacker);
             if (attacker instanceof ServerPlayer serverPlayer) {
                 rememberRecruitmentMemory(serverPlayer.serverLevel(), villager, serverPlayer, "betrayed");
                 VillagerInteractionTracker.rememberRecruitmentFollowup(serverPlayer.serverLevel(), villager, serverPlayer, "betrayed");
-                clearFollowTarget(villager);
+                VillagerCommandController.clear(villager);
                 sendNoLongerFollowingNotice(serverPlayer, villager);
                 sendFollowerBetrayalDialogue(villager, serverPlayer);
             } else {
-                clearFollowTarget(villager);
+                VillagerCommandController.clear(villager);
             }
         }
     }
@@ -151,8 +199,9 @@ public final class VillagerRecruitmentService {
         }
 
         boolean sentNotice = false;
-        if (villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
-            ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY));
+        UUID commandOwner = VillagerAssignmentStore.commandOwner(villager).orElse(null);
+        if (commandOwner != null) {
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(commandOwner);
             if (player != null) {
                 awardLuredKillIfOwner(player, killer);
                 VillagerNotifications.sendHud(
@@ -170,8 +219,9 @@ public final class VillagerRecruitmentService {
         if (!sentNotice) {
             notifyRecentBetrayedFollowerDeath(level, villager, killer);
         }
-        if (villager.getPersistentData().hasUUID(HIRED_PLAYER_KEY)) {
-            ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(HIRED_PLAYER_KEY));
+        Optional<UUID> hiredPlayerId = HiredVillagerContractService.getHirer(level, villager);
+        if (hiredPlayerId.isPresent()) {
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(hiredPlayerId.get());
             if (player != null) {
                 VillagerNotifications.sendHud(
                         player,
@@ -222,49 +272,46 @@ public final class VillagerRecruitmentService {
         );
     }
 
+    public static void sendMovingFreelyNotice(ServerPlayer player, Villager villager) {
+        VillagerNotifications.sendHud(
+                player,
+                player.serverLevel(),
+                villager,
+                "recruitment.move_freely",
+                replacements(villager),
+                displayName(villager) + " can move freely again.",
+                VillagerReputationNoticeKind.VILLAGER_DISMISSED
+        );
+    }
+
     public static void onVillagerTickPre(Villager villager) {
-        if (villager.level().isClientSide || !isFollowingAnyPlayer(villager)) {
-            return;
-        }
-        suppressFollowerAiIfNeeded(villager);
+        if (villager == null) return;
+        VillagerCommandController.onVillagerTickPre(villager);
     }
 
     public static void onVillagerTickPost(Villager villager) {
-        if (!(villager.level() instanceof ServerLevel level) || !villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
+        if (villager == null) return;
+        if (com.jvn.villagerretaliation.party.PartyQuickCommandService.isMoveToTraveling(villager)) {
             return;
         }
-
-        UUID playerId = villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY);
-        ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
-        updateTravelMemoryIfReady(level, villager);
-        if (!isValidFollowTarget(level, villager, player)) {
-            clearFollowTarget(villager);
-            return;
-        }
-        syncVehicleWithPlayer(villager, player);
-        if (isBeyondMaxFollowDistance(villager, player)) {
-            stopFollowingBecauseLeftBehind(level, villager, player);
-            sendNoLongerFollowingNotice(player, villager);
-            return;
-        }
-        if (villager.isSleeping() || villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
-            suppressFollowerAiIfNeeded(villager);
-            return;
-        }
-
-        suppressFollowerAiIfNeeded(villager);
-        villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
-        if (isRidingSameVehicle(villager, player)) {
-            stopFollowNavigation(villager);
-            return;
-        }
-
-        Entity followTarget = player.getVehicle() == null ? player : player.getVehicle();
-        double distanceSqr = villager.distanceToSqr(player);
-        if (distanceSqr > FOLLOW_START_DISTANCE_SQR) {
-            moveTowardFollowTarget(villager, followTarget, FOLLOW_SPEED);
-        } else if (distanceSqr < FOLLOW_STOP_DISTANCE_SQR) {
-            stopFollowNavigation(villager);
+        VillagerCommandController.TickResult result = VillagerCommandController.onVillagerTickPost(villager);
+        if (result == VillagerCommandController.TickResult.LEFT_BEHIND
+                && villager.level() instanceof ServerLevel commandLevel) {
+            ServerPlayer owner = VillagerAssignmentStore.commandOwner(villager)
+                    .map(id -> commandLevel.getServer().getPlayerList().getPlayer(id))
+                    .orElse(null);
+            if (owner != null) {
+                rememberRecruitmentMemory(commandLevel, villager, owner, LEFT_BEHIND_SCENARIO);
+                VillagerInteractionTracker.rememberRecruitmentFollowup(
+                        commandLevel, villager, owner, LEFT_BEHIND_SCENARIO);
+                VillagerCommandController.clear(villager);
+                sendNoLongerFollowingNotice(owner, villager);
+            } else {
+                VillagerCommandController.clear(villager);
+            }
+        } else if (result == VillagerCommandController.TickResult.OWNER_LOST
+                || result == VillagerCommandController.TickResult.OWNER_CHANGED_DIMENSION) {
+            VillagerCommandController.clear(villager);
         }
     }
 
@@ -274,7 +321,7 @@ public final class VillagerRecruitmentService {
         }
         long gameTime = level.getGameTime();
         UUID playerId = player.getUUID();
-        if (!consumePlayerScanSlot(playerId, gameTime, NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS, LEFT_BEHIND_PROXIMITY_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.consume(playerId, NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS, gameTime, LEFT_BEHIND_PROXIMITY_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
@@ -333,315 +380,24 @@ public final class VillagerRecruitmentService {
         VillagerInteractionService.broadcastVillagerChat(level, nearestVillager, result.text());
     }
 
-    public static void clearRuntimeState() {
-        RECENT_BETRAYED_FOLLOWERS.clear();
-        NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.clear();
-        NEXT_FOLLOW_REPUTATION_CHECK_TICKS.clear();
-        NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS.clear();
-        LAST_FOLLOWER_AI_SUPPRESSION_TICKS.clear();
-        FOLLOW_PATH_STATES.clear();
-        LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES.clear();
-    }
-
-    private static void syncVehicleWithPlayer(Villager villager, ServerPlayer player) {
-        Entity playerVehicle = player.getVehicle();
-        if (playerVehicle == null) {
-            dismountFollower(villager);
-            return;
-        }
-        if (villager.getVehicle() == playerVehicle) {
-            return;
-        }
-        if (villager.isPassenger()) {
-            dismountFollower(villager);
-        }
-        if (!villager.isPassenger() && villager.distanceToSqr(playerVehicle) <= FOLLOW_VEHICLE_BOARD_DISTANCE_SQR) {
-            villager.startRiding(playerVehicle);
-        }
-    }
-
-    private static boolean isRidingSameVehicle(Villager villager, ServerPlayer player) {
-        Entity playerVehicle = player.getVehicle();
-        return playerVehicle != null && villager.getVehicle() == playerVehicle;
-    }
-
-    private static void suppressFollowerAiIfNeeded(Villager villager) {
-        if (!(villager.level() instanceof ServerLevel level)) {
-            suppressFollowerAi(villager);
-            return;
-        }
-
-        UUID villagerId = villager.getUUID();
-        long gameTime = level.getGameTime();
-        if (LAST_FOLLOWER_AI_SUPPRESSION_TICKS.getOrDefault(villagerId, Long.MIN_VALUE) == gameTime) {
-            return;
-        }
-
-        LAST_FOLLOWER_AI_SUPPRESSION_TICKS.put(villagerId, gameTime);
-        suppressFollowerAi(villager);
-    }
-
-    private static void suppressFollowerAi(Villager villager) {
-        Brain<Villager> brain = villager.getBrain();
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
-        brain.eraseMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
-        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE);
-        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY);
-        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY_ENTITY);
-        villager.setTarget(null);
-        villager.setLastHurtByMob(null);
-        brain.setDefaultActivity(Activity.IDLE);
-        brain.setActiveActivityIfPossible(Activity.IDLE);
-    }
-
-    private static boolean moveTowardFollowTarget(Villager villager, Entity followTarget, double speed) {
-        if (!(villager.level() instanceof ServerLevel level)) {
-            return false;
-        }
-
-        UUID villagerId = villager.getUUID();
-        long gameTime = level.getGameTime();
-        FollowPathState state = FOLLOW_PATH_STATES.get(villagerId);
-        boolean targetChanged = state == null || !state.targetId().equals(followTarget.getUUID());
-        boolean targetMoved = state == null
-                || followTarget.distanceToSqr(state.targetX(), state.targetY(), state.targetZ()) >= FOLLOW_TARGET_MOVED_DISTANCE_SQR;
-        boolean shouldRecalculate = targetChanged
-                || targetMoved
-                || villager.getNavigation().isDone()
-                || gameTime >= state.nextRecalculationGameTime()
-                || villager.getRandom().nextFloat() < 0.05F;
-
-        if (!shouldRecalculate) {
-            return true;
-        }
-
-        Brain<Villager> brain = villager.getBrain();
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
-
-        int failedPathFindingPenalty = targetChanged || state == null ? 0 : state.failedPathFindingPenalty();
-        long recalculationDelay = FOLLOW_PATH_RECALCULATION_MIN_TICKS
-                + villager.getRandom().nextInt(FOLLOW_PATH_RECALCULATION_RANDOM_TICKS);
-        double distanceSqr = villager.distanceToSqr(followTarget);
-        if (distanceSqr > 1024.0D) {
-            recalculationDelay += 10L;
-        } else if (distanceSqr > 256.0D) {
-            recalculationDelay += 5L;
-        }
-
-        boolean moved = villager.getNavigation().moveTo(followTarget, speed);
-        if (moved) {
-            failedPathFindingPenalty = 0;
-        } else {
-            failedPathFindingPenalty += 15;
-            recalculationDelay += failedPathFindingPenalty;
-        }
-
-        FOLLOW_PATH_STATES.put(villagerId, new FollowPathState(
-                followTarget.getUUID(),
-                followTarget.getX(),
-                followTarget.getY(),
-                followTarget.getZ(),
-                gameTime + recalculationDelay,
-                failedPathFindingPenalty
-        ));
-        return moved;
-    }
-
-    private static void stopFollowNavigation(Villager villager) {
-        FOLLOW_PATH_STATES.remove(villager.getUUID());
-        if (!villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
-        }
-    }
-
-    private static boolean consumePlayerScanSlot(
-            UUID playerId,
-            long gameTime,
-            Map<UUID, Long> nextScanTicks,
-            long intervalTicks) {
-        Long nextScan = nextScanTicks.get(playerId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(playerId, intervalTicks);
-            if (firstScan > gameTime) {
-                nextScanTicks.put(playerId, firstScan);
-                return false;
-            }
-        } else if (gameTime < nextScan) {
-            return false;
-        }
-
-        nextScanTicks.put(playerId, gameTime + Math.max(1L, intervalTicks));
-        return true;
-    }
-
-    private static long scanStagger(UUID playerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(playerId.getMostSignificantBits() ^ playerId.getLeastSignificantBits(), intervalTicks);
-    }
-
-    private static boolean isValidFollowTarget(ServerLevel level, Villager villager, ServerPlayer player) {
-        return player != null
-                && player.isAlive()
-                && !player.isSpectator()
-                && villager.isAlive()
-                && hasRecentlyValidReputation(level, villager, player);
-    }
-
-    private static boolean isBeyondMaxFollowDistance(Villager villager, ServerPlayer player) {
-        double maxDistance = VillagerRetaliationConfig.MAX_FOLLOW_DISTANCE.get();
-        return villager.distanceToSqr(player) > maxDistance * maxDistance;
-    }
-
-    private static boolean hasRecentlyValidReputation(ServerLevel level, Villager villager, ServerPlayer player) {
-        long gameTime = level.getGameTime();
-        UUID villagerId = villager.getUUID();
-        Long nextCheck = NEXT_FOLLOW_REPUTATION_CHECK_TICKS.get(villagerId);
-        if (nextCheck != null && nextCheck > gameTime) {
-            return true;
-        }
-
-        NEXT_FOLLOW_REPUTATION_CHECK_TICKS.put(villagerId, gameTime + FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS);
-        return VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
-                >= VillagerReputationLevel.NEUTRAL.trustRank();
-    }
-
-    private static void clearFollowTarget(Villager villager) {
-        UUID villagerId = villager.getUUID();
-        NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.remove(villagerId);
-        NEXT_FOLLOW_REPUTATION_CHECK_TICKS.remove(villagerId);
-        LAST_FOLLOWER_AI_SUPPRESSION_TICKS.remove(villagerId);
-        FOLLOW_PATH_STATES.remove(villagerId);
-        dismountFollower(villager);
-        villager.getPersistentData().remove(FOLLOWING_PLAYER_KEY);
-        villager.getPersistentData().remove(FOLLOW_START_HEALTH_KEY);
-        villager.getPersistentData().remove(FOLLOW_MIN_HEALTH_KEY);
-        villager.getPersistentData().remove(FOLLOW_START_X_KEY);
-        villager.getPersistentData().remove(FOLLOW_START_Y_KEY);
-        villager.getPersistentData().remove(FOLLOW_START_Z_KEY);
-        villager.getPersistentData().remove(FOLLOW_START_BIOME_KEY);
-        villager.getPersistentData().remove(FOLLOW_MAX_DISTANCE_KEY);
-        villager.getPersistentData().remove(FOLLOW_USED_BOAT_KEY);
-        villager.getPersistentData().remove(FOLLOW_CROSSED_OCEAN_KEY);
-        villager.getNavigation().stop();
-    }
-
-    private static void dismountFollower(Villager villager) {
-        if (villager.isPassenger()) {
-            villager.stopRiding();
-        }
-    }
-
-    private static void beginFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
-        BlockPos start = villager.blockPosition();
-        villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, player.getUUID());
-        villager.getPersistentData().putFloat(FOLLOW_START_HEALTH_KEY, villager.getHealth());
-        villager.getPersistentData().putFloat(FOLLOW_MIN_HEALTH_KEY, villager.getHealth());
-        villager.getPersistentData().putInt(FOLLOW_START_X_KEY, start.getX());
-        villager.getPersistentData().putInt(FOLLOW_START_Y_KEY, start.getY());
-        villager.getPersistentData().putInt(FOLLOW_START_Z_KEY, start.getZ());
-        villager.getPersistentData().putString(FOLLOW_START_BIOME_KEY, biomeName(level, start));
-        villager.getPersistentData().putInt(FOLLOW_MAX_DISTANCE_KEY, 0);
-        villager.getPersistentData().putBoolean(FOLLOW_USED_BOAT_KEY, false);
-        villager.getPersistentData().putBoolean(FOLLOW_CROSSED_OCEAN_KEY, isOceanBiome(level, start));
-    }
-
-    private static void stopFollowingBecauseLeftBehind(ServerLevel level, Villager villager, ServerPlayer player) {
-        if (!isFollowing(villager, player)) {
-            clearFollowTarget(villager);
-            return;
-        }
-        rememberRecruitmentMemory(level, villager, player, LEFT_BEHIND_SCENARIO);
-        VillagerInteractionTracker.rememberRecruitmentFollowup(level, villager, player, LEFT_BEHIND_SCENARIO);
-        clearFollowTarget(villager);
-    }
-
     private static void rememberRecruitmentMemory(ServerLevel level, Villager villager, ServerPlayer player, String scenario) {
+        VillagerAssignmentStore.JourneySnapshot journey = VillagerAssignmentStore.journey(villager);
         VillagerInteractionTracker.rememberRecruitmentMemory(
                 level,
                 villager,
                 player,
                 scenario,
-                villager.getPersistentData().getString(FOLLOW_START_BIOME_KEY),
-                followDistanceBlocks(villager),
-                villager.getPersistentData().getBoolean(FOLLOW_USED_BOAT_KEY),
-                villager.getPersistentData().getBoolean(FOLLOW_CROSSED_OCEAN_KEY)
+                journey.startBiome(),
+                journey.distanceBlocks(),
+                journey.usedBoat(),
+                journey.crossedOcean()
         );
     }
-
-    private static void rememberBoatTripIfRiding(Villager villager) {
-        if (villager.getVehicle() instanceof Boat && !villager.getPersistentData().getBoolean(FOLLOW_USED_BOAT_KEY)) {
-            villager.getPersistentData().putBoolean(FOLLOW_USED_BOAT_KEY, true);
-        }
-    }
-
-    private static void updateTravelMemoryIfReady(ServerLevel level, Villager villager) {
-        long gameTime = level.getGameTime();
-        Long nextUpdate = NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.get(villager.getUUID());
-        if (nextUpdate != null && nextUpdate > gameTime) {
-            return;
-        }
-        NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.put(villager.getUUID(), gameTime + FOLLOW_TRAVEL_MEMORY_INTERVAL_TICKS);
-        updateTravelMemory(level, villager);
-        rememberBoatTripIfRiding(villager);
-    }
-
-    private static void updateTravelMemory(ServerLevel level, Villager villager) {
-        int distance = followDistanceBlocks(villager);
-        int currentMax = villager.getPersistentData().contains(FOLLOW_MAX_DISTANCE_KEY)
-                ? villager.getPersistentData().getInt(FOLLOW_MAX_DISTANCE_KEY)
-                : 0;
-        if (distance > currentMax) {
-            villager.getPersistentData().putInt(FOLLOW_MAX_DISTANCE_KEY, distance);
-        }
-        if (!villager.getPersistentData().getBoolean(FOLLOW_CROSSED_OCEAN_KEY)
-                && isOceanBiome(level, villager.blockPosition())) {
-            villager.getPersistentData().putBoolean(FOLLOW_CROSSED_OCEAN_KEY, true);
-        }
-    }
-
-    private static int followDistanceBlocks(Villager villager) {
-        int currentMax = villager.getPersistentData().contains(FOLLOW_MAX_DISTANCE_KEY)
-                ? villager.getPersistentData().getInt(FOLLOW_MAX_DISTANCE_KEY)
-                : 0;
-        if (!villager.getPersistentData().contains(FOLLOW_START_X_KEY)
-                || !villager.getPersistentData().contains(FOLLOW_START_Y_KEY)
-                || !villager.getPersistentData().contains(FOLLOW_START_Z_KEY)) {
-            return currentMax;
-        }
-        BlockPos start = new BlockPos(
-                villager.getPersistentData().getInt(FOLLOW_START_X_KEY),
-                villager.getPersistentData().getInt(FOLLOW_START_Y_KEY),
-                villager.getPersistentData().getInt(FOLLOW_START_Z_KEY)
-        );
-        return Math.max(currentMax, (int) Math.round(Math.sqrt(villager.blockPosition().distSqr(start))));
-    }
-
-    private static String biomeName(ServerLevel level, BlockPos pos) {
-        return level.getBiome(pos)
-                .unwrapKey()
-                .map(key -> VillagerInteractionTextUtil.resourcePathName(key.location()))
-                .orElse("the wilds");
-    }
-
-    private static boolean isOceanBiome(ServerLevel level, BlockPos pos) {
-        return level.getBiome(pos).is(BiomeTags.IS_OCEAN);
-    }
-
-    private static boolean wasFollowerInjured(Villager villager) {
-        if (!villager.getPersistentData().contains(FOLLOW_START_HEALTH_KEY)) {
-            return false;
-        }
-        float startHealth = villager.getPersistentData().getFloat(FOLLOW_START_HEALTH_KEY);
-        float minHealth = villager.getPersistentData().contains(FOLLOW_MIN_HEALTH_KEY)
-                ? villager.getPersistentData().getFloat(FOLLOW_MIN_HEALTH_KEY)
-                : villager.getHealth();
-        minHealth = Math.min(minHealth, villager.getHealth());
-        return minHealth + 0.5F < startHealth;
+    public static void clearRuntimeState() {
+        VillagerCommandController.clearRuntimeState();
+        RECENT_BETRAYED_FOLLOWERS.clear();
+        NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS.clear();
+        LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES.clear();
     }
 
     private static void rememberBetrayedFollower(Villager villager, Player attacker) {
@@ -703,6 +459,20 @@ public final class VillagerRecruitmentService {
         );
     }
 
+
+
+    private static void sendStayingHereNotice(ServerPlayer player, Villager villager) {
+        VillagerNotifications.sendHud(
+                player,
+                player.serverLevel(),
+                villager,
+                "recruitment.stay_here",
+                replacements(villager),
+                displayName(villager) + " will stay here.",
+                VillagerReputationNoticeKind.VILLAGER_FOLLOWING
+        );
+    }
+
     private static Map<String, String> replacements(Villager villager) {
         return VillagerNotifications.replacements("villager", displayName(villager));
     }
@@ -722,15 +492,6 @@ public final class VillagerRecruitmentService {
     private record RecentRecruitmentOwner(UUID playerId, long expiresGameTime) {
     }
 
-    private record FollowPathState(
-            UUID targetId,
-            double targetX,
-            double targetY,
-            double targetZ,
-            long nextRecalculationGameTime,
-            int failedPathFindingPenalty
-    ) {
-    }
 
     private record RecruitmentDialogueKey(UUID villagerId, UUID playerId) {
     }

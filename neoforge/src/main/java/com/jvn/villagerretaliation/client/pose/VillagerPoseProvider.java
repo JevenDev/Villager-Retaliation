@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.pose;
 
+import com.jvn.villagerretaliation.client.renderer.VillagerRenderEquipmentState;
+import com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -12,7 +14,9 @@ public interface VillagerPoseProvider<T extends AbstractVillager> {
     boolean shouldUseCombatModel(T villager);
 
     default boolean shouldRenderHeldItem(T villager) {
-        return !villager.getMainHandItem().isEmpty() || !villager.getOffhandItem().isEmpty();
+        return !VillagerDownedClientCache.isDowned(villager)
+                && (!VillagerRenderEquipmentState.visibleMainHand(villager).isEmpty()
+                || !villager.getOffhandItem().isEmpty());
     }
 
     default boolean hasUsableWeapon(T villager) {

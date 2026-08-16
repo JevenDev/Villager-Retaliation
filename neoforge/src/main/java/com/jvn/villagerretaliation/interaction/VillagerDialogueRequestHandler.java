@@ -1,34 +1,42 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialogueItemPayment;
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
-import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
-import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
-import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueItemPayment;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.normal.GiftAdviceKind;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.dialogue.VillagerRaidDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.mount.VillagerMountOwnershipDialogue;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class VillagerDialogueRequestHandler {
     private VillagerDialogueRequestHandler() {
@@ -60,6 +68,9 @@ public final class VillagerDialogueRequestHandler {
         VillagerInteractionService.focusVillagerOnPlayer(villager, player);
 
         ServerLevel level = target.level();
+        if (!VillagerMountOwnershipDialogue.allowsRequest(level, player, villager, optionId)) {
+            return;
+        }
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
         if (DialogueTreeService.LEAVE_OPTION_ID.equals(optionId)) {
@@ -75,7 +86,6 @@ public final class VillagerDialogueRequestHandler {
         }
 
         DialogueRequestType requestType = dialogueOption.requestType();
-        VillagerDialogueService.DialogueResult result = selectDialogueResult(context, dialogueOption, interactionState);
         DialogueItemPayment itemPayment = dialogueOption.itemPayment();
         DialogueItemPaymentResult itemPaymentResult = DialogueItemPaymentResult.empty();
         if (!itemPayment.isEmpty()) {
@@ -87,13 +97,19 @@ public final class VillagerDialogueRequestHandler {
                         itemPayment.removal().replacements()
                 );
                 VillagerInteractionService.sendDialogueReputation(player, villager, level);
-                VillagerInteractionService.broadcastVillagerChat(level, villager, failureText);
+                VillagerInteractionService.sendPersonalVillagerChat(player, villager, failureText);
                 return;
             }
             itemPaymentResult = paymentResult.get();
         }
 
-        var reputationEffect = com.jvn.villagerretaliation.dialogue.DialogueReputationService.apply(context, requestType, interactionState);
+        // Selection may advance a dialogue tree, begin a quest, or claim a report.
+        // Commit the required payment before allowing any of those side effects.
+        VillagerDialogueService.DialogueResult result = selectDialogueResult(context, dialogueOption, interactionState);
+
+        var reputationEffect = VillagerQuestService.isQuestDialogueOption(dialogueOption)
+                ? com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect.none(requestType)
+                : com.jvn.villagerretaliation.dialogue.normal.DialogueReputationService.apply(context, requestType, interactionState);
         VillagerMoodService.recordDialogueEffect(context, requestType, reputationEffect);
         VillagerInteractionService.playDialogueFeedback(level, villager, reputationEffect);
         VillagerAmbientIndicatorService.onDialogueResponse(level, villager, player, optionId, requestType, reputationEffect);
@@ -129,7 +145,7 @@ public final class VillagerDialogueRequestHandler {
                 reputationEffect,
                 dialogueOption.forceCameraTowardsVillager()
         );
-        VillagerInteractionService.broadcastVillagerChat(level, villager, responseText, responseSegments);
+        VillagerInteractionService.sendPersonalVillagerChat(player, villager, responseText, responseSegments);
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
         }
@@ -148,6 +164,8 @@ public final class VillagerDialogueRequestHandler {
             VillagerInteractionTracker.claimUnreportedRecruitmentFollowup(level, villager, player);
         } else if (requestType == DialogueRequestType.CURED_RECOGNITION) {
             VillagerInteractionTracker.claimUnreportedCuredRecognition(level, villager, player);
+        } else if (requestType == DialogueRequestType.RAID_VICTORY_ACKNOWLEDGEMENT) {
+            VillagerRaidDialogueService.claimVictoryAcknowledgement(level, villager, player);
         }
     }
 
@@ -161,16 +179,22 @@ public final class VillagerDialogueRequestHandler {
             return treeResult.get();
         }
         if (requestType == DialogueRequestType.GIFT_PREFERENCES) {
-            return VillagerGiftKnowledgeService
-                    .discoverFromGiftQuestion(context)
-                    .map(discovery -> new VillagerDialogueService.DialogueResult(
-                            "gift_preference_discovery",
-                            giftAdviceLine(context, discovery.adviceKind(), discovery.itemName(), discovery.subject())
-                    ))
-                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
-                            "gift_preference_known",
-                            giftAdviceLine(context, GiftAdviceKind.ALREADY_KNOWN, "", "")
-                    ));
+            List<VillagerGiftKnowledgeService.GiftKnowledgeDiscovery> discoveries =
+                    VillagerGiftKnowledgeService.discoverFromGiftQuestion(context);
+            if (discoveries.isEmpty()) {
+                return new VillagerDialogueService.DialogueResult(
+                        "gift_preference_known",
+                        giftAdviceLine(context, GiftAdviceKind.ALREADY_KNOWN, "", ""));
+            }
+            String response = discoveries.stream()
+                    .map(discovery -> giftAdviceLine(
+                            context,
+                            discovery.adviceKind(),
+                            discovery.itemName(),
+                            discovery.subject()))
+                    .filter(line -> !line.isBlank())
+                    .collect(java.util.stream.Collectors.joining("\n"));
+            return new VillagerDialogueService.DialogueResult("gift_preference_discovery", response);
         }
         if (requestType == DialogueRequestType.GIFT_ADVICE_FOLLOWUP) {
             return VillagerInteractionTracker
@@ -208,6 +232,12 @@ public final class VillagerDialogueRequestHandler {
                             VillagerDialogueResources.message(context, "share_story.missing").orElse("")
                     ));
         }
+        if (requestType == DialogueRequestType.STORY) {
+            Optional<VillagerDialogueService.DialogueResult> raidStory = VillagerRaidDialogueService.selectRaidStory(context);
+            if (raidStory.isPresent()) {
+                return raidStory.get();
+            }
+        }
         Optional<VillagerDialogueService.DialogueResult> questResult = VillagerQuestService.handleDialogueOption(context, dialogueOption);
         if (questResult.isPresent()) {
             return questResult.get();
@@ -238,10 +268,10 @@ public final class VillagerDialogueRequestHandler {
         String alternativeGift = report.liked()
                 ? ""
                 : VillagerGiftKnowledgeService
-                        .randomLikedGiftName(context.level(), testedProfession, report.itemId(), context.random())
+                        .randomLikedGiftName(context.level(), testedProfession, report.itemId(), context.locale(), context.random())
                         .orElse("something useful");
         Map<String, String> replacements = Map.of(
-                "gift_item", report.itemName() == null || report.itemName().isBlank() ? "that gift" : report.itemName(),
+                "gift_item", giftAdviceItemName(context, report),
                 "gift_subject", VillagerInteractionTextUtil.withIndefiniteArticle(professionName),
                 "tested_villager", report.testedVillagerName() == null || report.testedVillagerName().isBlank()
                         ? "them"
@@ -253,6 +283,20 @@ public final class VillagerDialogueRequestHandler {
                 .professionPriorityMessage(context, key, replacements)
                 .or(() -> VillagerDialogueResources.message(context, key, replacements))
                 .orElse("");
+    }
+
+    private static String giftAdviceItemName(
+            DialogueContext context,
+            VillagerInteractionTracker.GiftAdviceResultReport report) {
+        ResourceLocation itemId = report.itemId() == null ? null : ResourceLocation.tryParse(report.itemId());
+        if (itemId != null && BuiltInRegistries.ITEM.containsKey(itemId)) {
+            var item = BuiltInRegistries.ITEM.get(itemId);
+            if (item != Items.AIR) {
+                return VillagerItemText.dialogueName(
+                        context.level().getServer(), context.locale(), new ItemStack(item));
+            }
+        }
+        return report.itemName() == null || report.itemName().isBlank() ? "that gift" : report.itemName();
     }
 
     private static VillagerProfession professionFromKey(String key) {
@@ -291,7 +335,8 @@ public final class VillagerDialogueRequestHandler {
         if (itemPayment.requireSpace() && !remainder.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(DialogueItemPaymentResult.from(itemPayment, removedStacks.get()));
+        return Optional.of(DialogueItemPaymentResult.from(
+                player.getServer(), VillagerLocale.locale(player), itemPayment, removedStacks.get()));
     }
 
     private static DialogueItemTransferTarget dialogueItemTransferTarget(
@@ -363,18 +408,13 @@ public final class VillagerDialogueRequestHandler {
                 .toList();
     }
 
-    private static String itemName(ItemStack stack) {
-        String name = stack.getHoverName().getString();
-        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
-    }
-
     private static String itemId(ItemStack stack) {
         return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
     }
 
-    private static String itemListName(List<ItemStack> stacks) {
+    private static String itemListName(MinecraftServer server, String locale, List<ItemStack> stacks) {
         return stacks.stream()
-                .map(VillagerDialogueRequestHandler::itemName)
+                .map(stack -> VillagerItemText.stackName(server, locale, stack))
                 .reduce((left, right) -> left + ", " + right)
                 .orElse("items");
     }
@@ -384,19 +424,27 @@ public final class VillagerDialogueRequestHandler {
             return new DialogueItemPaymentResult(Map.of());
         }
 
-        private static DialogueItemPaymentResult from(DialogueItemPayment itemPayment, List<ItemStack> removedStacks) {
+        private static DialogueItemPaymentResult from(
+                MinecraftServer server,
+                String locale,
+                DialogueItemPayment itemPayment,
+                List<ItemStack> removedStacks) {
             Map<String, String> replacements = new HashMap<>(itemPayment.removal().replacements());
             int count = removedStacks.stream().mapToInt(ItemStack::getCount).sum();
             ItemStack representative = removedStacks.isEmpty() ? ItemStack.EMPTY : removedStacks.getFirst();
-            String itemName = representative.isEmpty() ? "items" : itemName(representative.copyWithCount(1));
-            String itemStack = representative.isEmpty() ? "items" : itemName(representative);
+            String itemName = representative.isEmpty()
+                    ? "items"
+                    : VillagerItemText.dialogueName(server, locale, representative);
+            String itemStack = representative.isEmpty()
+                    ? "items"
+                    : VillagerItemText.stackName(server, locale, representative);
             String itemId = representative.isEmpty() ? "" : itemId(representative);
             replacements.put("given_count", Integer.toString(count));
             replacements.put("given_item_count", Integer.toString(count));
             replacements.put("given_item", itemName);
             replacements.put("given_item_id", itemId);
             replacements.put("given_stack", itemStack);
-            replacements.put("given_items", itemListName(removedStacks));
+            replacements.put("given_items", itemListName(server, locale, removedStacks));
             replacements.put("payment_item", itemName);
             replacements.put("payment_item_id", itemId);
             replacements.put("payment_stack", itemStack);

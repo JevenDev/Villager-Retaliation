@@ -49,7 +49,7 @@ public final class DefaultVillagerPoseProvider extends AbstractCombatVillagerPos
     @Override
     public VillagerArmPose getArmPose(Villager villager, float attackTime) {
         if (VillagerInventoryScreen.isRenderingInventoryPreview(villager)
-                && (!villager.getMainHandItem().isEmpty() || !villager.getOffhandItem().isEmpty())) {
+                && shouldRenderHeldItem(villager)) {
             return VillagerArmPose.HOLDING_ITEM;
         }
         return super.getArmPose(villager, attackTime);

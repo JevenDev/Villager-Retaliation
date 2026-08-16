@@ -13,7 +13,7 @@
       "key": "container_theft_memory.direct",
       "lines": [
         "I still <pulse>remember</pulse> you trying to take my {stolen_stack}.",
-        "That {stolen_item} from the {stolen_container}? I have not forgotten.",
+        "That {stolen_item} from the {stolen_container}, I have not forgotten.",
         "You put your hands on village stores once. I am <pulse>watching</pulse> them now.",
         "Trust is counted in small things. Last time, it was counted in {stolen_stack}.",
         "I remember the {stolen_container}, the missing {stolen_item}, and your face beside both.",
@@ -21,9 +21,20 @@
         "The {stolen_stack} was not yours, and pretending otherwise will not help you here.",
         "I keep my things closer now. You can guess why.",
         "A stolen {stolen_item} leaves more behind than an empty space.",
-        "Speak if you need to, but understand why I am still <shake>careful</shake>."
+        "Speak if you need to, but understand why I am still <shake>careful</shake>.",
+        "I moved the valuable supplies after what happened.",
+        "The empty place in that container was easy to notice.",
+        "I check the latch twice whenever you are nearby.",
+        "Returning what you took would be a useful start.",
+        "I know exactly how many {stolen_item} belonged there.",
+        "People worked for those supplies before you reached for them.",
+        "The theft made ordinary conversation harder than it should be.",
+        "I have not decided whether you regret taking it.",
+        "Keep away from the {stolen_container} while we talk.",
+        "An apology will need honest actions behind it."
       ],
-      "weight": 155
+      "weight": 155,
+      "id": "global.messages.05_container_theft_memory.messages.container_theft_memory.direct.000"
     },
     {
       "key": "container_theft_memory.village",
@@ -37,9 +48,20 @@
         "A theft from one villager has a way of reaching every counter in the village.",
         "You may think {stolen_stack} was a small thing. Villages do not measure trust that way.",
         "The story of that {stolen_item} arrived before you did.",
-        "I will speak with you, but I will also keep one eye on my <pulse>stores</pulse>."
+        "I will speak with you, but I will also keep one eye on my <pulse>stores</pulse>.",
+        "The whole market heard about the missing {stolen_item}.",
+        "I know which container was opened and who was seen beside it.",
+        "Nobody needed to embellish the story for it to sound bad.",
+        "The traders started counting their stock after the warning spread.",
+        "You made several villagers nervous about leaving supplies unattended.",
+        "I trust <aqua>{theft_witness}</aqua> to know what they saw.",
+        "The missing item became village business when you refused to return it.",
+        "Do not expect the other shopkeepers to ignore that warning.",
+        "People have started closing their shutters when you approach.",
+        "If the story is wrong, your conduct from here must prove it."
       ],
-      "weight": 154
+      "weight": 154,
+      "id": "global.messages.05_container_theft_memory.messages.container_theft_memory.village.001"
     }
   ]
 }

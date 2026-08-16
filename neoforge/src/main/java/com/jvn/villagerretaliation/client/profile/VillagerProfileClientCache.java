@@ -37,7 +37,9 @@ public final class VillagerProfileClientCache {
                 payload.attributes(),
                 payload.skillGeneratedVersion(),
                 payload.skills(),
+                payload.skillBasedTradeLevelingEnabled(),
                 payload.tradeLevelSkillAdjustedXpProgress(),
+                payload.tradeLevelXpMultiplier(),
                 gameTime
         );
         BY_VILLAGER_UUID.put(payload.villagerId(), entry);
@@ -112,7 +114,9 @@ public final class VillagerProfileClientCache {
             VillagerSocialAttributes attributes,
             int skillGeneratedVersion,
             VillagerSkillSet skills,
+            boolean skillBasedTradeLevelingEnabled,
             double tradeLevelSkillAdjustedXpProgress,
+            double tradeLevelXpMultiplier,
             long lastUpdateGameTime) {
         public int value(VillagerSocialAttribute attribute) {
             return this.attributes.get(attribute);
@@ -143,7 +147,9 @@ public final class VillagerProfileClientCache {
                     this.attributes,
                     this.skillGeneratedVersion,
                     this.skills,
+                    this.skillBasedTradeLevelingEnabled,
                     clampFractionalProgress(progress),
+                    this.tradeLevelXpMultiplier,
                     this.lastUpdateGameTime
             );
         }

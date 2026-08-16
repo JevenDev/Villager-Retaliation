@@ -1,0 +1,13 @@
+{
+  "item": "kaleidoscope_tavern:miners_star",
+  "components": {
+    "kaleidoscope_tavern:brew_level": 6
+  },
+  "rates": [
+    {
+      "item_count": 1,
+      "currency_count": 15
+    }
+  ],
+  "market_group": "kaleidoscope_tavern:miners_stars"
+}

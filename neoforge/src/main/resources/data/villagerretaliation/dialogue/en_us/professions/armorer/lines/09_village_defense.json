@@ -13,7 +13,17 @@
         "When the shouting started, you did not fold. I respect that.",
         "You gave the village time to breathe. Every guard knows the value of time.",
         "When danger came close, nobody had time to sound brave first.",
-        "You learn a lot about a village when everyone hears the bell at once."
+        "You learn a lot about a village when everyone hears the bell at once.",
+        "You moved toward the gate.",
+        "You held a dangerous gap.",
+        "Your courage steadied others.",
+        "You protected strangers.",
+        "You chose the hardest place.",
+        "You kept danger from homes.",
+        "You covered those falling back.",
+        "The village remembers.",
+        "You carried responsibility.",
+        "You left us standing."
       ],
       "option": "village_defense_report",
       "show_for_babies": false,

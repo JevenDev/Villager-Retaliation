@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.forced",
+      "event.retaliation_disengaged"
+    ],
+    "topic": "events.retaliation_disengaged"
+  },
+  "message_prefix": "forced.retaliation_disengaged",
+  "entries": [
+    {
+      "id": "low_guts_pursuit_abandoned",
+      "message_prefix": "forced.retaliation_disengaged.low_guts_pursuit_abandoned",
+      "trigger": "low_guts_pursuit_abandoned",
+      "output": {
+        "mode": "chat",
+        "radius": 40
+      },
+      "lines": [
+        "Keep running. I am not leaving the village for you.",
+        "Go on. I have better things to protect than my pride.",
+        "You are not worth chasing any farther.",
+        "Do not mistake distance for forgiveness.",
+        "This is not over. The village will remember you.",
+        "I know your face now. That is enough.",
+        "Stay gone if you know what is good for you.",
+        "Run while you can. I am warning the others.",
+        "I will not be lured away from my home.",
+        "You wanted a chase. You will get a warning instead.",
+        "Fine. Leave. We will be ready if you return.",
+        "Take one more step away and keep going.",
+        "I have seen enough of you for one day.",
+        "Go. Every door in this village will know your name.",
+        "I am done following you. I am not done remembering."
+      ],
+      "priority": -20,
+      "chance": 1.0,
+      "witness_radius": 40,
+      "requires_line_of_sight": false,
+      "target_entity_types": [
+        "minecraft:player"
+      ],
+      "requires_witness_unarmed": true
+    },
+    {
+      "id": "low_guts_counter_completed",
+      "message_prefix": "forced.retaliation_disengaged.low_guts_counter_completed",
+      "trigger": "low_guts_counter_completed",
+      "output": {
+        "mode": "chat",
+        "radius": 40
+      },
+      "lines": [
+        "That was your warning. Now get out.",
+        "One strike is enough. Leave us alone.",
+        "Now you know we are not helpless.",
+        "I made my point. Leave the village.",
+        "Call that mercy and do not test it again.",
+        "I do not need to win. I needed you to listen.",
+        "You felt that. Stay away from us.",
+        "I have done what I came to do. Go.",
+        "That is enough blood for today.",
+        "Remember that blow before you raise your hand again.",
+        "I stood my ground. Now you can leave it.",
+        "We are even for now. Do not come back.",
+        "You were warned once. There will not be another warning.",
+        "I got my answer. You can keep your distance.",
+        "Go before my courage returns."
+      ],
+      "priority": -20,
+      "chance": 1.0,
+      "witness_radius": 40,
+      "requires_line_of_sight": false,
+      "target_entity_types": [
+        "minecraft:player"
+      ],
+      "requires_witness_unarmed": true
+    },
+    {
+      "id": "retaliation_target_escaped",
+      "message_prefix": "forced.retaliation_disengaged.retaliation_target_escaped",
+      "trigger": "retaliation_target_escaped",
+      "output": {
+        "mode": "chat",
+        "radius": 40
+      },
+      "lines": [
+        "Run back to whatever hole you came from.",
+        "Keep running. Distance does not make you innocent.",
+        "You escaped me, not the consequences.",
+        "I will not abandon the village just to catch you.",
+        "Go. The others will hear what you did.",
+        "You are beyond my reach, but not my memory.",
+        "Do not think getting away makes this finished.",
+        "I know where you ran. Stay there.",
+        "The village comes first. You can keep fleeing.",
+        "Coward! Keep moving and do not turn back.",
+        "You got away this time. There may not be a next time.",
+        "I will remember you when you come crawling back.",
+        "Run. We have walls to guard and names to share.",
+        "That is far enough. Now stay away.",
+        "Next time you may not be fast enough."
+      ],
+      "priority": -20,
+      "chance": 1.0,
+      "witness_radius": 40,
+      "requires_line_of_sight": false,
+      "target_entity_types": [
+        "minecraft:player"
+      ]
+    },
+    {
+      "id": "retaliation_search_expired",
+      "message_prefix": "forced.retaliation_disengaged.retaliation_search_expired",
+      "trigger": "retaliation_search_expired",
+      "output": {
+        "mode": "chat",
+        "radius": 40
+      },
+      "lines": [
+        "Where did you go? Show yourself!",
+        "Hide if you want. We still know what you did.",
+        "I know you are still out there somewhere.",
+        "You cannot hide from the whole village forever.",
+        "Come out and face what you started.",
+        "Gone, but not forgiven.",
+        "I lost your trail. I will not forget your face.",
+        "Stay hidden. It is safer for everyone.",
+        "They slipped away. Warn the others.",
+        "I cannot see you, but I know you are near.",
+        "Quiet now. Too quiet.",
+        "You chose the shadows. Remember why you needed them.",
+        "No sign of you. Good. Keep it that way.",
+        "I will stop looking, but I will stay ready.",
+        "The trail ends here. The grudge does not."
+      ],
+      "priority": -20,
+      "chance": 1.0,
+      "witness_radius": 40,
+      "requires_line_of_sight": false,
+      "target_entity_types": [
+        "minecraft:player"
+      ]
+    }
+  ]
+}

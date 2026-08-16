@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/quest-locale-v1.schema.json",
+  "title": "Villager Retaliation quest locale v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "messages"
+  ],
+  "properties": {
+    "schema": {
+      "const": "villagerretaliation:quest_locale/v1"
+    },
+    "messages": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "not": {
+          "type": "null"
+        }
+      }
+    }
+  }
+}

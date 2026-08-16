@@ -14,5 +14,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate data and tools
+        run: node tools/verify.mjs
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew build

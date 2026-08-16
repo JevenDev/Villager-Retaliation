@@ -13,15 +13,25 @@
       "id": "unemployed_opening",
       "lines": [
         "Mind the job site I have not found yet. What do you need?",
-        "Step clear of the job site I have not found yet. What do you need?",
-        "Mind the job site I have not found yet. I'm listening.",
-        "There you are. I was just near the village square, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one."
+        "Step around the work I am definitely about to begin. What is it?",
+        "I am listening. It is not like a workstation needs me.",
+        "There you are. Need a spare pair of hands?",
+        "Morning. I was deciding which chore to avoid first.",
+        "If you need help, ask plainly.",
+        "I have a moment before someone invents another errand.",
+        "What happened? You have the look of someone carrying a problem.",
+        "Go on. I am better at listening than choosing a trade.",
+        "If this is gossip, lower your voice. If it is work, raise it.",
+        "You found me between callings. Convenient timing.",
+        "I set my broom down for this, so make it worthwhile.",
+        "Need something carried, found, or explained badly?",
+        "The square can survive without me for a minute.",
+        "I am free right now, which is either useful or suspicious.",
+        "Tell me what you need before I volunteer for the wrong thing.",
+        "I was about to help someone else, but they were less specific.",
+        "You look serious. I will try to match that.",
+        "I am listening. Start with the part that matters.",
+        "Alright. What can I do?"
       ]
     }
   ]

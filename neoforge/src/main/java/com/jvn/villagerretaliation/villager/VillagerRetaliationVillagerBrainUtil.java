@@ -1,32 +1,23 @@
 package com.jvn.villagerretaliation.villager;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.UUID;
+import javax.annotation.Nullable;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.ai.Brain;
-import net.minecraft.world.entity.ai.behavior.Behavior;
-import net.minecraft.world.entity.ai.behavior.BehaviorControl;
-import net.minecraft.world.entity.ai.behavior.ShowTradesToPlayer;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.util.LandRandomPos;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.entity.ai.util.LandRandomPos;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.phys.Vec3;
-import javax.annotation.Nullable;
 
 public final class VillagerRetaliationVillagerBrainUtil {
-    private static final float FLEE_SPEED_MODIFIER = 0.75F;
+    private static final float FLEE_SPEED_MODIFIER = (float) VillagerMovementSpeedPolicy.RUN_SPEED_MODIFIER;
     private static final int FLEE_HORIZONTAL_RANGE = 16;
     private static final int FLEE_VERTICAL_RANGE = 7;
-    private static final long TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS = 20L * 10L;
-    private static final Map<UUID, Long> NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS = new HashMap<>();
 
     private VillagerRetaliationVillagerBrainUtil() {
     }
@@ -35,6 +26,39 @@ public final class VillagerRetaliationVillagerBrainUtil {
         VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY);
         VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY_ENTITY);
         VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE);
+        villager.setLastHurtByMob(null);
+    }
+
+    public static void clearPathingMemories(AbstractVillager villager) {
+        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.WALK_TARGET);
+        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.PATH);
+    }
+
+    public static void clearMovementMemories(AbstractVillager villager) {
+        clearPathingMemories(villager);
+        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.LOOK_TARGET);
+    }
+
+    public static boolean shouldSuppressVanillaBrainTickForCombat(Villager villager) {
+        LivingEntity target = villager.getTarget();
+        return target != null
+                && target != villager
+                && target.isAlive()
+                && VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get();
+    }
+
+    public static void stopNavigationAndClearPathing(AbstractVillager villager) {
+        if (!villager.getNavigation().isDone() || villager.getNavigation().getTargetPos() != null) {
+            villager.getNavigation().stop();
+        }
+        clearPathingMemories(villager);
+    }
+
+    public static void stopNavigationAndClearMovement(AbstractVillager villager) {
+        if (!villager.getNavigation().isDone() || villager.getNavigation().getTargetPos() != null) {
+            villager.getNavigation().stop();
+        }
+        clearMovementMemories(villager);
     }
 
     public static boolean hasThreatMemories(Brain<?> brain) {
@@ -43,63 +67,36 @@ public final class VillagerRetaliationVillagerBrainUtil {
                 || brain.hasMemoryValue(MemoryModuleType.NEAREST_HOSTILE);
     }
 
-    public static void removeTradePreviewBehavior(ServerLevel level, Villager villager) {
-        removeTradePreviewBehaviorNow(level, villager);
-        NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.put(
-                villager.getUUID(),
-                level.getGameTime() + TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS + scanStagger(villager.getUUID(), TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS)
-        );
+    public static void clearFleeMemories(Villager villager) {
+        clearThreatMemories(villager);
+        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HEARD_BELL_TIME);
+        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HIDING_PLACE);
     }
 
-    public static void removeTradePreviewBehaviorIfDue(ServerLevel level, Villager villager) {
-        UUID villagerId = villager.getUUID();
-        long gameTime = level.getGameTime();
-        long nextCheck = NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.getOrDefault(villagerId, Long.MIN_VALUE);
-        if (nextCheck == Long.MIN_VALUE) {
-            nextCheck = gameTime + scanStagger(villagerId, TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS);
-            if (nextCheck > gameTime) {
-                NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.put(villagerId, nextCheck);
-                return;
-            }
-        } else if (gameTime < nextCheck) {
+    public static boolean hasVanillaFleeState(@Nullable ServerLevel level, Brain<Villager> brain) {
+        return hasThreatMemories(brain)
+                || brain.hasMemoryValue(MemoryModuleType.HEARD_BELL_TIME)
+                || brain.hasMemoryValue(MemoryModuleType.HIDING_PLACE)
+                || brain.isActive(Activity.PANIC)
+                || brain.isActive(Activity.HIDE)
+                || level != null && brain.isActive(Activity.PRE_RAID)
+                || level != null && brain.isActive(Activity.RAID);
+    }
+
+    public static void suppressVanillaFleeState(ServerLevel level, Villager villager) {
+        Brain<Villager> brain = villager.getBrain();
+        boolean shouldResetActivity = hasVanillaFleeState(level, brain);
+        clearFleeMemories(villager);
+        if (!shouldResetActivity) {
             return;
         }
 
-        removeTradePreviewBehavior(level, villager);
-    }
-
-    public static void clearRuntimeState() {
-        NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.clear();
-    }
-
-    public static void clearRuntimeState(Villager villager) {
-        NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.remove(villager.getUUID());
-    }
-
-    private static void removeTradePreviewBehaviorNow(ServerLevel level, Villager villager) {
-        Brain<Villager> brain = villager.getBrain();
-        long gameTime = level.getGameTime();
-        for (Map<Activity, Set<BehaviorControl<? super Villager>>> behaviorsByActivity : brain.availableBehaviorsByPriority.values()) {
-            for (Set<BehaviorControl<? super Villager>> behaviors : behaviorsByActivity.values()) {
-                Iterator<BehaviorControl<? super Villager>> iterator = behaviors.iterator();
-                while (iterator.hasNext()) {
-                    BehaviorControl<? super Villager> behavior = iterator.next();
-                    if (behavior instanceof ShowTradesToPlayer) {
-                        if (behavior.getStatus() == Behavior.Status.RUNNING) {
-                            behavior.doStop(level, villager, gameTime);
-                        }
-                        iterator.remove();
-                    }
-                }
-            }
+        stopNavigationAndClearMovement(villager);
+        brain.setDefaultActivity(Activity.IDLE);
+        brain.setActiveActivityIfPossible(scheduledActivity(level, brain));
+        if (isActiveFleeActivity(brain)) {
+            brain.setActiveActivityIfPossible(Activity.IDLE);
         }
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 
     public static void enterFleeState(Villager villager, @Nullable LivingEntity hostile, long gameTime) {
@@ -140,5 +137,24 @@ public final class VillagerRetaliationVillagerBrainUtil {
         Vec3 walkDirection = walkTarget.getTarget().currentPosition().subtract(villagerPosition);
         Vec3 hostileDirection = hostile.position().subtract(villagerPosition);
         return walkDirection.dot(hostileDirection) < 0.0D;
+    }
+
+    private static Activity scheduledActivity(ServerLevel level, Brain<Villager> brain) {
+        Activity activity = brain.getSchedule().getActivityAt((int) (level.getDayTime() % 24000L));
+        return isFleeActivity(activity) ? Activity.IDLE : activity;
+    }
+
+    private static boolean isFleeActivity(Activity activity) {
+        return activity == Activity.PANIC
+                || activity == Activity.PRE_RAID
+                || activity == Activity.RAID
+                || activity == Activity.HIDE;
+    }
+
+    private static boolean isActiveFleeActivity(Brain<Villager> brain) {
+        return brain.isActive(Activity.PANIC)
+                || brain.isActive(Activity.PRE_RAID)
+                || brain.isActive(Activity.RAID)
+                || brain.isActive(Activity.HIDE);
     }
 }

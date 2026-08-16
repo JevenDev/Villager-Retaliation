@@ -13,7 +13,17 @@
         "I hope it keeps gathering dust instead of stories.",
         "Prepared and unused is better than unprepared and sorry.",
         "I know it is there if the day turns sharp.",
-        "The {gear_kind} gives me one less thing to fear on the road."
+        "The {gear_kind} gives me one less thing to fear on the road.",
+        "The gear came back clean because trouble never reached me.",
+        "I checked every buckle even though nothing tested them.",
+        "It stayed ready beside me all day and never left its straps.",
+        "No scratches this time, which is fine by me.",
+        "I kept it close enough to use without needing to.",
+        "The equipment is still in the same condition you gave it to me.",
+        "I would rather maintain unused gear than mend broken bones.",
+        "Nothing happened, but being prepared made the quiet easier.",
+        "I cleaned it anyway. Dust finds armor even when danger does not.",
+        "It has not seen a fight yet, and I hope that continues."
       ],
       "conditions": [
         {
@@ -29,7 +39,7 @@
       "id": "village_defense_global_counted",
       "request": "village_defense_report",
       "lines": [
-        "We saw what you did when the raiders came. People count that sort of courage carefully.",
+        "We saw what you did when the <red><bold>raiders</bold></red> came. People count that sort of courage carefully.",
         "The bell rang and you ran toward the danger. That is not nothing.",
         "You stood where many would have run. Villages remember that.",
         "When the gates shook, you did not turn away.",
@@ -38,7 +48,17 @@
         "Courage looks different up close. Yours looked useful.",
         "You gave the raiders something harder to break than a door.",
         "We remember who stood with us when the horn sounded.",
-        "That kind of help does not fade quickly around here."
+        "That kind of help does not fade quickly around here.",
+        "You bought us the time we needed to bar the last few doors.",
+        "The raiders reached the square, but they never made it past you.",
+        "I saw you hold the path while families reached their homes.",
+        "The bell rang, and you moved toward the danger instead of away.",
+        "People remember who guarded the doors when the raiders pressed in.",
+        "Your help gave the healers time to reach the wounded.",
+        "We counted fewer losses because you stood with us.",
+        "Several children still talk about seeing you beside the golem.",
+        "The damaged wall can be rebuilt. The lives you protected cannot.",
+        "You fought for this village as if one of its beds belonged to you."
       ],
       "option": "village_defense_report",
       "show_for_babies": false,
@@ -50,14 +70,24 @@
       "lines": [
         "You helped. I know that. I am still hearing the horns in my head.",
         "Maybe you saved us. Maybe I need another day before I can say that without <shake>shaking</shake>.",
-        "You stood where many would have run. Villages remember that.",
+        "You stayed at the path while I ran for shelter. I have not forgotten.",
         "I saw what you did, but my hands are still not steady enough to thank you properly.",
         "The raid is over, but my heart has not been told yet.",
         "You were useful when it mattered. I am not ready to call that comfort.",
         "I know we owe you something. I just need the smoke to clear first.",
         "You helped keep the village standing. That does not make the fear vanish.",
         "I am grateful, I think. It is hard to sort gratitude from panic right now.",
-        "The danger passed, but it left its sound behind."
+        "The danger passed, but it left its sound behind.",
+        "You helped us survive, but I am still startled by every horn.",
+        "I saw what you did at the gate. I also saw how close it came.",
+        "Thank you for fighting. I need time before the village feels safe again.",
+        "My hands shake when I remember the raiders reaching the first houses.",
+        "You earned gratitude, though fear is still louder in me today.",
+        "I know you were defending us. Sudden movement still makes me step back.",
+        "The battle ended, but sleep has not come easily since.",
+        "I want to trust the quiet. I am not there yet.",
+        "You gave people time to hide, including me.",
+        "Please do not mistake my caution for forgetting your help."
       ],
       "dispositions": [
         "cautious",
@@ -82,7 +112,17 @@
         "I can accept the words without being ready to relax.",
         "If you mean it, time will make that clearer than your mouth can.",
         "I am willing to remember this apology alongside what came before.",
-        "Say it less with words next time, and more with what you choose after."
+        "Say it less with words next time, and more with what you choose after.",
+        "I heard the apology. The memory is still here too.",
+        "Saying it plainly matters, but it does not undo the harm.",
+        "Give me time to decide what forgiveness looks like.",
+        "I need to see different choices before I trust the words.",
+        "You were right to apologize and wrong to expect an immediate answer.",
+        "Repair what you can, then let the rest of us breathe.",
+        "I believe you regret it. I am still angry.",
+        "Do not make me hear the same apology for the same mistake again.",
+        "The village will notice what you do after this conversation.",
+        "For now, I accept that you said it. I cannot offer more yet."
       ],
       "option": "apologize_for_harm",
       "weight": 56
@@ -100,7 +140,17 @@
         "That may be a beginning. It is not repair.",
         "If you mean it, stop giving us reasons to doubt you.",
         "I hear you. I am still keeping distance.",
-        "Do better long enough, and maybe these words will start to matter."
+        "Do better long enough, and maybe these words will start to matter.",
+        "I hear the apology, but I am keeping some distance.",
+        "Trust will return slower than the words arrived.",
+        "Do not ask me to feel safe immediately.",
+        "Show me through your choices that this will not happen again.",
+        "I want to believe you, though I still feel uneasy.",
+        "Give me time without pressing for forgiveness.",
+        "The apology matters. So does the warning that came before it.",
+        "I will watch what you do next.",
+        "We can be civil while trust is rebuilt.",
+        "I am not closing the door forever, only for now."
       ],
       "dispositions": [
         "cautious",
@@ -115,7 +165,7 @@
       "id": "apology_global_friendly",
       "request": "apology",
       "lines": [
-        "Thank you for saying it plainly. Do better by us, and this can pass.",
+        "<gold><pulse>Thank you</pulse></gold> for saying it plainly. Do better by us, and this can pass.",
         "That was the right thing to say. The next right thing matters too.",
         "Thank you. Let the apology become a habit, not a moment.",
         "I believe you want to mend this. Now let time see it too.",
@@ -124,7 +174,17 @@
         "I can work with an honest apology.",
         "Then let us start again carefully, with better steps this time.",
         "That helps. It does not erase everything, but it helps.",
-        "Keep choosing better, and the village will notice."
+        "Keep choosing better, and the village will notice.",
+        "Say what you mean without dressing it up.",
+        "I would rather hear an honest answer than a polished one.",
+        "I believe you are trying to make this right.",
+        "Thank you for saying it without being forced.",
+        "We can move forward if the behavior changes too.",
+        "I was hurt, but I do not want one mistake to define us.",
+        "Give me a little time and keep your promise.",
+        "An honest apology makes room for repair.",
+        "I would rather fix this than lose a friendship.",
+        "What you do next will tell me whether the words were real."
       ],
       "dispositions": [
         "respectful",
@@ -147,7 +207,17 @@
         "Maybe that helps. I still want a grown-up nearby.",
         "I am glad you said it, but I am not ready to be close.",
         "Okay. I will remember, but I am still being careful.",
-        "Sorry is good. Not doing it again is better."
+        "Sorry is good. Not doing it again is better.",
+        "I am going to tell a grown-up what happened.",
+        "Saying sorry is good, but you still scared me.",
+        "I need time before I want to play near you again.",
+        "Please do not make the same mistake tomorrow.",
+        "I heard your apology. I am still upset.",
+        "You should say sorry to everyone who saw it.",
+        "I want to believe you mean it.",
+        "Give me some space while I calm down.",
+        "If you fix what broke, the apology will feel more real.",
+        "I will remember whether you act kinder next time."
       ],
       "option": "apologize_for_harm",
       "show_for_adults": false,

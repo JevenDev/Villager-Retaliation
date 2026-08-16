@@ -70,4 +70,56 @@ public class VillagerEventTriggerSavedData extends SavedData {
         this.lastRunTimes.put(key, gameTime);
         setDirty();
     }
+
+    public CooldownMergeResult mergeScopeKey(String sourceScopeKey, String targetScopeKey) {
+        sourceScopeKey = sourceScopeKey == null ? "" : sourceScopeKey.trim();
+        targetScopeKey = targetScopeKey == null ? "" : targetScopeKey.trim();
+        if (sourceScopeKey.isBlank() || targetScopeKey.isBlank() || sourceScopeKey.equals(targetScopeKey)) {
+            return CooldownMergeResult.empty();
+        }
+
+        String sourceSuffix = "|" + sourceScopeKey;
+        int moved = 0;
+        int merged = 0;
+        int updatedTargetTimes = 0;
+        Map<String, Long> matching = new HashMap<>();
+        for (Map.Entry<String, Long> entry : this.lastRunTimes.entrySet()) {
+            if (entry.getKey().endsWith(sourceSuffix)) {
+                matching.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        for (Map.Entry<String, Long> entry : matching.entrySet()) {
+            String sourceKey = entry.getKey();
+            long sourceTime = entry.getValue();
+            this.lastRunTimes.remove(sourceKey);
+            String targetKey = sourceKey.substring(0, sourceKey.length() - sourceScopeKey.length()) + targetScopeKey;
+            Long existing = this.lastRunTimes.get(targetKey);
+            if (existing == null) {
+                this.lastRunTimes.put(targetKey, sourceTime);
+                moved++;
+            } else {
+                this.lastRunTimes.put(targetKey, Math.max(existing, sourceTime));
+                merged++;
+                if (sourceTime > existing) {
+                    updatedTargetTimes++;
+                }
+            }
+        }
+
+        if (!matching.isEmpty()) {
+            setDirty();
+        }
+        return new CooldownMergeResult(!matching.isEmpty(), moved, merged, updatedTargetTimes);
+    }
+
+    public record CooldownMergeResult(
+            boolean changed,
+            int moved,
+            int merged,
+            int updatedTargetTimes) {
+        private static CooldownMergeResult empty() {
+            return new CooldownMergeResult(false, 0, 0, 0);
+        }
+    }
 }

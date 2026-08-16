@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.quest;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.config.QuestItemHighlightMode;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import java.util.List;
 import java.util.Optional;
@@ -8,11 +9,15 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -42,7 +47,7 @@ public final class VillagerQuestItemHighlightClient {
             return;
         }
 
-        Component marker = Component.literal("Quest item: " + questEntry.get().title())
+        Component marker = Component.translatable("villagerretaliation.gui.quest_item_marker", questEntry.get().title())
                 .withStyle(ChatFormatting.GOLD);
         if (!event.getToolTip().contains(marker)) {
             event.getToolTip().add(marker);
@@ -125,16 +130,51 @@ public final class VillagerQuestItemHighlightClient {
         }
         String serialized = itemId.toString();
         for (QuestTrackerSyncPayload.QuestItem questItem : entry.questItems()) {
-            if (serialized.equals(questItem.itemId())) {
+            if (serialized.equals(questItem.itemId())
+                    && questItem.stackPredicate().matches(stack)
+                    && matchesQuestItemDetails(stack, questItem)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static Optional<QuestTrackerSyncPayload.Entry> activeTrackedEntry() {
-        Optional<QuestTrackerSyncPayload.Entry> tracked = VillagerQuestTrackerOverlay.trackedEntry();
-        return tracked.filter(VillagerQuestItemHighlightClient::isActiveTrackedEntry);
+    private static boolean matchesQuestItemDetails(
+            ItemStack stack, QuestTrackerSyncPayload.QuestItem questItem) {
+        for (QuestTrackerSyncPayload.QuestItemEnchantment requirement : questItem.enchantments()) {
+            int level = Math.max(
+                    enchantmentLevel(stack.getEnchantments(), requirement.id()),
+                    enchantmentLevel(
+                            stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY),
+                            requirement.id()));
+            if (level <= 0
+                    || requirement.minLevel() >= 0 && level < requirement.minLevel()
+                    || requirement.maxLevel() >= 0 && level > requirement.maxLevel()) {
+                return false;
+            }
+        }
+        if (questItem.minDurabilityPercent() < 0 && questItem.maxDurabilityPercent() < 0) {
+            return true;
+        }
+        if (!stack.isDamageableItem()) {
+            return false;
+        }
+        int maximum = Math.max(0, stack.getMaxDamage());
+        int remaining = Math.max(0, maximum - stack.getDamageValue());
+        int percent = maximum <= 0 ? 0 : Math.round(remaining * 100.0F / maximum);
+        return (questItem.minDurabilityPercent() < 0 || percent >= questItem.minDurabilityPercent())
+                && (questItem.maxDurabilityPercent() < 0 || percent <= questItem.maxDurabilityPercent());
+    }
+
+    private static int enchantmentLevel(ItemEnchantments enchantments, String id) {
+        int level = 0;
+        for (var entry : enchantments.entrySet()) {
+            Holder<Enchantment> holder = entry.getKey();
+            if (holder.unwrapKey().map(key -> key.location().toString().equals(id)).orElse(false)) {
+                level = Math.max(level, entry.getIntValue());
+            }
+        }
+        return level;
     }
 
     private static Optional<QuestTrackerSyncPayload.Entry> questEntryForStack(ItemStack stack) {
@@ -144,25 +184,28 @@ public final class VillagerQuestItemHighlightClient {
     private static Optional<QuestTrackerSyncPayload.Entry> questEntryForStack(
             ItemStack stack,
             List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries) {
-        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry()
-                .filter(entry -> matchesTrackedQuestItem(stack, entry));
-        if (tracked.isPresent()) {
-            return tracked;
-        }
         return activeQuestItemEntries.stream()
                 .filter(entry -> matchesTrackedQuestItem(stack, entry))
                 .findFirst();
     }
 
     private static List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries() {
-        return VillagerQuestTrackerOverlay.entries().stream()
-                .filter(VillagerQuestItemHighlightClient::isActiveTrackedEntry)
+        List<QuestTrackerSyncPayload.Entry> source = highlightMode() == QuestItemHighlightMode.SELECTED_ACTIVE_QUESTS
+                ? VillagerQuestTrackerOverlay.trackedEntries()
+                : VillagerQuestTrackerOverlay.entries();
+        return source.stream()
+                .filter(VillagerQuestItemHighlightClient::isActiveQuestEntry)
                 .filter(entry -> !entry.questItems().isEmpty())
                 .toList();
     }
 
-    private static boolean isActiveTrackedEntry(QuestTrackerSyncPayload.Entry entry) {
-        return "active".equalsIgnoreCase(entry.state());
+    private static QuestItemHighlightMode highlightMode() {
+        QuestItemHighlightMode mode = VillagerRetaliationConfig.QUEST_ITEM_HIGHLIGHT_MODE.get();
+        return mode == null ? QuestItemHighlightMode.ALL_ACTIVE_QUESTS : mode;
+    }
+
+    private static boolean isActiveQuestEntry(QuestTrackerSyncPayload.Entry entry) {
+        return entry != null && !entry.questAvailable() && "active".equalsIgnoreCase(entry.state());
     }
 
     private static boolean isHeldDisplayContext(ItemDisplayContext displayContext) {

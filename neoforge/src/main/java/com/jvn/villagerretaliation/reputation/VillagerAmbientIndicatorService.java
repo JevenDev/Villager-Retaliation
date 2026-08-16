@@ -2,12 +2,14 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
-import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -50,6 +52,15 @@ public final class VillagerAmbientIndicatorService {
     private VillagerAmbientIndicatorService() {
     }
 
+    public static void clearRuntimeState() {
+        NEXT_MURMUR_TICK.clear();
+        NEXT_ALERT_TICK.clear();
+        NEXT_SLEEP_TICK.clear();
+        RETALIATION_ANNOUNCEMENTS.clear();
+        FLEE_ANNOUNCEMENTS.clear();
+        ATTACK_LANDED_ANNOUNCEMENTS.clear();
+    }
+
     public static void maybeMurmurNearPlayers(ServerLevel level, AbstractVillager villager) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || !VillagerRetaliationConfig.ENABLE_AMBIENT_MURMURS.get()
@@ -59,7 +70,7 @@ public final class VillagerAmbientIndicatorService {
         }
 
         long gameTime = level.getGameTime();
-        if (gameTime % MURMUR_SCAN_INTERVAL_TICKS != Math.floorMod(villager.getUUID().getMostSignificantBits(), MURMUR_SCAN_INTERVAL_TICKS)
+        if (!TickThrottle.isSpreadTick(villager.getUUID().getMostSignificantBits(), gameTime, MURMUR_SCAN_INTERVAL_TICKS)
                 || gameTime < NEXT_MURMUR_TICK.getOrDefault(villager.getUUID(), 0L)) {
             return;
         }
@@ -410,6 +421,7 @@ public final class VillagerAmbientIndicatorService {
                 case VILLAGE_EVENT_REPORT -> random(villager.getRandom(), "Everyone?", "Afterward", "Checking");
                 case APOLOGY -> random(villager.getRandom(), "Apology", "Heard", "Careful");
                 case VILLAGE_DEFENSE_REPORT -> random(villager.getRandom(), "Raid ended", "You fought", "Afterward");
+                case RAID_VICTORY_ACKNOWLEDGEMENT -> random(villager.getRandom(), "We won", "Raid broken", "Together");
                 case STORY -> random(villager.getRandom(), "Listen", "Long story", "I remember");
                 case JOKE -> random(villager.getRandom(), "Heh", "Not bad", "Oh dear");
                 case INSULT -> random(villager.getRandom(), "Careful", "Really?", "Watch it");
@@ -731,7 +743,7 @@ public final class VillagerAmbientIndicatorService {
         VillagerInteractionService.broadcastForcedVillagerChat(
                 level,
                 villager,
-                babyDamagedChat(villager, attacker),
+                babyDamagedChat(level, villager, attacker),
                 VillagerInteractionService.villagerSpeakerLabel(villager)
         );
     }
@@ -740,23 +752,29 @@ public final class VillagerAmbientIndicatorService {
         VillagerInteractionService.broadcastForcedVillagerChat(
                 level,
                 villager,
-                babyWitnessedDeathChat(villager, attacker),
+                babyWitnessedDeathChat(level, villager, attacker),
                 VillagerInteractionService.villagerSpeakerLabel(villager)
         );
     }
 
-    private static String babyDamagedChat(Villager villager, Entity attacker) {
-        if (attacker instanceof Player) {
-            return random(villager.getRandom(), "Ow! Why would you do that?", "Stop! That hurts!", "Help! They hit me!");
-        }
-        return random(villager.getRandom(), "Ow! Something hit me!", "Help! That hurt!", "I want to go home!");
+    private static String babyDamagedChat(ServerLevel level, Villager villager, Entity attacker) {
+        return VillagerDialogueResources.globalMessage(
+                level.getServer(),
+                villager.getRandom(),
+                attacker instanceof Player
+                        ? "interaction.ambient.baby_damaged.player"
+                        : "interaction.ambient.baby_damaged.other"
+        ).orElse("");
     }
 
-    private static String babyWitnessedDeathChat(Villager villager, Entity attacker) {
-        if (attacker instanceof Player) {
-            return random(villager.getRandom(), "No no no! I saw what you did!", "Help! They hurt them!", "I want the grownups!");
-        }
-        return random(villager.getRandom(), "No no no! Run!", "Where are the grownups?", "Hide! Hide now!");
+    private static String babyWitnessedDeathChat(ServerLevel level, Villager villager, Entity attacker) {
+        return VillagerDialogueResources.globalMessage(
+                level.getServer(),
+                villager.getRandom(),
+                attacker instanceof Player
+                        ? "interaction.ambient.baby_witnessed_death.player"
+                        : "interaction.ambient.baby_witnessed_death.other"
+        ).orElse("");
     }
 
     private static String random(RandomSource random, String first, String second, String third) {

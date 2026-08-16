@@ -21,7 +21,17 @@
         "Fine. Let this end here before it grows sharper.",
         "I will accept this. Do not mistake that for forgetting.",
         "Peace can start here, if you let it.",
-        "That is enough for now. Keep the rest of your actions <pulse>clean</pulse>."
+        "That is enough for now. Keep the rest of your actions <pulse>clean</pulse>.",
+        "All right. I will stand down.",
+        "You have my word that I will not strike first.",
+        "Fine. Let us end this before someone gets hurt.",
+        "I am lowering my guard, so do the same.",
+        "We can settle this without weapons.",
+        "I hear you. The fight ends here.",
+        "Take a step back and I will calm down.",
+        "No more threats from either of us.",
+        "I would rather walk away than make another enemy.",
+        "The village has seen enough violence today."
       ],
       "outcomes": [
         "success"
@@ -38,9 +48,19 @@
         "If you mean to settle this, bring the full {emerald_cost} {emeralds}.",
         "You cannot buy peace with half the price.",
         "The offer is too light for the damage done.",
-        "I need {emerald_cost} {emeralds}. Anything less leaves this open.",
+        "Put the weapon down and give everyone room to breathe.",
         "That is not enough to cool anyone's temper.",
-        "Come back with <color:green>{emerald_cost} {emeralds}</color>, or choose another way."
+        "Come back with <color:green>{emerald_cost} {emeralds}</color>, or choose another way.",
+        "That is not enough to settle this.",
+        "You are short on emeralds and I am short on patience.",
+        "Bring the full {emerald_cost} {emeralds} if you want peace.",
+        "The price does not shrink because your purse is light.",
+        "Come back when you can cover what you owe.",
+        "Half a payment buys no forgiveness.",
+        "I counted twice. You still do not have enough.",
+        "The village will not carry the rest of your debt.",
+        "You need {emerald_cost} {emeralds}, not another excuse.",
+        "No deal until the full amount is here."
       ],
       "outcomes": [
         "not_enough_emeralds"
@@ -59,7 +79,17 @@
         "That offer comes too late to sound peaceful.",
         "No. Trust is not for sale today.",
         "The damage is heavier than those {payment_items}.",
-        "<shake>Back away.</shake> This cannot be settled like that."
+        "<shake>Back away.</shake> This cannot be settled like that.",
+        "No payment makes you safe to trust right now.",
+        "The guards are already coming. Put everything down.",
+        "You crossed the point where bargaining could help.",
+        "Back away from the village and keep your offer.",
+        "People here are still hiding because of you.",
+        "I will not lower my guard while you remain a threat.",
+        "The damage is too serious for a private settlement.",
+        "No. This ends with you leaving, not paying.",
+        "Another step forward will be treated as an attack.",
+        "Your reputation has closed this conversation."
       ],
       "dispositions": [
         "hostile",
@@ -74,7 +104,7 @@
       "id": "global_pacify_blocked_2",
       "lines": [
         "Keep them. I do not trust your apology.",
-        "No. The offer does not reach the damage yet.",
+        "No. I need distance before I can even consider an offer.",
         "Keep {payment_items}. This is not ready to mend.",
         "You cannot buy your way out of every memory.",
         "No. I would rather keep my distance than take your payment.",
@@ -82,7 +112,17 @@
         "The village is not ready to accept peace from your hand.",
         "Your {payment_items} do not make me feel safer.",
         "No. The wound is still too fresh for bargaining.",
-        "Keep the {payment_items}. I am keeping my <shake>caution</shake>."
+        "Keep the {payment_items}. I am keeping my <shake>caution</shake>.",
+        "I cannot accept {payment_items} while I am still afraid of you.",
+        "Keep the offer and give me time to think.",
+        "I am not ready to call this settled.",
+        "Payment would not make the next conversation feel safer.",
+        "Please leave the {payment_items} where they are.",
+        "I need distance more than I need compensation.",
+        "You may mean peace, but I cannot trust it today.",
+        "Ask again after your actions have changed what people expect.",
+        "Taking the offer now would feel like pretending.",
+        "No. Let me walk away without making this worse."
       ],
       "dispositions": [
         "rude",

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.villager;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +45,22 @@ public final class VillagerRetaliationVillagerRules {
     }
 
     public static boolean shouldSuppressFleeingBehavior(Villager villager, boolean keepFleeingBehavior) {
+        return shouldSuppressFleeingBehavior(villager, keepFleeingBehavior, CreeperThreatScan.STAGGERED);
+    }
+
+    public static boolean shouldSuppressVanillaFleeBehavior(Villager villager) {
+        return shouldSuppressVanillaFleeBehavior(villager, shouldKeepFleeingBehavior(villager));
+    }
+
+    public static boolean shouldSuppressVanillaFleeBehavior(Villager villager, boolean keepFleeingBehavior) {
+        return shouldSuppressFleeingBehavior(villager, keepFleeingBehavior, CreeperThreatScan.IMMEDIATE);
+    }
+
+    private static boolean shouldSuppressFleeingBehavior(
+            Villager villager,
+            boolean keepFleeingBehavior,
+            CreeperThreatScan creeperThreatScan
+    ) {
         if (keepFleeingBehavior) {
             return false;
         }
@@ -56,7 +73,8 @@ public final class VillagerRetaliationVillagerRules {
 
         return !hasCachedVisibleCreeperThreat(
                 villager,
-                VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get()
+                VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get(),
+                creeperThreatScan
         );
     }
 
@@ -76,7 +94,11 @@ public final class VillagerRetaliationVillagerRules {
         return VillagerRetaliationConfig.VILLAGERS_PICK_UP_GROUND_WEAPONS.get();
     }
 
-    private static boolean hasCachedVisibleCreeperThreat(Villager villager, double radius) {
+    private static boolean hasCachedVisibleCreeperThreat(
+            Villager villager,
+            double radius,
+            CreeperThreatScan creeperThreatScan
+    ) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return VillagerRetaliationVillagerCombatUtil.hasVisibleCreeperThreat(villager, radius);
         }
@@ -84,29 +106,29 @@ public final class VillagerRetaliationVillagerRules {
         UUID villagerId = villager.getUUID();
         long gameTime = level.getGameTime();
         CachedCreeperThreat cached = CREEPER_THREAT_CACHE.get(villagerId);
-        if (cached != null && cached.expiresGameTime() > gameTime) {
+        if (cached != null
+                && cached.expiresGameTime() > gameTime
+                && (cached.verified() || creeperThreatScan == CreeperThreatScan.STAGGERED)) {
             return cached.visible();
         }
-        if (cached == null) {
-            long firstScan = gameTime + scanStagger(villagerId, CREEPER_THREAT_CACHE_TICKS);
+        if (cached == null && creeperThreatScan == CreeperThreatScan.STAGGERED) {
+            long firstScan = gameTime + TickThrottle.stagger(villagerId, CREEPER_THREAT_CACHE_TICKS);
             if (firstScan > gameTime) {
-                CREEPER_THREAT_CACHE.put(villagerId, new CachedCreeperThreat(true, firstScan));
+                CREEPER_THREAT_CACHE.put(villagerId, new CachedCreeperThreat(true, firstScan, false));
                 return true;
             }
         }
 
         boolean visible = VillagerRetaliationVillagerCombatUtil.hasVisibleCreeperThreat(villager, radius);
-        CREEPER_THREAT_CACHE.put(villagerId, new CachedCreeperThreat(visible, gameTime + CREEPER_THREAT_CACHE_TICKS));
+        CREEPER_THREAT_CACHE.put(villagerId, new CachedCreeperThreat(visible, gameTime + CREEPER_THREAT_CACHE_TICKS, true));
         return visible;
     }
 
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
+    private enum CreeperThreatScan {
+        STAGGERED,
+        IMMEDIATE
     }
 
-    private record CachedCreeperThreat(boolean visible, long expiresGameTime) {
+    private record CachedCreeperThreat(boolean visible, long expiresGameTime, boolean verified) {
     }
 }

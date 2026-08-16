@@ -1,0 +1,934 @@
+package com.jvn.villagerretaliation.sell;
+
+import com.google.gson.JsonParser;
+
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.block.SellBoxBlockEntity;
+import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
+import java.math.BigInteger;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.CustomModelData;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+@GameTestHolder
+@PrefixGameTestTemplate(false)
+public final class SellBoxGameTests {
+    private static final String EMPTY_TEMPLATE = "empty";
+    private static final BlockPos BOX_POS = new BlockPos(1, 1, 1);
+
+    private SellBoxGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void exactCurrencyArithmeticNeverRoundsBulkPrices(GameTestHelper helper) {
+        CurrencyAmount balance = CurrencyAmount.of(1, 15)
+                .multiply(14)
+                .add(CurrencyAmount.of(1, 15));
+        helper.assertValueEqual(balance, CurrencyAmount.of(1, 1), "fifteen fifteenths must be exact");
+        helper.assertValueEqual(
+                CurrencyAmount.of(31, 15).withoutWholeUnits(BigInteger.TWO),
+                CurrencyAmount.of(1, 15),
+                "collecting whole units must retain the exact fraction");
+        CompoundTag oversized = new CompoundTag();
+        oversized.putString("Numerator", "9".repeat(129));
+        oversized.putString("Denominator", "1");
+        helper.assertValueEqual(
+                CurrencyAmount.load(oversized),
+                CurrencyAmount.ZERO,
+                "oversized serialized currency values must be rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void pricingSchemaDefaultsAndValidatesMarketGroups(GameTestHelper helper) {
+        ResourceLocation location =
+                ResourceLocation.fromNamespaceAndPath("test", "sell_prices/legacy_coal.json");
+        SellPriceDefinition legacy = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"item_count\":12,\"currency_count\":1}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                legacy.marketGroup(),
+                ResourceLocation.fromNamespaceAndPath("minecraft", "coal"),
+                "legacy definitions must default their market group to the item id");
+
+        SellPriceDefinition grouped = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"item_count\":{\"min\":12,\"max\":14},"
+                                                + "\"currency_count\":1,\"market_group\":\"villagerretaliation:fuel\"}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                grouped.marketGroup(),
+                ResourceLocation.fromNamespaceAndPath("villagerretaliation", "fuel"),
+                "explicit market groups must parse");
+
+        SellPriceDefinition oneRate = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":{\"min\":12,\"max\":14},\"currency_count\":1}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(oneRate.rates().size(), 1, "one explicit rate must parse");
+        helper.assertValueEqual(
+                oneRate.candidatePrices().size(),
+                3,
+                "ranges inside one rate must generate associated candidate prices");
+
+        SellPriceDefinition currencyRange = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":1,\"currency_count\":{\"min\":10,\"max\":12}}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                currencyRange.candidatePrices(),
+                java.util.List.of(
+                        CurrencyAmount.of(10, 1),
+                        CurrencyAmount.of(11, 1),
+                        CurrencyAmount.of(12, 1)),
+                "a currency-count range must remain associated with its item count");
+
+        SellPriceDefinition bothRanges = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":{\"min\":1,\"max\":2},"
+                                                + "\"currency_count\":{\"min\":2,\"max\":4}}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                bothRanges.candidatePrices(),
+                java.util.List.of(
+                        CurrencyAmount.of(1, 1),
+                        CurrencyAmount.of(3, 2),
+                        CurrencyAmount.of(2, 1),
+                        CurrencyAmount.of(3, 1),
+                        CurrencyAmount.of(4, 1)),
+                "both ranges in one rate must generate and deduplicate that family's combinations");
+
+        SellPriceDefinition discrete = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":1,\"currency_count\":10},"
+                                                + "{\"item_count\":1,\"currency_count\":15},"
+                                                + "{\"item_count\":1,\"currency_count\":25}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                discrete.candidatePrices(),
+                java.util.List.of(
+                        CurrencyAmount.of(10, 1),
+                        CurrencyAmount.of(15, 1),
+                        CurrencyAmount.of(25, 1)),
+                "separate rates must stay discrete instead of filling the values between them");
+
+        SellPriceDefinition deduplicated = SellPriceResources.definitionFromJson(
+                        location,
+                        JsonParser.parseString(
+                                        "{\"item\":\"minecraft:coal\",\"rates\":["
+                                                + "{\"item_count\":1,\"currency_count\":1},"
+                                                + "{\"item_count\":2,\"currency_count\":2}]}")
+                                .getAsJsonObject())
+                .orElseThrow();
+        helper.assertValueEqual(
+                deduplicated.candidatePrices().size(),
+                1,
+                "equivalent ratios from separate rates must be deduplicated");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:coal\",\"item_count\":12,"
+                                                        + "\"currency_count\":1,\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "legacy pricing fields and rates must not be accepted together");
+
+        var tagged = SellPriceResources.definitionsFromJson(
+                ResourceLocation.fromNamespaceAndPath("test", "sell_prices/logs.json"),
+                JsonParser.parseString(
+                                "{\"item\":\"#minecraft:logs\",\"item_count\":5,\"currency_count\":1}")
+                        .getAsJsonObject());
+        helper.assertTrue(
+                tagged.stream().anyMatch(definition -> definition.item() == Items.OAK_LOG),
+                "item tags must expand to matching sellable items");
+        helper.assertTrue(
+                tagged.stream().anyMatch(definition -> definition.item() == Items.SPRUCE_LOG),
+                "one tag definition must cover multiple variants");
+        helper.assertTrue(
+                tagged.stream().allMatch(definition -> definition.marketGroup().equals(
+                        ResourceLocation.fromNamespaceAndPath("minecraft", "logs"))),
+                "tag definitions must default their market group to the tag id");
+        helper.assertTrue(
+                SellPriceResources.definitionsFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"#minecraft:not_a_real_tag\",\"item_count\":5,\"currency_count\":1}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "unknown item tags must reject the definition");
+
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:coal\",\"item_count\":12,\"currency_count\":1,"
+                                                        + "\"market_group\":\"Bad Group\"}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "invalid market groups must reject the definition");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void pricingSchemaBoundsExactBalanceDenominators(GameTestHelper helper) {
+        ResourceLocation location =
+                ResourceLocation.fromNamespaceAndPath("test", "sell_prices/unsafe_denominator.json");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:coal\",\"item_count\":257,"
+                                                        + "\"currency_count\":1}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "item counts above the exact-balance serialization bound must be rejected");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                location,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:coal\",\"item_count\":256,"
+                                                        + "\"currency_count\":2147483647}")
+                                        .getAsJsonObject())
+                        .isPresent(),
+                "the bound applies to denominators without unnecessarily limiting currency numerators");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void stackPredicatesUseComponentCodecsCustomDataAndRemainingDurability(GameTestHelper helper) {
+        SellPriceDefinition exactComponent = parseDefinition(
+                helper,
+                "exact_component",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_model_data\":6},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        SellPriceDefinition broad = parseDefinition(
+                helper,
+                "broad_stone",
+                "{\"item\":\"minecraft:stone\","
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":5}]}");
+        SellPriceDefinition specific = parseDefinition(
+                helper,
+                "specific_stone",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_model_data\":6},"
+                        + "\"priority\":10,\"rates\":[{\"item_count\":1,\"currency_count\":15}]}");
+        ItemStack modeled = new ItemStack(Items.STONE);
+        modeled.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(6));
+        helper.assertTrue(
+                exactComponent.stackPredicate().matches(modeled),
+                "codec-backed exact component values must match");
+        helper.assertValueEqual(
+                SellPriceResources.selectDefinition(modeled, java.util.List.of(broad, specific))
+                        .orElseThrow()
+                        .id(),
+                specific.id(),
+                "higher-priority component-specific definitions must override broad definitions");
+
+        SellPriceDefinition equalFirst = parseDefinition(
+                helper,
+                "a_equal",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_model_data\":6},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":7}]}");
+        SellPriceDefinition equalLast = parseDefinition(
+                helper,
+                "z_equal",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_model_data\":6},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":9}]}");
+        helper.assertValueEqual(
+                SellPriceResources.selectDefinition(modeled, java.util.List.of(equalFirst, equalLast))
+                        .orElseThrow()
+                        .id(),
+                equalLast.id(),
+                "equal-priority definitions must use deterministic definition-id tie behavior");
+        helper.assertTrue(
+                equalFirst.stackPredicate().overlaps(equalLast.stackPredicate()),
+                "equal exact predicates must be recognized as an ambiguous overlap");
+
+        modeled.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(5));
+        helper.assertFalse(
+                exactComponent.stackPredicate().matches(modeled),
+                "different exact component values must not match");
+
+        SellPriceDefinition numericRange = parseDefinition(
+                helper,
+                "numeric_range",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"components\":{\"minecraft:damage\":"
+                        + "{\"min\":4,\"max\":6}},\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        ItemStack rangedTool = new ItemStack(Items.DIAMOND_PICKAXE);
+        rangedTool.setDamageValue(5);
+        helper.assertTrue(
+                numericRange.stackPredicate().matches(rangedTool),
+                "numeric component values inside min and max must match");
+        rangedTool.setDamageValue(7);
+        helper.assertFalse(
+                numericRange.stackPredicate().matches(rangedTool),
+                "numeric component values outside the range must not match");
+
+        SellPriceDefinition minOnly = parseDefinition(
+                helper,
+                "numeric_min",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"components\":{\"minecraft:damage\":"
+                        + "{\"min\":3}},\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        helper.assertTrue(
+                minOnly.stackPredicate().matches(rangedTool),
+                "min-only numeric component ranges must match");
+
+        SellPriceDefinition customData = parseDefinition(
+                helper,
+                "custom_data",
+                "{\"item\":\"minecraft:stone\",\"components\":{\"minecraft:custom_data\":"
+                        + "{\"quality\":3,\"nested\":{\"kind\":\"polished\"}}},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        CompoundTag data = new CompoundTag();
+        data.putInt("quality", 3);
+        CompoundTag nested = new CompoundTag();
+        nested.putString("kind", "polished");
+        nested.putBoolean("unrelated", true);
+        data.put("nested", nested);
+        data.putString("also_unrelated", "kept");
+        ItemStack customStack = new ItemStack(Items.STONE);
+        customStack.set(DataComponents.CUSTOM_DATA, CustomData.of(data));
+        helper.assertTrue(
+                customData.stackPredicate().matches(customStack),
+                "custom_data must use useful nested subset matching");
+
+        SellPriceDefinition shorthand = parseDefinition(
+                helper,
+                "shorthand",
+                "{\"item\":\"minecraft:diamond_pickaxe[minecraft:damage=5]\","
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        ItemStack shorthandStack = new ItemStack(Items.DIAMOND_PICKAXE);
+        shorthandStack.setDamageValue(5);
+        helper.assertTrue(
+                shorthand.stackPredicate().matches(shorthandStack),
+                "vanilla item component shorthand must create exact predicates");
+
+        ItemStack wornTool = new ItemStack(Items.DIAMOND_PICKAXE);
+        wornTool.setDamageValue(wornTool.getMaxDamage() - 60);
+        SellPriceDefinition durabilityMin = parseDefinition(
+                helper,
+                "durability_min",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"durability\":{\"min\":50},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        SellPriceDefinition durabilityMax = parseDefinition(
+                helper,
+                "durability_max",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"durability\":{\"max\":70},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        SellPriceDefinition durabilityBoth = parseDefinition(
+                helper,
+                "durability_both",
+                "{\"item\":\"minecraft:diamond_pickaxe\",\"durability\":{\"min\":50,\"max\":70},"
+                        + "\"rates\":[{\"item_count\":1,\"currency_count\":2}]}");
+        helper.assertTrue(durabilityMin.stackPredicate().matches(wornTool), "remaining durability min must match");
+        helper.assertTrue(durabilityMax.stackPredicate().matches(wornTool), "remaining durability max must match");
+        helper.assertTrue(durabilityBoth.stackPredicate().matches(wornTool), "remaining durability interval must match");
+        helper.assertFalse(
+                durabilityMin.stackPredicate().matches(new ItemStack(Items.STONE)),
+                "durability predicates must reject non-damageable items");
+
+        var registries = helper.getLevel().registryAccess();
+        ResourceLocation invalid = ResourceLocation.fromNamespaceAndPath("test", "sell_prices/invalid.json");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:stone\",\"components\":{\"missing:nope\":1},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "invalid component ids must skip the definition");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:diamond_pickaxe\","
+                                                        + "\"components\":{\"minecraft:damage\":\"bad\"},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "invalid component codec payloads must skip the definition");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:stone\","
+                                                        + "\"components\":{\"minecraft:custom_model_data\":{\"min\":3}},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "numeric ranges on nonnumeric codec values must skip the definition");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:stone\",\"durability\":{\"min\":1},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "impossible durability definitions must be rejected cleanly");
+        helper.assertTrue(
+                SellPriceResources.definitionFromJson(
+                                registries,
+                                invalid,
+                                JsonParser.parseString(
+                                                "{\"item\":\"minecraft:diamond_pickaxe\","
+                                                        + "\"durability\":{\"min\":70,\"max\":50},"
+                                                        + "\"rates\":[{\"item_count\":1,\"currency_count\":1}]}")
+                                        .getAsJsonObject())
+                        .isEmpty(),
+                "malformed durability ranges must be rejected cleanly");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void successfulMarketSyncRecordsCurrentSnapshot(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        SellBoxMarketSyncService.clear();
+
+        helper.assertFalse(
+                SellBoxMarketSyncService.isSynced(player, sellBox),
+                "an open menu without a sent snapshot must require synchronization");
+        SellBoxMarketSyncService.markSynced(player, sellBox);
+        helper.assertTrue(
+                SellBoxMarketSyncService.isSynced(player, sellBox),
+                "a successful payload send must suppress the duplicate next-tick snapshot");
+        int containerId = player.containerMenu.containerId;
+        helper.assertFalse(
+                SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId),
+                "an unchanged box must reuse its quoted inventory entries");
+        sellBox.restoreCurrency(new ItemStack(Items.EMERALD, 1));
+        helper.assertFalse(
+                SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId),
+                "a balance-only update must reuse its quoted inventory entries");
+        sellBox.setItem(0, new ItemStack(Items.COAL, 2));
+        helper.assertFalse(
+                SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId),
+                "a pending-only update must reuse its quoted inventory entries");
+        player.getInventory().setItem(0, new ItemStack(Items.STRING, 1));
+        helper.assertTrue(
+                SellBoxMarketSyncService.shouldSyncEntries(player, sellBox, containerId),
+                "a changed inventory variant must rebuild quoted inventory entries");
+
+        SellBoxMarketSyncService.clear();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void exactMarketArithmeticSupportsMarginalTiers(GameTestHelper helper) {
+        CurrencyAmount amount = CurrencyAmount.of(31, 5);
+        helper.assertValueEqual(
+                amount.multiplyRatio(125, 100),
+                CurrencyAmount.of(31, 4),
+                "exact rational multipliers must not round");
+        helper.assertValueEqual(
+                amount.subtract(CurrencyAmount.of(6, 1)),
+                CurrencyAmount.of(1, 5),
+                "exact subtraction must retain fractions");
+        helper.assertValueEqual(
+                CurrencyAmount.of(2, 1).subtractClamped(CurrencyAmount.of(3, 1)),
+                CurrencyAmount.ZERO,
+                "clamped subtraction must never become negative");
+        helper.assertValueEqual(
+                CurrencyAmount.of(3, 1).min(CurrencyAmount.of(4, 1)),
+                CurrencyAmount.of(3, 1),
+                "minimum selection must be exact");
+        helper.assertValueEqual(
+                VillageMarketPolicy.effectiveMultiplier(DailyDemandBand.VERY_LOW, SupplyBand.GLUTTED),
+                CurrencyAmount.of(25, 100),
+                "the effective multiplier must honor the 25 percent floor");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void villageBaseCandidatesAreDeterministicAndBounded(GameTestHelper helper) {
+        SellPriceDefinition definition = new SellPriceDefinition(
+                ResourceLocation.fromNamespaceAndPath("test", "coal"),
+                Items.COAL,
+                new SellPriceDefinition.IntRange(15, 24),
+                SellPriceDefinition.IntRange.fixed(1));
+        VillageAllegianceId village = new VillageAllegianceId(new UUID(21L, 22L));
+        Set<CurrencyAmount> selectedAcrossDays = new LinkedHashSet<>();
+        CurrencyAmount previous = null;
+        for (long day = -5; day < 25; day++) {
+            CurrencyAmount selected = VillageSellMarket.selectBasePrice(3733L, day, village, definition);
+            helper.assertTrue(definition.candidatePrices().contains(selected), "base price must be a configured candidate");
+            helper.assertTrue(!selected.equals(previous), "multi-value prices must not repeat on consecutive days");
+            helper.assertValueEqual(
+                    VillageSellMarket.selectBasePrice(3733L, day, village, definition),
+                    selected,
+                    "seed, village, definition, and day must select deterministically");
+            selectedAcrossDays.add(selected);
+            previous = selected;
+        }
+        helper.assertTrue(selectedAcrossDays.size() > 1, "multi-value ranges must vary across days");
+
+        boolean rejected = false;
+        try {
+            new SellPriceDefinition.IntRange(0, 1);
+        } catch (IllegalArgumentException expected) {
+            rejected = true;
+        }
+        helper.assertTrue(rejected, "non-positive datapack ranges must be rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void villageDemandIsDeterministicLocalAndDaySensitive(GameTestHelper helper) {
+        VillageAllegianceId first = new VillageAllegianceId(new UUID(11L, 12L));
+        VillageAllegianceId second = new VillageAllegianceId(new UUID(13L, 14L));
+        Set<ResourceLocation> groups = new LinkedHashSet<>();
+        for (String path : new String[] {"logs", "wool", "fish", "grain", "iron", "flowers", "fuel", "stone", "paper", "gems"}) {
+            groups.add(ResourceLocation.fromNamespaceAndPath("villagerretaliation", path));
+        }
+        Map<ResourceLocation, DailyDemandBand> firstDay =
+                VillageSellMarket.demandBands(3733L, first, 5L, groups);
+        helper.assertValueEqual(
+                VillageSellMarket.demandBands(3733L, first, 5L, groups),
+                firstDay,
+                "demand must be restart-stable for the same inputs");
+        helper.assertTrue(
+                !firstDay.equals(VillageSellMarket.demandBands(3733L, second, 5L, groups)),
+                "different villages must rank commodity groups independently");
+        helper.assertTrue(
+                !firstDay.equals(VillageSellMarket.demandBands(3733L, first, 6L, groups)),
+                "demand must shift on a new overworld day");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void marginalSaleCrossesSupplyTiersAndAddsFullPressure(GameTestHelper helper) {
+        VillageAllegianceId village = new VillageAllegianceId(new UUID(15L, 16L));
+        MarketQuote quote = VillageSellMarket.calculateQuote(
+                village,
+                "Oakvale",
+                ResourceLocation.fromNamespaceAndPath("villagerretaliation", "logs"),
+                CurrencyAmount.of(1, 1),
+                DailyDemandBand.NORMAL,
+                CurrencyAmount.of(12, 1),
+                60);
+        helper.assertValueEqual(quote.supplySegments().size(), 4, "the sale must cross all four supply tiers");
+        helper.assertValueEqual(
+                quote.stackPayout(),
+                CurrencyAmount.of(34, 1),
+                "marginal tiers must price 4 fresh, 16 active, 32 saturated, and 8 glutted base value");
+        helper.assertValueEqual(
+                quote.pressureAdded(),
+                CurrencyAmount.of(60, 1),
+                "discounted payout must still add the full base value as pressure");
+        helper.assertValueEqual(
+                quote.resultingPressure(),
+                CurrencyAmount.of(72, 1),
+                "resulting pressure must include the complete sale exactly once");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void villageMarketPressureRecoversPersistsAndStaysIsolated(GameTestHelper helper) {
+        VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();
+        VillageAllegianceId first = new VillageAllegianceId(new UUID(1L, 2L));
+        VillageAllegianceId second = new VillageAllegianceId(new UUID(3L, 4L));
+        registry.ensureRecord(first, 0L, helper.getLevel().dimension().location(), BlockPos.ZERO);
+        registry.ensureRecord(second, 0L, helper.getLevel().dimension().location(), new BlockPos(64, 0, 0));
+
+        ResourceLocation logs = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "logs");
+        VillageMarketSavedData data = new VillageMarketSavedData();
+        data.recordPressure(registry, first, logs, CurrencyAmount.of(40, 1), 10L);
+        helper.assertValueEqual(
+                data.pressure(registry, first, logs, 11L),
+                CurrencyAmount.of(24, 1),
+                "one elapsed day must recover sixteen base emeralds");
+        helper.assertValueEqual(
+                data.pressure(registry, first, logs, 9L),
+                CurrencyAmount.of(40, 1),
+                "moving time backward must not reverse recovery");
+        helper.assertValueEqual(
+                data.pressure(registry, second, logs, 11L),
+                CurrencyAmount.ZERO,
+                "villages must keep independent pressure");
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        VillageMarketSavedData loaded = VillageMarketSavedData.load(saved, helper.getLevel().registryAccess());
+        helper.assertValueEqual(
+                loaded.pressure(registry, first, logs, 11L),
+                CurrencyAmount.of(24, 1),
+                "exact pressure must survive save and load");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void villageMarketAliasesMergeRecoveredPressure(GameTestHelper helper) {
+        VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();
+        VillageAllegianceId source = new VillageAllegianceId(new UUID(5L, 6L));
+        VillageAllegianceId target = new VillageAllegianceId(new UUID(7L, 8L));
+        registry.ensureRecord(source, 0L, helper.getLevel().dimension().location(), BlockPos.ZERO);
+        registry.ensureRecord(target, 0L, helper.getLevel().dimension().location(), new BlockPos(64, 0, 0));
+
+        ResourceLocation wool = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "wool");
+        VillageMarketSavedData data = new VillageMarketSavedData();
+        data.recordPressure(registry, source, wool, CurrencyAmount.of(40, 1), 2L);
+        data.recordPressure(registry, target, wool, CurrencyAmount.of(20, 1), 3L);
+        helper.assertTrue(registry.merge(source, target), "the test villages must merge");
+        data.canonicalize(registry, 4L);
+
+        helper.assertValueEqual(data.marketCount(), 1, "alias market state must be retired");
+        helper.assertValueEqual(
+                data.pressure(registry, target, wool, 4L),
+                CurrencyAmount.of(12, 1),
+                "both states must recover to the merge day before pressure is combined");
+        helper.assertValueEqual(
+                data.pressure(registry, source, wool, 4L),
+                CurrencyAmount.of(12, 1),
+                "alias reads must resolve to the canonical market");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void wholesaleCatalogueAnchorsGroupsAndUnsafeGoods(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        SellPriceDefinition logs = SellPriceResources.definition(server, new ItemStack(Items.OAK_LOG))
+                .orElseThrow();
+        helper.assertTrue(
+                SellPriceResources.candidatePrices(server, logs)
+                        == SellPriceResources.candidatePrices(server, logs),
+                "loaded sell-price candidates must be precomputed and reused");
+        helper.assertTrue(
+                SellPriceResources.marketGroups(server).contains(logs.marketGroup()),
+                "the loaded market-group index must contain bundled definitions");
+        SellPriceDefinition planks = SellPriceResources.definition(server, new ItemStack(Items.OAK_PLANKS))
+                .orElseThrow();
+        helper.assertValueEqual(logs.itemCount(), SellPriceDefinition.IntRange.fixed(5), "logs anchor");
+        helper.assertValueEqual(planks.itemCount(), SellPriceDefinition.IntRange.fixed(18), "planks anchor");
+        helper.assertValueEqual(
+                logs.marketGroup(),
+                ResourceLocation.fromNamespaceAndPath("villagerretaliation", "logs"),
+                "all logs use the logs group");
+        helper.assertValueEqual(
+                SellPriceResources.definition(server, new ItemStack(Items.SPRUCE_LOG)).orElseThrow().marketGroup(),
+                logs.marketGroup(),
+                "log variants must share one group");
+        helper.assertValueEqual(
+                SellPriceResources.definition(server, new ItemStack(Items.WHEAT)).orElseThrow().itemCount(),
+                SellPriceDefinition.IntRange.fixed(20),
+                "wheat anchor");
+        helper.assertValueEqual(
+                SellPriceResources.definition(server, new ItemStack(Items.WHEAT_SEEDS)).orElseThrow().itemCount(),
+                SellPriceDefinition.IntRange.fixed(48),
+                "seed anchor");
+        helper.assertValueEqual(
+                SellPriceResources.definition(server, new ItemStack(Items.IRON_INGOT)).orElseThrow().itemCount(),
+                SellPriceDefinition.IntRange.fixed(5),
+                "iron anchor");
+        helper.assertTrue(
+                SellPriceResources.definition(server, new ItemStack(Items.ENCHANTED_BOOK)).isEmpty(),
+                "component-sensitive enchanted books must be disabled");
+        helper.assertTrue(
+                SellPriceResources.definition(server, new ItemStack(Items.DIAMOND_PICKAXE)).isEmpty(),
+                "damageable tools must be disabled");
+        helper.assertTrue(
+                SellPriceResources.definition(server, new ItemStack(Items.TIPPED_ARROW)).isEmpty(),
+                "component-sensitive tipped arrows must be disabled");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void sellBoxesInOneVillageSharePressure(GameTestHelper helper) {
+        SellBoxBlockEntity first = placeBox(helper);
+        BlockPos secondPos = new BlockPos(3, 1, 1);
+        helper.setBlock(secondPos, VillagerRetaliationBlocks.SELL_BOX.get());
+        SellBoxBlockEntity second = (SellBoxBlockEntity) helper.getBlockEntity(secondPos);
+
+        MarketQuote before = VillageSellMarket.quote(
+                        helper.getLevel(), second.getBlockPos(), new ItemStack(Items.DIAMOND, 64))
+                .orElseThrow();
+        first.insertForSale(new ItemStack(Items.DIAMOND, 64), false);
+        helper.assertTrue(first.sellPending(), "the first box sale must complete");
+        MarketQuote after = VillageSellMarket.quote(
+                        helper.getLevel(), second.getBlockPos(), new ItemStack(Items.DIAMOND, 64))
+                .orElseThrow();
+
+        helper.assertTrue(
+                after.stackPayout().compareTo(before.stackPayout()) < 0,
+                "a second box in the village must see the first box's supply pressure");
+        helper.assertValueEqual(
+                after.recoveredPressure(),
+                CurrencyAmount.of(64, 1),
+                "one completed sale must add pressure exactly once");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void groupedItemsSharePressureAndServerRejectsStaleQuotes(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        MarketQuote stale = VillageSellMarket.quote(
+                        helper.getLevel(), sellBox.getBlockPos(), new ItemStack(Items.DIAMOND, 64))
+                .orElseThrow();
+        sellBox.insertForSale(new ItemStack(Items.DIAMOND, 64), false);
+        helper.assertTrue(sellBox.sellPending(), "first sale must complete");
+
+        sellBox.insertForSale(new ItemStack(Items.DIAMOND, 64), false);
+        CurrencyAmount balanceBefore = sellBox.balance();
+        helper.assertTrue(sellBox.sellPending(), "second sale must complete");
+        CurrencyAmount actualSecondPayout = sellBox.balance().subtract(balanceBefore);
+        helper.assertTrue(
+                actualSecondPayout.compareTo(stale.stackPayout()) < 0,
+                "the server must recalculate instead of trusting the stale pre-sale quote");
+
+        MarketQuote logsBefore = VillageSellMarket.quote(
+                        helper.getLevel(), sellBox.getBlockPos(), new ItemStack(Items.OAK_LOG, 64))
+                .orElseThrow();
+        sellBox.insertForSale(new ItemStack(Items.OAK_LOG, 64), false);
+        helper.assertTrue(sellBox.sellPending(), "oak logs must sell");
+        MarketQuote spruceAfter = VillageSellMarket.quote(
+                        helper.getLevel(), sellBox.getBlockPos(), new ItemStack(Items.SPRUCE_LOG, 1))
+                .orElseThrow();
+        helper.assertValueEqual(
+                spruceAfter.marketGroup(),
+                logsBefore.marketGroup(),
+                "log variants must share one market group");
+        helper.assertValueEqual(
+                spruceAfter.recoveredPressure(),
+                CurrencyAmount.of(64, 5),
+                "selling oak logs must add full base pressure to spruce log quotes");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void noVillageRejectsSalesButKeepsCurrencyCollectable(GameTestHelper helper) {
+        helper.setBlock(BOX_POS, VillagerRetaliationBlocks.SELL_BOX.get());
+        SellBoxBlockEntity sellBox = (SellBoxBlockEntity) helper.getBlockEntity(BOX_POS);
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
+        int recordsBefore = registry.records().size();
+        ItemStack diamonds = new ItemStack(Items.DIAMOND, 4);
+
+        helper.assertFalse(
+                VillageSellMarket.canAcceptSale(helper.getLevel(), sellBox.getBlockPos(), diamonds),
+                "automation planning outside a village must reject sale items");
+        helper.assertValueEqual(
+                sellBox.inputHandler().insertItem(0, diamonds, true),
+                diamonds,
+                "simulation outside a village must reject the item");
+        helper.assertValueEqual(
+                registry.records().size(),
+                recordsBefore,
+                "simulation must not discover or create a village");
+        helper.assertValueEqual(
+                sellBox.insertForSale(diamonds, false),
+                diamonds,
+                "actual insertion outside a valid market must reject the item");
+        helper.assertTrue(sellBox.getItem(0).isEmpty(), "rejected goods must not enter the pending slot");
+
+        sellBox.restoreCurrency(new ItemStack(Items.EMERALD, 2));
+        helper.assertValueEqual(
+                sellBox.outputHandler().extractItem(0, 2, false).getCount(),
+                2,
+                "existing whole currency must remain extractable outside a village");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void pendingStackWaitsForConfirmation(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        ItemStack coal = new ItemStack(Items.COAL, 7);
+        helper.assertTrue(
+                VillageSellMarket.canAcceptSale(helper.getLevel(), sellBox.getBlockPos(), coal),
+                "automation planning must accept sale items in a known village");
+        ItemStack remainder = sellBox.insertForSale(coal, false);
+        helper.assertTrue(remainder.isEmpty(), "valid input should be accepted");
+        helper.assertValueEqual(sellBox.getItem(0).getCount(), 7, "the inserted stack should remain pending");
+        helper.assertTrue(sellBox.balance().isZero(), "insertion into an empty box must not sell immediately");
+
+        CurrencyAmount expected = sellBox.pendingValue();
+        helper.assertTrue(sellBox.sellPending(), "confirmation should sell the pending stack");
+        helper.assertValueEqual(sellBox.balance(), expected, "confirmed sale should add its exact current value");
+        helper.assertTrue(sellBox.getItem(0).isEmpty(), "confirmed sale should clear the pending slot");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void occupiedInsertionSellsOldStackAtomically(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        ItemStack oldStack = new ItemStack(Items.COAL, 3);
+        ItemStack newStack = new ItemStack(Items.COAL, 5);
+        sellBox.insertForSale(oldStack, false);
+        CurrencyAmount expected = sellBox.pendingValue();
+
+        helper.assertTrue(sellBox.insertForSale(newStack, false).isEmpty(), "replacement should be accepted");
+        helper.assertValueEqual(sellBox.balance(), expected, "replacement must sell exactly the old stack");
+        helper.assertValueEqual(sellBox.getItem(0).getCount(), 5, "the replacement stack should remain pending");
+
+        CurrencyAmount beforeInvalid = sellBox.balance();
+        ItemStack pendingBeforeInvalid = sellBox.getItem(0).copy();
+        ItemStack invalid = new ItemStack(Items.EMERALD, 1);
+        helper.assertValueEqual(sellBox.insertForSale(invalid, false), invalid, "currency must be rejected");
+        helper.assertValueEqual(sellBox.balance(), beforeInvalid, "invalid insertion must not sell the pending stack");
+        helper.assertTrue(
+                sameStack(sellBox.getItem(0), pendingBeforeInvalid),
+                "invalid insertion must not replace the pending stack");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void handlerSimulationHasNoSideEffects(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        ItemStack first = new ItemStack(Items.COAL, 4);
+        ItemStack second = new ItemStack(Items.STRING, 6);
+        sellBox.insertForSale(first, false);
+
+        helper.assertTrue(sellBox.inputHandler().insertItem(0, second, true).isEmpty(), "simulated valid insert should report acceptance");
+        helper.assertTrue(
+                sameStack(sellBox.getItem(0), first),
+                "simulated insert must not replace pending input");
+        helper.assertTrue(sellBox.balance().isZero(), "simulated insert must not trigger a sale");
+        sellBox.restoreCurrency(new ItemStack(Items.EMERALD, 2));
+        CurrencyAmount balanceBeforeExtraction = sellBox.balance();
+        helper.assertValueEqual(
+                sellBox.outputHandler().extractItem(0, 1, true).getCount(),
+                1,
+                "simulated payout should report one available whole currency item");
+        helper.assertValueEqual(
+                sellBox.balance(),
+                balanceBeforeExtraction,
+                "simulated extraction must not alter the balance");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void bottomExtractionPaysOnlyWholeCurrency(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        CurrencyAmount unitPrice = VillageSellMarket.quote(
+                        helper.getLevel(), sellBox.getBlockPos(), new ItemStack(Items.COAL))
+                .orElseThrow()
+                .effectiveUnitPrice();
+        sellBox.insertForSale(new ItemStack(Items.COAL, 64), false);
+        sellBox.sellPending();
+        CurrencyAmount original = sellBox.balance();
+
+        ItemStack simulated = sellBox.outputHandler().extractItem(0, 1, true);
+        helper.assertValueEqual(simulated.getCount(), 1, "a whole currency item should be exposed at the bottom");
+        helper.assertValueEqual(sellBox.balance(), original, "simulated extraction must preserve balance");
+
+        ItemStack extracted = sellBox.outputHandler().extractItem(0, 1, false);
+        helper.assertValueEqual(extracted.getCount(), 1, "actual extraction should mint one primary currency item");
+        helper.assertValueEqual(
+                sellBox.balance(),
+                original.withoutWholeUnits(BigInteger.ONE),
+                "actual extraction should remove exactly one whole unit");
+        helper.assertTrue(unitPrice.compareTo(CurrencyAmount.ZERO) > 0, "the built-in coal definition should be active");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void directContainerMutationInvalidatesMarketSync(GameTestHelper helper) {
+        SellBoxBlockEntity sellBox = placeBox(helper);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        SellBoxMarketSyncService.clear();
+        SellBoxMarketSyncService.markSynced(player, sellBox);
+
+        sellBox.setItem(0, new ItemStack(Items.COAL, 3));
+
+        helper.assertFalse(
+                SellBoxMarketSyncService.isSynced(player, sellBox),
+                "changing the pending slot through Container must invalidate the market snapshot");
+        helper.assertTrue(
+                sellBox.pendingValue().compareTo(CurrencyAmount.ZERO) > 0,
+                "a direct slot mutation must expose the current pending quote");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void loadedBlockItemPreservesPendingStackAndExactBalance(GameTestHelper helper) {
+        SellBoxBlockEntity original = placeBox(helper);
+        ItemStack sold = new ItemStack(Items.COAL, 3);
+        ItemStack pending = new ItemStack(Items.STRING, 5);
+        original.insertForSale(sold, false);
+        original.insertForSale(pending, false);
+
+        ItemStack drop = new ItemStack(VillagerRetaliationBlocks.SELL_BOX.get());
+        original.saveToItem(drop, helper.getLevel().registryAccess());
+        helper.assertValueEqual(drop.getMaxStackSize(), 1, "loaded sell-box items must remain unstackable");
+
+        SellBoxBlockEntity restored = new SellBoxBlockEntity(
+                new BlockPos(2, 1, 1), VillagerRetaliationBlocks.SELL_BOX.get().defaultBlockState());
+        restored.setLevel(helper.getLevel());
+        CustomData data = drop.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY);
+        helper.assertTrue(
+                data.loadInto(restored, helper.getLevel().registryAccess()),
+                "the loaded block entity data should be applied");
+        restored.applyComponentsFromItemStack(drop);
+        helper.assertTrue(sameStack(restored.getItem(0), pending), "pending stack should survive the item round trip");
+        helper.assertValueEqual(restored.balance(), original.balance(), "exact balance should survive the item round trip");
+        helper.succeed();
+    }
+
+    private static boolean sameStack(ItemStack first, ItemStack second) {
+        return first.getCount() == second.getCount()
+                && ItemStack.isSameItemSameComponents(first, second);
+    }
+
+    private static SellPriceDefinition parseDefinition(
+            GameTestHelper helper,
+            String path,
+            String json) {
+        return SellPriceResources.definitionFromJson(
+                        helper.getLevel().registryAccess(),
+                        ResourceLocation.fromNamespaceAndPath("test", "sell_prices/" + path + ".json"),
+                        JsonParser.parseString(json).getAsJsonObject())
+                .orElseThrow();
+    }
+
+    private static SellBoxBlockEntity placeBox(GameTestHelper helper) {
+        BlockPos absolute = helper.absolutePos(BOX_POS);
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
+        VillageAllegianceId village = new VillageAllegianceId(new UUID(
+                absolute.asLong(),
+                absolute.asLong() ^ 0x5DEECE66DL));
+        registry.ensureRecord(
+                village,
+                helper.getLevel().getGameTime(),
+                helper.getLevel().dimension().location(),
+                absolute);
+        helper.setBlock(BOX_POS, VillagerRetaliationBlocks.SELL_BOX.get());
+        if (helper.getBlockEntity(BOX_POS) instanceof SellBoxBlockEntity sellBox) {
+            return sellBox;
+        }
+        throw new IllegalStateException("Sell box block entity was not created");
+    }
+}

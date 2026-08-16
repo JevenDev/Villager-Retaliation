@@ -1,0 +1,133 @@
+{
+  "actors": [
+    {
+      "alias": "player",
+      "binding_source": "owner_player",
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "death_policy": "block",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 600,
+      "type": "villagerretaliation:player"
+    },
+    {
+      "alias": "route_keeper",
+      "binding_source": "quest_provider",
+      "capabilities": [
+        "villagerretaliation:capability/dialogue"
+      ],
+      "death_policy": "continue_with_snapshot",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 600,
+      "type": "villagerretaliation:villager"
+    }
+  ],
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "none",
+  "definition_version": 1,
+  "entry_step": "unroll_the_route",
+  "failure_policy": "block_for_repair",
+  "id": "villagerretaliation:nether_road_choice",
+  "metadata": {
+    "quest": "villagerretaliation:choose_a_road",
+    "title": {
+      "key": "#scene.nether_road_choice.metadata.title"
+    }
+  },
+  "ownership": "quest_instance",
+  "schema": "villagerretaliation:scene/v1",
+  "steps": [
+    {
+      "actors": [
+        "route_keeper"
+      ],
+      "data": {
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20,
+        "text": {
+          "key": "#scene.nether_road_choice.step.unroll_the_route.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "unroll_the_route",
+      "next": "let_ink_dry",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "data": {
+        "ticks": 35
+      },
+      "id": "let_ink_dry",
+      "next": "read_road",
+      "type": "villagerretaliation:wait_ticks"
+    },
+    {
+      "data": {
+        "branches": [
+          {
+            "conditions": [
+              {
+                "key": "choice",
+                "quest": "villagerretaliation:choose_a_road",
+                "scope": "quest",
+                "type": "quest_fact",
+                "value": "fortress"
+              }
+            ],
+            "transition": "fortress"
+          }
+        ],
+        "default_transition": "bastion"
+      },
+      "failure_step": "failed",
+      "id": "read_road",
+      "transitions": {
+        "bastion": "bastion_charge",
+        "fortress": "fortress_charge"
+      },
+      "type": "villagerretaliation:scene_branch"
+    },
+    {
+      "actors": [
+        "route_keeper"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.nether_road_choice.step.fortress_charge.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "fortress_charge",
+      "next": "completed",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "actors": [
+        "route_keeper"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.nether_road_choice.step.bastion_charge.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "bastion_charge",
+      "next": "completed",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ],
+  "timeout_ticks": 1200
+}

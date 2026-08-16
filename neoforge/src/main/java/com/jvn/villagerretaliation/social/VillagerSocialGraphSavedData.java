@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.social;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -158,6 +160,35 @@ public class VillagerSocialGraphSavedData extends SavedData {
         return profile;
     }
 
+    public Optional<Boolean> knownBaby(UUID villagerId) {
+        VillagerProfile profile = villagerId == null ? null : this.profiles.get(villagerId);
+        return profile == null ? Optional.empty() : Optional.of(profile.baby());
+    }
+
+    public Optional<String> knownVillage(UUID villagerId) {
+        VillagerProfile profile = villagerId == null ? null : this.profiles.get(villagerId);
+        return profile == null || profile.village().isBlank() ? Optional.empty() : Optional.of(profile.village());
+    }
+
+    public int replaceVillageKey(String sourceKey, String targetKey) {
+        sourceKey = sourceKey == null ? "" : sourceKey.trim();
+        targetKey = targetKey == null ? "" : targetKey.trim();
+        if (sourceKey.isBlank() || targetKey.isBlank() || sourceKey.equals(targetKey)) {
+            return 0;
+        }
+
+        int changed = 0;
+        for (VillagerProfile profile : this.profiles.values()) {
+            if (profile.replaceVillageKey(sourceKey, targetKey)) {
+                changed++;
+            }
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public void markDead(ServerLevel level, Villager villager, String deathCause) {
         VillagerProfile profile = ensureProfile(level, villager);
         boolean changed = profile.markDead(level, deathCause);
@@ -275,7 +306,13 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
     public VillagerFamilyTreeSnapshot familySnapshot(ServerLevel level, Villager villager) {
         ensureProfile(level, villager);
-        UUID villagerId = villager.getUUID();
+        return familySnapshot(level, villager.getUUID());
+    }
+
+    public VillagerFamilyTreeSnapshot familySnapshot(ServerLevel level, UUID villagerId) {
+        if (villagerId == null) {
+            return VillagerFamilyTreeSnapshot.EMPTY;
+        }
         return new VillagerFamilyTreeSnapshot(
                 relationshipMembers(level, villagerId, RelationshipType.PARENT),
                 relationshipMembers(level, villagerId, RelationshipType.BIRTH_PARENT),
@@ -296,7 +333,13 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
     public VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, Villager villager) {
         ensureProfile(level, villager);
-        UUID villagerId = villager.getUUID();
+        return relationshipSnapshot(level, villager.getUUID());
+    }
+
+    public VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, UUID villagerId) {
+        if (villagerId == null) {
+            return VillagerRelationshipSnapshot.EMPTY;
+        }
         boolean changed = false;
         for (UUID spouseId : relationships(villagerId, RelationshipType.SPOUSE)) {
             boolean spouseAlive = isKnownAlive(spouseId);
@@ -1136,7 +1179,7 @@ public class VillagerSocialGraphSavedData extends SavedData {
             profile.baby = tag.getBoolean(TAG_BABY);
             profile.alive = !tag.contains(TAG_ALIVE, Tag.TAG_BYTE) || tag.getBoolean(TAG_ALIVE);
             profile.dimension = tag.getString(TAG_DIMENSION);
-            profile.village = tag.getString(TAG_VILLAGE);
+            profile.village = VillageScopeKeys.fromSavedSocialKey(tag.getString(TAG_VILLAGE));
             profile.createdGameTime = tag.getLong(TAG_CREATED_GAME_TIME);
             profile.lastSeenGameTime = tag.getLong(TAG_LAST_SEEN_GAME_TIME);
             if (tag.contains(TAG_LAST_POS, Tag.TAG_COMPOUND)) {
@@ -1191,7 +1234,10 @@ public class VillagerSocialGraphSavedData extends SavedData {
             changed |= setBaby(villager.isBaby());
             changed |= setAlive(villager.isAlive());
             changed |= setDimension(nextDimension);
-            changed |= setVillage(nextVillage);
+            // Preserve the last resolved village when membership lookup is temporarily unavailable.
+            if (!nextVillage.isBlank() || this.village.isBlank()) {
+                changed |= setVillage(nextVillage);
+            }
             changed |= setLastSeenGameTime(level.getGameTime());
             changed |= setLastKnownPosition(nextPos);
             if (villager.isAlive()) {
@@ -1261,6 +1307,14 @@ public class VillagerSocialGraphSavedData extends SavedData {
             return this.gender;
         }
 
+        public boolean baby() {
+            return this.baby;
+        }
+
+        public String village() {
+            return this.village;
+        }
+
         private boolean setName(String value) {
             String safeValue = value == null ? "" : value;
             if (this.name.equals(safeValue)) {
@@ -1322,6 +1376,14 @@ public class VillagerSocialGraphSavedData extends SavedData {
             return true;
         }
 
+        private boolean replaceVillageKey(String sourceKey, String targetKey) {
+            if (!this.village.equals(sourceKey)) {
+                return false;
+            }
+            this.village = targetKey;
+            return true;
+        }
+
         private boolean setLastSeenGameTime(long value) {
             if (this.lastSeenGameTime == value) {
                 return false;
@@ -1352,12 +1414,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
         private static String resolveVillageKey(ServerLevel level, Villager villager) {
             return VillageMembership.resolve(level, villager)
-                    .map(area -> level.dimension().location() + "@" + compactPos(area.centerBlock()))
+                    .map(area -> VillageScopeKeys.forArea(level, area))
                     .orElse("");
-        }
-
-        private static String compactPos(BlockPos pos) {
-            return pos.getX() + "," + pos.getY() + "," + pos.getZ();
         }
 
         private static CompoundTag writeBlockPos(BlockPos pos) {

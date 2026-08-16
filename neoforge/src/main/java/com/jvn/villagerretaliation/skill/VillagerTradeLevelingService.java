@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerData;
@@ -29,17 +30,43 @@ public final class VillagerTradeLevelingService {
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
         VillagerSkill primarySkill = VillagerProfessionSkills.primarySkill(villager);
         int skillValue = profile.skills().get(primarySkill);
-        double totalScaledProgress = profile.tradeLevelSkillAdjustedXpProgress()
-                + offer.getXp() * tradeLevelXpMultiplier(skillValue);
-        int effectiveXp = Math.max(1, (int) Math.floor(totalScaledProgress + PROGRESS_EPSILON));
-        double remainingProgress = Math.max(0.0D, totalScaledProgress - effectiveXp);
+        TradeXpResult result = calculateTradeLevelXp(
+                offer.getXp(),
+                tradeLevelXpMultiplier(skillValue),
+                profile.tradeLevelSkillAdjustedXpProgress());
 
-        boolean progressChanged = profile.setTradeLevelSkillAdjustedXpProgress(remainingProgress, level.getGameTime());
+        boolean progressChanged = profile.setTradeLevelSkillAdjustedXpProgress(result.remainingProgress(), level.getGameTime());
         if (progressChanged) {
             VillagerProfileSavedData.get(level).setDirty();
         }
 
-        return Math.max(0, effectiveXp);
+        return result.awardedXp();
+    }
+
+    public static boolean onTradeLevelChanged(
+            ServerLevel level, Villager villager, int previousLevel, int currentLevel) {
+        if (level == null || villager == null) return false;
+        int gainedLevels = Math.clamp(currentLevel, 1, 5) - Math.clamp(previousLevel, 1, 5);
+        if (gainedLevels <= 0) return false;
+        return VillagerProfileManager.adjustAttribute(
+                level, villager, VillagerSocialAttribute.KNOWLEDGE, gainedLevels);
+    }
+
+    /**
+     * Calculates one trade independently of world state so the server award and client preview use identical math.
+     * The one-XP guarantee applies to this trade's contribution before carried progress is added. This prevents a
+     * low-XP trade from spending fractional progress banked by an earlier trade without actually awarding it.
+     */
+    public static TradeXpResult calculateTradeLevelXp(int vanillaXp, double multiplier, double carriedProgress) {
+        if (vanillaXp <= 0) {
+            return new TradeXpResult(Math.max(0, vanillaXp), clampProgress(carriedProgress));
+        }
+
+        double safeMultiplier = clamp(multiplier, 0.0D, 1.0D);
+        double tradeContribution = Math.max(1.0D, vanillaXp * safeMultiplier);
+        double totalProgress = clampProgress(carriedProgress) + tradeContribution;
+        int awardedXp = Math.max(1, (int) Math.floor(totalProgress + PROGRESS_EPSILON));
+        return new TradeXpResult(awardedXp, clampProgress(totalProgress - awardedXp));
     }
 
     public static double tradeLevelXpMultiplier(int skillValue) {
@@ -53,8 +80,11 @@ public final class VillagerTradeLevelingService {
                 1.0D);
         double normalizedSkill = (VillagerSkillSet.clamp(skillValue) - VillagerSkillSet.MIN_VALUE)
                 / (double) (VillagerSkillSet.MAX_VALUE - VillagerSkillSet.MIN_VALUE);
-        double curvedSkill = normalizedSkill * normalizedSkill;
-        return minMultiplier + (maxMultiplier - minMultiplier) * curvedSkill;
+        return minMultiplier + (maxMultiplier - minMultiplier) * normalizedSkill;
+    }
+
+    private static double clampProgress(double progress) {
+        return clamp(progress, 0.0D, 0.999_999D);
     }
 
     private static double clamp(double value, double min, double max) {
@@ -62,5 +92,8 @@ public final class VillagerTradeLevelingService {
             return min;
         }
         return Math.max(min, Math.min(max, value));
+    }
+
+    public record TradeXpResult(int awardedXp, double remainingProgress) {
     }
 }

@@ -1,0 +1,2289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/quest-v2.schema.json",
+  "title": "Villager Retaliation Quest Module v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "localization_prefix",
+    "provider",
+    "entry_stage",
+    "stages"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "villagerretaliation:quest/v2"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_.-]+$"
+    },
+    "localization_prefix": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_.-]+$"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "provider": {
+      "$ref": "#/$defs/provider"
+    },
+    "availability": {
+      "$ref": "#/$defs/availability"
+    },
+    "lifecycle": {
+      "$ref": "#/$defs/lifecycle"
+    },
+    "dialogue": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/dialogue_slot"
+      }
+    },
+    "target": {
+      "$ref": "#/$defs/target"
+    },
+    "entry_stage": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/stage"
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/event"
+      }
+    },
+    "rewards": {
+      "$ref": "#/$defs/rewards"
+    },
+    "ui": {
+      "$ref": "#/$defs/ui"
+    }
+  },
+  "$defs": {
+    "localized_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "description": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "title_key": {
+          "type": "string"
+        },
+        "description_key": {
+          "type": "string"
+        },
+        "questline": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parent": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "show_locked_adventure_hint": {
+          "type": "boolean"
+        },
+        "author": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "migration": {
+          "$ref": "#/$defs/migration"
+        }
+      }
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "active_policy": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "keep",
+            "reset_stage",
+            "restart"
+          ]
+        },
+        "on_active_change": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "keep",
+            "reset_stage",
+            "restart"
+          ]
+        },
+        "stage_aliases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+          }
+        },
+        "objective_aliases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+          }
+        }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "villagerretaliation:villager"
+          ]
+        },
+        "required_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "villagerretaliation:dialogue_context",
+              "villagerretaliation:live_provider",
+              "villagerretaliation:saved_provider",
+              "villagerretaliation:villager_provider"
+            ]
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "villagerretaliation:dialogue_context",
+              "villagerretaliation:live_provider",
+              "villagerretaliation:saved_provider",
+              "villagerretaliation:villager_provider"
+            ]
+          }
+        },
+        "death_protection": {
+          "type": "string",
+          "enum": [
+            "after_start",
+            "none",
+            "while_active"
+          ]
+        },
+        "blocks_hiring": {
+          "type": "boolean"
+        },
+        "filters": {
+          "type": "object"
+        },
+        "data": {
+          "type": "object"
+        }
+      }
+    },
+    "availability": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "selection_weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "active": {
+          "$ref": "#/$defs/active_state"
+        },
+        "expiration": {
+          "$ref": "#/$defs/expiration"
+        },
+        "branch": {
+          "$ref": "#/$defs/branch"
+        },
+        "cooldown": {
+          "type": "string"
+        },
+        "cooldown_ticks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cooldown_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "completion_cooldown": {
+          "type": "string"
+        },
+        "completion_cooldown_ticks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "completion_cooldown_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "completion_cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "prerequisite_cooldown": {
+          "type": "string"
+        },
+        "prerequisite_cooldown_ticks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "prerequisite_cooldown_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "prerequisite_cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "exclusive_group": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "exclusive_on": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "started"
+          ]
+        },
+        "blocks_on_start": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        },
+        "blocks_on_completion": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        },
+        "repeatable": {
+          "type": "boolean"
+        },
+        "max_starts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_completions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_active_quests": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_active_by_tag": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "completion_scope": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "abandonment": {
+          "type": "string"
+        },
+        "abandonment_cooldown": {
+          "type": "string"
+        },
+        "abandonment_cooldown_ticks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "abandonment_cooldown_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "abandonment_cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "consume_on_completion": {
+          "type": "boolean"
+        },
+        "consume_on_abandonment": {
+          "type": "boolean"
+        },
+        "locked_to_villager": {
+          "type": "boolean"
+        },
+        "cross_villager_compatible": {
+          "type": "boolean"
+        },
+        "prerequisites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        }
+      }
+    },
+    "active_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "hide_when_unmet": {
+          "type": "boolean"
+        },
+        "pause_progress_when_unmet": {
+          "type": "boolean"
+        }
+      }
+    },
+    "expiration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "after_ticks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "consume": {
+          "type": "boolean"
+        },
+        "allow_repickup": {
+          "type": "boolean"
+        },
+        "notify": {
+          "type": "boolean"
+        }
+      }
+    },
+    "branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "exclusive_group": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "exclusive_on": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "started"
+          ]
+        },
+        "blocks_on_start": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        },
+        "blocks_on_completion": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "on_start": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_complete": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_abandon": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_expire": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_fail": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_stage_enter": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_stage_exit": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "dialogue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scene"
+          }
+        }
+      }
+    },
+    "lifecycle_hook": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "next": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "scene": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "abandon": {
+          "type": "boolean"
+        },
+        "fail": {
+          "type": "boolean"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "structure": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "dimension": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "pieces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "search_radius": {
+          "type": "integer"
+        },
+        "discovery_radius": {
+          "type": "integer"
+        },
+        "proof_item": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "proof_item_components": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "proof_item_durability": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "proof_item_custom_data": {
+          "type": "object"
+        },
+        "proof_item_nbt": {
+          "type": "object"
+        }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "objectives"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "title": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "title_key": {
+          "type": "string"
+        },
+        "description": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "description_key": {
+          "type": "string"
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/objective"
+          }
+        },
+        "complete_when": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/predicate"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/predicate"
+              }
+            }
+          ]
+        },
+        "completion": {
+          "$ref": "#/$defs/completion"
+        },
+        "completion_mode": {
+          "type": "string",
+          "enum": [
+            "all",
+            "any",
+            "at_least"
+          ]
+        },
+        "completion_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bonuses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bonus"
+          }
+        },
+        "next": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+            },
+            {
+              "$ref": "#/$defs/transition"
+            }
+          ]
+        },
+        "dialogue": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/dialogue_slot"
+          }
+        },
+        "scenes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scene"
+          }
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response"
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        },
+        "on_enter": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "on_exit": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "entry_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "exit_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "rewards": {
+          "$ref": "#/$defs/rewards"
+        },
+        "ui": {
+          "$ref": "#/$defs/ui"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "all",
+            "any",
+            "at_least"
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "predicate": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "bonus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "when"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "when": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/predicate"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/predicate"
+              }
+            }
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "all",
+            "any",
+            "at_least"
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      }
+    },
+    "objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "block_break",
+            "block_interact",
+            "block_place",
+            "block_use",
+            "branch_choice",
+            "break_block",
+            "choice",
+            "condition",
+            "coordinate",
+            "coordinates",
+            "coords",
+            "criterion",
+            "criterion_event",
+            "custom_event",
+            "dialogue_choice",
+            "entity_kill",
+            "event",
+            "fact",
+            "gift",
+            "gift_given",
+            "give_gift",
+            "interact_block",
+            "item_check",
+            "kill",
+            "location_visit",
+            "memory",
+            "memory_event",
+            "merchant_trade",
+            "mine",
+            "mine_block",
+            "mob_kill",
+            "place",
+            "place_block",
+            "quest_choice",
+            "quest_counter",
+            "quest_fact",
+            "quest_stage",
+            "quest_tag",
+            "quest_variable",
+            "region_visit",
+            "rep",
+            "reputation",
+            "reputation_level",
+            "right_click_block",
+            "stage",
+            "structure_visit",
+            "trade",
+            "trading",
+            "trust",
+            "use_block",
+            "village_event",
+            "village_memory",
+            "villager_trade"
+          ]
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "consume": {
+          "type": "boolean"
+        },
+        "tracker": {
+          "$ref": "#/$defs/tracker"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "criterion": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "match": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        "target": {
+          "type": "object"
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "structure": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "dimension": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "location": {
+          "type": "object"
+        },
+        "radius": {
+          "type": "number"
+        },
+        "search_radius": {
+          "type": "number"
+        },
+        "discovery_radius": {
+          "type": "number"
+        },
+        "item": {
+          "type": "string"
+        },
+        "item_tag": {
+          "type": "string"
+        },
+        "entity": {
+          "type": "string"
+        },
+        "entity_tag": {
+          "type": "string"
+        },
+        "block": {
+          "type": "string"
+        },
+        "block_tag": {
+          "type": "string"
+        },
+        "memory": {
+          "type": "string"
+        },
+        "memory_tag": {
+          "type": "string"
+        },
+        "quest": {
+          "type": "string"
+        },
+        "quest_id": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "tag": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "weight": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "item_tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "entities": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "entity_tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "blocks": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "block_tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "memory_tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "gift_reactions": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "reputation_levels": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "tags": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "values": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "stages": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "choices": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "selection": {
+          "type": "string",
+          "enum": [
+            "random"
+          ]
+        },
+        "components": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "durability": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "min_durability": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_durability": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_durability_percent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_durability_percent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "enchantment": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "enchantments": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              }
+            }
+          ]
+        },
+        "min_enchantment_level": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_enchantment_level": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "custom_data": {
+          "type": "object"
+        },
+        "nbt": {
+          "type": "object"
+        },
+        "gift_reaction": {
+          "type": "string"
+        },
+        "reputation_level": {
+          "type": "string"
+        },
+        "min": {
+          "type": "integer"
+        },
+        "max": {
+          "type": "integer"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "ui": {
+          "$ref": "#/$defs/ui"
+        }
+      }
+    },
+    "tracker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "complete_text": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "complete_text_key": {
+          "type": "string"
+        },
+        "show_progress": {
+          "type": "boolean"
+        },
+        "progress": {
+          "type": "number"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "dialogue_slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scene": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "scene_ref": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "label": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "label_key": {
+          "type": "string"
+        },
+        "request": {
+          "type": "string"
+        },
+        "show_for_babies": {
+          "type": "boolean"
+        },
+        "order": {
+          "type": "integer"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "text": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "lines": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response"
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "end": {
+          "type": "boolean"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "slot": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "label": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "label_key": {
+          "type": "string"
+        },
+        "request": {
+          "type": "string"
+        },
+        "show_for_babies": {
+          "type": "boolean"
+        },
+        "order": {
+          "type": "integer"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "text": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "lines": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "end": {
+          "type": "boolean"
+        },
+        "next": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+            },
+            {
+              "$ref": "#/$defs/transition"
+            }
+          ]
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "scene_ref": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "label": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "label_key": {
+          "type": "string"
+        },
+        "text": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "lines": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "next": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "scene": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "response": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "abandon": {
+          "type": "boolean"
+        },
+        "fail": {
+          "type": "boolean"
+        },
+        "request": {
+          "type": "string"
+        },
+        "order": {
+          "type": "integer"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "end": {
+          "type": "boolean"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "scene": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "response": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "abandon": {
+          "type": "boolean"
+        },
+        "fail": {
+          "type": "boolean"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "event": {
+          "type": "string",
+          "enum": [
+            "abandon",
+            "abandoned",
+            "block_break",
+            "block_interact",
+            "block_place",
+            "break_block",
+            "complete",
+            "completed",
+            "criterion",
+            "custom_criterion",
+            "entity_kill",
+            "expire",
+            "expired",
+            "fail",
+            "failed",
+            "gift",
+            "gift_given",
+            "interact_block",
+            "kill",
+            "memory",
+            "memory_event",
+            "mob_kill",
+            "near_provider",
+            "nearby",
+            "place_block",
+            "player",
+            "player_tick",
+            "progress",
+            "proximity",
+            "quest_abandoned",
+            "quest_completed",
+            "quest_expired",
+            "quest_failed",
+            "quest_progress",
+            "quest_started",
+            "reputation",
+            "reputation_changed",
+            "stage",
+            "stage_changed",
+            "stage_entered",
+            "stage_set",
+            "start",
+            "started",
+            "tick",
+            "trade",
+            "trade_completed",
+            "updated",
+            "use_block"
+          ]
+        },
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "abandon",
+            "abandoned",
+            "block_break",
+            "block_interact",
+            "block_place",
+            "break_block",
+            "complete",
+            "completed",
+            "criterion",
+            "custom_criterion",
+            "entity_kill",
+            "expire",
+            "expired",
+            "fail",
+            "failed",
+            "gift",
+            "gift_given",
+            "interact_block",
+            "kill",
+            "memory",
+            "memory_event",
+            "mob_kill",
+            "near_provider",
+            "nearby",
+            "place_block",
+            "player",
+            "player_tick",
+            "progress",
+            "proximity",
+            "quest_abandoned",
+            "quest_completed",
+            "quest_expired",
+            "quest_failed",
+            "quest_progress",
+            "quest_started",
+            "reputation",
+            "reputation_changed",
+            "stage",
+            "stage_changed",
+            "stage_entered",
+            "stage_set",
+            "start",
+            "started",
+            "tick",
+            "trade",
+            "trade_completed",
+            "updated",
+            "use_block"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "abandon",
+            "abandoned",
+            "block_break",
+            "block_interact",
+            "block_place",
+            "break_block",
+            "complete",
+            "completed",
+            "criterion",
+            "custom_criterion",
+            "entity_kill",
+            "expire",
+            "expired",
+            "fail",
+            "failed",
+            "gift",
+            "gift_given",
+            "interact_block",
+            "kill",
+            "memory",
+            "memory_event",
+            "mob_kill",
+            "near_provider",
+            "nearby",
+            "place_block",
+            "player",
+            "player_tick",
+            "progress",
+            "proximity",
+            "quest_abandoned",
+            "quest_completed",
+            "quest_expired",
+            "quest_failed",
+            "quest_progress",
+            "quest_started",
+            "reputation",
+            "reputation_changed",
+            "stage",
+            "stage_changed",
+            "stage_entered",
+            "stage_set",
+            "start",
+            "started",
+            "tick",
+            "trade",
+            "trade_completed",
+            "updated",
+            "use_block"
+          ]
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "next": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "cooldown": {
+          "type": "string"
+        },
+        "cooldown_ticks": {
+          "type": "integer"
+        },
+        "cooldown_seconds": {
+          "type": "integer"
+        },
+        "cooldown_days": {
+          "type": "integer"
+        },
+        "radius": {
+          "type": "number"
+        },
+        "repeatable": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "chance": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "exclusive": {
+          "type": "boolean"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "rewards": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "experience": {
+          "type": "integer"
+        },
+        "reputation": {
+          "type": "integer"
+        },
+        "gossip_reputation": {
+          "type": "integer"
+        },
+        "loot_table": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "memory_event": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "memory_scope": {
+          "type": "string",
+          "enum": [
+            "both",
+            "village",
+            "villager"
+          ]
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "title_key": {
+          "type": "string"
+        },
+        "description": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "description_key": {
+          "type": "string"
+        },
+        "tracker_text": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "tracker_text_key": {
+          "type": "string"
+        },
+        "tracker_complete_text": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/localized_reference"
+            }
+          ]
+        },
+        "tracker_complete_text_key": {
+          "type": "string"
+        },
+        "show_progress": {
+          "type": "boolean"
+        },
+        "progress": {
+          "type": "number"
+        },
+        "placeholders": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "color": {
+          "type": "string"
+        },
+        "outline_color": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "hidden": {
+          "type": "boolean"
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "advancement",
+            "advancements",
+            "all",
+            "all_of",
+            "and",
+            "any",
+            "any_of",
+            "armed",
+            "attribute",
+            "biome",
+            "choice_selected",
+            "dimension",
+            "entity_nearby",
+            "equipment",
+            "event_payload",
+            "fact",
+            "family",
+            "held_item",
+            "item",
+            "memory",
+            "mood",
+            "nearby_entities",
+            "nearby_entity",
+            "not",
+            "or",
+            "player_item",
+            "quest",
+            "quest_choice_selected",
+            "quest_counter",
+            "quest_fact",
+            "quest_stage",
+            "quest_stage_history",
+            "quest_tag",
+            "quest_trigger_payload",
+            "quest_variable",
+            "recruitment_memory",
+            "relationship",
+            "reputation",
+            "response_selected",
+            "score",
+            "scoreboard",
+            "selected_choice",
+            "skill",
+            "social_attribute",
+            "stage",
+            "stage_history",
+            "stat",
+            "time",
+            "time_of_day",
+            "trade_level",
+            "trigger_payload",
+            "village",
+            "village_presence",
+            "villager_age",
+            "villager_equipment",
+            "villager_level",
+            "villager_mood",
+            "visited_stage",
+            "weather"
+          ]
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "add_counter",
+            "add_tag",
+            "arm",
+            "attribute_reward",
+            "branch_transition",
+            "clear_tag",
+            "counter",
+            "dialogue",
+            "draw_weapon",
+            "experience",
+            "fact",
+            "flash_tracker",
+            "force_dialogue",
+            "forced_dialogue",
+            "gossip",
+            "gossip_reputation",
+            "hud",
+            "increment_counter",
+            "loot",
+            "loot_table",
+            "memory",
+            "memory_event",
+            "message",
+            "notification",
+            "notify",
+            "profile_attribute",
+            "quest",
+            "quest_action",
+            "quest_response_transition",
+            "quest_stage",
+            "quest_tag",
+            "quest_tracker",
+            "quest_transition",
+            "ready_weapon",
+            "remove_tag",
+            "rep",
+            "reputation",
+            "response_transition",
+            "scene",
+            "scene_start",
+            "set_fact",
+            "set_stage",
+            "set_tag",
+            "set_variable",
+            "social_attribute",
+            "stage",
+            "start_scene",
+            "tag",
+            "tracker",
+            "unset_tag",
+            "variable",
+            "xp"
+          ]
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "add_counter",
+            "add_tag",
+            "arm",
+            "attribute_reward",
+            "branch_transition",
+            "clear_tag",
+            "counter",
+            "dialogue",
+            "draw_weapon",
+            "experience",
+            "fact",
+            "flash_tracker",
+            "force_dialogue",
+            "forced_dialogue",
+            "gossip",
+            "gossip_reputation",
+            "hud",
+            "increment_counter",
+            "loot",
+            "loot_table",
+            "memory",
+            "memory_event",
+            "message",
+            "notification",
+            "notify",
+            "profile_attribute",
+            "quest",
+            "quest_action",
+            "quest_response_transition",
+            "quest_stage",
+            "quest_tag",
+            "quest_tracker",
+            "quest_transition",
+            "ready_weapon",
+            "remove_tag",
+            "rep",
+            "reputation",
+            "response_transition",
+            "scene",
+            "scene_start",
+            "set_fact",
+            "set_stage",
+            "set_tag",
+            "set_variable",
+            "social_attribute",
+            "stage",
+            "start_scene",
+            "tag",
+            "tracker",
+            "unset_tag",
+            "variable",
+            "xp"
+          ]
+        },
+        "memory_scope": {
+          "type": "string",
+          "enum": [
+            "both",
+            "village",
+            "villager"
+          ]
+        },
+        "attribute": {
+          "type": "string",
+          "enum": [
+            "charm",
+            "guts",
+            "kindness",
+            "knowledge",
+            "proficiency"
+          ]
+        },
+        "amount": {
+          "type": "integer"
+        },
+        "duration_ticks": {
+          "type": "integer"
+        },
+        "duration_seconds": {
+          "type": "integer"
+        },
+        "duration_days": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

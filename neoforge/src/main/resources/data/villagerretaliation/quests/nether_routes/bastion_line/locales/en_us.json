@@ -1,0 +1,113 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.nether_routes.bastion_line.description": "Secure the bastion branch and build durable blackstone route marks.",
+    "quest.nether_routes.bastion_line.stage.return.dialogue.turn_in.label": "About Broken Gold",
+    "quest.nether_routes.bastion_line.stage.return.dialogue.turn_in.lines": [
+      "The bastion line is marked, stocked, and expensive enough to be respected.",
+      "A road through broken gold now leads back to the village.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.nether_routes.bastion_line.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.nether_routes.bastion_line.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.nether_routes.bastion_line.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The bastion line is marked, stocked, and expensive enough to be respected.",
+      "A road through broken gold now leads back to the village."
+    ],
+    "quest.nether_routes.bastion_line.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.nether_routes.bastion_line.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.nether_routes.bastion_line.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.nether_routes.bastion_line.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Broken Gold is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.bastion_line.stage.return.scene.turn_in_wait.lines": [
+      "Three brutes, thirty-two blackstone, two gold blocks for the caches.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.nether_routes.bastion_line.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.nether_routes.bastion_line.stage.work.dialogue.offer.label": "Broken Gold",
+    "quest.nether_routes.bastion_line.stage.work.dialogue.offer.lines": [
+      "The bastion bearing is true, but the brutes treat every marker as a challenge.",
+      "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter.",
+      "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.nether_routes.bastion_line.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.nether_routes.bastion_line.stage.work.dialogue.reminder.label": "About Broken Gold",
+    "quest.nether_routes.bastion_line.stage.work.dialogue.reminder.lines": [
+      "Three brutes, thirty-two blackstone, two gold blocks for the caches.",
+      "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
+      "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.nether_routes.bastion_line.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.nether_routes.bastion_line.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.nether_routes.bastion_line.stage.work.objective.bring_blackstone.tracker.complete_text": "The blackstone markers are ready.",
+    "quest.nether_routes.bastion_line.stage.work.objective.bring_blackstone.tracker.text": "Bring 32 blackstone for route markers.",
+    "quest.nether_routes.bastion_line.stage.work.objective.bring_gold.tracker.complete_text": "The gold blocks are ready.",
+    "quest.nether_routes.bastion_line.stage.work.objective.bring_gold.tracker.text": "Bring 2 gold blocks for safe-route caches.",
+    "quest.nether_routes.bastion_line.stage.work.objective.clear_brutes.tracker.complete_text": "The bastion patrol is cleared.",
+    "quest.nether_routes.bastion_line.stage.work.objective.clear_brutes.tracker.text": "Defeat 3 Piglin Brutes along the route.",
+    "quest.nether_routes.bastion_line.stage.work.scene.abandon_confirm.lines": [
+      "Put Broken Gold aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.nether_routes.bastion_line.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.nether_routes.bastion_line.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Broken Gold is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.decline.lines": [
+      "Then the bastion keeps its walls and its opinions."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.leave.lines": [
+      "Three brutes, thirty-two blackstone, two gold blocks for the caches.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Three brutes, thirty-two blackstone, two gold blocks for the caches.",
+      "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
+      "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Broken Gold is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Broken Gold is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.start_quest.action.start.lines.started": [
+      "Wear one piece of gold. It will not impress the brutes, but everyone else may pause.",
+      "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Broken Gold is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.bastion_line.stage.work.ui.tracker_text": "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
+    "quest.nether_routes.bastion_line.title": "Broken Gold"
+  }
+}

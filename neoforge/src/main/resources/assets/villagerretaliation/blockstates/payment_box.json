@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "villagerretaliation:block/payment_box",
+      "x": 180
+    },
+    "facing=east": {
+      "model": "villagerretaliation:block/payment_box",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north": {
+      "model": "villagerretaliation:block/payment_box",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "villagerretaliation:block/payment_box",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up": {
+      "model": "villagerretaliation:block/payment_box"
+    },
+    "facing=west": {
+      "model": "villagerretaliation:block/payment_box",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

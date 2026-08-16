@@ -1,9 +1,13 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
+import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
+import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -27,21 +31,24 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.interactionScreen.renderBackdropBehindChat(graphics);
         this.interactionScreen.render(graphics, mouseX, mouseY, partialTick);
         VillagerInteractionScreen.ChatRenderLayout layout = this.interactionScreen.chatRenderLayout();
-        graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.chatLayerZ());
+        graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
         graphics.pose().pushPose();
-        graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
-        super.render(graphics, layout.translatedMouseX(mouseX), layout.translatedMouseY(mouseY), partialTick);
-        graphics.pose().popPose();
-        VillagerClientUiUtil.popGuiLayer(graphics);
-        graphics.disableScissor();
+        try {
+            graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
+            super.render(graphics, layout.translatedMouseX(mouseX), layout.translatedMouseY(mouseY), partialTick);
+        } finally {
+            graphics.pose().popPose();
+            graphics.disableScissor();
+            VillagerClientUiUtil.popGuiLayer(graphics);
+        }
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        this.interactionScreen.noteInteractionActivity();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             returnToInteractionScreen();
             return true;
@@ -58,8 +65,22 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        this.interactionScreen.noteInteractionActivity();
         VillagerInteractionScreen.ChatRenderLayout layout = this.interactionScreen.chatRenderLayout();
-        return super.mouseClicked(mouseX - layout.xOffset(), mouseY - layout.yOffset(), button);
+        return super.mouseClicked(
+                mouseX - layout.xOffset(), mouseY - layout.yOffset(), button);
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        this.interactionScreen.noteInteractionActivity();
+        super.mouseMoved(mouseX, mouseY);
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        this.interactionScreen.noteInteractionActivity();
+        return super.charTyped(codePoint, modifiers);
     }
 
     @Override
@@ -75,8 +96,7 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
             VillagerMood primaryMood,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
-            List<String> knownLikedGiftNames,
-            List<String> knownDislikedGiftNames) {
+            List<GiftPreferenceView> giftPreferences) {
         this.interactionScreen.updateReputation(
                 reputation,
                 reputationLevel,
@@ -84,12 +104,20 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
                 primaryMood,
                 forceCameraTowardsVillager,
                 dialogueOptions,
-                knownLikedGiftNames,
-                knownDislikedGiftNames
+                giftPreferences
         );
     }
 
     @Override
+    public void updateDuelStatus(OpenVillagerDuelPayload payload) {
+        this.interactionScreen.updateDuelStatus(payload);
+    }
+
+    @Override
+    public void acceptRecruitmentResult(RecruitmentResultPayload payload) {
+        this.interactionScreen.acceptRecruitmentResult(payload);
+    }
+
     public void replaceFromServer() {
         this.interactionScreen.replaceFromServer();
     }
@@ -97,6 +125,25 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     @Override
     public void closeFromServer() {
         this.interactionScreen.closeFromServer();
+    }
+
+    @Override
+    public void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments) {
+        this.interactionScreen.acceptVillagerDialogue(text, textSegments);
+    }
+
+    @Override
+    public void copyCurrentDialogueTo(VillagerInteractionScreen target) {
+        this.interactionScreen.copyCurrentDialogueTo(target);
+    }
+
+    @Override
+    public void prepareReplacementTransition(VillagerInteractionScreen target) {
+        this.interactionScreen.prepareReplacementTransition(target);
+    }
+
+    VillagerInteractionScreen interactionScreen() {
+        return this.interactionScreen;
     }
 
     private void returnToInteractionScreen() {

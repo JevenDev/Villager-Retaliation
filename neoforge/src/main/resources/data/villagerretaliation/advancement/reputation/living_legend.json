@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/local_legend",
+  "display": {
+    "icon": {
+      "id": "minecraft:nether_star"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.living_legend.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.living_legend.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,7 +1,10 @@
 package com.jvn.villagerretaliation.util;
 
+import com.jvn.villagerretaliation.compat.AccessoryInventoryCompat;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -31,7 +34,8 @@ public record VillagerPlayerItemCondition(
         OptionalInt maxDurability,
         OptionalInt minDurabilityPercent,
         OptionalInt maxDurabilityPercent,
-        List<EnchantmentSelector> enchantments) {
+        List<EnchantmentSelector> enchantments,
+        ItemStackPredicate componentPredicate) {
     private static final VillagerPlayerItemCondition EMPTY = new VillagerPlayerItemCondition(
             List.of(),
             Set.of(),
@@ -39,7 +43,8 @@ public record VillagerPlayerItemCondition(
             OptionalInt.empty(),
             OptionalInt.empty(),
             OptionalInt.empty(),
-            List.of());
+            List.of(),
+            ItemStackPredicate.ANY);
 
     public static VillagerPlayerItemCondition empty() {
         return EMPTY;
@@ -66,12 +71,14 @@ public record VillagerPlayerItemCondition(
                 readOptionalInt(entry, "max_player_item_enchantment_level"),
                 readOptionalInt(entry, "max_held_item_enchantment_level"));
         List<EnchantmentSelector> enchantments = readEnchantmentSelectors(entry, minEnchantmentLevel, maxEnchantmentLevel);
+        ItemStackPredicate componentPredicate = readComponentPredicate(entry, selectors);
         if (selectors.isEmpty()
                 && minDurability.isEmpty()
                 && maxDurability.isEmpty()
                 && minDurabilityPercent.isEmpty()
                 && maxDurabilityPercent.isEmpty()
-                && enchantments.isEmpty()) {
+                && enchantments.isEmpty()
+                && componentPredicate.isAny()) {
             return empty();
         }
 
@@ -86,7 +93,8 @@ public record VillagerPlayerItemCondition(
                 maxDurability,
                 minDurabilityPercent,
                 maxDurabilityPercent,
-                List.copyOf(enchantments));
+                List.copyOf(enchantments),
+                componentPredicate);
     }
 
     public boolean isEmpty() {
@@ -95,7 +103,8 @@ public record VillagerPlayerItemCondition(
                 && this.maxDurability.isEmpty()
                 && this.minDurabilityPercent.isEmpty()
                 && this.maxDurabilityPercent.isEmpty()
-                && this.enchantments.isEmpty();
+                && this.enchantments.isEmpty()
+                && this.componentPredicate.isAny();
     }
 
     public boolean matches(Player player) {
@@ -151,6 +160,7 @@ public record VillagerPlayerItemCondition(
                 case ARMOR -> matchingStack(player.getArmorSlots(), ItemSlot.ARMOR);
                 case HOTBAR -> matchingHotbarStack(player);
                 case INVENTORY -> matchingStack(player.getInventory().items, ItemSlot.INVENTORY);
+                case ACCESSORIES -> matchingStack(AccessoryInventoryCompat.equippedStacks(player), ItemSlot.ACCESSORIES);
                 case HANDS, EQUIPMENT, ANY -> Optional.empty();
             };
             if (match.isPresent()) {
@@ -173,10 +183,12 @@ public record VillagerPlayerItemCondition(
                 case ARMOR -> expanded.add(ItemSlot.ARMOR);
                 case HOTBAR -> expanded.add(ItemSlot.HOTBAR);
                 case INVENTORY -> expanded.add(ItemSlot.INVENTORY);
+                case ACCESSORIES -> expanded.add(ItemSlot.ACCESSORIES);
                 case EQUIPMENT -> {
                     expanded.add(ItemSlot.MAIN_HAND);
                     expanded.add(ItemSlot.OFF_HAND);
                     expanded.add(ItemSlot.ARMOR);
+                    expanded.add(ItemSlot.ACCESSORIES);
                 }
                 case ANY -> {
                     expanded.add(ItemSlot.MAIN_HAND);
@@ -184,6 +196,7 @@ public record VillagerPlayerItemCondition(
                     expanded.add(ItemSlot.ARMOR);
                     expanded.add(ItemSlot.HOTBAR);
                     expanded.add(ItemSlot.INVENTORY);
+                    expanded.add(ItemSlot.ACCESSORIES);
                 }
             }
         }
@@ -217,9 +230,37 @@ public record VillagerPlayerItemCondition(
             return Optional.empty();
         }
         Optional<EnchantmentInfo> enchantment = matchingEnchantment(stack);
-        return matchesItem(stack) && matchesDurability(stack) && matchesEnchantment(enchantment)
+        return matchesItem(stack)
+                && this.componentPredicate.matches(stack)
+                && matchesDurability(stack)
+                && matchesEnchantment(enchantment)
                 ? Optional.of(new MatchedItem(stack, slot, enchantment))
                 : Optional.empty();
+    }
+
+    private static ItemStackPredicate readComponentPredicate(JsonObject entry, List<ItemSelector> selectors) {
+        JsonObject normalized = new JsonObject();
+        copyFirst(entry, normalized, "components", "player_item_components", "held_item_components");
+        copyFirst(entry, normalized, "custom_data", "player_item_custom_data", "held_item_custom_data");
+        copyFirst(entry, normalized, "nbt", "player_item_nbt", "held_item_nbt");
+        return ItemStackPredicateParser.parse(
+                ItemStackPredicateParser.DEFAULT_REGISTRIES,
+                normalized,
+                selectors.stream().map(ItemSelector::item).filter(java.util.Objects::nonNull).toList(),
+                "components",
+                null,
+                "custom_data",
+                "nbt");
+    }
+
+    private static void copyFirst(JsonObject source, JsonObject target, String targetKey, String... sourceKeys) {
+        for (String sourceKey : sourceKeys) {
+            JsonElement value = source.get(sourceKey);
+            if (value != null && !value.isJsonNull()) {
+                target.add(targetKey, value.deepCopy());
+                return;
+            }
+        }
     }
 
     private boolean matchesItem(ItemStack stack) {
@@ -450,6 +491,7 @@ public record VillagerPlayerItemCondition(
         ARMOR("armor"),
         HOTBAR("hotbar"),
         INVENTORY("inventory"),
+        ACCESSORIES("accessories"),
         EQUIPMENT("equipment"),
         ANY("any");
 

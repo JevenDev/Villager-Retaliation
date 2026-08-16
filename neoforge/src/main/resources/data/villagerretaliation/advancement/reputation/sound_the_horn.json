@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/the_mark_you_chose",
+  "display": {
+    "icon": {
+      "id": "minecraft:goat_horn"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.sound_the_horn.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.sound_the_horn.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

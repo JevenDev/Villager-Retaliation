@@ -1,24 +1,42 @@
 package com.jvn.villagerretaliation.profile;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillGenerator;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.skill.VillagerSkillValue;
+import com.mojang.logging.LogUtils;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.WanderingTrader;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import org.slf4j.Logger;
 
 public final class VillagerProfileManager {
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final long DAY_TICKS = 24_000L;
+    private static final long RETIREMENT_PRUNE_INTERVAL_TICKS = 1_200L;
+    private static final Set<UUID> VANILLA_DESPAWN_ELIGIBLE_TRADERS = new HashSet<>();
+
     private VillagerProfileManager() {
     }
 
     public static VillagerProfile getOrCreateProfile(ServerLevel level, AbstractVillager villager) {
         VillagerProfileSavedData data = VillagerProfileSavedData.get(level);
+        rememberWanderingTraderDespawnEligibility(villager);
+        data.reactivate(villager.getUUID());
         VillagerProfile profile = data.get(villager.getUUID());
         if (profile == null) {
             profile = VillagerProfileGenerator.generate(level, villager);
@@ -26,8 +44,11 @@ public final class VillagerProfileManager {
             return profile;
         }
 
+        String previousProfessionKey = profile.lastKnownProfession();
         String professionKey = VillagerProfileGenerator.professionKey(villager);
-        boolean changed = profile.updateLastKnownProfession(professionKey, level.getGameTime());
+        boolean changed = regenerateUntouchedSkillsForFirstProfession(
+                profile, previousProfessionKey, professionKey, level.getGameTime());
+        changed |= profile.updateLastKnownProfession(professionKey, level.getGameTime());
         changed |= ensureSkills(profile, professionKey, level.getGameTime());
         if (changed) {
             data.setDirty();
@@ -55,6 +76,30 @@ public final class VillagerProfileManager {
         if (changed) {
             VillagerProfileSavedData.get(level).setDirty();
         }
+        return changed;
+    }
+
+    public static boolean adjustAttribute(
+            ServerLevel level,
+            AbstractVillager villager,
+            VillagerSocialAttribute attribute,
+            int change) {
+        return adjustAttribute(level, getOrCreateProfile(level, villager), attribute, change);
+    }
+
+    public static boolean adjustAttribute(
+            ServerLevel level,
+            UUID villagerUuid,
+            VillagerSocialAttribute attribute,
+            int change) {
+        return adjustAttribute(level, VillagerProfileSavedData.get(level).get(villagerUuid), attribute, change);
+    }
+
+    private static boolean adjustAttribute(
+            ServerLevel level, VillagerProfile profile, VillagerSocialAttribute attribute, int change) {
+        if (profile == null || change == 0) return false;
+        boolean changed = profile.setSocialAttribute(attribute, profile.socialAttributes().get(attribute) + change, level.getGameTime());
+        if (changed) VillagerProfileSavedData.get(level).setDirty();
         return changed;
     }
 
@@ -108,6 +153,85 @@ public final class VillagerProfileManager {
         return profile;
     }
 
+    public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level) || !isProfileCarrier(event.getEntity())) {
+            return;
+        }
+
+        Entity entity = event.getEntity();
+        rememberWanderingTraderDespawnEligibility(entity);
+        VillagerProfileSavedData data = VillagerProfileSavedData.get(level);
+        if (data.hasProfile(entity.getUUID())) {
+            data.reactivate(entity.getUUID());
+        }
+    }
+
+    public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level) || !isProfileCarrier(event.getEntity())) {
+            return;
+        }
+
+        Entity entity = event.getEntity();
+        // Unloads, dimension changes, and generic discards can represent transport or mod storage,
+        // so only the terminal removal signals below may retire a profile.
+        boolean vanillaDespawnEligible = VANILLA_DESPAWN_ELIGIBLE_TRADERS.remove(entity.getUUID());
+        Entity.RemovalReason removalReason = entity.getRemovalReason();
+        VillagerProfileSavedData.RetirementReason retirementReason = null;
+        if (removalReason == Entity.RemovalReason.KILLED) {
+            retirementReason = VillagerProfileSavedData.RetirementReason.DEATH;
+        } else if (entity instanceof WanderingTrader trader
+                && removalReason == Entity.RemovalReason.DISCARDED
+                && trader.getDespawnDelay() == 0
+                && vanillaDespawnEligible) {
+            retirementReason = VillagerProfileSavedData.RetirementReason.NATURAL_DESPAWN;
+        }
+
+        if (retirementReason != null) {
+            VillagerProfileSavedData.get(level).retire(
+                    entity.getUUID(),
+                    worldGameTime(level),
+                    retirementReason
+            );
+        }
+    }
+
+    public static void onServerTickPost(ServerTickEvent.Post event) {
+        long gameTime = event.getServer().overworld().getGameTime();
+        if (gameTime % RETIREMENT_PRUNE_INTERVAL_TICKS != 0L) {
+            return;
+        }
+
+        int retentionDays = VillagerRetaliationConfig.RETIRED_VILLAGER_PROFILE_RETENTION_DAYS.get();
+        if (retentionDays <= 0) {
+            return;
+        }
+        long retentionTicks = retentionDays * DAY_TICKS;
+
+        int removed = VillagerProfileSavedData.get(event.getServer().overworld())
+                .pruneRetiredProfiles(gameTime - retentionTicks);
+        if (removed > 0) {
+            LOGGER.debug("Pruned {} retired villager profile(s).", removed);
+        }
+    }
+
+    public static void clearRuntimeState() {
+        VANILLA_DESPAWN_ELIGIBLE_TRADERS.clear();
+    }
+
+    private static boolean isProfileCarrier(Entity entity) {
+        return entity instanceof AbstractVillager || entity instanceof ZombieVillager;
+    }
+
+    private static void rememberWanderingTraderDespawnEligibility(Entity entity) {
+        if (entity instanceof WanderingTrader trader && trader.getDespawnDelay() > 0) {
+            VANILLA_DESPAWN_ELIGIBLE_TRADERS.add(trader.getUUID());
+        }
+    }
+
+    private static long worldGameTime(ServerLevel level) {
+        return level.getServer().overworld().getGameTime();
+    }
+
     public static String exportProfile(VillagerProfile profile) {
         VillagerSocialAttributes attributes = profile.socialAttributes();
         VillagerSkillSet skills = profile.skills();
@@ -148,6 +272,37 @@ public final class VillagerProfileManager {
             }
             firstProgress = false;
             builder.append("\"").append(skill.serializedName()).append("\":").append(progress);
+        }
+        builder.append("},");
+        builder.append("\"skillPracticeXp\":{");
+        boolean firstPracticeXp = true;
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            double xp = profile.skillPracticeXp(skill);
+            if (xp <= 0.0D) {
+                continue;
+            }
+            if (!firstPracticeXp) {
+                builder.append(",");
+            }
+            firstPracticeXp = false;
+            builder.append("\"").append(skill.serializedName()).append("\":").append(xp);
+        }
+        builder.append("},");
+        builder.append("\"skillPracticeDailyState\":{");
+        boolean firstDailyState = true;
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            if (!profile.hasPracticeDailyState(skill)) {
+                continue;
+            }
+            if (!firstDailyState) {
+                builder.append(",");
+            }
+            firstDailyState = false;
+            builder.append("\"").append(skill.serializedName()).append("\":{")
+                    .append("\"day\":").append(profile.practiceDayIndex(skill)).append(",")
+                    .append("\"earnedXp\":").append(profile.practiceEarnedOnStoredDay(skill)).append(",")
+                    .append("\"repetitionKeys\":").append(profile.storedRepetitionKeyCount(skill))
+                    .append("}");
         }
         builder.append("},");
         builder.append("\"tradeLevelSkillAdjustedXpProgress\":").append(profile.tradeLevelSkillAdjustedXpProgress()).append(",");
@@ -209,6 +364,36 @@ public final class VillagerProfileManager {
             builder.append("(").append(value).append(")");
         }
         return builder.toString();
+    }
+
+    private static boolean regenerateUntouchedSkillsForFirstProfession(
+            VillagerProfile profile,
+            String previousProfessionKey,
+            String professionKey,
+            long gameTime) {
+        if (!isProfessionless(previousProfessionKey)
+                || isProfessionless(professionKey)
+                || profile.skillGeneratedVersion() != VillagerSkillGenerator.CURRENT_GENERATION_VERSION) {
+            return false;
+        }
+        VillagerSkillSet originalSkills = VillagerSkillGenerator.generate(
+                previousProfessionKey, profile.socialAttributes(), profile.seed());
+        if (!profile.skills().asMap().equals(originalSkills.asMap())) {
+            return false;
+        }
+        VillagerSkillSet professionSkills = VillagerSkillGenerator.generate(
+                professionKey, profile.socialAttributes(), profile.seed());
+        return profile.replaceSkills(
+                professionSkills, VillagerSkillGenerator.CURRENT_GENERATION_VERSION, gameTime);
+    }
+
+    private static boolean isProfessionless(String professionKey) {
+        return professionKey == null
+                || professionKey.isBlank()
+                || professionKey.equals("none")
+                || professionKey.equals("minecraft:none")
+                || professionKey.equals("unemployed")
+                || professionKey.equals("minecraft:unemployed");
     }
 
     private static boolean ensureSkills(VillagerProfile profile, String professionKey, long gameTime) {

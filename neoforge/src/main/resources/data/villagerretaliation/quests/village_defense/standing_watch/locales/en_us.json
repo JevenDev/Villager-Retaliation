@@ -1,0 +1,359 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_defense.standing_watch.description": {
+      "lines": [
+        "Stand watch and help defend the village from a real threat."
+      ]
+    },
+    "quest.village_defense.standing_watch.dialogue.already_completed": {
+      "lines": [
+        "I will not reopen a finished account. We already settled Standing Watch.",
+        "No one needs this done twice. You already stood with us when danger came.",
+        "Your earlier work still stands. The watch remembers who answered the alarm.",
+        "Leave the old tally alone. Nobody needs you to prove the same courage twice.",
+        "There is no second payment here. Your place on the wall was earned that night.",
+        "No one needs this done twice. The threat passed, and you helped make that happen.",
+        "Leave the old tally alone. We have already counted your service.",
+        "I remember your first return. The gate held with you beside it.",
+        "What was owed has been paid. That watch is over. Get some rest.",
+        "There is no second payment here. You did not run when the village needed you.",
+        "I will not reopen a finished account. The patrol record already carries your name.",
+        "Your earlier work still stands. Your reward was for a real defense, and it was paid.",
+        "Leave the old tally alone. We can leave that alarm in the past.",
+        "You finished what I asked. The villagers behind the doors remember your help.",
+        "There is no second payment here. You answered once, and that answer still counts.",
+        "What was owed has been paid. There is no unfinished duty waiting here.",
+        "There is no second payment here. You proved where you stand when it mattered.",
+        "Nothing remains to be earned from this. The watch has no second claim on that night.",
+        "We settled this one already. Standing Watch ended with the village intact.",
+        "Nothing remains to be earned from this. I have new worries, but this one is settled."
+      ]
+    },
+    "quest.village_defense.standing_watch.dialogue.inactive": {
+      "lines": [
+        "There is no reason to begin yet. The watch is not calling for proof right now.",
+        "I will post it when it matters. No alarm has been raised today.",
+        "Leave that work alone for now. The village is quiet enough for the regular patrol.",
+        "Ask me after the stores change. Keep your weapons close, but there is no call to the wall.",
+        "The time is wrong. The watch has not seen a threat worth summoning help for.",
+        "I will post it when it matters. We do not need extra defenders at the gate right now.",
+        "For now, let the matter rest. The bell is silent, and I mean to keep it that way.",
+        "I will post it when it matters. There is nothing brave about inventing a battle.",
+        "Nothing calls for this work today. Wait for a real danger before taking your post.",
+        "Not today. The patrol reports clear roads around the village.",
+        "For now, let the matter rest. No one is being called to emergency watch.",
+        "I am keeping this off the board. I will send word if the village needs another shield.",
+        "The time is wrong. For now, ordinary eyes are enough on the walls.",
+        "The time is wrong. The doors are open and the fields are calm.",
+        "The time is wrong. Save your strength for an alarm that matters.",
+        "Ask me after the stores change. Tonight's watch has enough hands already.",
+        "Not today. There is no active defense order with your name on it.",
+        "Ask me after the stores change. A quiet village is good news, not failure.",
+        "I am keeping this off the board. Stand down for now and stay within hearing.",
+        "Leave that work alone for now. The watch will ask when there is something to answer."
+      ]
+    },
+    "quest.village_defense.standing_watch.dialogue.locate_failed": {
+      "lines": [
+        "Something is wrong with the chart. There is no watch post to mark on a map. Stay close enough to answer trouble.",
+        "Until I know the way, you stay here. This duty has no distant marker to follow.",
+        "No mark is better than a false one. Do not wander after coordinates. The village is the place to defend.",
+        "I will not guess at a route. The watch post is wherever danger reaches us.",
+        "I found no safe bearing to give you. There is no outpost or ruin hidden on this map.",
+        "I found no safe bearing to give you. Stay close enough to hear the bell.",
+        "I cannot send you out blind. The target is an attack, and none has appeared yet.",
+        "We need a trustworthy route first. I cannot point to trouble before it shows itself.",
+        "The old directions no longer agree. Keep the gates in sight instead of searching the horizon.",
+        "The old directions no longer agree. The village boundary is the only mark you need.",
+        "We need a trustworthy route first. A watch is waiting, not chasing.",
+        "I will not guess at a route. No map can tell us which path danger will choose.",
+        "I will not guess at a route. Hold near the homes and let the threat come into view.",
+        "I will not guess at a route. There is no route because this work happens here.",
+        "My map has failed us. Watch the roads, fields, and dark beyond the lamps.",
+        "My map has failed us. If you leave to find danger, you leave the village uncovered.",
+        "The old directions no longer agree. The alarm will give you a direction when the time comes.",
+        "A doubtful map is too much risk. Patrol nearby, but do not turn this into an expedition.",
+        "I cannot send you out blind. Your position is with the villagers, not beyond them.",
+        "My map has failed us. Come back to the gate and wait where you can help."
+      ]
+    },
+    "quest.village_defense.standing_watch.dialogue.missing_proof": {
+      "lines": [
+        "Show me what came back with you. Words do not hold a gate. Stand with us when danger reaches the village.",
+        "Your word is not the missing piece. I need action during an attack, not a promise before one.",
+        "What you carried home decides this. The watch cannot credit a defense that never happened.",
+        "Your word is not the missing piece. Stay for the alarm and fight beside us.",
+        "The evidence still matters. Your weapon is ready, but your duty has not been tested.",
+        "I cannot sign off on an empty return. The proof is a village still standing after real danger.",
+        "Your word is not the missing piece. Training swings do not count as defending the gate.",
+        "What you carried home decides this. Answer the next threat where the villagers can see you.",
+        "A story cannot close the ledger. I believe you mean well. The watch needs deeds.",
+        "The proof has to reach my hands. Do not bring me an item and call the watch complete.",
+        "I believe you went, but that is not enough. This task ends after you help repel an attack.",
+        "The proof has to reach my hands. The patrol log has no battle to record for you yet.",
+        "I cannot sign off on an empty return. Hold your ground when something hostile reaches the village.",
+        "Show me what came back with you. The villagers need your presence during the danger itself.",
+        "You returned without the one thing I asked for. A report from elsewhere cannot prove this duty.",
+        "I believe you went, but that is not enough. Stand between the threat and the doors.",
+        "The evidence still matters. Your proof will be the way you act under alarm.",
+        "A story cannot close the ledger. Nothing you can carry replaces showing up for the fight.",
+        "The proof has to reach my hands. Wait for a real attack and help us answer it.",
+        "Your word is not the missing piece. Come back after the watch has seen you defend the village."
+      ]
+    },
+    "quest.village_defense.standing_watch.dialogue.missing_target": {
+      "lines": [
+        "You have not gone far enough yet. The village still needs to see you answer a real threat.",
+        "The place itself must be reached. No real threat has been answered yet.",
+        "The road must end where I sent you. The village still needs you to face danger here.",
+        "You still owe the road its last mile. You have stood nearby, but the defense itself remains undone.",
+        "This task was never only about the cargo. Wait until hostile forces reach the village, then help drive them off.",
+        "Reaching the mark is part of the promise. The duty is tied to an actual attack.",
+        "You cannot skip the heart of the task. Patrolling quiet roads does not complete Standing Watch.",
+        "The place itself must be reached. The target is whatever threatens the villagers, not a practice dummy.",
+        "Finish the outward journey first. Stay ready until the alarm gives you something real to fight.",
+        "The place itself must be reached. A peaceful night leaves this promise untested.",
+        "You have not gone far enough yet. You must help during danger, not merely arrive afterward.",
+        "Going near it does not count. The watch has not recorded your answer to a threat.",
+        "Reaching the mark is part of the promise. Keep close. The moment that matters has not happened yet.",
+        "Finish the outward journey first. The village needs a defender when the doors are under pressure.",
+        "The place itself must be reached. No enemy at the gate means no completed defense.",
+        "Going near it does not count. The work begins when the safe routine breaks.",
+        "The road must end where I sent you. Do not seek a fight elsewhere. This one belongs at home.",
+        "Finish the outward journey first. Your courage still needs its moment.",
+        "Going near it does not count. Stand by until the village faces a true danger.",
+        "You have not gone far enough yet. When an attack comes, keep it away from the homes."
+      ]
+    },
+    "quest.village_defense.standing_watch.dialogue.reminder": {
+      "lines": [
+        "Stay with the work you accepted. Stay near the village. If danger comes, answer it before it reaches the doors.",
+        "Bring this to a proper finish. Keep the village within sight and bell within hearing.",
+        "Do not lose the thread now. Watch the roads after dusk. Trouble prefers an easy approach.",
+        "Do not lose the thread now. If the alarm sounds, come to the gates at once.",
+        "The job still has loose ends. This is a defense duty, not a hunt beyond the fields.",
+        "The job still has loose ends. Stay equipped while you are near the village.",
+        "Remember what the village is waiting for. The watch needs you ready before the first door breaks.",
+        "Do not let one finished step distract you. Look toward the dark edges beyond the lanterns.",
+        "Keep the return trip in your plans. Do not chase every noise, but do not ignore the wrong one.",
+        "Do not let one finished step distract you. Your task is to answer a real threat here.",
+        "Keep the whole task in mind. Keep civilians behind you if fighting reaches the paths.",
+        "Remember what the village is waiting for. The patrol will call out the direction of an attack.",
+        "Remember what the village is waiting for. Stand where you can reach either gate quickly.",
+        "Bring this to a proper finish. If danger comes, meet it before it spreads through the streets.",
+        "Do not lose the thread now. A shield near home is worth more than a sword far away.",
+        "Keep the whole task in mind. Listen for bells, shouting, and iron golems moving at speed.",
+        "Do not lose the thread now. The quiet part of a watch still matters.",
+        "The next step still matters. Hold your post until there is something real to answer.",
+        "Keep the return trip in your plans. When the village is threatened, fight with the watch.",
+        "Before you leave, hear this again. Come back after danger is over and the doors are safe."
+      ]
+    },
+    "quest.village_defense.standing_watch.dialogue.start": {
+      "lines": [
+        "There is a reason I chose you. Arrows help. Nerves help more. Stand watch with us, and if danger comes, answer it.",
+        "The village has work for you. Take a place near the gates and stay alert.",
+        "This needs a careful hand. The village needs another steady hand when trouble arrives.",
+        "This needs a careful hand. This job is waiting through quiet and fighting through the alarm.",
+        "Take the task only if you are ready. Keep watch close to home, then answer any real threat.",
+        "Take this seriously. I am asking you to stand with the patrol, not roam alone.",
+        "Before you agree, hear all of it. Be ready to move when the bell sounds.",
+        "I am trusting you with something important. Guard the villagers first if fighting reaches the streets.",
+        "Listen closely. A defense begins before the enemy is at the door.",
+        "Here is the work. Choose a post with a clear view of the roads.",
+        "Here is the work. The watch needs judgment as much as a sharp weapon.",
+        "Here is the work. Stay near enough that a shout can reach you.",
+        "Before you agree, hear all of it. If danger appears, help drive it away from the homes.",
+        "This needs a careful hand. Do not go looking for glory. Keep the village safe.",
+        "Take the task only if you are ready. Hold the edge of the village with us.",
+        "Let us be clear about the job. Your task is simple to say and hard to fake. Be here when it matters.",
+        "There is a reason I chose you. Watch the dark beyond the lamps and trust the alarm.",
+        "The village has work for you. Stand ready until a genuine threat tests the village.",
+        "Listen closely. When peace breaks, put yourself between danger and the doors.",
+        "Take this seriously. Return after you help the village through an attack."
+      ]
+    },
+    "quest.village_defense.standing_watch.dialogue.turn_in": {
+      "lines": [
+        "Now I can close the ledger. You stood when it mattered. The watch will remember that.",
+        "The hard part is behind us. The gates held because people like you stayed.",
+        "The village can use this. I saw you answer the alarm without hesitation.",
+        "This will make a real difference. The villagers are safe, and your part in that is clear.",
+        "You saw it through. You kept the fighting away from the homes.",
+        "You saw it through. The watch is proud to count you among its defenders.",
+        "I am glad to see you home. You did more than swing a weapon. You held your ground.",
+        "That is the result I needed. That threat found no easy path through us.",
+        "You saw it through. The patrol log will remember your name.",
+        "Now I can close the ledger. You stayed until danger had truly passed.",
+        "You delivered exactly what was needed. The doors are standing and streets are quiet again.",
+        "I am glad to see you home. You fought where the village needed you most.",
+        "I am glad to see you home. That is what a real watch looks like.",
+        "Now I can close the ledger. Take this reward with thanks from every house behind the wall.",
+        "That settles what I asked of you. You made the alarm shorter and the morning safer.",
+        "Good, you made it back. Nobody had to wonder which side you were on.",
+        "The village can use this. The defense is over, and you earned your rest.",
+        "This return was worth waiting for. You kept your nerve when the routine broke.",
+        "The village can use this. I asked for help, and you gave the village a defender.",
+        "That is the result I needed. Good work. The next watch starts with more confidence because of you."
+      ]
+    },
+    "quest.village_defense.standing_watch.dialogue.unavailable": {
+      "lines": [
+        "You are not ready for this request. The watch is not ready to ask this of you.",
+        "Earn our confidence before asking again. The watch does not know you well enough for this duty.",
+        "I will not place this burden on you. I cannot place village lives behind an untested defender.",
+        "This work is not yours today. Earn some trust before asking for a post at the gate.",
+        "Earn our confidence before asking again. The patrol needs people who follow the alarm, not their pride.",
+        "I will not place this burden on you. Safer jobs can show how you carry responsibility.",
+        "The village needs a steadier hand. I am not putting you on emergency watch today.",
+        "The village needs a steadier hand. Come back after you help the village in smaller ways.",
+        "The answer is no for now. A weapon is not the same thing as good judgment.",
+        "You are not ready for this request. The homes behind this wall deserve someone proven.",
+        "The answer is no for now. Your name is not on the trusted watch list yet.",
+        "I cannot trust you with this yet. I need to know you will stay when danger arrives.",
+        "No, the risk is too high. This duty remains with familiar hands for now.",
+        "The answer is no for now. Show the villagers they can rely on you.",
+        "This calls for someone we know better. The watch cannot gamble when the alarm is real.",
+        "You are not ready for this request. Build a record here, then ask me again.",
+        "I will not place this burden on you. Courage without discipline can make an attack worse.",
+        "I cannot trust you with this yet. I will not give you a post merely because you asked.",
+        "This calls for someone we know better. Let the village learn your character first.",
+        "No, the risk is too high. For now, stand down and find other work."
+      ]
+    },
+    "quest.village_defense.standing_watch.objective.defend_village.complete_text": {
+      "lines": [
+        "The village saw you defend it."
+      ]
+    },
+    "quest.village_defense.standing_watch.objective.defend_village.text": {
+      "lines": [
+        "Defend the village from a real threat."
+      ]
+    },
+    "quest.village_defense.standing_watch.scene.standing_watch.metadata.title": "Standing Watch defense",
+    "quest.village_defense.standing_watch.scene.standing_watch.step.after_action.data.text": "The line holds. Return to the quest giver when you are ready to close the watch.",
+    "quest.village_defense.standing_watch.scene.standing_watch.step.sound_the_watch.data.text": "The watch bell rings. Attackers are closing on the village—hold the line near the quest giver.",
+    "quest.village_defense.standing_watch.stage.return.dialogue.turn_in.label": "About Standing Watch",
+    "quest.village_defense.standing_watch.stage.return.dialogue.turn_in.lines": [
+      "The village saw where you stood. No token could prove it better.",
+      "You held the line while doors were closing behind you. That earns trust.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_defense.standing_watch.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_defense.standing_watch.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_defense.standing_watch.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The village saw where you stood. No token could prove it better.",
+      "You held the line while doors were closing behind you. That earns trust."
+    ],
+    "quest.village_defense.standing_watch.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_defense.standing_watch.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_defense.standing_watch.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_defense.standing_watch.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Standing Watch is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_defense.standing_watch.stage.return.scene.turn_in_wait.lines": [
+      "Stand with the village when a real threat reaches its homes.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_defense.standing_watch.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_defense.standing_watch.stage.work.dialogue.offer.label": "Standing Watch",
+    "quest.village_defense.standing_watch.stage.work.dialogue.offer.lines": [
+      "Arrows help, but a village also needs someone who stands when the bell begins.",
+      "Defend this village from a real threat. The villagers will know whether you did.",
+      "Defend the village from a real threat."
+    ],
+    "quest.village_defense.standing_watch.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_defense.standing_watch.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_defense.standing_watch.stage.work.dialogue.reminder.label": "About Standing Watch",
+    "quest.village_defense.standing_watch.stage.work.dialogue.reminder.lines": [
+      "Stand with the village when a real threat reaches its homes.",
+      "Defend the village from a real threat.",
+      "Defend this village from a real threat. The villagers will know whether you did."
+    ],
+    "quest.village_defense.standing_watch.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_defense.standing_watch.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_defense.standing_watch.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_defense.standing_watch.stage.work.scene.abandon_confirm.lines": [
+      "Put Standing Watch aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_defense.standing_watch.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_defense.standing_watch.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Standing Watch is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.decline.lines": [
+      "Then keep your shield close. Trouble rarely sends an appointment."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.leave.lines": [
+      "Stand with the village when a real threat reaches its homes.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Stand with the village when a real threat reaches its homes.",
+      "Defend the village from a real threat.",
+      "Defend this village from a real threat. The villagers will know whether you did."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Standing Watch is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Standing Watch is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.start_quest.action.start.lines.started": [
+      "Stay near the bell when danger comes. A scattered defense is only several lonely fights.",
+      "Defend the village from a real threat."
+    ],
+    "quest.village_defense.standing_watch.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Standing Watch is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_defense.standing_watch.stage.work.ui.tracker_text": "Hold the village line and defeat the watch attack.",
+    "quest.village_defense.standing_watch.title": {
+      "lines": [
+        "Standing Watch"
+      ]
+    },
+    "quest.village_defense.standing_watch.tracker.event.text": {
+      "lines": [
+        "Defend the village from a real threat."
+      ]
+    },
+    "quest.village_defense.standing_watch.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver after defending the village."
+      ]
+    },
+    "quest.village_defense.standing_watch.tracker.title": {
+      "lines": [
+        "Standing Watch"
+      ]
+    }
+  }
+}

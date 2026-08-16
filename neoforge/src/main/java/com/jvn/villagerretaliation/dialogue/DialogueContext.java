@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -62,9 +63,11 @@ public record DialogueContext(
         VillagerInteractionTracker.GiftAdviceResultReport giftAdviceResultReport,
         VillagerFamilyTreeSnapshot familyTree,
         VillagerRelationshipSnapshot relationships,
-        List<VillageEventMemory.MemoryEvent> recentEvents,
+        List<VillageEventMemory.MemoryEvent> personalEvents,
+        List<VillageEventMemory.MemoryEvent> villageEvents,
         RandomSource random,
-        String locale
+        String locale,
+        String villageKey
 ) {
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;
@@ -128,15 +131,32 @@ public record DialogueContext(
     }
 
     public boolean hasRecentEvent(VillageEventMemory.EventTag... tags) {
-        return VillageEventMemory.hasAny(this.recentEvents, tags);
+        return VillageEventMemory.hasAny(this.personalEvents, tags)
+                || VillageEventMemory.hasAny(this.villageEvents, tags);
     }
 
     public boolean hasRecentEventTag(Set<ResourceLocation> tagIds) {
-        return VillageEventMemory.hasAnyTag(this.recentEvents, tagIds);
+        return VillageEventMemory.hasAnyTag(this.personalEvents, tagIds)
+                || VillageEventMemory.hasAnyTag(this.villageEvents, tagIds);
+    }
+
+    /** Union view for source-unspecified dialogue without counting dual-written incidents twice. */
+    public List<VillageEventMemory.MemoryEvent> recentEvents() {
+        if (this.personalEvents.isEmpty()) {
+            return this.villageEvents;
+        }
+        if (this.villageEvents.isEmpty()) {
+            return this.personalEvents;
+        }
+        LinkedHashSet<VillageEventMemory.MemoryEvent> unique = new LinkedHashSet<>(this.personalEvents);
+        unique.addAll(this.villageEvents);
+        return unique.stream()
+                .sorted(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime))
+                .toList();
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentUnreportedHostileVillageEventConcern() {
-        return this.recentEvents.stream()
+        return this.villageEvents.stream()
                 .filter(event -> HOSTILE_VILLAGE_EVENT_TAGS.contains(event.tag()))
                 .filter(event -> event.gameTime() > this.lastVillageEventReportGameTime)
                 .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
@@ -303,17 +323,19 @@ public record DialogueContext(
     }
 
     public boolean hasRecentPlayerEvent(VillageEventMemory.EventTag... tags) {
-        return VillageEventMemory.hasAnyForPlayer(this.recentEvents, this.player.getUUID(), tags);
+        return VillageEventMemory.hasAnyForPlayer(this.personalEvents, this.player.getUUID(), tags)
+                || VillageEventMemory.hasAnyForPlayer(this.villageEvents, this.player.getUUID(), tags);
     }
 
     public boolean hasRecentPlayerEventTag(Set<ResourceLocation> tagIds) {
-        return VillageEventMemory.hasAnyTagForPlayer(this.recentEvents, this.player.getUUID(), tagIds);
+        return VillageEventMemory.hasAnyTagForPlayer(this.personalEvents, this.player.getUUID(), tagIds)
+                || VillageEventMemory.hasAnyTagForPlayer(this.villageEvents, this.player.getUUID(), tagIds);
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentGiftToThisVillager() {
         UUID playerId = this.player.getUUID();
         UUID villagerId = this.villager.getUUID();
-        return this.recentEvents.stream()
+        return this.personalEvents.stream()
                 .filter(event -> event.gift() != null)
                 .filter(event -> playerId.equals(event.playerId()))
                 .filter(event -> villagerId.equals(event.sourceId()))
@@ -323,7 +345,7 @@ public record DialogueContext(
     public Optional<VillageEventMemory.MemoryEvent> recentGiftToAnotherVillager() {
         UUID playerId = this.player.getUUID();
         UUID villagerId = this.villager.getUUID();
-        return this.recentEvents.stream()
+        return this.villageEvents.stream()
                 .filter(event -> event.gift() != null)
                 .filter(event -> playerId.equals(event.playerId()))
                 .filter(event -> !villagerId.equals(event.sourceId()))
@@ -333,7 +355,7 @@ public record DialogueContext(
     public Optional<VillageEventMemory.MemoryEvent> recentContainerTheftToThisVillager() {
         UUID playerId = this.player.getUUID();
         UUID villagerId = this.villager.getUUID();
-        return this.recentEvents.stream()
+        return this.personalEvents.stream()
                 .filter(event -> event.containerTheft() != null)
                 .filter(event -> playerId.equals(event.playerId()))
                 .filter(event -> villagerId.equals(event.sourceId()))
@@ -343,7 +365,7 @@ public record DialogueContext(
     public Optional<VillageEventMemory.MemoryEvent> recentContainerTheftFromAnotherVillager() {
         UUID playerId = this.player.getUUID();
         UUID villagerId = this.villager.getUUID();
-        return this.recentEvents.stream()
+        return this.villageEvents.stream()
                 .filter(event -> event.containerTheft() != null)
                 .filter(event -> playerId.equals(event.playerId()))
                 .filter(event -> !villagerId.equals(event.sourceId()))
@@ -356,7 +378,7 @@ public record DialogueContext(
 
     public Optional<VillageEventMemory.MemoryEvent> recentRetaliationToThisVillager() {
         UUID villagerId = this.villager.getUUID();
-        return this.recentEvents.stream()
+        return this.personalEvents.stream()
                 .filter(event -> event.retaliation() != null)
                 .filter(event -> villagerId.equals(event.sourceId()))
                 .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
@@ -364,7 +386,7 @@ public record DialogueContext(
 
     public Optional<VillageEventMemory.MemoryEvent> recentRetaliationFromAnotherVillager() {
         UUID villagerId = this.villager.getUUID();
-        return this.recentEvents.stream()
+        return this.villageEvents.stream()
                 .filter(event -> event.retaliation() != null)
                 .filter(event -> !villagerId.equals(event.sourceId()))
                 .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
@@ -469,7 +491,7 @@ public record DialogueContext(
     }
 
     public boolean hasRecentVillageEventConcern() {
-        return hasRecentEvent(
+        return VillageEventMemory.hasAny(this.villageEvents,
                 VillageEventMemory.EventTag.THUNDERSTORM,
                 VillageEventMemory.EventTag.SANDSTORM,
                 VillageEventMemory.EventTag.SNOWSTORM,
@@ -548,7 +570,7 @@ public record DialogueContext(
     public long latestVillageDefenseGameTime() {
         long latest = Long.MIN_VALUE;
         UUID playerId = this.player.getUUID();
-        for (VillageEventMemory.MemoryEvent event : this.recentEvents) {
+        for (VillageEventMemory.MemoryEvent event : this.villageEvents) {
             if (event.tag() == VillageEventMemory.EventTag.PLAYER_DEFENDED_RAID
                     && playerId.equals(event.playerId())) {
                 latest = Math.max(latest, event.gameTime());
@@ -567,7 +589,7 @@ public record DialogueContext(
         }
         UUID playerId = this.player.getUUID();
         UUID villagerId = this.villager.getUUID();
-        for (VillageEventMemory.MemoryEvent event : this.recentEvents) {
+        for (VillageEventMemory.MemoryEvent event : this.personalEvents) {
             if (!playerId.equals(event.playerId())) {
                 continue;
             }

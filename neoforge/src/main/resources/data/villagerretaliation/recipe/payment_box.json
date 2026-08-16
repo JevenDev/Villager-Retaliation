@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PSP",
+    "PEP",
+    "PSP"
+  ],
+  "key": {
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "S": {
+      "tag": "minecraft:wooden_slabs"
+    },
+    "E": {
+      "tag": "villagerretaliation:currency"
+    }
+  },
+  "result": {
+    "id": "villagerretaliation:payment_box",
+    "count": 1
+  }
+}

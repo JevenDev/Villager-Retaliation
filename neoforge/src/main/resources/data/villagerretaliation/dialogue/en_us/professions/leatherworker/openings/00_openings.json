@@ -13,15 +13,25 @@
       "id": "leatherworker_opening",
       "lines": [
         "Mind the tannery. What do you need?",
-        "Step clear of the tannery. What do you need?",
-        "Mind the tannery. I'm listening.",
-        "There you are. I was just near the cauldron, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one."
+        "Set your feet somewhere dry and tell me what brought you in.",
+        "I have thread on my fingers, but I can listen.",
+        "Careful of the bucket by the door. Now, what is it?",
+        "You caught me between two saddles. Good timing.",
+        "Come in before the smell changes your mind.",
+        "Give me a moment to put this knife down.",
+        "If you need a repair, show me where it failed.",
+        "Morning. I have just opened the dye vats.",
+        "There you are. I thought I heard boots outside.",
+        "Do not touch the hides on the left. The rest of the room is safe enough.",
+        "I can spare a few minutes while that coat dries.",
+        "Hello again. How is the road treating your gear?",
+        "Was it me you needed, or are you looking for the smith?",
+        "Pull up that stool if you plan to stay awhile.",
+        "You arrived before the next customer. What is on your mind?",
+        "Mind the straps across the floor. I am sorting an order.",
+        "I was about to make tea. You can talk while it heats.",
+        "That pack sounds loose from here. What else is troubling you?",
+        "Welcome. Let me finish this stitch, then I am yours."
       ]
     }
   ]

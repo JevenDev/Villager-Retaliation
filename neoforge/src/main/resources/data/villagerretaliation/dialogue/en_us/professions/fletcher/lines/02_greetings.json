@@ -5,15 +5,25 @@
       "request": "greeting",
       "lines": [
         "Mind the fletching table. Straight arrows do not happen by accident.",
-        "Give the fletching table room. Arrows works better without elbows in it.",
+        "Give the fletching table room. Arrow making works better without elbows in the way.",
         "Step carefully near the fletching table. I would rather greet you than patch you up.",
         "There you are. I was just near the fletching table, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one."
+        "Stand clear of the target lane unless you are very confident and very foolish.",
+        "Hello. The feathers are sorted and my patience is mostly intact.",
+        "You caught me before the next string test.",
+        "Mind the shafts. Straight work dislikes careless elbows.",
+        "Good timing. I was about to argue with the wind.",
+        "Come closer from the side, not from downrange.",
+        "I have a moment while the glue dries.",
+        "If you need arrows, say how many and why.",
+        "Hello there. Try not to breathe on the feather pile.",
+        "The bow is unstrung, so conversation is safer now.",
+        "Speak up. The wind has been interrupting all morning.",
+        "Step around the fletching table and keep your hands friendly.",
+        "Good to see you arriving without a target on your back.",
+        "I am listening, but one eye is still checking that shaft.",
+        "The range is quiet for now. What do you need?",
+        "Good timing. I was about to take a break from the fletching table."
       ],
       "weight": 26
     }

@@ -1,0 +1,112 @@
+package com.jvn.villagerretaliation.interaction;
+
+import com.jvn.villagerretaliation.party.PartyQuickCommandService;
+import com.jvn.villagerretaliation.study.VillagerStudyService;
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.schedule.Activity;
+
+/**
+ * Chooses which kind of AI intent currently owns a hired villager's attention. This class only
+ * arbitrates; it deliberately does not mutate the villager's Brain or its memories.
+ */
+public final class VillagerAiArbitration {
+    private VillagerAiArbitration() {
+    }
+
+    public static Priority currentPriority(ServerLevel level, Villager villager) {
+        Brain<Villager> brain = villager.getBrain();
+        if (isImmediateDanger(villager, brain)) {
+            return Priority.IMMEDIATE_DANGER;
+        }
+        if (isCombatOrSupportAction(villager)) {
+            return Priority.COMBAT_OR_SUPPORT_ACTION;
+        }
+        if (villager.isTrading() || VillagerConversationService.isConversing(villager)) {
+            return Priority.TRADING_OR_CONVERSATION;
+        }
+
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentStore.snapshot(villager);
+        boolean hiredRoleTask = assignment.state() == VillagerAssignmentState.HIRED
+                && (assignment.command() == VillagerAssignmentCommand.WORK
+                || assignment.command() == VillagerAssignmentCommand.GUARD);
+        if (hiredRoleTask && HiredVillagerFocusService.isOnDutyGuard(level, villager)) {
+            return Priority.HIRED_ROLE_TASK;
+        }
+        if (villager.isSleeping()) {
+            return Priority.SLEEP;
+        }
+        if (VillagerStudyService.isActivelyStudying(level, villager)) {
+            return Priority.STUDY;
+        }
+        if (hiredRoleTask && !brain.isActive(Activity.REST)) {
+            return Priority.HIRED_ROLE_TASK;
+        }
+        boolean commanded = VillagerAssignmentStore.commandOwner(villager).isPresent();
+        VillagerAssignmentCommand command = VillagerAssignmentStore.command(villager);
+        if (commanded && (command == VillagerAssignmentCommand.FOLLOW
+                || command == VillagerAssignmentCommand.RETURN_HOME)) {
+            return Priority.FOLLOW_OR_RETURN_MOVEMENT;
+        }
+        if (brain.isActive(Activity.REST)) {
+            return Priority.SLEEP;
+        }
+        if (commanded) {
+            return Priority.FOLLOW_OR_RETURN_MOVEMENT;
+        }
+        return Priority.VANILLA_SCHEDULE_OR_IDLE;
+    }
+
+    public static boolean interruptsStudy(ServerLevel level, Villager villager) {
+        Brain<Villager> brain = villager.getBrain();
+        return isImmediateDanger(villager, brain)
+                || isCombatOrSupportAction(villager)
+                || villager.isTrading()
+                || VillagerConversationService.isConversing(villager)
+                || villager.isSleeping();
+    }
+
+    private static boolean isImmediateDanger(Villager villager, Brain<Villager> brain) {
+        return VillagerRecoveryService.isForcingRecovery(villager)
+                || villager.isOnFire()
+                || brain.isActive(Activity.PANIC)
+                || brain.isActive(Activity.HIDE)
+                || brain.isActive(Activity.PRE_RAID)
+                || brain.isActive(Activity.RAID)
+                || villager.getTarget() == null && hasLiveUnansweredThreat(brain);
+    }
+
+    private static boolean hasLiveUnansweredThreat(Brain<Villager> brain) {
+        LivingEntity attacker = brain.getMemory(MemoryModuleType.HURT_BY_ENTITY).orElse(null);
+        if (attacker != null && attacker.isAlive()) {
+            return true;
+        }
+        LivingEntity hostile = brain.getMemory(MemoryModuleType.NEAREST_HOSTILE).orElse(null);
+        return hostile != null && hostile.isAlive();
+    }
+
+    private static boolean isCombatOrSupportAction(Villager villager) {
+        LivingEntity target = villager.getTarget();
+        return target != null && target.isAlive()
+                || PartyQuickCommandService.overridesRecruitmentMovement(villager);
+    }
+
+    public enum Priority {
+        IMMEDIATE_DANGER,
+        COMBAT_OR_SUPPORT_ACTION,
+        TRADING_OR_CONVERSATION,
+        SLEEP,
+        STUDY,
+        HIRED_ROLE_TASK,
+        FOLLOW_OR_RETURN_MOVEMENT,
+        VANILLA_SCHEDULE_OR_IDLE;
+
+        public boolean yieldsCommandMovement() {
+            return ordinal() < FOLLOW_OR_RETURN_MOVEMENT.ordinal();
+        }
+    }
+}

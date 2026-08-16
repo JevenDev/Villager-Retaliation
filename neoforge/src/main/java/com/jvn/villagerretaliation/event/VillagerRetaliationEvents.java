@@ -1,6 +1,12 @@
 package com.jvn.villagerretaliation.event;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
+import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
+import com.jvn.villagerretaliation.allegiance.UnlawfulOrderService;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
+import com.jvn.villagerretaliation.combat.VillagerCombatAttributeCompat;
 import com.jvn.villagerretaliation.combat.VillagerPacificationAttempt;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
@@ -8,38 +14,79 @@ import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
+import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
+import com.jvn.villagerretaliation.duel.DuelKitRegistry;
+import com.jvn.villagerretaliation.duel.DuelService;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.scene.SceneRuntime;
+import com.jvn.villagerretaliation.scene.encounter.EncounterService;
+import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
+import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
+import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.interaction.HiredCombatSkillPracticeService;
+import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
+import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
+import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.ContainerFilterResolver;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.mount.VillagerMountedCombatPolicy;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
+import com.jvn.villagerretaliation.party.PartyActionHandler;
+import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartySyncService;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.runtime.ServerRuntimeState;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
+import com.jvn.villagerretaliation.study.VillagerStudyService;
 import com.jvn.villagerretaliation.trade.VillagerTradeMemory;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerDataWarmup;
+import com.jvn.villagerretaliation.util.VillagerEquipmentDurability;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
+import com.jvn.villagerretaliation.villager.VillagerContainerClimbGuard;
+import com.jvn.villagerretaliation.villager.VillagerNaturalJobArmor;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
+import com.jvn.villagerretaliation.villager.VillagerSleepHealingService;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -51,9 +98,11 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerDataHolder;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.raid.Raid;
@@ -62,9 +111,12 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -77,8 +129,12 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 public final class VillagerRetaliationEvents {
+    private static final AtomicBoolean BUILDER_CATALOG_SYNC_DIRTY = new AtomicBoolean();
+    private static boolean gameTestOriginSeeded;
+
     private VillagerRetaliationEvents() {
     }
 
@@ -86,28 +142,150 @@ public final class VillagerRetaliationEvents {
         VillagerDataWarmup.warm(event.getServer());
     }
 
+    public static void stabilizeGameTestOrigin(ServerTickEvent.Post event) {
+        String configuredSeed = System.getProperty("villagerretaliation.gametestOriginSeed");
+        if (gameTestOriginSeeded || configuredSeed == null) {
+            return;
+        }
+        try {
+            event.getServer().overworld().random.setSeed(Long.parseLong(configuredSeed));
+            gameTestOriginSeeded = true;
+        } catch (NumberFormatException ignored) {
+            // Leave NeoForge's random GameTest origin in place for an invalid local override.
+        }
+    }
+
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            com.jvn.villagerretaliation.duel.DuelService.recoverPendingPlayer(player);
+            SceneLifecycleIntegration.onPlayerConnection(player);
+            VillagerQuestService.clearRuntimeState(player);
+            ClipboardWorkforceService.clearRuntimeState(player);
+            VillagerQuestService.attachPendingPartyQuests(player);
+            VillagerReputationNetworking.sendServerConfig(player);
+            PartySyncService.sendTo(player);
+            PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
+                    .ifPresent(party -> PartySyncService.syncParty(player.getServer(), party.id()));
+            PartyActionHandler.sendPendingInvitation(player);
+        }
+    }
+
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onPlayerLoggedOut(event);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            com.jvn.villagerretaliation.duel.DuelService.onPlayerLogout(player);
+            PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
+                    .ifPresent(party -> PartySyncService.syncPartyWithOfflinePlayer(
+                            player.getServer(),
+                            party.id(),
+                            player.getUUID()));
+            VillagerQuestService.clearRuntimeState(player);
+            ClipboardWorkforceService.clearRuntimeState(player);
+            HiredDebugPreviewService.clearRuntimeState(player);
+            ServerboundRequestLimiter.clear(player.getUUID());
+        }
+    }
+
+    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            HiredDebugPreviewService.disableForPlayer(player);
+            VillagerQuestService.onCriterion(
+                    player.serverLevel(),
+                    player,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "dimension_changed"),
+                    java.util.Map.of(
+                            "from", event.getFrom().location().toString(),
+                            "to", event.getTo().location().toString()));
+        }
+    }
+
+    public static void onItemCrafted(PlayerEvent.ItemCraftedEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            ItemStack stack = event.getCrafting();
+            VillagerQuestService.onCriterion(
+                    player.serverLevel(),
+                    player,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "crafted"),
+                    java.util.Map.of("item", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()),
+                    stack,
+                    null);
+        }
+    }
+
+    public static void onItemSmelted(PlayerEvent.ItemSmeltedEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            ItemStack stack = event.getSmelting();
+            VillagerQuestService.onCriterion(
+                    player.serverLevel(),
+                    player,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "smelted"),
+                    java.util.Map.of("item", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()),
+                    stack,
+                    null);
+        }
+    }
+
+    public static void onPlayerClone(PlayerEvent.Clone event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            if (event.getOriginal() instanceof ServerPlayer original) {
+                DuelService.copyPendingPlayerRecovery(original, player);
+            }
+            VillagerQuestService.clearRuntimeState(player);
+            ClipboardWorkforceService.clearRuntimeState(player);
+            PartySyncService.sendTo(player);
+        }
+    }
+
     public static void onServerStopping(ServerStoppingEvent event) {
-        VillagerDataWarmup.clearCaches();
-        VillagerRetaliationVillagerBrainUtil.clearRuntimeState();
-        VillagerRetaliationVillagerRules.clearCachedChecks();
-        VillagerGossipHooks.clear();
-        VillagerReputationManager.clearSyncState();
-        VillagerCombatSurvivalService.clearRuntimeState();
-        VillagerRecruitmentService.clearRuntimeState();
-        VillagerTradeMemory.clearRuntimeState();
-        VillagerSocialGraphService.clearRuntimeState();
+        gameTestOriginSeeded = false;
+        com.jvn.villagerretaliation.raid.PlayerRaidService.clearRuntimeState();
+        com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.clearRuntimeState();
+        ClipboardWorkforceService.clearRuntimeState();
+        ServerRuntimeState.clear(event.getServer());
+        com.jvn.villagerretaliation.sell.SellBoxMarketSyncService.clear();
+        com.jvn.villagerretaliation.duel.DuelService.clearRuntimeState(event.getServer());
+        VillagerProfileManager.clearRuntimeState();
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
+        var registryAccess = event.getRegistryAccess();
         event.addListener((barrier, resourceManager, preparationProfiler, reloadProfiler, backgroundExecutor, gameExecutor) ->
                 java.util.concurrent.CompletableFuture
-                        .runAsync(VillagerDataWarmup::clearResourceCaches, backgroundExecutor)
+                        .runAsync(() -> {
+                            DuelKitRegistry.reload(resourceManager, registryAccess);
+                            VillagerDataWarmup.clearResourceCaches();
+                            com.jvn.villagerretaliation.item.VillagerRecipeSemantics.markReloaded();
+                            BUILDER_CATALOG_SYNC_DIRTY.set(true);
+                        }, backgroundExecutor)
                         .thenCompose(barrier::wait));
+    }
+
+    public static void onServerTickPost(ServerTickEvent.Post event) {
+        com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onServerTick(event.getServer());
+        com.jvn.villagerretaliation.duel.DuelService.tick(event.getServer());
+        ForcedDialogueService.maybeTriggerPlayerAiming(event.getServer());
+        VillagerInventoryAccess.onServerTick(event.getServer());
+        PartyVillagerContractService.onServerTick(event.getServer());
+        SceneRuntime.tick(event.getServer());
+        if (!BUILDER_CATALOG_SYNC_DIRTY.compareAndSet(true, false)) {
+            return;
+        }
+        for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
+            VillagerReputationNetworking.sendBuilderStructureCatalog(player);
+        }
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
         VillagerRetaliationHandler.onEntityAttributeModification(event);
         WanderingTraderRetaliationHandler.onEntityAttributeModification(event);
+    }
+
+    public static void onEntitySize(EntityEvent.Size event) {
+        if (event.getEntity() instanceof Villager villager
+                && !villager.level().isClientSide()
+                && VillagerDownedService.isDowned(villager)) {
+            event.setNewSize(VillagerDownedService.pose(villager).dimensions(event.getNewSize()));
+        }
     }
 
     public static void onLivingDrops(LivingDropsEvent event) {
@@ -116,9 +294,28 @@ public final class VillagerRetaliationEvents {
         } else if (event.getEntity() instanceof WanderingTrader wanderingTrader) {
             WanderingTraderLootHandler.addDrops(wanderingTrader, event);
         }
+        com.jvn.villagerretaliation.party.PartyVillagerDropCollection.markSlainEntityDrops(event);
+        EncounterService.onDrops(event);
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof LivingEntity living
+                && com.jvn.villagerretaliation.duel.DuelService.isDuelDamage(living, event.getSource())) return;
+
+        HiredCombatSkillPracticeService.onDamageDealt(event);
+        if (event.getSource().getEntity() instanceof ServerPlayer player
+                && event.getEntity() instanceof LivingEntity target
+                && event.getNewDamage() > 0.0F) {
+            VillagerQuestService.onCriterion(
+                    player.serverLevel(),
+                    player,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "damage_dealt"),
+                    java.util.Map.of(
+                            "entity", net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString(),
+                            "damage_type", event.getSource().typeHolder().getRegisteredName()),
+                    player.getMainHandItem(),
+                    target);
+        }
         if (event.getEntity() instanceof Villager villager && event.getNewDamage() > 0.0F) {
             VillagerRecruitmentService.rememberFollowerDamage(villager);
         }
@@ -136,10 +333,19 @@ public final class VillagerRetaliationEvents {
             VillagerAmbientIndicatorService.onVillagerDamaged(level, villager, event.getSource().getEntity());
             VillagerMoodService.recordVillagerDamaged(level, villager, event.getSource().getEntity());
         }
+        VillagerDownedService.onLivingDamagePost(event);
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
-        if (shouldCancelVillagerGolemDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
+        if (com.jvn.villagerretaliation.duel.DuelService.onIncomingDamage(event)) {
+            return;
+        }
+        if (VillagerMountedCombatPolicy.shouldCancelDamage(event.getEntity(), event.getSource())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+        }
+        if (EncounterService.shouldCancelFriendlyDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
             return;
@@ -147,9 +353,32 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onLivingDamagePre(event);
     }
 
+    public static void onLivingDamageFinalPre(LivingDamageEvent.Pre event) {
+        if (event.getEntity() instanceof AbstractVillager villager
+                && !com.jvn.villagerretaliation.duel.DuelService.isDuelDamage(villager, event.getSource())) {
+            DamageContainer container = event.getContainer();
+            float damageReachingArmor = event.getNewDamage()
+                    + container.getReduction(DamageContainer.Reduction.ARMOR)
+                    + container.getReduction(DamageContainer.Reduction.ENCHANTMENTS)
+                    + container.getReduction(DamageContainer.Reduction.MOB_EFFECTS);
+            VillagerEquipmentDurability.hurtArmor(villager, event.getSource(), damageReachingArmor);
+        }
+        VillagerDisciplineService.capFinalDamage(event);
+        if (com.jvn.villagerretaliation.duel.DuelService.onFinalDamage(event)) {
+            return;
+        }
+        VillagerDownedService.onLivingDamagePre(event);
+    }
+
     public static void onLivingDeath(LivingDeathEvent event) {
+        HiredCombatSkillPracticeService.onKill(event);
+        EncounterService.onDeath(event.getEntity());
+        SceneLifecycleIntegration.onActorDeath(event.getEntity());
+        com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
+                .onEntityPermanentlyRemoved(event.getEntity());
         if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
-            VillagerRetaliationVillagerCombatUtil.resolveAttacker(player, event.getSource())
+            HiredDebugPreviewService.disableForPlayer(player);
+            VillagerRetaliationVillagerCombatUtil.resolveDeathAttacker(player, event.getSource())
                     .filter(AbstractVillager.class::isInstance)
                     .map(AbstractVillager.class::cast)
                     .ifPresent(killer -> VillagerAmbientIndicatorService.onPlayerKilled(level, killer, player));
@@ -158,10 +387,15 @@ public final class VillagerRetaliationEvents {
             broadcastVillagerDeathMessage(villager, event.getSource());
             VillagerCombatSurvivalService.onVillagerDeath(villager);
             VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
+            PartyVillagerContractService.onVillagerDeath(villager);
             VillagerQuestService.onVillagerDeath(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                HiredVillagerContractService.onVillagerDeath(level, villager);
+            }
         }
         VillagerRetaliationHandler.onLivingDeath(event);
         WanderingTraderRetaliationHandler.onLivingDeath(event);
+        VillagerQuestService.onEntityKilled(event.getEntity(), event.getSource().getEntity());
         rememberVillageDeathEvent(event);
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.endForVillager(villager, true);
@@ -175,7 +409,20 @@ public final class VillagerRetaliationEvents {
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         Entity entity = event.getEntity();
         if (entity instanceof Villager villager) {
+            VillagerDownedService.onVillagerTickPre(villager);
+            VillagerSleepHealingService.onVillagerTick(villager);
+            VillagerStudyService.tick(villager);
+            if (VillagerDownedService.isDowned(villager)) {
+                return;
+            }
+            if (com.jvn.villagerretaliation.duel.DuelService.isParticipant(villager)) {
+                return;
+            }
+            if (villager.level() instanceof ServerLevel level) {
+                VillagerBehaviorSuppressionPolicy.enforce(level, villager);
+            }
             VillagerRecruitmentService.onVillagerTickPre(villager);
+            HiredVillagerFocusService.onVillagerTickPre(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerAmbientIndicatorService.maybeEmitSleepIndicator(level, villager);
             }
@@ -192,11 +439,30 @@ public final class VillagerRetaliationEvents {
             VillagerReputationAdvancements.onPlayerTick(player);
             VillagerRecruitmentService.onPlayerTick(player);
             VillagerQuestService.onPlayerTick(player);
+            ClipboardWorkforceService.onPlayerTick(player);
+            HiredDebugPreviewService.onPlayerTick(player);
             return;
         }
         if (entity instanceof Villager villager) {
+            if (VillagerDownedService.isDowned(villager)) {
+                com.jvn.villagerretaliation.mount.VillagerMountTravelService.onVillagerDowned(villager);
+                return;
+            }
+            if (com.jvn.villagerretaliation.duel.DuelService.isParticipant(villager)) {
+                return;
+            }
+            VillagerNaturalJobArmor.maybeRoll(villager);
             VillagerConversationService.tickVillager(villager);
+            HiredVillagerContractService.onVillagerTickPost(villager);
             VillagerRecruitmentService.onVillagerTickPost(villager);
+            HiredVillagerWorkService.onVillagerTickPost(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                VillagerTaskNavigationUtil.tickVillagerWaterSafety(level, villager);
+                VillagerTaskNavigationUtil.tickPathDoors(level, villager);
+                VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+                VillagerTaskNavigationUtil.tickHiredPathStepAssist(level, villager);
+                VillagerContainerClimbGuard.tick(villager);
+            }
             rememberWeatherEventNearVillager(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerTradeMemory.ensureProfessionPoolIfNeeded(level, villager);
@@ -204,12 +470,28 @@ public final class VillagerRetaliationEvents {
                 ForcedDialogueService.maybeTriggerTradeRefreshReadyProximity(level, villager);
                 ForcedDialogueService.maybeTriggerPlayerItemProximity(level, villager);
             }
-            VillagerRetaliationHandler.onEntityTickPost(event);
+            boolean recovering = com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerTickPost(villager);
+            if (!recovering) {
+                VillagerRetaliationHandler.onEntityTickPost(event);
+            }
             VillagerFleeBehaviorHandler.onEntityTickPost(event);
             VillagerCombatSurvivalService.onVillagerTickPost(villager);
+            com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerTickPost(villager);
+            com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+            com.jvn.villagerretaliation.mount.VillagerMountTravelService.onVillagerTickPost(villager);
             VillagerInventoryAccess.maybeOffloadInventoryOverflow(villager);
+            VillagerWalletService.tickWallet(villager);
             VillagerSocialGraphService.onEntityTickPost(event);
             VillagerReputationEvents.onEntityTickPost(event);
+            com.jvn.villagerretaliation.duel.DuelService.onVillagerTickPost(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.enforce(level, villager);
+            }
+            return;
+        }
+        if (entity instanceof AbstractVillager villager
+                && entity instanceof VillagerDataHolder) {
+            VillagerNaturalJobArmor.maybeRoll(villager);
             return;
         }
         if (entity instanceof WanderingTrader) {
@@ -223,18 +505,91 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (!event.getLevel().isClientSide() && event.getEntity() instanceof AbstractVillager villager) {
+            VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
+            if (villager instanceof Villager regular) {
+                com.jvn.villagerretaliation.duel.DuelService.recoverPendingVillager(regular);
+            }
+        }
+        com.jvn.villagerretaliation.duel.DuelService.onEntityJoinLevel(event);
+        if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
+            ContainerFilterResolver.invalidateFrame(level, frame);
+        }
+        if (event.getEntity() instanceof LivingEntity livingEntity) {
+            VillagerCombatAttributeCompat.ensureCombatAttributes(livingEntity);
+        }
+        if (!event.getLevel().isClientSide()) {
+            EncounterService.onEntityJoin(event.getEntity());
+            SceneLifecycleIntegration.onEntityReturn(event.getEntity());
+        }
+        VillagerNaturalJobArmor.onEntityJoinLevel(event);
         VillagerRetaliationHandler.onEntityJoinLevel(event);
+        VillagerProfileManager.onEntityJoinLevel(event);
+        if (event.getEntity() instanceof net.minecraft.world.entity.item.ItemEntity itemEntity
+                && !event.getLevel().isClientSide()) {
+            com.jvn.villagerretaliation.party.PartyVillagerDropCollection.onItemEntityLoaded(itemEntity);
+        }
+        if (event.getEntity() instanceof net.minecraft.world.entity.projectile.AbstractArrow arrow
+                && !event.getLevel().isClientSide()) {
+            com.jvn.villagerretaliation.party.PartyVillagerDropCollection.onArrowEntityLoaded(arrow);
+        }
+        if (event.getEntity() instanceof Villager villager && event.getLevel() instanceof ServerLevel level) {
+            HiredVillagerIndex.update(level, villager);
+            VillagerDownedService.onVillagerLoaded(villager);
+            PartyVillagerContractService.onVillagerLoaded(villager);
+            VillagerBehaviorSuppressionPolicy.enforce(level, villager);
+        }
     }
 
     public static void onPlayerStartTracking(PlayerEvent.StartTracking event) {
-        if (event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof AbstractVillager villager) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        if (event.getTarget() instanceof AbstractVillager villager) {
             VillagerProfileManager.getOrCreateProfile(player.serverLevel(), villager);
-            VillagerReputationNetworking.sendName(player, villager);
+        }
+        if (event.getTarget() instanceof Villager villager) {
+            VillagerReputationNetworking.sendDownedState(player, villager, VillagerDownedService.isDowned(villager));
+            VillagerReputationNetworking.sendHunger(
+                    player, villager, com.jvn.villagerretaliation.villager.VillagerRecoveryService.foodLevel(villager));
+            VillagerReputationNetworking.sendStudyState(player, villager);
+        }
+        if (VillagerPresetNameRegistry.isVillagerForm(event.getTarget())) {
+            VillagerReputationNetworking.sendName(player, event.getTarget());
         }
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (event.getTarget() instanceof ItemFrame frame && frame.level() instanceof ServerLevel level) {
+            ContainerFilterResolver.invalidateFrame(level, frame);
+        }
+        if (com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.handleEntityInteract(event)) {
+            return;
+        }
         if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            VillagerQuestService.onCriterion(
+                    serverPlayer.serverLevel(),
+                    serverPlayer,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "entity_interacted"),
+                    java.util.Map.of(
+                            "entity", net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(event.getTarget().getType()).toString()),
+                    player.getItemInHand(event.getHand()),
+                    event.getTarget() instanceof LivingEntity living ? living : null);
+        }
+
+        if (event.getTarget() instanceof Villager villager
+                && VillagerBehaviorSuppressionPolicy.suppresses(
+                        villager, VillagerBehaviorSuppressionPolicy.Behavior.INTERACTION_MENUS)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                VillagerConversationService.endForVillager(villager, true);
+                VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.incapacitated");
+            }
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
             return;
         }
 
@@ -243,6 +598,60 @@ public final class VillagerRetaliationEvents {
         }
 
         ItemStack interactionStack = player.getItemInHand(event.getHand());
+
+        if (event.getTarget() instanceof Villager villager
+                && !(player instanceof ServerPlayer)
+                && VillagerInteractionService.shouldSuppressClientVanillaInteraction(villager, player, event.getHand())) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.CONSUME);
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer serverPlayer
+                && com.jvn.villagerretaliation.raid.PlayerRaidService.shouldHandleMercyInteraction(
+                        villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(
+                    com.jvn.villagerretaliation.raid.PlayerRaidService.handleMercyInteraction(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer
+                && VillagerRetaliationItems.isClipboard(interactionStack)
+                && !HiredStorageClipboardItem.mode(interactionStack).opensClipboardAssignmentMenu()) {
+            InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());
+            if (result.consumesAction()) {
+                event.setCanceled(true);
+                event.setCancellationResult(result);
+                return;
+            }
+        }
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleClipboardInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleClipboardVillagerRightClick(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleConstructionBlueprintInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleConstructionBlueprintVillagerRightClick(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleItemFilterInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleItemFilterVillagerRightClick(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
 
         if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer
@@ -268,6 +677,11 @@ public final class VillagerRetaliationEvents {
                 event.setCancellationResult(InteractionResult.SUCCESS);
                 return;
             }
+        }
+
+        if (event.getTarget() instanceof Villager
+                && VillagerInteractionService.shouldDeferVillagerInteractionToHeldItem(player, event.getHand())) {
+            return;
         }
 
         if (event.getTarget() instanceof Villager villager) {
@@ -339,15 +753,61 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (event.getTarget() instanceof Villager
+                && event.getEntity() instanceof Player player
+                && VillagerInteractionService.shouldDeferVillagerInteractionToHeldItem(player, event.getHand())) {
+            return;
+        }
+        if (event.getTarget() instanceof Villager villager
+                && event.getEntity() instanceof ServerPlayer serverPlayer
+                && com.jvn.villagerretaliation.raid.PlayerRaidService.shouldHandleMercyInteraction(
+                        villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(
+                    com.jvn.villagerretaliation.raid.PlayerRaidService.handleMercyInteraction(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
         if (event.getTarget() instanceof Villager villager
                 && event.getEntity() instanceof ServerPlayer serverPlayer
                 && VillagerInteractionService.shouldHandleSleepingInteraction(villager, serverPlayer, event.getHand())) {
             event.setCancellationResult(VillagerInteractionService.handleSleepingVillagerInteraction(villager, serverPlayer));
             event.setCanceled(true);
+            return;
+        }
+        if (event.getTarget() instanceof Villager villager
+                && event.getEntity() instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleVillagerRightClick(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }        if (event.getTarget() instanceof Villager villager
+                && event.getEntity() instanceof Player player
+                && !(player instanceof ServerPlayer)
+                && VillagerInteractionService.shouldSuppressClientVanillaInteraction(
+                        villager, player, event.getHand())) {
+            event.setCancellationResult(InteractionResult.CONSUME);
+            event.setCanceled(true);
         }
     }
 
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (PartyContainerLootService.isCheckingAccess()) {
+            return;
+        }
+        if (event.getEntity() instanceof ServerPlayer serverPlayer
+                && event.getLevel() instanceof ServerLevel level
+                && VillagerRetaliationItems.isClipboard(event.getItemStack())) {
+            InteractionResult result = HiredStorageClipboardItem.handleRightClickBlock(
+                    level,
+                    serverPlayer,
+                    event.getItemStack(),
+                    event.getPos()
+            );
+            event.setCanceled(true);
+            event.setCancellationResult(result.consumesAction() ? result : InteractionResult.SUCCESS);
+            return;
+        }
+
         if (event.getEntity() instanceof ServerPlayer serverPlayer && event.getLevel() instanceof ServerLevel level) {
             InteractionResult sleepingResult = VillagerInteractionService.handleSleepingVillagerBedInteraction(
                     level,
@@ -362,6 +822,13 @@ public final class VillagerRetaliationEvents {
             }
         }
 
+        if (!event.isCanceled()
+                && event.getEntity() instanceof ServerPlayer serverPlayer
+                && event.getLevel() instanceof ServerLevel level) {
+            BlockState state = level.getBlockState(event.getPos());
+            VillagerQuestService.onBlockInteracted(level, serverPlayer, event.getPos(), state);
+        }
+
         ForcedDialogueService.rememberPotentialContainerOpen(event);
         ToucanHazardAttribution.rememberPlayerPlacedVanillaHazard(
                 event.getEntity(),
@@ -372,13 +839,50 @@ public final class VillagerRetaliationEvents {
         );
     }
 
+    public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer
+                && event.getLevel() instanceof ServerLevel level
+                && VillagerRetaliationItems.isClipboard(event.getItemStack())) {
+            InteractionResult result = HiredStorageClipboardItem.handleLeftClickBlock(
+                    level,
+                    serverPlayer,
+                    event.getItemStack(),
+                    event.getPos()
+            );
+            if (result.consumesAction()) {
+                event.setCanceled(true);
+            }
+        }
+    }
+
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         if (event.getPlayer() instanceof ServerPlayer serverPlayer
                 && event.getLevel() instanceof ServerLevel level
                 && event.getState().is(BlockTags.BEDS)) {
             VillagerInteractionService.handleSleepingVillagerBedBroken(level, serverPlayer, event.getPos());
         }
+        if (!event.isCanceled() && event.getLevel() instanceof ServerLevel level) {
+            HiredPathMemory.onBlockChanged(level, event.getPos());
+            if (event.getPlayer() instanceof ServerPlayer serverPlayer) {
+                VillagerQuestService.onBlockBroken(level, serverPlayer, event.getPos(), event.getState());
+            }
+            HiredOreBlockTracker.onBlockBreak(event);
+            ContainerFilterResolver.invalidateContainer(level, event.getPos());
+            AssignedStorageService.removeAssignedContainer(level, event.getPos());
+        }
         ForcedDialogueService.onContainerBreak(event);
+    }
+
+    public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        HiredPathMemory.onBlockPlace(event);
+        if (!event.isCanceled() && event.getLevel() instanceof ServerLevel level) {
+            ContainerFilterResolver.invalidateContainer(level, event.getPos());
+        }
+        if (!event.isCanceled()
+                && event.getLevel() instanceof ServerLevel level
+                && event.getEntity() instanceof ServerPlayer serverPlayer) {
+            VillagerQuestService.onBlockPlaced(level, serverPlayer, event.getPos(), event.getPlacedBlock());
+        }
     }
 
     private static void tryGiveHighReputationGift(Villager villager, Player player, InteractionHand hand) {
@@ -422,16 +926,47 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
+            ContainerFilterResolver.invalidateFrame(level, frame);
+        }
+        VillageCombatAuthorizationService.clearFor(event.getEntity());
+        Entity.RemovalReason removalReason = event.getEntity().getRemovalReason();
+        if (!event.getLevel().isClientSide()
+                && (removalReason == Entity.RemovalReason.DISCARDED
+                || removalReason == Entity.RemovalReason.KILLED)) {
+            com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
+                    .onEntityPermanentlyRemoved(event.getEntity());
+            com.jvn.villagerretaliation.raid.PlayerRaidService
+                    .onEntityPermanentlyRemoved(event.getEntity());
+        }
+        if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
+            VillagerDownedService.onVillagerUnloaded(villager);
+            com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerUnloaded(villager);
+            com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerUnloaded(villager);
+            if (removalReason == Entity.RemovalReason.DISCARDED || removalReason == Entity.RemovalReason.KILLED) {
+                PartyVillagerContractService.onVillagerPermanentlyRemoved(villager);
+            } else {
+                PartyVillagerContractService.onVillagerUnloaded(villager);
+            }
+        }
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
         VillagerSocialGraphService.onEntityLeaveLevel(event.getEntity());
+        VillagerProfileManager.onEntityLeaveLevel(event);
         VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
         if (event.getEntity() instanceof AbstractVillager villager) {
+            VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
             VillagerTradeUseTracker.forget(villager);
         }
         if (event.getEntity() instanceof Villager villager) {
+            HiredVillagerIndex.remove(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                HiredVillagerWorkService.onVillagerLeaveLevel(level, villager);
+            }
+            AssignedStorageService.releaseCourierClaims(villager);
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
-            VillagerRetaliationVillagerBrainUtil.clearRuntimeState(villager);
+            HiredJobInventory.clearRuntimeState(villager);
+            VillagerTaskNavigationUtil.clearRuntimeState(villager);
             VillagerRetaliationVillagerRules.clearCachedChecks(villager);
             VillagerTradeMemory.clearRuntimeState(villager);
         }
@@ -476,7 +1011,7 @@ public final class VillagerRetaliationEvents {
             return;
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(target, event.getSource())
+        VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(target, event.getSource())
                 .filter(AbstractVillager.class::isInstance)
                 .map(AbstractVillager.class::cast)
                 .filter(attacker -> attacker != target)
@@ -551,7 +1086,7 @@ public final class VillagerRetaliationEvents {
         if (!(villager.level() instanceof ServerLevel level) || !level.isThundering()) {
             return;
         }
-        if (level.getGameTime() % 200L == Math.floorMod(villager.getUUID().getLeastSignificantBits(), 200L)) {
+        if (TickThrottle.isSpreadTick(villager.getUUID(), level.getGameTime(), 200L)) {
             VillageEventMemory.EventTag weatherTag = weatherEventTag(level, villager.blockPosition());
             if (VillageEventMemory.remember(level, weatherTag, villager.blockPosition(), villager, null)) {
                 VillagerMoodService.recordVillageEvent(level, villager, weatherTag, null);
@@ -597,74 +1132,23 @@ public final class VillagerRetaliationEvents {
     }
 
     private static Component villagerDeathMessage(Villager villager, DamageSource source) {
-        Component villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager);
-        Player hazardOwner = ToucanHazardAttribution.resolveVanillaHazardOwner(villager, source)
-                .filter(Player.class::isInstance)
-                .map(Player.class::cast)
-                .orElse(null);
-        if (hazardOwner != null) {
-            return attributedHazardDeathMessage(villagerName, hazardOwner, source);
-        }
-
-        String messageId = "death.attack." + source.getMsgId();
-        Entity attacker = source.getEntity();
-        if (attacker == null || attacker == villager) {
-            return Component.translatable(messageId, villagerName);
-        }
-
-        return Component.translatable(messageId, villagerName, attacker.getDisplayName());
-    }
-
-    private static Component attributedHazardDeathMessage(Component villagerName, Player player, DamageSource source) {
-        return Component.literal("")
-                .append(villagerName)
-                .append(" ")
-                .append(attributedHazardDeathPhrase(source))
-                .append(" by ")
-                .append(player.getDisplayName())
-                .append(" using ")
-                .append(attributedHazardTool(source));
-    }
-
-    private static String attributedHazardDeathPhrase(DamageSource source) {
-        String messageId = source.getMsgId();
-        if (messageId.equals("lava")
-                || messageId.equals("inFire")
-                || messageId.equals("onFire")
-                || messageId.equals("hotFloor")
-                || messageId.equals("fireball")
-                || messageId.equals("unattributedFireball")) {
-            return "burned to death";
-        }
-        return "died";
-    }
-
-    private static String attributedHazardTool(DamageSource source) {
-        String messageId = source.getMsgId();
-        if (messageId.equals("lava")) {
-            return "a lava bucket";
-        }
-        if (messageId.equals("fireball") || messageId.equals("unattributedFireball")) {
-            return "a fire charge";
-        }
-        if (messageId.equals("inFire") || messageId.equals("onFire")) {
-            return "flint and steel";
-        }
-        return "a hazard";
-    }
-
-    private static boolean shouldCancelVillagerGolemDamage(Entity victim, Entity attacker, Entity directAttacker) {
-        return VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, attacker)
-                || VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, directAttacker);
+        return VillagerDeathMessageFactory.create(villager, source);
     }
 
     private static void clearIronGolemTargetingVillagers(Entity entity) {
-        if (!(entity instanceof IronGolem ironGolem)) {
+        if (!(entity instanceof IronGolem ironGolem)
+                || !(ironGolem.level() instanceof ServerLevel level)) {
             return;
         }
 
         LivingEntity target = ironGolem.getTarget();
-        if (target == null || !VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(ironGolem, target)) {
+        if (target == null || !VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(ironGolem, target)
+                || !VillageAllegianceCombatPolicy.evaluate(
+                        level,
+                        ironGolem,
+                        target,
+                        AllegianceCombatContext.TARGET_CONTINUATION,
+                        VillageCombatAuthorizationService.isAuthorized(ironGolem, target)).denied()) {
             return;
         }
 

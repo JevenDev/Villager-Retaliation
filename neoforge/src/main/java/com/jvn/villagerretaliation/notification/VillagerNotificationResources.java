@@ -42,6 +42,7 @@ public final class VillagerNotificationResources {
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
             "target_entity_type", "target_entity", "target_entity_types", "target_entities",
             "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
+            "player_item_components", "held_item_components", "player_item_custom_data", "held_item_custom_data", "player_item_nbt", "held_item_nbt",
             "min_player_item_durability", "max_player_item_durability", "min_player_item_durability_percent", "max_player_item_durability_percent",
             "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
             "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",

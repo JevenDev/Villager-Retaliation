@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.raid_memories"
+  },
+  "messages": [
+    {
+      "key": "raid_memory.story.victory",
+      "lines": [
+        "A story, I remember a bell screaming over a sea of gray faces. You and I held our ground until their last banner fell.",
+        "Once, raiders came certain this village would fold. We fought side by side and taught them certainty can be a short-lived thing.",
+        "There was a morning when the paths were full of raiders. By sunset, we were still standing together and the paths belonged to us again.",
+        "I remember sharing the line with you during a raid. Every safe bed in this village felt like a victory when the fighting stopped.",
+        "The best story I know ends with a broken raid horn, a ringing bell, and both of us alive to hear it.",
+        "We once watched a raid crash against this village. It was loud, ugly work, but we kept each other standing until it was done.",
+        "They carried an illager banner into our home. You and I made sure they did not carry it back out in triumph.",
+        "Some stories grow with every telling. The raid we won together needs no exaggeration.",
+        "I remember when fear ran through the village faster than the bell. We stood together until courage caught up.",
+        "If you want a true story, remember the raid we survived and won. I learned that day exactly who I wanted beside me.",
+        "The raid left arrows in every fence, but none of their banners stayed standing.",
+        "The village survived because people stood together.",
+        "The bell sounded different when victory was finally certain.",
+        "We checked every house before celebrating.",
+        "The raiders expected fear and found defenders.",
+        "The wounded were cared for before anyone counted trophies.",
+        "Ordinary work sounds returned the next morning.",
+        "We repaired the gate with the same hands that held it.",
+        "The children came outside when the paths were declared safe.",
+        "Everyone remembers where they stood during the hardest push."
+      ]
+    },
+    {
+      "key": "raid_memory.story.loss",
+      "lines": [
+        "A story, I remember the raid we could not stop. We walked away, but part of that village never did.",
+        "Once, you and I stood against a raid and lost the ground beneath us. Surviving was not the same as winning.",
+        "I still hear the bell from the village we failed to hold. Some stories stay because they never found a kinder ending.",
+        "There was a raid when courage was not enough. We fought together, lost together, and carried the memory out with us.",
+        "The raiders won that day. I remember the empty paths afterward more clearly than the battle itself.",
+        "You asked for a story, so here is an honest one. We once gave everything to a village and still watched it fall.",
+        "Not every shared battle becomes a victory tale. The raid we lost taught me how heavy silence can be after a bell.",
+        "I remember standing beside you while the village slipped away from us. I do not blame you, but I cannot forget it.",
+        "We survived a raid that the village did not. That is a story I tell carefully.",
+        "Once, the banners stayed standing longer than we did. We lost, but at least neither of us had to remember it alone.",
+        "The raid took people we expected to see tomorrow.",
+        "The bell stopped, but nobody felt safe.",
+        "We counted the living and the missing before the damage.",
+        "Some houses are quiet because no one returned to them.",
+        "The raiders left marks that repairs cannot hide.",
+        "We learned which defenses failed too late.",
+        "People shared beds after their homes were lost.",
+        "The village still jumps at distant horns.",
+        "We carry the names of those who held the line.",
+        "The golem could not be everywhere at once."
+      ]
+    }
+  ]
+}

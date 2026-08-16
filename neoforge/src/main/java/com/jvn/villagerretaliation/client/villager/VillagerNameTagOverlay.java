@@ -1,8 +1,11 @@
 package com.jvn.villagerretaliation.client.villager;
 
-import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationClientPreferences;
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
+import com.jvn.villagerretaliation.client.interaction.VillagerInteractionVisibilityFade;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderNameTagEvent;
@@ -15,9 +18,19 @@ public final class VillagerNameTagOverlay {
     }
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
-        if (!VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get()
-                || !(event.getEntity() instanceof AbstractVillager villager)
-                || villager.hasCustomName()) {
+        if (VillagerModelPreviewRenderContext.isRendering(event.getEntity())) {
+            event.setCanRender(TriState.FALSE);
+            return;
+        }
+        if (!VillagerPresetNameRegistry.isVillagerForm(event.getEntity())) {
+            return;
+        }
+        if (!VillagerRetaliationServerConfigClient.showVillagerNameTags()
+                || !VillagerRetaliationClientPreferences.showVillagerNameTags()) {
+            event.setCanRender(TriState.FALSE);
+            return;
+        }
+        if (event.getEntity().hasCustomName()) {
             return;
         }
 
@@ -25,21 +38,37 @@ public final class VillagerNameTagOverlay {
         if (minecraft.player == null || minecraft.options.hideGui) {
             return;
         }
-        if (minecraft.player.distanceToSqr(villager) > MAX_NAME_TAG_DISTANCE * MAX_NAME_TAG_DISTANCE) {
+        if (event.getEntity().isInvisibleTo(minecraft.player)) {
+            event.setCanRender(TriState.FALSE);
+            return;
+        }
+        if (minecraft.player.distanceToSqr(event.getEntity()) > MAX_NAME_TAG_DISTANCE * MAX_NAME_TAG_DISTANCE) {
             return;
         }
 
-        VillagerNameClientCache.displayName(villager.getId()).ifPresent(name -> {
+        VillagerNameClientCache.displayName(event.getEntity().getId()).ifPresent(name -> {
             event.setContent(name);
             event.setCanRender(TriState.TRUE);
         });
     }
 
     public static void onClientTick(ClientTickEvent.Post event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null) {
+            while (VillagerNameTagKeyMappings.TOGGLE_NAME_TAGS.consumeClick()) {
+                boolean enabled = VillagerRetaliationClientPreferences.toggleShowVillagerNameTags();
+                String key = enabled
+                        ? "message.villagerretaliation.villager_name_tags.enabled"
+                        : "message.villagerretaliation.villager_name_tags.disabled";
+                minecraft.player.displayClientMessage(Component.translatable(key), true);
+            }
+        }
         VillagerNameClientCache.pruneMissing();
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         VillagerNameClientCache.clear();
+        VillagerRetaliationServerConfigClient.reset();
+        VillagerInteractionVisibilityFade.reset();
     }
 }

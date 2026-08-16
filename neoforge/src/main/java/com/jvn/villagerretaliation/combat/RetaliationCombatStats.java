@@ -1,32 +1,38 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 
 final class RetaliationCombatStats {
-    static final double PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER = 0.7D;
+    static final double WALK_SPEED = 0.5D;
+    static final double RUN_SPEED = 0.35D;
+    static final double COMBAT_SPEED_MODIFIER = VillagerMovementSpeedPolicy.RUN_SPEED_MODIFIER;
     static final double PLAYER_FIST_DAMAGE = 1.0D;
-    static final double VINDICATOR_STYLE_WEAPON_BASE_DAMAGE = 5.0D;
+    private static final double NORMAL_DIFFICULTY_DAMAGE_BONUS = 0.5D;
+    private static final double HARD_DIFFICULTY_DAMAGE_BONUS = 1.0D;
 
     private RetaliationCombatStats() {
     }
 
-    static double meleeAttackDamageBase(ItemStack weapon) {
-        if (weapon.isEmpty() || !hasAttackDamageModifier(weapon)) {
-            return PLAYER_FIST_DAMAGE;
-        }
-
-        return VINDICATOR_STYLE_WEAPON_BASE_DAMAGE;
+    static double meleeAttackDamageBase(ItemStack weapon, Difficulty difficulty) {
+        double unarmedDamage = hasAttackDamageModifier(weapon) ? 0.0D : PLAYER_FIST_DAMAGE;
+        return unarmedDamage + switch (difficulty) {
+            case NORMAL -> NORMAL_DIFFICULTY_DAMAGE_BONUS;
+            case HARD -> HARD_DIFFICULTY_DAMAGE_BONUS;
+            default -> 0.0D;
+        };
     }
 
     private static boolean hasAttackDamageModifier(ItemStack stack) {
-        boolean[] hasAttackDamageModifier = new boolean[]{false};
+        boolean[] found = new boolean[]{false};
         stack.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
             if (attribute.equals(Attributes.ATTACK_DAMAGE)) {
-                hasAttackDamageModifier[0] = true;
+                found[0] = true;
             }
         });
-        return hasAttackDamageModifier[0];
+        return found[0];
     }
 }

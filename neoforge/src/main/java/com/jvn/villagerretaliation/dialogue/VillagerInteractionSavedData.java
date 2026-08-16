@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -28,8 +31,11 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_VILLAGER = "Villager";
     private static final String TAG_PLAYER = "Player";
     private static final String TAG_HAS_TALKED = "HasTalked";
+    private static final String TAG_ROUTINE_CHAT_MUTED = "RoutineChatMuted";
     private static final String TAG_LAST_SEEN_DAY = "LastSeenDay";
     private static final String TAG_RECENT_LINES = "RecentLines";
+    private static final String TAG_DIALOGUE_USAGE = "DialogueUsage";
+    private static final String TAG_DIALOGUE_ID = "DialogueId";
     private static final String TAG_LAST_POSITIVE_DIALOGUE_REPUTATION = "LastPositiveDialogueReputation";
     private static final String TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY = "LastPositiveDialogueReputationDay";
     private static final String TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION = "LastNegativeDialogueReputation";
@@ -69,6 +75,8 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_SHARED_STORY_COUNTS = "SharedStoryCounts";
     private static final String TAG_VILLAGE_ENCOUNTERS = "VillageEncounters";
     private static final String TAG_VILLAGES = "Villages";
+    private static final String TAG_VILLAGE_IDS = "VillageIds";
+    private static final String TAG_VILLAGE_ID = "VillageId";
     private static final String TAG_TARGETS = "Targets";
     private static final String TAG_TARGET_KEY = "TargetKey";
     private static final String TAG_SHARED_STORIES = "SharedStories";
@@ -99,7 +107,11 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_GIFT_ADVICE_RESULT_VILLAGER_NAME = "GiftAdviceResultVillagerName";
     private static final String TAG_GIFT_ADVICE_RESULT_LIKED = "GiftAdviceResultLiked";
     private static final String TAG_GIFT_ADVICE_RESULT_GAME_TIME = "GiftAdviceResultGameTime";
+    private static final String TAG_GIFT_REPUTATION_DAY = "GiftReputationDay";
+    private static final String TAG_DAILY_POSITIVE_GIFT_REPUTATION = "DailyPositiveGiftReputation";
+    private static final String TAG_DAILY_POSITIVE_GIFT_ITEMS = "DailyPositiveGiftItems";
     private static final int MAX_RECENT_LINES = 5;
+    private static final int MAX_DIALOGUE_USAGE = 256;
     private static final int MAX_CARTOGRAPHER_MAPS = 8;
     private static final int MAX_STORY_HINTS = 12;
     private static final int MAX_SHARED_STORY_TARGETS = 64;
@@ -115,13 +127,16 @@ public class VillagerInteractionSavedData extends SavedData {
     private final GiftKnowledgeStore giftKnowledge = new GiftKnowledgeStore();
     private final Map<UUID, LinkedHashMap<String, Long>> sharedStoryCooldownsByPlayer = new HashMap<>();
     private final Map<UUID, Integer> sharedStoryCountsByPlayer = new HashMap<>();
-    private final Map<UUID, LinkedHashSet<String>> villageEncountersByPlayer = new HashMap<>();
+    private final Map<UUID, LinkedHashSet<VillageAllegianceId>> villageEncountersByPlayer = new HashMap<>();
+    private final Map<UUID, LinkedHashSet<String>> legacyVillageEncountersByPlayer = new HashMap<>();
 
     public static VillagerInteractionSavedData get(ServerLevel level) {
-        return level.getServer().overworld().getDataStorage().computeIfAbsent(
+        VillagerInteractionSavedData data = level.getServer().overworld().getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(VillagerInteractionSavedData::new, VillagerInteractionSavedData::load, DataFixTypes.LEVEL),
                 DATA_NAME
         );
+        data.migrateLegacyVillageEncounters(level);
+        return data;
     }
 
     public static VillagerInteractionSavedData load(CompoundTag tag, HolderLookup.Provider provider) {
@@ -136,6 +151,7 @@ public class VillagerInteractionSavedData extends SavedData {
 
             InteractionEntry entry = new InteractionEntry();
             entry.hasTalked = entryTag.getBoolean(TAG_HAS_TALKED);
+            entry.routineChatMuted = entryTag.getBoolean(TAG_ROUTINE_CHAT_MUTED);
             entry.lastSeenDay = readOptionalLong(entryTag, TAG_LAST_SEEN_DAY);
             entry.lastPositiveDialogueReputationGameTime = readOptionalLong(entryTag, TAG_LAST_POSITIVE_DIALOGUE_REPUTATION);
             entry.lastPositiveDialogueReputationDay = readOptionalLong(entryTag, TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY);
@@ -197,6 +213,15 @@ public class VillagerInteractionSavedData extends SavedData {
             }
             entry.giftAdviceResultLiked = entryTag.getBoolean(TAG_GIFT_ADVICE_RESULT_LIKED);
             entry.giftAdviceResultGameTime = readOptionalLong(entryTag, TAG_GIFT_ADVICE_RESULT_GAME_TIME);
+            entry.giftReputationDay = readOptionalLong(entryTag, TAG_GIFT_REPUTATION_DAY);
+            entry.dailyPositiveGiftReputation = Math.max(0, entryTag.getInt(TAG_DAILY_POSITIVE_GIFT_REPUTATION));
+            ListTag dailyPositiveGiftItems = entryTag.getList(TAG_DAILY_POSITIVE_GIFT_ITEMS, Tag.TAG_STRING);
+            for (Tag rawItemId : dailyPositiveGiftItems) {
+                String itemId = rawItemId.getAsString();
+                if (!itemId.isBlank()) {
+                    entry.dailyPositiveGiftItemIds.add(itemId);
+                }
+            }
             if (entryTag.contains(TAG_CONSECUTIVE_REQUEST_TYPE, Tag.TAG_STRING)) {
                 try {
                     entry.consecutiveRequestType = DialogueRequestType.valueOf(entryTag.getString(TAG_CONSECUTIVE_REQUEST_TYPE));
@@ -209,6 +234,18 @@ public class VillagerInteractionSavedData extends SavedData {
             ListTag recentLines = entryTag.getList(TAG_RECENT_LINES, Tag.TAG_STRING);
             for (Tag rawLine : recentLines) {
                 entry.recentDialogueIds.addLast(rawLine.getAsString());
+            }
+            ListTag dialogueUsage = entryTag.getList(TAG_DIALOGUE_USAGE, Tag.TAG_COMPOUND);
+            for (Tag rawUsage : dialogueUsage) {
+                if (!(rawUsage instanceof CompoundTag usageTag)) {
+                    continue;
+                }
+                String dialogueId = usageTag.getString(TAG_DIALOGUE_ID);
+                if (!dialogueId.isBlank()) {
+                    entry.dialogueUsage.put(dialogueId, new DialogueUsage(
+                            Math.max(0, usageTag.getInt(TAG_COUNT)),
+                            readOptionalLong(usageTag, TAG_GAME_TIME)));
+                }
             }
             ListTag requestTypeTimes = entryTag.getList(TAG_LAST_REQUEST_TYPE_REPUTATION, Tag.TAG_COMPOUND);
             for (Tag rawRequestTypeTime : requestTypeTimes) {
@@ -343,10 +380,20 @@ public class VillagerInteractionSavedData extends SavedData {
             if (!(rawEncounters instanceof CompoundTag encountersTag) || !encountersTag.hasUUID(TAG_PLAYER)) {
                 continue;
             }
-            LinkedHashSet<String> villageKeys = new LinkedHashSet<>();
-            readStringSet(encountersTag.getList(TAG_VILLAGES, Tag.TAG_STRING), villageKeys);
-            if (!villageKeys.isEmpty()) {
-                data.villageEncountersByPlayer.put(encountersTag.getUUID(TAG_PLAYER), villageKeys);
+            UUID playerId = encountersTag.getUUID(TAG_PLAYER);
+            LinkedHashSet<VillageAllegianceId> villageIds = new LinkedHashSet<>();
+            for (Tag rawVillage : encountersTag.getList(TAG_VILLAGE_IDS, Tag.TAG_COMPOUND)) {
+                if (rawVillage instanceof CompoundTag villageTag && villageTag.hasUUID(TAG_VILLAGE_ID)) {
+                    villageIds.add(new VillageAllegianceId(villageTag.getUUID(TAG_VILLAGE_ID)));
+                }
+            }
+            if (!villageIds.isEmpty()) {
+                data.villageEncountersByPlayer.put(playerId, villageIds);
+            }
+            LinkedHashSet<String> legacyKeys = new LinkedHashSet<>();
+            readStringSet(encountersTag.getList(TAG_VILLAGES, Tag.TAG_STRING), legacyKeys);
+            if (!legacyKeys.isEmpty()) {
+                data.legacyVillageEncountersByPlayer.put(playerId, legacyKeys);
             }
         }
         return data;
@@ -387,6 +434,7 @@ public class VillagerInteractionSavedData extends SavedData {
                 entryTag.putUUID(TAG_VILLAGER, villagerEntry.getKey());
                 entryTag.putUUID(TAG_PLAYER, playerEntry.getKey());
                 entryTag.putBoolean(TAG_HAS_TALKED, playerEntry.getValue().hasTalked);
+                entryTag.putBoolean(TAG_ROUTINE_CHAT_MUTED, playerEntry.getValue().routineChatMuted);
                 entryTag.putLong(TAG_LAST_SEEN_DAY, playerEntry.getValue().lastSeenDay);
                 entryTag.putLong(TAG_LAST_POSITIVE_DIALOGUE_REPUTATION, playerEntry.getValue().lastPositiveDialogueReputationGameTime);
                 entryTag.putLong(TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY, playerEntry.getValue().lastPositiveDialogueReputationDay);
@@ -448,6 +496,10 @@ public class VillagerInteractionSavedData extends SavedData {
                 }
                 entryTag.putBoolean(TAG_GIFT_ADVICE_RESULT_LIKED, playerEntry.getValue().giftAdviceResultLiked);
                 entryTag.putLong(TAG_GIFT_ADVICE_RESULT_GAME_TIME, playerEntry.getValue().giftAdviceResultGameTime);
+                entryTag.putLong(TAG_GIFT_REPUTATION_DAY, playerEntry.getValue().giftReputationDay);
+                entryTag.putInt(TAG_DAILY_POSITIVE_GIFT_REPUTATION, playerEntry.getValue().dailyPositiveGiftReputation);
+                entryTag.put(TAG_DAILY_POSITIVE_GIFT_ITEMS,
+                        writeStringSet(playerEntry.getValue().dailyPositiveGiftItemIds));
                 if (playerEntry.getValue().consecutiveRequestType != null) {
                     entryTag.putString(TAG_CONSECUTIVE_REQUEST_TYPE, playerEntry.getValue().consecutiveRequestType.name());
                     entryTag.putInt(TAG_CONSECUTIVE_REQUEST_COUNT, playerEntry.getValue().consecutiveRequestCount);
@@ -457,6 +509,15 @@ public class VillagerInteractionSavedData extends SavedData {
                     recentLines.add(StringTag.valueOf(lineId));
                 }
                 entryTag.put(TAG_RECENT_LINES, recentLines);
+                ListTag dialogueUsage = new ListTag();
+                for (Map.Entry<String, DialogueUsage> usageEntry : playerEntry.getValue().dialogueUsage.entrySet()) {
+                    CompoundTag usageTag = new CompoundTag();
+                    usageTag.putString(TAG_DIALOGUE_ID, usageEntry.getKey());
+                    usageTag.putInt(TAG_COUNT, usageEntry.getValue().count());
+                    usageTag.putLong(TAG_GAME_TIME, usageEntry.getValue().lastUsedGameTime());
+                    dialogueUsage.add(usageTag);
+                }
+                entryTag.put(TAG_DIALOGUE_USAGE, dialogueUsage);
                 ListTag requestTypeTimes = new ListTag();
                 for (Map.Entry<DialogueRequestType, Long> requestTypeEntry : playerEntry.getValue().lastReputationByRequestType.entrySet()) {
                     CompoundTag requestTypeTag = new CompoundTag();
@@ -553,13 +614,19 @@ public class VillagerInteractionSavedData extends SavedData {
         }
         tag.put(TAG_SHARED_STORY_COUNTS, sharedStoryCountsTag);
         ListTag villageEncountersTag = new ListTag();
-        for (Map.Entry<UUID, LinkedHashSet<String>> encountersEntry : this.villageEncountersByPlayer.entrySet()) {
+        for (Map.Entry<UUID, LinkedHashSet<VillageAllegianceId>> encountersEntry : this.villageEncountersByPlayer.entrySet()) {
             if (encountersEntry.getValue().isEmpty()) {
                 continue;
             }
             CompoundTag encountersTag = new CompoundTag();
             encountersTag.putUUID(TAG_PLAYER, encountersEntry.getKey());
-            encountersTag.put(TAG_VILLAGES, writeStringSet(encountersEntry.getValue()));
+            ListTag villageIds = new ListTag();
+            for (VillageAllegianceId villageId : encountersEntry.getValue()) {
+                CompoundTag villageTag = new CompoundTag();
+                villageTag.putUUID(TAG_VILLAGE_ID, villageId.value());
+                villageIds.add(villageTag);
+            }
+            encountersTag.put(TAG_VILLAGE_IDS, villageIds);
             villageEncountersTag.add(encountersTag);
         }
         tag.put(TAG_VILLAGE_ENCOUNTERS, villageEncountersTag);
@@ -574,25 +641,81 @@ public class VillagerInteractionSavedData extends SavedData {
         return tag;
     }
 
-    boolean hasVillageEncounter(UUID playerId, String villageKey) {
-        if (playerId == null || villageKey == null || villageKey.isBlank()) {
+    boolean hasVillageEncounter(
+            UUID playerId,
+            VillageAllegianceId villageId,
+            VillageAllegianceRegistrySavedData registry) {
+        if (playerId == null || villageId == null || registry == null) {
             return false;
         }
-        Set<String> villageKeys = this.villageEncountersByPlayer.get(playerId);
-        return villageKeys != null && villageKeys.contains(villageKey);
+        VillageAllegianceId canonical = registry.canonical(villageId).orElse(null);
+        Set<VillageAllegianceId> villageIds = this.villageEncountersByPlayer.get(playerId);
+        return canonical != null && villageIds != null && villageIds.stream()
+                .map(id -> registry.canonical(id).orElse(null))
+                .anyMatch(canonical::equals);
     }
 
-    boolean rememberVillageEncounter(UUID playerId, String villageKey) {
-        if (playerId == null || villageKey == null || villageKey.isBlank()) {
+    boolean rememberVillageEncounter(UUID playerId, VillageAllegianceId villageId) {
+        if (playerId == null || villageId == null) {
             return false;
         }
-        LinkedHashSet<String> villageKeys = this.villageEncountersByPlayer.computeIfAbsent(playerId, ignored -> new LinkedHashSet<>());
-        boolean changed = villageKeys.add(villageKey);
-        while (villageKeys.size() > MAX_VILLAGE_ENCOUNTERS_PER_PLAYER) {
-            villageKeys.remove(villageKeys.iterator().next());
+        LinkedHashSet<VillageAllegianceId> villageIds = this.villageEncountersByPlayer.computeIfAbsent(
+                playerId, ignored -> new LinkedHashSet<>());
+        boolean changed = villageIds.add(villageId);
+        while (villageIds.size() > MAX_VILLAGE_ENCOUNTERS_PER_PLAYER) {
+            villageIds.remove(villageIds.iterator().next());
             changed = true;
         }
         return changed;
+    }
+
+    void migrateLegacyVillageEncounters(ServerLevel level) {
+        migrateLegacyVillageEncounters(VillageAllegianceRegistrySavedData.get(level));
+    }
+
+    void migrateLegacyVillageEncounters(VillageAllegianceRegistrySavedData registry) {
+        if (this.legacyVillageEncountersByPlayer.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<UUID, LinkedHashSet<String>> entry : this.legacyVillageEncountersByPlayer.entrySet()) {
+            for (String legacyKey : entry.getValue()) {
+                resolveLegacyEncounter(registry, legacyKey)
+                        .ifPresent(id -> rememberVillageEncounter(entry.getKey(), id));
+            }
+        }
+        this.legacyVillageEncountersByPlayer.clear();
+        setDirty();
+    }
+
+    private static java.util.Optional<VillageAllegianceId> resolveLegacyEncounter(
+            VillageAllegianceRegistrySavedData registry,
+            String legacyKey) {
+        if (legacyKey == null) {
+            return java.util.Optional.empty();
+        }
+        int separator = legacyKey.lastIndexOf(':');
+        if (separator <= 0 || separator >= legacyKey.length() - 1) {
+            return java.util.Optional.empty();
+        }
+        ResourceLocation dimension = ResourceLocation.tryParse(legacyKey.substring(0, separator));
+        String[] region = legacyKey.substring(separator + 1).split(",");
+        if (dimension == null || region.length != 2) {
+            return java.util.Optional.empty();
+        }
+        try {
+            int regionX = Integer.parseInt(region[0]);
+            int regionZ = Integer.parseInt(region[1]);
+            List<VillageAllegianceId> matches = registry.activeRecords(dimension).stream()
+                    .filter(record -> Math.floorDiv(record.center().getX(), 64) == regionX)
+                    .filter(record -> Math.floorDiv(record.center().getZ(), 64) == regionZ)
+                    .map(VillageAllegianceRegistrySavedData.AllegianceRecord::id)
+                    .map(id -> registry.canonical(id).orElse(id))
+                    .distinct()
+                    .toList();
+            return matches.size() == 1 ? java.util.Optional.of(matches.getFirst()) : java.util.Optional.empty();
+        } catch (NumberFormatException ignored) {
+            return java.util.Optional.empty();
+        }
     }
 
     public InteractionEntry getOrCreate(UUID villagerId, UUID playerId) {
@@ -605,6 +728,29 @@ public class VillagerInteractionSavedData extends SavedData {
         InteractionEntry created = new InteractionEntry();
         putEntry(villagerId, playerId, created);
         return created;
+    }
+
+    public int limitPositiveGiftReputation(
+            UUID villagerId,
+            UUID playerId,
+            long day,
+            String itemId,
+            int proposedReputation,
+            double repeatedMultiplier,
+            int dailyCap) {
+        if (proposedReputation <= 0) {
+            return proposedReputation;
+        }
+        InteractionEntry entry = getOrCreate(villagerId, playerId);
+        int awarded = entry.limitPositiveGiftReputation(
+                day,
+                itemId,
+                proposedReputation,
+                repeatedMultiplier,
+                dailyCap
+        );
+        setDirty();
+        return awarded;
     }
 
     InteractionEntry getOrEmptyForRead(UUID villagerId, UUID playerId) {
@@ -627,6 +773,30 @@ public class VillagerInteractionSavedData extends SavedData {
         this.villagerIdsByPlayer.computeIfAbsent(playerId, ignored -> new LinkedHashSet<>()).add(villagerId);
     }
 
+    public boolean transferVillagerEntries(UUID sourceVillagerId, UUID targetVillagerId) {
+        if (sourceVillagerId == null || targetVillagerId == null || sourceVillagerId.equals(targetVillagerId)) {
+            return false;
+        }
+
+        Map<UUID, InteractionEntry> sourceEntries = this.entries.remove(sourceVillagerId);
+        if (sourceEntries == null || sourceEntries.isEmpty()) {
+            return false;
+        }
+
+        Map<UUID, InteractionEntry> targetEntries = this.entries.computeIfAbsent(targetVillagerId, ignored -> new HashMap<>());
+        for (Map.Entry<UUID, InteractionEntry> entry : sourceEntries.entrySet()) {
+            targetEntries.put(entry.getKey(), entry.getValue());
+            Set<UUID> indexedIds = this.villagerIdsByPlayer.computeIfAbsent(entry.getKey(), ignored -> new LinkedHashSet<>());
+            indexedIds.remove(sourceVillagerId);
+            indexedIds.add(targetVillagerId);
+        }
+        for (Set<UUID> indexedIds : this.villagerIdsByPlayer.values()) {
+            indexedIds.remove(sourceVillagerId);
+        }
+        setDirty();
+        return true;
+    }
+
     private Iterable<UUID> villagerIdsForPlayer(UUID playerId) {
         Set<UUID> indexedIds = this.villagerIdsByPlayer.get(playerId);
         return indexedIds == null ? List.of() : indexedIds;
@@ -637,16 +807,24 @@ public class VillagerInteractionSavedData extends SavedData {
         return playerEntries == null ? null : playerEntries.get(playerId);
     }
 
-    public boolean knowsGift(UUID playerId, String professionKey, String itemId, boolean liked) {
-        return this.giftKnowledge.knowsGift(playerId, professionKey, itemId, liked);
+    public boolean knowsGiftCategory(UUID playerId, String professionKey, String categoryId) {
+        return this.giftKnowledge.knowsCategory(playerId, professionKey, categoryId);
     }
 
-    public boolean hasGiftKnowledge(UUID playerId, String... professionKeys) {
-        return this.giftKnowledge.hasGiftKnowledge(playerId, professionKeys);
+    public Set<String> discoveredGiftCategories(UUID playerId, String... professionKeys) {
+        return this.giftKnowledge.discoveredCategories(playerId, professionKeys);
     }
 
-    public boolean rememberGiftKnowledge(UUID playerId, String professionKey, String itemId, boolean liked) {
-        return this.giftKnowledge.rememberGiftKnowledge(playerId, professionKey, itemId, liked);
+    public boolean rememberGiftCategory(UUID playerId, String professionKey, String categoryId) {
+        return this.giftKnowledge.rememberCategory(playerId, professionKey, categoryId);
+    }
+
+    public Set<String> legacyGiftIds(UUID playerId, String professionKey, boolean liked) {
+        return this.giftKnowledge.legacyGiftIds(playerId, professionKey, liked);
+    }
+
+    public boolean removeLegacyGift(UUID playerId, String professionKey, String itemId, boolean liked) {
+        return this.giftKnowledge.removeLegacyGift(playerId, professionKey, itemId, liked);
     }
 
     public void rememberCartographerMap(
@@ -991,6 +1169,20 @@ public class VillagerInteractionSavedData extends SavedData {
         return entry == null ? null : entry.unreportedGearReport(villagerId);
     }
 
+    public boolean hasRecentBrokenBedMemory(UUID villagerId, UUID playerId, long gameTime, long maxAgeTicks) {
+        InteractionEntry entry = getIndexedEntry(villagerId, playerId);
+        return entry != null
+                && entry.lastBrokenBedGameTime() != Long.MIN_VALUE
+                && gameTime - entry.lastBrokenBedGameTime() <= maxAgeTicks;
+    }
+
+    public boolean hasRecentDirectHitMemory(UUID villagerId, UUID playerId, long gameTime, long maxAgeTicks) {
+        InteractionEntry entry = getIndexedEntry(villagerId, playerId);
+        return entry != null
+                && entry.lastDirectHitGameTime() != Long.MIN_VALUE
+                && gameTime - entry.lastDirectHitGameTime() <= maxAgeTicks;
+    }
+
     public VillagerInteractionTracker.GearReport claimUnreportedGearReport(UUID villagerId, UUID playerId) {
         InteractionEntry entry = getIndexedEntry(villagerId, playerId);
         return entry == null ? null : entry.claimUnreportedGearReport(villagerId);
@@ -1107,8 +1299,13 @@ public class VillagerInteractionSavedData extends SavedData {
         return entry == null ? null : entry.claimUnreportedGiftAdviceResult(villagerId);
     }
 
+    public record DialogueUsage(int count, long lastUsedGameTime) {
+        private static final DialogueUsage EMPTY = new DialogueUsage(0, Long.MIN_VALUE);
+    }
+
     public static class InteractionEntry {
         private boolean hasTalked;
+        private boolean routineChatMuted;
         private long lastSeenDay = Long.MIN_VALUE;
         private long lastPositiveDialogueReputationGameTime = Long.MIN_VALUE;
         private long lastPositiveDialogueReputationDay = Long.MIN_VALUE;
@@ -1146,9 +1343,13 @@ public class VillagerInteractionSavedData extends SavedData {
         private String giftAdviceResultVillagerName;
         private boolean giftAdviceResultLiked;
         private long giftAdviceResultGameTime = Long.MIN_VALUE;
+        private long giftReputationDay = Long.MIN_VALUE;
+        private int dailyPositiveGiftReputation;
+        private final LinkedHashSet<String> dailyPositiveGiftItemIds = new LinkedHashSet<>();
         private DialogueRequestType consecutiveRequestType;
         private int consecutiveRequestCount;
         private final ArrayDeque<String> recentDialogueIds = new ArrayDeque<>();
+        private final LinkedHashMap<String, DialogueUsage> dialogueUsage = new LinkedHashMap<>();
         private final Map<DialogueRequestType, Long> lastReputationByRequestType = new EnumMap<>(DialogueRequestType.class);
         private final Map<DialogueRequestType, Long> lastDialogueByRequestType = new EnumMap<>(DialogueRequestType.class);
         private final Map<DialogueRequestType, RequestUseWindow> requestUseWindows = new EnumMap<>(DialogueRequestType.class);
@@ -1168,6 +1369,48 @@ public class VillagerInteractionSavedData extends SavedData {
             this.hasTalked = true;
         }
 
+        private int limitPositiveGiftReputation(
+                long day,
+                String itemId,
+                int proposedReputation,
+                double repeatedMultiplier,
+                int dailyCap) {
+            if (this.giftReputationDay != day) {
+                this.giftReputationDay = day;
+                this.dailyPositiveGiftReputation = 0;
+                this.dailyPositiveGiftItemIds.clear();
+            }
+
+            String normalizedItemId = itemId == null ? "" : itemId;
+            boolean repeated = !normalizedItemId.isBlank()
+                    && this.dailyPositiveGiftItemIds.contains(normalizedItemId);
+            int adjustedReputation = proposedReputation;
+            if (repeated) {
+                double multiplier = Math.clamp(repeatedMultiplier, 0.0D, 1.0D);
+                adjustedReputation = (int) Math.floor(proposedReputation * multiplier);
+            }
+
+            int remaining = Math.max(0, Math.max(0, dailyCap) - this.dailyPositiveGiftReputation);
+            int awarded = Math.min(adjustedReputation, remaining);
+            this.dailyPositiveGiftReputation += awarded;
+            if (!normalizedItemId.isBlank()) {
+                this.dailyPositiveGiftItemIds.add(normalizedItemId);
+            }
+            return awarded;
+        }
+
+        public boolean routineChatMuted() {
+            return this.routineChatMuted;
+        }
+
+        public boolean setRoutineChatMuted(boolean muted) {
+            if (this.routineChatMuted == muted) {
+                return false;
+            }
+            this.routineChatMuted = muted;
+            return true;
+        }
+
         public long lastSeenDay() {
             return this.lastSeenDay;
         }
@@ -1182,6 +1425,10 @@ public class VillagerInteractionSavedData extends SavedData {
 
         public List<String> recentDialogueIds() {
             return new ArrayList<>(this.recentDialogueIds);
+        }
+
+        public DialogueUsage dialogueUsage(String dialogueId) {
+            return this.dialogueUsage.getOrDefault(dialogueId, DialogueUsage.EMPTY);
         }
 
         public long lastPositiveDialogueReputationGameTime() {
@@ -1482,9 +1729,27 @@ public class VillagerInteractionSavedData extends SavedData {
                     .recordUse(gameTime, day, resetTicks);
             this.recentDialogueIds.remove(dialogueId);
             this.recentDialogueIds.addLast(dialogueId);
+            rememberDialogueUsage(dialogueId, gameTime);
+            int variantSeparator = dialogueId.indexOf("#line_");
+            if (variantSeparator > 0) {
+                rememberDialogueUsage(dialogueId.substring(0, variantSeparator), gameTime);
+            }
             this.lastDialogueByRequestType.put(requestType, gameTime);
             while (this.recentDialogueIds.size() > MAX_RECENT_LINES) {
                 this.recentDialogueIds.removeFirst();
+            }
+        }
+
+        private void rememberDialogueUsage(String dialogueId, long gameTime) {
+            if (dialogueId == null || dialogueId.isBlank()) {
+                return;
+            }
+            DialogueUsage previous = this.dialogueUsage.remove(dialogueId);
+            this.dialogueUsage.put(dialogueId, new DialogueUsage(
+                    previous == null ? 1 : Math.min(Integer.MAX_VALUE, previous.count() + 1),
+                    gameTime));
+            while (this.dialogueUsage.size() > MAX_DIALOGUE_USAGE) {
+                this.dialogueUsage.remove(this.dialogueUsage.keySet().iterator().next());
             }
         }
 
@@ -1756,6 +2021,7 @@ public class VillagerInteractionSavedData extends SavedData {
 
         private boolean isEmpty() {
             return !this.hasTalked
+                    && !this.routineChatMuted
                     && this.lastSeenDay == Long.MIN_VALUE
                     && this.lastPositiveDialogueReputationGameTime == Long.MIN_VALUE
                     && this.lastPositiveDialogueReputationDay == Long.MIN_VALUE
@@ -1793,9 +2059,13 @@ public class VillagerInteractionSavedData extends SavedData {
                     && isBlank(this.giftAdviceResultVillagerName)
                     && !this.giftAdviceResultLiked
                     && this.giftAdviceResultGameTime == Long.MIN_VALUE
+                    && this.giftReputationDay == Long.MIN_VALUE
+                    && this.dailyPositiveGiftReputation == 0
+                    && this.dailyPositiveGiftItemIds.isEmpty()
                     && this.consecutiveRequestType == null
                     && this.consecutiveRequestCount == 0
                     && this.recentDialogueIds.isEmpty()
+                    && this.dialogueUsage.isEmpty()
                     && this.lastReputationByRequestType.isEmpty()
                     && this.lastDialogueByRequestType.isEmpty()
                     && this.requestUseWindows.isEmpty()

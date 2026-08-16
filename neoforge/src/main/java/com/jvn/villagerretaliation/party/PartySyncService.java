@@ -1,0 +1,200 @@
+package com.jvn.villagerretaliation.party;
+
+import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
+import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
+import com.jvn.villagerretaliation.util.VillagerEntityResolver;
+import com.mojang.authlib.GameProfile;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.npc.Villager;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+public final class PartySyncService {
+    private PartySyncService() {
+    }
+
+    public static void sendTo(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        PartyRecord party = PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).orElse(null);
+        send(player, party == null
+                ? PartyRosterSyncPayload.empty()
+                : snapshot(player.getServer(), party, null, null).forRecipient(player.getUUID()));
+    }
+
+    public static void syncParty(MinecraftServer server, UUID partyId) {
+        syncParty(server, partyId, null, null);
+    }
+
+    public static void syncPartyWithOfflinePlayer(MinecraftServer server, UUID partyId, UUID offlinePlayerId) {
+        syncParty(server, partyId, offlinePlayerId, null);
+    }
+
+    public static void syncPartyWithUnavailableVillager(MinecraftServer server, UUID partyId, UUID unavailableVillagerId) {
+        syncParty(server, partyId, null, unavailableVillagerId);
+    }
+
+    private static void syncParty(
+            MinecraftServer server,
+            UUID partyId,
+            UUID offlinePlayerId,
+            UUID unavailableVillagerId) {
+        if (server == null || partyId == null) {
+            return;
+        }
+        PartyRecord party = PartyService.getParty(server.overworld(), partyId).orElse(null);
+        if (party == null) {
+            return;
+        }
+        PartyRosterSnapshot snapshot = snapshot(server, party, offlinePlayerId, unavailableVillagerId);
+        for (UUID playerId : party.playerIds()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            if (player != null) {
+                send(player, snapshot.forRecipient(playerId));
+            }
+        }
+    }
+
+    public static void clear(MinecraftServer server, UUID playerId) {
+        if (server == null || playerId == null) {
+            return;
+        }
+        ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+        if (player != null) {
+            send(player, PartyRosterSyncPayload.empty());
+        }
+    }
+
+    public static void clear(MinecraftServer server, List<UUID> playerIds) {
+        if (playerIds == null) {
+            return;
+        }
+        playerIds.forEach(playerId -> clear(server, playerId));
+    }
+
+    private static PartyRosterSnapshot snapshot(
+            MinecraftServer server,
+            PartyRecord party,
+            UUID offlinePlayerId,
+            UUID unavailableVillagerId) {
+        List<PartyRosterSyncPayload.PlayerEntry> players = new ArrayList<>(party.playerIds().size());
+        for (UUID playerId : party.playerIds()) {
+            ServerPlayer online = server.getPlayerList().getPlayer(playerId);
+            players.add(new PartyRosterSyncPayload.PlayerEntry(
+                    playerId,
+                    online == null ? profileName(server, playerId) : online.getGameProfile().getName(),
+                    online != null && !playerId.equals(offlinePlayerId),
+                    playerId.equals(party.leaderId()),
+                    party.hasAdminPrivileges(playerId)));
+        }
+        long now = server.overworld().getGameTime();
+        List<PartyRosterSyncPayload.VillagerEntry> villagers = new ArrayList<>(party.villagers().size());
+        for (PartyVillagerRecord record : party.villagers()) {
+            Villager loaded = VillagerEntityResolver.loaded(server, record.villagerId());
+            villagers.add(new PartyRosterSyncPayload.VillagerEntry(
+                    record.villagerId(),
+                    loaded == null ? -1 : loaded.getId(),
+                    record.cachedName(),
+                    record.cachedProfession(),
+                    record.cachedGender(),
+                    record.commandMode(),
+                    loaded != null && loaded.isAlive() && !record.villagerId().equals(unavailableVillagerId),
+                    record.remainingDays(now),
+                    record.contractEndGameTime(),
+                    record.combatMode(),
+                    record.attackMode(),
+                    record.dropCollectionMode(),
+                    record.quickCommandsEnabled(),
+                    record.weaponsUnequipped(),
+                    VillagerMountAssignmentService.hasAssignment(server.overworld(), record.villagerId())));
+        }
+        return new PartyRosterSnapshot(
+                party.id(),
+                party.leaderId(),
+                profileName(server, party.leaderId()),
+                combatModeState(party),
+                attackModeState(party),
+                party.sharedVillagerInventories(),
+                party.friendlyFireAllowed(),
+                party.mountMode(),
+                VillagerMountAssignmentService.featureAvailable(),
+                PartyQuickCommandService.moveTargetDimension(party),
+                PartyQuickCommandService.moveTarget(party),
+                PartyQuickCommandService.isStandGuardActive(party),
+                List.copyOf(players),
+                List.copyOf(villagers));
+    }
+
+    private record PartyRosterSnapshot(
+            UUID partyId,
+            UUID leaderId,
+            String leaderName,
+            PartyCombatModeState combatMode,
+            PartyAttackModeState attackMode,
+            boolean sharedVillagerInventories,
+            boolean friendlyFireAllowed,
+            boolean mountMode,
+            boolean mountFeatureAvailable,
+            ResourceLocation moveTargetDimension,
+            BlockPos moveTarget,
+            boolean standGuardActive,
+            List<PartyRosterSyncPayload.PlayerEntry> players,
+            List<PartyRosterSyncPayload.VillagerEntry> villagers) {
+        PartyRosterSyncPayload forRecipient(UUID recipientId) {
+            return new PartyRosterSyncPayload(
+                    true,
+                    this.partyId,
+                    this.leaderName,
+                    this.leaderId.equals(recipientId),
+                    this.combatMode,
+                    this.attackMode,
+                    this.sharedVillagerInventories,
+                    this.friendlyFireAllowed,
+                    this.mountMode,
+                    this.mountFeatureAvailable,
+                    this.moveTargetDimension,
+                    this.moveTarget,
+                    this.standGuardActive,
+                    this.players,
+                    this.villagers);
+        }
+    }
+
+    static PartyCombatModeState combatModeState(PartyRecord party) {
+        return PartyCombatModeState.of(party.combatMode());
+    }
+
+    static PartyAttackModeState attackModeState(PartyRecord party) {
+        return PartyAttackModeState.of(party.attackMode());
+    }
+
+    private static String profileName(MinecraftServer server, UUID playerId) {
+        ServerPlayer online = server.getPlayerList().getPlayer(playerId);
+        if (online != null) {
+            return online.getGameProfile().getName();
+        }
+        var profileCache = server.getProfileCache();
+        if (profileCache == null) {
+            return "Player";
+        }
+        return profileCache
+                .get(playerId)
+                .map(GameProfile::getName)
+                .filter(name -> !name.isBlank())
+                .orElse("Player");
+    }
+
+    private static void send(ServerPlayer player, PartyRosterSyncPayload payload) {
+        try {
+            PacketDistributor.sendToPlayer(player, payload);
+        } catch (UnsupportedOperationException ignored) {
+            // Game tests can use mock connections without negotiated custom payloads.
+        }
+    }
+}

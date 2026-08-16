@@ -1,0 +1,185 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.closings",
+      "context.ominous_banner"
+    ],
+    "topic": "global.closings.ominous_banner"
+  },
+  "closings": [
+    {
+      "id": "ominous_banner_closing_revered",
+      "requires_ominous_banner": true,
+      "reputation_levels": [
+        "revered",
+        "royalty"
+      ],
+      "lines": [
+        "I still believe you can choose better. Let the first choice be removing that banner.",
+        "We can speak warmly again when you are no longer wearing a raider's threat.",
+        "Your deeds earned respect. Do not let that mark speak louder than all of them.",
+        "Leave the banner outside if you return.",
+        "Come back as the person this village respects.",
+        "Your good name deserves a better ending than that mark.",
+        "Take it down before the guards lose their patience.",
+        "I expect to see your own colors next time.",
+        "Do one more good thing today and put it away.",
+        "People still believe your better deeds show who you are. Do not prove them wrong.",
+        "The village would rather welcome its defender than fear a raider's symbol.",
+        "You have earned room to correct this, but not forever.",
+        "Let your next visit remind us why your name once brought relief.",
+        "Carry our gratitude with you and leave the banner behind.",
+        "The guards are waiting because they know your history. Respect that mercy.",
+        "One piece of cloth should not undo years of courage. Remove it.",
+        "Return peacefully and we can speak as old friends again.",
+        "Choose the reputation you built over the threat you found.",
+        "The children know your good stories. Do not give them a worse one today.",
+        "Go now, and make sure the banner is gone before anyone sees you return."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_trusted",
+      "requires_ominous_banner": true,
+      "reputation_levels": [
+        "trusted",
+        "respected"
+      ],
+      "lines": [
+        "Take it off before you return. I would rather remember the person I trusted.",
+        "Do not make your friends look at that mark again.",
+        "Trust can survive a terrible choice, but only if you stop making it.",
+        "Put the banner away before we speak again.",
+        "I will wait for the friend I know, not the threat I see.",
+        "Do not ask our trust to survive another visit like this.",
+        "Lower it before someone less patient meets you outside.",
+        "Return without the raider mark and I will listen.",
+        "Give me a reason to defend your name after you leave.",
+        "I am letting you walk away because our history still means something.",
+        "Do not make me regret asking the guards to wait.",
+        "The next time I see you, I want to recognize the person first.",
+        "Friends can make terrible choices. They can also correct them.",
+        "Leave that mark on the road and come back with an explanation.",
+        "You know this village well enough to understand our fear.",
+        "Our trust is hurt, not gone. What you do next decides the rest.",
+        "Take the warning off your head before it reaches another door.",
+        "I will remember that you left peacefully if you choose to do so.",
+        "Do not carry a raider's threat into a place where you were welcomed.",
+        "Go carefully. People are frightened, and not everyone trusts you as I do."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_neutral",
+      "requires_ominous_banner": true,
+      "reputation_level": "neutral",
+      "lines": [
+        "Keep your distance until that banner is gone.",
+        "We are finished. Take the raider mark with you.",
+        "Your next greeting will go better without a threat above your face.",
+        "Remove the banner before you come back.",
+        "Our next conversation starts only after that mark is gone.",
+        "Keep away from the homes until you look peaceful again.",
+        "The guards will be watching the road behind you.",
+        "Leave without trouble and do not return dressed for a raid.",
+        "Make your choice before you reach another village gate.",
+        "We owe you no further hearing while you carry that sign.",
+        "Walk straight out and keep both hands visible.",
+        "If you meant no harm, leaving quietly is how you prove it.",
+        "Do not stop near the stores on your way to the gate.",
+        "The banner has made this meeting shorter than it could have been.",
+        "Set it down outside the walls if you expect to return.",
+        "You may explain yourself another day under a peaceful sky.",
+        "Nobody here knows you well enough to risk overlooking this.",
+        "The guards will not offer the same warning twice.",
+        "Take the open path and give every house a wide berth.",
+        "Go now. The village needs calm more than it needs your answer."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_suspicious",
+      "requires_ominous_banner": true,
+      "reputation_level": "suspicious",
+      "lines": [
+        "You have done nothing to ease my suspicion. That banner made it worse.",
+        "Leave now. I will be watching which way that mark travels.",
+        "We are done. Do not mistake restraint for trust.",
+        "Take the banner with you and stay away from our stores.",
+        "I will have more questions if you return.",
+        "Do not circle back after dark wearing that mark.",
+        "The guards know which road you took.",
+        "Lower it now, though that will not restore my trust.",
+        "Your next visit had better look very different from this one.",
+        "I will be checking whether anything is missing after you leave.",
+        "You arrived looking like my worst guess about you.",
+        "Do not test how closely the watch is following your steps.",
+        "If the banner is stolen, surrender it. If it is yours, leave with it.",
+        "Nothing about this encounter has made your purpose clearer.",
+        "Stay in sight until you are beyond the last house.",
+        "I expect the guards to search the path after you go.",
+        "Taking the mark down is only the first answer you owe us.",
+        "You have turned caution into a reason for alarm.",
+        "Do not approach another villager until you are rid of it.",
+        "Leave while this is still suspicion and not a fight."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_hostile",
+      "requires_ominous_banner": true,
+      "reputation_levels": [
+        "hostile",
+        "despised"
+      ],
+      "lines": [
+        "Take your banner and get out of my sight.",
+        "No more words. That mark has said enough for you.",
+        "We are finished. Leave before this becomes something other than a conversation.",
+        "Get the banner and yourself out of here.",
+        "Come back under that mark and the guards will answer first.",
+        "Do not stop at another door on your way out.",
+        "I want you beyond sight of the bell before nightfall.",
+        "Take one peaceful step after another until this village is behind you.",
+        "There is nothing more to discuss. Leave.",
+        "You have worn out every warning this village owed you.",
+        "Take the quickest road away and do not turn back.",
+        "The banner suits the enemy you chose to become.",
+        "Nobody here will protect you from the guards now.",
+        "Keep away from our crops, our animals, and our homes.",
+        "I will sound the alarm myself if I see you again.",
+        "Your excuses can follow you out. We do not want them either.",
+        "One more threat and you will not leave under your own power.",
+        "This village has buried enough because of marks like that.",
+        "Go carry your hatred somewhere empty.",
+        "The conversation is over, and so is your welcome."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_feared",
+      "requires_ominous_banner": true,
+      "reputation_level": "feared",
+      "lines": [
+        "<shake>Please go.</shake> I cannot breathe easily while you wear that.",
+        "That is all I can say. Please take the banner away from here.",
+        "I answered you. Now let me get somewhere safe.",
+        "Please take that banner far from our homes.",
+        "Do not return until the raider mark is gone.",
+        "Stay on the open path where the guards can see you.",
+        "Please leave before fear turns into a fight.",
+        "Lower it before another villager mistakes your movement for an attack.",
+        "Go quietly and let the village settle again.",
+        "I have answered you. Please do not make me stay any longer.",
+        "Keep walking away and nobody needs to get hurt.",
+        "The children are watching from the windows. Please leave them in peace.",
+        "I will not follow you, so there is no need to threaten me.",
+        "Put it down before the guards decide you are reaching for a weapon.",
+        "Please use the wide path and avoid every doorway.",
+        "I want to believe you will leave without making the bell ring.",
+        "Do not come back tonight, even if you remove it.",
+        "My hands will stop shaking once you are beyond the wall.",
+        "Go now while everyone is still giving you room.",
+        "Please let this be the last time we see that mark."
+      ]
+    }
+  ]
+}

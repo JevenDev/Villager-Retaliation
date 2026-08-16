@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/familiar_face",
+  "display": {
+    "icon": {
+      "id": "minecraft:leather_boots"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.village_hopper.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.village_hopper.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

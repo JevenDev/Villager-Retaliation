@@ -1,0 +1,143 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.hired_roles"
+  },
+  "messages": [
+    {
+      "key": "interaction.role_requires_hire",
+      "lines": [
+        "Hire me first, then choose my work.",
+        "Give me a contract first, and then assign my role.",
+        "Set me under hire before you choose what I do.",
+        "I need to be hired before you direct my work.",
+        "Put me under contract first, then we can speak of roles.",
+        "First hire me. After that, choose my work.",
+        "My role comes after the contract, not before it.",
+        "I cannot take an assigned role until you hire me.",
+        "Make the contract first, then tell me what work you want.",
+        "Hire me, and then we can decide my duties.",
+        "You need an active hire contract to manage this role.",
+        "Only my hirer can change the assignment.",
+        "The role menu is locked until the contract is valid.",
+        "No work assignment changed.",
+        "Ask the person who hired me to manage the role.",
+        "The village ledger does not recognize your authority.",
+        "Begin the hire before choosing a job.",
+        "An expired contract cannot support an active role.",
+        "I will keep my current work until the hirer changes it.",
+        "The restriction protects both sides of the agreement."
+      ],
+      "id": "global.messages.10_hired_roles.messages.interaction.role_requires_hire.000"
+    },
+    {
+      "key": "interaction.role_not_suitable",
+      "lines": [
+        "{role} does not suit my profession or skills.",
+        "I am not well fitted for {role}.",
+        "{role} is not work I am suited to.",
+        "My training does not lend itself to {role}.",
+        "I would not be a good choice for {role}.",
+        "That role does not match what I know how to do.",
+        "{role} is not a proper fit for me.",
+        "My profession and skills do not favor {role}.",
+        "I am not the right villager for {role}.",
+        "You should choose someone better suited than me for {role}.",
+        "That role does not fit my profession or abilities.",
+        "Choose a job that matches what I can actually do.",
+        "I would waste supplies in that position.",
+        "The role needs skills I do not have.",
+        "My current condition also limits the available work.",
+        "Another villager may be a better choice.",
+        "I can explain which roles are suitable.",
+        "No assignment was changed.",
+        "The contract stays active without a role.",
+        "I will not pretend competence and create a problem."
+      ],
+      "id": "global.messages.10_hired_roles.messages.interaction.role_not_suitable.001"
+    },
+    {
+      "key": "interaction.role_assigned",
+      "lines": [
+        "Very well. I will serve as {role}.",
+        "Understood. My role is now {role}.",
+        "All right. I will take up {role} duties.",
+        "Then {role} is my work now.",
+        "So be it. I will act as {role}.",
+        "I understand. You have assigned me to {role}.",
+        "Very good. I will work in the role of {role}.",
+        "Then I am set to {role}.",
+        "Our arrangement is clear. I will serve as {role}.",
+        "I will take that role. {role}.",
+        "I will adjust my gear for {role}.",
+        "The new duty is clear.",
+        "I will start with the work that {role} requires.",
+        "You can count on me to handle {role} properly.",
+        "I know where my attention belongs now.",
+        "I will leave my previous duty and take this one.",
+        "The contract now lists me as {role}.",
+        "I am ready to begin the new assignment.",
+        "I will report back on my {role} work.",
+        "That change suits me."
+      ],
+      "id": "global.messages.10_hired_roles.messages.interaction.role_assigned.002"
+    },
+    {
+      "key": "interaction.role_overview",
+      "lines": [
+        "I am serving as {role}. I can also take {available_roles}.",
+        "My current role is {role}. The roles open to me are {available_roles}.",
+        "Right now I work as {role}. Available roles for me are {available_roles}.",
+        "At present I am assigned to {role}. I am able to serve as {available_roles}.",
+        "My duty is {role} for now. I could also take {available_roles}.",
+        "I am currently set as {role}. These are my available roles. {available_roles}.",
+        "For the moment I serve as {role}. Other roles I can take are {available_roles}.",
+        "You have me working as {role}. I am available for {available_roles} as well.",
+        "My present assignment is {role}. I can fill these roles. {available_roles}.",
+        "I stand as {role} right now, though I am capable of {available_roles}.",
+        "{role} is the duty I am filling today. I can switch to {available_roles}.",
+        "My contract currently lists {role}.",
+        "If you want a change, I am trained for {available_roles}.",
+        "I have the tools for {role} with me now.",
+        "The other duties within my training are {available_roles}.",
+        "I will remain in {role} until my hirer changes it.",
+        "My present work comes with the responsibilities of {role}.",
+        "There is room in the contract to choose from {available_roles}.",
+        "I am ready to explain any of the available duties.",
+        "For now, expect me to handle {role}."
+      ],
+      "id": "global.messages.10_hired_roles.messages.interaction.role_overview.003"
+    },
+    {
+      "key": "interaction.role.manage_requires_hirer",
+      "lines": [
+        "Only the one who hired me can change my role.",
+        "My duties are for my hirer to decide.",
+        "You are not the one who hired me for this work.",
+        "I need my hirer before I change what I am doing.",
+        "The person paying me has to give that order.",
+        "I cannot change roles for someone else.",
+        "Bring my hirer here, and I will listen.",
+        "That order has to come from the one who hired me.",
+        "My contract does not let you change my duties.",
+        "No. My hirer decides my work.",
+        "You are not the villager who hired me.",
+        "Only the person holding my contract can manage my role.",
+        "My hirer decides when my assignment changes.",
+        "Bring the hirer here if you want my duties changed.",
+        "I am not accepting work orders from someone outside my contract.",
+        "The contract gives my hirer control of this role.",
+        "You can ask my hirer to change the assignment.",
+        "My current role stays in place until the hirer says otherwise.",
+        "I know who signed my contract, and it was not you.",
+        "The hirer has to approve any change to my work."
+      ],
+      "id": "global.messages.10_hired_roles.messages.interaction.role.manage_requires_hirer.004"
+    }
+  ]
+}

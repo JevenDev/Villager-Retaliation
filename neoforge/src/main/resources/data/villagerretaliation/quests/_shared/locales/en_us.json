@@ -1,0 +1,593 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.dialogue.abandoned": {
+      "lines": [
+        "You walked away from {quest}.",
+        "You left {quest} unfinished.",
+        "I have taken {quest} off your hands.",
+        "You chose not to finish {quest}.",
+        "The work on {quest} ends here.",
+        "I will find someone else for {quest}.",
+        "You gave up the task called {quest}.",
+        "I am closing your part in {quest}.",
+        "You are no longer responsible for {quest}.",
+        "The village cannot keep waiting on {quest}.",
+        "I have marked {quest} as abandoned.",
+        "Your promise on {quest} has been set aside.",
+        "There will be no reward for leaving {quest} unfinished.",
+        "I expected more when you accepted {quest}.",
+        "The task called {quest} is no longer yours.",
+        "We will carry on without you on {quest}.",
+        "You can leave, but {quest} still needed doing.",
+        "I will not pretend {quest} was completed.",
+        "Your work on {quest} stops now.",
+        "That is the end of your part in {quest}."
+      ]
+    },
+    "quest.dialogue.abandoned_cooldown": {
+      "lines": [
+        "You left {quest}, so I need time before I trust you with it again.",
+        "I am not reopening {quest} for you yet.",
+        "Come back later if you still mean to finish {quest}.",
+        "Walking away from {quest} has consequences.",
+        "You cannot take {quest} again so soon.",
+        "I need to see patience before I return {quest} to you.",
+        "The task called {quest} stays closed for now.",
+        "You abandoned {quest}. Let some time pass.",
+        "I will not hand {quest} straight back after you dropped it.",
+        "Your chance at {quest} needs time to recover.",
+        "We can discuss {quest} again later.",
+        "The village remembers that you left {quest}.",
+        "Do not ask for {quest} again today.",
+        "Trust around {quest} has to rebuild first.",
+        "You may get another chance at {quest}, but not now.",
+        "Let the dust settle before we revisit {quest}.",
+        "You stepped away from {quest}. I am holding it back.",
+        "There is a wait before {quest} can be yours again.",
+        "Show some patience if you want another try at {quest}.",
+        "For now, {quest} remains closed to you."
+      ]
+    },
+    "quest.dialogue.abandoned_forever": {
+      "lines": [
+        "You abandoned {quest}, and I will not offer it again.",
+        "Your chance to complete {quest} is gone.",
+        "I warned you that leaving {quest} would close it for good.",
+        "The task called {quest} is finished with you.",
+        "There will be no second offer for {quest}.",
+        "You chose to walk away from {quest} forever.",
+        "I cannot trust you with {quest} again.",
+        "Your part in {quest} ended when you abandoned it.",
+        "That was your only chance at {quest}.",
+        "The village will find another way to handle {quest}.",
+        "Do not ask me to reopen {quest}.",
+        "The door on {quest} is closed.",
+        "You left {quest}, and the offer left with you.",
+        "No amount of waiting will return {quest} to you.",
+        "I meant it when I said {quest} had one chance.",
+        "The work on {quest} must continue without you.",
+        "You broke your agreement on {quest} for the last time.",
+        "Another person will have to finish {quest}.",
+        "You cannot take back the choice you made on {quest}.",
+        "That is the final end of {quest} for you."
+      ]
+    },
+    "quest.dialogue.already_completed": {
+      "lines": [
+        "{quest} is done, and I have no reason to send you through it again.",
+        "We settled {quest} already. Let it stay finished.",
+        "For {quest}, you handled that one. There is nothing left to collect.",
+        "For {quest}, I remember your part in this. The matter is closed.",
+        "The village got what it needed from {quest}.",
+        "For {quest}, no need to retrace old work. You completed it.",
+        "{quest} belongs behind us now.",
+        "For {quest}, you already earned the thanks for that one.",
+        "I marked {quest} complete a while ago.",
+        "For {quest}, everything asked of you there has been done.",
+        "We can leave {quest} where it ended.",
+        "You saw {quest} through to the end.",
+        "There is no unfinished business left in {quest}.",
+        "{quest} has been counted and settled.",
+        "For {quest}, I will not ask you to repeat a finished job.",
+        "For {quest}, you brought that matter to a proper close.",
+        "The last part of {quest} is already behind us.",
+        "We have our answer from {quest}.",
+        "{quest} has nothing more to demand from you.",
+        "For {quest}, you did your share. We are finished with it."
+      ]
+    },
+    "quest.dialogue.inactive": {
+      "lines": [
+        "The time is not right for {quest} yet.",
+        "I cannot open {quest} at the moment.",
+        "For {quest}, something still has to change before we begin.",
+        "{quest} needs to wait a little longer.",
+        "For {quest}, the village is not ready to move on that yet.",
+        "For {quest}, come back after things have settled.",
+        "I need more time before I can offer {quest}.",
+        "{quest} stays closed for now.",
+        "For {quest}, we are missing the right circumstances to begin.",
+        "Today is not the day for {quest}.",
+        "For {quest}, hold off until the situation changes.",
+        "For {quest}, I cannot send anyone after that just yet.",
+        "{quest} exists, but it is not ready for you.",
+        "For {quest}, wait for a better opening before taking this on.",
+        "I have to keep {quest} on hold.",
+        "For {quest}, there is a piece not yet in place.",
+        "{quest} will have to sit for now.",
+        "For {quest}, check back when the village is ready.",
+        "For {quest}, starting now would only cause trouble.",
+        "I will speak up when {quest} can begin."
+      ]
+    },
+    "quest.dialogue.inventory_full": {
+      "lines": [
+        "Make room before you collect the reward for {quest}.",
+        "Your packs are too full to finish {quest}.",
+        "I cannot hand over payment for {quest} until you clear some space.",
+        "You need an empty place for what {quest} earned you.",
+        "Come back with room in your inventory for the reward from {quest}.",
+        "{quest} is done, but your hands are full.",
+        "Clear out a slot, then we can settle {quest}.",
+        "I will hold the reward for {quest} until you have space.",
+        "You carried too much to take payment for {quest}.",
+        "Make space and return for what {quest} owes you.",
+        "For {quest}, the reward cannot fit in your pack right now.",
+        "You finished {quest}. Now empty a pocket.",
+        "I do not want your payment for {quest} falling on the ground.",
+        "Find room before we close out {quest}.",
+        "For {quest}, your inventory is the only thing delaying the reward.",
+        "Come back lighter and I will pay you for {quest}.",
+        "For {quest}, the village has your reward, but you have nowhere to put it.",
+        "Set something down before taking payment for {quest}.",
+        "There is no room for the reward from {quest} yet.",
+        "For {quest}, clear some space and we can finish this properly."
+      ]
+    },
+    "quest.dialogue.locate_failed": {
+      "lines": [
+        "For {quest}, I could not find a reliable path to the place.",
+        "For {quest}, the location is not showing itself today.",
+        "For {quest}, I searched the usual signs and came up empty.",
+        "For {quest}, there is no trustworthy direction I can give you.",
+        "For {quest}, the trail went cold before I found the destination.",
+        "For {quest}, I will not send you out with a guess for a map.",
+        "For {quest}, nothing I checked gave me a solid location.",
+        "For {quest}, the place may be out there, but I cannot mark it safely.",
+        "For {quest}, my search found no route worth trusting.",
+        "For {quest}, I need a real bearing before I send you anywhere.",
+        "For {quest}, the land is keeping that place hidden for now.",
+        "For {quest}, I checked twice and still found no useful lead.",
+        "Without a location, {quest} has nowhere to start.",
+        "For {quest}, the map has no honest answer for us yet.",
+        "For {quest}, I would rather delay than point you toward empty ground.",
+        "For {quest}, no road, landmark, or rumor led me to it.",
+        "For {quest}, the destination slipped past every search I tried.",
+        "For {quest}, I cannot give you coordinates I do not trust.",
+        "For {quest}, we need a better lead before this journey begins.",
+        "For {quest}, for now, the place remains beyond my reach."
+      ]
+    },
+    "quest.dialogue.locked_to_villager": {
+      "lines": [
+        "You accepted {quest} from someone else. Finish it with them.",
+        "I cannot settle {quest} because it belongs to another villager.",
+        "Return to the person who gave you {quest}.",
+        "The agreement on {quest} was not made with me.",
+        "You need the original issuer to complete {quest}.",
+        "I did not send you on {quest}, so I cannot close it.",
+        "Find the villager who trusted you with {quest}.",
+        "Your work on {quest} is tied to someone else.",
+        "Take {quest} back to the one who offered it.",
+        "I cannot step into another villager's agreement on {quest}.",
+        "The reward for {quest} is not mine to give.",
+        "You brought {quest} to the wrong person.",
+        "Only the original issuer can settle {quest}.",
+        "Someone else is waiting for your return on {quest}.",
+        "This is not where {quest} ends.",
+        "Go back to whoever started {quest} with you.",
+        "I have no claim over the work in {quest}.",
+        "The promise behind {quest} belongs to another villager.",
+        "You will have to finish {quest} where it began.",
+        "I cannot accept the result of {quest} on their behalf."
+      ]
+    },
+    "quest.dialogue.missing_objectives": {
+      "lines": [
+        "There is still work left in {quest}.",
+        "You have not completed every part of {quest}.",
+        "Finish the remaining steps in {quest} before you return.",
+        "The task called {quest} is not done yet.",
+        "You missed something that {quest} requires.",
+        "I cannot close {quest} with part of the work unfinished.",
+        "Check what remains on {quest}.",
+        "One or more goals in {quest} still need attention.",
+        "You are close, but {quest} needs more work.",
+        "Complete the whole of {quest}, not only the easy part.",
+        "The record for {quest} still shows unfinished work.",
+        "Go over {quest} again and finish what you missed.",
+        "There is another step waiting in {quest}.",
+        "Bring every part of {quest} to completion.",
+        "I am still waiting on the rest of {quest}.",
+        "The job cannot end while {quest} has open goals.",
+        "You need to see {quest} all the way through.",
+        "Something important remains undone in {quest}.",
+        "Return after the final requirement of {quest} is met.",
+        "The reward waits for a fully completed {quest}."
+      ]
+    },
+    "quest.dialogue.missing_proof": {
+      "lines": [
+        "I need to see proof before I can close {quest}.",
+        "For {quest}, your word is not the part I am missing. Bring evidence.",
+        "{quest} stays open until the proof is here.",
+        "Show me something that confirms {quest} was done.",
+        "For {quest}, I cannot mark this complete without evidence.",
+        "For {quest}, the village needs more than a story this time.",
+        "For {quest}, bring back the sign I asked for, then we can settle up.",
+        "For {quest}, there should be proof with you, and I do not see it.",
+        "For {quest}, I believe you went, but I still need confirmation.",
+        "{quest} is nearly done. The evidence is the last piece.",
+        "For {quest}, come back with proof and I will finish the record.",
+        "For {quest}, I cannot reward work that leaves no trace.",
+        "For {quest}, whatever happened out there, bring me something that shows it.",
+        "For {quest}, the missing proof is all that stands between you and payment.",
+        "I need a clear sign that {quest} is complete.",
+        "For {quest}, do not leave the evidence behind next time.",
+        "For {quest}, there is one thing left to show me before we finish.",
+        "For {quest}, bring the proof into my hands, not only the tale.",
+        "For {quest}, I am waiting on evidence, not another promise.",
+        "Once I see the proof, {quest} can end."
+      ]
+    },
+    "quest.dialogue.missing_target": {
+      "lines": [
+        "You still need to choose where {quest} is headed.",
+        "There is no target for {quest} yet.",
+        "For {quest}, I cannot send you out until we know the destination.",
+        "For {quest}, pick the place first, then we can talk about the journey.",
+        "{quest} needs somewhere to begin.",
+        "We are missing the location that gives {quest} meaning.",
+        "For {quest}, choose a target before taking another step.",
+        "For {quest}, without a destination, every road is the wrong one.",
+        "For {quest}, I need a place to point you toward.",
+        "{quest} has no proper target yet.",
+        "For {quest}, find the destination, then come back to me.",
+        "For {quest}, there is nothing useful to pursue until a place is chosen.",
+        "We cannot plan {quest} without knowing where it leads.",
+        "For {quest}, set the target before you set out.",
+        "The map needs a mark before {quest} can start.",
+        "For {quest}, tell me where this is going, and I can help from there.",
+        "For {quest}, the missing destination is holding everything up.",
+        "For {quest}, no target means no route and no honest task.",
+        "We need the place before we can prepare {quest}.",
+        "For {quest}, come back once the destination is clear."
+      ]
+    },
+    "quest.dialogue.reminder": {
+      "lines": [
+        "{quest} is still waiting for you.",
+        "For {quest}, you have not finished what we agreed on.",
+        "{quest} remains open.",
+        "I am still counting on you to see {quest} through.",
+        "Do not lose track of {quest} you took.",
+        "For {quest}, there is more to do before we can call this finished.",
+        "The village is waiting on the result of {quest}.",
+        "You accepted {quest}, and it still needs your hands.",
+        "For {quest}, come back when the last part is done.",
+        "{quest} has not gone away.",
+        "I have kept your place in {quest} open.",
+        "Finish {quest} before it becomes another loose end.",
+        "We still need what {quest} was meant to bring.",
+        "{quest} is yours until you complete it or walk away.",
+        "For {quest}, I would rather hear progress than another delay.",
+        "Take care of {quest}, then return to me.",
+        "For {quest}, there is an unfinished promise between us.",
+        "{quest} is still out there waiting.",
+        "For {quest}, I have not forgotten what I asked of you.",
+        "See {quest} through and we can settle it properly."
+      ]
+    },
+    "quest.dialogue.start": {
+      "lines": [
+        "For {quest}, I have a job that needs steady hands.",
+        "For {quest}, there is work here if you are willing to take it.",
+        "For {quest}, I could use your help with something the village needs.",
+        "For {quest}, a task has come up, and I think you can handle it.",
+        "For {quest}, if you are ready, I have work for you.",
+        "For {quest}, the village needs someone willing to see this through.",
+        "For {quest}, I have an errand that should not be left waiting.",
+        "For {quest}, there is a problem I would like you to take on.",
+        "I need someone dependable for {quest}.",
+        "For {quest}, you came at the right time. I have work to offer.",
+        "For {quest}, a useful pair of hands could make a difference here.",
+        "For {quest}, I have a request, if you are willing to hear it.",
+        "{quest} needs doing, and I would trust you with it.",
+        "For {quest}, there is work ahead and a reason to start now.",
+        "For {quest}, I could use your help before this becomes a larger problem.",
+        "Take {quest} if you mean to finish it.",
+        "For {quest}, the village has a need that you may be able to meet.",
+        "For {quest}, I have something important for you to do.",
+        "For {quest}, if you want work, I can point you toward it.",
+        "Hear me out. {quest} is worth doing."
+      ]
+    },
+    "quest.dialogue.turn_in": {
+      "lines": [
+        "For {quest}, that is everything I asked for. Well done.",
+        "You brought {quest} home. Let us settle up.",
+        "{quest} is complete, and you earned your reward.",
+        "I can see {quest} was handled properly.",
+        "For {quest}, good. The village has what it needed.",
+        "For {quest}, you followed this through to the end. Thank you.",
+        "For {quest}, that result is worth the wait.",
+        "{quest} is finished, and your part mattered.",
+        "For {quest}, you did what you promised. I will do the same.",
+        "This is enough to close {quest}.",
+        "For {quest}, I have no complaint with work done this well.",
+        "For {quest}, you returned with exactly what was needed.",
+        "{quest} can finally leave my mind.",
+        "For {quest}, the village is better off because you finished this.",
+        "For {quest}, you have earned more than a quick thank you.",
+        "Everything checks out. {quest} is complete.",
+        "I trusted you with {quest}, and you delivered.",
+        "For {quest}, that closes the matter cleanly.",
+        "For {quest}, you did not leave the hard part for someone else. I respect that.",
+        "For {quest}, take your reward. You earned it honestly."
+      ]
+    },
+    "quest.dialogue.unavailable": {
+      "lines": [
+        "I cannot offer {quest} right now.",
+        "{quest} is out of reach for the moment.",
+        "There is no opening for {quest} today.",
+        "I have to keep {quest} off the table.",
+        "For {quest}, you will need to come back another time.",
+        "{quest} cannot move forward from here.",
+        "For {quest}, that offer is closed for now.",
+        "For {quest}, I cannot send you on that errand today.",
+        "Nothing about this moment makes {quest} possible.",
+        "For {quest}, we do not have what we need to begin.",
+        "Leave {quest} alone for the time being.",
+        "I am not able to give you {quest} yet.",
+        "The village cannot support {quest} right now.",
+        "{quest} will have to wait for another chance.",
+        "For {quest}, I have no safe way to start that today.",
+        "For {quest}, this is the wrong moment to take that on.",
+        "There is no useful path forward on {quest} yet.",
+        "I need to hold {quest} back.",
+        "For {quest}, try me again after the situation changes.",
+        "For now, {quest} remains unavailable."
+      ]
+    },
+    "quest.expired": {
+      "lines": [
+        "Quest expired. {quest}"
+      ]
+    },
+    "quest.offer_hint.level": {
+      "lines": [
+        "I may have work when I reach {level}.",
+        "Ask again when I am trading at {level}.",
+        "Once I reach {level}, I may have work worth discussing.",
+        "I need more experience first. Come back when I am {level}.",
+        "That work can wait until I have reached {level}.",
+        "When my trade rank is {level}, I may be ready to offer it.",
+        "I am not seasoned enough yet. Try again when I am {level}.",
+        "I may have something once I have worked my way up to {level}.",
+        "Come back when my trade level is {level}.",
+        "That sort of work belongs to a {level} villager.",
+        "My trade needs to reach {level} before I can arrange this properly.",
+        "I do not have the standing for that job until I become {level}.",
+        "At {level}, I will have the contacts needed for this work.",
+        "The supplies for that task become available when I reach {level}.",
+        "I need the experience of a {level} trader before I take this on.",
+        "My workshop is not ready for this until my rank reaches {level}.",
+        "Once I am {level}, the other traders will take this request seriously.",
+        "I have a few more trades to master before I reach {level}.",
+        "This job is beyond my current rank, but it will not be beyond {level}.",
+        "Check my badge next time. If it says {level}, we can begin."
+      ]
+    },
+    "quest.offer_hint.parent": {
+      "lines": [
+        "I may have work when we settle earlier work first.",
+        "Finish the earlier matter first, then ask me again.",
+        "One thing at a time. We should settle the previous work first.",
+        "I may have more once the earlier job is done.",
+        "That can wait until the current chain of work is settled.",
+        "Come back after the earlier work is finished.",
+        "I need the previous matter closed before I offer this.",
+        "We should not open that work until the earlier task is handled.",
+        "Settle what came before, and I may have more for you.",
+        "I may speak on that after the earlier work is complete.",
+        "The next job depends on how the first one ends.",
+        "Bring me the result from our last task before we discuss another.",
+        "I cannot plan the next step while the first is still unfinished.",
+        "There is information in the earlier job that we need for this one.",
+        "The people involved will not move forward until the old matter is closed.",
+        "Finish what you already promised, then I will trust you with more.",
+        "I am still waiting on the last task. This one has to wait with me.",
+        "The trail continues from our earlier work, so do not skip ahead.",
+        "Return when the first job is behind us and your hands are free.",
+        "We have loose ends from before. Tie those off, then come find me."
+      ]
+    },
+    "quest.offer_hint.skill": {
+      "lines": [
+        "I may have work when I improve {skill}.",
+        "Ask me again once my {skill} is better.",
+        "I need more practice with {skill} before I can offer that work.",
+        "When my {skill} improves, I may have something for you.",
+        "That task needs better {skill} than I have right now.",
+        "Let me build up {skill} first, then ask again.",
+        "I may be ready once I get better at {skill}.",
+        "Come back when my {skill} is stronger.",
+        "I cannot offer that properly until my {skill} improves.",
+        "More {skill} first. Then I may have work.",
+        "I would only waste your time if I tried this with my current {skill}.",
+        "The job calls for a steadier hand at {skill} than mine.",
+        "I am still making mistakes with {skill}, and this task allows none.",
+        "Once I can handle {skill} without help, I will be ready.",
+        "I need a few more days of practice with {skill} before we begin.",
+        "The materials are too valuable to risk on weak {skill}.",
+        "Let me learn the finer parts of {skill}, then bring this up again.",
+        "My teacher would laugh if I took that job with this level of {skill}.",
+        "I know what the task needs. My {skill} simply is not there yet.",
+        "Watch for improvement in my {skill}. That will be your sign to return."
+      ]
+    },
+    "quest.offer_hint.timing": {
+      "lines": [
+        "I may have work when the timing is better.",
+        "Not just now, but ask again later.",
+        "The moment is not right for that work yet.",
+        "I may have something once things line up.",
+        "Give it time. That work is not ready yet.",
+        "Come back later, when the request is ready.",
+        "I am waiting for the right moment before offering that.",
+        "That work may open up later.",
+        "Ask again when the village has room for that work.",
+        "The job is real, but today is the wrong day for it.",
+        "I am still waiting for word from someone involved.",
+        "The supplies are not in place yet. I will know when they arrive.",
+        "Too many people are watching right now. We need a quieter moment.",
+        "The weather has put that work on hold for now.",
+        "Someone else must finish their part before yours can begin.",
+        "I need a little time to make the arrangements safely.",
+        "The village has more urgent trouble today. Check back after it settles.",
+        "I cannot send you yet. The road is not ready for us.",
+        "Wait for the next change of plans, then ask me again.",
+        "I will bring it up when everything is finally in place."
+      ]
+    },
+    "quest.offer_hint.trust": {
+      "lines": [
+        "I may have work when I trust you more.",
+        "I might have something for you once I know you better.",
+        "Come back when I have a little more reason to trust you.",
+        "I keep that sort of work for people I trust.",
+        "There may be work later, once you have earned more trust here.",
+        "I am not ready to hand you that responsibility yet.",
+        "Help the village a bit more, and I may have work for you.",
+        "When I know I can rely on you, I may have a task.",
+        "Build some trust with me first, then ask again.",
+        "I may open that work to you when you have proven yourself here.",
+        "Let us handle a few smaller matters before I give you this one.",
+        "The job is sensitive, and I do not know you well enough yet.",
+        "Show me that you keep your word, then we can talk about work.",
+        "People here still watch you closely. Give them a reason to relax.",
+        "I need to see how you treat this village before I involve you.",
+        "Earn a good name around here and I will reconsider.",
+        "This task goes to someone I know will come back.",
+        "Do right by a few people here, and they may vouch for you.",
+        "I cannot risk this on a stranger, even one who means well.",
+        "Give me time to learn what kind of person you are."
+      ]
+    },
+    "quest.tracker.metadata.issued_by": {
+      "lines": [
+        "Issued by {issuer}"
+      ]
+    },
+    "quest.tracker.status.abandoned": {
+      "lines": [
+        "Abandoned"
+      ]
+    },
+    "quest.tracker.status.abandoned_cooldown": {
+      "lines": [
+        "Abandoned, available again after {time_remaining}"
+      ]
+    },
+    "quest.tracker.status.active": {
+      "lines": [
+        "Active"
+      ]
+    },
+    "quest.tracker.status.completed": {
+      "lines": [
+        "Completed"
+      ]
+    },
+    "quest.tracker.status.consumed": {
+      "lines": [
+        "Consumed"
+      ]
+    },
+    "quest.tracker.status.expired": {
+      "lines": [
+        "Expired"
+      ]
+    },
+    "quest.tracker.status.inactive": {
+      "lines": [
+        "Inactive"
+      ]
+    },
+    "quest.tracker.status.not_started": {
+      "lines": [
+        "Not started"
+      ]
+    },
+    "quest.tracker.status.ready": {
+      "lines": [
+        "Ready to turn in"
+      ]
+    },
+    "quest.tracker.step.abandoned": {
+      "lines": [
+        "This quest has been abandoned."
+      ]
+    },
+    "quest.tracker.step.abandoned_cooldown": {
+      "lines": [
+        "This quest can be picked up again after {time_remaining}."
+      ]
+    },
+    "quest.tracker.step.completed": {
+      "lines": [
+        "This quest is complete."
+      ]
+    },
+    "quest.tracker.step.consumed": {
+      "lines": [
+        "This quest has been consumed."
+      ]
+    },
+    "quest.tracker.step.expired": {
+      "lines": [
+        "This quest expired."
+      ]
+    },
+    "quest.tracker.step.inactive": {
+      "lines": [
+        "Quest conditions are not currently met."
+      ]
+    },
+    "quest.tracker.step.proof": {
+      "lines": [
+        "Complete the remaining objective."
+      ]
+    },
+    "quest.tracker.step.return": {
+      "lines": [
+        "Return to the quest giver."
+      ]
+    },
+    "quest.tracker.step.travel": {
+      "lines": [
+        "Travel to the quest target."
+      ]
+    },
+    "villagerretaliation.shared.encounter.night_run_attack.location_message": "The blocked night route is at {x}, {y}, {z}. Clear it before returning.",
+    "villagerretaliation.shared.encounter.standing_watch.phase.captain_enters.action.warn_defenders.text": "The raider captain has entered the fight.",
+    "villagerretaliation.shared.encounter.standing_watch.rewards.completion.watch_medal.trophy_name": "Standing Watch Medal",
+    "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.boss_bar_title": "Standing Watch - Raider Captain",
+    "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.dialogue_hook.text": "The captain is here. Hold the line!",
+    "villagerretaliation.shared.encounter.standing_watch.wave.raider_captain.member.raider_captain.custom_name": "Raider Captain",
+    "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.boss_bar_title": "Standing Watch - Restless Dead",
+    "villagerretaliation.shared.encounter.standing_watch.wave.restless_dead.scene_action.first_warning.text": "The first attackers are coming through the dark."
+  }
+}

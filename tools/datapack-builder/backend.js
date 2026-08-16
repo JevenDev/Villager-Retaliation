@@ -10,6 +10,10 @@
     const packVersionNamespace = options.packVersionNamespace;
     const packVersionStorageKey = options.packVersionStorageKey;
     const encoder = new TextEncoder();
+    const questModel = globalThis.QuestBuilderModel || window.QuestBuilderModel;
+    if (!questModel) {
+      throw new Error("Quest bundle support requires quest-builder/quest-model.js.");
+    }
 
     function createInitialState() {
       return {
@@ -17,7 +21,7 @@
           packName: "Villager Retaliation Pack",
           description: "Custom Villager Retaliation datapack",
           packVersion: currentPackVersion,
-          packFormat: 34,
+          packFormat: 48,
           namespace: "my_pack",
           slug: "my_pack",
           locale: "en_us"
@@ -36,6 +40,14 @@
         forcedDialogue: {
           fileName: "my_pack_forced_dialogue",
           entries: []
+        },
+        skillTrades: {
+          fileName: "my_pack_skill_trades",
+          entries: []
+        },
+        quests: {
+          modules: [],
+          v1Imports: []
         },
         notifications: {
           fileName: "my_pack_notifications",
@@ -303,6 +315,10 @@
       return `data/villagerretaliation/notifications/${state.meta.locale}/${state.notifications.fileName}.json`;
     }
 
+    function skillTradesPath(state) {
+      return `data/${contentNamespace(state)}/skill_trades/${state.skillTrades.fileName}.json`;
+    }
+
     function giftsPath(state) {
       return `data/villagerretaliation/gifts/${state.gifts.fileName}.json`;
     }
@@ -331,12 +347,20 @@
       const files = { ...state.extraFiles };
       files["pack.mcmeta"] = safeJson(makePackMeta(state));
 
+      if (state.quests.modules.length > 0) {
+        Object.assign(files, generatedQuestFiles(state));
+      }
+
       if (hasAnyEntries(state, "dialogue", dialogueKindKeys)) {
         Object.assign(files, generatedDialogueFiles(state));
       }
 
       if (state.forcedDialogue.entries.length > 0) {
         Object.assign(files, generatedForcedDialogueFiles(state));
+      }
+
+      if (state.skillTrades.entries.length > 0) {
+        Object.assign(files, generatedSkillTradeFiles(state));
       }
 
       if (state.notifications.notifications.length > 0) {
@@ -375,6 +399,21 @@
       return files;
     }
 
+    function generatedSkillTradeFiles(state) {
+      const grouped = new Map();
+      for (const entry of state.skillTrades.entries) {
+        const sourcePath = entry.__sourcePath || skillTradesPath(state);
+        if (!grouped.has(sourcePath)) grouped.set(sourcePath, { entries: [], replace: entry.__sourceReplace });
+        grouped.get(sourcePath).entries.push(stripBuilderFields(entry));
+      }
+      return Object.fromEntries([...grouped].map(([sourcePath, group]) => {
+        const root = {};
+        if (typeof group.replace === "boolean") root.replace = group.replace;
+        root.entries = group.entries;
+        return [sourcePath, safeJson(root)];
+      }));
+    }
+
     function generatedDialogueFiles(state) {
       const grouped = new Map();
       for (const kind of dialogueKindKeys) {
@@ -397,6 +436,170 @@
         grouped.get(path).entries.push(entry);
       }
       return Object.fromEntries([...grouped.entries()].map(([path, value]) => [path, safeJson(value)]));
+    }
+
+    function generatedQuestFiles(state) {
+      const files = {};
+      for (const [index, entry] of state.quests.modules.entries()) {
+        const source = stripBuilderFields(entry);
+        const bundle = questModel.questBundleFiles(source);
+        const questPath = questModulePath(state, entry, index);
+        const localePath = questLocalePath(state, entry, index);
+        let locale = bundle.locale;
+        const existingSource = state.extraFiles[localePath];
+        if (typeof existingSource === "string") {
+          try {
+            const existing = JSON.parse(stripTextBom(existingSource));
+            if (existing?.schema === "villagerretaliation:quest_locale/v1"
+                && existing.messages && typeof existing.messages === "object") {
+              locale = { ...existing, messages: { ...existing.messages, ...bundle.locale.messages } };
+            }
+          } catch {
+            // The normal preview validator reports malformed preserved locale files.
+          }
+        }
+        files[questPath] = JSON.stringify(bundle.quest, null, 2) + "\n";
+        files[localePath] = JSON.stringify(locale, null, 2) + "\n";
+      }
+      return files;
+    }
+
+    function stripBuilderFields(value) {
+      if (Array.isArray(value)) return value.map(stripBuilderFields);
+      if (value && typeof value === "object" && !(value instanceof Uint8Array)) {
+        const result = {};
+        for (const [key, child] of Object.entries(value)) {
+          if (key.startsWith("__")) continue;
+          result[key] = stripBuilderFields(child);
+        }
+        return result;
+      }
+      return value;
+    }
+
+    function questModulePath(state, entry, index = 0) {
+      if (questBundlePathInfo(entry?.__sourcePath)) return entry.__sourcePath;
+      const parts = resourceLocationParts(entry?.id);
+      const namespace = namespaceify(parts.namespace || contentNamespace(state), contentNamespace(state));
+      const fallbackName = `quest_${String(index + 1).padStart(2, "0")}`;
+      const slug = normalizeFileName(entry?.__fileName || parts.path || fallbackName, fallbackName).replaceAll("/", "_");
+      const questline = normalizeFileName(entry?.metadata?.questline || "quests", "quests").replaceAll("/", "_");
+      return `data/${namespace}/quests/${questline}/${slug}/quest.json`;
+    }
+
+    function questLocalePath(state, entry, index = 0, locale = "en_us") {
+      return questModulePath(state, entry, index).replace(/\/quest\.json$/, `/locales/${locale}.json`);
+    }
+
+    function questBundlePathInfo(path) {
+      const match = String(path || "").match(/^data\/([^/]+)\/quests\/(?!_shared\/)([^/]+)\/([^/]+)\/quest\.json$/);
+      return match ? { namespace: match[1], questline: match[2], slug: match[3] } : null;
+    }
+
+    function questBundleResourceKind(path) {
+      if (questBundlePathInfo(path)) return "quests";
+      const shared = String(path || "").match(/^data\/[^/]+\/quests\/_shared\/(locales|pools|scenes|encounters|rewards)\/.+\.json$/);
+      const owned = String(path || "").match(/^data\/[^/]+\/quests\/[^/]+\/[^/]+\/(locales|scenes|encounters|rewards)\/.+\.json$/);
+      const kind = shared?.[1] || owned?.[1];
+      return kind ? `quest_${kind}` : "";
+    }
+
+    function isLegacyQuestResourcePath(path) {
+      const value = String(path || "");
+      if (/^data\/[^/]+\/(?:quest_messages|quest_scenes|quest_encounters|quest_pools)\/.+\.json$/.test(value)) {
+        return true;
+      }
+      if (/^data\/[^/]+\/loot_table\/quest\/.+\.json$/.test(value)) return true;
+      return /^data\/[^/]+\/quests\/.+\.json$/.test(value)
+        && !questBundleResourceKind(value);
+    }
+
+    function validBundleCompanion(kind, json) {
+      if (kind === "quest_scenes") return isSceneV1Resource(json);
+      if (kind === "quest_encounters") return isEncounterV1Resource(json);
+      if (kind === "quest_locales") return json?.schema === "villagerretaliation:quest_locale/v1" && json.messages && typeof json.messages === "object";
+      if (kind === "quest_rewards") return json?.schema === "villagerretaliation:quest_reward/v1" && typeof json.id === "string" && json.table && typeof json.table === "object";
+      return kind === "quest_pools";
+    }
+
+    function resourceLocationParts(id) {
+      const text = String(id || "").trim();
+      const match = text.match(/^([a-z0-9_.-]+):([a-z0-9_./-]+)$/);
+      return match ? { namespace: match[1], path: match[2] } : { namespace: "", path: "" };
+    }
+
+    function isQuestV2Module(json) {
+      return Boolean(json && typeof json === "object" && !Array.isArray(json) && json.schema === "villagerretaliation:quest/v2");
+    }
+
+    function isQuestV1Resource(json) {
+      return Boolean(
+        json
+        && typeof json === "object"
+        && !Array.isArray(json)
+        && !isQuestV2Module(json)
+        && typeof json.id === "string"
+        && (Array.isArray(json.objectives) || json.offer || json.rules || json.tracker || json.display)
+      );
+    }
+
+    function isSceneV1Resource(json) {
+      return Boolean(json && typeof json === "object" && !Array.isArray(json) && json.schema === "villagerretaliation:scene/v1");
+    }
+
+    function isEncounterV1Resource(json) {
+      return Boolean(json && typeof json === "object" && !Array.isArray(json) && json.schema === "villagerretaliation:encounter/v1");
+    }
+
+    function normalizeQuestModuleEntry(json, path) {
+      const entry = stripBuilderFields(json);
+      if (path) entry.__sourcePath = path;
+      return entry;
+    }
+
+    function normalizeQuestV1Import(json, path) {
+      const title = json?.display?.title || json?.title || json?.id || path;
+      return {
+        id: String(json?.id || ""),
+        title: String(title || path),
+        sourcePath: path,
+        suggestion: "Run the migration tool to create a quest module v2 copy; the builder will not overwrite this legacy resource."
+      };
+    }
+
+    function upsertQuestV1Import(state, json, path) {
+      state.quests.v1Imports = state.quests.v1Imports.filter((entry) => entry.sourcePath !== path);
+      state.quests.v1Imports.push(normalizeQuestV1Import(json, path));
+    }
+
+    function removeQuestV1Import(state, path) {
+      state.quests.v1Imports = state.quests.v1Imports.filter((entry) => entry.sourcePath !== path);
+    }
+
+    function replaceQuestModuleFile(state, path, json) {
+      const namespaceMatch = path.match(/^data\/([^/]+)\/quests\/.+\.json$/);
+      if (namespaceMatch) state.meta.namespace = namespaceify(namespaceMatch[1], state.meta.namespace || "my_pack");
+      let imported = json;
+      const localeSource = state.extraFiles[path.replace(/\/quest\.json$/, "/locales/en_us.json")];
+      if (typeof localeSource === "string") {
+        try {
+          const locale = JSON.parse(stripTextBom(localeSource));
+          if (locale?.schema === "villagerretaliation:quest_locale/v1"
+              && locale.messages && typeof locale.messages === "object") {
+            imported = questModel.materializeLocalizedDefinition(
+              json,
+              json.localization_prefix || "",
+              locale.messages
+            );
+          }
+        } catch {
+          // Preserve malformed locale files for the normal preview validator.
+        }
+      }
+      state.quests.modules = state.quests.modules.filter((entry, index) => questModulePath(state, entry, index) !== path);
+      state.quests.modules.push(normalizeQuestModuleEntry(imported, path));
+      delete state.extraFiles[path];
+      removeQuestV1Import(state, path);
     }
 
     function normalizeImportedPaths(fileMap) {
@@ -436,7 +639,7 @@
     }
 
     function isNamespaceRootDataPath(path) {
-      return /^[a-z0-9_.-]+\/(?:dialogue|forced_dialogue|notifications|gifts|pacification|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
+      return /^[a-z0-9_.-]+\/(?:dialogue|dialogue_trees|forced_dialogue|notifications|gifts|item_text|pacification|quests|quest_scenes|quest_encounters|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
     }
 
     function isTextPath(path) {
@@ -445,10 +648,14 @@
 
     function importedKnownKind(state, path) {
       if (/^data\/[^/]+\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
+      if (/^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/.test(path)) return "dialogue_trees";
       if (/^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)) return "forced_dialogue";
+      if (/^data\/[^/]+\/skill_trades\/.+\.json$/.test(path)) return "skill_trades";
       if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
       if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
       if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
+      if (questBundleResourceKind(path)) return questBundleResourceKind(path);
+      if (isLegacyQuestResourcePath(path)) return "unsupported_legacy_quest";
       if (/^data\/[^/]+\/story_structures\/.+\.json$/.test(path)) return "story_structures";
       if (/^data\/[^/]+\/story_biomes\/.+\.json$/.test(path)) return "story_biomes";
       if (path === namesPath(state)) return "names";
@@ -467,12 +674,19 @@
         }
       }
       const paths = Object.keys(files).map((path) => path.replace(/^\/+/, ""));
+      const hasBeta13Path = paths.some((path) => Boolean(questBundleResourceKind(path)));
+      if (hasBeta13Path) return "1.0.0-beta.13";
       const hasBeta12DialogueField = Object.entries(files).some(([path, value]) => (
         /^data\/[^/]+\/dialogue\/.+\.json$/.test(path.replace(/^\/+/, ""))
         && typeof value === "string"
         && jsonContainsAnyKey(value, beta12DialogueKeys)
       ));
       if (hasBeta12DialogueField) return "1.0.0-beta.12";
+      const hasBeta12Path = paths.some((path) => (
+        /^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/.test(path)
+        || /^data\/[^/]+\/quests\/.+\.json$/.test(path)
+      ));
+      if (hasBeta12Path) return "1.0.0-beta.12";
       const hasBeta11Path = paths.some((path) => (
         /^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)
         || /^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)
@@ -522,6 +736,49 @@
         const parsed = json();
         if (!parsed) return false;
         replaceForcedDialogueFile(state, path, parsed);
+        return true;
+      }
+
+      const skillTradeMatch = path.match(/^data\/([^/]+)\/skill_trades\/(.+)\.json$/);
+      if (skillTradeMatch) {
+        const parsed = json();
+        if (!parsed || !Array.isArray(parsed.entries)) return false;
+        state.meta.namespace = namespaceify(skillTradeMatch[1], state.meta.namespace || "my_pack");
+        state.skillTrades.fileName = normalizeFileName(skillTradeMatch[2].split("/").pop(), state.skillTrades.fileName);
+        state.skillTrades.entries = state.skillTrades.entries
+          .filter((entry) => (entry.__sourcePath || skillTradesPath(state)) !== path)
+          .concat(cleanArray(parsed.entries).map((entry) => ({ ...entry, __sourcePath: path, __sourceReplace: parsed.replace })));
+        delete state.extraFiles[path];
+        return true;
+      }
+
+      if (questBundlePathInfo(path)) {
+        const parsed = json();
+        if (!isQuestV2Module(parsed)) return false;
+        replaceQuestModuleFile(state, path, parsed);
+        return true;
+      }
+
+      const bundleKind = questBundleResourceKind(path);
+      if (bundleKind) {
+        const parsed = json();
+        if (!parsed || !validBundleCompanion(bundleKind, parsed)) return false;
+        state.extraFiles[path] = source;
+        return true;
+      }
+
+      if (isLegacyQuestResourcePath(path)) {
+        const parsed = json();
+        if (!parsed) return false;
+        state.extraFiles[path] = source;
+        if (isQuestV1Resource(parsed)) upsertQuestV1Import(state, parsed, path);
+        return true;
+      }
+
+      if (path.match(/^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/)) {
+        const parsed = json();
+        if (!parsed) return false;
+        state.extraFiles[path] = source;
         return true;
       }
 
@@ -642,8 +899,13 @@
 
     function ingestFiles(state, files) {
       const extra = {};
-      for (const [path, value] of Object.entries(files)) {
-        const normalizedPath = path.replace(/^\/+/, "");
+      const entries = Object.entries(files)
+        .map(([path, value]) => [path.replace(/^\/+/, ""), value]);
+      const ordered = [
+        ...entries.filter(([path]) => !questBundlePathInfo(path)),
+        ...entries.filter(([path]) => questBundlePathInfo(path))
+      ];
+      for (const [normalizedPath, value] of ordered) {
         if (normalizedPath.endsWith("/")) continue;
         if (normalizedPath === "pack.mcmeta" && typeof value === "string") {
           try {
@@ -661,6 +923,7 @@
         }
         extra[normalizedPath] = value;
       }
+
       state.extraFiles = { ...state.extraFiles, ...extra };
     }
 
@@ -670,6 +933,18 @@
         json = JSON.parse(stripTextBom(source));
       } catch {
         return false;
+      }
+
+      const skillTradeMatch = path.match(/^data\/([^/]+)\/skill_trades\/(.+)\.json$/);
+      if (skillTradeMatch && Array.isArray(json.entries)) {
+        state.meta.namespace = namespaceify(skillTradeMatch[1], state.meta.namespace || "my_pack");
+        state.skillTrades.fileName = normalizeFileName(skillTradeMatch[2].split("/").pop(), state.skillTrades.fileName);
+        const start = state.skillTrades.entries.length;
+        mergeArray(state, "skillTrades", "entries", json.entries, path);
+        for (let index = start; index < state.skillTrades.entries.length; index++) {
+          state.skillTrades.entries[index].__sourceReplace = json.replace;
+        }
+        return true;
       }
 
       const dialogueInfo = dialoguePathInfo(path);
@@ -711,6 +986,30 @@
         if (namespaceMatch) state.meta.namespace = namespaceify(namespaceMatch[1], state.meta.namespace || "my_pack");
         state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
         mergeArray(state, "forcedDialogue", "entries", normalizeForcedDialogueEntries(json), path);
+        return true;
+      }
+
+      if (questBundlePathInfo(path)) {
+        if (!isQuestV2Module(json)) return false;
+        replaceQuestModuleFile(state, path, json);
+        return true;
+      }
+
+      const bundleKind = questBundleResourceKind(path);
+      if (bundleKind) {
+        if (!validBundleCompanion(bundleKind, json)) return false;
+        state.extraFiles[path] = stripTextBom(source);
+        return true;
+      }
+
+      if (isLegacyQuestResourcePath(path)) {
+        state.extraFiles[path] = stripTextBom(source);
+        if (isQuestV1Resource(json)) upsertQuestV1Import(state, json, path);
+        return true;
+      }
+
+      if (/^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/.test(path)) {
+        state.extraFiles[path] = stripTextBom(source);
         return true;
       }
 
@@ -806,6 +1105,7 @@
     }
 
     function detectJsonKind(json) {
+      if (Array.isArray(json.entries) && json.entries.some((entry) => entry && typeof entry === "object" && (entry.result || entry.skills || entry.skill))) return { section: "skillTrades", kind: "entries", key: "entries" };
       if (Array.isArray(json.entries) && json.entries.some(isForcedDialogueEntry)) return { section: "forcedDialogue", kind: "entries", key: "entries" };
       if (Array.isArray(json.notifications)) return { section: "notifications", kind: "notifications", key: "notifications" };
       if (Array.isArray(json.preferences)) return { section: "gifts", kind: "preferences", key: "preferences" };
@@ -1058,6 +1358,7 @@
       dialogueFileStem,
       defaultDialogueEntryPath,
       forcedDialoguePath,
+      skillTradesPath,
       notificationsPath,
       giftsPath,
       pacificationPath,
@@ -1067,6 +1368,19 @@
       generatedFiles,
       generatedDialogueFiles,
       generatedForcedDialogueFiles,
+      generatedQuestFiles,
+      questModulePath,
+      questLocalePath,
+      questBundlePathInfo,
+      questBundleResourceKind,
+      isLegacyQuestResourcePath,
+      isQuestV2Module,
+      isQuestV1Resource,
+      isSceneV1Resource,
+      isEncounterV1Resource,
+      normalizeQuestModuleEntry,
+      normalizeQuestV1Import,
+      replaceQuestModuleFile,
       normalizeImportedPaths,
       normalizeNamespaceRootImportPaths,
       isNamespaceRootDataPath,

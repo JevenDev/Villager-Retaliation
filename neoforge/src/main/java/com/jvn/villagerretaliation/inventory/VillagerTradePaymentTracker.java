@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 public final class VillagerTradePaymentTracker {
     private static final String TRADE_LEDGER_TAG = "VillagerRetaliationTradePaymentLedger";
@@ -29,7 +29,7 @@ public final class VillagerTradePaymentTracker {
     }
 
     public static void storeTradePayment(ServerLevel level, Villager villager, ServerPlayer player, ItemStack payment) {
-        if (!isStorableTradePayment(payment)) {
+        if (!isStorableTradePayment(level, payment)) {
             return;
         }
 
@@ -51,7 +51,7 @@ public final class VillagerTradePaymentTracker {
     }
 
     public static boolean isInvalidStoredTradePayment(ItemStack stack) {
-        return tradedBy(stack).isPresent() && !isStorableTradePayment(stack);
+        return false;
     }
 
     public static Optional<String> tradedBy(ItemStack stack) {
@@ -206,8 +206,8 @@ public final class VillagerTradePaymentTracker {
         return LEDGER.mark(stack, player, owner);
     }
 
-    private static boolean isStorableTradePayment(ItemStack stack) {
-        return !stack.isEmpty() && stack.is(Items.EMERALD);
+    private static boolean isStorableTradePayment(ServerLevel level, ItemStack stack) {
+        return VillagerCurrencyResources.isCurrency(level.getServer(), stack);
     }
 
     private static void stripTradePaymentTracking(ItemStack stack) {

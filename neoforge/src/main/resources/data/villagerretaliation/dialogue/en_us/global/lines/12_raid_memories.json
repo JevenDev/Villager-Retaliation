@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.raid_memories"
+  },
+  "lines": [
+    {
+      "id": "raid_victory_acknowledgement",
+      "request": "raid_victory_acknowledgement",
+      "option": "raid_victory_acknowledgement",
+      "lines": [
+        "We stood together when the horns sounded, and we are both still here. I will remember that.",
+        "The raiders came expecting frightened villagers. They did not expect the two of us.",
+        "When the last banner fell, I knew the village would see another morning because we fought together.",
+        "I heard the victory bell over all that noise. You made sure there was a village left to ring it.",
+        "You did not leave me alone in that fight. That means more than any emerald I could offer.",
+        "Raiders remember strong walls. I will remember the person who stood beside me when ours were tested.",
+        "We drove them back step by step. I trust you more after sharing ground like that.",
+        "The village is standing, the beds are warm, and the workstations are waiting. We earned that ordinary morning.",
+        "They brought axes, banners, and bad intentions. We sent every one of them away together.",
+        "There is a difference between visiting a village and defending one. After that raid, you are one of us.",
+        "I thought the bell might be the last sound I heard. Then I saw you still fighting beside me.",
+        "We were outnumbered, not outmatched. I would stand with you again.",
+        "That victory belongs to everyone who held the line, and your name has a firm place in it.",
+        "You helped turn a day of fear into a story this village will tell with pride.",
+        "The raid broke against us. Whatever comes next, I know what kind of ally you are.",
+        "We repaired the gate together after the last raider fell.",
+        "I remember seeing you check the houses before celebrating.",
+        "The children came outside only after you said the path was clear.",
+        "You held the line when the golem was pulled away.",
+        "The victory felt real when ordinary work sounds returned."
+      ],
+      "show_for_babies": false,
+      "weight": 300
+    }
+  ]
+}

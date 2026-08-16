@@ -1,8 +1,11 @@
 package com.jvn.villagerretaliation.debug;
 
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.social.BreedingDecision;
+import com.jvn.villagerretaliation.social.VillagerBirthService;
+import com.jvn.villagerretaliation.social.VillagerBreedingPolicy;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
-import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
@@ -80,10 +83,10 @@ public class VillagerDebugBreedingStickItem extends Item {
         }
 
         VillagerSocialGraphSavedData socialGraph = VillagerSocialGraphSavedData.get(level);
-        VillagerSocialGraphSavedData.BreedingValidation validation = socialGraph.validateBreedingPair(level, otherVillager, villager);
+        BreedingDecision decision = VillagerBreedingPolicy.evaluatePair(level, otherVillager, villager);
         boolean sameGender = VillagerPresetNameRegistry.resolveGender(otherVillager) == VillagerPresetNameRegistry.resolveGender(villager);
         boolean adoptionRequested = serverPlayer.isShiftKeyDown();
-        if (!adoptionRequested && validation.allowed()) {
+        if (!adoptionRequested && decision.allowed()) {
             if (spawnDebugBaby(level, serverPlayer, otherVillager, villager)) {
                 clearSelection(stack);
                 serverPlayer.displayClientMessage(
@@ -97,7 +100,7 @@ public class VillagerDebugBreedingStickItem extends Item {
         }
 
         if (!adoptionRequested && !sameGender) {
-            serverPlayer.displayClientMessage(Component.literal(validation.reason()), true);
+            serverPlayer.displayClientMessage(Component.translatable(decision.messageKey()), true);
             return InteractionResult.SUCCESS;
         }
 
@@ -134,6 +137,15 @@ public class VillagerDebugBreedingStickItem extends Item {
         if (parentA == null || parentB == null) {
             clearSelection(stack);
             player.displayClientMessage(Component.literal("Adoption pair was unavailable. Selection cleared."), true);
+            return InteractionResult.SUCCESS;
+        }
+
+        if (VillagerDownedService.isDowned(parentA)
+                || VillagerDownedService.isDowned(parentB)
+                || VillagerDownedService.isDowned(child)) {
+            player.displayClientMessage(
+                    Component.translatable("villagerretaliation.breeding.blocked.downed"),
+                    true);
             return InteractionResult.SUCCESS;
         }
 
@@ -180,9 +192,7 @@ public class VillagerDebugBreedingStickItem extends Item {
             return false;
         }
 
-        VillagerSocialGraphSavedData.get(level).linkParentsAndChild(level, parentA, parentB, child);
-        VillagerReputationManager.inheritReputationFromParents(level, child, parentA, parentB);
-        VillageEventMemory.remember(level, VillageEventMemory.EventTag.BABY_BORN, child.blockPosition(), child, player);
+        VillagerBirthService.initializeNewborn(level, parentA, parentB, child, player);
         level.sendParticles(ParticleTypes.HEART, x, y + child.getBbHeight() + 0.25D, z, 7, 0.35D, 0.25D, 0.35D, 0.02D);
         parentA.playSound(SoundEvents.VILLAGER_YES, 0.8F, 0.9F + parentA.getRandom().nextFloat() * 0.2F);
         parentB.playSound(SoundEvents.VILLAGER_YES, 0.8F, 0.9F + parentB.getRandom().nextFloat() * 0.2F);

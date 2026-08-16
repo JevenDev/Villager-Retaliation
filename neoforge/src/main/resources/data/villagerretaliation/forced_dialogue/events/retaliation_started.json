@@ -1,0 +1,328 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.forced",
+      "event.retaliation_started"
+    ],
+    "topic": "events.retaliation_started"
+  },
+  "message_prefix": "forced.retaliation_started",
+  "entries": [
+    {
+      "id": "retaliation_started_callout_unarmed_player",
+      "message_prefix": "forced.retaliation_started.callout_unarmed_player",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "I do not need a weapon to stand between you and home.",
+        "Bare hands are still hands, {target}.",
+        "No blade, no bow, no running.",
+        "If I have to fight empty-handed, then I fight empty-handed.",
+        "You will not find this village helpless.",
+        "I have nothing in my hands and a whole village behind me.",
+        "Come closer, {target}. I have enough <shake>anger</shake> for both hands.",
+        "No weapon. Still not afraid.",
+        "No steel, just stubborn. Still enough.",
+        "I may be empty-handed, but I am not alone."
+      ],
+      "priority": 35,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true,
+      "target_entity_types": [
+        "minecraft:player"
+      ],
+      "requires_witness_unarmed": true
+    },
+    {
+      "id": "retaliation_started_callout_unarmed_mob",
+      "message_prefix": "forced.retaliation_started.callout_unarmed_mob",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "<shake>Help!</shake> {target} is at the village!",
+        "Bell! Ring the bell! {target_article} is here!",
+        "I need help over here!",
+        "Someone armed, to me!",
+        "Guards! Anyone! {target} is too close!",
+        "Get inside! I cannot hold {target} back!",
+        "Help me drive it away!",
+        "I have no weapon! Help!",
+        "Keep it off me! I am unarmed!",
+        "Do not let it reach the doors!"
+      ],
+      "priority": 34,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true,
+      "target_entity_types": [
+        "minecraft:pillager",
+        "minecraft:vindicator",
+        "minecraft:evoker",
+        "minecraft:ravager",
+        "minecraft:witch",
+        "minecraft:zombie",
+        "minecraft:zombie_villager",
+        "minecraft:husk",
+        "minecraft:drowned",
+        "minecraft:skeleton",
+        "minecraft:stray",
+        "minecraft:wither_skeleton",
+        "minecraft:bogged",
+        "minecraft:phantom",
+        "minecraft:creeper",
+        "minecraft:spider",
+        "minecraft:cave_spider",
+        "minecraft:slime",
+        "minecraft:magma_cube",
+        "minecraft:enderman"
+      ],
+      "requires_witness_unarmed": true
+    },
+    {
+      "id": "retaliation_started_callout_player",
+      "message_prefix": "forced.retaliation_started.callout_player",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "Die, {target}!",
+        "You chose this, {target}.",
+        "The village <pulse>remembers</pulse> you, {target}.",
+        "No more warnings, {target}.",
+        "Back from my people, {target}!",
+        "You should have left while words still mattered.",
+        "You crossed the line, {target}.",
+        "This village is not yours to scare.",
+        "Back up now or get pushed back.",
+        "You swing at one of us, you answer all of us."
+      ],
+      "priority": 30,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true,
+      "target_entity_types": [
+        "minecraft:player"
+      ]
+    },
+    {
+      "id": "retaliation_started_callout_raider",
+      "message_prefix": "forced.retaliation_started.callout_raider",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "Raid somewhere else, {target}!",
+        "You picked the wrong village.",
+        "For the <pulse>bell</pulse> and every door behind it!",
+        "Not one step farther.",
+        "The village stands, {target}!",
+        "You will not take another home.",
+        "Not one crate, not one bed, not one block.",
+        "You hear that bell? It means leave.",
+        "We survived worse than you.",
+        "Turn around before this gets uglier."
+      ],
+      "priority": 25,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true,
+      "target_entity_types": [
+        "minecraft:pillager",
+        "minecraft:vindicator",
+        "minecraft:evoker",
+        "minecraft:ravager",
+        "minecraft:witch"
+      ]
+    },
+    {
+      "id": "retaliation_started_callout_evoker",
+      "message_prefix": "forced.retaliation_started.callout_evoker",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "No more tricks, {target}!",
+        "Keep your spells away from our doors.",
+        "Your <shake>fangs</shake> stop here.",
+        "The village has heard enough magic for one day.",
+        "Summon all you want. We still stand.",
+        "You will not curse this place.",
+        "No totems, no fangs, no foothold here.",
+        "Your magic ends at our walls.",
+        "Try that spell on stone, not villagers.",
+        "We break your focus and send you running."
+      ],
+      "priority": 28,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true,
+      "target_entity_types": [
+        "minecraft:evoker"
+      ]
+    },
+    {
+      "id": "retaliation_started_callout_pillager",
+      "message_prefix": "forced.retaliation_started.callout_pillager",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "Lower that crossbow, {target}!",
+        "No more bolts through village windows.",
+        "You missed your chance to run.",
+        "Raiders leave empty-handed today.",
+        "Aim at me, not the children.",
+        "Your <bold>banner</bold> means nothing here.",
+        "Keep that banner out of our streets.",
+        "No looting today, crossbow fool.",
+        "Your patrol ends in this square.",
+        "Take your raid horn and walk."
+      ],
+      "priority": 28,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true,
+      "target_entity_types": [
+        "minecraft:pillager"
+      ]
+    },
+    {
+      "id": "retaliation_started_callout_vindicator",
+      "message_prefix": "forced.retaliation_started.callout_vindicator",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "Put down the axe, {target}!",
+        "That blade does not enter another home.",
+        "You will not chop through this village.",
+        "Come closer and learn what farmers carry.",
+        "<bold>No more doors</bold> for you to break.",
+        "Swing once more and answer for it.",
+        "Your axe meets iron and stone today.",
+        "We rebuilt every door you broke. Try again.",
+        "No chopping paths through our homes.",
+        "Drop it or we drop you."
+      ],
+      "priority": 28,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true,
+      "target_entity_types": [
+        "minecraft:vindicator"
+      ]
+    },
+    {
+      "id": "retaliation_started_callout_undead",
+      "message_prefix": "forced.retaliation_started.callout_undead",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "Back to the dark with you, {target}!",
+        "Not this house. Not tonight.",
+        "You do <bold>not</bold> get another villager.",
+        "I hear your bones. I am not afraid.",
+        "The dead can learn to run.",
+        "Stay away from the living.",
+        "Sunlight will finish what we start.",
+        "Graves stay closed. Move.",
+        "No bites, no arrows, no shadows in our homes.",
+        "Rot somewhere else."
+      ],
+      "priority": 20,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true,
+      "target_entity_types": [
+        "minecraft:zombie",
+        "minecraft:zombie_villager",
+        "minecraft:husk",
+        "minecraft:drowned",
+        "minecraft:skeleton",
+        "minecraft:stray",
+        "minecraft:wither_skeleton",
+        "minecraft:bogged",
+        "minecraft:phantom"
+      ]
+    },
+    {
+      "id": "retaliation_started_callout_monster",
+      "message_prefix": "forced.retaliation_started.callout_monster",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "Away from the village, {target}!",
+        "You are too close to our doors.",
+        "No <shake>hissing</shake> near my home.",
+        "Not near the children.",
+        "This path is ours.",
+        "Try the fields. See what happens.",
+        "No webs, no blast craters, no chaos here.",
+        "Crawl back into the dark, {target}.",
+        "One more step and the whole village swings.",
+        "This lane is guarded. Go hunt elsewhere."
+      ],
+      "priority": 15,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true,
+      "target_entity_types": [
+        "minecraft:creeper",
+        "minecraft:spider",
+        "minecraft:cave_spider",
+        "minecraft:slime",
+        "minecraft:magma_cube",
+        "minecraft:enderman"
+      ]
+    },
+    {
+      "id": "retaliation_started_callout_generic",
+      "message_prefix": "forced.retaliation_started.callout_generic",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "Die, {target}!",
+        "Back away, {target}!",
+        "You picked a fight with the wrong village.",
+        "I will not let you hurt us.",
+        "The village has <shake>teeth</shake> too.",
+        "Come on then.",
+        "You are done here.",
+        "For the village!",
+        "Not one step closer, {target}.",
+        "You are outnumbered and out of chances."
+      ],
+      "priority": 0,
+      "chance": 0.35,
+      "witness_radius": 24,
+      "requires_line_of_sight": true
+    }
+  ]
+}

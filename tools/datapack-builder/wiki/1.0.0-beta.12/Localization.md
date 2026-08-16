@@ -68,6 +68,52 @@ If several filtered dialogue rules should share one translated line, keep the lo
 
 That lets translators touch one keyed message instead of copying every filter block.
 
+## Quests
+
+Quest JSON can keep its objectives, rewards, and rules in one file while moving player-facing words into locale message files:
+
+```json
+{
+  "display": {
+    "title": "Bread Delivery",
+    "title_key": "quest.village_supply.bread_delivery.title"
+  },
+  "dialogue": {
+    "start": ["Bring me 16 bread."],
+    "start_key": "quest.village_supply.bread_delivery.dialogue.start"
+  }
+}
+```
+
+Translate the matching keys under the locale:
+
+```text
+data/my_pack/dialogue/fr_fr/quests/messages/00_quest_text.json
+```
+
+Quest key fields include `title_key`, `description_key`, tracker `text_key`, objective `text_key` / `complete_text_key`, dialogue `<stage>_key`, and expiration `text_key`.
+
+## Forced Dialogue
+
+Forced dialogue supports the same message catalog:
+
+```json
+{
+  "message_prefix": "forced.my_pack.theft.warning",
+  "line": "Hands off that {container}.",
+  "options": [
+    {
+      "label": "Apologize",
+      "response": "Then prove it."
+    }
+  ]
+}
+```
+
+With `message_prefix`, VR looks for `.line`, `.option.<id>.label`, `.option.<id>.response`, `.option.<id>.take_items.success`, and matching failure or stolen-item keys. Explicit fields such as `line_key`, `label_key`, and `response_key` still work and override the generated keys.
+
+Translate entry lines, option labels, option responses, and payment/stolen-item success or failure responses with message entries in `data/<namespace>/dialogue/<locale>/.../messages/*.json`.
+
 ## Profession Names
 
 Vanilla professions use Minecraft's own language keys:
@@ -89,4 +135,5 @@ Custom professions follow the same pattern with namespace and dotted path:
 ## Rule Of Thumb
 
 - Dialogue, notifications, and authored lines: datapack locale folders
+- Quest titles, quest tracker text, quest lifecycle dialogue, and forced-dialogue labels/responses: datapack locale folders with message keys
 - UI labels, profile text, family rows, profession names: resource-pack language files

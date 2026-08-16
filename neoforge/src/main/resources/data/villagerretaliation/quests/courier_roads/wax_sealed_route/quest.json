@@ -1,0 +1,399 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "make_satchel",
+  "id": "villagerretaliation:wax_sealed_route",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "questline": "courier_roads",
+    "tags": [
+      "group.courier_roads",
+      "role.side",
+      "activity.deliver",
+      "activity.gather",
+      "destination.overworld",
+      "tier.early",
+      "difficulty.easy",
+      "commitment.standard",
+      "theme.community",
+      "theme.exploration"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "novice",
+      "professions": [
+        "minecraft:librarian",
+        "minecraft:cartographer",
+        "minecraft:leatherworker"
+      ],
+      "skills": {
+        "diplomacy": {
+          "min": 5
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 95,
+    "gossip_reputation": 3,
+    "loot_table": "villagerretaliation:quest/wax_sealed_route",
+    "memory_event": "player_completed_quest",
+    "reputation": 8
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "bring_leather",
+        "bring_paper"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.make_satchel.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.make_satchel.dialogue.offer.lines"
+          },
+          "order": -20,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.make_satchel.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.make_satchel.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.make_satchel.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.make_satchel.dialogue.reminder.lines"
+          },
+          "order": -20,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.make_satchel.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.make_satchel.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "make_satchel",
+      "next": "seal_letters",
+      "objectives": [
+        {
+          "count": 4,
+          "id": "bring_leather",
+          "item": "minecraft:leather",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.make_satchel.objective.bring_leather.tracker.complete_text"
+            },
+            "progress": 0.45,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.make_satchel.objective.bring_leather.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 12,
+          "id": "bring_paper",
+          "item": "minecraft:paper",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.make_satchel.objective.bring_paper.tracker.complete_text"
+            },
+            "progress": 0.6,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.make_satchel.objective.bring_paper.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.make_satchel.scene.start_quest.action.start.lines.already_completed"
+                },
+                "started": {
+                  "key": "#stage.make_satchel.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.make_satchel.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.make_satchel.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.make_satchel.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.make_satchel.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.make_satchel.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.6,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.make_satchel.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "complete_when": [
+        "bring_honeycomb",
+        "bring_compass"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stage.seal_letters.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.seal_letters.dialogue.reminder.lines"
+          },
+          "order": -20,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.seal_letters.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.seal_letters.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "seal_letters",
+      "next": "return",
+      "objectives": [
+        {
+          "count": 3,
+          "id": "bring_honeycomb",
+          "item": "minecraft:honeycomb",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.seal_letters.objective.bring_honeycomb.tracker.complete_text"
+            },
+            "progress": 0.85,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.seal_letters.objective.bring_honeycomb.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "consume": false,
+          "count": 1,
+          "id": "bring_compass",
+          "item": "minecraft:compass",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.seal_letters.objective.bring_compass.tracker.complete_text"
+            },
+            "progress": 0.9,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.seal_letters.objective.bring_compass.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.seal_letters.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.seal_letters.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.seal_letters.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.9,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.seal_letters.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -20,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#C99B51",
+    "icon": "minecraft:honeycomb",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.courier_roads.wax_sealed_route"
+}

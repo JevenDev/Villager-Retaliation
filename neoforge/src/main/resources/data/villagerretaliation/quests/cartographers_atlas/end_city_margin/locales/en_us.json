@@ -1,0 +1,92 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.end_city_margin.description": {
+      "lines": [
+        "Add an End City route to the atlas and return with shulker proof."
+      ]
+    },
+    "quest.cartographers_atlas.end_city_margin.event.atlas_finished.action.notification.text": "The Cartographer's Atlas margins are complete.",
+    "quest.cartographers_atlas.end_city_margin.stage.return.dialogue.turn_in.label": "About End City Margin",
+    "quest.cartographers_atlas.end_city_margin.stage.return.dialogue.turn_in.lines": [
+      "You brought the outer islands back on your boots. Let me bind the final margin."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.return.dialogue.turn_in.response.complete.label": "Bind the End City margin",
+    "quest.cartographers_atlas.end_city_margin.stage.return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.end_city_margin.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "There it is: village road, ruin road, chosen horizon, fire road, last room, outer island. A whole atlas, and you walked it into truth."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The End margin still needs the city bearing, shulkers, shells, and chorus fruit."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring shulker shells before I bind the final margin."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The shells need the End City bearing behind them."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The End margin still needs its proof before I can close it."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.return.scene.leave.lines": [
+      "Keep the shells from rattling near the page edge."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.return.ui.tracker_text": "Return to the cartographer with the finished atlas margin.",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.dialogue.offer.label": "End City Margin",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.dialogue.offer.lines": [
+      "An End City is not a new place merely because this atlas lacks it. Its outer margin still needs a road where distance stops making sense.",
+      "Find the city, record its shulkers, and bring shells with chorus fruit. This is how the outer margin learns to hold."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.dialogue.offer.response.accept.label": "Chart the End margin",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.dialogue.reminder.label": "About End City Margin",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.dialogue.reminder.lines": [
+      "The End margin still needs the city bearing, shulker proof, shells, and chorus fruit."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.dialogue.reminder.response.details.label": "Remind me where",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.objective.bring_chorus_fruit.tracker.complete_text": "The chorus fruit proves the outer road.",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.objective.bring_chorus_fruit.tracker.text": "Bring 16 chorus fruit from the outer islands.",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.objective.bring_shulker_shells.tracker.complete_text": "The shulker shells are ready for the atlas cover.",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.objective.bring_shulker_shells.tracker.text": "Bring 2 shulker shells from the End City.",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.objective.defeat_shulkers.tracker.complete_text": "The shulker patrol is recorded.",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.objective.defeat_shulkers.tracker.text": "Defeat 2 shulkers in the End City margin.",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.objective.visit_end_city.tracker.complete_text": "The End City margin has been charted.",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.objective.visit_end_city.tracker.text": "Reach the End City near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.end_city_margin.stage.survey.scene.decline.lines": [
+      "The outer islands are not going anywhere. That is one of their few courtesies."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.scene.leave.lines": [
+      "Tie the page down before you open it near a portal."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.scene.reminder_details.action.remind.lines.reminder": [
+      "End City near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Defeat 2 shulkers and bring 2 shulker shells with 16 chorus fruit."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have your End margin open right now."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.scene.start_quest.action.start.lines.already_completed": [
+      "The End City margin is already complete."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.scene.start_quest.action.start.lines.locate_failed": [
+      "The End City mark is too far for the atlas to catch from here."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.scene.start_quest.action.start.lines.started": [
+      "The city mark is near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring shulker shells and chorus fruit after you chart it."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.scene.start_quest.action.start.lines.unavailable": [
+      "The atlas needs the Stronghold bearing before the End margin can be drawn."
+    ],
+    "quest.cartographers_atlas.end_city_margin.stage.survey.ui.tracker_text": "Reach the End City near {target_x}, {target_z} in {target_dimension}.",
+    "quest.cartographers_atlas.end_city_margin.title": {
+      "lines": [
+        "End City Margin"
+      ]
+    },
+    "quest.cartographers_atlas.end_city_margin.tracker.title": {
+      "lines": [
+        "End City Margin"
+      ]
+    }
+  }
+}

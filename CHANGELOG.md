@@ -1,5 +1,202 @@
 # Changelog
 
+## 1.0.0-beta.13 - 2026-06-06
+
+Beta.13 is the Hired Help and Village Life update! It adds complete worker logistics, player parties, persistent village allegiance, player raids, protected villagers, duels, quest scenes and encounters, and a much larger quest catalog.
+
+
+### Added
+
+#### Hiring, Contracts, And Progression
+
+- Added renewable hired-villager contracts with role and duration selection, reputation and aptitude-aware prices, daily wages, extension limits, early-cancellation refunds, payment grace, automatic renewal, and live contract countdowns.
+- Added thirteen contract roles: Combat, Hunting, Mining, Logging, Farming, Fishing, Brewing, Craftsman, Animal Handling, Nitwit, Cook, Smelter, and Courier. Builder is offered separately as a paid one-off construction service.
+- Added role qualification through primary and support skills. Canonical professions qualify automatically, Courier is available to every adult, Nitwit remains profession-restricted, and only masons, toolsmiths, and weaponsmiths can provide blueprints or perform Builder work.
+- Added a Job Stats view with role readiness, profession overrides, the two contributing skills, weighted aptitude, work speed, transfer capacity, and role-specific job icons and explanations.
+- Added skill-based hired-work practice and throughput. Completed work trains both role skills at a 70/30 split, the same weighted aptitude scales work cadence from 75% to 125% and transfer capacity from 50% to 150% without changing vanilla workstation timers.
+- Added a persistent, server-authoritative worker runtime with bounded work areas, route focus, work plans, task states, status and final reports, path backoff, unreachable-target memory, stall recovery, storage navigation, and budgeted scans.
+
+#### Worker Roles
+
+- Added Combat workers that guard or roam assigned areas and routes, use configurable target policies, switch weapons for the threat, recover between fights, and keep job combat separate from ordinary retaliation.
+- Added Hunting workers with selectable animal, hostile-mob, and player targets, patrol behavior, melee and ranged weapon support, ammunition recovery, and collection and deposit of hunting drops.
+- Added Mining workers with exposed-ore, horizontal excavation, and vertical excavation modes, vein plans, stairs and ladders, torch and support placement, hazard checks, water navigation, tool and supply retrieval, and output delivery.
+- Added Logging workers with selectable log families, natural-tree and Nether-fungus harvesting, optional stripping, leaf clearing and collection, decay-drop pickup, sapling replanting and bonemeal, and interrupted-tree recovery.
+- Added Farming workers that directly harvest mature crops, replant from job supplies, fill empty farmland, optionally till suitable soil, use hoes correctly, and deposit crop output.
+- Added Fishing workers with a real villager fishing hook, open-water spot selection, rod durability and enchantment handling, skill-scaled bite timing, catch XP handling, and immediate output deposits.
+- Added Brewing workers with selectable potion orders and batch sizes, water-bottle filling, ingredient and blaze-powder supply handling, support for potion variants, multiple brewing stands, and finished-potion collection.
+- Added Craftsman workers that use Recipe Filters to choose ordinary crafting recipes, pull exact ingredients from Supplies storage, work at crafting tables, and send crafted results to Output storage.
+- Added Cook workers that use filters and vanilla cooking recipes across available cooking workstations, fetch ingredients and fuel, and collect and deposit finished food.
+- Added Smelter workers that manage furnaces and blast furnaces, fetch raw materials and fuel, preserve fuel remainders, collect results, and spread work across multiple stations.
+- Added Animal Handling workers with selectable breeding targets, breeding and culling limits, safe culling drops and XP, sheep shearing, cow milking, egg and other product collection, tool retrieval, and periodic output deposits.
+- Added Courier workers that move filtered cargo between assigned containers, patrol empty inputs, honor per-container extraction allowances, collect Sell Box proceeds, and scale each transfer with villager aptitude.
+- Added Builder services with construction blueprints, placement and material previews, work-site validation, paid escrow, cancellation refunds, safe block-entity handling, clearing rules, pause/cancel/finalize states, and a data-driven village-house catalog.
+- Added a deliberately low-productivity Nitwit role with periodic supervision reports and its own configurable practice rate.
+
+#### Storage, Logistics, And Economy
+
+- Added persistent villager wallets with lifetime earnings, spending, and deposit totals. Trade income, wages, deposits, refunds, duel stakes, payment boxes, worker earnings, and Sell Box proceeds use the wallet economy.
+- Added data-driven currency definitions and the `villagerretaliation:currency` item tag so wallets, contracts, deposits, refunds, payment boxes, duels, drops, worker earnings, and sales no longer assume emeralds.
+- Added the Payment Box with a dedicated inventory and screen, recurring contract payment, shared-owner support, bounded chunk loading, automatic renewal, and configured-currency handling.
+- Added the Sell Box and daily market with 293 built-in price definitions, animated block art and UI, server-authoritative daily sale values, configured-currency payouts, and courier collection.
+- Added the Clipboard, Construction Blueprint, Villager Item Filter, Attribute Filter, and Recipe Filter items with crafting recipes, dedicated screens, previews, tooltips, and copy/reset utility recipes.
+- Added Blueprint Material Checklists, crafted shapelessly from a Construction Blueprint and a book, with sticky inventory completion, reversible manual checkboxes, item icons, and connected-container material scans.
+- Added Clipboard workforce management for live worker lists, multi-selection, assignment and removal, role changes, warnings, work-area drafting and resizing, route editing, storage assignment, reusable drafts, and world-space previews.
+- Added per-purpose container assignments for Supplies, Output, General, and Payment storage. Shared and double containers retain every worker assignment and are resolved as one logical inventory where appropriate.
+- Added separate Personal, Job, and Party inventory views on top of the beta.12 storage foundation, with nine-slot hotbars, job equipment and filter slots, protected gear, authorization rules, reclaim windows, overflow handling, and safe return of supplied equipment.
+- Added role-aware tool selection, dynamic combat weapon switching, transient-gear tracking, and safeguards against duplicated or leaked equipment.
+- Added item filters with item and tag entries, quantities, allow/deny modes, all/any combination rules, stock targets, and configurable transfer policies.
+- Added Attribute Filters for component and item-property matching and Recipe Filters for selecting crafted, cooked, or processed outputs, EMI, JEI, and REI drag-and-drop can populate compatible ghost slots.
+- Added composable container filters, including attached item-frame rules, persisted filter snapshots, per-container collection and destination policies, and cached matching for large logistics networks.
+- Added output backpressure so workers pause when every valid destination is full or filter-capped, report the blocking reason, and resume when capacity returns.
+- Added Courier routes with ordered nodes, out-and-back branches, branch previews, reach hints, node-tethered container stops, bounded chunk tickets, nearest-node recovery, batching, and return traversal.
+- Added cooperative villager traffic handling for narrow passages and shared routes, with stable right-of-way, short queues, safe sidesteps, and Clipboard visualization controls.
+
+#### Parties, Commands, And Mounts
+
+- Added persistent player parties with paid villager recruitment, invitations, player and villager rosters, leader/admin controls, contract renewal and expiry, dismissal, disbanding, death cleanup, and saved party state.
+- Added shared Party inventory and management tabs, authorization-aware container access, protected party gear, preferred inventory opening, and cleanup when membership or contracts end.
+- Added party-wide quest credit, retaliation and witness context, raid memories, villager last-known positions, player-party membership commands, and mutual party alliances.
+- Consolidated player and operator commands, tab-completion hints, and clickable prompts under the single `/vr` root; organized operator tools under `/vr admin`; and standardized vanilla-style camel-case literals and explicit entity targets.
+- Added a party quick-command wheel with Follow, Stay, Move To, Regroup, Stand Guard, attack targeting, heal/recover, Ride Mount, Dismount Mount, gather drops, loot containers, equipment, and policy controls.
+- Added global and per-villager combat modes, target categories, weapon preferences, drop-collection rules, formation targets, friendly-fire protection, attack raycasting, and server-authoritative permission and target validation.
+- Added Stay Here for Revered unhired villagers and authorized hirers, plus one command policy that arbitrates following, holding position, Move To, Regroup, work, party orders, combat, and mounted travel.
+- Added persisted one-to-one mount assignments for party villagers and hired workers, supporting horses, donkeys, mules, llamas, and camels through native Minecraft mob-jockey control.
+- Added mounted following and long-distance work travel, precise-work dismounts, idle parking, unload/reload recovery, remount and seat promotion, leashed-mount selection, player takeover, and quick mount commands.
+- Added ToucanLib-owned dual-rider horse seats, front-rider control, rear-rider safety, player seat takeover, and automatic passenger reshuffling without requiring Ride On.
+
+#### Villages, Allegiance, Raids, And Villager Life
+
+- Added durable POI-backed village identities with canonical UUIDs and aliases, resident rosters, lifecycle state, merge history, retirement and archival, and persisted home allegiance.
+- Added connected village footprints built from occupied POIs, complete village structure pieces, and tagged connected terrain such as paths, with datapack tags for modded village worldgen.
+- Added data-driven generated village names, custom naming by using a banner on a village bell, synced Home dialogue, village-bound HUD labels, and operator inspect, rename, merge, prune, and reassignment tools.
+- Added Wanderer identity for villagers created outside tracked villages, one-day settlement for stable Wanderers, newborn home inheritance, delayed natural-spawn assignment, trusted home reassignment, and party-member settlement protection.
+- Added allegiance-aware behavior for villagers and natural iron golems. Locals, allied parties, Wanderers, and foreign communities are distinguished for reputation, gossip, retaliation, discipline, aid, and combat authorization.
+- Added a bounded village-footprint debug overlay with gold section outlines, current-village naming, subscription cleanup, and configurable render limits.
+- Added Player Raids started by displaying an ominous banner and using a goat horn, with an optional double-use confirmation, preparation and abandonment timers, boss bars, and persistent per-village cooldowns.
+- Added snapshotted raid parties and defenders, data-driven militia loadouts, golem reinforcements, defender highlighting, siege targeting, pursuit rules, betrayal handling, and persistent raid memories.
+- Added a raid mercy phase for babies and nitwits, village victory and defeat outcomes, fifteen outcome reactions, reputation consequences, dialogue follow-ups, and operator win/lose testing controls.
+- Added configurable downed protection for party members, hired villagers, quest providers, scene actors, raid participants, and tagged essential villagers, with source filters, threat checks, synchronized poses and collision sizes, quiet-period recovery, and optional Second Wind revival.
+- Added villager duels with server-authoritative offers and confirmation, configurable terms, optional stakes, isolated inventories and loadouts, arena boundaries, spectators, knockout recovery, cooldowns, sounds, post-duel dialogue, and witness stories.
+- Added nearby player duels through `/vr duel challenge <player> [kit] [wager]`, with clickable invitation acceptance, preset or Bring Your Own kits, wager escrow and payout, arena boundaries, combat isolation, and inventory recovery. The Bring Your Own server restriction remains specific to village duels.
+- Added optional Curios and Accessories compatibility for assigned duel loadouts and recovery, accessory-aware dialogue item conditions, and ominous-banner recognition.
+- Added villager hunger, visible hunger status, hunger-driven natural recovery, Hunger-effect drain, difficulty-scaled starvation damage, food recovery behavior, and healing after completed sleep, all with balance controls.
+- Added natural data-driven profession armor, per-piece mixing, armor scavenging and upgrade ranking, shields and guard loadouts, charged-crossbow preservation, arrow recovery, automatic Totem of Undying use, and Mending for armor and held equipment.
+- Added ominous banners (and regular banners) as wearable player and villager head attachments.
+- Added thirty advancements spanning ominous banners, raids, hired work and logistics, village settlement and reputation, Builder blueprints, Payment Box wages, duels, gifts, branching quests, and exploration: Sound the Horn, Steady Gaze, The Mark You Chose, The Village Falls, Quarter Given, Army of One, Et tu, Brute?, War Party, You and What Army?, Honest Work, Full Employment, Village Hopper, The People's Champion, Living Legend, Housewarming, Blueprint for Success, Urban Planner, Master of the Craft, Master of All Trades, A Well-Oiled Machine, Supply and Demand, Payday, On the Payroll, Emerald Economy, Friendly Competition, It's the Thought That Counts, Family Business, Choose Your Own Adventure, All Roads Lead Somewhere, and Are We There Yet? Stateful progress uses bounded persistent counters and action hooks instead of world-wide per-tick scans.
+- Added in-game MarkedDown guide content covering reputation, interaction, quests, hiring, jobs, Clipboard storage, Builder work, parties, mounts, villages, gifts, watched property, downed villagers, Player Raids, controls, and advancements.
+
+#### Quests, Scenes, Dialogue, And Interfaces
+
+- Added 59 built-in quests since beta.12-hotfix.2, expanding the catalog from 26 to 85 quests. The full catalog includes 33 repeatable requests.
+- Added 5 four-quest branching adventure lines with 2 choice-gated endings for both, plus connected quest prerequisites, restart rules, provider policies, and end-game progression.
+- Added quest module v2 with one-file modules, declarative stages and aliases, branches and choice history, facts and scopes, availability rules, completion limits, provider binding, lifecycle hooks, shared actions and conditions, and v1 compatibility.
+- Added objective and trigger support for locations, structures, mob kills, block breaking, placing and interaction, trades, gifts, reputation, inventory, memory events, choices, facts, quest-state changes, and composite requirements.
+- Added failed and recoverable quest states, missing-provider rebind rules, provider death protection, deferred lifecycle work, deterministic transition evaluation, and traceable blocker reasons.
+- Added persistent quest scenes with typed durable actors, multi-tick steps, waits and continuations, deadlines, exactly-once operation receipts, saved run identities, disconnect and chunk-return recovery, cleanup, audits, and operator repair.
+- Added encounter templates with anchored areas, leave policies, authored spawn points and offsets, explicit waves, equipment and enchantments, drop chances, elites, bosses, boss bars, and deterministic weighted variants.
+- Added encounter phases, friendly participants, composite victory objectives, retries and failure policies, navigation markers and particles, temporary environmental blocks and restoration, rewards, trophy and mob-drop policies, and safe cleanup.
+- Added 10 built-in persistent scenes and five encounter templates for Atlas choices and patrols, Standing Watch, Night Ward, Night Run, Trial Chamber Recall, Nether and End choices, Mansion Warning, and Last Ember.
+- Added multi-quest tracking, completion history, selected-quest highlighting, bookmarks, count badges, reward and prerequisite previews, objective item counts, locked-adventure hints, saved journal position, and improved tracker navigation.
+- Added a standalone Quest Builder and expanded Datapack Generator support for quest v2, scene v1, and encounter v1 projects, including import, preview, validation, migration guidance, and datapack ZIP export.
+- Added dialogue and story coverage for hired work, parties, discipline, village allegiance, raids, downed recovery, duels, mount ownership, gifts, combat outcomes, return visits, and retaliation disengagement.
+- Added data-driven non-hostile weapon drawing through shared actions and held, worn, or carried item proximity rules, with configurable duration and Datapack Generator controls.
+- Added villager mouth movement while dialogue text appears, configurable text speed, cinematic transitions and bars, styled text effects, blip audio every few visible characters, and configurable routine chat broadcasting and muting.
+- Added a non-destructive gift amount selector, scrollable item selection, reaction previews and tooltips, per-player/per-villager daily reputation caps, repeated-item diminishing returns, request throttling, and keepsake-aware validation.
+- Added non-binary villager gender support across profiles, family data, breeding compatibility, preset names, UI labels, networking, persistence, and the operator `set_gender` command.
+- Added a centralized breeding and birth policy for managed villagers so party, hired, downed, and otherwise protected villagers keep consistent eligibility and newborn initialization.
+- Added configurable villager stat nameplates with health, armor, and hunger in Always, Hired Only, Party Only, or Never modes, plus a reputation debug overlay and an optional reputation icon in the vanilla trade screen.
+- Added optional EMI, JEI, and REI exclusion zones and filter-slot drag-and-drop so recipe panels avoid villager, party, Payment Box, and filter interfaces.
+- Added resource-pack support for dual-arm combat villagers, crossed-arm and side-arm layouts, armor and profession overlays, and OptiFine CEM/EMF-style villager models.
+
+### Changed
+
+- Trade-based skill growth now uses continuous practice XP, advances more slowly at high skill values, and applies per-day and repeated-offer diminishing returns. Existing skill values and saved fractional trade progress are preserved.
+- Skill-based merchant leveling now uses linear rather than squared skill scaling, guarantees at least one visible XP for an XP-bearing trade, persists fractional carry, and shows the same adjusted award on the merchant screen that the server applies.
+- Villager interaction screen was redesigned with animated page transitions, scrollable option stacks, profession-colored art, portraits and ornaments, pixel controls, scale-aware tooltips, dedicated work and party pages, and consistent layouts across GUI scales.
+- Quest runtime and tracker now compile staged quest state, facts, scopes, triggers, transitions, provider bindings, failure states, and blocker reasons instead of assuming a single live-provider objective flow.
+- The 21 built-in quests were migrated from the v1 resource shape to self-contained quest module v2 files while preserving stable quest IDs and legacy v1 pack loading, their existing objectives, dialogue, rewards, prerequisites, and presentation were reauthored for the staged runtime.
+- Dialogue trees, forced dialogue, and quest dialogue now share localized text metadata, actions and conditions, payload codecs, dry-run diagnostics, and consistent reload, replacement, removal, and session-clearing behavior.
+- The active-quest UI is now a tabbed active/completed/history interface journal with multi-tracking, persistent selection and scroll state, richer objective and reward details, and updated HUD highlighting.
+- Skill Trade refreshes and Special Orders now use stricter server-authoritative request state, clearer readiness and refusal results, targetable schema validation, safer refresh replacement, and full Datapack Generator round-tripping.
+- Trade option is now shown only for villagers with a trade-capable profession instead of presenting an unusable trade path for every adult villager.
+- Villager AI suppression now uses a central priority policy so active retaliation, conversation, trading, following, hired work, party orders, combat, support, sleep, and vanilla schedules do not overwrite one another.
+- Profession combat and support now use unified weapon and action state so compatible vanilla and modded villagers can switch melee, shield, bow, charged crossbow, trident, potion, support, and recovery behavior without stale goals or conflicting animations.
+- Witness retaliation no longer treats every nearby villager as the same community: witnesses must share the harmed villager's village allegiance, and indirect damage resolves the actual attacker before the community response is chosen.
+- "Follow Me" no longer uses a fixed `0.62` navigation speed: followers use vanilla villager walking speed (`0.5`) within eight blocks and Vindicator-equivalent running speed (`0.7`) beyond eight blocks.
+- New-config defaults changed from Despised `-250` and Feared `-750` in beta.12 to Despised `-400` and Feared `-1000`. Existing Feared `-750` values migrate to `-1000`, every other stored value, including Despised `-250`, is left untouched.
+- Normal villager conversation now accepts occupied hands when their items have no entity or air right-click behavior. Consumables, shields, equippable armor, projectiles, and modded use items keep their native action, while the beta.12 Clipboard plus beta.13 purpose-built items retain dedicated interaction handlers.
+- Blanket rejection of baby-villager interaction was removed, babies can now use the conversation surfaces appropriate to them while adult-only trading, hiring, inventory, and combat actions remain gated.
+- Profile and skill descriptions were rewritten to explain practical effects, practice gains, profession overrides, job aptitude, and progression more clearly.
+- The project remains on Minecraft 1.21.1 while updating NeoForge from 21.1.219 to 21.1.238 and ToucanLib from 0.3.1 to 0.5.0.
+- Added development and compatibility dependencies for EMI, JEI, REI, Curios, and Accessories to support recipe-viewer integration, duel equipment recovery, accessory-aware dialogue conditions, and ominous-banner recognition.
+
+### Fixed
+
+- Fixed the Hearthbound feast request changing ingredient lists in quick succession; each quest now shows its full supply list up front, and follow-up quests can use a prerequisite cooldown before appearing.
+- Fixed beta.12 skill-trade registration adding duplicate villager or wandering-trader offers when registration ran more than once.
+- Fixed beta.12 skill-adjusted merchant XP losing or desynchronizing fractional carry after trades and offer refreshes, and fixed the merchant-screen preview drifting from the server award.
+- Fixed the beta.12 interaction and gift screens double-firing into vanilla interaction or trading paths and sizing the gift inventory incorrectly at GUI scale 4.
+- Fixed Chat Heads player icons disappearing after animated villager dialogue replaced the vanilla chat rendering path.
+- Fixed beta.12 generic profession greetings and farewells leaking into reputation-specific dialogue pools.
+- Fixed beta.12 disliked and hated gifts being accepted and removed from the player's inventory instead of being rejected.
+- Fixed villagers interrupting beta.12 retaliation or fleeing to collect unrelated vanilla item drops.
+- Fixed Bread Delivery, Village Lanterns, and Trial Chamber Recall allowing repeat turn-ins without consuming their required hand-in items.
+- Fixed quest abandonment and expiration hooks being lost while their original provider was unavailable, deferred lifecycle work now survives saves and replays only after a valid provider return or explicit compatible rebind.
+- Fixed beta.12 shared-story dialogue replacing the story's `{target}` structure placeholder with an unrelated remembered-retaliation target.
+
+### Removed
+
+- Removed registration of the legacy `/villagerretaliation` command root. Use `/vr` for player commands and `/vr admin` for operator tools; command blocks, scripts, and documentation that invoke the old root must be updated.
+- Removed the built-in beta.12 per-quest `dialogue_trees` resources after migrating their content to self-contained quest module v2 files. Stable quest ids are preserved, and external beta.12 v1 quest packs remain supported through the compatibility adapter.
+- Removed the experimental interaction chrome, veil and skill shaders, overlay textures, and profession-color resource used by the beta.12 screen in favor of the redesigned interaction interface.
+- Removed the bundled vanilla villager texture override in favor of the beta.13 resource-pack model and overlay hooks.
+- Removed the old dialogue-and-quest normalization scripts; the maintained Datapack Generator and Quest Builder now provide the supported authoring, validation, migration-guidance, and export workflows.
+
+### Technical / Pack Development
+
+#### Added For Pack Authors
+
+- Added versioned JSON Schemas and registry metadata for `villagerretaliation:quest/v2`, `villagerretaliation:scene/v1`, encounter templates, skill trades, builder structures, and shared actor, provider, objective, trigger, condition, action, and scene-step registries.
+- Added data-driven roots for currency, 293 sell prices, builder structures, village names, natural job armor, Player Raid loadouts, localized counted-item text, quest module v2 resources, quest scenes, and quest encounters.
+- Added pack-extensible tags for village structures and terrain, allegiance holders, protected civilians, assignable mounts, currencies, ominous-banner equivalents, equipment, worker targets, and logistics matching.
+- Added public scene and quest extension registries with explicit recovery and client-sync contracts, stable IDs, registry freezing, duplicate checks, and compiled source diagnostics.
+- Added structured diagnostics, trace and explain commands, provider and lifecycle audits, objective and transition inspection, scene repair, village administration, hired-work previews, payload bounds, migration helpers, and example packs.
+- Added save schemas and migrations for assignments, parties, villages, quests, scenes, encounters, raids, mounts, wallets, storage, filters, profiles, and completion history, plus bounded server-to-client payloads for their user interfaces.
+- Added broad GameTest and lightweight regression coverage for worker roles, inventories, filters, transfers, parties, mounts, villages, allegiance, raids, duels, downed villagers, quest v1/v2 compatibility, scenes, encounters, dialogue, combat, rendering state, and save recovery.
+- Added player-wiki, pack-wiki, README, JSON-reference, first-quest, scene-runtime, tracked-village, Builder, Sell Box, raid, model, localization, and example-pack documentation for the beta.13 surface.
+
+#### Changed For Pack Authors
+
+- Beta.12 v1 quest JSON remains supported through a compatibility adapter, while v2 is the maintained authoring target for new or intentionally migrated quests, stable quest IDs do not change.
+- Shared conditions and actions now drive dialogue and quests. Older helper-heavy dialogue fields still load where documented, but conditions are the maintained replacement and authoring tools flag planned deprecations.
+- The beta.12 Datapack Generator now preserves unknown and legacy pass-through content instead of silently rewriting it, and its beta.13 target can author quest, scene, encounter, dialogue, skill-trade, and other supported resources.
+
+## 1.0.0-beta.12-hotfix.2 - 2026-06-06
+
+Beta.12-hotfix.2 expands the beta.13 follow-up with broader gender support, new Village Supply quest content, operator gender correction tooling, and refined skill-based villager trade leveling with synced merchant-screen feedback.
+
+### Added
+
+- Added non-binary villager gender support across social data, breeding compatibility checks, profile/family UI labels, deterministic preset-name selection, and English localization.
+- Added five new built-in Village Supply quests: `beetroot_bundle`, `bottle_stock`, `egg_baskets`, `feather_fletching`, and `torch_bundle`, each with authored quest definitions, dialogue trees, loot tables, and player-wiki coverage.
+- Added `/villagerretaliation profile set_gender` so operators can set a villager's stored gender directly in-game.
+- Added more preset villager names to the built-in male and female name pools.
+
+### Changed
+
+- Built-in quest totals documented in the README, CurseForge description, and generated player wiki now reflect the added Village Supply questline content.
+- Villager gender chosen through the new command is now persisted on the villager so profile data and future loads keep the override.
+- Added skill-based trade-level XP scaling driven by the villager's primary profession skill, including persisted fractional progress so slowed or boosted trade XP carries cleanly across trades.
+- Merchant trade UI now displays the adjusted trade-level XP gain using synced villager profile data instead of showing stale vanilla-only values.
+- Skill-based trade leveling now guarantees at least 1 visible trade-level XP from XP-bearing trades, matching the updated config tooltip and avoiding zero-looking progress on valid trades.
+
+### Fixed
+
+- Fixed skill-based trade-level XP progress desync between server-side villager leveling and the client merchant display.
+- Fixed adjusted trade XP being lost between trades by syncing and caching the remaining fractional progress in villager profile payloads.
+- Fixed merchant result and container flows bypassing adjusted trade-level XP presentation after a trade completed or when trade offers refreshed.
+
 ## 1.0.0-beta.12-hotfix.1 - 2026-06-02
 
 Beta.12-hotfix.1 is a focused stability follow-up for beta.12. It fixes duplicate skill-trade registration and makes the villager interaction UI behave consistently across UI scale and text-scale settings.
@@ -12,6 +209,7 @@ Beta.12-hotfix.1 is a focused stability follow-up for beta.12. It fixes duplicat
 
 ### Fixed
 
+- Low-guts apology confrontations now interrupt only isolated attacks: followers cannot confront or retaliate against their player for witnessed crimes, and an already-hostile village or repeated player attacks and kills flow directly into retaliation instead of more forced dialogue. Directly attacking a follower still dismisses the betrayed villager as before.
 - Fixed UI scale rendering issues for gui scale 1, 2, 4, and auto.
 - Fixed Mac user UI rendering (i think lol).
 - Fixed duplicate villager and wandering-trader skill trades caused by repeated trade registration against mutable or previously registered trade collections.
@@ -39,7 +237,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Added path-aware folderized dialogue loading under `dialogue/<locale>/...`, including typed `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` folders, optional `type` in option files, profession defaults from paths, and namespaced custom profession paths.
 - Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` for in-game dialogue and datapack debugging.
 - Added beta.12 Datapack Generator support for the new target, folderized dialogue import/export, versioned wiki snapshots, and the downloadable dialogue folder template.
-- Added a player-facing static wiki under `tools/player-wiki` with generated quest walkthroughs, rewards, gifts, reputation, skill trades, watched-container guidance, advancements, search, and command/keybind references.
+- Added a player-facing static wiki under `wiki/player` with generated quest walkthroughs, rewards, gifts, reputation, skill trades, watched-container guidance, advancements, search, and command/keybind references.
 - Added persistent per-villager/per-player last-seen memory with absence-aware opening dialogue placeholders: `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}`.
 - Added persisted village event and village encounter memories so dialogue can react to recent hostile events and prior village visits without rescanning every interaction.
 - Added recruitment left-behind follow-up dialogue and biome filters through `recruitment_memory_biome` / `recruitment_memory_biomes`.
@@ -76,7 +274,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Removed the Datapack Generator's beta.11-to-beta.12 Convert workflow. Beta.12 is a manual retargeting boundary, not a marker-only migration.
 - Removed quest compatibility aliases and advancement-style `criteria` / `requirements` inference from the quest loader.
 - Removed Edmundo
-- Removed beta.11-only quest/action compatibility shapes from the beta.12 quest surface. The maintained action fields are `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker`; documented shorthand such as `xp`, `rep`, `notify`, and inline unique action fields still load where the shared action parser lists them.
+- Removed beta.11-only quest/action compatibility shapes from the beta.12 quest surface. The maintained action fields are `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker`, documented shorthand such as `xp`, `rep`, `notify`, and inline unique action fields still load where the shared action parser lists them.
 - Removed top-level dialogue metadata aliases from maintained beta.12 dialogue and dialogue-tree authoring.
 - No beta.12 runtime JSON fields, triggers, or placeholders are removed solely because of the folderized dialogue layout.
 - Edmundo came back
@@ -85,7 +283,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 ### Migration Notes For Pack Authors
 
 - Keep existing beta.11 datapacks on `villagerretaliation.pack_version: "1.0.0-beta.11"` until you have manually reviewed dialogue, forced dialogue, notifications, quests, and skill trades against the beta.12 wiki.
-- Do not migrate by only changing `villagerretaliation.pack_version` to `1.0.0-beta.12`. The marker selects the editor/runtime target; it does not reorganize dialogue files, audit ids, update compatibility fields, or validate new beta.12 behavior.
+- Do not migrate by only changing `villagerretaliation.pack_version` to `1.0.0-beta.12`. The marker selects the editor/runtime target, it does not reorganize dialogue files, audit ids, update compatibility fields, or validate new beta.12 behavior.
 - Prefer new beta.12 dialogue packs under `data/villagerretaliation/dialogue/<locale>/global`, `groups`, or `professions/<profession>`, using typed folders such as `options`, `lines`, `messages`, `openings`, `closings`, and `pacify`.
 - Treat `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` as reserved section folder names below `dialogue/<locale>/`.
 - Split old monolithic dialogue files by ownership and purpose. Keep bundle files only when several related entries are easier to maintain together.
@@ -106,7 +304,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 
 - Villagers no longer generate arbitrary profession weapons when attacked. They now fight with weapons they already hold, weapons stored in their inventory, or eligible weapons they can pick up from the ground.
 - Villagers can now swap a held non-weapon item with an inventory weapon for combat, then restore the held item after the borrowed weapon is returned.
-- Villagers with a held non-weapon can now pick up eligible ground weapons; the held item is stored first and only drops if storage is truly full.
+- Villagers with a held non-weapon can now pick up eligible ground weapons, the held item is stored first and only drops if storage is truly full.
 - Villager gifts are now refused before item removal when the receiving villager has no room to store the gift.
 - Villager inventory screens now allow the player's normal drop key to drop hovered villager-slot items.
 
@@ -162,7 +360,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Added data-driven profession loot resources, profession-specific villager loot tables, and resource-id-aware pack parsing.
 - Added generated-container item tooltips, generated-item safeguards, and villager trade-payment tracking with reputation penalties when tracked payment items are taken.
 - Added a browser-based Villager Retaliation datapack builder/generator with import/export, file-tree browsing, validation panels, JSON preview editing, panel toggles, resizable persistent panels, and GitHub Pages deployment.
-- Added VR pack-version support to the datapack builder; beta.11+ exports write `villagerretaliation.pack_version` in `pack.mcmeta`, and imports use it to restore the target generator version.
+- Added VR pack-version support to the datapack builder, beta.11+ exports write `villagerretaliation.pack_version` in `pack.mcmeta`, and imports use it to restore the target generator version.
 - Added datapack-builder support for forced dialogue, item payments, profession loot, generated-container loot table filters, `player_item_proximity` item callouts, item durability filters, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
 - Added datapack-builder support for `dialogue_option` entries with separate `request` fields and forced-dialogue chat output.
 - Added datapack-builder quality-of-life tools: built-in versioned wiki tabs, multi-tab wiki navigation, wiki search/highlights, preview line numbers, drag-and-drop import and entry reordering, inline save, undo/redo, configurable keybinds, settings, migration UI, and suggestions for the `baby_villager_attacked` event tag.
@@ -185,7 +383,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Villager names are now loaded additively from datapacks instead of requiring one monolithic preset-name file.
 - Profession-filtered dialogue, keyed messages, openings, and closings now default more carefully around baby villagers, with explicit `show_for_babies` support where needed.
 - Dialogue options now use `type: "dialogue_option"` with a separate `request` value, and dialogue lines now use `request`.
-- General player-selected conversation now uses `question`; `small_talk` is no longer a separate request.
+- General player-selected conversation now uses `question`, `small_talk` is no longer a separate request.
 - Built-in dialogue variants now use `lines` arrays instead of repeated near-identical entries, and recent-dialogue tracking now remembers individual line-array variants.
 - Built-in dialogue entries now provide at least three text variants where they output villager speech, reducing repeated one-line responses in common conversations.
 - Built-in profession dialogue is now split into profession files, with shared multi-profession reactions kept in grouped dialogue files.
@@ -213,7 +411,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 ### Removed
 
 - Removed `small_talk` as a separate dialogue request. Use `question` for general player-selected conversation.
-- Removed request values from dialogue option `type`; dialogue options now use `type: "dialogue_option"` plus `request`, and dialogue lines use `request`.
+- Removed request values from dialogue option `type`, dialogue options now use `type: "dialogue_option"` plus `request`, and dialogue lines use `request`.
 - Removed `_chat` forced-dialogue triggers. Use the normal trigger with `output.mode: "chat"`.
 
 ### Notes For Pack Authors

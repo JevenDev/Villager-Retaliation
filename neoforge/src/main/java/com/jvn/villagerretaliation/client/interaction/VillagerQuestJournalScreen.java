@@ -1,62 +1,229 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.toucanlib.client.ToucanScrollbarThumb;
+import com.jvn.toucanlib.client.ToucanHudText;
 import com.jvn.toucanlib.client.ToucanScrollState;
-import com.jvn.toucanlib.client.ToucanScrollbars;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationClientPreferences;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings;
-import com.jvn.villagerretaliation.client.quest.VillagerQuestUi;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
+import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.Util;
+import net.minecraft.advancements.AdvancementType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.advancements.AdvancementWidgetType;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public final class VillagerQuestJournalScreen extends Screen {
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
-    private static final float DETAIL_SCROLL_STEP = 16.0F;
-    private static final float OPTION_HOVER_SCALE = 0.055F;
-    private static final float OPTION_SELECTED_SCALE = 0.02F;
-    private static final int QUEST_OPTION_GAP = 4;
+    private static final float JOURNAL_ANIMATION_DURATION_MILLIS = 280.0F;
+
+    private static final int JOURNAL_WIDTH = 351;
+    private static final int JOURNAL_HEIGHT = 215;
+    private static final int BOOKMARK_WIDTH = 25;
+    private static final int BOOKMARK_HEIGHT = 30;
+    private static final int BOOKMARK_LEFT_OFFSET = 13;
+    private static final int BOOKMARK_TOP_OFFSET = 207;
+    private static final int BOOKMARK_GAP = 1;
+    private static final int INACTIVE_BOOKMARK_OFFSET_Y = -5;
+    private static final int BOOKMARK_ICON_SIZE = 17;
+    private static final int SELECTED_BOOKMARK_ICON_OFFSET_Y = -2;
+    private static final int INACTIVE_BOOKMARK_ICON_OFFSET_Y = 1;
+    private static final int TAB_TITLE_LEFT_OFFSET = 28;
+    private static final int TAB_TITLE_BOTTOM_OFFSET = 37;
+
+    private static final int QUEST_OPTION_LEFT_OFFSET = 23;
+    private static final int QUEST_OPTION_TOP_OFFSET = 41;
+    private static final int QUEST_OPTION_RIGHT_OFFSET = 150;
+    private static final int QUEST_OPTION_BOTTOM_OFFSET = 191;
+    private static final int QUEST_OPTION_WIDTH = QUEST_OPTION_RIGHT_OFFSET - QUEST_OPTION_LEFT_OFFSET;
+    private static final int QUEST_OPTION_HEIGHT = 19;
+    private static final int QUEST_OPTION_GAP = 0;
+    private static final int QUEST_OPTION_VIEWPORT_HEIGHT = QUEST_OPTION_BOTTOM_OFFSET - QUEST_OPTION_TOP_OFFSET;
+    private static final int QUEST_OPTION_TEXT_LEFT_PADDING = 15;
+    private static final int QUEST_OPTION_TEXT_RIGHT_PADDING = 18;
+    private static final int QUEST_OPTION_TEXT_TOP_PADDING = 6;
+    private static final int QUEST_OPTION_TEXT_LINE_GAP = 2;
+    private static final int QUEST_OPTION_EMPTY_TEXT_TOP_PADDING = 8;
+    private static final int QUEST_OPTION_SELECTED_OVERHANG_X = 3;
+    private static final int QUEST_OPTION_SELECTED_OVERHANG_Y = 2;
+    private static final int QUEST_OPTION_STATE_ICON_LEFT_PADDING = 3;
+    private static final int QUEST_OPTION_STATE_ICON_TOP_PADDING = 5;
+    private static final int QUEST_OPTION_STATE_ICON_SIZE = 9;
+    private static final int QUEST_OPTION_UPDATE_ICON_RIGHT_PADDING = 6;
+    private static final int QUEST_OPTION_UPDATE_ICON_TOP_PADDING = 3;
+    private static final int QUEST_OPTION_UPDATE_ICON_WIDTH = 6;
+    private static final int QUEST_OPTION_UPDATE_ICON_HEIGHT = 13;
+    private static final int QUEST_OPTION_SCROLLBAR_GAP = 5;
+    private static final int QUEST_OPTION_SCROLLBAR_WIDTH = 4;
+    private static final int QUEST_OPTION_SCROLLER_MIN_HEIGHT = 6;
+    private static final int QUEST_COUNT_BADGE_WIDTH = 11;
+    private static final int QUEST_COUNT_BADGE_HEIGHT = 11;
+    private static final int QUEST_COUNT_BADGE_HORIZONTAL_PADDING = 2;
+    private static final int QUEST_COUNT_BADGE_INNER_INSET = 1;
+    private static final int QUEST_COUNT_BADGE_BOTTOM_GAP = 4;
+
+    private static final int DETAILS_LEFT_OFFSET = 192;
+    private static final int DETAILS_TOP_OFFSET = 28;
+    private static final int DETAILS_WIDTH = 137;
+    private static final int DETAILS_HEIGHT = 163;
+    private static final int DETAILS_LINE_STEP = 11;
+    private static final int DETAILS_DIVIDER_WIDTH = 137;
+    private static final int DETAILS_DIVIDER_HEIGHT = 5;
+    private static final int DETAILS_TITLE_ICON_SIZE = 9;
+    private static final int DETAILS_QUEST_STEP_ICON_SIZE = 7;
+    private static final int DETAILS_REWARD_ITEM_SIZE = 12;
+    private static final int DETAILS_QUEST_STEP_ICON_LEFT_PADDING = 0;
+    private static final int DETAILS_QUEST_STEP_TEXT_GAP = 5;
+    private static final int DETAILS_PAGE_LABEL_GAP = 3;
+    private static final int DETAILS_PAGE_LABEL_HEIGHT = 12;
+    private static final int DETAILS_ABANDON_HEIGHT = 12;
+    private static final int DETAILS_SECTION_GAP = DETAILS_LINE_STEP + 2;
+    private static final int QUESTLINE_GRAPH_HEADER_HEIGHT = 23;
+    private static final int QUESTLINE_GRAPH_NODE_WIDTH = 32;
+    private static final int QUESTLINE_GRAPH_NODE_HEIGHT = 26;
+    private static final int QUESTLINE_GRAPH_PAN_MARGIN = 8;
+    private static final String QUESTLINE_LINK_PREFIX = "#questline/";
+
+    private static final int TEXT_COLOR = 0xFF000000;
+    private static final int TITLE_COLOR = 0xFF000000;
+    private static final int QUEST_TITLE_TEXT_COLOR = 0xFF000000;
+    private static final int NO_QUEST_TITLE_OUTLINE = 0x00000000;
+    private static final int MUTED_TEXT_COLOR = 0xFF000000;
+    private static final int SELECTED_TEXT_COLOR = 0xFFFFFFFF;
+    private static final int HOVERED_TEXT_COLOR = 0xFF000000;
+    private static final int LINK_TEXT_COLOR = 0xFF315B8A;
+    private static final int QUESTLINE_LABEL_COLOR = 0xFF4A3828;
+    private static final int QUESTLINE_PROGRESS_COLOR = 0xFF4F6F36;
+    private static final int QUESTLINE_TOOLTIP_LABEL_COLOR = 0xFFF9CB5F;
+    private static final int QUESTLINE_TOOLTIP_NAME_COLOR = 0xFF5C96EF;
+    private static final int QUESTLINE_TOOLTIP_PROGRESS_COLOR = 0xFFB5F45B;
+    private static final int QUESTLINE_NODE_TOOLTIP_DESCRIPTION_COLOR = 0xFFA0A0A0;
+    private static final int QUESTLINE_NODE_TOOLTIP_ACTION_COLOR = 0xFF5C96EF;
+    private static final int QUESTLINE_NODE_TOOLTIP_ACTIVE_COLOR = 0xFFF9CB5F;
+    private static final int QUESTLINE_NODE_TOOLTIP_COMPLETED_COLOR = 0xFFB5F45B;
+    private static final int QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR = 0xFFF06A6A;
+    private static final int QUESTLINE_NODE_TOOLTIP_LOCKED_COLOR = 0xFFA0A0A0;
+    private static final int QUEST_COUNT_TEXT_COLOR = 0xFFFFFFFF;
+    private static final int PAGE_TEXT_COLOR = 0xFFE1DAC7;
+    private static final Style QUEST_COUNT_ACTIVE_STYLE = Style.EMPTY.withColor(0xF9CB5F);
+    private static final Style QUEST_COUNT_ACCEPTED_STYLE = Style.EMPTY.withColor(0xE1DAC7);
+    private static final Style QUEST_COUNT_COMPLETED_STYLE = Style.EMPTY.withColor(0xB5F45B);
+    private static final Style QUEST_COUNT_NEARBY_STYLE = Style.EMPTY.withColor(0x5C96EF);
+    private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.quest_journal.";
+    private static final int LIGHTEST_JOURNAL_ENTRY_COLOR = 0xFFF6F0DF;
+    private static final double MIN_JOURNAL_TEXT_CONTRAST = 4.5D;
+
+    private static final JournalNineSlice QUEST_JOURNAL_SCROLLBAR_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLBAR_TEXTURE, 4, 6, 1, 1, 2, 2);
+    private static final JournalNineSlice QUEST_JOURNAL_SCROLLER_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLER_TEXTURE, 4, 6, 1, 1, 2, 2);
+    private static final JournalNineSlice QUEST_JOURNAL_SCROLLER_HIGHLIGHT_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLER_HIGHLIGHT_TEXTURE, 4, 6, 1, 1, 2, 2);
+    private static final JournalNineSlice QUEST_JOURNAL_QUEST_NUMBER_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_QUEST_NUMBER_TEXTURE, 11, 11, 3, 3, 3, 3);
+    private static final JournalNineSlice QUEST_JOURNAL_ENTRY_1_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_1_TEXTURE, 3, 3, 1, 1, 1, 1);
+    private static final JournalNineSlice QUEST_JOURNAL_ENTRY_2_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_2_TEXTURE, 3, 3, 1, 1, 1, 1);
+    private static final JournalNineSlice QUEST_JOURNAL_ENTRY_HIGHLIGHT_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_HIGHLIGHT_TEXTURE, 3, 3, 1, 1, 1, 1);
+    private static final JournalNineSlice QUEST_JOURNAL_SELECTED_QUEST_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SELECTED_QUEST_TEXTURE, 134, 23, 3, 3, 11, 11);
 
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
-    private final OptionListContext optionListContext = new OptionListContext();
-    private boolean draggingScrollbar;
-    private boolean draggingDetailsScrollbar;
-    private float scrollbarDragOffset;
-    private float detailsScrollbarDragOffset;
+    private final EnumMap<QuestJournalTab, VillagerInteractionScreenState.OptionListPosition> tabPositions =
+            new EnumMap<>(QuestJournalTab.class);
     private float visualOptionScroll;
     private float visualDetailsScroll;
     private long lastScrollRenderMillis;
     private int detailsSelectedOption = Integer.MIN_VALUE;
-    private long detailsAnimationStartMillis = -1L;
+    private int detailsPage;
+    private String selectedQuestId = "";
+    private String searchQuery = "";
+    private boolean searchActive;
+    private QuestJournalTab selectedTab = QuestJournalTab.AVAILABLE;
+    private boolean draggingOptionScrollbar;
+    private float optionScrollbarDragOffset;
+    private boolean questlineMapOpen;
+    private String questlineMapId = "";
+    private String questlineMapReturnQuestId = "";
+    private float questlineGraphPanX;
+    private float questlineGraphPanY;
+    private boolean draggingQuestlineGraph;
+    private boolean questlineGraphCursorCaptured;
+    private double questlineGraphCursorX;
+    private double questlineGraphCursorY;
+    private double questlineGraphUiCursorX;
+    private double questlineGraphUiCursorY;
     private boolean closingWithAnimation;
+    private boolean openedSoundPlayed;
+    private long animationStartMillis = -1L;
+    private final float cinematicBarSlant = VillagerDialogueCinematicBars.sampleSlant();
+    private List<QuestTrackerSyncPayload.Entry> cachedVisibleSourceEntries;
+    private QuestJournalTab cachedVisibleTab;
+    private String cachedVisibleQuery = "";
+    private List<QuestTrackerSyncPayload.Entry> cachedVisibleEntries = List.of();
+    private List<QuestTrackerSyncPayload.Entry> cachedOptionLayoutEntries;
+    private List<List<FormattedCharSequence>> cachedOptionTitleLines = List.of();
+    private int[] cachedOptionHeights = new int[0];
+    private float[] cachedOptionOffsets = new float[0];
+    private float cachedOptionContentHeight;
 
     public VillagerQuestJournalScreen() {
-        super(Component.literal("Active Quests"));
+        super(Component.translatable(GUI_KEY_PREFIX + "title"));
     }
 
     @Override
     protected void init() {
-        this.state.resetOptions(!entries().isEmpty());
+        this.state.resetOptions(!visibleEntries().isEmpty());
         this.visualOptionScroll = this.state.optionScroll();
         this.visualDetailsScroll = this.state.detailsScroll();
         this.lastScrollRenderMillis = Util.getMillis();
-        this.detailsAnimationStartMillis = Util.getMillis();
-        VillagerInteractionExperimentalChrome.resetAnimation();
+        this.detailsSelectedOption = this.state.selectedOption();
+        rememberSelectedQuestId();
+        this.closingWithAnimation = false;
+        this.animationStartMillis = Util.getMillis();
+        if (!this.openedSoundPlayed) {
+            this.openedSoundPlayed = true;
+            playBookSound(0.9F);
+        }
     }
 
     @Override
     public void tick() {
+        if (this.draggingQuestlineGraph && !isQuestlineGraphDragButtonDown()) {
+            endQuestlineGraphDrag();
+        }
+        if (this.closingWithAnimation) {
+            if (animationElapsedMillis() >= JOURNAL_ANIMATION_DURATION_MILLIS) {
+                Minecraft.getInstance().setScreen(null);
+            }
+            return;
+        }
         clampSelectedOption();
         resetDetailsScrollAfterSelectionChange();
         this.state.tickOptionScroll(OPTION_SCROLL_LERP);
@@ -72,16 +239,38 @@ public final class VillagerQuestJournalScreen extends Screen {
         clampSelectedOption();
         updateVisualScrolls();
 
+        int effectiveMouseX = this.draggingQuestlineGraph ? Mth.floor(this.questlineGraphUiCursorX) : mouseX;
+        int effectiveMouseY = this.draggingQuestlineGraph ? Mth.floor(this.questlineGraphUiCursorY) : mouseY;
+        int slideOffset = slideOffsetY();
+        int journalMouseY = effectiveMouseY - slideOffset;
+
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.screenLayerZ());
-        renderExperimentalBackdrop(graphics, mouseX, mouseY);
-        VillagerInteractionOptionList.render(this.optionListContext, graphics, mouseX, mouseY);
-        renderSelectedUnderlineClipped(graphics, mouseX, mouseY);
-        renderQuestDetails(graphics);
+        if (ClientVillagerConversationState.active()) {
+            VillagerDialogueCinematicBars.render(graphics, this.width, this.height, 1.0F, this.cinematicBarSlant);
+        }
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, slideOffset, 0.0F);
+        renderJournalContainer(graphics);
+        renderTabTitle(graphics);
+        renderQuestCountBadge(graphics);
+        renderQuestOptions(graphics, effectiveMouseX, journalMouseY, slideOffset);
+        renderQuestDetails(graphics, slideOffset, effectiveMouseX, journalMouseY);
+        graphics.pose().popPose();
+        renderQuestlineGraphTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
+        renderQuestlineTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
+        renderQuestStateTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
+        renderPreviousStepTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
+        renderQuestCountTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
+        renderBookmarkTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
+        renderAbandonTooltip(graphics, effectiveMouseX, effectiveMouseY, slideOffset);
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.closingWithAnimation) {
+            return true;
+        }
         if (VillagerQuestKeyMappings.OPEN_JOURNAL.matches(keyCode, scanCode)) {
             VillagerQuestTrackerOverlay.ignorePendingJournalToggle();
             closeJournal();
@@ -89,8 +278,30 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
         return switch (keyCode) {
             case GLFW.GLFW_KEY_ESCAPE -> {
+                if (this.questlineMapOpen) {
+                    closeQuestlineMap();
+                    yield true;
+                }
+                if (this.searchActive || !this.searchQuery.isBlank()) {
+                    this.searchActive = false;
+                    this.searchQuery = "";
+                    resetFilteredSelection();
+                    yield true;
+                }
                 closeJournal();
                 yield true;
+            }
+            case GLFW.GLFW_KEY_SLASH -> {
+                this.searchActive = true;
+                yield true;
+            }
+            case GLFW.GLFW_KEY_BACKSPACE -> {
+                if (this.searchActive && !this.searchQuery.isEmpty()) {
+                    this.searchQuery = this.searchQuery.substring(0, this.searchQuery.length() - 1);
+                    resetFilteredSelection();
+                    yield true;
+                }
+                yield super.keyPressed(keyCode, scanCode, modifiers);
             }
             case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> {
                 moveSelection(-1);
@@ -105,89 +316,101 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (this.searchActive && !Character.isISOControl(codePoint) && this.searchQuery.length() < 48) {
+            this.searchQuery += codePoint;
+            resetFilteredSelection();
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            return super.mouseClicked(mouseX, mouseY, button);
+        if (this.closingWithAnimation || button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            return this.closingWithAnimation || super.mouseClicked(mouseX, mouseY, button);
         }
 
-        int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
+        double journalMouseY = mouseY - slideOffsetY();
+        QuestJournalTab clickedTab = bookmarkAt(mouseX, journalMouseY);
+        if (clickedTab != null) {
+            selectTab(clickedTab);
+            return true;
+        }
+
+        if (tryBeginOptionScrollbarDrag(mouseX, journalMouseY)) {
+            return true;
+        }
+
+        if (this.questlineMapOpen) {
+            if (questlineGraphBackAt(mouseX, journalMouseY)) {
+                closeQuestlineMap();
+                playBookSound(1.08F);
+                return true;
+            }
+            QuestTrackerSyncPayload.QuestlineNode node = questlineGraphNodeAt(mouseX, journalMouseY);
+            if (node != null) {
+                if (openQuestPage(node.questId())) {
+                    closeQuestlineMap();
+                    playBookSound(1.0F);
+                }
+                return true;
+            }
+            if (isPointInsideQuestlineGraph(mouseX, journalMouseY)) {
+                beginQuestlineGraphDrag(mouseX, mouseY);
+                return true;
+            }
+        }
+
+        QuestDetailLine previousStepLink = detailLinkAt(mouseX, journalMouseY);
+        if (previousStepLink != null) {
+            if (previousStepLink.questlineLink()) {
+                openQuestlineMap(previousStepLink.targetQuestId().substring(QUESTLINE_LINK_PREFIX.length()));
+                return true;
+            }
+            if (openQuestPage(previousStepLink.targetQuestId())) {
+                return true;
+            }
+        }
+
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (abandonActionAt(mouseX, journalMouseY, selected)) {
+            requestQuestAbandon(selected);
+            return true;
+        }
+
+        int hovered = questOptionAt(mouseX, journalMouseY);
         if (hovered >= 0) {
             if (hovered != this.state.selectedOption()) {
                 setSelectedOption(hovered);
-                ensureSelectedVisible();
+                acknowledgeSelectedQuestUpdate();
+                ensureSelectedVisible(false);
                 return true;
             }
-            VillagerQuestTrackerOverlay.toggleTracking(entries().get(hovered));
-            ensureSelectedVisible();
-            return true;
-        }
-
-        ToucanScrollbarThumb scrollbarThumb = scrollbarThumb();
-        if (scrollbarThumb != null && scrollbarThumb.contains(mouseX, mouseY)) {
-            this.draggingScrollbar = true;
-            this.scrollbarDragOffset = ToucanScrollbars.dragOffset(mouseY, scrollbarThumb);
-            return true;
-        }
-        ToucanScrollbarThumb detailsScrollbarThumb = detailsScrollbarThumb();
-        if (detailsScrollbarThumb != null && detailsScrollbarThumb.contains(mouseX, mouseY)) {
-            this.draggingDetailsScrollbar = true;
-            this.detailsScrollbarDragOffset = ToucanScrollbars.dragOffset(mouseY, detailsScrollbarThumb);
+            acknowledgeSelectedQuestUpdate();
+            VillagerQuestTrackerOverlay.toggleTracking(visibleEntries().get(hovered));
+            ensureSelectedVisible(false);
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingScrollbar) {
-            ToucanScrollbarThumb scrollbarThumb = scrollbarThumb();
-            if (scrollbarThumb == null) {
-                this.draggingScrollbar = false;
-                return false;
-            }
-            setTargetOptionScroll(ToucanScrollbars.scrollFromThumbDrag(mouseY, this.scrollbarDragOffset, scrollbarThumb, maxOptionScroll()));
-            this.state.jumpOptionScrollToTarget();
-            this.visualOptionScroll = this.state.targetOptionScroll();
-            return true;
-        }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingDetailsScrollbar) {
-            ToucanScrollbarThumb detailsScrollbarThumb = detailsScrollbarThumb();
-            if (detailsScrollbarThumb == null) {
-                this.draggingDetailsScrollbar = false;
-                return false;
-            }
-            setTargetDetailsScroll(ToucanScrollbars.scrollFromThumbDrag(
-                    mouseY,
-                    this.detailsScrollbarDragOffset,
-                    detailsScrollbarThumb,
-                    maxDetailsScroll()));
-            this.state.jumpDetailsScrollToTarget();
-            this.visualDetailsScroll = this.state.targetDetailsScroll();
-            return true;
-        }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingScrollbar) {
-            this.draggingScrollbar = false;
-            return true;
-        }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingDetailsScrollbar) {
-            this.draggingDetailsScrollbar = false;
-            return true;
-        }
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (maxDetailsScroll() > 0.0F && isPointInsideDetailsScrollArea(mouseX, mouseY)) {
-            setTargetDetailsScroll(this.state.targetDetailsScroll() - (float) scrollY * DETAIL_SCROLL_STEP);
+        if (this.closingWithAnimation || this.draggingQuestlineGraph) {
             return true;
         }
-        if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, mouseY)) {
+
+        double journalMouseY = mouseY - slideOffsetY();
+        if (this.questlineMapOpen && isPointInsideQuestlineGraph(mouseX, journalMouseY)) {
+            return true;
+        }
+        if (scrollY != 0.0D && isPointInsideDetailsScrollArea(mouseX, journalMouseY) && turnDetailsPage(scrollY < 0.0D ? 1 : -1)) {
+            return true;
+        }
+        if (maxOptionScroll() <= 0.0F
+                || (!isPointInsideOptionScrollArea(mouseX, journalMouseY)
+                        && !isPointInsideOptionScrollbarArea(mouseX, journalMouseY))) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
         setTargetOptionScroll(this.state.targetOptionScroll() - (float) scrollY * OPTION_SCROLL_STEP);
@@ -195,8 +418,39 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingQuestlineGraph) {
+            this.questlineGraphPanX += (float) dragX;
+            this.questlineGraphPanY += (float) dragY;
+            clampQuestlineGraphPan();
+            return true;
+        }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingOptionScrollbar) {
+            return dragOptionScrollbar(mouseY - slideOffsetY());
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingQuestlineGraph) {
+            endQuestlineGraphDrag();
+            return true;
+        }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingOptionScrollbar) {
+            this.draggingOptionScrollbar = false;
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    public boolean isClosingWithAnimation() {
+        return this.closingWithAnimation;
     }
 
     @Override
@@ -204,169 +458,736 @@ public final class VillagerQuestJournalScreen extends Screen {
         closeJournal();
     }
 
-    private void renderExperimentalBackdrop(GuiGraphics graphics, int mouseX, int mouseY) {
-        renderExperimentalSkillsBackdrop(graphics, mouseX, mouseY);
+    @Override
+    public void removed() {
+        endQuestlineGraphDrag();
+        super.removed();
     }
 
-    private void renderExperimentalSkillsBackdrop(GuiGraphics graphics, int mouseX, int mouseY) {
-        VillagerInteractionScreenShaderRenderer.renderExperimentalSkillsPanel(
-                graphics,
-                skillsBackdropLeft(),
-                skillsBackdropTop(),
-                skillsBackdropRight(),
-                skillsBackdropBottom(),
-                VillagerInteractionExperimentalChrome.chromeAlpha(),
-                experimentalTicks(),
-                detailsElapsedMillis(),
-                -1.0F,
-                VillagerInteractionExperimentalChrome.backdropElapsedMillis(),
-                VillagerInteractionExperimentalChrome.backdropExitElapsedMillis(),
-                this.width,
-                this.height,
-                mouseX,
-                mouseY,
+    private void renderJournalContainer(GuiGraphics graphics) {
+        int left = journalLeft();
+        int top = journalTop();
+        graphics.blit(
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_CONTAINER_TEXTURE,
+                left,
+                top,
+                0,
+                0,
+                JOURNAL_WIDTH,
+                JOURNAL_HEIGHT,
+                JOURNAL_WIDTH,
+                JOURNAL_HEIGHT);
+        renderBookmarks(graphics, left, top);
+        graphics.blit(
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_CONTAINER_OVERLAY_TEXTURE,
+                left,
+                top,
+                0,
+                0,
+                JOURNAL_WIDTH,
+                JOURNAL_HEIGHT,
+                JOURNAL_WIDTH,
+                JOURNAL_HEIGHT);
+    }
+
+    private void renderTabTitle(GuiGraphics graphics) {
+        Component title = this.searchActive || !this.searchQuery.isBlank()
+                ? Component.translatable(GUI_KEY_PREFIX + "search", this.searchQuery.isBlank() ? "_" : this.searchQuery)
+                : this.selectedTab.title();
+        graphics.drawString(
+                this.font,
+                title,
+                journalLeft() + TAB_TITLE_LEFT_OFFSET,
+                journalTop() + TAB_TITLE_BOTTOM_OFFSET - this.font.lineHeight,
+                TITLE_COLOR,
                 false);
     }
 
-    private void renderSelectedUnderline(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= entries().size()) {
-            return;
-        }
-        QuestTrackerSyncPayload.Entry selected = entries().get(this.state.selectedOption());
-        if (!"active".equalsIgnoreCase(selected.state())) {
-            return;
-        }
+    private void renderQuestCountBadge(GuiGraphics graphics) {
+        String count = Integer.toString(visibleEntries().size());
+        int textWidth = this.font.width(count);
+        int badgeWidth = questCountBadgeWidth(textWidth);
+        int badgeLeft = questCountBadgeLeft(badgeWidth);
+        int badgeTop = questCountBadgeTop();
+        int innerLeft = badgeLeft + QUEST_COUNT_BADGE_INNER_INSET;
+        int innerWidth = badgeWidth - QUEST_COUNT_BADGE_INNER_INSET * 2;
+        QUEST_JOURNAL_QUEST_NUMBER_NINE_SLICE.render(
+                graphics,
+                badgeLeft,
+                badgeTop,
+                badgeWidth,
+                QUEST_COUNT_BADGE_HEIGHT);
+        graphics.drawString(
+                this.font,
+                count,
+                innerLeft + Math.round((innerWidth - textWidth) / 2.0F),
+                badgeTop + 2,
+                QUEST_COUNT_TEXT_COLOR,
+                false);
+    }
 
-        int rowHeight = VillagerInteractionOptionList.optionHeight(this.optionListContext, this.state.selectedOption());
-        float rowTop = optionsTop() + VillagerInteractionOptionList.optionOffset(this.optionListContext, this.state.selectedOption()) - optionRenderScroll();
-        int viewportTop = optionsTop();
-        int viewportBottom = viewportTop + optionViewportHeight();
-        if (rowTop + rowHeight < viewportTop || rowTop > viewportBottom) {
+    private void renderQuestCountTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        String count = Integer.toString(visibleEntries().size());
+        int badgeWidth = questCountBadgeWidth(this.font.width(count));
+        int badgeLeft = questCountBadgeLeft(badgeWidth);
+        int badgeTop = questCountBadgeTop() + slideOffset;
+        if (!isPointInside(mouseX, mouseY, badgeLeft, badgeTop, badgeLeft + badgeWidth, badgeTop + QUEST_COUNT_BADGE_HEIGHT)) {
             return;
         }
+        graphics.renderComponentTooltip(this.font, questCountTooltip(), mouseX, mouseY);
+    }
 
-        int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
-        float hoverMix = hovered == this.state.selectedOption() ? this.optionListContext.hoverIntensity(mouseX, mouseY, optionsLeft(), rowTop) : 0.0F;
-        float textScale = VillagerInteractionExperimentalLayout.scaleFactor();
-        float shiftX = hoverMix > 0.0F ? this.optionListContext.hoverShift(mouseX, optionsLeft(), optionWidth(), 3.2F * textScale) * hoverMix : 0.0F;
-        float shiftY = hoverMix > 0.0F ? this.optionListContext.hoverShift(mouseY, rowTop, rowHeight, 1.6F * textScale) * hoverMix : 0.0F;
-        int left = Mth.floor(optionsLeft() - experimentalUnitAtLeast(12, 8) + shiftX);
-        int top = Mth.floor(rowTop + rowHeight - experimentalUnitAtLeast(1, 1) + shiftY) + experimentalUnitAtLeast(3, 2);
-        int right = Mth.floor(Math.min(optionsScrollbarLeft() - experimentalUnitAtLeast(8, 5), optionsLeft() + optionWidth() - experimentalUnitAtLeast(8, 5)) + shiftX);
-        int bottom = top + experimentalUnitAtLeast(2, 1);
-        if (right <= left) {
+    private int questCountBadgeWidth(int textWidth) {
+        return Math.max(
+                QUEST_COUNT_BADGE_WIDTH,
+                textWidth + QUEST_COUNT_BADGE_HORIZONTAL_PADDING * 2 + QUEST_COUNT_BADGE_INNER_INSET);
+    }
+
+    private int questCountBadgeLeft(int badgeWidth) {
+        return optionsLeft() + QUEST_OPTION_WIDTH - badgeWidth;
+    }
+
+    private int questCountBadgeTop() {
+        return optionsTop() - QUEST_COUNT_BADGE_BOTTOM_GAP - QUEST_COUNT_BADGE_HEIGHT;
+    }
+
+    private List<Component> questCountTooltip() {
+        QuestCountSummary summary = questCountSummary();
+        return switch (this.selectedTab) {
+            case AVAILABLE -> List.of(
+                    Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    Component.translatable(GUI_KEY_PREFIX + "count.active", summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
+                    Component.translatable(GUI_KEY_PREFIX + "count.accepted", summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE),
+                    Component.translatable(GUI_KEY_PREFIX + "count.nearby", summary.nearby()).withStyle(QUEST_COUNT_NEARBY_STYLE));
+            case ACTIVE -> List.of(
+                    Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    Component.translatable(GUI_KEY_PREFIX + "count.active", summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
+                    Component.translatable(GUI_KEY_PREFIX + "count.accepted", summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE));
+            case COMPLETED -> List.of(
+                    Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    Component.translatable(GUI_KEY_PREFIX + "count.completed", summary.completed()).withStyle(QUEST_COUNT_COMPLETED_STYLE));
+        };
+    }
+
+    private void renderBookmarkTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        QuestJournalTab hoveredTab = bookmarkAt(mouseX, mouseY - slideOffset);
+        if (hoveredTab == null) {
             return;
         }
-        if (top < viewportTop || bottom > viewportBottom) {
-            return;
+        graphics.renderComponentTooltip(this.font, List.of(hoveredTab.tooltip()), mouseX, mouseY);
+    }
+
+    private void renderQuestStateTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        Component tooltip = questStateTooltipAt(mouseX, mouseY - slideOffset);
+        if (tooltip != null) {
+            graphics.renderComponentTooltip(this.font, List.of(tooltip), mouseX, mouseY);
         }
-        float alpha = VillagerInteractionUiUtil.edgeFadeAlpha(
-                optionRenderScroll(),
-                maxOptionScroll(),
+    }
+
+    private Component questStateTooltipAt(double mouseX, double journalMouseY) {
+        int index = questOptionAt(mouseX, journalMouseY);
+        if (index < 0) {
+            return null;
+        }
+        int optionTop = Mth.floor(optionsTop() + optionOffset(index) - optionRenderScroll());
+        int iconLeft = optionsLeft() + QUEST_OPTION_STATE_ICON_LEFT_PADDING;
+        int iconTop = optionTop + QUEST_OPTION_STATE_ICON_TOP_PADDING;
+        if (!isPointInside(
+                mouseX,
+                journalMouseY,
+                iconLeft,
+                iconTop,
+                iconLeft + QUEST_OPTION_STATE_ICON_SIZE,
+                iconTop + QUEST_OPTION_STATE_ICON_SIZE)) {
+            return null;
+        }
+        if (index == this.state.selectedOption()) {
+            return Component.translatable(GUI_KEY_PREFIX + "state.selected").withStyle(QUEST_COUNT_ACTIVE_STYLE);
+        }
+        return QuestJournalEntryState.iconFor(visibleEntries().get(index)).tooltip();
+    }
+
+    private static QuestCountSummary questCountSummary() {
+        int active = 0;
+        int accepted = 0;
+        int nearby = 0;
+        int completed = 0;
+        for (QuestTrackerSyncPayload.Entry entry : entries()) {
+            QuestJournalEntryState state = QuestJournalEntryState.from(entry);
+            if (entry.questAvailable()) {
+                nearby++;
+            } else if (state == QuestJournalEntryState.ACTIVE && VillagerQuestTrackerOverlay.isTracked(entry)) {
+                active++;
+            } else if (state == QuestJournalEntryState.ACTIVE) {
+                accepted++;
+            } else if (state == QuestJournalEntryState.COMPLETED) {
+                completed++;
+            }
+        }
+        return new QuestCountSummary(active, accepted, nearby, completed);
+    }
+
+    private void renderBookmarks(GuiGraphics graphics, int journalLeft, int journalTop) {
+        int left = journalLeft + BOOKMARK_LEFT_OFFSET;
+        for (QuestJournalTab tab : QuestJournalTab.values()) {
+            int bookmarkLeft = bookmarkLeft(left, tab);
+            int bookmarkTop = bookmarkTop(journalTop, tab);
+            renderBookmark(graphics, tab.texture(), bookmarkLeft, bookmarkTop);
+            renderBookmarkIcon(graphics, tab.iconTexture(), bookmarkLeft, bookmarkTop, tab == this.selectedTab);
+        }
+    }
+
+    private void renderBookmark(GuiGraphics graphics, ResourceLocation texture, int left, int top) {
+        graphics.blit(texture, left, top, 0, 0, BOOKMARK_WIDTH, BOOKMARK_HEIGHT, BOOKMARK_WIDTH, BOOKMARK_HEIGHT);
+    }
+
+    private void renderBookmarkIcon(
+            GuiGraphics graphics,
+            ResourceLocation texture,
+            int bookmarkLeft,
+            int bookmarkTop,
+            boolean selected) {
+        int left = bookmarkLeft + (BOOKMARK_WIDTH - BOOKMARK_ICON_SIZE) / 2;
+        int top = bookmarkTop + (BOOKMARK_HEIGHT - BOOKMARK_ICON_SIZE) / 2;
+        top += selected ? SELECTED_BOOKMARK_ICON_OFFSET_Y : INACTIVE_BOOKMARK_ICON_OFFSET_Y;
+        graphics.blit(
+                texture,
+                left,
                 top,
-                bottom,
-                viewportTop,
-                viewportBottom,
-                26.0F);
-        VillagerQuestUi.renderAccentBar(graphics, left, top, right, bottom, alpha, experimentalTicks(), false);
+                0,
+                0,
+                BOOKMARK_ICON_SIZE,
+                BOOKMARK_ICON_SIZE,
+                BOOKMARK_ICON_SIZE,
+                BOOKMARK_ICON_SIZE);
     }
 
-    private void renderSelectedUnderlineClipped(GuiGraphics graphics, int mouseX, int mouseY) {
+    private int bookmarkLeft(int firstBookmarkLeft, QuestJournalTab tab) {
+        return firstBookmarkLeft + tab.index() * (BOOKMARK_WIDTH + BOOKMARK_GAP);
+    }
+
+    private int bookmarkTop(int journalTop, QuestJournalTab tab) {
+        int selectedOffset = tab == this.selectedTab ? 0 : INACTIVE_BOOKMARK_OFFSET_Y;
+        return journalTop + BOOKMARK_TOP_OFFSET + selectedOffset;
+    }
+
+    private void renderQuestOptions(GuiGraphics graphics, int mouseX, int journalMouseY, int slideOffset) {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        int left = optionsLeft();
         int top = optionsTop();
-        int bottom = top + optionViewportHeight();
-        graphics.enableScissor(Math.max(0, optionsLeft() - optionWidth()), top, optionsScrollbarLeft() - 4, bottom);
-        renderSelectedUnderline(graphics, mouseX, mouseY);
+        int viewportBottom = top + optionViewportHeight();
+        int hovered = questOptionAt(mouseX, journalMouseY);
+        if (visibleEntries.isEmpty()) {
+            graphics.drawString(
+                    this.font,
+                    this.selectedTab.emptyMessage(),
+                    left,
+                    top + QUEST_OPTION_EMPTY_TEXT_TOP_PADDING,
+                    TEXT_COLOR,
+                    false);
+            return;
+        }
+        graphics.enableScissor(
+                left - QUEST_OPTION_SELECTED_OVERHANG_X,
+                top - QUEST_OPTION_SELECTED_OVERHANG_Y + slideOffset,
+                left + QUEST_OPTION_WIDTH + QUEST_OPTION_SELECTED_OVERHANG_X,
+                viewportBottom + QUEST_OPTION_SELECTED_OVERHANG_Y + slideOffset);
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            int optionTop = Mth.floor(top + optionOffset(index) - optionRenderScroll());
+            int optionHeight = questOptionHeight(index);
+            int optionBottom = optionTop + optionHeight;
+            if (optionBottom < top || optionTop > viewportBottom) {
+                continue;
+            }
+            renderQuestOptionBackground(graphics, index, hovered, left, optionTop, optionHeight);
+        }
+        int selectedIndex = this.state.selectedOption();
+        if (selectedIndex >= 0 && selectedIndex < visibleEntries.size()) {
+            int selectedTop = Mth.floor(top + optionOffset(selectedIndex) - optionRenderScroll());
+            int selectedHeight = questOptionHeight(selectedIndex);
+            int selectedBottom = selectedTop + selectedHeight;
+            if (selectedBottom >= top && selectedTop <= viewportBottom) {
+                renderSelectedQuestOption(graphics, left, selectedTop, selectedHeight);
+            }
+        }
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            int optionTop = Mth.floor(top + optionOffset(index) - optionRenderScroll());
+            int optionHeight = questOptionHeight(index);
+            int optionBottom = optionTop + optionHeight;
+            if (optionBottom < top || optionTop > viewportBottom) {
+                continue;
+            }
+            renderQuestOptionIcon(graphics, visibleEntries.get(index), index == selectedIndex, left, optionTop);
+        }
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            int optionTop = Mth.floor(top + optionOffset(index) - optionRenderScroll());
+            int optionHeight = questOptionHeight(index);
+            int optionBottom = optionTop + optionHeight;
+            if (optionBottom < top || optionTop > viewportBottom) {
+                continue;
+            }
+            renderQuestOptionTitle(graphics, index, hovered, left, optionTop);
+        }
         graphics.disableScissor();
+        renderQuestOptionScrollbar(graphics, mouseX, journalMouseY);
     }
 
-    private void renderQuestDetails(GuiGraphics graphics) {
+    private void renderQuestOptionScrollbar(GuiGraphics graphics, int mouseX, int journalMouseY) {
+        float maxScroll = maxOptionScroll();
+        if (maxScroll <= 0.0F) {
+            return;
+        }
+
+        int left = optionScrollbarLeft();
+        int top = optionsTop();
+        int height = optionViewportHeight();
+        int scrollerHeight = optionScrollerHeight(height);
+        int scrollerTop = optionScrollerTop(top, height, scrollerHeight, maxScroll);
+        JournalNineSlice scroller =
+                isPointInside(
+                                mouseX,
+                                journalMouseY,
+                                left,
+                                scrollerTop,
+                                left + QUEST_OPTION_SCROLLBAR_WIDTH,
+                                scrollerTop + scrollerHeight)
+                        ? QUEST_JOURNAL_SCROLLER_HIGHLIGHT_NINE_SLICE
+                        : QUEST_JOURNAL_SCROLLER_NINE_SLICE;
+
+        QUEST_JOURNAL_SCROLLBAR_NINE_SLICE.render(graphics, left, top, QUEST_OPTION_SCROLLBAR_WIDTH, height);
+        scroller.render(graphics, left, scrollerTop, QUEST_OPTION_SCROLLBAR_WIDTH, scrollerHeight);
+    }
+
+    private int optionScrollerHeight(int trackHeight) {
+        float contentHeight = optionContentHeight();
+        if (contentHeight <= 0.0F) {
+            return trackHeight;
+        }
+        int scrollerHeight = Mth.floor(trackHeight * (trackHeight / contentHeight));
+        return Mth.clamp(scrollerHeight, QUEST_OPTION_SCROLLER_MIN_HEIGHT, trackHeight);
+    }
+
+    private int optionScrollerTop(int trackTop, int trackHeight, int scrollerHeight, float maxScroll) {
+        int travel = Math.max(0, trackHeight - scrollerHeight);
+        if (travel <= 0 || maxScroll <= 0.0F) {
+            return trackTop;
+        }
+        float scrollProgress = Mth.clamp(optionRenderScroll() / maxScroll, 0.0F, 1.0F);
+        return trackTop + Math.round(travel * scrollProgress);
+    }
+
+    private boolean tryBeginOptionScrollbarDrag(double mouseX, double journalMouseY) {
+        float maxScroll = maxOptionScroll();
+        if (maxScroll <= 0.0F || !isPointInsideOptionScrollbarArea(mouseX, journalMouseY)) {
+            return false;
+        }
+
+        int trackTop = optionsTop();
+        int trackHeight = optionViewportHeight();
+        int scrollerHeight = optionScrollerHeight(trackHeight);
+        int scrollerTop = optionScrollerTop(trackTop, trackHeight, scrollerHeight, maxScroll);
+        if (journalMouseY >= scrollerTop && journalMouseY <= scrollerTop + scrollerHeight) {
+            this.optionScrollbarDragOffset = (float) journalMouseY - scrollerTop;
+        } else {
+            this.optionScrollbarDragOffset = scrollerHeight / 2.0F;
+            setOptionScrollFromScrollbarDrag(journalMouseY);
+        }
+        this.draggingOptionScrollbar = true;
+        return true;
+    }
+
+    private boolean dragOptionScrollbar(double journalMouseY) {
+        if (maxOptionScroll() <= 0.0F) {
+            this.draggingOptionScrollbar = false;
+            return true;
+        }
+        setOptionScrollFromScrollbarDrag(journalMouseY);
+        return true;
+    }
+
+    private void setOptionScrollFromScrollbarDrag(double journalMouseY) {
+        int trackTop = optionsTop();
+        int trackHeight = optionViewportHeight();
+        int scrollerHeight = optionScrollerHeight(trackHeight);
+        int travel = Math.max(0, trackHeight - scrollerHeight);
+        if (travel <= 0) {
+            setTargetOptionScroll(0.0F);
+            this.visualOptionScroll = 0.0F;
+            return;
+        }
+
+        float scrollerTop = Mth.clamp((float) journalMouseY - this.optionScrollbarDragOffset, trackTop, trackTop + travel);
+        float scrollProgress = (scrollerTop - trackTop) / travel;
+        float scroll = Mth.clamp(scrollProgress * maxOptionScroll(), 0.0F, maxOptionScroll());
+        setTargetOptionScroll(scroll);
+        this.visualOptionScroll = scroll;
+    }
+
+    private void renderQuestOptionBackground(GuiGraphics graphics, int index, int hovered, int left, int top, int height) {
+        entryNineSlice(index).render(graphics, left, top, QUEST_OPTION_WIDTH, height);
+        if (index == hovered && index != this.state.selectedOption()) {
+            QUEST_JOURNAL_ENTRY_HIGHLIGHT_NINE_SLICE.render(graphics, left, top, QUEST_OPTION_WIDTH, height);
+        }
+    }
+
+    private void renderSelectedQuestOption(GuiGraphics graphics, int left, int top, int height) {
+        QUEST_JOURNAL_SELECTED_QUEST_NINE_SLICE.render(
+                graphics,
+                left - QUEST_OPTION_SELECTED_OVERHANG_X,
+                top - QUEST_OPTION_SELECTED_OVERHANG_Y,
+                QUEST_OPTION_WIDTH + QUEST_OPTION_SELECTED_OVERHANG_X * 2,
+                height + QUEST_OPTION_SELECTED_OVERHANG_Y * 2);
+    }
+
+    private void renderQuestOptionIcon(GuiGraphics graphics, QuestTrackerSyncPayload.Entry entry, boolean selected, int left, int top) {
+        QuestJournalEntryState state = QuestJournalEntryState.iconFor(entry);
+        int iconLeft = left + QUEST_OPTION_STATE_ICON_LEFT_PADDING;
+        int iconTop = top + QUEST_OPTION_STATE_ICON_TOP_PADDING;
+        renderQuestOptionIcon(graphics, state.texture(), iconLeft, iconTop);
+        if (selected) {
+            renderQuestOptionIcon(graphics, state.selectedTexture(), iconLeft, iconTop);
+        }
+        if (hasQuestUpdate(entry)) {
+            int updateIconLeft = left + QUEST_OPTION_WIDTH - QUEST_OPTION_UPDATE_ICON_RIGHT_PADDING - QUEST_OPTION_UPDATE_ICON_WIDTH;
+            int updateIconTop = top + QUEST_OPTION_UPDATE_ICON_TOP_PADDING;
+            renderQuestOptionIcon(
+                    graphics,
+                    VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_UPDATE_TEXTURE,
+                    updateIconLeft,
+                    updateIconTop,
+                    QUEST_OPTION_UPDATE_ICON_WIDTH,
+                    QUEST_OPTION_UPDATE_ICON_HEIGHT);
+            if (selected) {
+                renderQuestOptionIcon(
+                        graphics,
+                        VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_UPDATE_SELECTED_QUEST_TEXTURE,
+                        updateIconLeft,
+                        updateIconTop,
+                        QUEST_OPTION_UPDATE_ICON_WIDTH,
+                        QUEST_OPTION_UPDATE_ICON_HEIGHT);
+            }
+        }
+    }
+
+    private void renderQuestOptionIcon(GuiGraphics graphics, ResourceLocation texture, int left, int top) {
+        renderQuestOptionIcon(graphics, texture, left, top, QUEST_OPTION_STATE_ICON_SIZE, QUEST_OPTION_STATE_ICON_SIZE);
+    }
+
+    private void renderQuestOptionIcon(GuiGraphics graphics, ResourceLocation texture, int left, int top, int width, int height) {
+        graphics.blit(
+                texture,
+                left,
+                top,
+                0,
+                0,
+                width,
+                height,
+                width,
+                height);
+    }
+
+    private void renderQuestOptionTitle(GuiGraphics graphics, int index, int hovered, int left, int top) {
+        boolean selected = index == this.state.selectedOption();
+        QuestTrackerSyncPayload.Entry entry = visibleEntries().get(index);
+        int authoredColor = journalColor(entry, TEXT_COLOR);
+        int textColor = selected ? SELECTED_TEXT_COLOR : index == hovered ? HOVERED_TEXT_COLOR : authoredColor;
+        int textLeft = left + QUEST_OPTION_TEXT_LEFT_PADDING;
+        int textTop = top + QUEST_OPTION_TEXT_TOP_PADDING;
+        int lineStep = this.font.lineHeight + QUEST_OPTION_TEXT_LINE_GAP;
+        for (FormattedCharSequence line : questOptionTitleLines(index)) {
+            graphics.drawString(this.font, line, textLeft, textTop, textColor, false);
+            textTop += lineStep;
+        }
+    }
+
+    private JournalNineSlice entryNineSlice(int index) {
+        return index % 2 == 0 ? QUEST_JOURNAL_ENTRY_1_NINE_SLICE : QUEST_JOURNAL_ENTRY_2_NINE_SLICE;
+    }
+
+    private void renderQuestDetails(GuiGraphics graphics, int slideOffset, int mouseX, int journalMouseY) {
         QuestTrackerSyncPayload.Entry selected = selectedEntry();
         if (selected == null) {
             return;
         }
-
-        int left = skillsPanelLeft();
-        int top = skillsPanelTop() + skillsContainerPaddingY();
-        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), left + skillsPanelWidth());
-        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
-        if (right <= left || bottom <= top) {
+        if (this.questlineMapOpen) {
+            renderQuestlineGraph(graphics, selected, slideOffset, mouseX, journalMouseY);
             return;
         }
 
-        float alpha = VillagerInteractionExperimentalChrome.textFadeInAlpha();
-        if (!VillagerInteractionExperimentalChrome.shouldDrawText(alpha)) {
-            return;
-        }
-        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
-        int contentRight = detailsContentRight(right);
-        int wrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(contentRight - left, scale);
-        int lineStep = VillagerInteractionUiUtil.scaledLineStep(this.font, scale);
-        int progressReservedHeight = selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0;
-        int textBottom = Math.max(top + lineStep, bottom - progressReservedHeight);
-        int viewportHeight = Math.max(1, textBottom - top);
-        List<QuestDetailLine> detailLines = buildQuestDetailLines(selected, wrapWidth, lineStep);
-        int contentHeight = detailContentHeight(detailLines, lineStep);
-        float maxScroll = ToucanScrollState.maxScroll(contentHeight, viewportHeight);
-        setTargetDetailsScroll(this.state.targetDetailsScroll());
-        float scroll = Mth.clamp(detailsRenderScroll(), 0.0F, maxScroll);
+        int left = detailsLeft();
+        int top = detailsTop();
+        int right = left + DETAILS_WIDTH;
+        List<QuestDetailLine> detailLines = buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP);
+        int contentHeight = detailContentHeight(detailLines);
+        int viewportHeight = detailsPageViewportHeight(selected);
+        int maskBottom = top + viewportHeight;
+        boolean paged = contentHeight > viewportHeight;
+        List<Integer> pageStarts = detailPageStarts(detailLines, viewportHeight);
+        int pageCount = pageStarts.size();
+        this.detailsPage = Mth.clamp(this.detailsPage, 0, pageCount - 1);
+        int pageTop = pageStarts.get(this.detailsPage);
 
-        graphics.enableScissor(left - skillsContainerPaddingX(), top, right + experimentalUnitAtLeast(4, 2), textBottom);
+        graphics.enableScissor(left, top + slideOffset, right, maskBottom + slideOffset);
         for (QuestDetailLine line : detailLines) {
-            float lineTop = top + line.top() - scroll;
-            float lineBottom = lineTop + lineStep;
-            if (lineBottom < top || lineTop > textBottom) {
+            if (line.top() < pageTop || line.top() + line.height() > pageTop + viewportHeight) {
                 continue;
             }
-            float edgeAlpha = VillagerInteractionUiUtil.edgeFadeAlpha(
-                    scroll,
-                    maxScroll,
-                    lineTop,
-                    lineBottom,
-                    top,
-                    textBottom,
-                    experimentalUnitAtLeast(18, 10));
-            if (!VillagerInteractionExperimentalChrome.shouldDrawText(edgeAlpha * alpha)) {
+            float lineTop = top + line.top() - pageTop;
+            float lineBottom = lineTop + line.height();
+            if (lineBottom < top || lineTop > maskBottom) {
                 continue;
             }
-            VillagerInteractionUiUtil.drawScaledString(
-                    graphics,
-                    this.font,
-                    line.text(),
-                    left,
-                    Mth.floor(lineTop),
-                    VillagerInteractionUiUtil.withAlpha(line.color(), edgeAlpha * alpha),
-                    scale);
+            renderQuestDetailLine(graphics, line, left, Mth.floor(lineTop));
         }
         graphics.disableScissor();
 
-        renderDetailsScrollbar(graphics, top, viewportHeight, contentHeight, maxScroll, alpha);
-        if (selected.showProgress()) {
-            int barHeight = experimentalUnitAtLeast(2, 1);
-            int barTop = bottom - barHeight - experimentalUnitAtLeast(2, 1);
-            VillagerQuestUi.renderProgressBar(graphics, left, barTop, contentRight, barHeight, selected.progress(), alpha, experimentalTicks(), true, false);
+        if (paged) {
+            renderDetailsPageLabel(graphics, left, maskBottom + DETAILS_PAGE_LABEL_GAP, this.detailsPage + 1, pageCount);
         }
+        if (canAbandon(selected)) {
+            Component label = Component.translatable(GUI_KEY_PREFIX + "abandon");
+            int actionTop = top + DETAILS_HEIGHT - DETAILS_ABANDON_HEIGHT + 2;
+            graphics.drawString(
+                    this.font,
+                    label,
+                    left + Math.round((DETAILS_WIDTH - this.font.width(label)) / 2.0F),
+                    actionTop,
+                    0xFF8A1F1F,
+                    false);
+        }
+    }
+
+    private static List<Integer> detailPageStarts(List<QuestDetailLine> lines, int viewportHeight) {
+        if (lines.isEmpty()) {
+            return List.of(0);
+        }
+        List<Integer> starts = new ArrayList<>();
+        starts.add(0);
+        int pageStart = 0;
+        for (QuestDetailLine line : lines) {
+            if (line.top() + line.height() <= pageStart + viewportHeight) {
+                continue;
+            }
+            if (line.top() <= pageStart) {
+                continue;
+            }
+            pageStart = line.top();
+            starts.add(pageStart);
+        }
+        return starts;
+    }
+
+    private void renderDetailsPageLabel(GuiGraphics graphics, int left, int top, int page, int pageCount) {
+        String text = "Page: " + page + "/" + pageCount;
+        graphics.drawString(
+                this.font,
+                text,
+                left + Math.round((DETAILS_WIDTH - this.font.width(text)) / 2.0F),
+                top,
+                PAGE_TEXT_COLOR,
+                false);
+    }
+
+    private void renderQuestDetailLine(GuiGraphics graphics, QuestDetailLine line, int left, int top) {
+        if (line.divider()) {
+            int dividerLeft = left + Math.max(0, (DETAILS_WIDTH - DETAILS_DIVIDER_WIDTH) / 2);
+            graphics.blit(
+                    VillagerRetaliationClientAssets.QUEST_JOURNAL_DIVIDER_TEXTURE,
+                    dividerLeft,
+                    top,
+                    0,
+                    0,
+                    DETAILS_DIVIDER_WIDTH,
+                    DETAILS_DIVIDER_HEIGHT,
+                    DETAILS_DIVIDER_WIDTH,
+                    DETAILS_DIVIDER_HEIGHT);
+            return;
+        }
+        int textLeft = left + Math.max(0, line.textIndent());
+        ItemStack rewardItem = rewardItemStack(line.itemId());
+        if (!rewardItem.isEmpty()) {
+            float scale = DETAILS_REWARD_ITEM_SIZE / 16.0F;
+            graphics.pose().pushPose();
+            graphics.pose().translate(left + DETAILS_QUEST_STEP_ICON_LEFT_PADDING, top - 2, 0.0F);
+            graphics.pose().scale(scale, scale, 1.0F);
+            graphics.renderItem(rewardItem, 0, 0);
+            graphics.pose().popPose();
+        } else if (line.icon() != null) {
+            int iconSize = line.titleIcon() ? DETAILS_TITLE_ICON_SIZE : DETAILS_QUEST_STEP_ICON_SIZE;
+            int iconTop = top + (line.titleIcon() ? -1 : 0);
+            graphics.blit(
+                    line.icon(),
+                    left + DETAILS_QUEST_STEP_ICON_LEFT_PADDING,
+                    iconTop,
+                    0,
+                    0,
+                    iconSize,
+                    iconSize,
+                    iconSize,
+                    iconSize);
+            textLeft += DETAILS_QUEST_STEP_ICON_LEFT_PADDING + iconSize + DETAILS_QUEST_STEP_TEXT_GAP;
+        }
+        if (line.text() == null) {
+            return;
+        }
+        if (line.centered()) {
+            int textWidth = this.font.width(line.text());
+            textLeft = left + Math.round((DETAILS_WIDTH - textWidth) / 2.0F);
+        }
+        if (line.outlinedText() != null) {
+            ToucanHudText.drawOutlinedString(
+                    graphics,
+                    this.font,
+                    line.outlinedText(),
+                    textLeft,
+                    top,
+                    line.color(),
+                    line.outlineColor());
+            return;
+        }
+        graphics.drawString(this.font, line.text(), textLeft, top, line.color(), false);
     }
 
     private List<QuestDetailLine> buildQuestDetailLines(QuestTrackerSyncPayload.Entry selected, int wrapWidth, int lineStep) {
         List<QuestDetailLine> lines = new ArrayList<>();
-        int y = 0;
-        y = addWrappedDetailLines(lines, selected.title(), wrapWidth, VillagerQuestUi.TITLE_COLOR, y, lineStep, experimentalUnitAtLeast(8, 4));
-        y = addWrappedDetailLines(lines, selected.objective(), wrapWidth, VillagerQuestUi.TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(6, 3));
-        y = addWrappedDetailLines(lines, statusLine(selected), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+        int y = 1;
+        y = addTitleLines(
+                lines,
+                selected.title(),
+                wrapWidth - titleIconTextIndent(),
+                journalColor(selected, QUEST_TITLE_TEXT_COLOR),
+                journalOutlineColor(selected, NO_QUEST_TITLE_OUTLINE),
+                y,
+                lineStep,
+                QuestJournalEntryState.from(selected).texture());
+        y = addDividerLine(lines, y + 3, 3);
+        QuestTrackerSyncPayload.Journal journal = selected.journal();
+        int statusGapAfter = journal.blocker().isBlank() ? DETAILS_SECTION_GAP : 2;
+        y = addWrappedDetailLines(lines, statusLine(selected), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, statusGapAfter);
+        if (!journal.blocker().isBlank()) {
+            y = addWrappedDetailLines(
+                    lines,
+                    Component.translatable(GUI_KEY_PREFIX + "waiting_for", journal.blocker()),
+                    wrapWidth,
+                    TEXT_COLOR,
+                    y,
+                    lineStep,
+                    DETAILS_SECTION_GAP);
+        }
+        if (!journal.questline().isBlank()) {
+            y = addQuestlineLinkLines(lines, journal, wrapWidth, y, lineStep, DETAILS_SECTION_GAP);
+        }
+        if (VillagerRetaliationConfig.SHOW_QUEST_JOURNAL_TAGS.get() && !journal.tags().isEmpty()) {
+            y = addWrappedDetailLines(lines, Component.translatable(GUI_KEY_PREFIX + "tags", String.join(", ", journal.tags())), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
+        }
+        Component timing = journalTimingLine(selected);
+        if (timing != null) {
+            y = addWrappedDetailLines(lines, timing, wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
+        }
+        Component waypoint = journalWaypointLine(selected);
+        if (waypoint != null) {
+            y = addWrappedDetailLines(lines, waypoint, wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
+        }
         if (!selected.issuer().isBlank()) {
-            y = addWrappedDetailLines(lines, "Issued by: " + selected.issuer(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+            y = addWrappedDetailLines(
+                    lines,
+                    Component.translatable(GUI_KEY_PREFIX + "issuer", selected.issuer()),
+                    wrapWidth,
+                    MUTED_TEXT_COLOR,
+                    y,
+                    lineStep,
+                    2);
         }
         if (!selected.issuerLocation().isBlank()) {
-            y = addWrappedDetailLines(lines, selected.issuerLocation(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+            y = addWrappedDetailLines(lines, selected.issuerLocation(), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 0);
         }
-        if (!selected.questItems().isEmpty()) {
-            y = addWrappedDetailLines(lines, questItemsLine(selected), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+        y = addDividerLine(lines, y + 3, 3);
+        y = addWrappedDetailLines(lines, descriptionLine(selected), wrapWidth, TEXT_COLOR, y, lineStep, 0);
+        if (!selected.prerequisites().isEmpty()) {
+            y = addDividerLine(lines, y + 3, 3);
+            String sectionKey = selected.prerequisites().size() == 1
+                    ? "section.previous_step"
+                    : "section.previous_steps";
+            y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + sectionKey), TITLE_COLOR, y, lineStep, 0);
+            y = addDividerLine(lines, y + 3, 3);
+            for (QuestTrackerSyncPayload.Prerequisite prerequisite : selected.prerequisites()) {
+                QuestTrackerSyncPayload.Entry target = journalEntryForQuestId(prerequisite.questId());
+                if (target == null) {
+                    y = addQuestStepLines(lines, prerequisiteLine(prerequisite), prerequisite.met(), y, lineStep, 2);
+                } else {
+                    y = addQuestLinkLines(
+                            lines,
+                            prerequisiteLine(prerequisite),
+                            prerequisite.met(),
+                            prerequisite.questId(),
+                            y,
+                            lineStep,
+                            2);
+                }
+            }
         }
-        if (!selected.metadata().isBlank()) {
-            y += experimentalUnitAtLeast(6, 3);
-            addWrappedDetailLines(lines, selected.metadata(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, 0);
+        y = addDividerLine(lines, y + 3, 3);
+        y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.objectives"), TITLE_COLOR, y, lineStep, 0);
+        y = addDividerLine(lines, y + 3, 3);
+        boolean completed = selected.progress() >= 1.0F || QuestJournalEntryState.from(selected) == QuestJournalEntryState.COMPLETED;
+        if (!selected.objectiveSteps().isEmpty()) {
+            for (QuestTrackerSyncPayload.ObjectiveStep objectiveStep : selected.objectiveSteps()) {
+                y = addQuestStepLines(lines, objectiveStep.label(), objectiveStep.completed(), true, y, lineStep, 2);
+            }
+        } else if (selected.questItems().isEmpty()) {
+            y = addQuestStepLines(lines, selected.objective(), completed, y, lineStep, 2);
+        } else {
+            for (QuestTrackerSyncPayload.QuestItem item : selected.questItems()) {
+                y = addQuestStepLines(lines, questItemLine(item), questItemComplete(item), y, lineStep, 2);
+            }
+        }
+        if (!selected.rewardPreviews().isEmpty()) {
+            y = addDividerLine(lines, y + 3, 3);
+            y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.rewards"), TITLE_COLOR, y, lineStep, 0);
+            y = addDividerLine(lines, y + 3, 3);
+            for (QuestTrackerSyncPayload.RewardPreview reward : selected.rewardPreviews()) {
+                if (rewardItemStack(reward.itemId()).isEmpty()) {
+                    y = addQuestStepLines(lines, rewardPreviewLine(reward), completed, y, lineStep, 2);
+                } else {
+                    y = addItemRewardLines(lines, reward, y, lineStep, 2);
+                }
+            }
         }
         return lines;
+    }
+
+    private int addTitleLines(
+            List<QuestDetailLine> lines,
+            String text,
+            int wrapWidth,
+            int color,
+            int outlineColor,
+            int top,
+            int lineStep,
+            ResourceLocation firstLineIcon) {
+        if (text == null || text.isBlank() || wrapWidth <= 0) {
+            return top;
+        }
+        int y = top;
+        boolean first = true;
+        for (FormattedCharSequence line : this.font.split(Component.literal(text), wrapWidth)) {
+            lines.add(new QuestDetailLine(
+                    line,
+                    color,
+                    y,
+                    this.font.lineHeight,
+                    first ? firstLineIcon : null,
+                    false,
+                    false,
+                    first,
+                    "",
+                    "",
+                    outlineColor == 0 ? null : plainText(line),
+                    outlineColor));
+            y += lineStep;
+            first = false;
+        }
+        return y - lineStep + this.font.lineHeight;
     }
 
     private int addWrappedDetailLines(
@@ -377,205 +1198,537 @@ public final class VillagerQuestJournalScreen extends Screen {
             int top,
             int lineStep,
             int gapAfter) {
+        return addWrappedDetailLines(lines, text, wrapWidth, color, top, lineStep, gapAfter, null, false);
+    }
+
+    private int addWrappedDetailLines(
+            List<QuestDetailLine> lines,
+            Component text,
+            int wrapWidth,
+            int color,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        return addWrappedDetailLines(lines, text, wrapWidth, color, top, lineStep, gapAfter, null, false, false);
+    }
+
+    private int addWrappedDetailLines(
+            List<QuestDetailLine> lines,
+            String text,
+            int wrapWidth,
+            int color,
+            int top,
+            int lineStep,
+            int gapAfter,
+            ResourceLocation firstLineIcon,
+            boolean titleIcon) {
+        return addWrappedDetailLines(lines, text, wrapWidth, color, top, lineStep, gapAfter, firstLineIcon, titleIcon, false);
+    }
+
+    private int addWrappedDetailLines(
+            List<QuestDetailLine> lines,
+            String text,
+            int wrapWidth,
+            int color,
+            int top,
+            int lineStep,
+            int gapAfter,
+            ResourceLocation firstLineIcon,
+            boolean titleIcon,
+            boolean strikethrough) {
         if (text == null || text.isBlank() || wrapWidth <= 0) {
             return top;
         }
-        int y = top;
-        for (FormattedCharSequence line : this.font.split(Component.literal(text), wrapWidth)) {
-            lines.add(new QuestDetailLine(line, color, y));
-            y += lineStep;
-        }
-        return y + gapAfter;
+        Component component = strikethrough
+                ? Component.literal(text).withStyle(Style.EMPTY.withStrikethrough(true))
+                : Component.literal(text);
+        return addWrappedDetailLines(lines, component, wrapWidth, color, top, lineStep, gapAfter, firstLineIcon, titleIcon, false);
     }
 
-    private static int detailContentHeight(List<QuestDetailLine> detailLines, int lineStep) {
+    private int addWrappedDetailLines(
+            List<QuestDetailLine> lines,
+            Component component,
+            int wrapWidth,
+            int color,
+            int top,
+            int lineStep,
+            int gapAfter,
+            ResourceLocation firstLineIcon,
+            boolean titleIcon,
+            boolean strikethrough) {
+        if (component == null || wrapWidth <= 0) {
+            return top;
+        }
+        if (strikethrough) {
+            component = component.copy().withStyle(Style.EMPTY.withStrikethrough(true));
+        }
+        int y = top;
+        boolean first = true;
+        for (FormattedCharSequence line : this.font.split(component, wrapWidth)) {
+            lines.add(new QuestDetailLine(
+                    line,
+                    color,
+                    y,
+                    this.font.lineHeight,
+                    first ? firstLineIcon : null,
+                    false,
+                    false,
+                    first && titleIcon));
+            y += lineStep;
+            first = false;
+        }
+        return y - lineStep + this.font.lineHeight + gapAfter;
+    }
+
+    private int addCenteredDetailLine(
+            List<QuestDetailLine> lines,
+            Component text,
+            int color,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        if (text == null) {
+            return top;
+        }
+        lines.add(new QuestDetailLine(
+                text.getVisualOrderText(),
+                color,
+                top,
+                this.font.lineHeight,
+                null,
+                true,
+                false,
+                false));
+        return top + this.font.lineHeight + gapAfter;
+    }
+
+    private int addDividerLine(List<QuestDetailLine> lines, int top, int gapAfter) {
+        lines.add(new QuestDetailLine(null, TEXT_COLOR, top, DETAILS_DIVIDER_HEIGHT, null, false, true, false));
+        return top + DETAILS_DIVIDER_HEIGHT + gapAfter;
+    }
+
+    private int addQuestStepLines(
+            List<QuestDetailLine> lines,
+            String text,
+            boolean completed,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        return addQuestStepLines(lines, text, completed, false, top, lineStep, gapAfter);
+    }
+
+    private int addQuestStepLines(
+            List<QuestDetailLine> lines,
+            String text,
+            boolean completed,
+            boolean strikeCompleted,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        ResourceLocation icon = completed
+                ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_COMPLETED_TEXTURE
+                : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_TEXTURE;
+        return addWrappedDetailLines(
+                lines,
+                text,
+                Math.max(1, DETAILS_WIDTH - questStepTextIndent()),
+                TEXT_COLOR,
+                top,
+                lineStep,
+                gapAfter,
+                icon,
+                false,
+                strikeCompleted && completed);
+    }
+
+    private int addQuestLinkLines(
+            List<QuestDetailLine> lines,
+            String text,
+            boolean completed,
+            String targetQuestId,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        if (text == null || text.isBlank() || targetQuestId == null || targetQuestId.isBlank()) {
+            return top;
+        }
+        ResourceLocation icon = completed
+                ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_COMPLETED_TEXTURE
+                : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_TEXTURE;
+        Component component = Component.literal(text).withStyle(Style.EMPTY.withUnderlined(true));
+        int y = top;
+        boolean first = true;
+        for (FormattedCharSequence line : this.font.split(component, Math.max(1, DETAILS_WIDTH - questStepTextIndent()))) {
+            lines.add(new QuestDetailLine(
+                    line,
+                    LINK_TEXT_COLOR,
+                    y,
+                    this.font.lineHeight,
+                    first ? icon : null,
+                    false,
+                    false,
+                    false,
+                    targetQuestId));
+            y += lineStep;
+            first = false;
+        }
+        return y - lineStep + this.font.lineHeight + gapAfter;
+    }
+
+    private int addQuestlineLinkLines(
+            List<QuestDetailLine> lines,
+            QuestTrackerSyncPayload.Journal journal,
+            int wrapWidth,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        if (journal == null || journal.questline().isBlank()) {
+            return top;
+        }
+        String targetQuestline = QUESTLINE_LINK_PREFIX + journal.questline();
+        int y = top;
+        y = addQuestlineLinkText(
+                lines,
+                Component.translatable(GUI_KEY_PREFIX + "questline_label"),
+                wrapWidth,
+                QUESTLINE_LABEL_COLOR,
+                y,
+                lineStep,
+                targetQuestline);
+        y = addQuestlineLinkText(
+                lines,
+                Component.literal(questlineDisplayName(journal.questline()))
+                        .withStyle(Style.EMPTY.withUnderlined(true)),
+                wrapWidth,
+                LINK_TEXT_COLOR,
+                y,
+                lineStep,
+                targetQuestline);
+        y = addQuestlineLinkText(
+                lines,
+                Component.translatable(
+                        GUI_KEY_PREFIX + "questline_completion",
+                        journal.questlineCompleted(),
+                        journal.questlineTotal()),
+                wrapWidth,
+                QUESTLINE_PROGRESS_COLOR,
+                y,
+                lineStep,
+                targetQuestline);
+        return y - lineStep + this.font.lineHeight + gapAfter;
+    }
+
+    private int addQuestlineLinkText(
+            List<QuestDetailLine> lines,
+            Component text,
+            int wrapWidth,
+            int color,
+            int top,
+            int lineStep,
+            String targetQuestline) {
+        int y = top;
+        for (FormattedCharSequence line : this.font.split(text, wrapWidth)) {
+            lines.add(new QuestDetailLine(
+                    line,
+                    color,
+                    y,
+                    this.font.lineHeight,
+                    null,
+                    false,
+                    false,
+                    false,
+                    targetQuestline));
+            y += lineStep;
+        }
+        return y;
+    }
+
+    private int addItemRewardLines(
+            List<QuestDetailLine> lines,
+            QuestTrackerSyncPayload.RewardPreview reward,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        ItemStack stack = rewardItemStack(reward.itemId());
+        if (stack.isEmpty()) {
+            return addQuestStepLines(lines, rewardPreviewLine(reward), false, top, lineStep, gapAfter);
+        }
+        Component text = Component.literal("x" + reward.label() + " ").append(stack.getHoverName());
+        int y = top;
+        boolean first = true;
+        int rowStep = Math.max(lineStep, DETAILS_REWARD_ITEM_SIZE);
+        for (FormattedCharSequence line : this.font.split(text, Math.max(1, DETAILS_WIDTH - rewardItemTextIndent()))) {
+            lines.add(new QuestDetailLine(
+                    line,
+                    TEXT_COLOR,
+                    y,
+                    Math.max(this.font.lineHeight, first ? DETAILS_REWARD_ITEM_SIZE : this.font.lineHeight),
+                    null,
+                    false,
+                    false,
+                    false,
+                    "",
+                    first ? reward.itemId() : "",
+                    null,
+                    0,
+                    rewardItemTextIndent()));
+            y += rowStep;
+            first = false;
+        }
+        return y - rowStep + Math.max(this.font.lineHeight, DETAILS_REWARD_ITEM_SIZE) + gapAfter;
+    }
+
+    private static int detailContentHeight(List<QuestDetailLine> detailLines) {
         if (detailLines.isEmpty()) {
             return 0;
         }
         QuestDetailLine lastLine = detailLines.get(detailLines.size() - 1);
-        return lastLine.top() + lineStep;
+        return lastLine.top() + lastLine.height();
     }
 
-    private static String statusLine(QuestTrackerSyncPayload.Entry entry) {
+    private static Component statusLine(QuestTrackerSyncPayload.Entry entry) {
         if (entry.status().isBlank()) {
-            return entry.trackable() && VillagerQuestTrackerOverlay.isTracked(entry) ? "Tracked" : "Not tracked";
+            String key = entry.trackable() && VillagerQuestTrackerOverlay.isTracked(entry) ? "tracked" : "not_tracked";
+            return Component.translatable(GUI_KEY_PREFIX + "status." + key);
         }
         if (!entry.trackable()) {
-            return "Status: " + entry.status();
+            return Component.translatable(GUI_KEY_PREFIX + "status.value", entry.status());
         }
         return VillagerQuestTrackerOverlay.isTracked(entry)
-                ? "Status: " + entry.status() + " | Tracked"
-                : "Status: " + entry.status() + " | Not tracked";
+                ? Component.translatable(GUI_KEY_PREFIX + "status.value_tracked", entry.status())
+                : Component.translatable(GUI_KEY_PREFIX + "status.value_not_tracked", entry.status());
     }
 
-    private static String questItemsLine(QuestTrackerSyncPayload.Entry entry) {
-        List<String> names = new ArrayList<>();
-        for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
-            names.add(item.count() > 1 ? item.label() + " x" + item.count() : item.label());
-        }
-        return "Quest item: " + String.join(", ", names);
+    private static String descriptionLine(QuestTrackerSyncPayload.Entry entry) {
+        return entry.description().isBlank() ? entry.objective() : entry.description();
+    }
+
+    private static String questItemLine(QuestTrackerSyncPayload.QuestItem item) {
+        int current = Math.max(0, Math.min(item.count(), item.currentCount()));
+        return item.label() + " " + current + "/" + item.count();
+    }
+
+    private static boolean questItemComplete(QuestTrackerSyncPayload.QuestItem item) {
+        return item.count() <= 0 || item.currentCount() >= item.count();
+    }
+
+    private static String rewardPreviewLine(QuestTrackerSyncPayload.RewardPreview reward) {
+        return reward.label();
+    }
+
+    private static ItemStack rewardItemStack(String itemId) {
+        ResourceLocation id = itemId == null ? null : ResourceLocation.tryParse(itemId);
+        return id == null
+                ? ItemStack.EMPTY
+                : BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new).orElse(ItemStack.EMPTY);
+    }
+
+    private static String prerequisiteLine(QuestTrackerSyncPayload.Prerequisite prerequisite) {
+        return prerequisite.label();
+    }
+
+    private static int questStepTextIndent() {
+        return DETAILS_QUEST_STEP_ICON_LEFT_PADDING + DETAILS_QUEST_STEP_ICON_SIZE + DETAILS_QUEST_STEP_TEXT_GAP;
+    }
+
+    private static int rewardItemTextIndent() {
+        return DETAILS_QUEST_STEP_ICON_LEFT_PADDING + DETAILS_REWARD_ITEM_SIZE + DETAILS_QUEST_STEP_TEXT_GAP;
+    }
+
+    private static int titleIconTextIndent() {
+        return DETAILS_QUEST_STEP_ICON_LEFT_PADDING + DETAILS_TITLE_ICON_SIZE + DETAILS_QUEST_STEP_TEXT_GAP;
     }
 
     private void closeJournal() {
+        endQuestlineGraphDrag();
         if (this.closingWithAnimation) {
             return;
         }
         this.closingWithAnimation = true;
+        this.draggingOptionScrollbar = false;
+        this.animationStartMillis = Util.getMillis();
         VillagerQuestTrackerOverlay.dismissJournalFlash();
-        VillagerInteractionExperimentalChrome.startExitAnimation(
-                buildExitTextElements(),
-                buildExitFadeTextElements(),
-                buildExitFadeRectElements(),
-                new VillagerInteractionExperimentalChrome.ExitSkillsPanel(
-                        skillsBackdropLeft(),
-                        skillsBackdropTop(),
-                        skillsBackdropRight(),
-                        skillsBackdropBottom(),
-                        detailsElapsedMillis()));
-        Minecraft.getInstance().setScreen(null);
+        playBookSound(0.72F);
     }
 
-    private List<VillagerInteractionExperimentalChrome.ExitTextElement> buildExitTextElements() {
-        List<VillagerInteractionExperimentalChrome.ExitTextElement> textElements = new ArrayList<>();
-        float textScale = VillagerInteractionExperimentalLayout.scaleFactor();
-        int listLeft = optionsLeft();
-        int textLeft = listLeft + optionTextInset();
-        int top = optionsTop();
-        int viewportTop = top;
-        int viewportBottom = top + optionViewportHeight();
-        for (int index = 0; index < entries().size(); index++) {
-            int rowHeight = VillagerInteractionOptionList.optionHeight(this.optionListContext, index);
-            float y = top + VillagerInteractionOptionList.optionOffset(this.optionListContext, index) - optionRenderScroll();
-            if (y + rowHeight < viewportTop || y > viewportBottom) {
-                continue;
-            }
-
-            boolean selected = index == this.state.selectedOption();
-            int color = selected ? 0xFFF8F8F4 : 0xCFC7C8C5;
-            float scale = (1.48F + (selected ? OPTION_SELECTED_SCALE : 0.0F)) * textScale;
-            float delay = 120.0F + index * 28.0F;
-            int textY = Mth.floor(y + optionHeight() * (5.0F / 18.0F));
-            if (selected) {
-                int arrowX = textLeft - optionTextInset() - 7;
-                textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                        ">",
-                        arrowX,
-                        textY,
-                        0xFFFFFFFF,
-                        scale,
-                        delay,
-                        this.width - arrowX + 72.0F,
-                        0.0F,
-                        false));
-            }
-            List<String> labelLines = VillagerInteractionOptionList.wrappedOptionLabelLines(this.optionListContext, entries().get(index).title(), scale);
-            for (int lineIndex = 0; lineIndex < labelLines.size(); lineIndex++) {
-                int lineY = textY + lineIndex * optionHeight();
-                textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                        labelLines.get(lineIndex),
-                        textLeft,
-                        lineY,
-                        color,
-                        scale,
-                        delay + 24.0F,
-                        this.width - textLeft + 88.0F,
-                        0.0F,
-                        false));
-            }
-        }
-
-        return textElements;
-    }
-
-    private List<VillagerInteractionExperimentalChrome.ExitFadeTextElement> buildExitFadeTextElements() {
-        return List.of();
-    }
-
-    private List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> buildExitFadeRectElements() {
-        List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements = new ArrayList<>();
-        addScrollbarExitFadeRects(rectElements, scrollbarThumb(), optionRenderScroll(), maxOptionScroll());
-        addScrollbarExitFadeRects(rectElements, detailsScrollbarThumb(), detailsRenderScroll(), maxDetailsScroll());
-        return rectElements;
-    }
-
-    private void addScrollbarExitFadeRects(
-            List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements,
-            ToucanScrollbarThumb scrollbarThumb,
-            float currentScroll,
-            float maxScroll) {
-        if (scrollbarThumb == null) {
+    private void ensureSelectedVisible(boolean jumpToTarget) {
+        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= visibleEntries().size()) {
             return;
         }
 
-        boolean canScrollUp = currentScroll > 0.75F;
-        boolean canScrollDown = currentScroll < maxScroll - 0.75F;
-        int fadeLength = Math.min(8, Math.max(3, scrollbarThumb.height() / 3));
-        for (int y = scrollbarThumb.top(); y < scrollbarThumb.bottom(); y++) {
-            float alphaFactor = 1.0F;
-            if (canScrollUp && y < scrollbarThumb.top() + fadeLength) {
-                alphaFactor = Math.min(alphaFactor, (y - scrollbarThumb.top() + 1.0F) / fadeLength);
-            }
-            if (canScrollDown && y >= scrollbarThumb.bottom() - fadeLength) {
-                alphaFactor = Math.min(alphaFactor, (scrollbarThumb.bottom() - y) / (float) fadeLength);
-            }
-            rectElements.add(new VillagerInteractionExperimentalChrome.ExitFadeRectElement(
-                    scrollbarThumb.left(),
-                    y,
-                    scrollbarThumb.right(),
-                    y + 1,
-                    0xBFFFFFFF,
-                    alphaFactor));
-        }
-    }
-
-    private void ensureSelectedVisible() {
-        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= entries().size()) {
-            return;
-        }
-
-        float optionTop = VillagerInteractionOptionList.optionOffset(this.optionListContext, this.state.selectedOption());
-        float optionBottom = optionTop + VillagerInteractionOptionList.optionHeight(this.optionListContext, this.state.selectedOption());
+        float optionTop = optionOffset(this.state.selectedOption());
+        float optionBottom = optionTop + questOptionHeight(this.state.selectedOption());
         float viewportTop = this.state.targetOptionScroll();
         float viewportBottom = viewportTop + optionViewportHeight();
-        int padding = experimentalUnitAtLeast(6, 3);
+        int padding = 5;
+        boolean scrollChanged = false;
         if (optionTop < viewportTop + padding) {
             setTargetOptionScroll(optionTop - padding);
+            scrollChanged = true;
         } else if (optionBottom > viewportBottom - padding) {
             setTargetOptionScroll(optionBottom - optionViewportHeight() + padding);
+            scrollChanged = true;
+        }
+        if (jumpToTarget && scrollChanged) {
+            this.state.jumpOptionScrollToTarget();
+            this.visualOptionScroll = this.state.optionScroll();
         }
     }
 
     private void moveSelection(int direction) {
-        if (entries().isEmpty()) {
+        if (visibleEntries().isEmpty()) {
             return;
         }
-        this.state.moveSelectedOption(direction, entries().size());
-        ensureSelectedVisible();
+        setSelectedOption(Mth.positiveModulo(this.state.selectedOption() + direction, visibleEntries().size()));
+        acknowledgeSelectedQuestUpdate();
+        ensureSelectedVisible(false);
+    }
+
+    private void selectTab(QuestJournalTab tab) {
+        playBookSound(1.0F);
+        if (this.selectedTab == tab) {
+            return;
+        }
+
+        closeQuestlineMap();
+        rememberSelectedTabPosition();
+        this.selectedTab = tab;
+        restoreSelectedTabPosition();
+    }
+
+    private void rememberSelectedTabPosition() {
+        this.tabPositions.put(this.selectedTab, this.state.captureOptionListPosition());
+    }
+
+    private void restoreSelectedTabPosition() {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        VillagerInteractionScreenState.OptionListPosition position = this.tabPositions.get(this.selectedTab);
+        if (position == null) {
+            this.state.resetOptions(!visibleEntries.isEmpty());
+        } else {
+            this.state.restoreOptionListPosition(position, visibleEntries.size(), maxOptionScroll());
+            if (visibleEntries.isEmpty()) {
+                this.state.resetOptions(false);
+            }
+        }
+        this.state.resetDetailsScroll();
+        this.visualOptionScroll = this.state.optionScroll();
+        this.visualDetailsScroll = this.state.detailsScroll();
+        this.detailsSelectedOption = this.state.selectedOption();
+        this.detailsPage = 0;
+        rememberSelectedQuestId();
     }
 
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
-        int left = optionsLeft() - experimentalUnitAtLeast(18, 10);
-        int right = optionsLeft() + optionWidth() + experimentalUnitAtLeast(4, 2);
+        int left = optionsLeft();
         int top = optionsTop();
         int bottom = top + optionViewportHeight();
-        int verticalPadding = experimentalUnitAtLeast(4, 2);
-        return mouseX >= left && mouseX <= right && mouseY >= top - verticalPadding && mouseY <= bottom + verticalPadding;
+        return mouseX >= left
+                && mouseX <= left + QUEST_OPTION_WIDTH
+                && mouseY >= top
+                && mouseY <= bottom;
     }
 
-    private boolean isPointInsideDetailsScrollArea(double mouseX, double mouseY) {
-        int left = skillsPanelLeft() - experimentalUnitAtLeast(6, 3);
-        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), skillsPanelLeft() + skillsPanelWidth()) + experimentalUnitAtLeast(6, 3);
-        int top = skillsPanelTop() + skillsContainerPaddingY();
-        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
+    private static boolean isPointInside(double mouseX, double mouseY, int left, int top, int right, int bottom) {
         return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
     }
 
+    private boolean isPointInsideOptionScrollbarArea(double mouseX, double mouseY) {
+        int left = optionsLeft() + QUEST_OPTION_WIDTH;
+        int top = optionsTop();
+        return isPointInside(
+                mouseX,
+                mouseY,
+                left,
+                top,
+                optionScrollbarLeft() + QUEST_OPTION_SCROLLBAR_WIDTH,
+                top + optionViewportHeight());
+    }
+
+    private boolean isPointInsideDetailsScrollArea(double mouseX, double mouseY) {
+        int left = detailsLeft();
+        int top = detailsTop();
+        return mouseX >= left
+                && mouseX <= left + DETAILS_WIDTH
+                && mouseY >= top
+                && mouseY <= top + DETAILS_HEIGHT;
+    }
+
+    private QuestJournalTab bookmarkAt(double mouseX, double mouseY) {
+        int journalTop = journalTop();
+        int firstBookmarkLeft = journalLeft() + BOOKMARK_LEFT_OFFSET;
+        for (QuestJournalTab tab : QuestJournalTab.values()) {
+            int left = bookmarkLeft(firstBookmarkLeft, tab);
+            int top = bookmarkTop(journalTop, tab);
+            if (mouseX >= left
+                    && mouseX <= left + BOOKMARK_WIDTH
+                    && mouseY >= top
+                    && mouseY <= top + BOOKMARK_HEIGHT) {
+                return tab;
+            }
+        }
+        return null;
+    }
+
+    private int questOptionAt(double mouseX, double mouseY) {
+        int selectedIndex = this.state.selectedOption();
+        if (selectedIndex >= 0 && selectedIndex < visibleEntries().size()
+                && isPointInsideSelectedQuestOption(mouseX, mouseY, selectedIndex)) {
+            return selectedIndex;
+        }
+        if (!isPointInsideOptionScrollArea(mouseX, mouseY)) {
+            return -1;
+        }
+        int top = optionsTop();
+        for (int index = 0; index < visibleEntries().size(); index++) {
+            float optionTop = top + optionOffset(index) - optionRenderScroll();
+            if (mouseY >= optionTop && mouseY <= optionTop + questOptionHeight(index)) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private boolean isPointInsideSelectedQuestOption(double mouseX, double mouseY, int index) {
+        int viewportTop = optionsTop();
+        int viewportBottom = viewportTop + optionViewportHeight();
+        float optionTop = viewportTop + optionOffset(index) - optionRenderScroll();
+        float optionBottom = optionTop + questOptionHeight(index);
+        double hitTop = Math.max(optionTop - QUEST_OPTION_SELECTED_OVERHANG_Y,
+                viewportTop - QUEST_OPTION_SELECTED_OVERHANG_Y);
+        double hitBottom = Math.min(optionBottom + QUEST_OPTION_SELECTED_OVERHANG_Y,
+                viewportBottom + QUEST_OPTION_SELECTED_OVERHANG_Y);
+        int left = optionsLeft() - QUEST_OPTION_SELECTED_OVERHANG_X;
+        int right = optionsLeft() + QUEST_OPTION_WIDTH + QUEST_OPTION_SELECTED_OVERHANG_X;
+        return isPointInside(
+                mouseX,
+                mouseY,
+                left,
+                (int) Math.floor(hitTop),
+                right,
+                (int) Math.ceil(hitBottom));
+    }
+
     private void clampSelectedOption() {
-        if (entries().isEmpty()) {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        if (visibleEntries.isEmpty()) {
             this.state.resetOptions(false);
+            this.selectedQuestId = "";
             return;
         }
-        setSelectedOption(Mth.clamp(this.state.selectedOption(), 0, entries().size() - 1));
+        if (!this.selectedQuestId.isBlank()) {
+            int selectedIndex = indexOfQuestId(visibleEntries, this.selectedQuestId);
+            if (selectedIndex >= 0) {
+                if (selectedIndex != this.state.selectedOption()) {
+                    setSelectedOption(selectedIndex, true);
+                    ensureSelectedVisible(true);
+                }
+                clampTargetOptionScroll();
+                clampTargetDetailsScroll();
+                return;
+            }
+        }
+        setSelectedOption(Mth.clamp(this.state.selectedOption(), 0, visibleEntries.size() - 1));
         clampTargetOptionScroll();
         clampTargetDetailsScroll();
     }
@@ -595,12 +1748,28 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private void setSelectedOption(int selectedOption) {
+        setSelectedOption(selectedOption, false);
+    }
+
+    private void setSelectedOption(int selectedOption, boolean preserveDetailsScroll) {
         if (this.state.selectedOption() != selectedOption) {
+            closeQuestlineMap();
             this.detailsSelectedOption = selectedOption;
-            this.state.resetDetailsScroll();
-            this.visualDetailsScroll = 0.0F;
+            if (!preserveDetailsScroll) {
+                this.state.resetDetailsScroll();
+                this.visualDetailsScroll = 0.0F;
+                this.detailsPage = 0;
+            }
         }
         this.state.setSelectedOption(selectedOption);
+        rememberSelectedQuestId();
+    }
+
+    private void acknowledgeSelectedQuestUpdate() {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (selected != null) {
+            VillagerQuestTrackerOverlay.acknowledgeQuestUpdate(selected);
+        }
     }
 
     private void resetDetailsScrollAfterSelectionChange() {
@@ -610,13 +1779,467 @@ public final class VillagerQuestJournalScreen extends Screen {
         this.detailsSelectedOption = this.state.selectedOption();
         this.state.resetDetailsScroll();
         this.visualDetailsScroll = 0.0F;
+        this.detailsPage = 0;
     }
 
     private QuestTrackerSyncPayload.Entry selectedEntry() {
-        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= entries().size()) {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= visibleEntries.size()) {
             return null;
         }
-        return entries().get(this.state.selectedOption());
+        return visibleEntries.get(this.state.selectedOption());
+    }
+
+    private void rememberSelectedQuestId() {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        this.selectedQuestId = selected == null ? "" : selected.questId();
+    }
+
+    private boolean turnDetailsPage(int direction) {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (selected == null || direction == 0) {
+            return false;
+        }
+        int pageCount = detailsPageCount(selected);
+        if (pageCount <= 1) {
+            return false;
+        }
+        int nextPage = Mth.clamp(this.detailsPage + direction, 0, pageCount - 1);
+        if (nextPage == this.detailsPage) {
+            return false;
+        }
+        this.detailsPage = nextPage;
+        playBookSound(direction > 0 ? 0.92F : 1.08F);
+        return true;
+    }
+
+    private int detailsPageCount(QuestTrackerSyncPayload.Entry selected) {
+        return detailPageStarts(
+                        buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP),
+                        detailsPageViewportHeight(selected))
+                .size();
+    }
+
+    private static int detailsPageViewportHeight(QuestTrackerSyncPayload.Entry selected) {
+        return Math.max(
+                1,
+                DETAILS_HEIGHT - (canAbandon(selected)
+                        ? DETAILS_PAGE_LABEL_HEIGHT + DETAILS_ABANDON_HEIGHT
+                        : 0));
+    }
+
+    private static boolean canAbandon(QuestTrackerSyncPayload.Entry entry) {
+        return entry != null && "active".equalsIgnoreCase(entry.state());
+    }
+
+    private boolean abandonActionAt(
+            double mouseX,
+            double journalMouseY,
+            QuestTrackerSyncPayload.Entry selected) {
+        return !this.questlineMapOpen
+                && canAbandon(selected)
+                && isPointInside(
+                        mouseX,
+                        journalMouseY,
+                        detailsLeft(),
+                        detailsTop() + DETAILS_HEIGHT - DETAILS_ABANDON_HEIGHT,
+                        detailsLeft() + DETAILS_WIDTH,
+                        detailsTop() + DETAILS_HEIGHT);
+    }
+
+    private void requestQuestAbandon(QuestTrackerSyncPayload.Entry selected) {
+        if (selected == null) {
+            return;
+        }
+        String questId = selected.questId();
+        if (!VillagerRetaliationClientPreferences.confirmQuestAbandonment()) {
+            abandonQuest(questId);
+            return;
+        }
+        Minecraft.getInstance().setScreen(new QuestAbandonConfirmationScreen(
+                this,
+                selected.title(),
+                () -> abandonQuest(questId)));
+    }
+
+    private void abandonQuest(String questId) {
+        if (questId == null || questId.isBlank()) {
+            return;
+        }
+        PacketDistributor.sendToServer(new QuestTrackerRequestPayload(
+                questId, QuestTrackerRequestPayload.Action.ABANDON));
+        playBookSound(0.78F);
+    }
+
+    private static int indexOfQuestId(List<QuestTrackerSyncPayload.Entry> visibleEntries, String questId) {
+        if (questId == null || questId.isBlank()) {
+            return -1;
+        }
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            if (questId.equals(visibleEntries.get(index).questId())) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private void openQuestlineMap(String questline) {
+        if (questline == null || questline.isBlank()) {
+            return;
+        }
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        this.questlineMapOpen = true;
+        this.questlineMapId = questline;
+        this.questlineMapReturnQuestId = selected == null ? "" : baseQuestId(selected.questId());
+        endQuestlineGraphDrag();
+        centerQuestlineGraphOn(this.questlineMapReturnQuestId);
+        playBookSound(0.96F);
+    }
+
+    private void closeQuestlineMap() {
+        endQuestlineGraphDrag();
+        this.questlineMapOpen = false;
+    }
+
+    private void beginQuestlineGraphDrag(double mouseX, double mouseY) {
+        if (this.draggingQuestlineGraph) {
+            return;
+        }
+        this.draggingQuestlineGraph = true;
+        this.questlineGraphUiCursorX = mouseX;
+        this.questlineGraphUiCursorY = mouseY;
+        Minecraft minecraft = Minecraft.getInstance();
+        long window = minecraft.getWindow().getWindow();
+        double[] cursorX = new double[1];
+        double[] cursorY = new double[1];
+        GLFW.glfwGetCursorPos(window, cursorX, cursorY);
+        this.questlineGraphCursorX = cursorX[0];
+        this.questlineGraphCursorY = cursorY[0];
+        this.questlineGraphCursorCaptured = true;
+        GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+    }
+
+    private void endQuestlineGraphDrag() {
+        this.draggingQuestlineGraph = false;
+        if (!this.questlineGraphCursorCaptured) {
+            return;
+        }
+        this.questlineGraphCursorCaptured = false;
+        Minecraft minecraft = Minecraft.getInstance();
+        long window = minecraft.getWindow().getWindow();
+        GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+        GLFW.glfwSetCursorPos(window, this.questlineGraphCursorX, this.questlineGraphCursorY);
+        minecraft.mouseHandler.setIgnoreFirstMove();
+    }
+
+    private static boolean isQuestlineGraphDragButtonDown() {
+        long window = Minecraft.getInstance().getWindow().getWindow();
+        return GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
+    }
+
+    private List<QuestTrackerSyncPayload.QuestlineNode> currentQuestlineNodes() {
+        if (this.questlineMapId.isBlank()) {
+            return List.of();
+        }
+        return VillagerQuestTrackerOverlay.questlineNodes().stream()
+                .filter(node -> this.questlineMapId.equals(node.questline()))
+                .toList();
+    }
+
+    private QuestlineGraphLayout.Layout currentQuestlineGraphLayout() {
+        return QuestlineGraphLayout.arrange(currentQuestlineNodes());
+    }
+
+    private void centerQuestlineGraphOn(String questId) {
+        QuestlineGraphLayout.Layout layout = currentQuestlineGraphLayout();
+        if (layout.nodes().isEmpty()) {
+            this.questlineGraphPanX = 0.0F;
+            this.questlineGraphPanY = 0.0F;
+            return;
+        }
+        QuestlineGraphLayout.PositionedNode target = layout.nodes().get(questId);
+        if (target == null) {
+            target = layout.nodes().values().stream()
+                    .min(Comparator.comparingInt(QuestlineGraphLayout.PositionedNode::x)
+                            .thenComparingInt(QuestlineGraphLayout.PositionedNode::y))
+                    .orElse(null);
+        }
+        if (target != null) {
+            this.questlineGraphPanX = DETAILS_WIDTH / 2.0F - target.x() - QUESTLINE_GRAPH_NODE_WIDTH / 2.0F;
+            this.questlineGraphPanY = questlineGraphHeight() / 2.0F - target.y() - QUESTLINE_GRAPH_NODE_HEIGHT / 2.0F;
+        }
+        clampQuestlineGraphPan(layout);
+    }
+
+    private void clampQuestlineGraphPan() {
+        clampQuestlineGraphPan(currentQuestlineGraphLayout());
+    }
+
+    private void clampQuestlineGraphPan(QuestlineGraphLayout.Layout layout) {
+        if (layout.nodes().isEmpty()) {
+            return;
+        }
+        int graphWidth = layout.maxX() - layout.minX() + QUESTLINE_GRAPH_NODE_WIDTH;
+        int graphHeight = layout.maxY() - layout.minY() + QUESTLINE_GRAPH_NODE_HEIGHT;
+        if (graphWidth + QUESTLINE_GRAPH_PAN_MARGIN * 2 <= DETAILS_WIDTH) {
+            this.questlineGraphPanX = (DETAILS_WIDTH - graphWidth) / 2.0F - layout.minX();
+        } else {
+            float minimum = DETAILS_WIDTH - QUESTLINE_GRAPH_PAN_MARGIN - layout.maxX() - QUESTLINE_GRAPH_NODE_WIDTH;
+            float maximum = QUESTLINE_GRAPH_PAN_MARGIN - layout.minX();
+            this.questlineGraphPanX = Mth.clamp(this.questlineGraphPanX, minimum, maximum);
+        }
+        int viewportHeight = questlineGraphHeight();
+        if (graphHeight + QUESTLINE_GRAPH_PAN_MARGIN * 2 <= viewportHeight) {
+            this.questlineGraphPanY = (viewportHeight - graphHeight) / 2.0F - layout.minY();
+        } else {
+            float minimum = viewportHeight - QUESTLINE_GRAPH_PAN_MARGIN - layout.maxY() - QUESTLINE_GRAPH_NODE_HEIGHT;
+            float maximum = QUESTLINE_GRAPH_PAN_MARGIN - layout.minY();
+            this.questlineGraphPanY = Mth.clamp(this.questlineGraphPanY, minimum, maximum);
+        }
+    }
+
+    private int questlineGraphTop() {
+        return detailsTop() + QUESTLINE_GRAPH_HEADER_HEIGHT;
+    }
+
+    private static int questlineGraphHeight() {
+        return DETAILS_HEIGHT - QUESTLINE_GRAPH_HEADER_HEIGHT;
+    }
+
+    private int questlineGraphNodeLeft(QuestlineGraphLayout.PositionedNode node) {
+        return detailsLeft() + Mth.floor(this.questlineGraphPanX) + node.x();
+    }
+
+    private int questlineGraphNodeTop(QuestlineGraphLayout.PositionedNode node) {
+        return questlineGraphTop() + Mth.floor(this.questlineGraphPanY) + node.y();
+    }
+
+    private boolean isPointInsideQuestlineGraph(double mouseX, double journalMouseY) {
+        return this.questlineMapOpen && isPointInside(
+                mouseX,
+                journalMouseY,
+                detailsLeft(),
+                questlineGraphTop(),
+                detailsLeft() + DETAILS_WIDTH,
+                questlineGraphTop() + questlineGraphHeight());
+    }
+
+    private boolean questlineGraphBackAt(double mouseX, double journalMouseY) {
+        if (!this.questlineMapOpen) {
+            return false;
+        }
+        Component back = Component.translatable(GUI_KEY_PREFIX + "questline_back");
+        return isPointInside(
+                mouseX,
+                journalMouseY,
+                detailsLeft(),
+                detailsTop(),
+                detailsLeft() + this.font.width(back),
+                detailsTop() + this.font.lineHeight);
+    }
+
+    private QuestTrackerSyncPayload.QuestlineNode questlineGraphNodeAt(double mouseX, double journalMouseY) {
+        if (!isPointInsideQuestlineGraph(mouseX, journalMouseY)) {
+            return null;
+        }
+        QuestlineGraphLayout.Layout layout = currentQuestlineGraphLayout();
+        for (QuestlineGraphLayout.PositionedNode node : layout.nodes().values()) {
+            int left = questlineGraphNodeLeft(node);
+            int top = questlineGraphNodeTop(node);
+            if (isPointInside(
+                    mouseX,
+                    journalMouseY,
+                    left,
+                    top,
+                    left + QUESTLINE_GRAPH_NODE_WIDTH,
+                    top + QUESTLINE_GRAPH_NODE_HEIGHT)) {
+                return node.node();
+            }
+        }
+        return null;
+    }
+
+    private void renderAbandonTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (!abandonActionAt(mouseX, mouseY - slideOffset, selected)) {
+            return;
+        }
+        graphics.renderComponentTooltip(
+                this.font,
+                List.of(Component.translatable(GUI_KEY_PREFIX + "abandon.tooltip")
+                        .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR))),
+                mouseX,
+                mouseY);
+    }
+
+    private void renderQuestlineGraphTooltip(
+            GuiGraphics graphics,
+            int mouseX,
+            int mouseY,
+            int slideOffset) {
+        QuestTrackerSyncPayload.QuestlineNode node = questlineGraphNodeAt(mouseX, mouseY - slideOffset);
+        if (node == null) {
+            return;
+        }
+        List<Component> lines = new ArrayList<>();
+        int titleColor = parseJournalColor(node.color(), QUESTLINE_TOOLTIP_NAME_COLOR);
+        lines.add(Component.literal(node.title())
+                .withStyle(Style.EMPTY.withColor(titleColor).withBold(true)));
+        String stateKey = questlineNodeStateKey(node.state());
+        lines.add(Component.translatable(GUI_KEY_PREFIX + "questline_node.state." + stateKey)
+                .withStyle(Style.EMPTY.withColor(questlineNodeStateColor(node.state()))));
+        if (!"locked".equals(stateKey)) {
+            if (!node.description().isBlank()) {
+                lines.add(Component.literal(node.description())
+                        .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_DESCRIPTION_COLOR)));
+            }
+            if (journalEntryForQuestId(node.questId()) != null) {
+                lines.add(Component.translatable(GUI_KEY_PREFIX + "questline_node.open")
+                        .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_ACTION_COLOR)));
+            }
+        }
+        graphics.renderComponentTooltip(this.font, lines, mouseX, mouseY);
+    }
+
+    private static String questlineNodeStateKey(String state) {
+        return switch (state == null ? "" : state.toLowerCase(Locale.ROOT)) {
+            case "completed" -> "completed";
+            case "active" -> "active";
+            case "available", "abandoned", "expired", "failed" -> "available";
+            case "closed" -> "closed";
+            default -> "locked";
+        };
+    }
+
+    private static int questlineNodeStateColor(String state) {
+        return switch (state == null ? "" : state.toLowerCase(Locale.ROOT)) {
+            case "completed" -> QUESTLINE_NODE_TOOLTIP_COMPLETED_COLOR;
+            case "active" -> QUESTLINE_NODE_TOOLTIP_ACTIVE_COLOR;
+            case "available" -> QUESTLINE_NODE_TOOLTIP_ACTION_COLOR;
+            case "abandoned", "expired", "failed", "closed" -> QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR;
+            default -> QUESTLINE_NODE_TOOLTIP_LOCKED_COLOR;
+        };
+    }
+
+    private void renderQuestlineTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        QuestTrackerSyncPayload.Entry entry = questEntryAt(mouseX, mouseY - slideOffset);
+        if (entry == null || entry.journal().questline().isBlank()) {
+            return;
+        }
+        graphics.renderComponentTooltip(
+                this.font,
+                questlineTooltipLines(entry.journal()),
+                mouseX,
+                mouseY);
+    }
+
+    private static List<Component> questlineTooltipLines(QuestTrackerSyncPayload.Journal journal) {
+        return List.of(
+                Component.translatable(GUI_KEY_PREFIX + "questline_label")
+                        .withStyle(Style.EMPTY.withColor(QUESTLINE_TOOLTIP_LABEL_COLOR)),
+                Component.literal(questlineDisplayName(journal.questline()))
+                        .withStyle(Style.EMPTY.withColor(QUESTLINE_TOOLTIP_NAME_COLOR).withBold(true)),
+                Component.translatable(
+                                GUI_KEY_PREFIX + "questline_completion",
+                                journal.questlineCompleted(),
+                                journal.questlineTotal())
+                        .withStyle(Style.EMPTY.withColor(QUESTLINE_TOOLTIP_PROGRESS_COLOR)));
+    }
+
+    private QuestTrackerSyncPayload.Entry questEntryAt(double mouseX, double journalMouseY) {
+        int index = questOptionAt(mouseX, journalMouseY);
+        return index < 0 ? null : visibleEntries().get(index);
+    }
+
+    private void renderPreviousStepTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        QuestDetailLine link = detailLinkAt(mouseX, mouseY - slideOffset);
+        if (link == null) {
+            return;
+        }
+        List<Component> tooltip;
+        if (link.questlineLink()) {
+            QuestTrackerSyncPayload.Entry selected = selectedEntry();
+            tooltip = selected == null
+                    ? List.of()
+                    : questlineTooltipLines(selected.journal());
+        } else {
+            tooltip = List.of(Component.translatable(GUI_KEY_PREFIX + "view_previous_step"));
+        }
+        if (!tooltip.isEmpty()) {
+            graphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
+        }
+    }
+
+    private QuestDetailLine detailLinkAt(double mouseX, double journalMouseY) {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (this.questlineMapOpen || selected == null || !isPointInsideDetailsScrollArea(mouseX, journalMouseY)) {
+            return null;
+        }
+        List<QuestDetailLine> lines = buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP);
+        int viewportHeight = detailsPageViewportHeight(selected);
+        List<Integer> pageStarts = detailPageStarts(lines, viewportHeight);
+        int page = Mth.clamp(this.detailsPage, 0, pageStarts.size() - 1);
+        int pageTop = pageStarts.get(page);
+        for (QuestDetailLine line : lines) {
+            if (!line.link() || line.top() < pageTop || line.top() + line.height() > pageTop + viewportHeight) {
+                continue;
+            }
+            int top = detailsTop() + line.top() - pageTop;
+            int left = detailsLeft() + (line.icon() == null ? 0 : questStepTextIndent());
+            int width = line.text() == null ? 0 : this.font.width(line.text());
+            if (isPointInside(mouseX, journalMouseY, left, top, left + width, top + line.height())) {
+                return line;
+            }
+        }
+        return null;
+    }
+
+    private boolean openQuestPage(String targetQuestId) {
+        QuestTrackerSyncPayload.Entry target = journalEntryForQuestId(targetQuestId);
+        if (target == null) {
+            return false;
+        }
+        this.searchActive = false;
+        this.searchQuery = "";
+        QuestJournalTab targetTab = switch (QuestJournalEntryState.from(target)) {
+            case COMPLETED -> QuestJournalTab.COMPLETED;
+            case ACTIVE -> QuestJournalTab.ACTIVE;
+            default -> QuestJournalTab.AVAILABLE;
+        };
+        selectTab(targetTab);
+        int index = indexOfQuestId(visibleEntries(), target.questId());
+        if (index < 0) {
+            return false;
+        }
+        setSelectedOption(index);
+        acknowledgeSelectedQuestUpdate();
+        ensureSelectedVisible(true);
+        return true;
+    }
+
+    private static QuestTrackerSyncPayload.Entry journalEntryForQuestId(String questId) {
+        if (questId == null || questId.isBlank()) {
+            return null;
+        }
+        for (QuestTrackerSyncPayload.Entry entry : entries()) {
+            if (!entry.journal().hidden() && questId.equals(entry.questId())) {
+                return entry;
+            }
+        }
+        for (QuestTrackerSyncPayload.Entry entry : entries()) {
+            if (!entry.journal().hidden() && questId.equals(baseQuestId(entry.questId()))) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    private static String baseQuestId(String questId) {
+        if (questId == null) {
+            return "";
+        }
+        int historySuffix = questId.indexOf("#completed/");
+        return historySuffix < 0 ? questId : questId.substring(0, historySuffix);
     }
 
     private void setTargetOptionScroll(float scroll) {
@@ -625,90 +2248,6 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private void setTargetDetailsScroll(float scroll) {
         this.state.setTargetDetailsScroll(scroll, maxDetailsScroll());
-    }
-
-    private float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
-        return VillagerInteractionUiUtil.edgeFadeAlpha(
-                optionRenderScroll(),
-                maxOptionScroll(),
-                optionY,
-                optionY + optionHeight(),
-                viewportTop,
-                viewportBottom,
-                26.0F
-        );
-    }
-
-    private void renderScrollbar(GuiGraphics graphics) {
-        ToucanScrollbars.renderFadedThumb(
-                graphics,
-                scrollbarThumb(),
-                optionRenderScroll(),
-                maxOptionScroll(),
-                0xBFFFFFFF,
-                VillagerInteractionExperimentalChrome.chromeAlpha());
-    }
-
-    private void renderDetailsScrollbar(
-            GuiGraphics graphics,
-            int viewportTop,
-            int viewportHeight,
-            int contentHeight,
-            float maxScroll,
-            float alpha) {
-        ToucanScrollbars.renderFadedThumb(
-                graphics,
-                detailsScrollbarThumb(viewportTop, viewportHeight, contentHeight, maxScroll),
-                detailsRenderScroll(),
-                maxScroll,
-                0xAFFFFFFF,
-                alpha);
-    }
-
-    private ToucanScrollbarThumb scrollbarThumb() {
-        return VillagerInteractionUiUtil.buildScrollbarThumb(
-                optionsTop(),
-                optionViewportHeight(),
-                optionsScrollbarLeft(),
-                optionScrollbarWidth(),
-                optionScrollbarHitWidth(),
-                optionHeight(),
-                optionRenderScroll(),
-                maxOptionScroll(),
-                optionContentHeight()
-        );
-    }
-
-    private ToucanScrollbarThumb detailsScrollbarThumb() {
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
-        if (selected == null) {
-            return null;
-        }
-        int top = skillsPanelTop() + skillsContainerPaddingY();
-        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
-        if (bottom <= top) {
-            return null;
-        }
-        int viewportHeight = Math.max(1, bottom - top - (selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0));
-        float maxScroll = maxDetailsScroll(selected, viewportHeight);
-        int contentHeight = detailsContentHeight(selected);
-        return detailsScrollbarThumb(top, viewportHeight, contentHeight, maxScroll);
-    }
-
-    private ToucanScrollbarThumb detailsScrollbarThumb(int viewportTop, int viewportHeight, int contentHeight, float maxScroll) {
-        if (maxScroll <= 0.0F) {
-            return null;
-        }
-        return VillagerInteractionUiUtil.buildScrollbarThumb(
-                viewportTop,
-                viewportHeight,
-                detailsScrollbarLeft(),
-                optionScrollbarWidth(),
-                optionScrollbarHitWidth(),
-                experimentalUnitAtLeast(18, 10),
-                detailsRenderScroll(),
-                maxScroll,
-                contentHeight);
     }
 
     private void updateVisualScrolls() {
@@ -733,294 +2272,914 @@ public final class VillagerQuestJournalScreen extends Screen {
         return Mth.clamp(this.visualOptionScroll, 0.0F, maxOptionScroll());
     }
 
-    private float detailsRenderScroll() {
-        return Mth.clamp(this.visualDetailsScroll, 0.0F, maxDetailsScroll());
-    }
-
     private float maxOptionScroll() {
         return ToucanScrollState.maxScroll(optionContentHeight(), optionViewportHeight());
     }
 
     private float maxDetailsScroll() {
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
-        if (selected == null) {
-            return 0.0F;
-        }
-        int top = skillsPanelTop() + skillsContainerPaddingY();
-        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
-        int viewportHeight = Math.max(1, bottom - top - (selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0));
-        return maxDetailsScroll(selected, viewportHeight);
-    }
-
-    private float maxDetailsScroll(QuestTrackerSyncPayload.Entry selected, int viewportHeight) {
-        return ToucanScrollState.maxScroll(detailsContentHeight(selected), viewportHeight);
+        return 0.0F;
     }
 
     private float optionContentHeight() {
-        return VillagerInteractionOptionList.optionContentHeight(this.optionListContext);
+        ensureOptionLayout();
+        return this.cachedOptionContentHeight;
     }
 
-    private int detailsContentHeight(QuestTrackerSyncPayload.Entry selected) {
-        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
-        int left = skillsPanelLeft();
-        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), left + skillsPanelWidth());
-        int wrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(detailsContentRight(right) - left, scale);
-        int lineStep = VillagerInteractionUiUtil.scaledLineStep(this.font, scale);
-        return detailContentHeight(buildQuestDetailLines(selected, wrapWidth, lineStep), lineStep);
+    private float optionOffset(int optionIndex) {
+        ensureOptionLayout();
+        return optionIndex >= 0 && optionIndex < this.cachedOptionOffsets.length
+                ? this.cachedOptionOffsets[optionIndex]
+                : 0.0F;
     }
 
-    private int optionWidth() {
-        return VillagerInteractionLayoutMetrics.optionWidth();
+    private int questOptionHeight(int index) {
+        ensureOptionLayout();
+        return index >= 0 && index < this.cachedOptionHeights.length
+                ? this.cachedOptionHeights[index]
+                : QUEST_OPTION_HEIGHT;
     }
 
-    private int optionHeight() {
-        return VillagerInteractionLayoutMetrics.optionHeight();
+    private List<FormattedCharSequence> questOptionTitleLines(int index) {
+        ensureOptionLayout();
+        return index >= 0 && index < this.cachedOptionTitleLines.size()
+                ? this.cachedOptionTitleLines.get(index)
+                : List.of();
     }
 
-    private int optionTextInset() {
-        return VillagerInteractionLayoutMetrics.optionTextInset();
+    private void ensureOptionLayout() {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        if (this.cachedOptionLayoutEntries == visibleEntries) {
+            return;
+        }
+        List<List<FormattedCharSequence>> titleLines = new ArrayList<>(visibleEntries.size());
+        int[] heights = new int[visibleEntries.size()];
+        float[] offsets = new float[visibleEntries.size()];
+        float contentHeight = 0.0F;
+        int textWidth = questOptionTextWidth();
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            offsets[index] = contentHeight;
+            List<FormattedCharSequence> lines = List.copyOf(
+                    this.font.split(Component.literal(visibleEntries.get(index).title()), textWidth));
+            titleLines.add(lines);
+            int lineCount = Math.max(1, lines.size());
+            int height = lineCount <= 1
+                    ? QUEST_OPTION_HEIGHT
+                    : QUEST_OPTION_HEIGHT + (lineCount - 1) * (this.font.lineHeight + QUEST_OPTION_TEXT_LINE_GAP);
+            heights[index] = height;
+            contentHeight += height;
+            if (index < visibleEntries.size() - 1) {
+                contentHeight += QUEST_OPTION_GAP;
+            }
+        }
+        this.cachedOptionLayoutEntries = visibleEntries;
+        this.cachedOptionTitleLines = List.copyOf(titleLines);
+        this.cachedOptionHeights = heights;
+        this.cachedOptionOffsets = offsets;
+        this.cachedOptionContentHeight = contentHeight;
+    }
+
+    private int questOptionTextWidth() {
+        return Math.max(1, QUEST_OPTION_WIDTH - QUEST_OPTION_TEXT_LEFT_PADDING - QUEST_OPTION_TEXT_RIGHT_PADDING);
     }
 
     private int optionViewportHeight() {
-        return VillagerInteractionLayoutMetrics.fullOptionViewportHeight();
+        return QUEST_OPTION_VIEWPORT_HEIGHT;
     }
 
-    private int optionStride() {
-        return VillagerInteractionLayoutMetrics.optionHeight()
-                + VillagerInteractionExperimentalLayout.unitAtLeast(QUEST_OPTION_GAP, 2);
+    private int journalLeft() {
+        return (this.width - JOURNAL_WIDTH) / 2;
+    }
+
+    private int journalTop() {
+        return Math.max(4, (this.height - JOURNAL_HEIGHT) / 2);
     }
 
     private int optionsLeft() {
-        return VillagerInteractionExperimentalLayout.optionsLeft(this.width, optionWidth());
+        return journalLeft() + QUEST_OPTION_LEFT_OFFSET;
     }
 
     private int optionsTop() {
-        return VillagerInteractionExperimentalLayout.optionsTop(this.height, optionViewportHeight());
+        return journalTop() + QUEST_OPTION_TOP_OFFSET;
     }
 
-    private int optionsScrollbarLeft() {
-        return VillagerInteractionExperimentalLayout.scrollbarLeft(
-                this.width,
-                optionsLeft(),
-                optionWidth(),
-                optionScrollbarOffset(),
-                optionScrollbarWidth());
+    private int optionScrollbarLeft() {
+        return optionsLeft() + QUEST_OPTION_WIDTH + QUEST_OPTION_SCROLLBAR_GAP;
     }
 
-    private int scrollbarRight() {
-        return optionsScrollbarLeft() + optionScrollbarWidth();
+    private int detailsLeft() {
+        return journalLeft() + DETAILS_LEFT_OFFSET;
     }
 
-    private int detailsScrollbarLeft() {
-        int left = skillsPanelLeft();
-        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), left + skillsPanelWidth());
-        return Math.max(left, right - optionScrollbarWidth());
+    private int detailsTop() {
+        return journalTop() + DETAILS_TOP_OFFSET;
     }
 
-    private int detailsContentRight(int panelRight) {
-        return Math.max(skillsPanelLeft() + experimentalUnitAtLeast(48, 32), panelRight - experimentalUnitAtLeast(12, 7));
+    private int slideOffsetY() {
+        float visibility = journalVisibility();
+        int offscreenDistance = this.height - journalTop() + 12;
+        return Math.round((1.0F - visibility) * offscreenDistance);
     }
 
-    private int skillsPanelTop() {
-        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, skillsContainerHeight());
+    private float journalVisibility() {
+        float progress = Mth.clamp(animationElapsedMillis() / JOURNAL_ANIMATION_DURATION_MILLIS, 0.0F, 1.0F);
+        return this.closingWithAnimation ? 1.0F - easeInCubic(progress) : easeOutCubic(progress);
     }
 
-    private int skillsPanelLeft() {
-        int panelWidth = skillsPanelWidth();
-        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, scrollbarRight() - panelWidth);
-    }
-
-    private int skillsPanelWidth() {
-        return optionWidth();
-    }
-
-    private int skillsContainerHeight() {
-        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight());
-    }
-
-    private int skillsPanelHeight() {
-        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font);
-    }
-
-    private int skillsContainerPaddingX() {
-        return VillagerInteractionLayoutMetrics.skillsContainerPaddingX();
-    }
-
-    private int skillsContainerPaddingY() {
-        return VillagerInteractionLayoutMetrics.skillsContainerPaddingY();
-    }
-
-    private int skillsBackdropLeft() {
-        return Math.max(0, skillsPanelLeft() - skillsContainerPaddingX() - experimentalUnit(118));
-    }
-
-    private int skillsBackdropTop() {
-        return Math.max(0, skillsPanelTop() - experimentalUnit(26));
-    }
-
-    private int skillsBackdropRight() {
-        return this.width;
-    }
-
-    private int skillsBackdropBottom() {
-        return this.height;
-    }
-
-    private int optionScrollbarOffset() {
-        return VillagerInteractionLayoutMetrics.optionScrollbarOffset();
-    }
-
-    private int optionScrollbarWidth() {
-        return VillagerInteractionLayoutMetrics.optionScrollbarWidth();
-    }
-
-    private int optionScrollbarHitWidth() {
-        return VillagerInteractionLayoutMetrics.optionScrollbarHitWidth();
-    }
-
-    private int experimentalUnit(int value) {
-        return VillagerInteractionExperimentalLayout.unit(value);
-    }
-
-    private int experimentalUnitAtLeast(int value, int minimum) {
-        return VillagerInteractionExperimentalLayout.unitAtLeast(value, minimum);
-    }
-
-    private int experimentalTicks() {
-        return (int) ((Util.getMillis() % 1_000_000L) / 50L);
-    }
-
-    private float detailsElapsedMillis() {
-        long now = Util.getMillis();
-        if (this.detailsAnimationStartMillis < 0L) {
-            this.detailsAnimationStartMillis = now;
+    private float animationElapsedMillis() {
+        if (this.animationStartMillis < 0L) {
+            return JOURNAL_ANIMATION_DURATION_MILLIS;
         }
-        return now - this.detailsAnimationStartMillis;
+        return Util.getMillis() - this.animationStartMillis;
+    }
+
+    private static float easeOutCubic(float value) {
+        float inverse = 1.0F - value;
+        return 1.0F - inverse * inverse * inverse;
+    }
+
+    private static float easeInCubic(float value) {
+        return value * value * value;
+    }
+
+    private void playBookSound(float pitch) {
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F, pitch));
     }
 
     private static List<QuestTrackerSyncPayload.Entry> entries() {
         return VillagerQuestTrackerOverlay.entries();
     }
 
-    private record QuestDetailLine(FormattedCharSequence text, int color, int top) {
+    private List<QuestTrackerSyncPayload.Entry> visibleEntries() {
+        List<QuestTrackerSyncPayload.Entry> sourceEntries = entries();
+        String query = normalized(this.searchQuery);
+        if (this.cachedVisibleSourceEntries == sourceEntries
+                && this.cachedVisibleTab == this.selectedTab
+                && this.cachedVisibleQuery.equals(query)) {
+            return this.cachedVisibleEntries;
+        }
+        this.cachedVisibleSourceEntries = sourceEntries;
+        this.cachedVisibleTab = this.selectedTab;
+        this.cachedVisibleQuery = query;
+        this.cachedVisibleEntries = sourceEntries.stream()
+                .filter(entry -> !entry.journal().hidden())
+                .filter(entry -> this.selectedTab.includes(QuestJournalEntryState.from(entry)))
+                .filter(entry -> query.isBlank() || journalSearchText(entry).contains(query))
+                .sorted(Comparator.comparingInt(VillagerQuestJournalScreen::activeTrackedSortKey)
+                        .thenComparing(Comparator.comparingInt((QuestTrackerSyncPayload.Entry entry) -> entry.journal().priority()).reversed())
+                        .thenComparing(entry -> normalized(entry.journal().questline()))
+                        .thenComparing(entry -> normalized(entry.title())))
+                .toList();
+        this.cachedOptionLayoutEntries = null;
+        return this.cachedVisibleEntries;
     }
 
-    private final class OptionListContext implements VillagerInteractionOptionList.Context {
-        @Override
-        public Font font() {
-            return VillagerQuestJournalScreen.this.font;
+    private void resetFilteredSelection() {
+        this.state.resetOptions(!visibleEntries().isEmpty());
+        this.visualOptionScroll = 0.0F;
+        this.visualDetailsScroll = 0.0F;
+        this.selectedQuestId = "";
+        this.detailsPage = 0;
+    }
+
+    private static String journalSearchText(QuestTrackerSyncPayload.Entry entry) {
+        return normalized(String.join(" ",
+                entry.title(), entry.description(), entry.objective(), entry.status(), entry.journal().questline(),
+                String.join(" ", entry.journal().tags())));
+    }
+
+    private static int journalColor(QuestTrackerSyncPayload.Entry entry, int fallback) {
+        return readableJournalTextColor(parseJournalColor(entry == null ? "" : entry.journal().color(), fallback));
+    }
+
+    private static int journalOutlineColor(QuestTrackerSyncPayload.Entry entry, int fallback) {
+        return parseJournalColor(entry == null ? "" : entry.journal().outlineColor(), fallback);
+    }
+
+    private static int readableJournalTextColor(int color) {
+        double backgroundLuminance = relativeLuminance(LIGHTEST_JOURNAL_ENTRY_COLOR);
+        if (contrastRatio(relativeLuminance(color), backgroundLuminance) >= MIN_JOURNAL_TEXT_CONTRAST) {
+            return color;
         }
 
-        @Override
-        public int optionsLeft() {
-            return VillagerQuestJournalScreen.this.optionsLeft();
-        }
-
-        @Override
-        public int optionsTop() {
-            return VillagerQuestJournalScreen.this.optionsTop();
-        }
-
-        @Override
-        public int optionWidth() {
-            return VillagerQuestJournalScreen.this.optionWidth();
-        }
-
-        @Override
-        public int optionHeight() {
-            return VillagerQuestJournalScreen.this.optionHeight();
-        }
-
-        @Override
-        public int optionTextInset() {
-            return VillagerQuestJournalScreen.this.optionTextInset();
-        }
-
-        @Override
-        public int optionCount() {
-            return entries().size();
-        }
-
-        @Override
-        public String optionLabel(int index) {
-            QuestTrackerSyncPayload.Entry entry = entries().get(index);
-            if (!entry.trackable() && !entry.status().isBlank()) {
-                return entry.title() + " [" + entry.status() + "]";
+        double readableScale = 0.0D;
+        double unreadableScale = 1.0D;
+        for (int iteration = 0; iteration < 12; iteration++) {
+            double candidateScale = (readableScale + unreadableScale) / 2.0D;
+            int candidate = scaleRgb(color, candidateScale);
+            if (contrastRatio(relativeLuminance(candidate), backgroundLuminance) >= MIN_JOURNAL_TEXT_CONTRAST) {
+                readableScale = candidateScale;
+            } else {
+                unreadableScale = candidateScale;
             }
-            return entry.title();
+        }
+        return scaleRgb(color, readableScale);
+    }
+
+    private static int scaleRgb(int color, double scale) {
+        int red = (int) Math.round((color >> 16 & 0xFF) * scale);
+        int green = (int) Math.round((color >> 8 & 0xFF) * scale);
+        int blue = (int) Math.round((color & 0xFF) * scale);
+        return color & 0xFF000000 | red << 16 | green << 8 | blue;
+    }
+
+    private static double contrastRatio(double firstLuminance, double secondLuminance) {
+        double lighter = Math.max(firstLuminance, secondLuminance);
+        double darker = Math.min(firstLuminance, secondLuminance);
+        return (lighter + 0.05D) / (darker + 0.05D);
+    }
+
+    private static double relativeLuminance(int color) {
+        double red = linearColorChannel(color >> 16 & 0xFF);
+        double green = linearColorChannel(color >> 8 & 0xFF);
+        double blue = linearColorChannel(color & 0xFF);
+        return 0.2126D * red + 0.7152D * green + 0.0722D * blue;
+    }
+
+    private static double linearColorChannel(int channel) {
+        double value = channel / 255.0D;
+        return value <= 0.04045D
+                ? value / 12.92D
+                : Math.pow((value + 0.055D) / 1.055D, 2.4D);
+    }
+
+    private static int parseJournalColor(String authoredValue, int fallback) {
+        String value = authoredValue == null ? "" : authoredValue.trim();
+        if (value.startsWith("#") && value.length() == 7) {
+            try {
+                return 0xFF000000 | Integer.parseInt(value.substring(1), 16);
+            } catch (NumberFormatException ignored) {
+                return fallback;
+            }
+        }
+        net.minecraft.ChatFormatting formatting = net.minecraft.ChatFormatting.getByName(value);
+        return formatting != null && formatting.getColor() != null ? 0xFF000000 | formatting.getColor() : fallback;
+    }
+
+    private static String plainText(FormattedCharSequence sequence) {
+        StringBuilder text = new StringBuilder();
+        if (sequence != null) {
+            sequence.accept((position, style, codePoint) -> {
+                text.appendCodePoint(codePoint);
+                return true;
+            });
+        }
+        return text.toString();
+    }
+
+    private static Component journalTimingLine(QuestTrackerSyncPayload.Entry entry) {
+        long now = currentGameTime();
+        if (entry.journal().expiresAtGameTime() > 0L && "active".equals(normalized(entry.state()))) {
+            long remaining = Math.max(0L, entry.journal().expiresAtGameTime() - now);
+            return Component.translatable(GUI_KEY_PREFIX + "expires", formatDuration(remaining));
+        }
+        if (entry.journal().completedGameTime() >= 0L) {
+            return Component.translatable(GUI_KEY_PREFIX + "completed_ago", formatDuration(Math.max(0L, now - entry.journal().completedGameTime())));
+        }
+        return null;
+    }
+
+    private static Component journalWaypointLine(QuestTrackerSyncPayload.Entry entry) {
+        QuestTrackerSyncPayload.Waypoint waypoint = entry.journal().waypoint();
+        if (!waypoint.present()) {
+            return null;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        String distance = "";
+        if (minecraft.player != null && minecraft.level != null
+                && minecraft.level.dimension().location().toString().equals(waypoint.dimension())) {
+            int dx = waypoint.x() - minecraft.player.blockPosition().getX();
+            int dz = waypoint.z() - minecraft.player.blockPosition().getZ();
+            distance = " • " + Math.round(Math.sqrt((double) dx * dx + (double) dz * dz)) + " blocks";
+        }
+        return Component.translatable(GUI_KEY_PREFIX + "waypoint", waypoint.x(), waypoint.y(), waypoint.z(), waypoint.dimension(), distance);
+    }
+
+    private static long currentGameTime() {
+        return Minecraft.getInstance().level == null ? 0L : Minecraft.getInstance().level.getGameTime();
+    }
+
+    private static String formatDuration(long ticks) {
+        long seconds = Math.max(0L, ticks / 20L);
+        long days = seconds / 86400L;
+        long hours = (seconds % 86400L) / 3600L;
+        long minutes = (seconds % 3600L) / 60L;
+        long remainder = seconds % 60L;
+        if (days > 0L) return days + "d " + hours + "h";
+        if (hours > 0L) return hours + "h " + minutes + "m";
+        if (minutes > 0L) return minutes + "m " + remainder + "s";
+        return remainder + "s";
+    }
+
+    private static int activeTrackedSortKey(QuestTrackerSyncPayload.Entry entry) {
+        if (QuestJournalEntryState.from(entry) != QuestJournalEntryState.ACTIVE) {
+            return Integer.MAX_VALUE;
+        }
+        int trackedIndex = VillagerQuestTrackerOverlay.trackedIndex(entry);
+        return trackedIndex < 0 ? Integer.MAX_VALUE : trackedIndex;
+    }
+
+    private static boolean hasQuestUpdate(QuestTrackerSyncPayload.Entry entry) {
+        return entry.questUpdate() && !entry.questAvailable();
+    }
+
+    private static String normalized(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private enum QuestJournalTab {
+        AVAILABLE(
+                0,
+                GUI_KEY_PREFIX + "tab.available",
+                GUI_KEY_PREFIX + "tab.available.tooltip",
+                GUI_KEY_PREFIX + "empty.available",
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_RED_TEXTURE,
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_AVAILABLE_TEXTURE),
+        ACTIVE(
+                1,
+                GUI_KEY_PREFIX + "tab.active",
+                GUI_KEY_PREFIX + "tab.active.tooltip",
+                GUI_KEY_PREFIX + "empty.active",
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_PURPLE_TEXTURE,
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_ACTIVE_TEXTURE),
+        COMPLETED(
+                2,
+                GUI_KEY_PREFIX + "tab.completed",
+                GUI_KEY_PREFIX + "tab.completed.tooltip",
+                GUI_KEY_PREFIX + "empty.completed",
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_TEAL_TEXTURE,
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_COMPLETED_TEXTURE);
+
+        private final int index;
+        private final String titleKey;
+        private final String tooltipKey;
+        private final String emptyMessageKey;
+        private final ResourceLocation texture;
+        private final ResourceLocation iconTexture;
+
+        QuestJournalTab(
+                int index,
+                String titleKey,
+                String tooltipKey,
+                String emptyMessageKey,
+                ResourceLocation texture,
+                ResourceLocation iconTexture) {
+            this.index = index;
+            this.titleKey = titleKey;
+            this.tooltipKey = tooltipKey;
+            this.emptyMessageKey = emptyMessageKey;
+            this.texture = texture;
+            this.iconTexture = iconTexture;
+        }
+
+        int index() {
+            return this.index;
+        }
+
+        Component title() {
+            return Component.translatable(this.titleKey);
+        }
+
+        Component tooltip() {
+            return Component.translatable(this.tooltipKey).withStyle(this.tooltipStyle());
+        }
+
+        private Style tooltipStyle() {
+            return switch (this) {
+                case AVAILABLE -> QUEST_COUNT_NEARBY_STYLE;
+                case ACTIVE -> QUEST_COUNT_ACTIVE_STYLE;
+                case COMPLETED -> QUEST_COUNT_COMPLETED_STYLE;
+            };
+        }
+
+        Component emptyMessage() {
+            return Component.translatable(this.emptyMessageKey);
+        }
+
+        ResourceLocation texture() {
+            return this.texture;
+        }
+
+        ResourceLocation iconTexture() {
+            return this.iconTexture;
+        }
+
+        boolean includes(QuestJournalEntryState state) {
+            return switch (this) {
+                case AVAILABLE -> state == QuestJournalEntryState.AVAILABLE || state == QuestJournalEntryState.ACTIVE;
+                case ACTIVE -> state == QuestJournalEntryState.ACTIVE;
+                case COMPLETED -> state == QuestJournalEntryState.COMPLETED;
+            };
+        }
+    }
+
+    private enum QuestJournalEntryState {
+        AVAILABLE(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_AVAILABLE_TEXTURE),
+        ACTIVE(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_ACTIVE_TEXTURE),
+        INACTIVE(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_INACTIVE_TEXTURE),
+        COMPLETED(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_COMPLETED_TEXTURE);
+
+        private final ResourceLocation texture;
+
+        QuestJournalEntryState(ResourceLocation texture) {
+            this.texture = texture;
+        }
+
+        static QuestJournalEntryState from(QuestTrackerSyncPayload.Entry entry) {
+            if (entry.questAvailable()) {
+                return AVAILABLE;
+            }
+            String state = normalized(entry.state());
+            return switch (state) {
+                case "active", "accepted", "ready", "ready_to_turn_in" -> ACTIVE;
+                case "completed", "complete", "done" -> COMPLETED;
+                case "inactive", "locked", "unavailable", "abandoned", "expired" -> INACTIVE;
+                default -> AVAILABLE;
+            };
+        }
+
+        static QuestJournalEntryState iconFor(QuestTrackerSyncPayload.Entry entry) {
+            QuestJournalEntryState state = from(entry);
+            if (state == ACTIVE && !VillagerQuestTrackerOverlay.isTracked(entry)) {
+                return INACTIVE;
+            }
+            return state;
+        }
+
+        ResourceLocation texture() {
+            return this.texture;
+        }
+
+        ResourceLocation selectedTexture() {
+            return this == COMPLETED
+                    ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_SELECTED_QUEST_COMPLETED_TEXTURE
+                    : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_SELECTED_QUEST_TEXTURE;
+        }
+
+        Component tooltip() {
+            String key = switch (this) {
+                case AVAILABLE -> "available";
+                case ACTIVE -> "active";
+                case INACTIVE -> "accepted";
+                case COMPLETED -> "completed";
+            };
+            Style style = switch (this) {
+                case AVAILABLE -> QUEST_COUNT_NEARBY_STYLE;
+                case ACTIVE -> QUEST_COUNT_ACTIVE_STYLE;
+                case INACTIVE -> QUEST_COUNT_ACCEPTED_STYLE;
+                case COMPLETED -> QUEST_COUNT_COMPLETED_STYLE;
+            };
+            return Component.translatable(GUI_KEY_PREFIX + "state." + key).withStyle(style);
+        }
+    }
+
+    private record QuestDetailLine(
+            FormattedCharSequence text,
+            int color,
+            int top,
+            int height,
+            ResourceLocation icon,
+            boolean centered,
+            boolean divider,
+            boolean titleIcon,
+            String targetQuestId,
+            String itemId,
+            String outlinedText,
+            int outlineColor,
+            int textIndent) {
+        private QuestDetailLine(
+                FormattedCharSequence text,
+                int color,
+                int top,
+                int height,
+                ResourceLocation icon,
+                boolean centered,
+                boolean divider,
+                boolean titleIcon,
+                String targetQuestId,
+                String itemId,
+                String outlinedText,
+                int outlineColor) {
+            this(
+                    text,
+                    color,
+                    top,
+                    height,
+                    icon,
+                    centered,
+                    divider,
+                    titleIcon,
+                    targetQuestId,
+                    itemId,
+                    outlinedText,
+                    outlineColor,
+                    0);
+        }
+
+        private QuestDetailLine(
+                FormattedCharSequence text,
+                int color,
+                int top,
+                int height,
+                ResourceLocation icon,
+                boolean centered,
+                boolean divider,
+                boolean titleIcon) {
+            this(text, color, top, height, icon, centered, divider, titleIcon, "", "", null, 0);
+        }
+
+        private QuestDetailLine(
+                FormattedCharSequence text,
+                int color,
+                int top,
+                int height,
+                ResourceLocation icon,
+                boolean centered,
+                boolean divider,
+                boolean titleIcon,
+                String targetQuestId) {
+            this(text, color, top, height, icon, centered, divider, titleIcon, targetQuestId, "", null, 0);
+        }
+
+        private QuestDetailLine(
+                FormattedCharSequence text,
+                int color,
+                int top,
+                int height,
+                ResourceLocation icon,
+                boolean centered,
+                boolean divider,
+                boolean titleIcon,
+                String targetQuestId,
+                String itemId) {
+            this(text, color, top, height, icon, centered, divider, titleIcon, targetQuestId, itemId, null, 0);
+        }
+
+        private boolean link() {
+            return this.targetQuestId != null && !this.targetQuestId.isBlank();
+        }
+
+        private boolean questlineLink() {
+            return this.targetQuestId != null && this.targetQuestId.startsWith(QUESTLINE_LINK_PREFIX);
+        }
+    }
+
+    private static final class QuestAbandonConfirmationScreen extends ConfirmScreen {
+        private static final long ABANDON_DELAY_MILLIS = 3_000L;
+        private static final int TIMER_COLOR = 0xFF5555;
+
+        private final Screen parent;
+        private final Runnable onConfirm;
+        private final long abandonUnlockAt;
+        private Checkbox dontShowAgain;
+        private Button abandonButton;
+
+        private QuestAbandonConfirmationScreen(Screen parent, String questTitle, Runnable onConfirm) {
+            super(
+                    ignored -> {
+                    },
+                    Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.title"),
+                    Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.message", questTitle),
+                    Component.translatable(GUI_KEY_PREFIX + "abandon")
+                            .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR)),
+                    Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.cancel"));
+            this.parent = parent;
+            this.onConfirm = onConfirm;
+            this.abandonUnlockAt = Util.getMillis() + ABANDON_DELAY_MILLIS;
         }
 
         @Override
-        public int selectedOption() {
-            return VillagerQuestJournalScreen.this.state.selectedOption();
+        protected void addButtons(int y) {
+            int checkboxWidth = Math.max(1, Math.min(260, this.width - 40));
+            this.dontShowAgain = Checkbox.builder(
+                            Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.dont_show_again"),
+                            this.font)
+                    .maxWidth(checkboxWidth)
+                    .pos(0, y - 28)
+                    .build();
+            this.dontShowAgain.setX((this.width - this.dontShowAgain.getWidth()) / 2);
+            this.addRenderableWidget(this.dontShowAgain);
+            this.abandonButton = Button.builder(this.yesButton, ignored -> confirm())
+                    .bounds(this.width / 2 - 155, y, 150, 20)
+                    .build();
+            this.addExitButton(this.abandonButton);
+            this.addExitButton(Button.builder(this.noButton, ignored -> cancel())
+                    .bounds(this.width / 2 + 5, y, 150, 20)
+                    .build());
+            updateAbandonButtonState(Util.getMillis());
         }
 
         @Override
-        public float optionScroll() {
-            return VillagerQuestJournalScreen.this.optionRenderScroll();
+        public void tick() {
+            super.tick();
+            updateAbandonButtonState(Util.getMillis());
         }
 
         @Override
-        public int optionViewportHeight() {
-            return VillagerQuestJournalScreen.this.optionViewportHeight();
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
+            if (this.abandonButton == null || this.abandonButton.active) {
+                return;
+            }
+            String remaining = String.format(Locale.ROOT, "%.1fs", remainingSeconds(Util.getMillis()));
+            Component timerText = Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.timer", remaining);
+            int x = this.abandonButton.getX() + (this.abandonButton.getWidth() - this.font.width(timerText)) / 2;
+            int timerY = this.abandonButton.getY()
+                    + (this.abandonButton.getHeight() - this.font.lineHeight) / 2;
+            guiGraphics.drawString(this.font, timerText, x, timerY, TIMER_COLOR, false);
+        }
+
+        private void updateAbandonButtonState(long now) {
+            if (this.abandonButton == null) {
+                return;
+            }
+            boolean unlocked = now >= this.abandonUnlockAt;
+            this.abandonButton.active = unlocked;
+            this.abandonButton.setMessage(unlocked ? this.yesButton : Component.empty());
+        }
+
+        private double remainingSeconds(long now) {
+            return now >= this.abandonUnlockAt ? 0.0D : (this.abandonUnlockAt - now) / 1000.0D;
+        }
+
+        private void confirm() {
+            if (this.dontShowAgain != null && this.dontShowAgain.selected()) {
+                VillagerRetaliationClientPreferences.confirmQuestAbandonment(false);
+            }
+            this.minecraft.setScreen(this.parent);
+            this.onConfirm.run();
+        }
+
+        private void cancel() {
+            this.minecraft.setScreen(this.parent);
         }
 
         @Override
-        public int optionStride() {
-            return VillagerQuestJournalScreen.this.optionStride();
+        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                cancel();
+                return true;
+            }
+            return super.keyPressed(keyCode, scanCode, modifiers);
         }
 
         @Override
-        public float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
-            return VillagerQuestJournalScreen.this.edgeFadeAlpha(optionY, viewportTop, viewportBottom);
+        public void onClose() {
+            cancel();
+        }
+    }
+
+    private void renderQuestlineGraph(
+            GuiGraphics graphics,
+            QuestTrackerSyncPayload.Entry selected,
+            int slideOffset,
+            int mouseX,
+            int journalMouseY) {
+        int left = detailsLeft();
+        int top = detailsTop();
+        Component back = Component.translatable(GUI_KEY_PREFIX + "questline_back")
+                .withStyle(Style.EMPTY.withUnderlined(true));
+        graphics.drawString(this.font, back, left, top, LINK_TEXT_COLOR, false);
+        if (selected.journal().questlineTotal() > 0) {
+            String progress = selected.journal().questlineCompleted() + "/" + selected.journal().questlineTotal();
+            graphics.drawString(this.font, progress, left + DETAILS_WIDTH - this.font.width(progress), top, MUTED_TEXT_COLOR, false);
+        }
+        String title = fittedQuestlineTitle(this.questlineMapId, DETAILS_WIDTH);
+        graphics.drawString(
+                this.font,
+                title,
+                left + Math.round((DETAILS_WIDTH - this.font.width(title)) / 2.0F),
+                top + DETAILS_LINE_STEP,
+                TITLE_COLOR,
+                false);
+
+        QuestlineGraphLayout.Layout layout = currentQuestlineGraphLayout();
+        if (layout.nodes().isEmpty()) {
+            Component unavailable = Component.translatable(GUI_KEY_PREFIX + "questline_empty");
+            graphics.drawString(
+                    this.font,
+                    unavailable,
+                    left + Math.round((DETAILS_WIDTH - this.font.width(unavailable)) / 2.0F),
+                    top + QUESTLINE_GRAPH_HEADER_HEIGHT + 12,
+                    MUTED_TEXT_COLOR,
+                    false);
+            return;
+        }
+        clampQuestlineGraphPan(layout);
+        int viewportTop = questlineGraphTop();
+        int viewportBottom = viewportTop + questlineGraphHeight();
+        graphics.enableScissor(left, viewportTop + slideOffset, left + DETAILS_WIDTH, viewportBottom + slideOffset);
+        renderQuestlineGraphEdges(graphics, layout, true);
+        renderQuestlineGraphEdges(graphics, layout, false);
+        for (QuestlineGraphLayout.PositionedNode node : layout.nodes().values()) {
+            renderQuestlineGraphNode(graphics, node, layout.branchesFrom(node.node().questId()));
+        }
+        graphics.disableScissor();
+    }
+
+    private void renderQuestlineGraphEdges(
+            GuiGraphics graphics,
+            QuestlineGraphLayout.Layout layout,
+            boolean dropShadow) {
+        for (QuestlineGraphLayout.Edge edge : layout.edges()) {
+            QuestlineGraphLayout.PositionedNode parent = layout.nodes().get(edge.parentQuestId());
+            QuestlineGraphLayout.PositionedNode child = layout.nodes().get(edge.childQuestId());
+            if (parent != null && child != null) {
+                renderQuestlineGraphEdge(graphics, parent, child, dropShadow);
+            }
+        }
+    }
+
+    private void renderQuestlineGraphEdge(
+            GuiGraphics graphics,
+            QuestlineGraphLayout.PositionedNode parent,
+            QuestlineGraphLayout.PositionedNode child,
+            boolean dropShadow) {
+        int parentCenterX = questlineGraphNodeLeft(parent) + QUESTLINE_GRAPH_NODE_WIDTH / 2;
+        int turnX = questlineGraphNodeLeft(parent) + QUESTLINE_GRAPH_NODE_WIDTH + 4;
+        int parentCenterY = questlineGraphNodeTop(parent) + QUESTLINE_GRAPH_NODE_HEIGHT / 2;
+        int childCenterX = questlineGraphNodeLeft(child) + QUESTLINE_GRAPH_NODE_WIDTH / 2;
+        int childCenterY = questlineGraphNodeTop(child) + QUESTLINE_GRAPH_NODE_HEIGHT / 2;
+        int color = dropShadow ? 0xFF000000 : 0xFFFFFFFF;
+        if (dropShadow) {
+            graphics.hLine(turnX, parentCenterX, parentCenterY - 1, color);
+            graphics.hLine(turnX + 1, parentCenterX, parentCenterY, color);
+            graphics.hLine(turnX, parentCenterX, parentCenterY + 1, color);
+            graphics.hLine(childCenterX, turnX - 1, childCenterY - 1, color);
+            graphics.hLine(childCenterX, turnX - 1, childCenterY, color);
+            graphics.hLine(childCenterX, turnX - 1, childCenterY + 1, color);
+            graphics.vLine(turnX - 1, childCenterY, parentCenterY, color);
+            graphics.vLine(turnX + 1, childCenterY, parentCenterY, color);
+        } else {
+            graphics.hLine(turnX, parentCenterX, parentCenterY, color);
+            graphics.hLine(childCenterX, turnX, childCenterY, color);
+            graphics.vLine(turnX, childCenterY, parentCenterY, color);
+        }
+    }
+
+    private void renderQuestlineGraphNode(
+            GuiGraphics graphics,
+            QuestlineGraphLayout.PositionedNode positioned,
+            boolean branch) {
+        int left = questlineGraphNodeLeft(positioned);
+        int top = questlineGraphNodeTop(positioned);
+        QuestTrackerSyncPayload.QuestlineNode node = positioned.node();
+        boolean obtained = "completed".equalsIgnoreCase(node.state())
+                || "active".equalsIgnoreCase(node.state());
+        AdvancementWidgetType widgetType = obtained
+                ? AdvancementWidgetType.OBTAINED
+                : AdvancementWidgetType.UNOBTAINED;
+        AdvancementType advancementType = questlineNodeAdvancementType(node, branch);
+        graphics.blitSprite(
+                widgetType.frameSprite(advancementType),
+                left + (QUESTLINE_GRAPH_NODE_WIDTH - 26) / 2,
+                top + (QUESTLINE_GRAPH_NODE_HEIGHT - 26) / 2,
+                26,
+                26);
+
+        ItemStack icon = questlineNodeItem(node);
+        if (!icon.isEmpty()) {
+            graphics.renderFakeItem(
+                    icon,
+                    left + (QUESTLINE_GRAPH_NODE_WIDTH - 16) / 2,
+                    top + (QUESTLINE_GRAPH_NODE_HEIGHT - 16) / 2);
+        } else {
+            ResourceLocation texture = questlineNodeTexture(node.state());
+            int iconSize = 12;
+            graphics.blit(
+                    texture,
+                    left + (QUESTLINE_GRAPH_NODE_WIDTH - iconSize) / 2,
+                    top + (QUESTLINE_GRAPH_NODE_HEIGHT - iconSize) / 2,
+                    0,
+                    0,
+                    iconSize,
+                    iconSize,
+                    iconSize,
+                    iconSize);
+        }
+        if ("closed".equalsIgnoreCase(node.state())) {
+            graphics.drawString(this.font, "x", left + 13, top + 9, 0xFF8A1F1F, false);
+        }
+    }
+
+    private static AdvancementType questlineNodeAdvancementType(
+            QuestTrackerSyncPayload.QuestlineNode node,
+            boolean branch) {
+        if ("active".equalsIgnoreCase(node.state())) {
+            return AdvancementType.GOAL;
+        }
+        return branch ? AdvancementType.CHALLENGE : AdvancementType.TASK;
+    }
+
+    private static ResourceLocation questlineNodeTexture(String state) {
+        return switch (state == null ? "" : state.toLowerCase(Locale.ROOT)) {
+            case "completed" -> QuestJournalEntryState.COMPLETED.texture();
+            case "active" -> QuestJournalEntryState.ACTIVE.texture();
+            case "available" -> QuestJournalEntryState.AVAILABLE.texture();
+            default -> QuestJournalEntryState.INACTIVE.texture();
+        };
+    }
+
+    private static ItemStack questlineNodeItem(QuestTrackerSyncPayload.QuestlineNode node) {
+        ResourceLocation id = node == null ? null : ResourceLocation.tryParse(node.icon());
+        return id == null
+                ? ItemStack.EMPTY
+                : BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new).orElse(ItemStack.EMPTY);
+    }
+
+    private String fittedQuestlineTitle(String questline, int width) {
+        String display = questlineDisplayName(questline);
+        if (this.font.width(display) <= width) {
+            return display;
+        }
+        String suffix = "...";
+        return this.font.plainSubstrByWidth(display, Math.max(0, width - this.font.width(suffix))) + suffix;
+    }
+
+    private static String questlineDisplayName(String questline) {
+        if (questline == null || questline.isBlank()) {
+            return "";
+        }
+        String playerFacingId = questline;
+        int namespaceSeparator = playerFacingId.lastIndexOf(':');
+        if (namespaceSeparator >= 0 && namespaceSeparator + 1 < playerFacingId.length()) {
+            playerFacingId = playerFacingId.substring(namespaceSeparator + 1);
+        }
+        int pathSeparator = playerFacingId.lastIndexOf('/');
+        if (pathSeparator >= 0 && pathSeparator + 1 < playerFacingId.length()) {
+            playerFacingId = playerFacingId.substring(pathSeparator + 1);
+        }
+        String[] words = playerFacingId.replace('-', '_').split("_");
+        StringBuilder display = new StringBuilder();
+        for (String word : words) {
+            if (word.isBlank()) {
+                continue;
+            }
+            if (!display.isEmpty()) {
+                display.append(' ');
+            }
+            display.append(Character.toUpperCase(word.charAt(0)));
+            if (word.length() > 1) {
+                display.append(word.substring(1));
+            }
+        }
+        return display.toString();
+    }
+
+    private record QuestCountSummary(int active, int accepted, int nearby, int completed) {
+    }
+
+    private record JournalNineSlice(
+            ResourceLocation texture,
+            int textureWidth,
+            int textureHeight,
+            int sliceLeft,
+            int sliceRight,
+            int sliceTop,
+            int sliceBottom) {
+        private void render(GuiGraphics graphics, int left, int top, int width, int height) {
+            int centerSourceWidth = this.textureWidth - this.sliceLeft - this.sliceRight;
+            int centerSourceHeight = this.textureHeight - this.sliceTop - this.sliceBottom;
+            int centerWidth = Math.max(0, width - this.sliceLeft - this.sliceRight);
+            int centerHeight = Math.max(0, height - this.sliceTop - this.sliceBottom);
+
+            blit(graphics, left, top, this.sliceLeft, this.sliceTop, 0, 0, this.sliceLeft, this.sliceTop);
+            blit(graphics, left + this.sliceLeft, top, centerWidth, this.sliceTop, this.sliceLeft, 0, centerSourceWidth, this.sliceTop);
+            blit(graphics, left + width - this.sliceRight, top, this.sliceRight, this.sliceTop, this.textureWidth - this.sliceRight, 0, this.sliceRight, this.sliceTop);
+
+            blit(graphics, left, top + this.sliceTop, this.sliceLeft, centerHeight, 0, this.sliceTop, this.sliceLeft, centerSourceHeight);
+            blit(graphics, left + this.sliceLeft, top + this.sliceTop, centerWidth, centerHeight, this.sliceLeft, this.sliceTop, centerSourceWidth, centerSourceHeight);
+            blit(graphics, left + width - this.sliceRight, top + this.sliceTop, this.sliceRight, centerHeight, this.textureWidth - this.sliceRight, this.sliceTop, this.sliceRight, centerSourceHeight);
+
+            blit(graphics, left, top + height - this.sliceBottom, this.sliceLeft, this.sliceBottom, 0, this.textureHeight - this.sliceBottom, this.sliceLeft, this.sliceBottom);
+            blit(graphics, left + this.sliceLeft, top + height - this.sliceBottom, centerWidth, this.sliceBottom, this.sliceLeft, this.textureHeight - this.sliceBottom, centerSourceWidth, this.sliceBottom);
+            blit(graphics, left + width - this.sliceRight, top + height - this.sliceBottom, this.sliceRight, this.sliceBottom, this.textureWidth - this.sliceRight, this.textureHeight - this.sliceBottom, this.sliceRight, this.sliceBottom);
         }
 
-        @Override
-        public float hoverIntensity(double mouseX, double mouseY, int left, float top) {
-            double normalizedX = Math.abs(((mouseX - left) / optionWidth()) * 2.0D - 1.0D);
-            double normalizedY = Math.abs(((mouseY - top) / optionHeight()) * 2.0D - 1.0D);
-            double distance = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
-            return (float) Mth.clamp(1.0D - distance / Math.sqrt(2.0D), 0.0D, 1.0D);
-        }
-
-        @Override
-        public float hoverShift(double mouse, float start, float size, float strength) {
-            return (float) ((((mouse - start) / size) * 2.0D) - 1.0D) * strength;
-        }
-
-        @Override
-        public float optionHoverScale() {
-            return OPTION_HOVER_SCALE;
-        }
-
-        @Override
-        public float optionSelectedScale() {
-            return OPTION_SELECTED_SCALE;
-        }
-
-        @Override
-        public float experimentalTextScale() {
-            return VillagerInteractionExperimentalLayout.scaleFactor();
-        }
-
-        @Override
-        public int experimentalUnit(int value) {
-            return VillagerQuestJournalScreen.this.experimentalUnit(value);
-        }
-
-        @Override
-        public int experimentalUnitAtLeast(int value, int minimum) {
-            return VillagerQuestJournalScreen.this.experimentalUnitAtLeast(value, minimum);
-        }
-
-        @Override
-        public int optionsScrollbarLeft() {
-            return VillagerQuestJournalScreen.this.optionsScrollbarLeft();
-        }
-
-        @Override
-        public void renderScrollbar(GuiGraphics graphics) {
-            VillagerQuestJournalScreen.this.renderScrollbar(graphics);
+        private void blit(
+                GuiGraphics graphics,
+                int destLeft,
+                int destTop,
+                int destWidth,
+                int destHeight,
+                int sourceLeft,
+                int sourceTop,
+                int sourceWidth,
+                int sourceHeight) {
+            if (destWidth <= 0 || destHeight <= 0 || sourceWidth <= 0 || sourceHeight <= 0) {
+                return;
+            }
+            graphics.blit(
+                    this.texture,
+                    destLeft,
+                    destTop,
+                    destWidth,
+                    destHeight,
+                    (float) sourceLeft,
+                    (float) sourceTop,
+                    sourceWidth,
+                    sourceHeight,
+                    this.textureWidth,
+                    this.textureHeight);
         }
     }
 }

@@ -1,0 +1,3167 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.forced",
+      "event.container_theft"
+    ],
+    "topic": "events.container_theft"
+  },
+  "message_prefix": "forced.container_theft",
+  "entries": [
+    {
+      "id": "repeated_village_container_theft_final_warning",
+      "message_prefix": "forced.container_theft.repeated_village_container_theft_final_warning",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "<bold>No.</bold> I already caught you in our belongings twice. This ends now.",
+        "<shake>Again?</shake> You were warned. The village is done asking.",
+        "Three times with your hands in village stores. <bold>No more words.</bold>"
+      ],
+      "priority": 40,
+      "witness_radius": 16,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": false,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": true,
+      "reputation": -25,
+      "min_recent_container_thefts": 2
+    },
+    {
+      "id": "repeated_village_container_theft_second_warning",
+      "message_prefix": "forced.container_theft.repeated_village_container_theft_second_warning",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "I already caught you putting your hands into our belongings once and let you off. <bold>Put {stolen_stack} back.</bold>",
+        "<shake>Again?</shake> I warned you once about village stores. This time you make it right.",
+        "You were given a warning for this once. Return {stolen_stack}, or pay for what you keep taking."
+      ],
+      "priority": 30,
+      "witness_radius": 16,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -18,
+      "min_recent_container_thefts": 1,
+      "max_recent_container_thefts": 1,
+      "options": [
+        {
+          "id": "return_repeat_theft",
+          "label": "Give it back",
+          "order": 0,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "You already had your <color:gold>warning</color>. Returning it is the smallest part of making this right.",
+          "responses": [
+            "<bold>Put it back now.</bold> Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "You already had your <color:gold>warning</color>. Returning it is the smallest part of making this right.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Then this was <italic>never</italic> about a mistake.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words <pulse>carefully</pulse>."
+            ],
+            "failure_reputation": -8,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "id": "pay_repeat_theft",
+          "label": "Pay restitution",
+          "order": 1,
+          "reputation": -2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "That pays for the goods. It does not buy back the <color:gold>warning</color> you wasted.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 25,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "<gradient:#55ff55:#ffd34d>Twenty-five emeralds.</gradient> That pays for the goods. It does not buy back the warning you wasted.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be <pulse>watching</pulse> what you do next."
+            ],
+            "failure_response": "You cannot pay the restitution either. Then you are out of excuses.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -8,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "id": "threaten_repeat_witness",
+          "label": "Threaten them",
+          "order": 2,
+          "reputation": -14,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "I already let you walk once. <shake>I will not do it again.</shake>",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "reputation": -10,
+        "aggro_chance": 0.75,
+        "end_conversation": true,
+        "responses": [
+          "<shake>Thief!</shake>",
+          "Hey! <shake>Thief!</shake>",
+          "<jump>Not yours!</jump>"
+        ],
+        "take_stolen_items": {
+          "destination": "villager_inventory_then_source_container",
+          "success_responses": [
+            "<shake>Thief!</shake>",
+            "Hey! <shake>Thief!</shake>",
+            "<jump>Not yours!</jump>"
+          ],
+          "failure_responses": [
+            "<shake>Thief!</shake> Hand it over.",
+            "Where is it, thief?",
+            "You stole from us!"
+          ],
+          "failure_reputation": -8,
+          "failure_aggro": true,
+          "failure_end_conversation": true
+        }
+      }
+    },
+    {
+      "id": "witnessed_village_weaponsmith_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_weaponsmith",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "<bold>Put {stolen_stack} back.</bold> That stock belongs in the forge chest.",
+        "I saw {stolen_stack} leave that {container}. Return it.",
+        "Those supplies are counted for village work. Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_weaponsmith",
+      "witness_professions": [
+        "weaponsmith"
+      ],
+      "options": [
+        {
+          "id": "return_blade",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. A blade taken in secret cuts trust first.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. A blade taken in secret cuts trust first.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "accept_warning",
+          "label": "Accept warning",
+          "order": 1,
+          "reputation": 1,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "You have earned enough respect that I will call this foolish, not hostile. Do not test that twice.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ]
+        },
+        {
+          "id": "pay_for_steel",
+          "label": "Pay for the steel",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Steel is easy to price. Trust is not.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 10,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Ten emeralds covers the stock. It does not make the taking clean.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay ten emeralds. Then you cannot buy your way out of this.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "low_reputation_price",
+          "label": "Make restitution",
+          "order": 3,
+          "reputation": 1,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "With your history, I price the risk higher than the metal.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 20,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Twenty emeralds. Now leave the steel where villagers can find it.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "No payment, no patience.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -10,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Then draw your answer.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_temple_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_temple",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. That {container} holds offerings and remedies.",
+        "I saw you take {stolen_stack} from the temple stores. Return it.",
+        "Those supplies are for the <pulse>frightened and the sick</pulse>. Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_temple",
+      "witness_professions": [
+        "cleric"
+      ],
+      "options": [
+        {
+          "id": "return_offering",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Return it, then let your next kindness arrive before your next mistake.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Return it, then let your next kindness arrive before your next mistake.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "ask_forgiveness",
+          "label": "Ask forgiveness",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Forgiveness is not a lid you close. It is a habit you rebuild.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ]
+        },
+        {
+          "id": "temple_restitution",
+          "label": "Offer restitution",
+          "order": 2,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Restitution should help the village heal.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 12,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Twelve emeralds will refill what fear empties. Do not touch the temple stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot offer what you do not carry.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -3,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "dismiss_temple",
+          "label": "Dismiss them",
+          "order": 3,
+          "reputation": -6,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Then you do not understand what you took.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_armorer_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_armorer",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. That {container} keeps the village protected.",
+        "I saw {stolen_stack} leave the armory chest. Return it.",
+        "<bold>Protection starts with stocked supplies.</bold> Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_armorer",
+      "witness_professions": [
+        "armorer"
+      ],
+      "options": [
+        {
+          "id": "return_armor",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. Armor belongs where the village can reach it.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Armor belongs where the village can reach it.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "You understand the danger, then. Keep your hands away from our protection.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 10,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Ten emeralds will cover the missing protection. The warning stays.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay 10 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 3,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Armor has weight. So does a lie.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Then you are the danger I was preparing for.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_butcher_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_butcher",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. That food and stock are counted for village tables.",
+        "I saw {stolen_stack} leave the butcher chest. Return it.",
+        "Those stores feed <italic>more than one mouth</italic>. Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_butcher",
+      "witness_professions": [
+        "butcher"
+      ],
+      "options": [
+        {
+          "id": "return_food",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. Food returned quickly still feeds the right mouths.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Food returned quickly still feeds the right mouths.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Hungry people ask. Thieves make everyone hungrier.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 6,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Six emeralds replaces the food. Next time, speak before taking.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay 6 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 3,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "I know the sound of my stores leaving.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Threats do not season theft into something better.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_cartographer_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_cartographer",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. That {container} keeps our routes and records safe.",
+        "I saw {stolen_stack} leave the cartography chest. Return it.",
+        "Maps, paper, tools, <italic>all of it</italic> matters here. Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_cartographer",
+      "witness_professions": [
+        "cartographer"
+      ],
+      "options": [
+        {
+          "id": "return_maps",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. A returned map still points in the right direction.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. A returned map still points in the right direction.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "An apology is a start. Permission is the route you skipped.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 8,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Eight emeralds will replace the supplies. Do not chart another path through my chest.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay 8 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 3,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "I notice missing marks. I notice missing goods too.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Threats are a poor compass.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_fisher_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_fisher",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. Those stores came from <wavy>cold water</wavy> and long patience.",
+        "I saw {stolen_stack} leave the fisher chest. Return it.",
+        "Nets, meals, bait, whatever you took, <bold>put {stolen_stack} back.</bold>"
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_fisher",
+      "witness_professions": [
+        "fisherman"
+      ],
+      "options": [
+        {
+          "id": "return_catch",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. The catch returns before trust sinks any deeper.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. The catch returns before trust sinks any deeper.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Then remember patience before hunger next time.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 6,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Six emeralds will refill the stores. Keep your hands off the nets.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay 6 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 3,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "I know what I hauled in, and I know what you hauled out.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Then you have mistaken a fisherman for easy prey.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_fletcher_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_fletcher",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. That chest keeps the village ready.",
+        "I saw {stolen_stack} leave the fletcher chest. Return it.",
+        "Those supplies are for <bold>work and defense</bold>. Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_fletcher",
+      "witness_professions": [
+        "fletcher"
+      ],
+      "options": [
+        {
+          "id": "return_arrows",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. Arrows should leave the village only with purpose.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Arrows should leave the village only with purpose.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Then aim that apology at better choices.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 7,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Seven emeralds covers the stock. Do not reach for the fletching chest again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay 7 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 3,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "I can spot a bent arrow. I can spot a crooked answer.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Then every arrow in this village has a clearer target.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_mason_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_mason",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. That material was set aside for village work.",
+        "I saw {stolen_stack} leave the mason chest. Return it.",
+        "Walls do not stay standing when supplies <shake>vanish</shake>. Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_mason",
+      "witness_professions": [
+        "mason"
+      ],
+      "options": [
+        {
+          "id": "return_stone",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. A returned block keeps its place in the wall.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. A returned block keeps its place in the wall.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Words are softer than stone. Build better habits.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 7,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Seven emeralds will replace the stock. Keep your hands off the work chest.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay 7 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 3,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Stone leaves dust. Theft leaves a mark too.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Threaten a mason and you learn what a wall is for.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_shepherd_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_shepherd",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. Those stores were gathered for the village.",
+        "I saw {stolen_stack} leave the shepherd chest. Return it.",
+        "That work keeps people <pulse>clothed and warm</pulse>. Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_shepherd",
+      "witness_professions": [
+        "shepherd"
+      ],
+      "options": [
+        {
+          "id": "return_wool",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. Returned work can still warm someone.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Returned work can still warm someone.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Then mind the fence next time, and the boundary too.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 5,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Five emeralds covers the stock. Do not shear from our chest again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay 5 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 3,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "I count my flock and my stores. You are short on truth.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Threats are a thin blanket.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_leatherworker_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_leatherworker",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. That stock took time and work to prepare.",
+        "I saw {stolen_stack} leave the tannery chest. Return it.",
+        "Leatherwork, tools, scraps, all of it is <italic>accounted for</italic>. Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_tannery",
+      "witness_professions": [
+        "leatherworker"
+      ],
+      "options": [
+        {
+          "id": "return_leather",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. Returned work still carries fewer stains than stolen work.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Returned work still carries fewer stains than stolen work.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Then wear the lesson better than you wore the excuse.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 7,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Seven emeralds replaces the leatherwork. Ask before touching my stores.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay 7 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 3,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Leather keeps marks. So does a village.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Threats will not tan this into honesty.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_toolsmith_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village_toolsmith",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Put {stolen_stack} back. Those stores keep the village working.",
+        "I saw {stolen_stack} leave the toolsmith chest. Return it.",
+        "Every missing tool or supply costs someone a <pulse>day of work</pulse>. Put {stolen_stack} back."
+      ],
+      "priority": 10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -12,
+      "loot_table": "minecraft:chests/village/village_toolsmith",
+      "witness_professions": [
+        "toolsmith"
+      ],
+      "options": [
+        {
+          "id": "return_tools",
+          "label": "Return it",
+          "order": 0,
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. Work can continue when tools return.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Work can continue when tools return.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "An apology is useful only if your hands learn from it.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 2,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 9,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Nine emeralds covers the stock. Touch the chest again and the price will not be coins.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay 9 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 3,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "I know every tool by handle and wear. I know when one is missing.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 4,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Threaten the hand that makes tools and you may meet what they are for.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_village_container_theft",
+      "message_prefix": "forced.container_theft.witnessed_village",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "<bold>Stop right there.</bold> I watched you take {stolen_stack} from that {container}.",
+        "That {container} was stocked for the village. Put {stolen_stack} back.",
+        "Village stores are not free supplies. Return {stolen_stack}."
+      ],
+      "priority": 5,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -10,
+      "loot_tables": [
+        "minecraft:chests/village/village_armorer",
+        "minecraft:chests/village/village_butcher",
+        "minecraft:chests/village/village_cartographer",
+        "minecraft:chests/village/village_desert_house",
+        "minecraft:chests/village/village_fisher",
+        "minecraft:chests/village/village_fletcher",
+        "minecraft:chests/village/village_mason",
+        "minecraft:chests/village/village_plains_house",
+        "minecraft:chests/village/village_savanna_house",
+        "minecraft:chests/village/village_shepherd",
+        "minecraft:chests/village/village_snowy_house",
+        "minecraft:chests/village/village_taiga_house",
+        "minecraft:chests/village/village_tannery",
+        "minecraft:chests/village/village_temple",
+        "minecraft:chests/village/village_toolsmith",
+        "minecraft:chests/village/village_weaponsmith"
+      ],
+      "options": [
+        {
+          "id": "return_items",
+          "label": "I will put it back",
+          "order": 0,
+          "reputation": 4,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Then do it now. A village remembers the hand that returns what it took.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Then do it now. A village remembers the hand that returns what it took.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 1,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "An apology is a start. Closed lids and empty hands are better.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "accept_warning",
+          "label": "Accept warning",
+          "order": 2,
+          "reputation": 1,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Your name still carries weight here, so I will treat this as a mistake. Do not make me regret it.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ]
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "order": 3,
+          "reputation": 2,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Payment after taking is not permission. Still, making it right matters.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 8,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Eight emeralds will help replace what you took. Consider this a warning, not a purchase.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You do not have eight emeralds to offer. Do not promise payment with empty pockets.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "offer_costly_payment",
+          "label": "Offer costly payment",
+          "order": 4,
+          "reputation": 1,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro": false,
+          "end_conversation": true,
+          "response": "With your reputation, replacing trust costs more than replacing goods.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 16,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Sixteen emeralds pays for the risk you keep bringing to our doors. Do better, or there will not be another price.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You do not have sixteen emeralds. Even your apology comes up short.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -4,
+            "failure_aggro": true,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "needed_supplies",
+          "label": "I needed supplies",
+          "order": 5,
+          "reputation": -1,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Need asks before it takes. If you are hungry, speak to us like a neighbor.",
+          "responses": [
+            "Then ask plainly before reaching. Need does not make village stores yours."
+          ]
+        },
+        {
+          "id": "thought_abandoned",
+          "label": "I thought it was abandoned",
+          "order": 6,
+          "reputation": -2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "A quiet chest is not an abandoned one. These stores keep roofs standing.",
+          "responses": [
+            "Standing village stores are not abandoned."
+          ]
+        },
+        {
+          "id": "low_intellect_confuse_theft",
+          "label": "What chest?",
+          "order": 8,
+          "reputation": 0,
+          "aggro": false,
+          "end_conversation": true,
+          "responses": [
+            "What chest? Wait. Was there another chest? I... may have shouted before I understood.",
+            "No chest? But I saw... hm. Maybe I should sit down before accusing anyone else.",
+            "If there was no chest, then I have made a very loud mistake."
+          ],
+          "conditions": [
+            {
+              "attribute": "intellect",
+              "max": 35,
+              "type": "social_attribute"
+            }
+          ]
+        },
+        {
+          "id": "only_borrowing",
+          "label": "I was only borrowing it",
+          "order": 9,
+          "reputation": -3,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Borrowing has a witness before and a return after. You skipped the first half.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ]
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 10,
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "I watched your hands. Do not make the lie worse than the theft.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 11,
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Then we are past words.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "witnessed_container_theft",
+      "message_prefix": "forced.container_theft.witnessed",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "<bold>Stop right there.</bold> {stolen_stack} from that {container} is not yours to carry away.",
+        "I saw what you took. Put {stolen_stack} back.",
+        "That was not yours. Return {stolen_stack}."
+      ],
+      "priority": -10,
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
+      "aggro_immediately": false,
+      "reputation": -8,
+      "options": [
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "order": 0,
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Words are easy after the lid closes. Put your hands to better use.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ]
+        },
+        {
+          "id": "return_items",
+          "label": "I will put it back",
+          "order": 1,
+          "reputation": 3,
+          "aggro": false,
+          "end_conversation": true,
+          "response": "Good. Let your next choice be quieter and kinder.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Let your next choice be quieter and kinder.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "order": 2,
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "I watched you take from it. Do not make me repeat myself.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ]
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "order": 3,
+          "reputation": -8,
+          "aggro": true,
+          "end_conversation": true,
+          "response": "Then we are past talking.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ]
+        }
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "order": 1000,
+          "reputation": -2,
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "responses": [
+            "Put that back!",
+            "Hands off!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Put that back!",
+              "Hands off!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1001,
+          "reputation": -4,
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "responses": [
+            "Thief!",
+            "Hey! Thief!",
+            "Not yours!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief!",
+              "Hey! Thief!",
+              "Not yours!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "order": 1002,
+          "reputation": -8,
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "responses": [
+            "Thief! Put it back!",
+            "Drop it, thief!",
+            "Put it back, now!"
+          ],
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_responses": [
+              "Thief! Put it back!",
+              "Drop it, thief!",
+              "Put it back, now!"
+            ],
+            "failure_responses": [
+              "Thief! Hand it over.",
+              "Where is it, thief?",
+              "You stole from us!"
+            ],
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
+    }
+  ]
+}

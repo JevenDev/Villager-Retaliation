@@ -1,0 +1,44 @@
+package com.jvn.villagerretaliation.mixin;
+
+import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.work.mining.MiningSafety;
+import com.jvn.villagerretaliation.villager.VillagerContainerClimbGuard;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.level.pathfinder.PathfindingContext;
+import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+@Mixin(WalkNodeEvaluator.class)
+public abstract class WalkNodeEvaluatorMixin {
+    @Inject(method = "getPathTypeOfMob", at = @At("HEAD"), cancellable = true)
+    private void villagerretaliation$blockVillagerContainerTopPathNodes(
+            PathfindingContext context,
+            int x,
+            int y,
+            int z,
+            Mob mob,
+            CallbackInfoReturnable<PathType> cir) {
+        BlockPos floor = new BlockPos(x, y - 1, z);
+        if (!(mob instanceof Villager villager)) {
+            return;
+        }
+        boolean unsafeMiningNode = mob.level() instanceof ServerLevel level
+                && HiredVillagerContractService.isHired(level, villager)
+                && HiredVillagerContractService.activeRole(level, villager) == HiredVillagerRole.MINING
+                && !MiningSafety.isSafePathPosition(level, new BlockPos(x, y, z));
+        if (VillagerContainerClimbGuard.isForbiddenStandingFloor(context.level(), floor)
+                || HiredVillagerFocusService.isClaimedJobSitePathFloor(villager, floor)
+                || unsafeMiningNode) {
+            cir.setReturnValue(PathType.BLOCKED);
+        }
+    }
+}

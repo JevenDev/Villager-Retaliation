@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/on_the_payroll",
+  "display": {
+    "icon": {
+      "id": "minecraft:beacon"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.emerald_economy.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.emerald_economy.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

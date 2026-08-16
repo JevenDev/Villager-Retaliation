@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.villager.VillagerNaturalJobArmor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
@@ -8,8 +10,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -21,8 +25,9 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 final class VillagerInventoryContainer implements Container {
     static final int ARMOR_SLOT_COUNT = 4;
-    static final int INVENTORY_SLOT_COUNT = 27;
-    private static final int LEGACY_INVENTORY_SLOT_COUNT = 36;
+    static final int INVENTORY_SLOT_COUNT = 36;
+    static final int HOTBAR_SLOT_COUNT = 9;
+    static final int HOTBAR_START = INVENTORY_SLOT_COUNT - HOTBAR_SLOT_COUNT;
     static final int HELD_SLOT = ARMOR_SLOT_COUNT + INVENTORY_SLOT_COUNT;
     static final int OFFHAND_SLOT = HELD_SLOT + 1;
     static final int SLOT_COUNT = OFFHAND_SLOT + 1;
@@ -49,6 +54,7 @@ final class VillagerInventoryContainer implements Container {
     VillagerInventoryContainer(Villager villager) {
         this.villager = villager;
         this.inventory = NonNullList.withSize(INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
+        VillagerDefensiveLoadoutService.prepareForInventoryAccess(villager);
         VillagerRetaliationHandler.releaseTemporaryWeaponForInventory(villager);
         VillagerRetaliationVillagerWeapons.prepareTrackedPickupForInventory(villager);
         loadInventory();
@@ -72,12 +78,21 @@ final class VillagerInventoryContainer implements Container {
     @Override
     public ItemStack getItem(int slot) {
         if (isArmorSlot(slot)) {
+            if (jobEquipmentControls(ARMOR_SLOTS[slot])) {
+                return ItemStack.EMPTY;
+            }
             return this.villager.getItemBySlot(ARMOR_SLOTS[slot]);
         }
         if (slot == HELD_SLOT) {
+            if (jobEquipmentControls(EquipmentSlot.MAINHAND)) {
+                return ItemStack.EMPTY;
+            }
             return canAccessMainHand(this.villager) ? this.villager.getMainHandItem() : ItemStack.EMPTY;
         }
         if (slot == OFFHAND_SLOT) {
+            if (jobEquipmentControls(EquipmentSlot.OFFHAND)) {
+                return ItemStack.EMPTY;
+            }
             return this.villager.getOffhandItem();
         }
         int inventorySlot = slot - ARMOR_SLOT_COUNT;
@@ -122,10 +137,16 @@ final class VillagerInventoryContainer implements Container {
     @Override
     public void setItem(int slot, ItemStack stack) {
         if (isArmorSlot(slot)) {
+            if (jobEquipmentControls(ARMOR_SLOTS[slot])) {
+                return;
+            }
             setEquipment(ARMOR_SLOTS[slot], stack);
             return;
         }
         if (slot == HELD_SLOT) {
+            if (jobEquipmentControls(EquipmentSlot.MAINHAND)) {
+                return;
+            }
             if (stack.isEmpty() && !canAccessMainHand(this.villager)) {
                 return;
             }
@@ -133,6 +154,9 @@ final class VillagerInventoryContainer implements Container {
             return;
         }
         if (slot == OFFHAND_SLOT) {
+            if (jobEquipmentControls(EquipmentSlot.OFFHAND)) {
+                return;
+            }
             setEquipment(EquipmentSlot.OFFHAND, stack);
             return;
         }
@@ -153,10 +177,11 @@ final class VillagerInventoryContainer implements Container {
 
     @Override
     public boolean stillValid(Player player) {
+        double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         return this.villager.isAlive()
                 && player.isAlive()
                 && !player.isSpectator()
-                && player.distanceToSqr(this.villager) <= 64.0D;
+                && player.distanceToSqr(this.villager) <= maxDistance * maxDistance;
     }
 
     @Override
@@ -166,7 +191,6 @@ final class VillagerInventoryContainer implements Container {
 
     @Override
     public void stopOpen(Player player) {
-        setChanged();
         OPEN_INVENTORIES.computeIfPresent(this.villager.getUUID(), (uuid, openCount) -> openCount <= 1 ? null : openCount - 1);
     }
 
@@ -178,13 +202,14 @@ final class VillagerInventoryContainer implements Container {
         setChanged();
     }
 
+    void refreshFromVillager() {
+        loadInventory();
+    }
+
     static boolean isArmorSlot(int slot) {
         return slot >= 0 && slot < ARMOR_SLOT_COUNT;
     }
 
-    static boolean isVillagerInventorySlot(int slot) {
-        return slot >= ARMOR_SLOT_COUNT && slot < HELD_SLOT;
-    }
 
     static boolean isInventorySlot(int inventorySlot) {
         return inventorySlot >= 0 && inventorySlot < INVENTORY_SLOT_COUNT;
@@ -199,7 +224,9 @@ final class VillagerInventoryContainer implements Container {
     }
 
     static void dropExtraInventory(Villager villager) {
-        NonNullList<ItemStack> extraInventory = loadExtraInventory(villager, Math.max(0, LEGACY_INVENTORY_SLOT_COUNT - vanillaInventorySlots(villager)));
+        NonNullList<ItemStack> extraInventory = loadExtraInventory(
+                villager,
+                Math.max(0, INVENTORY_SLOT_COUNT - vanillaInventorySlots(villager)));
         for (ItemStack stack : extraInventory) {
             if (!stack.isEmpty()) {
                 villager.spawnAtLocation(stack.copy());
@@ -286,23 +313,41 @@ final class VillagerInventoryContainer implements Container {
     }
 
     static boolean tryBorrowCombatWeapon(Villager villager) {
-        if (hasBorrowedCombatWeapon(villager)) {
-            return maintainBorrowedCombatWeapon(villager);
-        }
-        ItemStack displacedMainHand = villager.getMainHandItem().copy();
-        if (VillagerRetaliationVillagerWeapons.isUsableWeapon(displacedMainHand)) {
+        return tryBorrowCombatWeapon(villager, VillagerRetaliationVillagerWeapons::isUsableWeapon);
+    }
+
+    static boolean tryBorrowCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
+        // A personal-inventory menu owns a mutable view of these same slots. Moving a
+        // weapon behind that menu's back lets a same-tick click write the old stack
+        // back to storage while the borrowed copy remains equipped.
+        // A job-owned main hand remains in its authoritative slot while a personal
+        // combat weapon temporarily overlays it. The personal source slot stays empty
+        // until return, so the job stack is never duplicated into personal storage.
+        if (hasOpenInventory(villager)) {
             return false;
         }
-
+        boolean overlaysJobMainHand = HiredJobInventory.hasJobEquipmentForSlot(
+                villager, EquipmentSlot.MAINHAND);
+        if (hasBorrowedCombatWeapon(villager)) {
+            if (predicate.test(villager.getMainHandItem())) {
+                return maintainBorrowedCombatWeapon(villager);
+            }
+            returnBorrowedCombatWeapon(villager);
+        }
+        ItemStack displacedMainHand = villager.getMainHandItem().copy();
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
-        int selectedSlot = selectBestWeaponSlot(inventory);
+        int selectedSlot = selectBestWeaponSlot(inventory, predicate);
         if (selectedSlot < 0) {
             return false;
         }
 
         ItemStack borrowedStack = inventory.get(selectedSlot).copy();
+        if (predicate.test(displacedMainHand)
+                && !VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(borrowedStack, displacedMainHand)) {
+            return false;
+        }
         inventory.set(selectedSlot, ItemStack.EMPTY);
-        if (!displacedMainHand.isEmpty()) {
+        if (!displacedMainHand.isEmpty() && !overlaysJobMainHand) {
             inventory.set(selectedSlot, displacedMainHand.copy());
             VillagerRetaliationVillagerEquipment.clearPlayerManagedMainHand(villager);
         }
@@ -392,6 +437,33 @@ final class VillagerInventoryContainer implements Container {
         villager.getPersistentData().remove(BORROWED_COMBAT_WEAPON_TAG);
     }
 
+    static boolean hasCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
+        for (ItemStack stack : loadFullInventory(villager)) {
+            if (!stack.isEmpty() && predicate.test(stack)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static ItemStack takeFirstCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            ItemStack stack = inventory.get(slot);
+            if (stack.isEmpty() || !predicate.test(stack)) {
+                continue;
+            }
+            ItemStack taken = stack.copyWithCount(1);
+            stack.shrink(1);
+            if (stack.isEmpty()) {
+                inventory.set(slot, ItemStack.EMPTY);
+            }
+            saveFullInventory(villager, inventory);
+            return taken;
+        }
+        return ItemStack.EMPTY;
+    }
+
     static int countStoredGiftItem(Villager villager, UUID playerId, ItemStack target) {
         if (target.isEmpty()) {
             return 0;
@@ -459,9 +531,18 @@ final class VillagerInventoryContainer implements Container {
         BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
         boolean borrowedWeaponInMainHand = borrowedWeapon != null
                 && ItemStack.isSameItem(villager.getMainHandItem(), borrowedWeapon.stack());
+        ItemStack trackedPlayerMainHand = HiredJobInventory.hasJobEquipmentForSlot(villager, EquipmentSlot.MAINHAND)
+                ? ItemStack.EMPTY
+                : VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager);
+        boolean trackedPlayerMainHandInMainHand = !trackedPlayerMainHand.isEmpty()
+                && ItemStack.isSameItem(villager.getMainHandItem(), trackedPlayerMainHand);
         dropEquipment(villager, event);
         if (borrowedWeapon != null && !borrowedWeaponInMainHand) {
             com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, borrowedWeapon.stack().copy());
+        }
+        if (!trackedPlayerMainHand.isEmpty() && !trackedPlayerMainHandInMainHand) {
+            com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, trackedPlayerMainHand);
+            VillagerRetaliationVillagerEquipment.clearPlayerManagedMainHand(villager);
         }
 
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
@@ -470,7 +551,7 @@ final class VillagerInventoryContainer implements Container {
                 com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, stack.copy());
             }
         }
-        dropLegacyOverflowInventory(villager, event);
+        HiredJobInventory.dropAll(villager, event);
 
         clearFullInventory(villager);
         clearBorrowedCombatWeapon(villager);
@@ -484,9 +565,116 @@ final class VillagerInventoryContainer implements Container {
         this.inventory.set(inventorySlot, stack);
     }
 
+    private boolean jobEquipmentControls(EquipmentSlot slot) {
+        return HiredJobInventory.hasJobEquipmentForSlot(this.villager, slot);
+    }
+
     private void setEquipment(EquipmentSlot slot, ItemStack stack) {
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, slot, stack);
         setChanged();
+    }
+
+    private boolean shouldStoreDisplacedEquipment(EquipmentSlot slot, ItemStack previous, ItemStack stack) {
+        return isPersonalEquipmentSlot(slot)
+                && !previous.isEmpty()
+                && !stack.isEmpty()
+                && !sameStack(previous, stack)
+                && (slot != EquipmentSlot.MAINHAND || canAccessMainHand(this.villager));
+    }
+
+    private boolean storeDisplacedEquipment(ItemStack stack) {
+        ItemStack remainder = stack.copy();
+        NonNullList<ItemStack> updatedInventory = copyInventory(this.inventory);
+        mergeIntoExistingStacks(updatedInventory, remainder);
+        fillEmptySlots(updatedInventory, remainder);
+        if (!remainder.isEmpty()) {
+            if (!canAssignedStorageAccept(remainder)) {
+                return false;
+            }
+            remainder = AssignedStorageService.depositStack(this.villager, remainder);
+        }
+        for (int slot = 0; slot < this.inventory.size(); slot++) {
+            this.inventory.set(slot, updatedInventory.get(slot));
+        }
+        if (!remainder.isEmpty()) {
+            // The preflight can become stale if storage changes during the transfer.
+            // Dropping the unaccepted portion completes the move without retaining a
+            // second copy in the equipment slot.
+            this.villager.spawnAtLocation(remainder);
+        }
+        return true;
+    }
+
+    private boolean canAssignedStorageAccept(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return true;
+        }
+        if (!(this.villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+
+        ItemStack remainder = stack.copy();
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate
+                : AssignedStorageService.liveContainerCandidates(level, this.villager)) {
+            remainder = simulateInsertIntoContainer(candidate.container(), remainder);
+            if (remainder.isEmpty()) {
+                return true;
+            }
+        }
+        return remainder.isEmpty();
+    }
+
+    private static ItemStack simulateInsertIntoContainer(Container container, ItemStack stack) {
+        ItemStack remainder = stack.copy();
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            if (remainder.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+
+            ItemStack existing = container.getItem(slot);
+            if (existing.isEmpty()
+                    || !ItemStack.isSameItemSameComponents(existing, remainder)
+                    || !container.canPlaceItem(slot, remainder)) {
+                continue;
+            }
+
+            int maxStackSize = Math.min(existing.getMaxStackSize(), container.getMaxStackSize());
+            int moveCount = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
+            if (moveCount > 0) {
+                remainder.shrink(moveCount);
+            }
+        }
+
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            if (remainder.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+            if (!container.getItem(slot).isEmpty() || !container.canPlaceItem(slot, remainder)) {
+                continue;
+            }
+
+            int moveCount = Math.min(remainder.getCount(),
+                    Math.min(remainder.getMaxStackSize(), container.getMaxStackSize()));
+            remainder.shrink(moveCount);
+        }
+        return remainder;
+    }
+
+    private static NonNullList<ItemStack> copyInventory(NonNullList<ItemStack> inventory) {
+        NonNullList<ItemStack> copy = NonNullList.withSize(inventory.size(), ItemStack.EMPTY);
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            copy.set(slot, inventory.get(slot).copy());
+        }
+        return copy;
+    }
+
+    private static boolean isPersonalEquipmentSlot(EquipmentSlot slot) {
+        return slot == EquipmentSlot.MAINHAND
+                || slot == EquipmentSlot.OFFHAND
+                || slot == EquipmentSlot.HEAD
+                || slot == EquipmentSlot.CHEST
+                || slot == EquipmentSlot.LEGS
+                || slot == EquipmentSlot.FEET;
     }
 
     private int vanillaInventorySlots() {
@@ -511,25 +699,14 @@ final class VillagerInventoryContainer implements Container {
         }
 
         int currentExtraSlots = Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots);
-        int legacyExtraSlots = Math.max(currentExtraSlots, LEGACY_INVENTORY_SLOT_COUNT - vanillaSlots);
-        NonNullList<ItemStack> loaded = loadExtraInventory(this.villager, legacyExtraSlots);
-        for (int slot = 0; slot < Math.min(loaded.size(), currentExtraSlots); slot++) {
+        NonNullList<ItemStack> loaded = loadExtraInventory(this.villager, currentExtraSlots);
+        for (int slot = 0; slot < loaded.size(); slot++) {
             ItemStack stack = loaded.get(slot);
             if (VillagerTradePaymentTracker.isInvalidStoredTradePayment(stack)) {
                 stack = ItemStack.EMPTY;
                 cleanedInvalidTradePayments = true;
             }
             this.inventory.set(vanillaSlots + slot, stack);
-        }
-        for (int slot = currentExtraSlots; slot < loaded.size(); slot++) {
-            ItemStack overflow = loaded.get(slot);
-            if (VillagerTradePaymentTracker.isInvalidStoredTradePayment(overflow)) {
-                cleanedInvalidTradePayments = true;
-                continue;
-            }
-            if (!overflow.isEmpty()) {
-                this.villager.spawnAtLocation(overflow.copy());
-            }
         }
         if (cleanedInvalidTradePayments) {
             setChanged();
@@ -560,6 +737,19 @@ final class VillagerInventoryContainer implements Container {
         return inventory;
     }
 
+    static List<ItemStack> captureFullInventory(Villager villager) {
+        return loadFullInventory(villager).stream().map(ItemStack::copy).toList();
+    }
+
+    static void replaceFullInventory(Villager villager, List<ItemStack> items) {
+        NonNullList<ItemStack> inventory = NonNullList.withSize(INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
+        for (int slot = 0; slot < inventory.size() && slot < items.size(); slot++) {
+            inventory.set(slot, items.get(slot).copy());
+        }
+        saveFullInventory(villager, inventory);
+        clearBorrowedCombatWeapon(villager);
+    }
+
     static void saveFullInventory(Villager villager, NonNullList<ItemStack> inventory) {
         int vanillaSlots = vanillaInventorySlots(villager);
         for (int slot = 0; slot < vanillaSlots; slot++) {
@@ -571,8 +761,7 @@ final class VillagerInventoryContainer implements Container {
         for (int slot = 0; slot < extraInventory.size(); slot++) {
             extraInventory.set(slot, inventory.get(vanillaSlots + slot).copy());
         }
-        CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), extraInventory, true, villager.level().registryAccess());
-        villager.getPersistentData().put(EXTRA_INVENTORY_TAG, tag);
+        saveExtraInventory(villager, extraInventory);
         invalidateUsableWeaponCache(villager);
     }
 
@@ -581,6 +770,11 @@ final class VillagerInventoryContainer implements Container {
         saveFullInventory(villager, emptyInventory);
         villager.getPersistentData().remove(EXTRA_INVENTORY_TAG);
         invalidateUsableWeaponCache(villager);
+    }
+
+    static void clearRuntimeState() {
+        OPEN_INVENTORIES.clear();
+        USABLE_WEAPON_CACHE.clear();
     }
 
     private static ItemStack addItemToPreferredSlot(Villager villager, ItemStack stack, int preferredSlot) {
@@ -609,19 +803,6 @@ final class VillagerInventoryContainer implements Container {
         return remainder;
     }
 
-    private static void dropLegacyOverflowInventory(Villager villager, LivingDropsEvent event) {
-        int vanillaSlots = vanillaInventorySlots(villager);
-        int currentExtraSlots = Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots);
-        int legacyExtraSlots = Math.max(currentExtraSlots, LEGACY_INVENTORY_SLOT_COUNT - vanillaSlots);
-        NonNullList<ItemStack> legacyExtraInventory = loadExtraInventory(villager, legacyExtraSlots);
-        for (int slot = currentExtraSlots; slot < legacyExtraInventory.size(); slot++) {
-            ItemStack stack = legacyExtraInventory.get(slot);
-            if (!stack.isEmpty()) {
-                com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, stack.copy());
-            }
-        }
-    }
-
     private static void mergeIntoExistingStacks(NonNullList<ItemStack> inventory, ItemStack remainder) {
         for (ItemStack existingStack : inventory) {
             if (remainder.isEmpty()) {
@@ -640,16 +821,9 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private static void fillEmptySlots(NonNullList<ItemStack> inventory, ItemStack remainder) {
-        fillEmptySlotsExcept(inventory, remainder, -1);
-    }
-
-    private static void fillEmptySlotsExcept(NonNullList<ItemStack> inventory, ItemStack remainder, int excludedSlot) {
         for (int slot = 0; slot < inventory.size(); slot++) {
             if (remainder.isEmpty()) {
                 return;
-            }
-            if (slot == excludedSlot) {
-                continue;
             }
             if (!inventory.get(slot).isEmpty()) {
                 continue;
@@ -661,21 +835,20 @@ final class VillagerInventoryContainer implements Container {
         }
     }
 
-    private static int selectBestWeaponSlot(NonNullList<ItemStack> inventory) {
+    private static int selectBestWeaponSlot(
+            NonNullList<ItemStack> inventory,
+            Predicate<ItemStack> predicate) {
         int bestSlot = -1;
         ItemStack bestWeapon = ItemStack.EMPTY;
         for (int slot = 0; slot < inventory.size(); slot++) {
             ItemStack candidate = inventory.get(slot);
-            if (VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(candidate, bestWeapon)) {
+            if (predicate.test(candidate)
+                    && VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(candidate, bestWeapon)) {
                 bestSlot = slot;
                 bestWeapon = candidate;
             }
         }
         return bestSlot;
-    }
-
-    private static void persistBorrowedCombatWeapon(Villager villager, int slot, ItemStack stack) {
-        persistBorrowedCombatWeapon(villager, slot, stack, ItemStack.EMPTY, 0);
     }
 
     private static void persistBorrowedCombatWeapon(Villager villager, int slot, ItemStack stack, ItemStack displacedMainHand) {
@@ -736,6 +909,25 @@ final class VillagerInventoryContainer implements Container {
 
     private static void dropEquipmentSlot(Villager villager, LivingDropsEvent event, EquipmentSlot slot) {
         ItemStack stack = villager.getItemBySlot(slot);
+        if (!stack.isEmpty() && VillagerNaturalJobArmor.isNaturalArmor(villager, slot, stack)) {
+            VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
+            return;
+        }
+
+        ItemStack jobStack = HiredJobInventory.jobEquipmentStack(villager, slot);
+        if (!jobStack.isEmpty()) {
+            // Vanilla has commonly moved the equipped copy into LivingDropsEvent and
+            // cleared the entity slot before this callback. Reconcile against the
+            // authoritative job stack instead of relying on the now-empty live slot.
+            ItemStack equipmentDrop = removeOneMatchingEquipmentDrop(event, jobStack);
+            if (!equipmentDrop.isEmpty()) {
+                HiredJobInventory.reconcileEquipmentDrop(villager, slot, equipmentDrop);
+            }
+            if (!stack.isEmpty()) {
+                VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
+            }
+            return;
+        }
         if (stack.isEmpty()) {
             return;
         }
@@ -750,6 +942,12 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private static boolean canAccessMainHand(Villager villager) {
+        if (VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
+            ItemStack trackedStack = VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager);
+            return villager.getMainHandItem().isEmpty()
+                    || !trackedStack.isEmpty() && ItemStack.isSameItem(villager.getMainHandItem(), trackedStack)
+                    || mainHandMatchesBorrowedCombatWeapon(villager);
+        }
         return villager.getMainHandItem().isEmpty()
                 || mainHandMatchesBorrowedCombatWeapon(villager)
                 || VillagerRetaliationVillagerEquipment.hasManagedMainHand(villager);
@@ -789,14 +987,33 @@ final class VillagerInventoryContainer implements Container {
                 : 0;
     }
 
-    private static void removeOneMatchingDrop(LivingDropsEvent event, ItemStack stack) {
+    private static ItemStack removeOneMatchingEquipmentDrop(LivingDropsEvent event, ItemStack stack) {
+        ItemStack exactMatch = removeOneMatchingDrop(event, stack);
+        if (!exactMatch.isEmpty()) {
+            return exactMatch;
+        }
+
         Iterator<ItemEntity> drops = event.getDrops().iterator();
         while (drops.hasNext()) {
-            if (ItemStack.isSameItemSameComponents(drops.next().getItem(), stack)) {
+            ItemStack droppedStack = drops.next().getItem();
+            if (ItemStack.isSameItem(droppedStack, stack)) {
                 drops.remove();
-                return;
+                return droppedStack.copy();
             }
         }
+        return ItemStack.EMPTY;
+    }
+
+    private static ItemStack removeOneMatchingDrop(LivingDropsEvent event, ItemStack stack) {
+        Iterator<ItemEntity> drops = event.getDrops().iterator();
+        while (drops.hasNext()) {
+            ItemStack droppedStack = drops.next().getItem();
+            if (ItemStack.isSameItemSameComponents(droppedStack, stack)) {
+                drops.remove();
+                return droppedStack.copy();
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     private record BorrowedCombatWeapon(int slot, ItemStack stack, ItemStack displacedMainHand, int returnFailures) {
@@ -812,8 +1029,7 @@ final class VillagerInventoryContainer implements Container {
             extraInventory.set(slot, this.inventory.get(vanillaSlots + slot).copy());
         }
 
-        CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), extraInventory, true, this.villager.level().registryAccess());
-        this.villager.getPersistentData().put(EXTRA_INVENTORY_TAG, tag);
+        saveExtraInventory(this.villager, extraInventory);
     }
 
     private void saveInventory() {
@@ -822,5 +1038,23 @@ final class VillagerInventoryContainer implements Container {
             this.villager.getInventory().setItem(slot, this.inventory.get(slot).copy());
         }
         this.villager.getInventory().setChanged();
+    }
+
+    private static void saveExtraInventory(Villager villager, NonNullList<ItemStack> extraInventory) {
+        if (isEmpty(extraInventory)) {
+            villager.getPersistentData().remove(EXTRA_INVENTORY_TAG);
+            return;
+        }
+        CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), extraInventory, true, villager.level().registryAccess());
+        villager.getPersistentData().put(EXTRA_INVENTORY_TAG, tag);
+    }
+
+    private static boolean isEmpty(NonNullList<ItemStack> inventory) {
+        for (ItemStack stack : inventory) {
+            if (!stack.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

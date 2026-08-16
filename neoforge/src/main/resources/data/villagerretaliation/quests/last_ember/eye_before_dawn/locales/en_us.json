@@ -1,0 +1,86 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.last_ember.eye_before_dawn.description": "Prepare the Last Ember notes for the gate by gathering eyes and the courage to face what answers them.",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.dialogue.offer.label": "Before Dawn",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.dialogue.offer.lines": [
+      "The pearls and fire point toward a door that does not care whether anyone is ready.",
+      "Bring eyes of ender, and proof you can meet the staring dark. The village needs the lesson before the gate, not after."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.dialogue.offer.response.accept.label": "I will prepare for the gate.",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.dialogue.offer.response.decline.label": "Not yet.",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.dialogue.reminder.label": "About Before Dawn",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.dialogue.reminder.lines": [
+      "Defeat endermen and bring eyes of ender. The gate should not be the first time your hands shake."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.dialogue.reminder.response.details.label": "Repeat the eye work.",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.dialogue.reminder.response.leave.label": "I will handle it.",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.objective.bring_eyes.tracker.complete_text": "The eyes are ready.",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.objective.bring_eyes.tracker.text": "Bring 3 eyes of ender for the gate notes.",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.objective.defeat_endermen.tracker.complete_text": "The staring dark has been answered.",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.objective.defeat_endermen.tracker.text": "Defeat 3 endermen without letting fear write the lesson for you.",
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.scene.decline.lines": [
+      "That is allowed. A gate does not become kinder because you hurry toward it."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.scene.leave.lines": [
+      "Look away when you must. Courage is not staring until you break."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.scene.reminder_details.action.remind.lines.reminder": [
+      "Defeat 3 endermen and bring 3 eyes of ender for the gate lesson."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.scene.reminder_details.action.remind.lines.unavailable": [
+      "The gate lesson is not open right now."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.scene.start_quest.action.start.lines.already_completed": [
+      "The gate notes are already steady."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.scene.start_quest.action.start.lines.started": [
+      "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today; we are learning how not to panic tomorrow."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.scene.start_quest.action.start.lines.unavailable": [
+      "The gate lesson is not ready right now."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.answer_the_eye.ui.tracker_text": "Defeat 3 endermen and bring 3 eyes of ender.",
+    "quest.last_ember.eye_before_dawn.stage.return.dialogue.turn_in.label": "About Before Dawn",
+    "quest.last_ember.eye_before_dawn.stage.return.dialogue.turn_in.lines": [
+      "The notes are ready to wait for the gate. That may be the hardest part."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.return.dialogue.turn_in.response.complete.label": "Seal the gate notes.",
+    "quest.last_ember.eye_before_dawn.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.last_ember.eye_before_dawn.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good. The third note says this: a door is not destiny until someone walks through it."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The gate lesson is still missing something."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the gate materials here before we seal the notes."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the gate lesson right now."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.return.scene.leave.lines": [
+      "The notes remain open, which is another way of saying vulnerable."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.return.ui.tracker_text": "Return with the sealed gate materials.",
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.dialogue.reminder.label": "About Before Dawn",
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.dialogue.reminder.lines": [
+      "The eyes are enough to point. Bring an ender chest so the notes can wait without whispering from an ordinary drawer."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.dialogue.reminder.response.details.label": "Repeat the seal.",
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.dialogue.reminder.response.leave.label": "I will bring it.",
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.objective.bring_ender_chest.tracker.complete_text": "The sealed chest is ready.",
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.objective.bring_ender_chest.tracker.text": "Bring 1 ender chest to keep the Last Ember notes sealed.",
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.scene.leave.lines": [
+      "Some notes deserve a lid that knows how to stay shut."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 1 ender chest to seal the Last Ember notes."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.scene.reminder_details.action.remind.lines.unavailable": [
+      "The steady-hands lesson can wait until the eyes are ready."
+    ],
+    "quest.last_ember.eye_before_dawn.stage.steady_hands.ui.tracker_text": "Bring 1 ender chest.",
+    "quest.last_ember.eye_before_dawn.title": "Before Dawn"
+  }
+}

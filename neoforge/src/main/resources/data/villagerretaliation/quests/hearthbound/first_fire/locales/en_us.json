@@ -1,0 +1,72 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.hearthbound.first_fire.description": "Help a cook gather the first shared hearth supplies for the village.",
+    "quest.hearthbound.first_fire.stage.kindle.dialogue.offer.label": "Kindling",
+    "quest.hearthbound.first_fire.stage.kindle.dialogue.offer.lines": [
+      "A village does not become steady because one person eats well. It becomes steady when there is a warm place people trust.",
+      "Bring a campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That will give the first fire both a place and a purpose."
+    ],
+    "quest.hearthbound.first_fire.stage.kindle.dialogue.offer.response.accept.label": "I will help set the hearth.",
+    "quest.hearthbound.first_fire.stage.kindle.dialogue.offer.response.decline.label": "Another time.",
+    "quest.hearthbound.first_fire.stage.kindle.dialogue.reminder.label": "About Kindling",
+    "quest.hearthbound.first_fire.stage.kindle.dialogue.reminder.lines": [
+      "The first fire still needs a campfire, charcoal, bowls, and cooked cod. The list will not change before the hearth is ready."
+    ],
+    "quest.hearthbound.first_fire.stage.kindle.dialogue.reminder.response.details.label": "Repeat the supplies.",
+    "quest.hearthbound.first_fire.stage.kindle.dialogue.reminder.response.leave.label": "I will bring them.",
+    "quest.hearthbound.first_fire.stage.kindle.objective.bring_bowls.tracker.complete_text": "The bowls are ready.",
+    "quest.hearthbound.first_fire.stage.kindle.objective.bring_bowls.tracker.text": "Bring 6 bowls for the first shared meal.",
+    "quest.hearthbound.first_fire.stage.kindle.objective.bring_campfire.tracker.complete_text": "The hearth can be set.",
+    "quest.hearthbound.first_fire.stage.kindle.objective.bring_campfire.tracker.text": "Bring 1 campfire for the shared hearth.",
+    "quest.hearthbound.first_fire.stage.kindle.objective.bring_charcoal.tracker.complete_text": "The fire has enough clean fuel.",
+    "quest.hearthbound.first_fire.stage.kindle.objective.bring_charcoal.tracker.text": "Bring 6 charcoal so the first fire burns clean.",
+    "quest.hearthbound.first_fire.stage.kindle.objective.bring_cooked_cod.tracker.complete_text": "The meal has enough fish.",
+    "quest.hearthbound.first_fire.stage.kindle.objective.bring_cooked_cod.tracker.text": "Bring 6 cooked cod to fill the first pots.",
+    "quest.hearthbound.first_fire.stage.kindle.scene.decline.lines": [
+      "Fair enough. A cold pot can wait, but it never waits kindly."
+    ],
+    "quest.hearthbound.first_fire.stage.kindle.scene.leave.lines": [
+      "Keep the charcoal dry. Damp fuel makes everyone pretend not to complain."
+    ],
+    "quest.hearthbound.first_fire.stage.kindle.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod for the shared hearth."
+    ],
+    "quest.hearthbound.first_fire.stage.kindle.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have that hearth note open right now."
+    ],
+    "quest.hearthbound.first_fire.stage.kindle.scene.start_quest.action.start.lines.already_completed": [
+      "The first fire is already warming the village."
+    ],
+    "quest.hearthbound.first_fire.stage.kindle.scene.start_quest.action.start.lines.started": [
+      "Good. Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod. That is the complete list for this hearth."
+    ],
+    "quest.hearthbound.first_fire.stage.kindle.scene.start_quest.action.start.lines.unavailable": [
+      "The hearth is not ready to ask for help right now."
+    ],
+    "quest.hearthbound.first_fire.stage.kindle.ui.tracker_text": "Bring 1 campfire, 6 charcoal, 6 bowls, and 6 cooked cod.",
+    "quest.hearthbound.first_fire.stage.return.dialogue.turn_in.label": "About Kindling",
+    "quest.hearthbound.first_fire.stage.return.dialogue.turn_in.lines": [
+      "Fire, bowls, and food. That is enough to make a room feel less temporary."
+    ],
+    "quest.hearthbound.first_fire.stage.return.dialogue.turn_in.response.complete.label": "Set the hearth.",
+    "quest.hearthbound.first_fire.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.hearthbound.first_fire.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "There. The first fire is not much to look at yet, but people will stand closer to it than they admit."
+    ],
+    "quest.hearthbound.first_fire.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The hearth still needs its campfire, charcoal, bowls, or cooked fish before we light it."
+    ],
+    "quest.hearthbound.first_fire.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the hearth supplies here before we set anything down."
+    ],
+    "quest.hearthbound.first_fire.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the hearth note right now."
+    ],
+    "quest.hearthbound.first_fire.stage.return.scene.leave.lines": [
+      "Bring everything together. Scattered comfort is still scattered."
+    ],
+    "quest.hearthbound.first_fire.stage.return.ui.tracker_text": "Return with the hearth supplies.",
+    "quest.hearthbound.first_fire.title": "Kindling"
+  }
+}

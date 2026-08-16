@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -14,30 +15,53 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerConversationService {
     private static final int IDLE_TIMEOUT_TICKS = 20 * 60 * 2;
+    private static final int FOREIGN_HIRED_WORKER_IDLE_TIMEOUT_TICKS = IDLE_TIMEOUT_TICKS / 2;
     private static final double FORCED_DIALOGUE_APPROACH_START_DISTANCE = 5.5D;
     private static final double FORCED_DIALOGUE_APPROACH_STOP_DISTANCE = 4.0D;
-    private static final double FORCED_DIALOGUE_APPROACH_SPEED = 0.55D;
+    private static final double FORCED_DIALOGUE_APPROACH_SPEED =
+            com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
     private static final Map<UUID, VillagerConversationSession> SESSIONS_BY_PLAYER = new HashMap<>();
     private static final Map<UUID, UUID> PLAYER_BY_VILLAGER = new HashMap<>();
 
     private VillagerConversationService() {
     }
 
+    public static void clearRuntimeState() {
+        SESSIONS_BY_PLAYER.clear();
+        PLAYER_BY_VILLAGER.clear();
+    }
+
     public static boolean start(ServerPlayer player, Villager villager) {
-        return start(player, villager, false);
+        return start(player, villager, false, false);
     }
 
     public static boolean startForced(ServerPlayer player, Villager villager) {
-        return start(player, villager, true);
+        return start(player, villager, true, false);
     }
 
-    private static boolean start(ServerPlayer player, Villager villager, boolean forced) {
+    /** Starts a forced scene whose caller owns disposition/hostility authorization. */
+    public static boolean startForcedIgnoringDisposition(ServerPlayer player, Villager villager) {
+        return start(player, villager, true, true);
+    }
+
+    private static boolean start(
+            ServerPlayer player,
+            Villager villager,
+            boolean forced,
+            boolean ignoreDisposition) {
         boolean canStart = forced
-                ? VillagerInteractionService.canUseForcedInteractionSystem(player, villager)
+                ? ignoreDisposition
+                        ? VillagerInteractionService.canUseForcedInteractionSystemIgnoringDisposition(player, villager)
+                        : VillagerInteractionService.canUseForcedInteractionSystem(player, villager)
                 : VillagerInteractionService.canUseInteractionSystem(player, villager);
+        if (!forced && canStart && !VillagerInteractionService.canStartNormalConversation(player, villager)) {
+            return false;
+        }
         if (!canStart) {
             return false;
         }
+
+        VillagerInteractionService.prepareForInteractionSession(player, villager);
 
         UUID existingPlayerId = PLAYER_BY_VILLAGER.get(villager.getUUID());
         if (existingPlayerId != null && !existingPlayerId.equals(player.getUUID())) {
@@ -72,6 +96,19 @@ public final class VillagerConversationService {
         session.touch(player.serverLevel().getGameTime());
         holdVillager(villager, player, session);
         return true;
+    }
+
+    /** Records client activity for the session identified by the supplied villager entity id. */
+    public static void recordActivity(ServerPlayer player, int villagerEntityId) {
+        VillagerConversationSession session = SESSIONS_BY_PLAYER.get(player.getUUID());
+        if (session == null || !session.active() || session.villagerEntityId() != villagerEntityId) {
+            return;
+        }
+
+        Entity entity = player.serverLevel().getEntity(villagerEntityId);
+        if (entity instanceof Villager villager) {
+            validate(player, villager);
+        }
     }
 
     public static boolean isForced(ServerPlayer player, Villager villager) {
@@ -145,7 +182,7 @@ public final class VillagerConversationService {
             return;
         }
         if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get() && !villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         }
     }
 
@@ -162,7 +199,12 @@ public final class VillagerConversationService {
         SESSIONS_BY_PLAYER.remove(player.getUUID());
         PLAYER_BY_VILLAGER.remove(session.villagerId());
         if (notifyClient) {
-            PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(session.villagerEntityId(), ""));
+            try {
+                PacketDistributor.sendToPlayer(
+                        player, new VillagerConversationEndedPayload(session.villagerEntityId(), ""));
+            } catch (UnsupportedOperationException ignored) {
+                // GameTest mock players and unnegotiated connections cannot accept custom client payloads.
+            }
         }
     }
 
@@ -183,7 +225,10 @@ public final class VillagerConversationService {
             }
         }
         long idleTicks = player.serverLevel().getGameTime() - session.lastInteractionGameTime();
-        return idleTicks <= IDLE_TIMEOUT_TICKS;
+        int idleTimeoutTicks = VillagerInteractionService.isForeignHiredWorker(player, villager)
+                ? FOREIGN_HIRED_WORKER_IDLE_TIMEOUT_TICKS
+                : IDLE_TIMEOUT_TICKS;
+        return idleTicks <= idleTimeoutTicks;
     }
 
     private static void holdVillager(Villager villager, ServerPlayer player, VillagerConversationSession session) {
@@ -195,7 +240,7 @@ public final class VillagerConversationService {
             return;
         }
         if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get() && !villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         }
     }
 
@@ -203,13 +248,14 @@ public final class VillagerConversationService {
         double distanceSqr = villager.distanceToSqr(player);
         if (distanceSqr <= FORCED_DIALOGUE_APPROACH_STOP_DISTANCE * FORCED_DIALOGUE_APPROACH_STOP_DISTANCE) {
             if (!villager.getNavigation().isDone()) {
-                villager.getNavigation().stop();
+                VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             }
             return false;
         }
         if (distanceSqr <= FORCED_DIALOGUE_APPROACH_START_DISTANCE * FORCED_DIALOGUE_APPROACH_START_DISTANCE) {
             return !villager.getNavigation().isDone();
         }
+        VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
         return villager.getNavigation().moveTo(player, FORCED_DIALOGUE_APPROACH_SPEED);
     }
 }

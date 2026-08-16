@@ -1,32 +1,58 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import java.util.List;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 final class VillagerInteractionOptionList {
-    private static final float EXPERIMENTAL_OPTION_BASE_SCALE = 1.48F;
+    private static final float OPTION_BASE_SCALE = 1.48F;
     private static final int WRAPPED_OPTION_MAX_LINES = 2;
     private static final int SELECTOR_LABEL_GAP = 17;
+    private static final int PIXEL_OPTION_TEXTURE_WIDTH = 49;
+    private static final int PIXEL_OPTION_TEXTURE_HEIGHT = 23;
+    private static final int PIXEL_OPTION_SLICE_LEFT = 8;
+    private static final int PIXEL_OPTION_SLICE_RIGHT = 8;
+    private static final int PIXEL_OPTION_SLICE_TOP = 8;
+    private static final int PIXEL_OPTION_SLICE_BOTTOM = 8;
+    private static final int PIXEL_OPTION_SCROLL_ARROW_EDGE_INSET = 3;
+    private static final int PIXEL_OPTION_HIGHLIGHT_COLOR = 0x30FFFFFF;
+    private static final int PIXEL_OPTION_DISABLED_HIGHLIGHT_COLOR = 0x20FFFFFF;
+    private static final int PIXEL_OPTION_HIGHLIGHT_INSET = 2;
+    private static final float PIXEL_OPTION_EDGE_SCALE = 0.92F;
+    private static final int PIXEL_OPTION_SCISSOR_OVERFLOW = 12;
 
     private VillagerInteractionOptionList() {
     }
 
     static void render(Context context, GuiGraphics graphics, int mouseX, int mouseY) {
+        LayoutCache layout = layout(context);
         int left = context.optionsLeft();
         int top = context.optionsTop();
         int viewportHeight = context.optionViewportHeight();
         int viewportBottom = top + viewportHeight;
+        int scissorOffsetX = context.guiScissorOffsetX();
+        int scissorOffsetY = context.guiScissorOffsetY();
         int hovered = optionAt(context, mouseX, mouseY);
-        int scissorInset = context.experimentalUnit(4);
+        if (context.usePixelOptionButtons()) {
+            renderPixelOptions(context, graphics, hovered, mouseX, mouseY, left, top, viewportBottom, scissorOffsetY);
+            return;
+        }
 
-        graphics.enableScissor(Math.max(0, left - context.optionWidth()), top, context.optionsScrollbarLeft() - scissorInset, viewportBottom);
-        for (int index = 0; index < context.optionCount(); index++) {
-            int rowHeight = optionHeight(context, index);
-            float y = top + optionOffset(context, index) - context.optionScroll();
-            if (y + rowHeight < top || y > viewportBottom) {
-                continue;
+        int scissorInset = context.uiUnit(4);
+        graphics.enableScissor(
+                Math.max(0, left - context.optionWidth() + scissorOffsetX),
+                top + scissorOffsetY,
+                context.optionsScrollbarLeft() - scissorInset + scissorOffsetX,
+                viewportBottom + scissorOffsetY);
+        for (int index = layout.firstVisibleIndex(context.optionScroll()); index < context.optionCount(); index++) {
+            int rowHeight = layout.height(index);
+            float y = top + layout.offset(index) - context.optionScroll();
+            if (y > viewportBottom) {
+                break;
             }
             renderOption(context, graphics, index, hovered, mouseX, mouseY, left, y, rowHeight, top, viewportBottom);
         }
@@ -38,48 +64,85 @@ final class VillagerInteractionOptionList {
         int left = context.optionsLeft();
         int top = context.optionsTop();
         int bottom = top + context.optionViewportHeight();
-        int horizontalPadding = context.experimentalUnit(18);
-        int verticalPadding = context.experimentalUnitAtLeast(2, 1);
+        int horizontalPadding = context.usePixelOptionButtons() ? 0 : context.uiUnit(18);
         if (mouseX < left - horizontalPadding || mouseX > left + context.optionWidth()) {
             return -1;
         }
-        if (mouseY < top - verticalPadding || mouseY > bottom + verticalPadding) {
+        if (mouseY < top || mouseY >= bottom) {
             return -1;
         }
-        for (int index = 0; index < context.optionCount(); index++) {
-            float y = top + optionOffset(context, index) - context.optionScroll();
-            if (mouseY >= y - verticalPadding && mouseY <= y + optionHeight(context, index) + verticalPadding) {
-                return index;
-            }
-        }
-        return -1;
+        return layout(context).optionAt((float) mouseY - top + context.optionScroll());
     }
 
     static float optionOffset(Context context, int optionIndex) {
-        float offset = 0.0F;
-        for (int index = 0; index < optionIndex; index++) {
-            offset += optionHeight(context, index) + optionGap(context);
-        }
-        return offset;
+        return layout(context).offset(optionIndex);
     }
 
     static int optionHeight(Context context, int optionIndex) {
-        return context.optionHeight() + wrappedExtraHeight(context, optionIndex);
+        return layout(context).height(optionIndex);
     }
 
     static float optionContentHeight(Context context) {
-        float height = 0.0F;
-        for (int index = 0; index < context.optionCount(); index++) {
-            height += optionHeight(context, index);
-            if (index < context.optionCount() - 1) {
-                height += optionGap(context);
-            }
-        }
-        return height;
+        return layout(context).contentHeight();
     }
 
-    private static int optionGap(Context context) {
-        return Math.max(0, context.optionStride() - context.optionHeight());
+    static float nextSnappedScroll(Context context, float currentScroll, int direction) {
+        LayoutCache layout = layout(context);
+        float maxScroll = Math.max(0.0F, layout.contentHeight() - context.optionViewportHeight());
+        float current = Mth.clamp(currentScroll, 0.0F, maxScroll);
+        if (direction == 0 || maxScroll <= 0.0F) {
+            return current;
+        }
+
+        float threshold = 0.5F;
+        if (direction > 0) {
+            for (int index = 1; index < context.optionCount(); index++) {
+                float candidate = Mth.clamp(layout.offset(index), 0.0F, maxScroll);
+                if (candidate > current + threshold) {
+                    return candidate;
+                }
+            }
+            return maxScroll;
+        }
+
+        for (int index = context.optionCount() - 1; index >= 0; index--) {
+            float candidate = Mth.clamp(layout.offset(index), 0.0F, maxScroll);
+            if (candidate < current - threshold) {
+                return candidate;
+            }
+        }
+        return 0.0F;
+    }
+
+    static float scrollToReveal(Context context, float currentScroll, int optionIndex) {
+        LayoutCache layout = layout(context);
+        if (optionIndex < 0 || optionIndex >= context.optionCount()) {
+            return currentScroll;
+        }
+
+        float maxScroll = Math.max(0.0F, layout.contentHeight() - context.optionViewportHeight());
+        float current = Mth.clamp(currentScroll, 0.0F, maxScroll);
+        float optionTop = layout.offset(optionIndex);
+        float optionBottom = optionTop + layout.height(optionIndex);
+        if (optionTop < current) {
+            return Mth.clamp(optionTop, 0.0F, maxScroll);
+        }
+        if (optionBottom <= current + context.optionViewportHeight()) {
+            return current;
+        }
+
+        float minimumScroll = optionBottom - context.optionViewportHeight();
+        for (int index = 0; index <= optionIndex; index++) {
+            float candidate = Mth.clamp(layout.offset(index), 0.0F, maxScroll);
+            if (candidate >= minimumScroll - 0.5F) {
+                return candidate;
+            }
+        }
+        return maxScroll;
+    }
+
+    private static LayoutCache layout(Context context) {
+        return context.optionLayout().update(context);
     }
 
     static List<String> wrappedOptionLabelLines(Context context, String label, float scale) {
@@ -89,9 +152,9 @@ final class VillagerInteractionOptionList {
     }
 
     private static float wrappedLayoutScale(Context context) {
-        return (EXPERIMENTAL_OPTION_BASE_SCALE
+        return (OPTION_BASE_SCALE
                 + context.optionSelectedScale()
-                + context.optionHoverScale()) * context.experimentalTextScale();
+                + context.optionHoverScale()) * context.textScale();
     }
 
     private static void renderOption(
@@ -111,24 +174,20 @@ final class VillagerInteractionOptionList {
         boolean isHovered = hovered == index;
         boolean showSelector = index == selectorOption(context, hovered);
         float hoverMix = isHovered ? context.hoverIntensity(mouseX, mouseY, left, y) : 0.0F;
-        float textScale = context.experimentalTextScale();
-        float scale = (EXPERIMENTAL_OPTION_BASE_SCALE
+        float textScale = context.textScale();
+        float scale = (OPTION_BASE_SCALE
                 + (selected ? context.optionSelectedScale() : 0.0F)
                 + hoverMix * context.optionHoverScale()) * textScale;
-        float cursorShiftX = isHovered ? context.hoverShift(mouseX, left, context.optionWidth(), context.experimentalUnit(3)) * hoverMix : 0.0F;
-        float cursorShiftY = isHovered ? context.hoverShift(mouseY, y, rowHeight, context.experimentalUnit(2)) * hoverMix : 0.0F;
+        float cursorShiftX = isHovered ? context.hoverShift(mouseX, left, context.optionWidth(), context.uiUnit(3)) * hoverMix : 0.0F;
+        float cursorShiftY = isHovered ? context.hoverShift(mouseY, y, rowHeight, context.uiUnit(2)) * hoverMix : 0.0F;
         float edgeAlpha = context.edgeFadeAlpha(y, viewportTop, viewportBottom);
         int textColor = optionTextColor(selected, isHovered);
-        float textFadeInAlpha = VillagerInteractionExperimentalChrome.textFadeInAlpha();
-        if (!VillagerInteractionExperimentalChrome.shouldDrawText(textFadeInAlpha)) {
-            return;
-        }
-        float textAlpha = edgeAlpha * textFadeInAlpha;
+        float textAlpha = edgeAlpha;
 
-        renderExperimentalOptionBackground(context, graphics, isHovered, left, y, rowHeight, textAlpha);
+        renderOptionBackground(context, graphics, isHovered, left, y, rowHeight, textAlpha);
         graphics.pose().pushPose();
-        applyExperimentalOptionTransform(context, graphics, left, y, scale, cursorShiftX, cursorShiftY);
-        renderWrappedLabel(context, graphics, context.optionLabel(index), left, y, rowHeight, scale, textColor, textFadeInAlpha, viewportTop, viewportBottom, false);
+        applyOptionTransform(context, graphics, left, y, scale, cursorShiftX, cursorShiftY);
+        renderWrappedLabel(context, graphics, context.optionLabel(index), left, y, rowHeight, scale, textColor, 1.0F, viewportTop, viewportBottom, false);
         if (showSelector) {
             renderSelector(context, graphics, left, y, rowHeight, scale, cursorShiftX, cursorShiftY, textAlpha, isHovered);
         }
@@ -139,7 +198,402 @@ final class VillagerInteractionOptionList {
         return hovered >= 0 ? hovered : context.selectedOption();
     }
 
-    private static void applyExperimentalOptionTransform(Context context, GuiGraphics graphics, int left, float top, float scale, float shiftX, float shiftY) {
+    private static void renderPixelOptions(
+            Context context,
+            GuiGraphics graphics,
+            int hovered,
+            int mouseX,
+            int mouseY,
+            int left,
+            int top,
+            int viewportBottom,
+            int scissorOffsetY) {
+        int scissorRight = left + context.optionWidth();
+        if (context.pixelOptionSelectionArrowTexture() != null) {
+            scissorRight += context.pixelOptionSelectionArrowGap() + context.pixelOptionSelectionArrowWidth();
+        }
+        int scissorOffsetX = context.guiScissorOffsetX();
+        graphics.enableScissor(Math.max(0, left - PIXEL_OPTION_SCISSOR_OVERFLOW + scissorOffsetX), top + scissorOffsetY,
+                scissorRight + PIXEL_OPTION_SCISSOR_OVERFLOW + scissorOffsetX, viewportBottom + scissorOffsetY);
+        LayoutCache layout = layout(context);
+        List<Integer> visibleIndices = new java.util.ArrayList<>();
+        for (int index = layout.firstVisibleIndex(context.optionScroll()); index < context.optionCount(); index++) {
+            int rowHeight = layout.height(index);
+            float y = top + layout.offset(index) - context.optionScroll();
+            if (isVisible(y, rowHeight, top, viewportBottom)) {
+                visibleIndices.add(index);
+            } else if (y >= viewportBottom) {
+                break;
+            }
+        }
+
+        context.updatePixelOptionDockScales(hovered);
+        int highlighted = hovered >= 0
+                ? hovered
+                : context.pixelOptionKeyboardFocusVisible() ? context.selectedOption() : -1;
+        int highlightedSlot = -1;
+        for (int visibleSlot = 0; visibleSlot < visibleIndices.size(); visibleSlot++) {
+            int index = visibleIndices.get(visibleSlot);
+            if (index == highlighted) {
+                highlightedSlot = visibleSlot;
+                continue;
+            }
+            int rowHeight = layout.height(index);
+            float y = top + layout.offset(index) - context.optionScroll();
+            renderPixelOption(
+                    context,
+                    graphics,
+                    index,
+                    hovered,
+                    left,
+                    y,
+                    rowHeight,
+                    pixelOptionEdgeScaleBlend(y, rowHeight, top, viewportBottom),
+                    context.pixelOptionDockScale(index),
+                    top,
+                    viewportBottom);
+        }
+        if (highlightedSlot >= 0) {
+            int index = visibleIndices.get(highlightedSlot);
+            int rowHeight = layout.height(index);
+            float y = top + layout.offset(index) - context.optionScroll();
+            renderPixelOption(
+                    context,
+                    graphics,
+                    index,
+                    hovered,
+                    left,
+                    y,
+                    rowHeight,
+                    pixelOptionEdgeScaleBlend(y, rowHeight, top, viewportBottom),
+                    context.pixelOptionDockScale(index),
+                    top,
+                    viewportBottom);
+        }
+        graphics.disableScissor();
+        renderPixelScrollArrows(context, graphics, left, top, viewportBottom);
+    }
+
+    private static float pixelOptionEdgeScaleBlend(
+            float top,
+            int height,
+            int viewportTop,
+            int viewportBottom) {
+        float clippedAbove = Math.max(0.0F, viewportTop - top);
+        float clippedBelow = Math.max(0.0F, top + height - viewportBottom);
+        float clippedFraction = Mth.clamp(
+                (clippedAbove + clippedBelow) / Math.max(1.0F, height),
+                0.0F,
+                1.0F);
+        return VillagerClientUiUtil.smoothstep(clippedFraction);
+    }
+
+    private static void renderPixelOption(
+            Context context,
+            GuiGraphics graphics,
+            int index,
+            int hovered,
+            int left,
+            float top,
+            int rowHeight,
+            float edgeScaleBlend,
+            float dockScale,
+            int viewportTop,
+            int viewportBottom) {
+        int drawTop = Mth.floor(top);
+        boolean selected = index == context.selectedOption();
+        boolean isHovered = hovered == index;
+        boolean keyboardFocused = selected && context.pixelOptionKeyboardFocusVisible();
+        boolean active = isHovered || keyboardFocused;
+        ResourceLocation texture = context.pixelOptionTexture(keyboardFocused, isHovered);
+
+        graphics.pose().pushPose();
+        applyPixelOptionScale(
+                graphics,
+                drawTop,
+                rowHeight,
+                edgeScaleBlend,
+                dockScale,
+                left + context.optionWidth()
+                        + context.pixelOptionSelectionArrowGap()
+                        + context.pixelOptionSelectionArrowWidth(),
+                viewportTop,
+                viewportBottom);
+        try {
+            blitPixelOptionButton(graphics, texture, left, drawTop, context.optionWidth(), rowHeight);
+
+            boolean hasCheckbox = context.pixelOptionHasCheckbox(index);
+            int checkboxTextOffset = hasCheckbox
+                    ? context.pixelOptionCheckboxWidth() + context.pixelOptionCheckboxTextGap()
+                    : 0;
+            boolean hasIcon = context.pixelOptionIconTexture(index) != null;
+            int iconTextOffset = hasIcon
+                    ? context.pixelOptionIconWidth(index) + context.pixelOptionIconTextGap(index)
+                    : 0;
+            int textLeft = left + context.optionTextInset() + checkboxTextOffset + iconTextOffset;
+            int textWidth = Math.max(1, context.optionWidth() - context.optionTextInset()
+                    - checkboxTextOffset - iconTextOffset - context.pixelOptionTextRightPadding());
+            List<String> lines = layout(context).pixelLines(index);
+            int textColor = context.pixelOptionTextColor(keyboardFocused, isHovered || active);
+            renderPixelOptionCheckbox(context, graphics, index, left, drawTop, rowHeight);
+            renderPixelOptionIcon(context, graphics, index, left, drawTop, rowHeight, checkboxTextOffset);
+            for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+                int lineTop = drawTop + context.pixelOptionTextTop() + lineIndex * context.pixelOptionLineStep();
+                drawPixelOutlinedString(
+                        graphics,
+                        context.font(),
+                        fitPlainText(context.font(), lines.get(lineIndex), textWidth),
+                        textLeft,
+                        lineTop,
+                        textColor,
+                        1.0F
+                );
+            }
+            if (active) {
+                renderPixelOptionHighlight(
+                        graphics,
+                        left,
+                        drawTop,
+                        context.optionWidth(),
+                        rowHeight,
+                        context.pixelOptionHighlightActive(index),
+                        1.0F);
+            }
+            if (active) {
+                renderPixelSelectionArrow(context, graphics, left, drawTop, rowHeight);
+            }
+        } finally {
+            graphics.pose().popPose();
+        }
+    }
+
+    private static void renderPixelOptionHighlight(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int width,
+            int height,
+            boolean active,
+            float alpha) {
+        int baseColor = active ? PIXEL_OPTION_HIGHLIGHT_COLOR : PIXEL_OPTION_DISABLED_HIGHLIGHT_COLOR;
+        int color = VillagerInteractionUiUtil.withAlpha(baseColor, alpha);
+        int highlightLeft = left + PIXEL_OPTION_HIGHLIGHT_INSET;
+        int highlightTop = top + PIXEL_OPTION_HIGHLIGHT_INSET;
+        int highlightRight = left + width - PIXEL_OPTION_HIGHLIGHT_INSET;
+        int highlightBottom = top + height - PIXEL_OPTION_HIGHLIGHT_INSET;
+        graphics.fillGradient(RenderType.guiOverlay(), highlightLeft, highlightTop, highlightRight, highlightBottom, color, color, 0);
+    }
+
+    private static void renderPixelOptionCheckbox(
+            Context context,
+            GuiGraphics graphics,
+            int index,
+            int left,
+            int top,
+            int rowHeight) {
+        if (!context.pixelOptionHasCheckbox(index)) {
+            return;
+        }
+        int checkboxWidth = context.pixelOptionCheckboxWidth();
+        int checkboxHeight = context.pixelOptionCheckboxHeight();
+        int checkboxLeft = left + context.optionTextInset();
+        int checkboxTop = top + Math.max(0, (rowHeight - checkboxHeight) / 2);
+        graphics.blit(
+                context.pixelOptionCheckboxTexture(),
+                checkboxLeft,
+                checkboxTop,
+                0,
+                0,
+                checkboxWidth,
+                checkboxHeight,
+                checkboxWidth,
+                checkboxHeight);
+        if (context.pixelOptionChecked(index)) {
+            graphics.blit(
+                    context.pixelOptionCheckmarkTexture(),
+                    checkboxLeft,
+                    checkboxTop,
+                    0,
+                    0,
+                    checkboxWidth,
+                    checkboxHeight,
+                    checkboxWidth,
+                    checkboxHeight);
+        }
+    }
+
+    private static void renderPixelOptionIcon(
+            Context context,
+            GuiGraphics graphics,
+            int index,
+            int left,
+            int top,
+            int rowHeight,
+            int leadingOffset) {
+        ResourceLocation texture = context.pixelOptionIconTexture(index);
+        if (texture == null) {
+            return;
+        }
+        int iconWidth = context.pixelOptionIconWidth(index);
+        int iconHeight = context.pixelOptionIconHeight(index);
+        if (iconWidth <= 0 || iconHeight <= 0) {
+            return;
+        }
+        int iconLeft = left + context.optionTextInset() + leadingOffset;
+        int iconTop = top + Math.max(0, (rowHeight - iconHeight) / 2);
+        graphics.blit(texture, iconLeft, iconTop, 0, 0, iconWidth, iconHeight, iconWidth, iconHeight);
+    }
+
+    private static void renderPixelSelectionArrow(Context context, GuiGraphics graphics, int left, int top, int rowHeight) {
+        ResourceLocation texture = context.pixelOptionSelectionArrowTexture();
+        if (texture == null) {
+            return;
+        }
+
+        int arrowWidth = context.pixelOptionSelectionArrowWidth();
+        int arrowHeight = context.pixelOptionSelectionArrowHeight();
+        int arrowLeft = left + context.optionWidth() + context.pixelOptionSelectionArrowGap();
+        int arrowTop = top + Math.max(0, (rowHeight - arrowHeight) / 2);
+        graphics.blit(texture, arrowLeft, arrowTop, 0, 0, arrowWidth, arrowHeight, arrowWidth, arrowHeight);
+    }
+
+    private static boolean isVisible(float top, int height, int viewportTop, int viewportBottom) {
+        return top + height > viewportTop && top < viewportBottom;
+    }
+
+    private static void applyPixelOptionScale(
+            GuiGraphics graphics,
+            int top,
+            int height,
+            float edgeScaleBlend,
+            float dockScale,
+            float dockRight,
+            int viewportTop,
+            int viewportBottom) {
+        float edgeScale = Mth.lerp(
+                Mth.clamp(edgeScaleBlend, 0.0F, 1.0F),
+                1.0F,
+                PIXEL_OPTION_EDGE_SCALE);
+        float scaleX = edgeScale * Math.max(0.001F, dockScale);
+        float scaleY = scaleX;
+        float topRoom = Math.max(0.0F, top - viewportTop);
+        float bottomRoom = Math.max(0.0F, viewportBottom - (top + height));
+        if (scaleY > 1.0F) {
+            scaleY = Math.min(scaleY, 1.0F + (topRoom + bottomRoom) / Math.max(1.0F, height));
+        }
+        if (Math.abs(scaleX - 1.0F) <= 0.001F && Math.abs(scaleY - 1.0F) <= 0.001F) {
+            return;
+        }
+
+        float pivotX = dockRight;
+        float pivotY = top + height * 0.5F;
+        if (scaleY > 1.0F) {
+            float verticalExpansion = height * (scaleY - 1.0F);
+            float minimumExpansionAbove = Math.max(0.0F, verticalExpansion - bottomRoom);
+            float maximumExpansionAbove = Math.min(verticalExpansion, topRoom);
+            float expansionAbove = Mth.clamp(
+                    verticalExpansion * 0.5F,
+                    minimumExpansionAbove,
+                    maximumExpansionAbove);
+            pivotY = top + expansionAbove / (scaleY - 1.0F);
+        }
+        graphics.pose().translate(pivotX, pivotY, 0.0F);
+        graphics.pose().scale(scaleX, scaleY, 1.0F);
+        graphics.pose().translate(-pivotX, -pivotY, 0.0F);
+    }
+
+    private static void drawPixelOutlinedString(GuiGraphics graphics, Font font, String text, int x, int y, int color, float alpha) {
+        int outlineColor = VillagerInteractionUiUtil.withAlpha(0xFF000000, alpha);
+        int textColor = VillagerInteractionUiUtil.withAlpha(color, alpha);
+        graphics.drawString(font, text, x - 1, y, outlineColor, false);
+        graphics.drawString(font, text, x + 1, y, outlineColor, false);
+        graphics.drawString(font, text, x, y - 1, outlineColor, false);
+        graphics.drawString(font, text, x, y + 1, outlineColor, false);
+        graphics.drawString(font, text, x, y, textColor, false);
+    }
+
+    private static void renderPixelScrollArrows(Context context, GuiGraphics graphics, int left, int top, int viewportBottom) {
+        float maxScroll = Math.max(0.0F, optionContentHeight(context) - context.optionViewportHeight());
+        int arrowWidth = context.pixelOptionArrowWidth();
+        int arrowHeight = context.pixelOptionArrowHeight();
+        int arrowX = left + (context.optionWidth() - arrowWidth) / 2;
+        if (context.optionScroll() > 0.75F && context.pixelOptionArrowUpTexture() != null) {
+            graphics.blit(
+                    context.pixelOptionArrowUpTexture(),
+                    arrowX,
+                    top - arrowHeight - 1 + PIXEL_OPTION_SCROLL_ARROW_EDGE_INSET,
+                    0,
+                    0,
+                    arrowWidth,
+                    arrowHeight,
+                    arrowWidth,
+                    arrowHeight
+            );
+        }
+        if (context.optionScroll() < maxScroll - 0.75F && context.pixelOptionArrowDownTexture() != null) {
+            graphics.blit(
+                    context.pixelOptionArrowDownTexture(),
+                    arrowX,
+                    viewportBottom + 1 - PIXEL_OPTION_SCROLL_ARROW_EDGE_INSET,
+                    0,
+                    0,
+                    arrowWidth,
+                    arrowHeight,
+                    arrowWidth,
+                    arrowHeight
+            );
+        }
+    }
+
+    private static void blitPixelOptionButton(GuiGraphics graphics, ResourceLocation texture, int left, int top, int width, int height) {
+        int centerSourceWidth = PIXEL_OPTION_TEXTURE_WIDTH - PIXEL_OPTION_SLICE_LEFT - PIXEL_OPTION_SLICE_RIGHT;
+        int centerSourceHeight = PIXEL_OPTION_TEXTURE_HEIGHT - PIXEL_OPTION_SLICE_TOP - PIXEL_OPTION_SLICE_BOTTOM;
+        int centerWidth = Math.max(0, width - PIXEL_OPTION_SLICE_LEFT - PIXEL_OPTION_SLICE_RIGHT);
+        int centerHeight = Math.max(0, height - PIXEL_OPTION_SLICE_TOP - PIXEL_OPTION_SLICE_BOTTOM);
+
+        blitPixelOptionSlice(graphics, texture, left, top, PIXEL_OPTION_SLICE_LEFT, PIXEL_OPTION_SLICE_TOP, 0, 0, PIXEL_OPTION_SLICE_LEFT, PIXEL_OPTION_SLICE_TOP);
+        blitPixelOptionSlice(graphics, texture, left + PIXEL_OPTION_SLICE_LEFT, top, centerWidth, PIXEL_OPTION_SLICE_TOP, PIXEL_OPTION_SLICE_LEFT, 0, centerSourceWidth, PIXEL_OPTION_SLICE_TOP);
+        blitPixelOptionSlice(graphics, texture, left + width - PIXEL_OPTION_SLICE_RIGHT, top, PIXEL_OPTION_SLICE_RIGHT, PIXEL_OPTION_SLICE_TOP, PIXEL_OPTION_TEXTURE_WIDTH - PIXEL_OPTION_SLICE_RIGHT, 0, PIXEL_OPTION_SLICE_RIGHT, PIXEL_OPTION_SLICE_TOP);
+
+        blitPixelOptionSlice(graphics, texture, left, top + PIXEL_OPTION_SLICE_TOP, PIXEL_OPTION_SLICE_LEFT, centerHeight, 0, PIXEL_OPTION_SLICE_TOP, PIXEL_OPTION_SLICE_LEFT, centerSourceHeight);
+        blitPixelOptionSlice(graphics, texture, left + PIXEL_OPTION_SLICE_LEFT, top + PIXEL_OPTION_SLICE_TOP, centerWidth, centerHeight, PIXEL_OPTION_SLICE_LEFT, PIXEL_OPTION_SLICE_TOP, centerSourceWidth, centerSourceHeight);
+        blitPixelOptionSlice(graphics, texture, left + width - PIXEL_OPTION_SLICE_RIGHT, top + PIXEL_OPTION_SLICE_TOP, PIXEL_OPTION_SLICE_RIGHT, centerHeight, PIXEL_OPTION_TEXTURE_WIDTH - PIXEL_OPTION_SLICE_RIGHT, PIXEL_OPTION_SLICE_TOP, PIXEL_OPTION_SLICE_RIGHT, centerSourceHeight);
+
+        blitPixelOptionSlice(graphics, texture, left, top + height - PIXEL_OPTION_SLICE_BOTTOM, PIXEL_OPTION_SLICE_LEFT, PIXEL_OPTION_SLICE_BOTTOM, 0, PIXEL_OPTION_TEXTURE_HEIGHT - PIXEL_OPTION_SLICE_BOTTOM, PIXEL_OPTION_SLICE_LEFT, PIXEL_OPTION_SLICE_BOTTOM);
+        blitPixelOptionSlice(graphics, texture, left + PIXEL_OPTION_SLICE_LEFT, top + height - PIXEL_OPTION_SLICE_BOTTOM, centerWidth, PIXEL_OPTION_SLICE_BOTTOM, PIXEL_OPTION_SLICE_LEFT, PIXEL_OPTION_TEXTURE_HEIGHT - PIXEL_OPTION_SLICE_BOTTOM, centerSourceWidth, PIXEL_OPTION_SLICE_BOTTOM);
+        blitPixelOptionSlice(graphics, texture, left + width - PIXEL_OPTION_SLICE_RIGHT, top + height - PIXEL_OPTION_SLICE_BOTTOM, PIXEL_OPTION_SLICE_RIGHT, PIXEL_OPTION_SLICE_BOTTOM, PIXEL_OPTION_TEXTURE_WIDTH - PIXEL_OPTION_SLICE_RIGHT, PIXEL_OPTION_TEXTURE_HEIGHT - PIXEL_OPTION_SLICE_BOTTOM, PIXEL_OPTION_SLICE_RIGHT, PIXEL_OPTION_SLICE_BOTTOM);
+    }
+
+    private static void blitPixelOptionSlice(
+            GuiGraphics graphics,
+            ResourceLocation texture,
+            int destLeft,
+            int destTop,
+            int destWidth,
+            int destHeight,
+            int sourceLeft,
+            int sourceTop,
+            int sourceWidth,
+            int sourceHeight) {
+        if (destWidth <= 0 || destHeight <= 0 || sourceWidth <= 0 || sourceHeight <= 0) {
+            return;
+        }
+        graphics.blit(
+                texture,
+                destLeft,
+                destTop,
+                destWidth,
+                destHeight,
+                (float) sourceLeft,
+                (float) sourceTop,
+                sourceWidth,
+                sourceHeight,
+                PIXEL_OPTION_TEXTURE_WIDTH,
+                PIXEL_OPTION_TEXTURE_HEIGHT
+        );
+    }
+
+    private static void applyOptionTransform(Context context, GuiGraphics graphics, int left, float top, float scale, float shiftX, float shiftY) {
         float pivotX = left + context.optionTextInset();
         float pivotY = top + optionTextYOffset(context.optionHeight());
         graphics.pose().translate(pivotX + shiftX, pivotY + shiftY, 0.0F);
@@ -165,7 +619,7 @@ final class VillagerInteractionOptionList {
         int textLeft = left + context.optionTextInset();
         float pivotX = textLeft;
         float pivotY = top + optionTextYOffset(context.optionHeight());
-        float desiredScreenX = textLeft + shiftX - context.experimentalUnit(SELECTOR_LABEL_GAP);
+        float desiredScreenX = textLeft + shiftX - context.uiUnit(SELECTOR_LABEL_GAP);
         float desiredScreenY = top + rowHeight * 0.5F + shiftY - context.font().lineHeight * scale * 0.5F + 3.0F + (hovered ? 1.0F : 0.0F);
         int localX = Mth.floor(pivotX + (desiredScreenX - pivotX - shiftX) / Math.max(scale, 0.001F));
         int localY = Mth.floor(pivotY + (desiredScreenY - pivotY - shiftY) / Math.max(scale, 0.001F));
@@ -198,7 +652,7 @@ final class VillagerInteractionOptionList {
             float lineTop = textTop + lineIndex * lineStep;
             float lineScreenTop = top + optionTextYOffset(baseHeight) + lineIndex * baseHeight;
             float lineAlpha = alpha * context.edgeFadeAlpha(lineScreenTop, viewportTop, viewportBottom);
-            if (VillagerInteractionExperimentalChrome.shouldDrawText(lineAlpha)) {
+            if (VillagerInteractionUiAnimation.shouldDrawText(lineAlpha)) {
                 int lineColor = VillagerInteractionUiUtil.withAlpha(color, lineAlpha);
                 if (wrapped) {
                     graphics.pose().pushPose();
@@ -212,14 +666,14 @@ final class VillagerInteractionOptionList {
         }
     }
 
-    private static void renderExperimentalOptionBackground(Context context, GuiGraphics graphics, boolean hovered, int left, float top, int rowHeight, float edgeAlpha) {
+    private static void renderOptionBackground(Context context, GuiGraphics graphics, boolean hovered, int left, float top, int rowHeight, float edgeAlpha) {
         if (!hovered) {
             return;
         }
 
-        int bgLeft = left - context.experimentalUnit(12);
+        int bgLeft = left - context.uiUnit(12);
         int bgTop = Mth.floor(top + 1.0F);
-        int bgRight = Math.min(context.optionsScrollbarLeft() - context.experimentalUnit(8), left + context.optionWidth() - context.experimentalUnit(8));
+        int bgRight = Math.min(context.optionsScrollbarLeft() - context.uiUnit(8), left + context.optionWidth() - context.uiUnit(8));
         int bgBottom = bgTop + rowHeight - 1;
         if (bgRight > bgLeft) {
             graphics.fill(bgLeft, bgTop, bgRight, bgBottom, VillagerInteractionUiUtil.withAlpha(0xFF000000, edgeAlpha * 0.16F));
@@ -227,6 +681,9 @@ final class VillagerInteractionOptionList {
     }
 
     private static int wrappedExtraHeight(Context context, int optionIndex) {
+        if (context.usePixelOptionButtons()) {
+            return 0;
+        }
         float scale = wrappedLayoutScale(context);
         return wrappedOptionLabelLines(context, context.optionLabel(optionIndex), scale).size() > 1
                 ? context.optionHeight()
@@ -271,8 +728,173 @@ final class VillagerInteractionOptionList {
         return hovered ? 0xFFE5E5DE : 0xCFC7C8C5;
     }
 
+    private static String fitPlainText(Font font, String text, int width) {
+        if (text == null || text.isBlank() || font.width(text) <= width) {
+            return text == null ? "" : text;
+        }
+
+        String ellipsis = "...";
+        int ellipsisWidth = font.width(ellipsis);
+        if (width <= ellipsisWidth) {
+            return font.plainSubstrByWidth(text, Math.max(0, width));
+        }
+        return font.plainSubstrByWidth(text, Math.max(0, width - ellipsisWidth)) + ellipsis;
+    }
+
+    static List<String> pixelOptionLabelLines(Context context, int index) {
+        List<String> characterWrapped = pixelOptionLabelLines(
+                context.pixelOptionLabel(index),
+                context.pixelOptionMaxLineCharacters());
+        int leadingWidth = 0;
+        if (context.pixelOptionHasCheckbox(index)) {
+            leadingWidth += context.pixelOptionCheckboxWidth() + context.pixelOptionCheckboxTextGap();
+        }
+        if (context.pixelOptionIconTexture(index) != null) {
+            leadingWidth += context.pixelOptionIconWidth(index) + context.pixelOptionIconTextGap(index);
+        }
+        int availableWidth = Math.max(1, context.optionWidth()
+                - context.optionTextInset()
+                - leadingWidth
+                - context.pixelOptionTextRightPadding());
+        List<String> widthWrapped = new java.util.ArrayList<>();
+        for (String line : characterWrapped) {
+            widthWrapped.addAll(wrapPlainText(context.font(), line, availableWidth, Integer.MAX_VALUE));
+        }
+        return widthWrapped.isEmpty() ? List.of("") : List.copyOf(widthWrapped);
+    }
+
+    static List<String> pixelOptionLabelLines(String label, int maxCharacters) {
+        return wrapPlainTextByCharacters(label, maxCharacters);
+    }
+
+    private static List<String> wrapPlainTextByCharacters(String text, int maxCharacters) {
+        if (text == null || text.isBlank()) {
+            return List.of("");
+        }
+        int max = Math.max(1, maxCharacters);
+        List<String> lines = new java.util.ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        for (String word : text.split(" ")) {
+            if (word.isBlank()) {
+                continue;
+            }
+            if (word.length() > max) {
+                if (!line.isEmpty()) {
+                    lines.add(line.toString());
+                    line.setLength(0);
+                }
+                for (int start = 0; start < word.length(); start += max) {
+                    lines.add(word.substring(start, Math.min(word.length(), start + max)));
+                }
+                continue;
+            }
+
+            String candidate = line.isEmpty() ? word : line + " " + word;
+            if (candidate.length() <= max || line.isEmpty()) {
+                line.setLength(0);
+                line.append(candidate);
+                continue;
+            }
+
+            lines.add(line.toString());
+            line.setLength(0);
+            line.append(word);
+        }
+        if (!line.isEmpty()) {
+            lines.add(line.toString());
+        }
+        return lines.isEmpty() ? List.of(text) : lines;
+    }
+
+    static final class LayoutCache {
+        private long version = Long.MIN_VALUE;
+        private float[] offsets = new float[0];
+        private int[] heights = new int[0];
+        private List<List<String>> pixelLines = List.of();
+        private float contentHeight;
+
+        LayoutCache update(Context context) {
+            if (this.version == context.optionLayoutVersion()) {
+                return this;
+            }
+
+            int count = context.optionCount();
+            this.offsets = new float[count];
+            this.heights = new int[count];
+            List<List<String>> newPixelLines = context.usePixelOptionButtons()
+                    ? new java.util.ArrayList<>(count)
+                    : List.of();
+            int rawGap = context.optionStride() - context.optionHeight();
+            int gap = context.usePixelOptionButtons() ? rawGap : Math.max(0, rawGap);
+            float offset = 0.0F;
+            for (int index = 0; index < count; index++) {
+                this.offsets[index] = offset;
+                int height;
+                if (context.usePixelOptionButtons()) {
+                    List<String> lines = pixelOptionLabelLines(context, index);
+                    newPixelLines.add(lines);
+                    height = context.optionHeight()
+                            + Math.max(0, lines.size() - 1) * context.pixelOptionLineStep();
+                } else {
+                    height = context.optionHeight() + wrappedExtraHeight(context, index);
+                }
+                this.heights[index] = height;
+                offset += height;
+                if (index < count - 1) {
+                    offset += gap;
+                }
+            }
+            this.pixelLines = context.usePixelOptionButtons() ? List.copyOf(newPixelLines) : List.of();
+            this.contentHeight = offset;
+            this.version = context.optionLayoutVersion();
+            return this;
+        }
+
+        float offset(int index) {
+            return index >= 0 && index < this.offsets.length ? this.offsets[index] : 0.0F;
+        }
+
+        int height(int index) {
+            return index >= 0 && index < this.heights.length ? this.heights[index] : 0;
+        }
+
+        float contentHeight() {
+            return this.contentHeight;
+        }
+
+        List<String> pixelLines(int index) {
+            return index >= 0 && index < this.pixelLines.size() ? this.pixelLines.get(index) : List.of("");
+        }
+
+        int firstVisibleIndex(float scroll) {
+            int low = 0;
+            int high = this.offsets.length;
+            while (low < high) {
+                int middle = (low + high) >>> 1;
+                if (this.offsets[middle] + this.heights[middle] <= scroll) {
+                    low = middle + 1;
+                } else {
+                    high = middle;
+                }
+            }
+            return low;
+        }
+
+        int optionAt(float position) {
+            int index = firstVisibleIndex(position);
+            if (index >= this.offsets.length || position < this.offsets[index]) {
+                return -1;
+            }
+            return position < this.offsets[index] + this.heights[index] ? index : -1;
+        }
+    }
+
     interface Context {
         Font font();
+
+        long optionLayoutVersion();
+
+        LayoutCache optionLayout();
 
         int optionsLeft();
 
@@ -306,13 +928,144 @@ final class VillagerInteractionOptionList {
 
         float optionSelectedScale();
 
-        float experimentalTextScale();
+        float textScale();
 
-        int experimentalUnit(int value);
+        int uiUnit(int value);
 
-        int experimentalUnitAtLeast(int value, int minimum);
+        int uiUnitAtLeast(int value, int minimum);
 
         int optionsScrollbarLeft();
+
+        default int guiScissorOffsetY() {
+            return 0;
+        }
+
+        default int guiScissorOffsetX() {
+            return 0;
+        }
+
+        default boolean usePixelOptionButtons() {
+            return false;
+        }
+
+        default ResourceLocation pixelOptionTexture(boolean selected, boolean hovered) {
+            return null;
+        }
+
+        default boolean pixelOptionKeyboardFocusVisible() {
+            return false;
+        }
+
+        default String pixelOptionLabel(int index) {
+            return optionLabel(index);
+        }
+
+        default int pixelOptionTextTop() {
+            return 4;
+        }
+
+        default int pixelOptionTextRightPadding() {
+            return 4;
+        }
+
+        default int pixelOptionMaxLineCharacters() {
+            return 20;
+        }
+
+        default int pixelOptionLineStep() {
+            return 10;
+        }
+
+        default int pixelOptionTextColor(boolean selected, boolean hovered) {
+            return 0xFF2E2418;
+        }
+
+        default boolean pixelOptionHighlightActive(int index) {
+            return true;
+        }
+
+        default ResourceLocation pixelOptionIconTexture(int index) {
+            return null;
+        }
+
+        default int pixelOptionIconWidth(int index) {
+            return 0;
+        }
+
+        default int pixelOptionIconHeight(int index) {
+            return 0;
+        }
+
+        default int pixelOptionIconTextGap(int index) {
+            return 0;
+        }
+
+        default boolean pixelOptionHasCheckbox(int index) {
+            return false;
+        }
+
+        default boolean pixelOptionChecked(int index) {
+            return false;
+        }
+
+        default ResourceLocation pixelOptionCheckboxTexture() {
+            return null;
+        }
+
+        default ResourceLocation pixelOptionCheckmarkTexture() {
+            return null;
+        }
+
+        default int pixelOptionCheckboxWidth() {
+            return 0;
+        }
+
+        default int pixelOptionCheckboxHeight() {
+            return 0;
+        }
+
+        default int pixelOptionCheckboxTextGap() {
+            return 0;
+        }
+
+        default void updatePixelOptionDockScales(int hovered) {
+        }
+
+        default float pixelOptionDockScale(int index) {
+            return 1.0F;
+        }
+
+        default ResourceLocation pixelOptionArrowUpTexture() {
+            return null;
+        }
+
+        default ResourceLocation pixelOptionArrowDownTexture() {
+            return null;
+        }
+
+        default int pixelOptionArrowWidth() {
+            return 9;
+        }
+
+        default int pixelOptionArrowHeight() {
+            return 6;
+        }
+
+        default ResourceLocation pixelOptionSelectionArrowTexture() {
+            return null;
+        }
+
+        default int pixelOptionSelectionArrowWidth() {
+            return 0;
+        }
+
+        default int pixelOptionSelectionArrowHeight() {
+            return 0;
+        }
+
+        default int pixelOptionSelectionArrowGap() {
+            return 0;
+        }
 
         void renderScrollbar(GuiGraphics graphics);
     }

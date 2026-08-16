@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
@@ -54,6 +55,10 @@ public final class VillagerReputationManager {
         addReputation(level, receiver, playerId, amount, ReputationEventType.GOSSIP, receiver.blockPosition());
     }
 
+    public static void addUnlawfulOrderReputation(ServerLevel level, Villager villager, UUID playerId, int amount) {
+        addReputation(level, villager, playerId, amount, ReputationEventType.UNLAWFUL_ORDER, villager.blockPosition());
+    }
+
     public static void addTradeReputation(ServerLevel level, AbstractVillager villager, Player player) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return;
@@ -79,6 +84,7 @@ public final class VillagerReputationManager {
         addVanillaGossip(villager, player.getUUID(), GossipType.TRADING, VillagerRetaliationConfig.TRADE_REPUTATION_GAIN.get());
         handleTierChange(level, villager, player, previousLevel, newLevel);
         VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+        notifyQuestReputationChanged(level, villager, player, entry.reputation());
         syncToTrackingPlayer(level, villager, player.getUUID());
     }
 
@@ -92,6 +98,10 @@ public final class VillagerReputationManager {
 
     public static void addTradePaymentReturnReputation(ServerLevel level, AbstractVillager villager, Player player, int amount) {
         addReputation(level, villager, player.getUUID(), amount, ReputationEventType.TRADE, villager.blockPosition());
+    }
+
+    public static void addHiredWorkReputation(ServerLevel level, AbstractVillager villager, UUID playerId, int amount) {
+        addReputation(level, villager, playerId, amount, ReputationEventType.DIALOGUE, villager.blockPosition());
     }
 
     public static int getReputation(ServerLevel level, AbstractVillager villager, UUID playerId) {
@@ -180,9 +190,31 @@ public final class VillagerReputationManager {
         if (player != null) {
             handleTierChange(level, villager, player, previousLevel, newLevel);
             VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+            notifyQuestReputationChanged(level, villager, player, entry.reputation());
         }
         syncToTrackingPlayer(level, villager, playerId);
         return true;
+    }
+
+    /** Updates an offline or unloaded villager identity without requiring an entity instance. */
+    public static boolean setReputation(
+            ServerLevel level, UUID villagerId, UUID playerId, int reputation, BlockPos lastKnownPosition) {
+        VillagerReputationSavedData data = VillagerReputationSavedData.get(level);
+        VillagerReputationSavedData.ReputationEntry entry = data.getOrCreate(villagerId, playerId);
+        if (entry.reputation() == reputation) {
+            return false;
+        }
+        entry.setReputation(reputation);
+        entry.setLastInteractionGameTime(level.getGameTime());
+        entry.setLastKnownVillagerPosition(lastKnownPosition);
+        data.setDirty();
+        return true;
+    }
+
+    public static int getReputation(ServerLevel level, UUID villagerId, UUID playerId) {
+        VillagerReputationSavedData.ReputationEntry entry =
+                VillagerReputationSavedData.get(level).get(villagerId, playerId);
+        return entry == null ? 0 : entry.reputation();
     }
 
     public static boolean hasStoredReputation(ServerLevel level, UUID villagerId, UUID playerId) {
@@ -222,7 +254,9 @@ public final class VillagerReputationManager {
     }
 
     private static void addReputation(ServerLevel level, AbstractVillager villager, UUID playerId, int amount, ReputationEventType eventType, BlockPos eventPos) {
-        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get() || amount == 0) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || amount == 0
+                || shouldIgnorePartyCrimeReputation(level, villager, playerId, amount, eventType)) {
             return;
         }
 
@@ -251,8 +285,32 @@ public final class VillagerReputationManager {
         if (player != null) {
             handleTierChange(level, villager, player, previousLevel, newLevel);
             VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+            notifyQuestReputationChanged(level, villager, player, entry.reputation());
         }
         syncToTrackingPlayer(level, villager, playerId);
+    }
+
+    private static boolean shouldIgnorePartyCrimeReputation(
+            ServerLevel level,
+            AbstractVillager villager,
+            UUID playerId,
+            int amount,
+            ReputationEventType eventType) {
+        if (amount >= 0
+                || eventType != ReputationEventType.WITNESSED_HIT && eventType != ReputationEventType.GOSSIP) {
+            return false;
+        }
+        return false;
+    }
+
+    private static void notifyQuestReputationChanged(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            int reputation) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            VillagerQuestService.onReputationChanged(level, serverPlayer, villager, reputation);
+        }
     }
 
     private static void handleTierChange(ServerLevel level, AbstractVillager villager, Player player, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
@@ -260,8 +318,11 @@ public final class VillagerReputationManager {
             return;
         }
 
+        ResolvedVillagerNotification notification =
+                resolveTierChangeNotification(level, villager, player, previousLevel, newLevel, false, "");
         notifyTierChange(player, new PendingTierMessage(
-                resolveTierChangeNotification(level, villager, player, previousLevel, newLevel),
+                notification,
+                resolveTierChangeNotification(level, villager, player, previousLevel, newLevel, true, notification.text()),
                 previousLevel,
                 newLevel
         ));
@@ -281,9 +342,12 @@ public final class VillagerReputationManager {
             AbstractVillager villager,
             Player player,
             VillagerReputationLevel previousLevel,
-            VillagerReputationLevel newLevel) {
+            VillagerReputationLevel newLevel,
+            boolean collapsed,
+            String collapsedFallback) {
         String direction = newLevel.isMoreTrustedThan(previousLevel) ? "improved" : "worsened";
-        String trigger = "reputation.tier." + newLevel.name().toLowerCase(java.util.Locale.ROOT) + "." + direction;
+        String trigger = "reputation.tier." + newLevel.name().toLowerCase(java.util.Locale.ROOT) + "." + direction
+                + (collapsed ? ".collapsed" : "");
         String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
         return VillagerNotifications.resolve(
                 level,
@@ -295,9 +359,10 @@ public final class VillagerReputationManager {
                         "villager_possessive", toPossessive(name),
                         "villager_kind", villager instanceof WanderingTrader ? "wandering trader" : "villager",
                         "previous_level", previousLevel.name().toLowerCase(java.util.Locale.ROOT),
-                        "new_level", newLevel.name().toLowerCase(java.util.Locale.ROOT)
+                        "new_level", newLevel.name().toLowerCase(java.util.Locale.ROOT),
+                        "amount", "{amount}"
                 ),
-                resolveTierChangeMessage(villager, previousLevel, newLevel),
+                collapsed ? collapsedFallback : resolveTierChangeMessage(villager, previousLevel, newLevel),
                 VillagerReputationNoticeKind.DEFAULT
         );
     }
@@ -366,37 +431,6 @@ public final class VillagerReputationManager {
         }
     }
 
-    private static String collapsedTierChangeMessage(VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel, int count) {
-        boolean improved = newLevel.isMoreTrustedThan(previousLevel);
-        return count + "x " + (switch (newLevel) {
-            case ROYALTY -> improved
-                    ? "Villagers now treat you like royalty."
-                    : "Villagers no longer see you as royalty.";
-            case REVERED -> improved
-                    ? "Villagers now revere you."
-                    : "Villagers' reverence for you has faded.";
-            case RESPECTED -> improved
-                    ? "Villagers deeply respect you."
-                    : "Villagers' deep respect for you is slipping away.";
-            case TRUSTED -> improved
-                    ? "Villagers now trust you."
-                    : "Villagers' trust in you has weakened.";
-            case NEUTRAL -> "Villagers seem to feel neutral toward you again.";
-            case SUSPICIOUS -> improved
-                    ? "Villagers seem less suspicious of you."
-                    : "Villagers are becoming suspicious of you.";
-            case HOSTILE -> improved
-                    ? "Villagers no longer see you as completely unforgivable."
-                    : "Villagers are becoming hostile toward you.";
-            case DESPISED -> improved
-                    ? "Villagers' hatred for you has softened."
-                    : "Villagers come to despise you.";
-            case FEARED -> improved
-                    ? "Villagers no longer fear you completely."
-                    : "Villagers now fear you.";
-        });
-    }
-
     private static void spawnTierChangeParticles(ServerLevel level, AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
         double x = villager.getX();
         double y = villager.getY() + villager.getBbHeight() + 0.25D;
@@ -443,7 +477,8 @@ public final class VillagerReputationManager {
         LAST_SYNCED_REPUTATION.entrySet().removeIf(entry -> gameTime - entry.getValue().gameTime() > SYNC_CACHE_TTL_TICKS);
     }
 
-    public static void clearSyncState() {
+    public static void clearRuntimeState() {
+        PENDING_TIER_MESSAGES.clear();
         LAST_SYNCED_REPUTATION.clear();
         nextSyncCachePruneGameTime = 0L;
     }
@@ -462,6 +497,7 @@ public final class VillagerReputationManager {
 
     private record PendingTierMessage(
             ResolvedVillagerNotification notification,
+            ResolvedVillagerNotification collapsedTemplate,
             VillagerReputationLevel previousLevel,
             VillagerReputationLevel newLevel) {
         private TierMessageGroupKey groupKey() {
@@ -480,11 +516,11 @@ public final class VillagerReputationManager {
                 return this.notification;
             }
             return new ResolvedVillagerNotification(
-                    collapsedTierChangeMessage(this.previousLevel, this.newLevel, count),
-                    this.notification.textColor(),
-                    this.notification.chatColor(),
-                    this.notification.noticeKind(),
-                    this.notification.worldTextKind()
+                    this.collapsedTemplate.text().replace("{amount}", Integer.toString(count)),
+                    this.collapsedTemplate.textColor(),
+                    this.collapsedTemplate.chatColor(),
+                    this.collapsedTemplate.noticeKind(),
+                    this.collapsedTemplate.worldTextKind()
             );
         }
     }

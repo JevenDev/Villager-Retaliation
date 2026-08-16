@@ -4,10 +4,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -106,16 +109,24 @@ public final class VillagerPacifyPaymentResources {
                 server,
                 PACIFICATION_ROOT,
                 location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
-                (location, resource) -> readFile(location, resource, paymentRules));
+                (location, resource) -> readFile(server, location, resource, paymentRules));
         return new PaymentRules(List.copyOf(paymentRules));
     }
 
-    private static void readFile(ResourceLocation location, Resource resource, List<PaymentRule> paymentRules) {
+    private static void readFile(
+            MinecraftServer server,
+            ResourceLocation location,
+            Resource resource,
+            List<PaymentRule> paymentRules) {
         DatapackResourceLoader.readObject(location, "pacification payment", resource)
-                .ifPresent(root -> readPaymentRules(location, root, paymentRules));
+                .ifPresent(root -> readPaymentRules(server, location, root, paymentRules));
     }
 
-    private static void readPaymentRules(ResourceLocation location, JsonObject root, List<PaymentRule> paymentRules) {
+    private static void readPaymentRules(
+            MinecraftServer server,
+            ResourceLocation location,
+            JsonObject root,
+            List<PaymentRule> paymentRules) {
         JsonArray entries = root.getAsJsonArray("payments");
         if (entries == null) {
             return;
@@ -135,6 +146,23 @@ public final class VillagerPacifyPaymentResources {
                 continue;
             }
 
+            ItemStackPredicate stackPredicate;
+            try {
+                stackPredicate = ItemStackPredicateParser.parse(
+                        server.registryAccess(),
+                        entry,
+                        selectors.stream().map(ItemSelector::item).filter(java.util.Objects::nonNull).toList(),
+                        "components",
+                        "durability",
+                        "custom_data",
+                        "nbt");
+            } catch (IllegalArgumentException exception) {
+                DatapackDiagnostics.warnSkippedEntry(
+                        location, "pacification payment", "payment_" + index, exception.getMessage());
+                index++;
+                continue;
+            }
+
             int count = readInt(entry, "count", -1);
             int minCount = count > 0 ? count : readInt(entry, "min_count", 1);
             int maxCount = count > 0 ? count : readInt(entry, "max_count", minCount);
@@ -150,6 +178,7 @@ public final class VillagerPacifyPaymentResources {
                     readString(entry, "plural_name"),
                     readInt(entry, "priority", 0),
                     VillagerEquipmentCondition.read(entry),
+                    stackPredicate,
                     index
             ));
             index++;
@@ -256,10 +285,12 @@ public final class VillagerPacifyPaymentResources {
             String pluralItemName,
             int priority,
             VillagerEquipmentCondition equipmentCondition,
+            ItemStackPredicate stackPredicate,
             int order) implements Comparable<PaymentRule> {
         private boolean matches(AbstractVillager villager, ItemStack stack) {
             return appliesToProfession(professionOf(villager))
                     && this.equipmentCondition.matches(villager)
+                    && this.stackPredicate.matches(stack)
                     && this.selectors.stream().anyMatch(selector -> selector.matches(stack));
         }
 

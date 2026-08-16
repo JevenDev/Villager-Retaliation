@@ -25,7 +25,17 @@
         "You have a steady step today. Hold onto that.",
         "I have plenty waiting on me, but I <green>enjoyed</green> this.",
         "Thanks for stopping a while. It is good to share the time.",
-        "Until <pulse>next time</pulse>, walk easy and keep a <wave>warm</wave> fire nearby."
+        "Until <pulse>next time</pulse>, walk easy and keep a <wave>warm</wave> fire nearby.",
+        "Take care. It was good talking with you.",
+        "Come by again when you have time.",
+        "I should get back to work, but you are welcome here.",
+        "Safe travels. I hope the road treats you kindly.",
+        "Until next time, then.",
+        "Thanks for stopping to talk.",
+        "I will see you around the village.",
+        "Do not stay away too long.",
+        "Goodbye for now. Let me know if you need anything.",
+        "The day feels a little lighter after that talk."
       ],
       "show_for_babies": false
     },
@@ -45,15 +55,24 @@
         "That is enough chatter for now.",
         "Thank you for the time.",
         "I will be <wave>around</wave>, <i>if</i> you need me.",
-        "Be well until we meet again."
+        "Be well until we meet again.",
+        "That is all for now.",
+        "I should get back to my day.",
+        "We can speak again later.",
+        "Take care on the road.",
+        "I have work waiting for me.",
+        "I will leave you to your business.",
+        "The village does not run itself.",
+        "I think we have covered enough.",
+        "Goodbye for now.",
+        "That will do for today."
       ],
       "show_for_babies": false
     },
     {
       "dispositions": [
         "rude",
-        "hostile",
-        "fearful"
+        "hostile"
       ],
       "id": "global_hostile_closing",
       "lines": [
@@ -66,7 +85,46 @@
         "No more words. Not now.",
         "We can leave this for another time.",
         "I need some distance.",
-        "This is where we stop."
+        "This is where we stop.",
+        "We are done here.",
+        "Leave before my patience runs out.",
+        "That is enough talking for one day.",
+        "Go bother someone who wants your company.",
+        "Keep your distance after you leave.",
+        "I have nothing else to say to you.",
+        "Do not mistake this ending for forgiveness.",
+        "Take your trouble somewhere else.",
+        "The conversation is over. Move along.",
+        "Next time, think before you approach me."
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "fearful"
+      ],
+      "id": "global_feared_closing",
+      "lines": [
+        "Please, let me go now.",
+        "That is all I know. Please do not hurt me.",
+        "I answered you. I am going somewhere safe now.",
+        "Please keep your distance while I leave.",
+        "We are done, yes? <shake>I need to go.</shake>",
+        "I cannot keep talking while I am this afraid.",
+        "Please leave peacefully. That is all I ask.",
+        "I need to get back where other people can see me.",
+        "That is everything. Please let that be enough.",
+        "I am leaving now. Please do not follow me.",
+        "I need to be alone now.",
+        "That is enough. I need some distance.",
+        "I answered you. Let me leave safely.",
+        "Do not follow me after this.",
+        "We are finished, so please lower your hands.",
+        "Please keep the path clear while I go.",
+        "I do not want any more trouble today.",
+        "Let us end this quietly.",
+        "I will feel better once there is space between us.",
+        "That ends our talk for now."
       ],
       "show_for_babies": false
     },
@@ -86,7 +144,17 @@
         "I will be here when you come back.",
         "Goodbye! Do not be gone too long.",
         "Okay, I am going to do something fun now.",
-        "Go on now. I will see you soon!"
+        "Go on now. I will see you soon!",
+        "Bye! Come talk to me again later.",
+        "I have to go before the grown-ups start looking for me.",
+        "Come find me again later!",
+        "That was fun. I am going to tell someone about it.",
+        "I need to get back to playing now.",
+        "Do not forget to wave next time.",
+        "Bye for now! I have important kid things to do.",
+        "I am going inside, but you can visit again.",
+        "Thanks for talking with me.",
+        "I will look for you near the bell later."
       ],
       "show_for_adults": false
     },
@@ -107,7 +175,17 @@
         "I will see you again soon. Maybe.",
         "Alright, that is all.",
         "Time to go do my chores.",
-        "Goodbye! I am heading <wave>over there</wave> now."
+        "Goodbye! I am heading <wave>over there</wave> now.",
+        "Okay. I am going back inside now.",
+        "That is enough talking for me.",
+        "I need to stand closer to the grown-ups.",
+        "Bye. Please do not follow me.",
+        "I am leaving before this gets scary.",
+        "We can talk another time if you are nice.",
+        "I heard you. Now I want some space.",
+        "I am going where I feel safe.",
+        "That is all I wanted to say.",
+        "I need to check where my family is."
       ],
       "show_for_adults": false
     },
@@ -118,7 +196,7 @@
       ],
       "id": "baby_afraid_closing",
       "lines": [
-        "I am going to find someone <pulse>older</pulse>.",
+        "I am finding my family now.",
         "I am going back where it feels safer.",
         "I need to find a grown-up now.",
         "I am heading somewhere safer.",
@@ -127,7 +205,17 @@
         "I do not want to be alone right now.",
         "I am leaving so I can breathe easier.",
         "I will come back when I feel braver.",
-        "<i>I am going where the crowd is.</i>"
+        "<i>I am going where the crowd is.</i>",
+        "I am going inside now.",
+        "Please stay there while I leave.",
+        "I do not want to talk anymore.",
+        "I need a grown-up.",
+        "Do not come any closer.",
+        "I am going somewhere safe.",
+        "We are done. Please let me go.",
+        "I want to be near the golem now.",
+        "I answered you, so please leave me alone.",
+        "I am scared and I need to go."
       ],
       "show_for_adults": false
     }

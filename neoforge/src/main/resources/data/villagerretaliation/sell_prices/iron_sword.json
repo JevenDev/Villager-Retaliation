@@ -1,0 +1,7 @@
+{
+    "enabled":  false,
+    "item":  "minecraft:iron_sword",
+    "item_count":  1,
+    "currency_count":  1,
+    "market_group":  "villagerretaliation:iron"
+}

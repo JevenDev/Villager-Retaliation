@@ -2,33 +2,95 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.QuestScopeKey;
+import com.jvn.villagerretaliation.quest.QuestTriggerContext;
+import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
+import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 
-public sealed interface DialogueCondition permits DialogueCondition.AllOf, DialogueCondition.AnyOf,
+public sealed interface DialogueCondition permits DialogueCondition.Invalid, DialogueCondition.AllOf, DialogueCondition.AnyOf,
         DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
-        DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.Weather, DialogueCondition.Time {
+        DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact,
+        DialogueCondition.SelectedChoice, DialogueCondition.StageHistory,
+        DialogueCondition.PlayerItem, DialogueCondition.VillagerEquipment,
+        DialogueCondition.Biome, DialogueCondition.Dimension, DialogueCondition.Advancement,
+        DialogueCondition.Scoreboard, DialogueCondition.NearbyEntity, DialogueCondition.Village,
+        DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time,
+        DialogueCondition.TriggerPayload {
 
     boolean matches(DialogueContext context);
 
+    default boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+        return matches(context);
+    }
+
     int specificityScore();
+
+    static boolean matchesAll(DialogueContext context, List<DialogueCondition> conditions) {
+        return ConditionRegistry.matchesAll(context, conditions);
+    }
+
+    static boolean matchesAll(
+            DialogueContext context,
+            QuestTriggerContext triggerContext,
+            List<DialogueCondition> conditions) {
+        return ConditionRegistry.matchesAll(context, triggerContext, conditions);
+    }
+
+    static ConditionEvaluationTrace trace(DialogueContext context, DialogueCondition condition) {
+        return ConditionRegistry.trace(context, condition);
+    }
+
+    static Optional<ConditionEvaluationTrace> firstUnmatched(
+            DialogueContext context,
+            List<DialogueCondition> conditions) {
+        return ConditionRegistry.traceAll(context, conditions).stream()
+                .map(ConditionEvaluationTrace::firstUnmatched)
+                .flatMap(Optional::stream)
+                .findFirst();
+    }
+
+    static List<ConditionTypeDescriptor> descriptors() {
+        return ConditionRegistry.descriptors();
+    }
+
+    static String canonicalTypeId(String type) {
+        return ConditionRegistry.canonicalTypeId(type);
+    }
+
+    static String canonicalTypeId(DialogueCondition condition) {
+        return ConditionRegistry.canonicalTypeId(condition);
+    }
+
+    static Set<ConditionCapability> capabilities(DialogueCondition condition) {
+        return ConditionRegistry.capabilities(condition);
+    }
 
     static List<DialogueCondition> readList(ResourceLocation location, String context, JsonObject entry) {
         return readList(location, context, entry, null);
@@ -73,7 +135,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         }
         if (!element.isJsonArray()) {
             warnInvalid(location, context, "conditions must be an array of condition objects.");
-            return List.of();
+            return List.of(new Invalid("conditions must be an array"));
         }
 
         List<DialogueCondition> conditions = new ArrayList<>();
@@ -92,32 +154,12 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             ResourceLocation defaultQuestId) {
         if (element == null || !element.isJsonObject()) {
             warnInvalid(location, context, "condition must be an object.");
-            return Optional.empty();
+            return Optional.of(new Invalid("condition must be an object"));
         }
 
         JsonObject condition = element.getAsJsonObject();
-        String type = readString(condition, "type").toLowerCase(Locale.ROOT);
-        return switch (type) {
-            case "all", "all_of", "and" -> readChildren(location, context, condition, defaultQuestId).map(AllOf::new);
-            case "any", "any_of", "or" -> readChildren(location, context, condition, defaultQuestId).map(AnyOf::new);
-            case "not" -> read(location, context + ".condition", condition.get("condition"), defaultQuestId).map(Not::new);
-            case "reputation" -> Optional.of(readReputation(condition));
-            case "memory" -> readMemory(location, context, condition);
-            case "family" -> Optional.of(readFamily(condition));
-            case "relationship" -> Optional.of(readRelationship(condition));
-            case "recruitment_memory" -> Optional.of(readRecruitmentMemory(condition));
-            case "villager_age" -> Optional.of(readVillagerAge(condition));
-            case "social_attribute", "attribute", "stat" -> readSocialAttribute(location, context, condition);
-            case "skill" -> readSkill(location, context, condition);
-            case "villager_level", "trade_level" -> readVillagerLevel(location, context, condition);
-            case "quest" -> readQuest(location, context, condition, defaultQuestId);
-            case "weather" -> readWeather(condition);
-            case "time", "time_of_day" -> readTime(condition);
-            default -> {
-                warnInvalid(location, context, "unknown condition type \"" + type + "\".");
-                yield Optional.empty();
-            }
-        };
+        return ConditionRegistry.read(location, context, condition, defaultQuestId)
+                .or(() -> Optional.of(new Invalid("condition could not be parsed")));
     }
 
     private static Optional<List<DialogueCondition>> readChildren(
@@ -341,6 +383,137 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         return Optional.of(new Quest(questId, states));
     }
 
+    private static Optional<DialogueCondition> readQuestFact(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = readQuestReference(location, context, condition, defaultQuestId);
+        QuestFactScope scope = QuestFactScope.bySerializedName(
+                readString(condition, "scope"),
+                questId == null ? QuestFactScope.PLAYER : QuestFactScope.QUEST);
+        Set<ResourceLocation> tags = readResourceLocationSet(location, context, condition, "tag", "tags", "fact_tag", "quest_tag");
+        String key = firstNonBlank(
+                readString(condition, "key"),
+                firstNonBlank(
+                        readString(condition, "variable"),
+                        firstNonBlank(readString(condition, "counter"), readString(condition, "fact"))));
+        Set<String> stageValues = readRawStringSet(condition, "stage", "stages");
+        if (key.isBlank() && !stageValues.isEmpty()) {
+            key = "stage";
+        }
+        LinkedHashSet<String> rawValues = new LinkedHashSet<>(readRawStringSet(condition, "value", "values"));
+        rawValues.addAll(stageValues);
+        Set<String> values = Set.copyOf(rawValues);
+        Integer min = readNullableInt(condition, "min");
+        Integer max = readNullableInt(condition, "max");
+        if (tags.isEmpty() && key.isBlank()) {
+            warnInvalid(location, context, "quest_fact condition must define tag, tags, key, variable, counter, stage, or stages.");
+            return Optional.empty();
+        }
+        if (scope == QuestFactScope.QUEST && questId == null) {
+            warnInvalid(location, context, "quest_fact condition with quest scope must define quest or have a default quest.");
+            return Optional.empty();
+        }
+        return Optional.of(new QuestFact(scope, questId, tags, key, values, min, max));
+    }
+
+    private static Optional<DialogueCondition> readSelectedChoice(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = readQuestReference(location, context, condition, defaultQuestId);
+        if (questId == null) {
+            warnInvalid(location, context, "selected_choice condition must define quest or have a default quest.");
+            return Optional.empty();
+        }
+        String responseId = firstNonBlank(
+                readString(condition, "response"),
+                firstNonBlank(readString(condition, "response_id"), readString(condition, "choice")));
+        if (responseId.isBlank()) {
+            warnInvalid(location, context, "selected_choice condition must define response, response_id, or choice.");
+            return Optional.empty();
+        }
+        return Optional.of(new SelectedChoice(
+                questId,
+                firstNonBlank(readString(condition, "scene_path"), readString(condition, "scene")),
+                responseId,
+                firstNonBlank(readString(condition, "prior_stage"), readString(condition, "from_stage")),
+                firstNonBlank(readString(condition, "next_stage"), readString(condition, "to_stage"))));
+    }
+
+    private static Optional<DialogueCondition> readStageHistory(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = readQuestReference(location, context, condition, defaultQuestId);
+        if (questId == null) {
+            warnInvalid(location, context, "stage_history condition must define quest or have a default quest.");
+            return Optional.empty();
+        }
+        String stage = readString(condition, "stage");
+        String priorStage = firstNonBlank(readString(condition, "prior_stage"), readString(condition, "from_stage"));
+        String nextStage = firstNonBlank(readString(condition, "next_stage"), readString(condition, "to_stage"));
+        if (stage.isBlank() && priorStage.isBlank() && nextStage.isBlank()) {
+            warnInvalid(location, context, "stage_history condition must define stage, prior_stage, from_stage, next_stage, or to_stage.");
+            return Optional.empty();
+        }
+        return Optional.of(new StageHistory(questId, stage, priorStage, nextStage));
+    }
+
+    private static Optional<DialogueCondition> readMood(ResourceLocation location, String context, JsonObject condition) {
+        EnumSet<VillagerMood> moods = EnumSet.noneOf(VillagerMood.class);
+        for (String value : readStringList(condition, "mood")) {
+            readEnum(value, VillagerMood.class).ifPresent(moods::add);
+        }
+        for (String value : readStringList(condition, "moods")) {
+            readEnum(value, VillagerMood.class).ifPresent(moods::add);
+        }
+        for (String value : readStringList(condition, "state")) {
+            readEnum(value, VillagerMood.class).ifPresent(moods::add);
+        }
+        for (String value : readStringList(condition, "states")) {
+            readEnum(value, VillagerMood.class).ifPresent(moods::add);
+        }
+        if (moods.isEmpty()) {
+            warnInvalid(location, context, "mood condition must define mood, moods, state, or states.");
+            return Optional.empty();
+        }
+        Integer min = readNullableInt(condition, "min");
+        if (min == null) {
+            min = readNullableInt(condition, "min_intensity");
+        }
+        if (min == null) {
+            min = readNullableInt(condition, "min_mood_intensity");
+        }
+        Integer max = readNullableInt(condition, "max");
+        if (max == null) {
+            max = readNullableInt(condition, "max_intensity");
+        }
+        if (max == null) {
+            max = readNullableInt(condition, "max_mood_intensity");
+        }
+        return Optional.of(new Mood(Set.copyOf(moods), min, max));
+    }
+
+    private static ResourceLocation readQuestReference(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = defaultQuestId;
+        for (String key : List.of("quest", "quest_id")) {
+            String value = readString(condition, key);
+            if (!value.isBlank()) {
+                questId = QuestIds.parse(value, location);
+                break;
+            }
+        }
+        return questId;
+    }
+
     private static Optional<DialogueCondition> readWeather(JsonObject condition) {
         EnumSet<DialogueContext.WeatherState> states = EnumSet.noneOf(DialogueContext.WeatherState.class);
         for (String value : readStringList(condition, "state")) {
@@ -373,6 +546,166 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             readEnum(value, DialogueContext.TimeOfDay.class).ifPresent(times::add);
         }
         return times.isEmpty() ? Optional.empty() : Optional.of(new Time(Set.copyOf(times)));
+    }
+
+    private static Optional<DialogueCondition> readPlayerItem(
+            ResourceLocation location, String context, JsonObject condition) {
+        JsonObject normalized = condition.deepCopy();
+        copyAlias(normalized, "item", "player_item");
+        copyAlias(normalized, "items", "player_items");
+        copyAlias(normalized, "item_tag", "player_item_tag");
+        copyAlias(normalized, "item_tags", "player_item_tags");
+        copyAlias(normalized, "slot", "player_item_slot");
+        copyAlias(normalized, "slots", "player_item_slots");
+        copyAlias(normalized, "enchantment", "player_item_enchantment");
+        copyAlias(normalized, "enchantments", "player_item_enchantments");
+        VillagerPlayerItemCondition parsed = VillagerPlayerItemCondition.read(normalized);
+        if (parsed.isEmpty()) {
+            warnInvalid(location, context, "player_item condition must define an item predicate.");
+            return Optional.empty();
+        }
+        return Optional.of(new PlayerItem(parsed));
+    }
+
+    private static Optional<DialogueCondition> readVillagerEquipment(
+            ResourceLocation location, String context, JsonObject condition) {
+        Boolean armed = readNullableBoolean(condition, "armed");
+        Boolean unarmed = readNullableBoolean(condition, "unarmed");
+        VillagerEquipmentCondition parsed = armed != null || unarmed != null
+                ? new VillagerEquipmentCondition(Boolean.TRUE.equals(unarmed) || Boolean.FALSE.equals(armed),
+                        Boolean.TRUE.equals(armed) || Boolean.FALSE.equals(unarmed))
+                : VillagerEquipmentCondition.read(condition);
+        if (parsed.isEmpty()) {
+            warnInvalid(location, context, "villager_equipment condition must define armed or unarmed.");
+            return Optional.empty();
+        }
+        return Optional.of(new VillagerEquipment(parsed));
+    }
+
+    private static Optional<DialogueCondition> readBiome(
+            ResourceLocation location, String context, JsonObject condition) {
+        Set<ResourceLocation> biomes = readResourceLocationSet(location, context, condition, "biome", "biomes");
+        Set<ResourceLocation> tags = readResourceLocationSet(
+                location, context, condition, "tag", "tags", "biome_tag", "biome_tags");
+        if (biomes.isEmpty() && tags.isEmpty()) {
+            warnInvalid(location, context, "biome condition must define biome, biomes, biome_tag, or biome_tags.");
+            return Optional.empty();
+        }
+        return Optional.of(new Biome(biomes, tags));
+    }
+
+    private static Optional<DialogueCondition> readDimension(
+            ResourceLocation location, String context, JsonObject condition) {
+        Set<ResourceLocation> dimensions = readResourceLocationSet(
+                location, context, condition, "dimension", "dimensions", "value", "values");
+        if (dimensions.isEmpty()) {
+            warnInvalid(location, context, "dimension condition must define dimension or dimensions.");
+            return Optional.empty();
+        }
+        return Optional.of(new Dimension(dimensions));
+    }
+
+    private static Optional<DialogueCondition> readAdvancement(
+            ResourceLocation location, String context, JsonObject condition) {
+        Set<ResourceLocation> advancements = readResourceLocationSet(
+                location, context, condition, "advancement", "advancements", "id", "ids");
+        if (advancements.isEmpty()) {
+            warnInvalid(location, context, "advancement condition must define advancement or advancements.");
+            return Optional.empty();
+        }
+        return Optional.of(new Advancement(advancements, readBoolean(condition, "all", true)));
+    }
+
+    private static Optional<DialogueCondition> readScoreboard(
+            ResourceLocation location, String context, JsonObject condition) {
+        String objective = firstNonBlank(readString(condition, "objective"), readString(condition, "score"));
+        if (objective.isBlank()) {
+            warnInvalid(location, context, "scoreboard condition must define objective.");
+            return Optional.empty();
+        }
+        Integer exact = readNullableInt(condition, "value");
+        Integer min = exact == null ? readNullableInt(condition, "min") : exact;
+        Integer max = exact == null ? readNullableInt(condition, "max") : exact;
+        return Optional.of(new Scoreboard(objective, min, max));
+    }
+
+    private static Optional<DialogueCondition> readNearbyEntity(
+            ResourceLocation location, String context, JsonObject condition) {
+        Set<ResourceLocation> types = readResourceLocationSet(
+                location, context, condition, "entity", "entities", "entity_type", "entity_types");
+        Set<ResourceLocation> tags = readResourceLocationSet(
+                location, context, condition, "entity_tag", "entity_tags");
+        if (types.isEmpty() && tags.isEmpty()) {
+            warnInvalid(location, context, "nearby_entity condition must define entity types or tags.");
+            return Optional.empty();
+        }
+        Integer radiusValue = readNullableInt(condition, "radius");
+        double radius = Math.max(1.0D, Math.min(128.0D, radiusValue == null ? 16.0D : radiusValue.doubleValue()));
+        Integer min = readNullableInt(condition, "min_count");
+        Integer max = readNullableInt(condition, "max_count");
+        String origin = readString(condition, "origin").toLowerCase(Locale.ROOT);
+        return Optional.of(new NearbyEntity(types, tags, radius, min == null ? 1 : Math.max(0, min), max,
+                "player".equals(origin)));
+    }
+
+    private static Village readVillage(JsonObject condition) {
+        Set<String> keys = readNormalizedStrings(condition, "key", "keys", "village", "villages");
+        return new Village(readBoolean(condition, "present", true), keys);
+    }
+
+    private static TriggerPayload readTriggerPayload(JsonObject condition) {
+        Set<String> events = readNormalizedStrings(condition, "event", "events");
+        Map<String, Set<String>> any = readPayloadQuery(condition, "any");
+        Map<String, Set<String>> all = new LinkedHashMap<>(readPayloadQuery(condition, "all"));
+        Map<String, Set<String>> not = readPayloadQuery(condition, "not");
+        for (String key : List.of(
+                "mob", "entity", "block", "item", "gift_reaction", "event_villager",
+                "event_villager_type", "trade_cost_a", "trade_cost_b", "trade_result",
+                "criterion", "memory_tag")) {
+            Set<String> values = readNormalizedStrings(condition, key, key + "s");
+            if (!values.isEmpty()) {
+                all.put(key, values);
+            }
+        }
+        JsonObject data = readObject(condition, "data");
+        if (data != null) {
+            for (Map.Entry<String, JsonElement> entry : data.entrySet()) {
+                if (entry.getValue().isJsonPrimitive()) {
+                    all.put("criterion_" + normalizePayloadKey(entry.getKey()),
+                            Set.of(entry.getValue().getAsString().toLowerCase(Locale.ROOT)));
+                }
+            }
+        }
+        return new TriggerPayload(events, any, all, not,
+                readNullableInt(condition, "min_reputation"),
+                readNullableInt(condition, "max_reputation"));
+    }
+
+    private static Map<String, Set<String>> readPayloadQuery(JsonObject condition, String key) {
+        JsonObject object = readObject(condition, key);
+        if (object == null) {
+            return Map.of();
+        }
+        Map<String, Set<String>> result = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            JsonObject wrapper = new JsonObject();
+            wrapper.add("values", entry.getValue());
+            Set<String> values = readNormalizedStrings(wrapper, "values");
+            if (!values.isEmpty()) {
+                result.put(normalizePayloadKey(entry.getKey()), values);
+            }
+        }
+        return Map.copyOf(result);
+    }
+
+    private static String normalizePayloadKey(String key) {
+        return key == null ? "" : key.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_.-]+", "_");
+    }
+
+    private static void copyAlias(JsonObject object, String alias, String canonical) {
+        if (!object.has(canonical) && object.has(alias)) {
+            object.add(canonical, object.get(alias).deepCopy());
+        }
     }
 
     private static void warnInvalid(ResourceLocation location, String context, String message) {
@@ -426,6 +759,41 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             }
         }
         return Set.copyOf(values);
+    }
+
+    private static Set<String> readRawStringSet(JsonObject entry, String... keys) {
+        java.util.LinkedHashSet<String> values = new java.util.LinkedHashSet<>();
+        for (String key : keys) {
+            for (String value : readStringList(entry, key)) {
+                if (!value.isBlank()) {
+                    values.add(value);
+                }
+            }
+        }
+        return Set.copyOf(values);
+    }
+
+    private static Set<ResourceLocation> readResourceLocationSet(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            String... keys) {
+        java.util.LinkedHashSet<ResourceLocation> values = new java.util.LinkedHashSet<>();
+        for (String key : keys) {
+            for (String value : readStringList(entry, key)) {
+                ResourceLocation tagId = ResourceLocation.tryParse(value);
+                if (tagId == null) {
+                    warnInvalid(location, context, "quest fact tag \"" + value + "\" is not a valid resource location.");
+                } else {
+                    values.add(tagId);
+                }
+            }
+        }
+        return Set.copyOf(values);
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        return first == null || first.isBlank() ? second : first;
     }
 
     private static Set<String> readBiomeKeys(JsonObject entry, String... keys) {
@@ -513,10 +881,503 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         }
     }
 
+    enum ConditionCapability {
+        PLAYER_LIVE,
+        PROVIDER_LIVE,
+        PROVIDER_SNAPSHOT,
+        TRIGGER_PAYLOAD,
+        VILLAGE_KNOWN,
+        WORLD_KNOWN
+    }
+
+    enum ConditionOutcome {
+        MATCHED,
+        UNMET,
+        UNKNOWN
+    }
+
+    record ConditionTypeDescriptor(
+            String id,
+            Set<String> aliases,
+            Set<ConditionCapability> capabilities,
+            Class<? extends DialogueCondition> implementationType
+    ) {
+        public ConditionTypeDescriptor {
+            id = normalizeType(id);
+            aliases = aliases == null ? Set.of() : Set.copyOf(aliases);
+            capabilities = capabilities == null ? Set.of() : Set.copyOf(capabilities);
+        }
+    }
+
+    record ConditionEvaluationTrace(
+            String canonicalTypeId,
+            ConditionOutcome outcome,
+            String message,
+            List<ConditionEvaluationTrace> children
+    ) {
+        public ConditionEvaluationTrace {
+            canonicalTypeId = canonicalTypeId == null || canonicalTypeId.isBlank() ? "unknown" : canonicalTypeId;
+            outcome = outcome == null ? ConditionOutcome.UNKNOWN : outcome;
+            message = message == null ? "" : message;
+            children = children == null ? List.of() : List.copyOf(children);
+        }
+
+        public boolean matched() {
+            return this.outcome == ConditionOutcome.MATCHED;
+        }
+
+        public Optional<ConditionEvaluationTrace> firstUnmatched() {
+            if (this.outcome != ConditionOutcome.MATCHED && this.children.isEmpty()) {
+                return Optional.of(this);
+            }
+            for (ConditionEvaluationTrace child : this.children) {
+                Optional<ConditionEvaluationTrace> failed = child.firstUnmatched();
+                if (failed.isPresent()) {
+                    return failed;
+                }
+            }
+            return this.outcome == ConditionOutcome.MATCHED ? Optional.empty() : Optional.of(this);
+        }
+    }
+
+    final class ConditionRegistry {
+        private static final List<ConditionTypeRegistration> REGISTRATIONS = List.of(
+                register(
+                        "all",
+                        AllOf.class,
+                        aliases("all_of", "and"),
+                        Set.of(),
+                        (location, context, condition, defaultQuestId) ->
+                                readChildren(location, context, condition, defaultQuestId).map(AllOf::new)),
+                register(
+                        "any",
+                        AnyOf.class,
+                        aliases("any_of", "or"),
+                        Set.of(),
+                        (location, context, condition, defaultQuestId) ->
+                                readChildren(location, context, condition, defaultQuestId).map(AnyOf::new)),
+                register(
+                        "not",
+                        Not.class,
+                        Set.of(),
+                        Set.of(),
+                        (location, context, condition, defaultQuestId) ->
+                                DialogueCondition.read(location, context + ".condition", condition.get("condition"), defaultQuestId).map(Not::new)),
+                register(
+                        "reputation",
+                        Reputation.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readReputation(condition))),
+                register(
+                        "memory",
+                        Memory.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE,
+                                ConditionCapability.PROVIDER_SNAPSHOT, ConditionCapability.VILLAGE_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readMemory(location, context, condition)),
+                register(
+                        "family",
+                        Family.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readFamily(condition))),
+                register(
+                        "relationship",
+                        Relationship.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readRelationship(condition))),
+                register(
+                        "recruitment_memory",
+                        RecruitmentMemory.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readRecruitmentMemory(condition))),
+                register(
+                        "villager_age",
+                        VillagerAge.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readVillagerAge(condition))),
+                register(
+                        "social_attribute",
+                        SocialAttribute.class,
+                        aliases("attribute", "stat"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> readSocialAttribute(location, context, condition)),
+                register(
+                        "skill",
+                        Skill.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> readSkill(location, context, condition)),
+                register(
+                        "villager_level",
+                        VillagerLevel.class,
+                        aliases("trade_level"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> readVillagerLevel(location, context, condition)),
+                register(
+                        "quest",
+                        Quest.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        DialogueCondition::readQuest),
+                register(
+                        "quest_fact",
+                        QuestFact.class,
+                        aliases("quest_tag", "quest_variable", "quest_counter", "quest_stage", "fact", "stage"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN,
+                                ConditionCapability.PROVIDER_SNAPSHOT, ConditionCapability.VILLAGE_KNOWN),
+                        DialogueCondition::readQuestFact),
+                register(
+                        "selected_choice",
+                        SelectedChoice.class,
+                        aliases("choice_selected", "response_selected", "quest_choice_selected"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        DialogueCondition::readSelectedChoice),
+                register(
+                        "stage_history",
+                        StageHistory.class,
+                        aliases("quest_stage_history", "visited_stage"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        DialogueCondition::readStageHistory),
+                register(
+                        "player_item",
+                        PlayerItem.class,
+                        aliases("item", "held_item"),
+                        capabilities(ConditionCapability.PLAYER_LIVE),
+                        (location, context, condition, defaultQuestId) -> readPlayerItem(location, context, condition)),
+                register(
+                        "villager_equipment",
+                        VillagerEquipment.class,
+                        aliases("equipment", "armed"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE),
+                        (location, context, condition, defaultQuestId) -> readVillagerEquipment(location, context, condition)),
+                register(
+                        "biome",
+                        Biome.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readBiome(location, context, condition)),
+                register(
+                        "dimension",
+                        Dimension.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readDimension(location, context, condition)),
+                register(
+                        "advancement",
+                        Advancement.class,
+                        aliases("advancements"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readAdvancement(location, context, condition)),
+                register(
+                        "scoreboard",
+                        Scoreboard.class,
+                        aliases("score"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readScoreboard(location, context, condition)),
+                register(
+                        "nearby_entity",
+                        NearbyEntity.class,
+                        aliases("nearby_entities", "entity_nearby"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readNearbyEntity(location, context, condition)),
+                register(
+                        "village",
+                        Village.class,
+                        aliases("village_presence"),
+                        capabilities(ConditionCapability.VILLAGE_KNOWN),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readVillage(condition))),
+                register(
+                        "trigger_payload",
+                        TriggerPayload.class,
+                        aliases("event_payload", "quest_trigger_payload"),
+                        capabilities(ConditionCapability.TRIGGER_PAYLOAD),
+                        (location, context, condition, defaultQuestId) ->
+                                Optional.of(readTriggerPayload(condition))),
+                register(
+                        "mood",
+                        Mood.class,
+                        aliases("villager_mood"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> readMood(location, context, condition)),
+                register(
+                        "weather",
+                        Weather.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readWeather(condition)),
+                register(
+                        "time",
+                        Time.class,
+                        aliases("time_of_day"),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readTime(condition))
+        );
+        private static final Map<String, ConditionTypeRegistration> BY_ALIAS = registrationsByAlias();
+        private static final Map<Class<? extends DialogueCondition>, ConditionTypeRegistration> BY_IMPLEMENTATION =
+                registrationsByImplementation();
+
+        private ConditionRegistry() {
+        }
+
+        static Optional<DialogueCondition> read(
+                ResourceLocation location,
+                String context,
+                JsonObject condition,
+                ResourceLocation defaultQuestId) {
+            String type = normalizeType(readString(condition, "type"));
+            ConditionTypeRegistration registration = BY_ALIAS.get(type);
+            if (registration == null) {
+                warnInvalid(location, context, "unknown condition type \"" + type + "\".");
+                return Optional.empty();
+            }
+            return registration.reader().read(location, context, condition, defaultQuestId);
+        }
+
+        static boolean matchesAll(DialogueContext context, List<DialogueCondition> conditions) {
+            return matchesAll(context, null, conditions);
+        }
+
+        static boolean matchesAll(
+                DialogueContext context,
+                QuestTriggerContext triggerContext,
+                List<DialogueCondition> conditions) {
+            if (conditions == null || conditions.isEmpty()) {
+                return true;
+            }
+            for (DialogueCondition condition : conditions) {
+                if (condition == null || !condition.matches(context, triggerContext)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        static ConditionEvaluationTrace trace(DialogueContext context, DialogueCondition condition) {
+            if (condition == null) {
+                return new ConditionEvaluationTrace("unknown", ConditionOutcome.UNKNOWN, "condition is missing", List.of());
+            }
+            if (condition instanceof Invalid invalid) {
+                return new ConditionEvaluationTrace("invalid", ConditionOutcome.UNMET, invalid.reason(), List.of());
+            }
+            if (condition instanceof AllOf allOf) {
+                List<ConditionEvaluationTrace> children = traceAll(context, allOf.conditions());
+                return new ConditionEvaluationTrace("all", allOutcome(children), allMessage(children), children);
+            }
+            if (condition instanceof AnyOf anyOf) {
+                List<ConditionEvaluationTrace> children = traceAll(context, anyOf.conditions());
+                return new ConditionEvaluationTrace("any", anyOutcome(children), anyMessage(children), children);
+            }
+            if (condition instanceof Not not) {
+                ConditionEvaluationTrace child = trace(context, not.condition());
+                ConditionOutcome outcome = switch (child.outcome()) {
+                    case MATCHED -> ConditionOutcome.UNMET;
+                    case UNMET -> ConditionOutcome.MATCHED;
+                    case UNKNOWN -> ConditionOutcome.UNKNOWN;
+                };
+                return new ConditionEvaluationTrace("not", outcome, "negated " + child.outcome().name().toLowerCase(Locale.ROOT), List.of(child));
+            }
+            String id = canonicalTypeId(condition);
+            if (context == null) {
+                return new ConditionEvaluationTrace(id, ConditionOutcome.UNKNOWN, "live context unavailable", List.of());
+            }
+            boolean matched = condition.matches(context);
+            return new ConditionEvaluationTrace(
+                    id,
+                    matched ? ConditionOutcome.MATCHED : ConditionOutcome.UNMET,
+                    matched ? "matched" : "condition returned false",
+                    List.of());
+        }
+
+        static List<ConditionEvaluationTrace> traceAll(DialogueContext context, List<DialogueCondition> conditions) {
+            if (conditions == null || conditions.isEmpty()) {
+                return List.of();
+            }
+            List<ConditionEvaluationTrace> traces = new ArrayList<>();
+            for (DialogueCondition condition : conditions) {
+                traces.add(trace(context, condition));
+            }
+            return List.copyOf(traces);
+        }
+
+        static List<ConditionTypeDescriptor> descriptors() {
+            return REGISTRATIONS.stream()
+                    .map(ConditionTypeRegistration::descriptor)
+                    .toList();
+        }
+
+        static String canonicalTypeId(String type) {
+            String normalized = normalizeType(type);
+            ConditionTypeRegistration registration = BY_ALIAS.get(normalized);
+            return registration == null ? normalized : registration.descriptor().id();
+        }
+
+        static String canonicalTypeId(DialogueCondition condition) {
+            if (condition == null) {
+                return "unknown";
+            }
+            ConditionTypeRegistration registration = BY_IMPLEMENTATION.get(condition.getClass());
+            if (registration != null) {
+                return registration.descriptor().id();
+            }
+            return normalizeType(condition.getClass().getSimpleName());
+        }
+
+        static Set<ConditionCapability> capabilities(DialogueCondition condition) {
+            if (condition == null) {
+                return Set.of();
+            }
+            if (condition instanceof AllOf allOf) {
+                return childCapabilities(allOf.conditions());
+            }
+            if (condition instanceof AnyOf anyOf) {
+                return childCapabilities(anyOf.conditions());
+            }
+            if (condition instanceof Not not) {
+                return capabilities(not.condition());
+            }
+            ConditionTypeRegistration registration = BY_IMPLEMENTATION.get(condition.getClass());
+            return registration == null ? Set.of() : registration.descriptor().capabilities();
+        }
+
+        private static Set<ConditionCapability> childCapabilities(List<DialogueCondition> conditions) {
+            LinkedHashSet<ConditionCapability> result = new LinkedHashSet<>();
+            if (conditions != null) {
+                for (DialogueCondition child : conditions) {
+                    result.addAll(capabilities(child));
+                }
+            }
+            return Set.copyOf(result);
+        }
+
+        private static ConditionOutcome allOutcome(List<ConditionEvaluationTrace> children) {
+            boolean sawUnknown = false;
+            for (ConditionEvaluationTrace child : children) {
+                if (child.outcome() == ConditionOutcome.UNMET) {
+                    return ConditionOutcome.UNMET;
+                }
+                sawUnknown |= child.outcome() == ConditionOutcome.UNKNOWN;
+            }
+            return sawUnknown ? ConditionOutcome.UNKNOWN : ConditionOutcome.MATCHED;
+        }
+
+        private static String allMessage(List<ConditionEvaluationTrace> children) {
+            return allOutcome(children) == ConditionOutcome.MATCHED ? "all conditions matched" : "one or more conditions did not match";
+        }
+
+        private static ConditionOutcome anyOutcome(List<ConditionEvaluationTrace> children) {
+            boolean sawUnknown = false;
+            for (ConditionEvaluationTrace child : children) {
+                if (child.outcome() == ConditionOutcome.MATCHED) {
+                    return ConditionOutcome.MATCHED;
+                }
+                sawUnknown |= child.outcome() == ConditionOutcome.UNKNOWN;
+            }
+            return sawUnknown ? ConditionOutcome.UNKNOWN : ConditionOutcome.UNMET;
+        }
+
+        private static String anyMessage(List<ConditionEvaluationTrace> children) {
+            return anyOutcome(children) == ConditionOutcome.MATCHED ? "at least one condition matched" : "no conditions matched";
+        }
+
+        private static Map<String, ConditionTypeRegistration> registrationsByAlias() {
+            Map<String, ConditionTypeRegistration> byAlias = new LinkedHashMap<>();
+            for (ConditionTypeRegistration registration : REGISTRATIONS) {
+                byAlias.put(registration.descriptor().id(), registration);
+                for (String alias : registration.descriptor().aliases()) {
+                    byAlias.put(normalizeType(alias), registration);
+                }
+            }
+            return Map.copyOf(byAlias);
+        }
+
+        private static Map<Class<? extends DialogueCondition>, ConditionTypeRegistration> registrationsByImplementation() {
+            Map<Class<? extends DialogueCondition>, ConditionTypeRegistration> byImplementation = new HashMap<>();
+            for (ConditionTypeRegistration registration : REGISTRATIONS) {
+                byImplementation.put(registration.descriptor().implementationType(), registration);
+            }
+            return Map.copyOf(byImplementation);
+        }
+
+        private static ConditionTypeRegistration register(
+                String id,
+                Class<? extends DialogueCondition> implementationType,
+                Set<String> aliases,
+                Set<ConditionCapability> capabilities,
+                ConditionReader reader) {
+            return new ConditionTypeRegistration(
+                    new ConditionTypeDescriptor(id, aliases, capabilities, implementationType),
+                    reader);
+        }
+
+        private static Set<String> aliases(String... aliases) {
+            LinkedHashSet<String> result = new LinkedHashSet<>();
+            if (aliases != null) {
+                for (String alias : aliases) {
+                    String normalized = normalizeType(alias);
+                    if (!normalized.isBlank()) {
+                        result.add(normalized);
+                    }
+                }
+            }
+            return Set.copyOf(result);
+        }
+
+        private static Set<ConditionCapability> capabilities(ConditionCapability... capabilities) {
+            return capabilities == null || capabilities.length == 0
+                    ? Set.of()
+                    : Set.of(capabilities);
+        }
+
+        private record ConditionTypeRegistration(
+                ConditionTypeDescriptor descriptor,
+                ConditionReader reader
+        ) {
+        }
+
+        @FunctionalInterface
+        private interface ConditionReader {
+            Optional<DialogueCondition> read(
+                    ResourceLocation location,
+                    String context,
+                    JsonObject condition,
+                    ResourceLocation defaultQuestId);
+        }
+    }
+
+    private static String normalizeType(String type) {
+        return type == null ? "" : type.trim().toLowerCase(Locale.ROOT);
+    }
+
+    record Invalid(String reason) implements DialogueCondition {
+        public Invalid {
+            reason = reason == null ? "invalid condition" : reason;
+        }
+
+        @Override
+        public boolean matches(DialogueContext context) {
+            return false;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 0;
+        }
+    }
+
     record AllOf(List<DialogueCondition> conditions) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            return this.conditions.stream().allMatch(condition -> condition.matches(context));
+            return DialogueCondition.matchesAll(context, this.conditions);
+        }
+
+        @Override
+        public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+            return DialogueCondition.matchesAll(context, triggerContext, this.conditions);
         }
 
         @Override
@@ -528,7 +1389,25 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     record AnyOf(List<DialogueCondition> conditions) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            return this.conditions.stream().anyMatch(condition -> condition.matches(context));
+            if (context == null) {
+                return false;
+            }
+            for (DialogueCondition condition : this.conditions) {
+                if (condition != null && condition.matches(context)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+            for (DialogueCondition condition : this.conditions) {
+                if (condition != null && condition.matches(context, triggerContext)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
@@ -543,7 +1422,17 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     record Not(DialogueCondition condition) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            return !this.condition.matches(context);
+            return context != null
+                    && this.condition != null
+                    && !(this.condition instanceof Invalid)
+                    && !this.condition.matches(context);
+        }
+
+        @Override
+        public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+            return this.condition != null
+                    && !(this.condition instanceof Invalid)
+                    && !this.condition.matches(context, triggerContext);
         }
 
         @Override
@@ -587,17 +1476,27 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         private boolean matchesEventTag(DialogueContext context) {
             UUID playerId = context.player().getUUID();
             UUID villagerId = context.villager().getUUID();
-            for (VillageEventMemory.MemoryEvent event : context.recentEvents()) {
+            return switch (this.source) {
+                case THIS_VILLAGER -> matchesEventList(context.personalEvents(), playerId, villagerId, false);
+                case OTHER_VILLAGER -> matchesEventList(context.villageEvents(), playerId, villagerId, true);
+                case ANY -> matchesEventList(context.personalEvents(), playerId, villagerId, false)
+                        || matchesEventList(context.villageEvents(), playerId, villagerId, false);
+            };
+        }
+
+        private boolean matchesEventList(
+                List<VillageEventMemory.MemoryEvent> events,
+                UUID playerId,
+                UUID villagerId,
+                boolean excludeSpeaker) {
+            for (VillageEventMemory.MemoryEvent event : events) {
                 if (!this.tags.contains(event.tagId())) {
                     continue;
                 }
                 if (this.currentPlayerOnly && !playerId.equals(event.playerId())) {
                     continue;
                 }
-                if (this.source == MemorySource.THIS_VILLAGER && !villagerId.equals(event.sourceId())) {
-                    continue;
-                }
-                if (this.source == MemorySource.OTHER_VILLAGER && villagerId.equals(event.sourceId())) {
+                if (excludeSpeaker && villagerId.equals(event.sourceId())) {
                     continue;
                 }
                 return true;
@@ -826,6 +1725,351 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         @Override
         public int specificityScore() {
             return 8;
+        }
+    }
+
+    record QuestFact(
+            QuestFactScope scope,
+            ResourceLocation questId,
+            Set<ResourceLocation> tags,
+            String key,
+            Set<String> values,
+            Integer min,
+            Integer max) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            QuestScopeKey scopeKey = this.scope.scope(context, this.questId);
+            if (scopeKey.isBlank()) {
+                return false;
+            }
+            VillagerQuestFacts facts = VillagerQuestFacts.get(context.level());
+            if (!this.tags.isEmpty() && this.tags.stream().noneMatch(tag -> facts.hasTag(scopeKey, tag))) {
+                return false;
+            }
+            if (this.key == null || this.key.isBlank()) {
+                return !this.tags.isEmpty();
+            }
+            Optional<String> variable = facts.variable(scopeKey, this.key);
+            if (!this.values.isEmpty() && variable.stream().noneMatch(this.values::contains)) {
+                return false;
+            }
+            int counter = facts.counter(scopeKey, this.key);
+            if (this.min != null && counter < this.min) {
+                return false;
+            }
+            if (this.max != null && counter > this.max) {
+                return false;
+            }
+            return !this.values.isEmpty() || this.min != null || this.max != null || variable.isPresent() || counter != 0;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 8;
+        }
+    }
+
+    record SelectedChoice(
+            ResourceLocation questId,
+            String scenePath,
+            String responseId,
+            String priorStage,
+            String nextStage) implements DialogueCondition {
+        public SelectedChoice {
+            scenePath = scenePath == null ? "" : scenePath.trim();
+            responseId = responseId == null ? "" : responseId.trim();
+            priorStage = priorStage == null ? "" : priorStage.trim();
+            nextStage = nextStage == null ? "" : nextStage.trim();
+        }
+
+        @Override
+        public boolean matches(DialogueContext context) {
+            return VillagerQuestService.hasSelectedChoice(
+                    context,
+                    this.questId,
+                    this.scenePath,
+                    this.responseId,
+                    this.priorStage,
+                    this.nextStage);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 9;
+        }
+    }
+
+    record StageHistory(
+            ResourceLocation questId,
+            String stage,
+            String priorStage,
+            String nextStage) implements DialogueCondition {
+        public StageHistory {
+            stage = stage == null ? "" : stage.trim();
+            priorStage = priorStage == null ? "" : priorStage.trim();
+            nextStage = nextStage == null ? "" : nextStage.trim();
+        }
+
+        @Override
+        public boolean matches(DialogueContext context) {
+            return VillagerQuestService.hasStageHistory(
+                    context,
+                    this.questId,
+                    this.stage,
+                    this.priorStage,
+                    this.nextStage);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 9;
+        }
+    }
+
+    record PlayerItem(VillagerPlayerItemCondition condition) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            return this.condition.matches(context.player());
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5;
+        }
+    }
+
+    record VillagerEquipment(VillagerEquipmentCondition condition) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            return this.condition.matches(context.villager());
+        }
+
+        @Override
+        public int specificityScore() {
+            return 4;
+        }
+    }
+
+    record Biome(Set<ResourceLocation> biomes, Set<ResourceLocation> tags) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            var biome = context.level().getBiome(context.villager().blockPosition());
+            boolean idMatch = biome.unwrapKey().map(key -> this.biomes.contains(key.location())).orElse(false);
+            boolean tagMatch = this.tags.stream().anyMatch(id -> biome.is(
+                    net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BIOME, id)));
+            return idMatch || tagMatch;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 4;
+        }
+    }
+
+    record Dimension(Set<ResourceLocation> dimensions) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            return this.dimensions.contains(context.level().dimension().location());
+        }
+
+        @Override
+        public int specificityScore() {
+            return 3;
+        }
+    }
+
+    record Advancement(Set<ResourceLocation> advancements, boolean requireAll) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            java.util.function.Predicate<ResourceLocation> completed = id -> {
+                var advancement = context.level().getServer().getAdvancements().get(id);
+                return advancement != null && context.player().getAdvancements().getOrStartProgress(advancement).isDone();
+            };
+            return this.requireAll ? this.advancements.stream().allMatch(completed) : this.advancements.stream().anyMatch(completed);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 6;
+        }
+    }
+
+    record Scoreboard(String objective, Integer min, Integer max) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            net.minecraft.world.scores.Scoreboard scoreboard = context.level().getScoreboard();
+            net.minecraft.world.scores.Objective target = scoreboard.getObjective(this.objective);
+            if (target == null) {
+                return false;
+            }
+            net.minecraft.world.scores.ReadOnlyScoreInfo score = scoreboard.getPlayerScoreInfo(context.player(), target);
+            if (score == null) {
+                return false;
+            }
+            int value = score.value();
+            return (this.min == null || value >= this.min) && (this.max == null || value <= this.max);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5;
+        }
+    }
+
+    record NearbyEntity(
+            Set<ResourceLocation> entityTypes,
+            Set<ResourceLocation> entityTags,
+            double radius,
+            int minCount,
+            Integer maxCount,
+            boolean aroundPlayer) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            net.minecraft.world.entity.Entity origin = this.aroundPlayer ? context.player() : context.villager();
+            net.minecraft.world.phys.AABB bounds = origin.getBoundingBox().inflate(this.radius);
+            int count = context.level().getEntities(origin, bounds, entity -> {
+                ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+                if (this.entityTypes.contains(id)) {
+                    return true;
+                }
+                var holder = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(entity.getType());
+                return this.entityTags.stream().anyMatch(tag -> holder.is(
+                        net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, tag)));
+            }).size();
+            return count >= this.minCount && (this.maxCount == null || count <= this.maxCount);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5;
+        }
+    }
+
+    record Village(boolean present, Set<String> keys) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            String key = context.villageKey() == null ? "" : context.villageKey().trim().toLowerCase(Locale.ROOT);
+            boolean known = !key.isBlank();
+            if (known != this.present) {
+                return false;
+            }
+            return !known || this.keys.isEmpty() || this.keys.contains(key);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 3;
+        }
+    }
+
+    record TriggerPayload(
+            Set<String> events,
+            Map<String, Set<String>> any,
+            Map<String, Set<String>> all,
+            Map<String, Set<String>> not,
+            Integer minReputation,
+            Integer maxReputation
+    ) implements DialogueCondition {
+        public TriggerPayload {
+            events = events == null ? Set.of() : Set.copyOf(events);
+            any = freezeQuery(any);
+            all = freezeQuery(all);
+            not = freezeQuery(not);
+        }
+
+        @Override
+        public boolean matches(DialogueContext context) {
+            return false;
+        }
+
+        @Override
+        public boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
+            if (triggerContext == null) {
+                return false;
+            }
+            String event = QuestTriggerRegistry.canonicalEventId(triggerContext.event());
+            if (!this.events.isEmpty() && !this.events.contains(event)) {
+                return false;
+            }
+            for (Map.Entry<String, Set<String>> expected : this.all.entrySet()) {
+                if (!matchesValue(triggerContext, expected)) {
+                    return false;
+                }
+            }
+            if (!this.any.isEmpty() && this.any.entrySet().stream()
+                    .noneMatch(expected -> matchesValue(triggerContext, expected))) {
+                return false;
+            }
+            if (this.not.entrySet().stream().anyMatch(expected -> matchesValue(triggerContext, expected))) {
+                return false;
+            }
+            if (this.minReputation != null || this.maxReputation != null) {
+                String value = triggerContext.value("reputation");
+                if (value.isBlank()) {
+                    return false;
+                }
+                try {
+                    int reputation = Integer.parseInt(value);
+                    if (this.minReputation != null && reputation < this.minReputation) {
+                        return false;
+                    }
+                    if (this.maxReputation != null && reputation > this.maxReputation) {
+                        return false;
+                    }
+                } catch (NumberFormatException ignored) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5 + this.all.size() * 2 + this.any.size() + this.not.size();
+        }
+
+        private static boolean matchesValue(
+                QuestTriggerContext triggerContext,
+                Map.Entry<String, Set<String>> expected) {
+            String actual = triggerContext.value(expected.getKey()).toLowerCase(Locale.ROOT);
+            return !actual.isBlank() && expected.getValue().contains(actual);
+        }
+
+        private static Map<String, Set<String>> freezeQuery(Map<String, Set<String>> query) {
+            if (query == null || query.isEmpty()) {
+                return Map.of();
+            }
+            Map<String, Set<String>> copy = new LinkedHashMap<>();
+            query.forEach((key, values) -> {
+                String normalized = normalizePayloadKey(key);
+                if (!normalized.isBlank() && values != null && !values.isEmpty()) {
+                    copy.put(normalized, values.stream()
+                            .filter(java.util.Objects::nonNull)
+                            .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                            .filter(value -> !value.isBlank())
+                            .collect(java.util.stream.Collectors.toUnmodifiableSet()));
+                }
+            });
+            return Map.copyOf(copy);
+        }
+    }
+
+    record Mood(Set<VillagerMood> moods, Integer minIntensity, Integer maxIntensity) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            if (!this.moods.isEmpty() && !this.moods.contains(context.primaryMood())) {
+                return false;
+            }
+            int intensity = context.moodIntensity();
+            if (this.minIntensity != null && intensity < this.minIntensity) {
+                return false;
+            }
+            return this.maxIntensity == null || intensity <= this.maxIntensity;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 4;
         }
     }
 

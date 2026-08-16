@@ -1,0 +1,104 @@
+{
+  "replace": false,
+  "entries": [
+    {
+      "id": "trade_examples:cartographer_frontier_chart",
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": [
+        "villagerretaliation:cartography"
+      ],
+      "min_rank": "skilled",
+      "villager_level": 3,
+      "chance": 0.55,
+      "weight": 8,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 10
+      },
+      "result": {
+        "items": [
+          "minecraft:map",
+          "minecraft:compass"
+        ],
+        "count": 1
+      },
+      "max_uses": 4,
+      "xp": 12,
+      "price_multiplier": 0.05,
+      "request": {
+        "targetable": true,
+        "display_priority": 25,
+        "min_reputation": "respected",
+        "wait_days": 1,
+        "cooldown_days": 2
+      }
+    },
+    {
+      "id": "trade_examples:fletcher_master_crossbow",
+      "professions": [
+        "minecraft:fletcher"
+      ],
+      "skills": [
+        "villagerretaliation:archery",
+        "villagerretaliation:crafting"
+      ],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.3,
+      "weight": 5,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 22
+      },
+      "result": {
+        "item": "minecraft:crossbow",
+        "count": 1,
+        "enchantments": {
+          "mode": "random_from",
+          "candidates": [
+            "minecraft:quick_charge",
+            "minecraft:piercing",
+            "minecraft:unbreaking"
+          ],
+          "level_by_skill": true,
+          "min_level": 1,
+          "max_level": 3
+        }
+      },
+      "max_uses": {
+        "base": 2,
+        "bonus_by_skill": true,
+        "max_bonus": 2
+      },
+      "xp": 20,
+      "price_multiplier": 0.1,
+      "conditions": {
+        "config_flags": [
+          "skillTradeAllowHighTierEquipment"
+        ]
+      },
+      "quality_scaling": {
+        "enabled": true,
+        "count_by_skill": false,
+        "cost_by_skill": true,
+        "max_uses_by_skill": true,
+        "xp_by_skill": false,
+        "rare_chance_by_skill": true,
+        "enchantments_by_skill": true
+      },
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 3,
+        "cooldown_days": 5,
+        "extra_cost": {
+          "item": "minecraft:iron_ingot",
+          "count": 8
+        }
+      }
+    }
+  ]
+}

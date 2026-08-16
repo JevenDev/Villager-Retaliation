@@ -1,9 +1,9 @@
 package com.jvn.villagerretaliation.village;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,8 +26,11 @@ public final class VillageMembership {
     private static final double VILLAGER_DISCOVERY_RADIUS = 96.0D;
     private static final double EDGE_PADDING = 16.0D;
     private static final long RESOLVE_CACHE_TICKS = 200L;
+    private static final long RESOLVE_CACHE_PRUNE_INTERVAL_TICKS = 20L;
     private static final int MAX_RESOLVE_CACHE_ENTRIES = 512;
-    private static final Map<ResolveCacheKey, CachedResolve> RESOLVE_CACHE = new HashMap<>();
+    private static final Map<ResolveCacheKey, CachedResolve> RESOLVE_CACHE =
+            new LinkedHashMap<>(64, 0.75F, true);
+    private static long nextResolveCachePruneGameTime;
 
     private VillageMembership() {
     }
@@ -57,6 +60,8 @@ public final class VillageMembership {
             if (directArea.isPresent() || direct.area() == null) {
                 return directArea;
             }
+        } else if (direct != null) {
+            RESOLVE_CACHE.remove(cacheKey, direct);
         }
 
         Optional<VillageArea> cachedArea = cachedAreaContaining(level, origin, cacheKey, gameTime);
@@ -73,6 +78,7 @@ public final class VillageMembership {
 
     public static void clearCache() {
         RESOLVE_CACHE.clear();
+        nextResolveCachePruneGameTime = 0L;
     }
 
     private static Optional<VillageArea> resolveUncached(ServerLevel level, BlockPos origin) {
@@ -115,6 +121,11 @@ public final class VillageMembership {
     }
 
     private static void pruneResolveCache(long gameTime) {
+        if (gameTime < nextResolveCachePruneGameTime
+                && RESOLVE_CACHE.size() <= MAX_RESOLVE_CACHE_ENTRIES) {
+            return;
+        }
+        nextResolveCachePruneGameTime = gameTime + RESOLVE_CACHE_PRUNE_INTERVAL_TICKS;
         RESOLVE_CACHE.entrySet().removeIf(entry -> !entry.getValue().isValid(gameTime));
         if (RESOLVE_CACHE.size() <= MAX_RESOLVE_CACHE_ENTRIES) {
             return;

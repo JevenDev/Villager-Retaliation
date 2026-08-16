@@ -1,11 +1,9 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
-import java.util.List;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public final class VillagerGiftPreferences {
@@ -15,26 +13,22 @@ public final class VillagerGiftPreferences {
     private VillagerGiftPreferences() {
     }
 
-    public static GiftPreference evaluate(ServerLevel level, VillagerProfession profession, ItemStack stack) {
+    public static ResolvedGiftPreference evaluate(ServerLevel level, VillagerProfession profession, ItemStack stack) {
         if (stack.isEmpty()) {
-            return new GiftPreference(GiftReaction.NEUTRAL, false, 0);
+            return ResolvedGiftPreference.neutral();
         }
         return VillagerGiftResources.preference(level, profession, stack)
                 .map(preference -> preference.withReputationValue(reputationValue(preference.reaction(), preference.perItemReputation(), stack)))
-                .orElse(new GiftPreference(GiftReaction.NEUTRAL, false, 0));
+                .orElseGet(ResolvedGiftPreference::neutral);
     }
 
-    public static GiftPreference evaluate(ServerLevel level, Villager villager, ItemStack stack) {
+    public static ResolvedGiftPreference evaluate(ServerLevel level, Villager villager, ItemStack stack) {
         if (stack.isEmpty()) {
-            return new GiftPreference(GiftReaction.NEUTRAL, false, 0);
+            return ResolvedGiftPreference.neutral();
         }
         return VillagerGiftResources.preference(level, villager, stack)
                 .map(preference -> preference.withReputationValue(reputationValue(preference.reaction(), preference.perItemReputation(), stack)))
-                .orElse(new GiftPreference(GiftReaction.NEUTRAL, false, 0));
-    }
-
-    public static List<GiftCandidate> giftCandidates(ServerLevel level, VillagerProfession profession) {
-        return VillagerGiftResources.giftCandidates(level, profession);
+                .orElseGet(ResolvedGiftPreference::neutral);
     }
 
     public static ItemStack highReputationReward(ServerLevel level, Villager villager, VillagerReputationLevel reputationLevel) {
@@ -63,38 +57,32 @@ public final class VillagerGiftPreferences {
             return this.defaultPerItemReputation;
         }
 
-        private boolean isPositive() {
-            return this.defaultPerItemReputation > 0;
+        public int legacyRating() {
+            return switch (this) {
+                case LOVED -> 2;
+                case LIKED -> 1;
+                case NEUTRAL -> 0;
+                case DISLIKED -> -1;
+                case HATED -> -3;
+            };
         }
+
+        public static GiftReaction fromRating(int rating) {
+            if (rating >= 2) {
+                return LOVED;
+            }
+            if (rating == 1) {
+                return LIKED;
+            }
+            if (rating == -1) {
+                return DISLIKED;
+            }
+            if (rating <= -2) {
+                return HATED;
+            }
+            return NEUTRAL;
+        }
+
     }
 
-    public record GiftPreference(
-            GiftReaction reaction,
-            boolean professionSpecific,
-            int reputationValue,
-            int perItemReputation,
-            String responseKey) {
-        public GiftPreference(GiftReaction reaction, boolean professionSpecific, int reputationValue) {
-            this(reaction, professionSpecific, reputationValue, reaction.defaultPerItemReputation(), "");
-        }
-
-        public GiftPreference(GiftReaction reaction, boolean professionSpecific, int reputationValue, int perItemReputation) {
-            this(reaction, professionSpecific, reputationValue, perItemReputation, "");
-        }
-
-        private GiftPreference withReputationValue(int reputationValue) {
-            return new GiftPreference(
-                    this.reaction,
-                    this.professionSpecific,
-                    reputationValue,
-                    this.perItemReputation,
-                    this.responseKey);
-        }
-    }
-
-    public record GiftCandidate(Item item, GiftReaction reaction, boolean professionSpecific) {
-        public boolean positive() {
-            return this.reaction.isPositive();
-        }
-    }
 }

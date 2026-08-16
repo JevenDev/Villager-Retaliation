@@ -1,0 +1,307 @@
+package com.jvn.villagerretaliation.interaction;
+
+import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
+import java.util.List;
+import java.util.Set;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+@GameTestHolder
+@PrefixGameTestTemplate(false)
+public final class GiftPreferenceResolverGameTests {
+    private static final String EMPTY_TEMPLATE = "empty";
+    private static final ResourceLocation BOATS = ResourceLocation.withDefaultNamespace("boats");
+
+    private GiftPreferenceResolverGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void resolutionUsesPriorityExactnessScopeAndStableIds(GameTestHelper helper) {
+        GiftPreferenceDefinition tag = definition(
+                "test:tag",
+                Set.of(VillagerProfession.FISHERMAN),
+                1,
+                10,
+                GiftPreferenceDefinition.ItemMatcher.tag(BOATS));
+        GiftPreferenceDefinition exact = definition(
+                "test:exact",
+                Set.of(VillagerProfession.FISHERMAN),
+                -3,
+                10,
+                GiftPreferenceDefinition.ItemMatcher.item(ResourceLocation.withDefaultNamespace("oak_boat")));
+
+        ResolvedGiftPreference exactResult = GiftPreferenceResolver.resolve(
+                        List.of(tag, exact),
+                        null,
+                        VillagerProfession.FISHERMAN,
+                        new ItemStack(Items.OAK_BOAT))
+                .orElseThrow();
+        helper.assertValueEqual(exactResult.categoryId(), exact.id(), "exact item should win equal-priority overlap");
+
+        GiftPreferenceDefinition higherPriorityTag = definition(
+                "test:higher_priority",
+                Set.of(VillagerProfession.FISHERMAN),
+                2,
+                50,
+                GiftPreferenceDefinition.ItemMatcher.tag(BOATS));
+        ResolvedGiftPreference priorityResult = GiftPreferenceResolver.resolve(
+                        List.of(exact, higherPriorityTag),
+                        null,
+                        VillagerProfession.FISHERMAN,
+                        new ItemStack(Items.OAK_BOAT))
+                .orElseThrow();
+        helper.assertValueEqual(
+                priorityResult.categoryId(),
+                higherPriorityTag.id(),
+                "priority should win before exactness");
+
+        GiftPreferenceDefinition stableA = definition(
+                "test:a",
+                Set.of(VillagerProfession.FISHERMAN),
+                1,
+                0,
+                GiftPreferenceDefinition.ItemMatcher.item(ResourceLocation.withDefaultNamespace("oak_boat")));
+        GiftPreferenceDefinition stableZ = definition(
+                "test:z",
+                Set.of(VillagerProfession.FISHERMAN),
+                2,
+                0,
+                GiftPreferenceDefinition.ItemMatcher.item(ResourceLocation.withDefaultNamespace("oak_boat")));
+        ResolvedGiftPreference stableResult = GiftPreferenceResolver.resolve(
+                        List.of(stableZ, stableA),
+                        null,
+                        VillagerProfession.FISHERMAN,
+                        new ItemStack(Items.OAK_BOAT))
+                .orElseThrow();
+        helper.assertValueEqual(stableResult.categoryId(), stableA.id(), "category id should break remaining ties");
+
+        GiftPreferenceDefinition global = definition(
+                "test:global",
+                Set.of(),
+                1,
+                0,
+                GiftPreferenceDefinition.ItemMatcher.item(ResourceLocation.withDefaultNamespace("oak_boat")));
+        ResolvedGiftPreference professionResult = GiftPreferenceResolver.resolve(
+                        List.of(global, stableZ),
+                        null,
+                        VillagerProfession.FISHERMAN,
+                        new ItemStack(Items.OAK_BOAT))
+                .orElseThrow();
+        helper.assertValueEqual(
+                professionResult.categoryId(),
+                stableZ.id(),
+                "profession category should win a remaining tie against a global category");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void oneTagCategoryAppliesAcrossItemsAndMatchesClientResolution(GameTestHelper helper) {
+        GiftPreferenceDefinition boats = definition(
+                "test:boats",
+                Set.of(VillagerProfession.FISHERMAN),
+                3,
+                20,
+                GiftPreferenceDefinition.ItemMatcher.tag(BOATS));
+        ItemStack oakBoat = new ItemStack(Items.OAK_BOAT);
+        ItemStack spruceBoat = new ItemStack(Items.SPRUCE_BOAT);
+
+        ResolvedGiftPreference oakResult = GiftPreferenceResolver.resolve(
+                        List.of(boats), null, VillagerProfession.FISHERMAN, oakBoat)
+                .orElseThrow();
+        ResolvedGiftPreference spruceResult = GiftPreferenceResolver.resolve(
+                        List.of(boats), null, VillagerProfession.FISHERMAN, spruceBoat)
+                .orElseThrow();
+        helper.assertValueEqual(oakResult.categoryId(), boats.id(), "oak boat category");
+        helper.assertValueEqual(spruceResult.categoryId(), boats.id(), "spruce boat category");
+
+        GiftPreferenceView knownView = view(boats, true, 3);
+        GiftPreferenceView unknownView = view(boats, false, 0);
+        helper.assertValueEqual(
+                GiftPreferenceResolver.resolveView(List.of(knownView), oakBoat).orElseThrow().categoryId(),
+                oakResult.categoryId(),
+                "client and server should resolve the same category");
+        helper.assertValueEqual(
+                GiftPreferenceResolver.resolveView(List.of(unknownView), spruceBoat).orElseThrow().rating(),
+                0,
+                "unknown view should not contain the live rating");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void componentSpecificPreferencesMatchOnServerAndClient(GameTestHelper helper) {
+        var predicate = ItemStackPredicateParser.parse(
+                helper.getLevel().registryAccess(),
+                JsonParser.parseString("{\"custom_data\":{\"quality\":3}}").getAsJsonObject(),
+                List.of(Items.STONE),
+                "components",
+                "durability",
+                "custom_data");
+        GiftPreferenceDefinition definition = definition(
+                "test:quality_stone",
+                Set.of(),
+                3,
+                10,
+                GiftPreferenceDefinition.ItemMatcher.item(
+                        ResourceLocation.withDefaultNamespace("stone"), predicate));
+        GiftPreferenceView view = view(definition, true, definition.rating());
+        ItemStack matching = new ItemStack(Items.STONE);
+        CompoundTag data = new CompoundTag();
+        data.putInt("quality", 3);
+        matching.set(DataComponents.CUSTOM_DATA, CustomData.of(data));
+
+        helper.assertTrue(
+                GiftPreferenceResolver.resolve(
+                                List.of(definition), null, VillagerProfession.FARMER, matching)
+                        .isPresent(),
+                "server preference resolution should match custom_data");
+        helper.assertTrue(
+                GiftPreferenceResolver.resolveView(List.of(view), matching).isPresent(),
+                "client preference resolution should match the synchronized predicate");
+        helper.assertFalse(
+                GiftPreferenceResolver.resolveView(List.of(view), new ItemStack(Items.STONE)).isPresent(),
+                "plain items must not match a component-specific preference");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void discoveredIdentityUsesTheCurrentRatingAndProfession(GameTestHelper helper) {
+        GiftPreferenceDefinition oldDefinition = definition(
+                "test:changing",
+                Set.of(VillagerProfession.FISHERMAN),
+                2,
+                0,
+                GiftPreferenceDefinition.ItemMatcher.item(ResourceLocation.withDefaultNamespace("cod")));
+        GiftPreferenceDefinition newDefinition = definition(
+                "test:changing",
+                Set.of(VillagerProfession.FISHERMAN),
+                3,
+                0,
+                GiftPreferenceDefinition.ItemMatcher.item(ResourceLocation.withDefaultNamespace("cod")));
+
+        GiftPreferenceView oldView = view(oldDefinition, true, oldDefinition.rating());
+        GiftPreferenceView newView = view(newDefinition, true, newDefinition.rating());
+        helper.assertValueEqual(oldView.categoryId(), newView.categoryId(), "discovery identity should remain stable");
+        helper.assertValueEqual(newView.rating(), 3, "known category should use the current definition rating");
+        helper.assertFalse(
+                GiftPreferenceResolver.resolve(
+                                List.of(newDefinition),
+                                null,
+                                VillagerProfession.FARMER,
+                                new ItemStack(Items.COD))
+                        .isPresent(),
+                "profession-specific definition should not leak to another profession");
+        helper.assertValueEqual(
+                VillagerGiftPreferences.GiftReaction.fromRating(3),
+                VillagerGiftPreferences.GiftReaction.LOVED,
+                "strongly loved consequence mapping");
+        helper.assertValueEqual(
+                VillagerGiftPreferences.GiftReaction.fromRating(-2),
+                VillagerGiftPreferences.GiftReaction.HATED,
+                "strongly disliked consequence mapping");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void bundledDataUsesTagsAndExactOverrides(GameTestHelper helper) {
+        ResolvedGiftPreference cookedFish = VillagerGiftPreferences.evaluate(
+                helper.getLevel(), VillagerProfession.FISHERMAN, new ItemStack(Items.COOKED_COD));
+        ResolvedGiftPreference rawFish = VillagerGiftPreferences.evaluate(
+                helper.getLevel(), VillagerProfession.FISHERMAN, new ItemStack(Items.COD));
+        ResolvedGiftPreference boat = VillagerGiftPreferences.evaluate(
+                helper.getLevel(), VillagerProfession.FISHERMAN, new ItemStack(Items.BIRCH_BOAT));
+        ResolvedGiftPreference pufferfish = VillagerGiftPreferences.evaluate(
+                helper.getLevel(), VillagerProfession.FISHERMAN, new ItemStack(Items.PUFFERFISH));
+
+        helper.assertValueEqual(cookedFish.rating(), 3, "cooked fish tag rating");
+        helper.assertValueEqual(cookedFish.source(), GiftPreferenceDefinition.MatchSource.TAG, "cooked fish tag source");
+        helper.assertValueEqual(rawFish.rating(), 2, "raw fish tag rating");
+        helper.assertValueEqual(boat.rating(), 1, "boat tag rating");
+        helper.assertValueEqual(pufferfish.rating(), -1, "pufferfish exact override rating");
+        helper.assertValueEqual(
+                pufferfish.source(),
+                GiftPreferenceDefinition.MatchSource.ITEM,
+                "pufferfish exact override source");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void giftAdviceChoosesAConcreteItemFromTheResolvedCategory(GameTestHelper helper) {
+        GiftPreferenceDefinition rawFish = VillagerGiftResources
+                .definitions(helper.getLevel(), VillagerProfession.FISHERMAN)
+                .stream()
+                .filter(definition -> definition.id().getPath().equals("builtin.fisherman.raw_fish"))
+                .findFirst()
+                .orElseThrow();
+
+        ItemStack suggested = VillagerGiftKnowledgeService
+                .representativeGift(
+                        helper.getLevel(),
+                        VillagerProfession.FISHERMAN,
+                        rawFish,
+                        RandomSource.create(3733L))
+                .orElseThrow();
+        String adviceName = VillagerGiftKnowledgeService.giftAdviceName(
+                helper.getLevel(),
+                "en_us",
+                VillagerProfession.FISHERMAN,
+                rawFish,
+                RandomSource.create(3733L));
+        ResolvedGiftPreference resolved = VillagerGiftPreferences.evaluate(
+                helper.getLevel(), VillagerProfession.FISHERMAN, suggested);
+
+        helper.assertFalse(suggested.isEmpty(), "gift advice should choose an item");
+        helper.assertValueEqual(
+                resolved.categoryId(),
+                rawFish.id(),
+                "suggested item should resolve back to the advised category");
+        helper.assertValueEqual(
+                adviceName,
+                VillagerItemText.dialogueName(helper.getLevel().getServer(), "en_us", suggested),
+                "spoken gift advice should contain only the concrete item name");
+        helper.succeed();
+    }
+
+    private static GiftPreferenceDefinition definition(
+            String id,
+            Set<VillagerProfession> professions,
+            int rating,
+            int priority,
+            GiftPreferenceDefinition.ItemMatcher... matchers) {
+        VillagerGiftPreferences.GiftReaction reaction = VillagerGiftPreferences.GiftReaction.fromRating(rating);
+        return new GiftPreferenceDefinition(
+                ResourceLocation.parse(id),
+                professions,
+                rating,
+                reaction.defaultPerItemReputation(),
+                "",
+                priority,
+                null,
+                GiftCategoryName.EMPTY,
+                List.of(matchers));
+    }
+
+    private static GiftPreferenceView view(GiftPreferenceDefinition definition, boolean known, int rating) {
+        return new GiftPreferenceView(
+                definition.id(),
+                rating,
+                known,
+                definition.priority(),
+                definition.professionSpecific(),
+                definition.name(),
+                definition.matchers().stream()
+                        .map(matcher -> new GiftPreferenceView.Matcher(
+                                matcher.source(), matcher.value(), matcher.stackPredicate()))
+                        .toList());
+    }
+}

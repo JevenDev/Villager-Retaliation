@@ -1,0 +1,346 @@
+{
+  "schema": "villagerretaliation:quest_bundle_compatibility/v1",
+  "source_commit": "6e5913766bc93eede34185e0b87eaa428e53b0e6",
+  "quests": {
+    "villagerretaliation:apiary_smoke": {
+      "slug": "apiary_smoke",
+      "localization_prefix": "quest.village_commissions.apiary_smoke"
+    },
+    "villagerretaliation:bastion_line": {
+      "slug": "bastion_line",
+      "localization_prefix": "quest.nether_routes.bastion_line"
+    },
+    "villagerretaliation:beacon_polish": {
+      "slug": "beacon_polish",
+      "localization_prefix": "quest.village_commissions.beacon_polish"
+    },
+    "villagerretaliation:beetroot_bundle": {
+      "slug": "beetroot_bundle",
+      "localization_prefix": "quest.village_supply.beetroot_bundle"
+    },
+    "villagerretaliation:bell_rope": {
+      "slug": "bell_rope",
+      "localization_prefix": "quest.village_commissions.bell_rope"
+    },
+    "villagerretaliation:below_the_bell": {
+      "slug": "below_the_bell",
+      "localization_prefix": "quest.deep_delvers.below_the_bell"
+    },
+    "villagerretaliation:berry_picking": {
+      "slug": "berry_picking",
+      "localization_prefix": "quest.village_supply.berry_picking"
+    },
+    "villagerretaliation:blank_map_promise": {
+      "slug": "blank_map_promise",
+      "localization_prefix": "quest.cartographers_atlas.blank_map_promise"
+    },
+    "villagerretaliation:bottle_stock": {
+      "slug": "bottle_stock",
+      "localization_prefix": "quest.village_supply.bottle_stock"
+    },
+    "villagerretaliation:bread_delivery": {
+      "slug": "bread_delivery",
+      "localization_prefix": "quest.village_supply.bread_delivery"
+    },
+    "villagerretaliation:breath_after_the_roar": {
+      "slug": "breath_after_the_roar",
+      "localization_prefix": "quest.last_ember.breath_after_the_roar"
+    },
+    "villagerretaliation:canal_beds": {
+      "slug": "canal_beds",
+      "localization_prefix": "quest.green_thumb.canal_beds"
+    },
+    "villagerretaliation:chart_the_drowned_coast": {
+      "slug": "chart_the_drowned_coast",
+      "localization_prefix": "quest.cartographers_atlas.chart_the_drowned_coast"
+    },
+    "villagerretaliation:choose_a_road": {
+      "slug": "choose_a_road",
+      "localization_prefix": "quest.nether_routes.choose_a_road"
+    },
+    "villagerretaliation:choose_a_star": {
+      "slug": "choose_a_star",
+      "localization_prefix": "quest.end_survey.choose_a_star"
+    },
+    "villagerretaliation:choose_the_horizon": {
+      "slug": "choose_the_horizon",
+      "localization_prefix": "quest.cartographers_atlas.choose_the_horizon"
+    },
+    "villagerretaliation:choose_the_soil": {
+      "slug": "choose_the_soil",
+      "localization_prefix": "quest.green_thumb.choose_the_soil"
+    },
+    "villagerretaliation:chorus_trail": {
+      "slug": "chorus_trail",
+      "localization_prefix": "quest.end_survey.chorus_trail"
+    },
+    "villagerretaliation:city_lantern": {
+      "slug": "city_lantern",
+      "localization_prefix": "quest.end_survey.city_lantern"
+    },
+    "villagerretaliation:clay_repairs": {
+      "slug": "clay_repairs",
+      "localization_prefix": "quest.village_supply.clay_repairs"
+    },
+    "villagerretaliation:clean_bandages": {
+      "slug": "clean_bandages",
+      "localization_prefix": "quest.field_medicine.clean_bandages"
+    },
+    "villagerretaliation:compost_turn": {
+      "slug": "compost_turn",
+      "localization_prefix": "quest.village_commissions.compost_turn"
+    },
+    "villagerretaliation:copper_weather": {
+      "slug": "copper_weather",
+      "localization_prefix": "quest.village_commissions.copper_weather"
+    },
+    "villagerretaliation:dragon_sample": {
+      "slug": "dragon_sample",
+      "localization_prefix": "quest.village_commissions.dragon_sample"
+    },
+    "villagerretaliation:echo_trade": {
+      "slug": "echo_trade",
+      "localization_prefix": "quest.village_commissions.echo_trade"
+    },
+    "villagerretaliation:egg_baskets": {
+      "slug": "egg_baskets",
+      "localization_prefix": "quest.village_supply.egg_baskets"
+    },
+    "villagerretaliation:empty_sky": {
+      "slug": "empty_sky",
+      "localization_prefix": "quest.end_survey.empty_sky"
+    },
+    "villagerretaliation:end_city_margin": {
+      "slug": "end_city_margin",
+      "localization_prefix": "quest.cartographers_atlas.end_city_margin"
+    },
+    "villagerretaliation:end_city_survey": {
+      "slug": "end_city_survey",
+      "localization_prefix": "quest.lost_civilization.end_city_survey"
+    },
+    "villagerretaliation:ender_freight": {
+      "slug": "ender_freight",
+      "localization_prefix": "quest.village_commissions.ender_freight"
+    },
+    "villagerretaliation:eye_before_dawn": {
+      "slug": "eye_before_dawn",
+      "localization_prefix": "quest.last_ember.eye_before_dawn"
+    },
+    "villagerretaliation:eye_of_the_last_room": {
+      "slug": "eye_of_the_last_room",
+      "localization_prefix": "quest.cartographers_atlas.eye_of_the_last_room"
+    },
+    "villagerretaliation:feather_fletching": {
+      "slug": "feather_fletching",
+      "localization_prefix": "quest.village_supply.feather_fletching"
+    },
+    "villagerretaliation:first_far_marker": {
+      "slug": "first_far_marker",
+      "localization_prefix": "quest.cartographers_atlas.first_far_marker"
+    },
+    "villagerretaliation:first_fire": {
+      "slug": "first_fire",
+      "localization_prefix": "quest.hearthbound.first_fire"
+    },
+    "villagerretaliation:fletchers_countermark": {
+      "slug": "fletchers_countermark",
+      "localization_prefix": "quest.village_defense.fletchers_countermark"
+    },
+    "villagerretaliation:fortress_line": {
+      "slug": "fortress_line",
+      "localization_prefix": "quest.nether_routes.fortress_line"
+    },
+    "villagerretaliation:fresh_cod": {
+      "slug": "fresh_cod",
+      "localization_prefix": "quest.village_supply.fresh_cod"
+    },
+    "villagerretaliation:gilded_debt": {
+      "slug": "gilded_debt",
+      "localization_prefix": "quest.dangerous_commissions.gilded_debt"
+    },
+    "villagerretaliation:honed_handles": {
+      "slug": "honed_handles",
+      "localization_prefix": "quest.workshop_oaths.honed_handles"
+    },
+    "villagerretaliation:house_of_ill_omens": {
+      "slug": "house_of_ill_omens",
+      "localization_prefix": "quest.dangerous_commissions.house_of_ill_omens"
+    },
+    "villagerretaliation:ink_and_bearings": {
+      "slug": "ink_and_bearings",
+      "localization_prefix": "quest.cartographers_atlas.ink_and_bearings"
+    },
+    "villagerretaliation:ink_in_the_dark_roof": {
+      "slug": "ink_in_the_dark_roof",
+      "localization_prefix": "quest.cartographers_atlas.ink_in_the_dark_roof"
+    },
+    "villagerretaliation:ink_supply": {
+      "slug": "ink_supply",
+      "localization_prefix": "quest.village_supply.ink_supply"
+    },
+    "villagerretaliation:iron_road": {
+      "slug": "iron_road",
+      "localization_prefix": "quest.deep_delvers.iron_road"
+    },
+    "villagerretaliation:kiln_fuel": {
+      "slug": "kiln_fuel",
+      "localization_prefix": "quest.village_supply.kiln_fuel"
+    },
+    "villagerretaliation:leather_repairs": {
+      "slug": "leather_repairs",
+      "localization_prefix": "quest.village_supply.leather_repairs"
+    },
+    "villagerretaliation:map_paper": {
+      "slug": "map_paper",
+      "localization_prefix": "quest.village_supply.map_paper"
+    },
+    "villagerretaliation:mark_the_shaft": {
+      "slug": "mark_the_shaft",
+      "localization_prefix": "quest.deep_delvers.mark_the_shaft"
+    },
+    "villagerretaliation:market_day": {
+      "slug": "market_day",
+      "localization_prefix": "quest.village_commissions.market_day"
+    },
+    "villagerretaliation:nether_candle": {
+      "slug": "nether_candle",
+      "localization_prefix": "quest.last_ember.nether_candle"
+    },
+    "villagerretaliation:nether_meridian": {
+      "slug": "nether_meridian",
+      "localization_prefix": "quest.cartographers_atlas.nether_meridian"
+    },
+    "villagerretaliation:nether_wart_warranty": {
+      "slug": "nether_wart_warranty",
+      "localization_prefix": "quest.dangerous_commissions.nether_wart_warranty"
+    },
+    "villagerretaliation:new_furrows": {
+      "slug": "new_furrows",
+      "localization_prefix": "quest.green_thumb.new_furrows"
+    },
+    "villagerretaliation:night_run": {
+      "slug": "night_run",
+      "localization_prefix": "quest.courier_roads.night_run"
+    },
+    "villagerretaliation:night_ward": {
+      "slug": "night_ward",
+      "localization_prefix": "quest.field_medicine.night_ward"
+    },
+    "villagerretaliation:ocean_glass": {
+      "slug": "ocean_glass",
+      "localization_prefix": "quest.village_commissions.ocean_glass"
+    },
+    "villagerretaliation:pearl_lessons": {
+      "slug": "pearl_lessons",
+      "localization_prefix": "quest.last_ember.pearl_lessons"
+    },
+    "villagerretaliation:pond_restock": {
+      "slug": "pond_restock",
+      "localization_prefix": "quest.village_commissions.pond_restock"
+    },
+    "villagerretaliation:powder_run": {
+      "slug": "powder_run",
+      "localization_prefix": "quest.village_commissions.powder_run"
+    },
+    "villagerretaliation:power_the_gate": {
+      "slug": "power_the_gate",
+      "localization_prefix": "quest.redstone_works.power_the_gate"
+    },
+    "villagerretaliation:quiet_trigger": {
+      "slug": "quiet_trigger",
+      "localization_prefix": "quest.redstone_works.quiet_trigger"
+    },
+    "villagerretaliation:rich_earth": {
+      "slug": "rich_earth",
+      "localization_prefix": "quest.green_thumb.rich_earth"
+    },
+    "villagerretaliation:road_mending": {
+      "slug": "road_mending",
+      "localization_prefix": "quest.village_commissions.road_mending"
+    },
+    "villagerretaliation:roads_that_remember": {
+      "slug": "roads_that_remember",
+      "localization_prefix": "quest.cartographers_atlas.roads_that_remember"
+    },
+    "villagerretaliation:seed_stockpile": {
+      "slug": "seed_stockpile",
+      "localization_prefix": "quest.village_supply.seed_stockpile"
+    },
+    "villagerretaliation:shared_table": {
+      "slug": "shared_table",
+      "localization_prefix": "quest.hearthbound.shared_table"
+    },
+    "villagerretaliation:small_spark": {
+      "slug": "small_spark",
+      "localization_prefix": "quest.redstone_works.small_spark"
+    },
+    "villagerretaliation:spider_silk": {
+      "slug": "spider_silk",
+      "localization_prefix": "quest.village_commissions.spider_silk"
+    },
+    "villagerretaliation:standing_watch": {
+      "slug": "standing_watch",
+      "localization_prefix": "quest.village_defense.standing_watch"
+    },
+    "villagerretaliation:sun_switch": {
+      "slug": "sun_switch",
+      "localization_prefix": "quest.redstone_works.sun_switch"
+    },
+    "villagerretaliation:sunken_ledger": {
+      "slug": "sunken_ledger",
+      "localization_prefix": "quest.old_roads.sunken_ledger"
+    },
+    "villagerretaliation:tales_of_a_lost_civilization": {
+      "slug": "tales_of_a_lost_civilization",
+      "localization_prefix": "quest.lost_civilization.tales_of_a_lost_civilization"
+    },
+    "villagerretaliation:temper_and_tally": {
+      "slug": "temper_and_tally",
+      "localization_prefix": "quest.workshop_oaths.temper_and_tally"
+    },
+    "villagerretaliation:the_atlas_test": {
+      "slug": "the_atlas_test",
+      "localization_prefix": "quest.cartographers_atlas.the_atlas_test"
+    },
+    "villagerretaliation:the_broken_milestone": {
+      "slug": "the_broken_milestone",
+      "localization_prefix": "quest.old_roads.the_broken_milestone"
+    },
+    "villagerretaliation:through_fire": {
+      "slug": "through_fire",
+      "localization_prefix": "quest.nether_routes.through_fire"
+    },
+    "villagerretaliation:timber_brace": {
+      "slug": "timber_brace",
+      "localization_prefix": "quest.deep_delvers.timber_brace"
+    },
+    "villagerretaliation:torch_bundle": {
+      "slug": "torch_bundle",
+      "localization_prefix": "quest.village_supply.torch_bundle"
+    },
+    "villagerretaliation:trial_chamber_recall": {
+      "slug": "trial_chamber_recall",
+      "localization_prefix": "quest.dangerous_commissions.trial_chamber_recall"
+    },
+    "villagerretaliation:village_lanterns": {
+      "slug": "village_lanterns",
+      "localization_prefix": "quest.village_supply.village_lanterns"
+    },
+    "villagerretaliation:watch_arrows": {
+      "slug": "watch_arrows",
+      "localization_prefix": "quest.village_defense.watch_arrows"
+    },
+    "villagerretaliation:wax_sealed_route": {
+      "slug": "wax_sealed_route",
+      "localization_prefix": "quest.courier_roads.wax_sealed_route"
+    },
+    "villagerretaliation:wither_ash": {
+      "slug": "wither_ash",
+      "localization_prefix": "quest.village_commissions.wither_ash"
+    },
+    "villagerretaliation:wool_blankets": {
+      "slug": "wool_blankets",
+      "localization_prefix": "quest.village_supply.wool_blankets"
+    }
+  }
+}

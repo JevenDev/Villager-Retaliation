@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.torch_bundle.description": {
+      "lines": [
+        "Bring torches so storehouses, pens, and work corners stay usable after dusk."
+      ]
+    },
+    "quest.village_supply.torch_bundle.dialogue.already_completed": {
+      "lines": [
+        "No one needs this done twice. We already settled Torch Bundle.",
+        "There is no second payment here. The night rack has the torches you brought.",
+        "No one needs this done twice. I counted your 16 torches. We are square.",
+        "No one needs this done twice. The guards already put that delivery to work.",
+        "No one needs this done twice. You solved the problem of dark storehouses after sundown.",
+        "I remember your first return. There is no reason to gather another load of torches.",
+        "The matter ended well enough. Torch Bundle is crossed off the torches work list.",
+        "I remember your first return. Your part in helping us light pens and work corners is finished.",
+        "That chapter is closed. The last torches batch is still serving the village.",
+        "The matter ended well enough. I remember who filled the torches order, and it was you.",
+        "Your earlier work still stands. The reward was paid when the torches delivery came in.",
+        "I remember your first return. You did enough the first time. I will leave the old entry filed under Torch Bundle.",
+        "There is no second payment here. We can keep dusk from hiding every hazard because you answered Torch Bundle.",
+        "That chapter is closed. The full torches count reached the night rack. Nothing is missing.",
+        "You finished what I asked. The guards would object if I asked you twice.",
+        "The matter ended well enough. Your torches delivery passed inspection and went into use.",
+        "Your earlier work still stands. That empty spot in the night rack belongs to yesterday.",
+        "There is no second payment here. The record shows 16 torches received from you.",
+        "I remember your first return. You did the quiet torches work that keeps everyone going.",
+        "There is no second payment here. The first ending was good enough for Torch Bundle."
+      ]
+    },
+    "quest.village_supply.torch_bundle.dialogue.inactive": {
+      "lines": [
+        "There is no reason to begin yet. The night rack is not taking torches right now.",
+        "The time is wrong. There is no open order for torches today.",
+        "We have no need of it yet. The night rack is being counted before I ask for more.",
+        "Not today. The guards have not posted a fresh request.",
+        "Leave that work alone for now. Hold off on the torches. We have nowhere useful to put them.",
+        "Leave that work alone for now. The need to light pens and work corners will return, but not today.",
+        "I am keeping this off the board. I am waiting for the next tally before opening Torch Bundle.",
+        "For now, let the matter rest. Bringing 16 torches now would crowd the stores.",
+        "For now, let the matter rest. The last torches batch has not been used up yet.",
+        "The time is wrong. Ask again after the guards check what remains.",
+        "The time is wrong. I will not invent an urgent need for torches.",
+        "Leave that work alone for now. The night rack is quiet, so this can wait.",
+        "There is no reason to begin yet. We are between work orders for torches.",
+        "The village can wait on this one. Nothing is wrong at the night rack. The timing is simply off.",
+        "We have no need of it yet. Save your effort until we actually need torches.",
+        "I am keeping this off the board. The board has no current mark beside Torch Bundle.",
+        "We have no need of it yet. Today is not the day for another torches run.",
+        "For now, let the matter rest. Once dark storehouses after sundown becomes a concern, I will reopen this.",
+        "I am keeping this off the board. I would rather delay than waste good torches.",
+        "Leave that work alone for now. Wait for the stores to change before asking me about Torch Bundle."
+      ]
+    },
+    "quest.village_supply.torch_bundle.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current torch order. Ask again after the night-supply rack has been checked.",
+        "The night-supply rack tally is missing, so I will not ask you to gather torches yet.",
+        "No one has confirmed how much torches the night-supply rack needs today.",
+        "The work note is incomplete. Let me settle the torch count first.",
+        "I will not send you after torches until the village confirms the order.",
+        "The night-supply rack has not posted a trustworthy torch count.",
+        "I checked the work slate twice; the torch request is not ready.",
+        "This order can wait until I have a current torch tally.",
+        "Someone needs to check the night-supply rack before I hand you this order.",
+        "The village has not agreed on the torch count yet.",
+        "I have an old torch tally and no current one.",
+        "The night-supply rack may need torches, but I will not turn a guess into work.",
+        "Come back after the night-supply rack finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the night-supply rack tally.",
+        "Let me confirm who needs the torches before you start gathering.",
+        "No work yet. The village has not approved this torch request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the torch order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.torch_bundle.dialogue.missing_proof": {
+      "lines": [
+        "I cannot sign off on an empty return. Bring the torches before I mark the corners lit.",
+        "I cannot sign off on an empty return. I need the torches here before I sign this off.",
+        "The proof has to reach my hands. A promise does not fill the night rack. Bring the torches delivery.",
+        "A story cannot close the ledger. You may have gathered them, but the guards have not received them.",
+        "The evidence still matters. Set the 16 torches down here and I can close the torches order.",
+        "I believe you went, but that is not enough. Handing over the torches is the proof on this supply job.",
+        "The evidence still matters. I cannot inspect dry torches with firm handles while your hands are empty.",
+        "You returned without the one thing I asked for. Your report sounds fine. I still need the actual torches.",
+        "Your word is not the missing piece. Nothing has reached the night rack yet.",
+        "Show me what came back with you. Bring what you collected before we discuss the Torch Bundle reward.",
+        "Your word is not the missing piece. The night rack needs usable torches, not a story about them.",
+        "I believe you went, but that is not enough. I will count the torches as soon as you place them here.",
+        "I believe you went, but that is not enough. Do not leave the torches delivery in another chest.",
+        "Bring back something the village can verify. The guards are waiting on the torches bundle itself.",
+        "I need something I can hold. The last step is simple. Hand over the torches.",
+        "I believe you went, but that is not enough. I cannot light pens and work corners with an empty counter.",
+        "A story cannot close the ledger. Come back carrying the torches order, and we will be done.",
+        "Show me what came back with you. The torches work counts once the night rack receives it.",
+        "You returned without the one thing I asked for. You are one handoff away from finishing Torch Bundle.",
+        "The proof has to reach my hands. Let me see the torches before I call this complete."
+      ]
+    },
+    "quest.village_supply.torch_bundle.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the torches.",
+        "I counted twice; the full order of 16 torches is not here yet.",
+        "This helps, but the night-supply rack still needs the remaining torches.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 16 torches; the pile is still short.",
+        "Bring the missing torches, and then I can settle the order.",
+        "The night-supply rack has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The night-supply rack is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 16 torches.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the night-supply rack short.",
+        "The order stays open until all 16 torches are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The night-supply rack is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.torch_bundle.dialogue.reminder": {
+      "lines": [
+        "Do not let one finished step distract you. Sixteen torches. The dark is cheap, which is why we spend so much avoiding it.",
+        "Do not lose the thread now. I am still waiting on 16 torches for the night rack.",
+        "Remember what the village is waiting for. Look for dry torches with firm handles. Bad supplies only move the problem.",
+        "Do not lose the thread now. The guards need those torches to light pens and work corners.",
+        "Keep the whole task in mind. The count is 16 torches. Check it before returning.",
+        "Before you leave, hear this again. This torches delivery means we can keep dusk from hiding every hazard.",
+        "Stay with the work you accepted. If you are choosing between loads, bring the torches first.",
+        "The job still has loose ends. Keep the torches order together so the torches tally stays easy.",
+        "Before you leave, hear this again. The night rack has space waiting for the full bundle.",
+        "Keep the whole task in mind. Do not let a simple request turn into dark storehouses after sundown.",
+        "Stay with the work you accepted. There is no hidden part to Torch Bundle. Bring the agreed torches count.",
+        "Remember what the village is waiting for. Handle them carefully. I want dry torches with firm handles.",
+        "The job still has loose ends. Bring all the torches at once if you can manage it.",
+        "Hold to the instructions I gave you. The guards are planning their next work around your return.",
+        "Do not lose the thread now. I wrote 16 torches on the torches slate so neither of us has to guess.",
+        "Keep the whole task in mind. The sooner these arrive, the sooner we can light pens and work corners.",
+        "Do not lose the thread now. Nothing else is missing from the torches order.",
+        "Keep the whole task in mind. Return when the torches are ready to hand over.",
+        "The next step still matters. You know how many torches the night rack needs. The rest is gathering.",
+        "Hold to the instructions I gave you. A complete torches bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.torch_bundle.dialogue.start": {
+      "lines": [
+        "The village has work for you. Bring 16 torches. I would like fewer surprises after sundown.",
+        "I am trusting you with something important. The torches order needs 16 torches. Can you handle that?",
+        "Take this seriously. The guards are trying to light pens and work corners, and supplies are thin.",
+        "Take the task only if you are ready. Bring me 16 torches. I want dry torches with firm handles.",
+        "I am trusting you with something important. I have a plain job with a useful result. Find 16 torches.",
+        "This needs a careful hand. We can keep dusk from hiding every hazard if you fill the torches order.",
+        "Take the task only if you are ready. Dark storehouses after sundown is a small problem until everyone needs the same thing.",
+        "The village has work for you. The count on the torches slate is 16 torches.",
+        "I need you to see this through. Gather the torches and bring the whole delivery here.",
+        "Take this seriously. Stocking the night rack is not glory, but it matters.",
+        "Here is the work. The guards asked me to find someone reliable for this run.",
+        "The village has work for you. I need a clean delivery for the night rack.",
+        "Let us be clear about the job. If you can spare the time, 16 torches would settle the torches shortage.",
+        "I need you to see this through. The need is real, which makes the instructions for Torch Bundle simple.",
+        "I need you to see this through. Bring the torches when you have the complete count.",
+        "This needs a careful hand. Good torches will let us light pens and work corners.",
+        "This needs a careful hand. The village should not reach dark storehouses after sundown before we act.",
+        "Take this seriously. Take care with the torches bundle. We need dry torches with firm handles.",
+        "Here is the work. I will pay when the night rack receives the full order.",
+        "Take this seriously. Find 16 torches, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.torch_bundle.dialogue.turn_in": {
+      "lines": [
+        "That is the result I needed. Good. Light does a lot for morale when walls start making noises.",
+        "The village can use this. The count is right. I will get these to the night rack.",
+        "This will make a real difference. The guards can light pens and work corners now.",
+        "Good, you made it back. These are dry torches with firm handles. You chose well.",
+        "You brought the work to a proper end. That delivery keeps us from dark storehouses after sundown.",
+        "That settles what I asked of you. Good work. All the torches arrived together.",
+        "You delivered exactly what was needed. I have your torches, and you earned the Torch Bundle reward.",
+        "The village can use this. The night rack looks less bare already.",
+        "You delivered exactly what was needed. This will help us keep dusk from hiding every hazard.",
+        "You saw it through. You saved the guards from making do with scraps.",
+        "That is the result I needed. Everything on the torches slate is here.",
+        "This return was worth waiting for. A useful torches job, done without fuss. Thank you.",
+        "That settles what I asked of you. I will put the torches away before someone borrows them.",
+        "You delivered exactly what was needed. The village is better stocked because you completed Torch Bundle.",
+        "You saw it through. You brought exactly the torches I asked for.",
+        "Now I can close the ledger. The torches delivery is sound from top to bottom.",
+        "The village can use this. The night rack has one less shortage waiting to surprise us.",
+        "This return was worth waiting for. The village may not cheer for torches, but it would notice their absence.",
+        "You delivered exactly what was needed. Take your payment. The torches count gives me no complaint.",
+        "That is the result I needed. I can hand the torches order to the guards with confidence."
+      ]
+    },
+    "quest.village_supply.torch_bundle.dialogue.unavailable": {
+      "lines": [
+        "You are not ready for this request. The torch request is closed for now.",
+        "This work is not yours today. I cannot hand you the work filed under Torch Bundle yet.",
+        "No, the risk is too high. The torches order is for someone the night rack already knows.",
+        "I cannot trust you with this yet. The guards need a delivery they can count on.",
+        "Come back after you have earned more trust. Show the village steadier work before taking Torch Bundle.",
+        "Come back after you have earned more trust. The torches matter too much to gamble on a stranger.",
+        "This work is not yours today. I am not opening the torches slate to you today.",
+        "I need proof of your judgment first. Build some trust, then ask about Torch Bundle again.",
+        "No, the risk is too high. I need someone who will return with the whole 16 torches.",
+        "The village needs a steadier hand. Gathering torches is simple, but reliability is not optional.",
+        "You are not ready for this request. For now, the torches order stays with regular hands.",
+        "I cannot trust you with this yet. I cannot promise the night rack a delivery from you yet.",
+        "Come back after you have earned more trust. There will be other work before we trust you with the night rack.",
+        "No, the risk is too high. The village has not cleared you for this torches run.",
+        "You are not ready for this request. I would rather wait than risk dark storehouses after sundown.",
+        "I cannot trust you with this yet. This is not punishment. Show better judgment before I open Torch Bundle.",
+        "I will not place this burden on you. The guards asked for a familiar runner this time.",
+        "I will not place this burden on you. Come back for the torches order after your name carries more weight.",
+        "The village needs a steadier hand. I am not taking new help for Torch Bundle.",
+        "This work is not yours today. Earn some confidence here, and we can revisit Torch Bundle."
+      ]
+    },
+    "quest.village_supply.torch_bundle.objective.bring_torches.complete_text": {
+      "lines": [
+        "The torch rack is stocked and ready."
+      ]
+    },
+    "quest.village_supply.torch_bundle.objective.bring_torches.text": {
+      "lines": [
+        "Bring 16 torches for the watch rack."
+      ]
+    },
+    "quest.village_supply.torch_bundle.stage.return.dialogue.turn_in.label": "About Torch Bundle",
+    "quest.village_supply.torch_bundle.stage.return.dialogue.turn_in.lines": [
+      "Sixteen little answers to sixteen dark corners. Good.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.torch_bundle.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.torch_bundle.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.torch_bundle.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Sixteen little answers to sixteen dark corners. Good.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.torch_bundle.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.torch_bundle.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.torch_bundle.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.torch_bundle.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Torch Bundle is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.torch_bundle.stage.return.scene.turn_in_wait.lines": [
+      "Bring 16 torches for paths, cellars, and doorways",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.torch_bundle.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.torch_bundle.stage.work.dialogue.offer.label": "Torch Bundle",
+    "quest.village_supply.torch_bundle.stage.work.dialogue.offer.lines": [
+      "The dark has been borrowing too many corners after sunset.",
+      "Bring 16 torches for paths, cellars, and doorways, and the shelves will look less worried.",
+      "Bring 16 torches for paths, cellars, and doorways. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.torch_bundle.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.torch_bundle.stage.work.dialogue.reminder.label": "About Torch Bundle",
+    "quest.village_supply.torch_bundle.stage.work.dialogue.reminder.lines": [
+      "Bring 16 torches for paths, cellars, and doorways",
+      "Bring 16 torches for paths, cellars, and doorways.",
+      "Bring 16 torches for paths, cellars, and doorways, and the shelves will look less worried."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.torch_bundle.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.torch_bundle.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.torch_bundle.stage.work.scene.abandon_confirm.lines": [
+      "Put Torch Bundle aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.torch_bundle.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.torch_bundle.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Torch Bundle is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.leave.lines": [
+      "Bring 16 torches for paths, cellars, and doorways",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 16 torches for paths, cellars, and doorways",
+      "Bring 16 torches for paths, cellars, and doorways.",
+      "Bring 16 torches for paths, cellars, and doorways, and the shelves will look less worried."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Torch Bundle is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Torch Bundle is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 16 torches for paths, cellars, and doorways. Keep the full count together on the road back.",
+      "Bring 16 torches for paths, cellars, and doorways.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Torch Bundle is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.torch_bundle.stage.work.ui.tracker_text": "Bring 16 torches for paths, cellars, and doorways.",
+    "quest.village_supply.torch_bundle.title": {
+      "lines": [
+        "Torch Bundle"
+      ]
+    },
+    "quest.village_supply.torch_bundle.tracker.proof.text": {
+      "lines": [
+        "Bring 16 torches for the watch rack."
+      ]
+    },
+    "quest.village_supply.torch_bundle.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the torches."
+      ]
+    },
+    "quest.village_supply.torch_bundle.tracker.title": {
+      "lines": [
+        "Torch Bundle"
+      ]
+    }
+  }
+}

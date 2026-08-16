@@ -2,8 +2,10 @@ package com.jvn.villagerretaliation.config;
 
 import com.mojang.logging.LogUtils;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import io.wispforest.owo.config.ConfigWrapper;
 import io.wispforest.owo.config.Option;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -13,35 +15,74 @@ import java.nio.file.Path;
 
 public final class VillagerRetaliationConfig {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static boolean clientSyncObserversRegistered;
 
     public static final ConfigWrapper<?> CONFIG = loadConfig();
 
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_DROPS = bind("general.enableVillagerDrops", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_DUELS = bind("duels.enabled", Boolean.class);
+    public static final ConfigValue<Boolean> ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT = bind("duels.allowBringYourOwnLoadout", Boolean.class);
+    public static final ConfigValue<Integer> DUEL_MINIMUM_GUTS = bind("duels.minimumGuts", Integer.class);
+    public static final ConfigValue<Integer> DUEL_COOLDOWN_DAYS = bind("duels.cooldownDays", Integer.class);
+    public static final ConfigValue<Integer> DUEL_REFUSAL_LOSSES = bind("duels.refusalLosses", Integer.class);
+    public static final ConfigValue<Integer> DUEL_ARENA_RADIUS = bind("duels.arenaRadius", Integer.class);
+    public static final ConfigValue<Boolean> SHOW_DUEL_ARENA_PARTICLES = bind("duels.showArenaParticles", Boolean.class);
+    public static final ConfigValue<Integer> DUEL_BOUNDARY_GRACE_TICKS = bind("duels.boundaryGraceTicks", Integer.class);
+    public static final ConfigValue<Integer> DUEL_TIMEOUT_TICKS = bind("duels.timeoutTicks", Integer.class);
+    public static final ConfigValue<Integer> DUEL_SPECTATOR_RADIUS = bind("duels.spectatorRadius", Integer.class);
+    public static final ConfigValue<Integer> DUEL_SPECTATOR_CAP = bind("duels.spectatorCap", Integer.class);
+    public static final ConfigValue<Integer> DUEL_WATCHER_REPUTATION = bind("duels.watcherReputation", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_WANDERING_TRADER_DROPS = bind("general.enableWanderingTraderDrops", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_RETALIATION = bind("general.enableVillagerRetaliation", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_REPUTATION = bind("general.enableVillagerReputation", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VANILLA_GOSSIP_INTEGRATION = bind("general.enableVanillaGossipIntegration", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_DESPISED_KILL_ON_SIGHT = bind("general.enableDespisedKillOnSight", Boolean.class);
+    public static final ConfigValue<Boolean> DESPISED_KILL_ON_SIGHT_INTERRUPTS_HIRED_WORK = bind("general.despisedKillOnSightInterruptsHiredWork", Boolean.class);
     public static final ConfigValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE = bind("general.reputationChangeDisplayMode", ReputationChangeDisplayMode.class);
     public static final ConfigValue<ReputationChangeNotificationStyle> REPUTATION_CHANGE_NOTIFICATION_STYLE = bind("general.reputationChangeNotificationStyle", ReputationChangeNotificationStyle.class);
     public static final ConfigValue<ReputationChangeHudPosition> REPUTATION_CHANGE_HUD_POSITION = bind("general.reputationChangeHudPosition", ReputationChangeHudPosition.class);
     public static final ConfigValue<Boolean> COLLAPSE_REPUTATION_CHANGE_NOTIFICATIONS = bind("general.collapseReputationChangeNotifications", Boolean.class);
     public static final ConfigValue<Boolean> SHOW_VILLAGER_NAME_TAGS = bind("general.showVillagerNameTags", Boolean.class);
+    public static final ConfigValue<VillagerRenderMode> VILLAGER_RENDER_MODE = bind("general.villagerRenderMode", VillagerRenderMode.class);
+    public static final ConfigValue<VillagerStatDisplayMode> VILLAGER_STAT_DISPLAY_MODE = bind("general.villagerStatDisplayMode", VillagerStatDisplayMode.class);
     public static final ConfigValue<Boolean> VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD = bind("general.villagerReputationHoverTooltipRequiresEmerald", Boolean.class);
+    public static final ConfigValue<Boolean> SHOW_TRADE_GUI_REPUTATION_ICON = bind("general.showTradeGuiReputationIcon", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_DEATH_MESSAGES = bind("general.enableVillagerDeathMessages", Boolean.class);
+    public static final ConfigValue<Integer> RETIRED_VILLAGER_PROFILE_RETENTION_DAYS = bind("general.retiredVillagerProfileRetentionDays", Integer.class);
+    public static final ConfigValue<Boolean> ENABLE_VILLAGER_STUDYING = bind("study.enabled", Boolean.class);
+    public static final ConfigValue<Integer> STUDY_DURATION_TICKS = bind("study.durationTicks", Integer.class);
+    public static final ConfigValue<Integer> STUDY_COOLDOWN_TICKS = bind("study.cooldownTicks", Integer.class);
+    public static final ConfigValue<Integer> STUDY_MINIMUM_REWARD = bind("study.minimumReward", Integer.class);
+    public static final ConfigValue<Integer> STUDY_MAXIMUM_REWARD = bind("study.maximumReward", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_INTERACTION_SCREEN = bind("dialogue.enableInteractionScreen", Boolean.class);
     public static final ConfigValue<Boolean> SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN = bind("dialogue.shiftRightClickBypassesInteractionScreen", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_DIALOGUE_REPUTATION_EFFECTS = bind("dialogue.enableDialogueReputationEffects", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_DIALOGUE_CAMERA_FOCUS = bind("dialogue.enableDialogueCameraFocus", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_DIALOGUE_CINEMATIC_BARS = bind("dialogue.enableDialogueCinematicBars", Boolean.class);
+    public static final ConfigValue<Integer> DIALOGUE_CINEMATIC_BAR_HEIGHT = bind("dialogue.dialogueCinematicBarHeight", Integer.class);
+    public static final ConfigValue<Integer> DIALOGUE_CINEMATIC_BAR_MIN_SLANT = bind("dialogue.dialogueCinematicBarMinSlant", Integer.class);
+    public static final ConfigValue<Integer> DIALOGUE_CINEMATIC_BAR_MAX_SLANT = bind("dialogue.dialogueCinematicBarMaxSlant", Integer.class);
+    public static final ConfigValue<Boolean> ANIMATE_DIALOGUE_CINEMATIC_BARS = bind("dialogue.animateDialogueCinematicBars", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_FORCED_DIALOGUE = bind("dialogue.enableForcedDialogue", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_CONTAINER_FORCED_DIALOGUE = bind("dialogue.enableContainerForcedDialogue", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_CONTAINER_OPEN_REACTION = bind("dialogue.enableContainerOpenReaction", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_RETALIATION_FORCED_DIALOGUE = bind("dialogue.enableRetaliationForcedDialogue", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_PLAYER_ITEM_PROXIMITY_FORCED_DIALOGUE = bind("dialogue.enablePlayerItemProximityForcedDialogue", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_WEAPON_AIMING_DIALOGUE_DELAY = bind("dialogue.enableWeaponAimingDialogueDelay", Boolean.class);
     public static final ConfigValue<Boolean> SEPARATE_VILLAGER_CHAT_MESSAGES = bind("dialogue.separateVillagerChatMessages", Boolean.class);
     public static final ConfigValue<Boolean> SEPARATE_VILLAGER_CHAT_SPEAKERS = bind("dialogue.separateVillagerChatSpeakers", Boolean.class);
     public static final ConfigValue<InteractionChatPosition> INTERACTION_CHAT_POSITION = bind("dialogue.interactionChatPosition", InteractionChatPosition.class);
+    public static final ConfigValue<VillagerChatBroadcastMode> VILLAGER_CHAT_BROADCAST_MODE = bind("dialogue.villagerChatBroadcastMode", VillagerChatBroadcastMode.class);
+    public static final ConfigValue<Integer> VILLAGER_CHAT_BROADCAST_RADIUS = bind("dialogue.villagerChatBroadcastRadius", Integer.class);
+    public static final ConfigValue<Boolean> SHOW_PERSONAL_INTERACTION_DIALOGUE_TO_NEARBY_PLAYERS = bind("dialogue.showPersonalInteractionDialogueToNearbyPlayers", Boolean.class);
+    public static final ConfigValue<DialogueTextSpeed> DIALOGUE_TEXT_SPEED = bind("dialogue.dialogueTextSpeed", DialogueTextSpeed.class);
+    public static final ConfigValue<Boolean> ENABLE_DIALOGUE_BLIP_AUDIO = bind("dialogue.enableDialogueBlipAudio", Boolean.class);
+    public static final ConfigValue<Double> DIALOGUE_BLIP_VOLUME = bind("dialogue.dialogueBlipVolume", Double.class);
+    public static final ConfigValue<Double> DIALOGUE_BLIP_MIN_PITCH = bind("dialogue.dialogueBlipMinPitch", Double.class);
+    public static final ConfigValue<Double> DIALOGUE_BLIP_MAX_PITCH = bind("dialogue.dialogueBlipMaxPitch", Double.class);
     public static final ConfigValue<Double> DIALOGUE_CAMERA_ZOOM_AMOUNT = bind("dialogue.dialogueCameraZoomAmount", Double.class);
+    public static final ConfigValue<Boolean> ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS = bind("dialogue.enableNormalDialogueCameraFocus", Boolean.class);
+    public static final ConfigValue<Double> NORMAL_DIALOGUE_CAMERA_ZOOM_AMOUNT = bind("dialogue.normalDialogueCameraZoomAmount", Double.class);
     public static final ConfigValue<Integer> DIALOGUE_CAMERA_TRANSITION_TICKS = bind("dialogue.dialogueCameraTransitionTicks", Integer.class);
     public static final ConfigValue<Boolean> FREEZE_VILLAGER_DURING_DIALOGUE = bind("dialogue.freezeVillagerDuringDialogue", Boolean.class);
     public static final ConfigValue<Double> MAX_DIALOGUE_DISTANCE = bind("dialogue.maxDialogueDistance", Double.class);
@@ -75,6 +116,11 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_GIFTS = bind("gifts.enableVillagerGifts", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_HIGH_REPUTATION_GIFTS = bind("gifts.enableHighReputationGifts", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_GIFT_KEEPSAKES = bind("gifts.enableGiftKeepsakes", Boolean.class);
+    public static final ConfigValue<Boolean> SHOW_GIFT_REACTION_TOOLTIP = bind("gifts.showGiftReactionTooltip", Boolean.class);
+    public static final ConfigValue<Boolean> GIFT_REACTION_TOOLTIP_REQUIRES_KNOWN_GIFT = bind("gifts.giftReactionTooltipRequiresKnownGift", Boolean.class);
+    public static final ConfigValue<Double> REPEATED_GIFT_REPUTATION_MULTIPLIER = bind("gifts.repeatedGiftReputationMultiplier", Double.class);
+    public static final ConfigValue<Integer> DAILY_GIFT_REPUTATION_CAP = bind("gifts.dailyGiftReputationCap", Integer.class);
+    public static final ConfigValue<Integer> GIFT_REQUEST_COOLDOWN_TICKS = bind("gifts.giftRequestCooldownTicks", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_SOCIAL_GRAPH = bind("social.enableVillagerSocialGraph", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_MOODS = bind("social.enableVillagerMoods", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_SOCIAL_ATTRIBUTE_BEHAVIOR = bind("social.enableSocialAttributeBehavior", Boolean.class);
@@ -84,16 +130,59 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS = bind("social.enableSocialAttributeRetaliationEffects", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS = bind("social.enableSocialAttributeGossipEffects", Boolean.class);
     public static final ConfigValue<Double> SOCIAL_ATTRIBUTE_EFFECT_SCALE = bind("social.socialAttributeEffectScale", Double.class);
+    public static final ConfigValue<Boolean> ENABLE_VANILLA_VILLAGER_BREEDING = bind("social.enableVanillaVillagerBreeding", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_FAMILY_BREEDING_RULES = bind("social.enableFamilyBreedingRules", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_OPPOSITE_GENDER_BREEDING_RULES = bind("social.enableOppositeGenderBreedingRules", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_PARENT_REPUTATION_INHERITANCE = bind("social.enableParentReputationInheritance", Boolean.class);
     public static final ConfigValue<Boolean> BABY_VILLAGERS_DROP_LOOT = bind("balance.babyVillagersDropLoot", Boolean.class);
     public static final ConfigValue<Boolean> REQUIRE_PLAYER_KILL_FOR_PROFESSION_LOOT = bind("balance.requirePlayerKillForProfessionLoot", Boolean.class);
+    public static final ConfigValue<Boolean> HUNGER_EFFECT_AFFECTS_VILLAGERS = bind("balance.hungerEffectAffectsVillagers", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_VILLAGER_STARVATION_DAMAGE = bind("balance.enableVillagerStarvationDamage", Boolean.class);
     public static final ConfigValue<Double> VILLAGER_EMERALD_DROP_CHANCE = bind("balance.villagerEmeraldDropChance", Double.class);
     public static final ConfigValue<Double> VILLAGER_BREAD_DROP_CHANCE = bind("balance.villagerBreadDropChance", Double.class);
     public static final ConfigValue<Double> PROFESSION_DROP_CHANCE = bind("balance.professionDropChance", Double.class);
     public static final ConfigValue<Double> RARE_DROP_CHANCE = bind("balance.rareDropChance", Double.class);
     public static final ConfigValue<Double> VERY_RARE_DROP_CHANCE = bind("balance.veryRareDropChance", Double.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_BASE_DAILY_COST = bind("balance.hiredContractBaseDailyCost", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_MINIMUM_DAILY_COST = bind("balance.hiredContractMinimumDailyCost", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_MAXIMUM_DAILY_COST = bind("balance.hiredContractMaximumDailyCost", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_SKILL_PREMIUM_PER_TEN = bind("balance.hiredContractSkillPremiumPerTen", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_ROYALTY_COST_MODIFIER = bind("balance.hiredContractRoyaltyCostModifier", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_REVERED_COST_MODIFIER = bind("balance.hiredContractReveredCostModifier", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_RESPECTED_COST_MODIFIER = bind("balance.hiredContractRespectedCostModifier", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_TRUSTED_COST_MODIFIER = bind("balance.hiredContractTrustedCostModifier", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_NEUTRAL_COST_MODIFIER = bind("balance.hiredContractNeutralCostModifier", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_SUSPICIOUS_COST_MODIFIER = bind("balance.hiredContractSuspiciousCostModifier", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_HOSTILE_COST_MODIFIER = bind("balance.hiredContractHostileCostModifier", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_DESPISED_COST_MODIFIER = bind("balance.hiredContractDespisedCostModifier", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_FEARED_COST_MODIFIER = bind("balance.hiredContractFearedCostModifier", Integer.class);
+    public static final ConfigValue<Integer> HIRED_CONTRACT_EARLY_END_REFUND_PERCENT = bind("balance.hiredContractEarlyEndRefundPercent", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_TICK_INTERVAL = bind("balance.hiredWorkTickInterval", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_DECISION_BUDGET = bind("balance.hiredWorkDecisionBudget", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_NOTICE_COOLDOWN_SECONDS = bind("balance.hiredWorkNoticeCooldownSeconds", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_DEFAULT_RADIUS = bind("balance.hiredWorkDefaultRadius", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_MAX_RADIUS = bind("balance.hiredWorkMaxRadius", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_BASE_EFFICIENCY_PERCENT = bind("balance.hiredWorkBaseEfficiencyPercent", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_MINIMUM_EFFICIENCY_PERCENT = bind("balance.hiredWorkMinimumEfficiencyPercent", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT = bind("balance.hiredWorkMaximumEfficiencyPercent", Integer.class);
+    public static final ConfigValue<Boolean> ENABLE_HIRED_WORK_SKILL_GROWTH = bind("balance.enableHiredWorkSkillGrowth", Boolean.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_MAX_BLOCKS = bind("balance.hiredBuilderMaxBlocks", Integer.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_MAX_SITE_DISTANCE = bind("balance.hiredBuilderMaxSiteDistance", Integer.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_MATERIAL_STORAGE_RADIUS = bind("balance.hiredBuilderMaterialStorageRadius", Integer.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_BASE_EMERALD_COST = bind("balance.hiredBuilderBaseEmeraldCost", Integer.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_EMERALDS_PER_64_BLOCKS = bind("balance.hiredBuilderEmeraldsPer64Blocks", Integer.class);
+    public static final ConfigValue<Boolean> HIRED_BUILDER_CAN_REPLACE_SOFT_BLOCKS = bind("balance.hiredBuilderCanReplaceSoftBlocks", Boolean.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_COMBAT = bind("balance.hiredWorkSkillGrowth.combat", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_MINING = bind("balance.hiredWorkSkillGrowth.mining", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_LOGGING = bind("balance.hiredWorkSkillGrowth.logging", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_CRAFTSMAN = bind("balance.hiredWorkSkillGrowth.craftsman", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_FARMING = bind("balance.hiredWorkSkillGrowth.farming", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_BREWING = bind("balance.hiredWorkSkillGrowth.brewing", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_COOKING = bind("balance.hiredWorkSkillGrowth.cooking", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_BUILDER = bind("balance.hiredWorkSkillGrowth.builder", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_NAVIGATION = bind("balance.hiredWorkSkillGrowth.navigation", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_ANIMAL_HANDLING = bind("balance.hiredWorkSkillGrowth.animalHandling", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_NITWIT = bind("balance.hiredWorkSkillGrowth.nitwit", Double.class);
     public static final ConfigValue<Boolean> ATTACK_AGGROS_ONLY_HIT_VILLAGER = bind("retaliation.attackAggrosOnlyHitVillager", Boolean.class);
     public static final ConfigValue<Boolean> KILLING_VILLAGER_AGGROS_NEARBY_VILLAGERS = bind("retaliation.killingVillagerAggrosNearbyVillagers", Boolean.class);
     public static final ConfigValue<Boolean> BABY_VILLAGERS_FLEE_WITNESSED_DEATHS = bind("retaliation.babyVillagersFleeWitnessedDeaths", Boolean.class);
@@ -125,6 +214,16 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> HOSTILE_THRESHOLD = bind("reputation.hostileThreshold", Integer.class);
     public static final ConfigValue<Integer> DESPISED_THRESHOLD = bind("reputation.despisedThreshold", Integer.class);
     public static final ConfigValue<Integer> FEARED_THRESHOLD = bind("reputation.fearedThreshold", Integer.class);
+    public static final ConfigValue<Boolean> ENABLE_PLAYER_RAIDS = bind("playerRaids.enabled", Boolean.class);
+    public static final ConfigValue<Boolean> CONFIRM_RAID_HORN = bind("playerRaids.confirmRaidHorn", Boolean.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_PREPARATION_TICKS = bind("playerRaids.preparationTicks", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_ABANDONMENT_TICKS = bind("playerRaids.abandonmentTicks", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_VILLAGE_COOLDOWN_DAYS = bind("playerRaids.villageCooldownDays", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_BOSS_BAR_RANGE = bind("playerRaids.bossBarRange", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_DEFENDERS_PER_GOLEM = bind("playerRaids.defendersPerGolem", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_MINIMUM_GOLEMS = bind("playerRaids.minimumGolems", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_MAXIMUM_GOLEMS = bind("playerRaids.maximumGolems", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_RAIDERS_PER_BONUS_GOLEM = bind("playerRaids.raidersPerBonusGolem", Integer.class);
     public static final ConfigValue<Double> WITNESS_RADIUS = bind("reputation.witnessRadius", Double.class);
     public static final ConfigValue<Double> GOSSIP_RADIUS = bind("reputation.gossipRadius", Double.class);
     public static final ConfigValue<Double> DESPISED_SIGHT_RADIUS = bind("reputation.despisedSightRadius", Double.class);
@@ -136,6 +235,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_REPUTATION_TRADE_PRICING = bind("reputation.enableReputationTradePricing", Boolean.class);
     public static final ConfigValue<Double> REPUTATION_TRADE_PRICE_SCALE = bind("reputation.reputationTradePriceScale", Double.class);
     public static final ConfigValue<Boolean> ENABLE_SKILL_TRADE_OVERHAUL = bind("trade.enableSkillTradeOverhaul", Boolean.class);
+    public static final ConfigValue<Boolean> DISABLE_VILLAGER_WALLET_LIMIT = bind("trade.disableVillagerWalletLimit", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_SPECIAL_ORDERS = bind("trade.enableSpecialOrders", Boolean.class);
     public static final ConfigValue<VillagerReputationLevel> SPECIAL_ORDER_MIN_REPUTATION = bind("trade.specialOrderMinReputation", VillagerReputationLevel.class);
     public static final ConfigValue<Integer> SPECIAL_ORDER_WAIT_DAYS = bind("trade.specialOrderWaitDays", Integer.class);
@@ -158,16 +258,35 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_SKILL_GROWTH_FEEDBACK = bind("trade.enableSkillGrowthFeedback", Boolean.class);
     public static final ConfigValue<Integer> SKILL_GROWTH_PRIMARY_MIN = bind("trade.skillGrowthPrimaryMin", Integer.class);
     public static final ConfigValue<Integer> SKILL_GROWTH_PRIMARY_MAX = bind("trade.skillGrowthPrimaryMax", Integer.class);
-    public static final ConfigValue<Double> SKILL_GROWTH_SECONDARY_CHANCE = bind("trade.skillGrowthSecondaryChance", Double.class);
-    public static final ConfigValue<Integer> SKILL_GROWTH_SECONDARY_MAX = bind("trade.skillGrowthSecondaryMax", Integer.class);
+    public static final ConfigValue<Boolean> SHOW_VILLAGE_BOUNDS = bind("debugOverlay.showVillageBounds", Boolean.class);
+    public static final ConfigValue<Boolean> SHOW_QUEST_JOURNAL_TAGS = bind("debugOverlay.showQuestJournalTags", Boolean.class);
+    public static final ConfigValue<Boolean> HIGHLIGHT_RAID_DEFENDERS = bind("debugOverlay.highlightRaidDefenders", Boolean.class);
+    public static final ConfigValue<Integer> DEBUG_PREVIEW_MAX_VISIBLE_NODES = bind("debugOverlay.debugPreviewMaxVisibleNodes", Integer.class);
+    public static final ConfigValue<Integer> DEBUG_PREVIEW_MAX_VISIBLE_LABELS = bind("debugOverlay.debugPreviewMaxVisibleLabels", Integer.class);
+    public static final ConfigValue<Integer> DEBUG_PREVIEW_MAX_VISIBLE_SEGMENTS = bind("debugOverlay.debugPreviewMaxVisibleSegments", Integer.class);
     public static final ConfigValue<Boolean> SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY = bind("debugOverlay.showVillagerReputationDebugOverlay", Boolean.class);
     public static final ConfigValue<Double> REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE = bind("debugOverlay.reputationDebugOverlayMaxDistance", Double.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_SHOW_TIER = bind("debugOverlay.reputationDebugOverlayShowTier", Boolean.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_SHOW_NUMBER = bind("debugOverlay.reputationDebugOverlayShowNumber", Boolean.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_SHOW_HEALTH = bind("debugOverlay.reputationDebugOverlayShowHealth", Boolean.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR = bind("debugOverlay.reputationDebugOverlayShowArmor", Boolean.class);
+    public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_SHOW_HUNGER = bind("debugOverlay.reputationDebugOverlayShowHunger", Boolean.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS = bind("debugOverlay.reputationDebugOverlayRequireAdvancedTooltips", Boolean.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_ONLY_WHEN_SNEAKING = bind("debugOverlay.reputationDebugOverlayOnlyWhenSneaking", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_VILLAGER_SLEEP_HEALING = bind("combat.enableVillagerSleepHealing", Boolean.class);
+    public static final ConfigValue<Double> VILLAGER_SLEEP_HEALING_MAX_HEALTH_PERCENT = bind("combat.villagerSleepHealingMaxHealthPercent", Double.class);
+    public static final ConfigValue<Boolean> ENABLE_VILLAGER_DOWNED_STATE = bind("combat.enableVillagerDownedState", Boolean.class);
+    public static final ConfigValue<Boolean> ALL_VILLAGERS_USE_DOWNED_STATE = bind("combat.allVillagersUseDownedState", Boolean.class);
+    public static final ConfigValue<Boolean> RAID_VILLAGERS_USE_DOWNED_STATE = bind("combat.raidVillagersUseDownedState", Boolean.class);
+    public static final ConfigValue<Boolean> HIRED_VILLAGERS_USE_DOWNED_STATE = bind("combat.hiredVillagersUseDownedState", Boolean.class);
+    public static final ConfigValue<Boolean> PARTY_VILLAGERS_USE_DOWNED_STATE = bind("combat.partyVillagersUseDownedState", Boolean.class);
+    public static final ConfigValue<Boolean> PLAYER_DAMAGE_DOWNS_ELIGIBLE_VILLAGERS = bind("combat.playerDamageDownsEligibleVillagers", Boolean.class);
+    public static final ConfigValue<Boolean> MOB_DAMAGE_DOWNS_ELIGIBLE_VILLAGERS = bind("combat.mobDamageDownsEligibleVillagers", Boolean.class);
+    public static final ConfigValue<Boolean> ENVIRONMENTAL_DAMAGE_DOWNS_ELIGIBLE_VILLAGERS = bind("combat.environmentalDamageDownsEligibleVillagers", Boolean.class);
+    public static final ConfigValue<Integer> DOWNED_MINIMUM_TICKS = bind("combat.downedMinimumTicks", Integer.class);
+    public static final ConfigValue<Double> DOWNED_RECOVERY_HEALTH_PERCENT = bind("combat.downedRecoveryHealthPercent", Double.class);
+    public static final ConfigValue<Double> DOWNED_THREAT_RADIUS = bind("combat.downedThreatRadius", Double.class);
+    public static final ConfigValue<Integer> DOWNED_QUIET_TICKS = bind("combat.downedQuietTicks", Integer.class);
     public static final ConfigValue<Boolean> WEAPONSMITHS_FIGHT_BACK = bind("combat.weaponsmithsFightBack", Boolean.class);
     public static final ConfigValue<Boolean> TOOLSMITHS_FIGHT_BACK = bind("combat.toolsmithsFightBack", Boolean.class);
     public static final ConfigValue<Boolean> ARMORERS_FIGHT_BACK = bind("combat.armorersFightBack", Boolean.class);
@@ -185,7 +304,6 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Double> COMBAT_WEAPON_DROP_CHANCE = bind("combat.combatWeaponDropChance", Double.class);
     public static final ConfigValue<Double> COMBAT_WEAPON_ENCHANT_CHANCE = bind("combat.combatWeaponEnchantChance", Double.class);
     public static final ConfigValue<Double> ARMORER_SHIELD_CHANCE_HARD = bind("combat.armorerShieldChanceHard", Double.class);
-    public static final ConfigValue<Boolean> FARMERS_USE_BREAD = bind("combat.farmersUseBread", Boolean.class);
     public static final ConfigValue<Boolean> CLERICS_USE_POTIONS = bind("combat.clericsUsePotions", Boolean.class);
     public static final ConfigValue<Double> PASSIVE_CLERIC_ALLY_HEAL_RANGE = bind("combat.passiveClericAllyHealRange", Double.class);
     public static final ConfigValue<Double> PASSIVE_CLERIC_ALLY_HEAL_HEALTH_THRESHOLD = bind("combat.passiveClericAllyHealHealthThreshold", Double.class);
@@ -198,18 +316,61 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> WANDERER_DROP_RANDOM_CURRENT_TRADE = bind("wanderer.dropRandomCurrentTrade", Boolean.class);
     public static final ConfigValue<Double> WANDERER_RANDOM_TRADE_DROP_CHANCE = bind("wanderer.randomTradeDropChance", Double.class);
     public static final ConfigValue<Boolean> DISABLE_DIALOGUE_TEXT_EFFECTS = bind("dialogue.disableDialogueTextEffects", Boolean.class);
+    public static final ConfigValue<Boolean> SHOW_QUEST_INDICATORS = bind("quest.showQuestIndicators", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_QUEST_ITEM_SHADER_HIGHLIGHTS = bind("quest.enableQuestItemShaderHighlights", Boolean.class);
+    public static final ConfigValue<QuestItemHighlightMode> QUEST_ITEM_HIGHLIGHT_MODE = bind("quest.questItemHighlightMode", QuestItemHighlightMode.class);
 
     private VillagerRetaliationConfig() {
     }
 
     public static void init() {
+        // beta.12 used -750 as the default. Move only that exact legacy value so
+        // deliberately customized thresholds remain untouched.
+        if (FEARED_THRESHOLD.get() == -750) {
+            FEARED_THRESHOLD.set(-1000);
+            CONFIG.save();
+        }
+        if (!clientSyncObserversRegistered) {
+            clientSyncObserversRegistered = true;
+            SHOW_VILLAGER_NAME_TAGS.option().observe(ignored -> syncServerConfigToConnectedPlayers());
+        }
+    }
+
+    private static void syncServerConfigToConnectedPlayers() {
+        var server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) {
+            return;
+        }
+        server.execute(() -> server.getPlayerList()
+                .getPlayers()
+                .forEach(VillagerReputationNetworking::sendServerConfig));
     }
 
     private static ConfigWrapper<?> loadConfig() {
         ConfigWrapper<?> config = instantiateConfigWrapper();
+        boolean migrateCraftsmanSkillGrowth =
+                VillagerRetaliationConfigCompatibility.shouldMigrateCraftsmanSkillGrowth(config.fileLocation());
+        boolean disableLegacyExperimentalTradeFeatures =
+                VillagerRetaliationConfigCompatibility.shouldDisableLegacyExperimentalTradeFeatures(config.fileLocation());
+        boolean disableLegacyExperimentalBreedingRules =
+                VillagerRetaliationConfigCompatibility.shouldDisableLegacyExperimentalBreedingRules(config.fileLocation());
         if (!migrateLegacyTomlIfNeeded(config)) {
             config.load();
+        }
+        boolean configChanged = false;
+        if (migrateCraftsmanSkillGrowth && VillagerRetaliationConfigCompatibility.inheritLegacyCraftsmanSkillGrowth(config)) {
+            configChanged = true;
+        }
+        if (disableLegacyExperimentalTradeFeatures
+                && VillagerRetaliationConfigCompatibility.disableLegacyExperimentalTradeFeatures(config)) {
+            configChanged = true;
+        }
+        if (disableLegacyExperimentalBreedingRules
+                && VillagerRetaliationConfigCompatibility.disableLegacyExperimentalBreedingRules(config)) {
+            configChanged = true;
+        }
+        if (configChanged) {
+            config.save();
         }
         return config;
     }

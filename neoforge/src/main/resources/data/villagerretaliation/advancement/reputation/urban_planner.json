@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/blueprint_for_success",
+  "display": {
+    "icon": {
+      "id": "villagerretaliation:blueprint_checklist"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.urban_planner.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.urban_planner.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

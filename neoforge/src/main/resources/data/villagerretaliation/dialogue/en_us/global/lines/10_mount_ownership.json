@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.mount_ownership"
+  },
+  "lines": [
+    {
+      "id": "mount_ownership_boss",
+      "request": "question",
+      "option": "mount.ownership",
+      "lines": [
+        "Take it up with my boss.",
+        "The mount belongs to the person who hired me.",
+        "You will need to ask my employer about it.",
+        "I do not lend out someone else’s animal.",
+        "My boss decides who may ride it.",
+        "I am responsible for bringing the mount back safely.",
+        "The saddle and the animal are part of my work agreement.",
+        "I cannot make that choice without the owner.",
+        "Ask the person whose name is on the contract.",
+        "I was trusted with the reins, not the right to give them away.",
+        "The mount is working today and is not available.",
+        "I will not risk my job by handing over the animal.",
+        "My employer may say yes, but you need their answer.",
+        "The animal knows its rider and may not accept a stranger.",
+        "I need the mount to finish the route I was given.",
+        "Talk to my boss before you touch the saddle.",
+        "This is borrowed equipment, not my property.",
+        "I can point you toward the owner if you need permission.",
+        "The contract is clear about who controls the mount.",
+        "I will keep hold of the reins until my boss says otherwise."
+      ],
+      "show_for_babies": false,
+      "weight": 1
+    }
+  ]
+}

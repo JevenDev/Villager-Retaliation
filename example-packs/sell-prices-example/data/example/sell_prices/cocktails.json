@@ -1,0 +1,18 @@
+{
+  "item": "#vr-food-sellbox:cocktails",
+  "rates": [
+    {
+      "item_count": 1,
+      "currency_count": 10
+    },
+    {
+      "item_count": 1,
+      "currency_count": 15
+    },
+    {
+      "item_count": 1,
+      "currency_count": 25
+    }
+  ],
+  "market_group": "vfs:cocktails"
+}

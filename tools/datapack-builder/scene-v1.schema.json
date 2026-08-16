@@ -1,0 +1,382 @@
+{
+  "type": "object",
+  "title": "Persistent cinematic scene v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jeven.dev/villager-retaliation/schema/scene-v1.schema.json",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "ownership",
+    "entry_step",
+    "actors",
+    "steps"
+  ],
+  "properties": {
+    "schema": {
+      "const": "villagerretaliation:scene/v1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "definition_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "ownership": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "player",
+        "party",
+        "quest_instance",
+        "world"
+      ]
+    },
+    "entry_step": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timeout_ticks": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failure_policy": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "fail_scene",
+        "cancel_scene",
+        "block_for_repair",
+        "run_failure_step"
+      ]
+    },
+    "cancellation_policy": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "fail_scene",
+        "cancel_scene",
+        "block_for_repair",
+        "run_failure_step"
+      ]
+    },
+    "cleanup_policy": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "none",
+        "owned_entities",
+        "encounters",
+        "all_owned",
+        "preserve_world"
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "title": "Data",
+      "additionalProperties": true
+    },
+    "actors": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "title": "Actor declaration",
+        "additionalProperties": false,
+        "required": [
+          "alias",
+          "type",
+          "binding_source",
+          "replacement_policy"
+        ],
+        "properties": {
+          "alias": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+            "enum": [
+              "villagerretaliation:hostile_encounter_group",
+              "villagerretaliation:living_entity",
+              "villagerretaliation:player",
+              "villagerretaliation:position",
+              "villagerretaliation:villager"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "capabilities": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            }
+          },
+          "binding_source": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "owner_player",
+              "party_member",
+              "quest_provider",
+              "uuid",
+              "marker",
+              "encounter",
+              "owned_spawn",
+              "unbound"
+            ]
+          },
+          "binding": {
+            "type": "string",
+            "minLength": 1
+          },
+          "replacement_policy": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "fixed",
+              "operator_rebindable",
+              "compatible_replacement",
+              "respawn_if_owned",
+              "optional"
+            ]
+          },
+          "missing_actor_policy": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "block",
+              "fail",
+              "skip",
+              "wait_until_timeout"
+            ]
+          },
+          "lethal_damage_policy": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "normal",
+              "downed"
+            ]
+          },
+          "death_policy": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "fail",
+              "block",
+              "apply_missing_policy",
+              "respawn_if_owned",
+              "continue_with_snapshot"
+            ]
+          },
+          "filters": {
+            "type": "object",
+            "title": "Data",
+            "additionalProperties": true
+          },
+          "timeout_ticks": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Stable scene step",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+            "enum": [
+              "villagerretaliation:action_batch",
+              "villagerretaliation:cancel_encounter",
+              "villagerretaliation:cleanup_encounter",
+              "villagerretaliation:dialogue",
+              "villagerretaliation:face_actor",
+              "villagerretaliation:face_position",
+              "villagerretaliation:move_actor",
+              "villagerretaliation:quest_transition",
+              "villagerretaliation:scene_branch",
+              "villagerretaliation:scene_complete",
+              "villagerretaliation:scene_fail",
+              "villagerretaliation:start_encounter",
+              "villagerretaliation:wait_condition",
+              "villagerretaliation:wait_encounter",
+              "villagerretaliation:wait_ticks"
+            ]
+          },
+          "actors": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+            }
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "additionalProperties": true
+          },
+          "next": {
+            "type": "string",
+            "minLength": 1
+          },
+          "failure_step": {
+            "type": "string",
+            "minLength": 1
+          },
+          "transitions": {
+            "type": "object",
+            "title": "Data",
+            "additionalProperties": true
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "villagerretaliation:quest_transition"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "title": "Typed quest transition",
+                  "additionalProperties": false,
+                  "properties": {
+                    "quest": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "quest_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "target": {
+                      "type": "string",
+                      "minLength": 1,
+                      "enum": [
+                        "stage",
+                        "complete",
+                        "fail",
+                        "abandon"
+                      ]
+                    },
+                    "target_stage": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    }
+                  },
+                  "oneOf": [
+                    {
+                      "required": [
+                        "quest"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "quest_id"
+                      ]
+                    }
+                  ],
+                  "allOf": [
+                    {
+                      "oneOf": [
+                        {
+                          "required": [
+                            "target_stage"
+                          ],
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "stage"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "required": [
+                            "target"
+                          ],
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "complete",
+                                "fail",
+                                "abandon"
+                              ]
+                            }
+                          },
+                          "not": {
+                            "required": [
+                              "target_stage"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "localized_reference": {
+      "type": "object",
+      "title": "Localized message reference",
+      "additionalProperties": false,
+      "required": [
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.TemporaryWeaponState;
+import com.jvn.villagerretaliation.util.TickThrottle;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerArmor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,18 +58,14 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         }
 
         long gameTime = level.getGameTime();
-        Long nextRestore = this.nextPersistedAngerRestoreTicks.get(villagerId);
-        if (nextRestore == null) {
-            long firstRestore = gameTime + scanStagger(villagerId, PERSISTED_ANGER_RESTORE_SCAN_INTERVAL_TICKS);
-            if (firstRestore > gameTime) {
-                this.nextPersistedAngerRestoreTicks.put(villagerId, firstRestore);
-                return;
-            }
-        } else if (gameTime < nextRestore) {
+        if (!TickThrottle.consume(
+                villagerId,
+                this.nextPersistedAngerRestoreTicks,
+                gameTime,
+                PERSISTED_ANGER_RESTORE_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
-        this.nextPersistedAngerRestoreTicks.put(villagerId, gameTime + PERSISTED_ANGER_RESTORE_SCAN_INTERVAL_TICKS);
         VillagerRetaliationRetaliationUtil.restorePersistedAngerIfNeeded(villager, this.angerTargets, this.persistentTagRoot);
     }
 
@@ -92,7 +90,14 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         this.nextAttackTicks.put(villager.getUUID(), gameTime);
     }
 
-    boolean tryAcquireGroundWeapon(T villager, double movementSpeed, Runnable beforeEquip, long gameTime) {
+    boolean tryAcquireGroundWeapon(
+            T villager,
+            double movementSpeed,
+            Runnable beforeEquip,
+            long gameTime,
+            boolean allowWeapons,
+            boolean allowArmor
+    ) {
         UUID villagerId = villager.getUUID();
         long disabledUntil = this.groundWeaponPickupDisabledUntilTicks.getOrDefault(villagerId, 0L);
         if (gameTime < disabledUntil) {
@@ -109,7 +114,7 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
                 disableGroundWeaponPursuit(villager, gameTime);
                 return false;
             }
-            if (VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(villager, pursuedWeapon, movementSpeed, beforeEquip)) {
+            if (tryAcquireGroundUpgrade(villager, pursuedWeapon, movementSpeed, beforeEquip, allowWeapons, allowArmor)) {
                 return true;
             }
             clearGroundWeaponPursuit(villager);
@@ -122,11 +127,23 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         }
 
         this.nextGroundWeaponScanTicks.put(villagerId, gameTime + GROUND_WEAPON_SCAN_COOLDOWN_TICKS);
-        return VillagerRetaliationVillagerWeapons.findNearestWeapon(villager)
+        ItemEntity nearestWeapon = allowWeapons
+                ? VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).orElse(null)
+                : null;
+        ItemEntity nearestArmor = allowArmor
+                ? VillagerRetaliationVillagerArmor.findNearestUpgrade(villager).orElse(null)
+                : null;
+        ItemEntity nearestUpgrade = nearestWeapon == null
+                ? nearestArmor
+                : nearestArmor == null || villager.distanceToSqr(nearestWeapon) <= villager.distanceToSqr(nearestArmor)
+                        ? nearestWeapon
+                        : nearestArmor;
+        return java.util.Optional.ofNullable(nearestUpgrade)
                 .map(itemEntity -> {
                     this.pursuedGroundWeaponIds.put(villagerId, itemEntity.getUUID());
                     this.groundWeaponPursuitStartTicks.put(villagerId, gameTime);
-                    boolean pursuing = VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(villager, itemEntity, movementSpeed, beforeEquip);
+                    boolean pursuing = tryAcquireGroundUpgrade(
+                            villager, itemEntity, movementSpeed, beforeEquip, allowWeapons, allowArmor);
                     if (!pursuing) {
                         clearGroundWeaponPursuit(villager);
                     }
@@ -136,6 +153,22 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
                     clearGroundWeaponPursuit(villager);
                     return false;
                 });
+    }
+
+    private boolean tryAcquireGroundUpgrade(
+            T villager,
+            ItemEntity itemEntity,
+            double movementSpeed,
+            Runnable beforeEquip,
+            boolean allowWeapons,
+            boolean allowArmor
+    ) {
+        if (allowWeapons && VillagerRetaliationVillagerWeapons.isUsableWeapon(itemEntity.getItem())) {
+            return VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(
+                    villager, itemEntity, movementSpeed, beforeEquip);
+        }
+        return allowArmor && VillagerRetaliationVillagerArmor.shouldPathfindForUpgrade(villager, itemEntity.getItem())
+                && VillagerRetaliationRetaliationUtil.tryAcquireGroundArmor(villager, itemEntity, movementSpeed);
     }
 
     boolean hasTemporaryWeapon(T villager) {
@@ -176,6 +209,17 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         VillagerRetaliationRetaliationUtil.clearPathingState(villager);
     }
 
+    void clearRuntimeState() {
+        this.angerTargets.clear();
+        this.nextPersistedAngerRestoreTicks.clear();
+        this.nextAttackTicks.clear();
+        this.nextGroundWeaponScanTicks.clear();
+        this.pursuedGroundWeaponIds.clear();
+        this.groundWeaponPursuitStartTicks.clear();
+        this.groundWeaponPickupDisabledUntilTicks.clear();
+        this.temporaryWeapons.clear();
+    }
+
     private boolean hasGroundWeaponPursuitTimedOut(T villager, long gameTime) {
         UUID villagerId = villager.getUUID();
         Long startedAt = this.groundWeaponPursuitStartTicks.get(villagerId);
@@ -207,12 +251,5 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
 
         var entity = level.getEntity(weaponId);
         return entity instanceof ItemEntity itemEntity ? itemEntity : null;
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 }

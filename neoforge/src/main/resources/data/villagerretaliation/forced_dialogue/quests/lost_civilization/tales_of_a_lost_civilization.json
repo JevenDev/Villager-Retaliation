@@ -1,6 +1,21 @@
 {
+  "message_prefix": "forced.quest.lost_civilization",
   "entries": [
     {
+      "id": "quest.lost_civilization.storm_reminder",
+      "message_prefix": "forced.quest.lost_civilization.storm_reminder",
+      "trigger": "quest",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Storms have a way of waking old stone, {player}. If you still mean to follow {quest}, keep your wits near {target_x}, {target_z}.",
+        "A night like this makes the deep roads restless. Your map still points {direction}, toward {target_x}, {target_z}.",
+        "Thunder carries strangely over ancient cities. Bring back {proof_item}, and I will know the trail was true."
+      ],
+      "requires_line_of_sight": true,
+      "force_camera_towards_villager": true,
+      "witness_profession": "minecraft:cartographer",
       "options": [
         {
           "id": "quest.lost_civilization.remember",
@@ -17,24 +32,11 @@
           "response": "My notes put it about {distance} blocks {direction}, near {target_x}, {target_z}. Look for the city center, then bring back {proof_item}."
         }
       ],
-      "lines": [
-        "Storms have a way of waking old stone, {player}. If you still mean to follow {quest}, keep your wits near {target_x}, {target_z}.",
-        "A night like this makes the deep roads restless. Your map still points {direction}, toward {target_x}, {target_z}.",
-        "Thunder carries strangely over ancient cities. Bring back {proof_item}, and I will know the trail was true."
-      ],
-      "force_camera_towards_villager": true,
-      "id": "quest.lost_civilization.storm_reminder",
       "leave_option": {
         "label": "Leave",
         "end_conversation": true,
         "response": "The map will wait. The storm may not."
-      },
-      "output": {
-        "mode": "forced_dialogue"
-      },
-      "requires_line_of_sight": true,
-      "trigger": "quest",
-      "witness_profession": "minecraft:cartographer"
+      }
     }
   ]
 }

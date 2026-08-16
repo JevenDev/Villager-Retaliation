@@ -13,15 +13,25 @@
       "id": "weaponsmith_opening",
       "lines": [
         "Mind the grindstone. What do you need?",
-        "Step clear of the grindstone. What do you need?",
-        "Mind the grindstone. I'm listening.",
-        "There you are. I was just near the grindstone, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one."
+        "Step clear of the wheel and speak up.",
+        "Set any weapon down before you explain.",
+        "There you are. Need an edge checked?",
+        "Morning. The forge has already been awake for hours.",
+        "Keep your hands clear of the wheel. I am listening.",
+        "I have a moment before the steel heats.",
+        "What happened to the weapon this time?",
+        "If this is about a nick, show me. If it is gossip, spare me.",
+        "Go on. The hammer can wait one minute.",
+        "Do not lean on the bench. That is where the sharp things live.",
+        "You came in calmly, so I assume nothing broke on the way here.",
+        "Tell me what you need before I start guessing at repairs.",
+        "The blade is cooling. Make this quick.",
+        "I am listening, but the grindstone is not. Speak up.",
+        "Leave some room by the forge and we will get along.",
+        "You look like someone with damaged steel or damaged pride.",
+        "One problem at a time. Which one did you bring?",
+        "If you need advice, expect it to be as blunt as the hammer.",
+        "Alright. Show me what needs work."
       ]
     }
   ]

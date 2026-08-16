@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.options"
+    ],
+    "topic": "global.menu_options.social"
+  },
+  "options": [
+    {
+      "id": "adult_family",
+      "label": "Ask about family",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 2,
+      "conditions": [
+        {
+          "type": "family"
+        }
+      ],
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_relationships",
+      "label": "Ask about relationships",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 3,
+      "conditions": [
+        {
+          "type": "relationship"
+        }
+      ],
+      "show_for_babies": false
+    }
+  ]
+}

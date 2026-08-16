@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.options"
+    ],
+    "topic": "global.menu_options.baby"
+  },
+  "options": [
+    {
+      "id": "baby_greeting",
+      "label": "Say hello",
+      "type": "dialogue_option",
+      "request": "greeting",
+      "order": 0,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_today_question",
+      "label": "Ask about today",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 1,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_question",
+      "label": "Ask what they know",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 2,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_family",
+      "label": "Ask about family",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 2,
+      "conditions": [
+        {
+          "type": "family"
+        }
+      ],
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_gift_preferences",
+      "label": "Ask about gifts",
+      "type": "dialogue_option",
+      "request": "gift_preferences",
+      "order": 3,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_story",
+      "label": "Ask for a story",
+      "type": "dialogue_option",
+      "request": "story",
+      "order": 4,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_share_story",
+      "label": "Share a story",
+      "type": "dialogue_option",
+      "request": "share_story",
+      "order": 5,
+      "requires_shareable_story": true,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_joke",
+      "label": "Tell a joke",
+      "type": "dialogue_option",
+      "request": "joke",
+      "order": 6,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_insult",
+      "label": "Be mean",
+      "type": "dialogue_option",
+      "request": "insult",
+      "order": 7,
+      "show_for_adults": false
+    }
+  ]
+}

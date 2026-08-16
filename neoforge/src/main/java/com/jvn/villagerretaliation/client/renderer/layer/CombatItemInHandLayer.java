@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.renderer.layer;
 import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
+import com.jvn.villagerretaliation.client.renderer.VillagerRenderEquipmentState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -49,8 +50,9 @@ public class CombatItemInHandLayer<T extends AbstractVillager> extends RenderLay
         }
 
         boolean mainHandIsRight = villager.getMainArm() == HumanoidArm.RIGHT;
-        ItemStack leftHandItem = mainHandIsRight ? villager.getOffhandItem() : villager.getMainHandItem();
-        ItemStack rightHandItem = mainHandIsRight ? villager.getMainHandItem() : villager.getOffhandItem();
+        ItemStack mainHandItem = VillagerRenderEquipmentState.visibleMainHand(villager);
+        ItemStack leftHandItem = mainHandIsRight ? villager.getOffhandItem() : mainHandItem;
+        ItemStack rightHandItem = mainHandIsRight ? mainHandItem : villager.getOffhandItem();
         if (leftHandItem.isEmpty() && rightHandItem.isEmpty()) {
             return;
         }

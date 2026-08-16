@@ -1,13 +1,18 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
-import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderSet;
@@ -21,8 +26,6 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 public final class VillagerInteractionTracker {
-    private static final int VILLAGE_ENCOUNTER_REGION_SIZE = 64;
-
     private VillagerInteractionTracker() {
     }
 
@@ -70,6 +73,14 @@ public final class VillagerInteractionTracker {
                 entry.lastDirectHitGameTime(),
                 entry.lastDirectHitWeapon()
         );
+    }
+
+    public static DialogueUsage dialogueUsage(
+            ServerLevel level, Villager villager, ServerPlayer player, String dialogueId) {
+        VillagerInteractionSavedData.InteractionEntry entry = VillagerInteractionSavedData.get(level)
+                .getOrEmptyForRead(villager.getUUID(), player.getUUID());
+        VillagerInteractionSavedData.DialogueUsage usage = entry.dialogueUsage(dialogueId);
+        return new DialogueUsage(usage.count(), usage.lastUsedGameTime());
     }
 
     public static void rememberDialogue(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType, String dialogueId) {
@@ -283,17 +294,20 @@ public final class VillagerInteractionTracker {
     }
 
     private static Optional<StructureVisit> detectedStructureAt(ServerLevel level, BlockPos playerPos, ResourceLocation structureId) {
-        ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, structureId);
+        if (structureId == null) {
+            return Optional.empty();
+        }
+        ResourceLocation canonicalStructureId = VillagerWorldTargetCache.canonicalStructureId(structureId);
         return level.registryAccess()
                 .registryOrThrow(Registries.STRUCTURE)
-                .getHolder(structureKey)
+                .getHolder(ResourceKey.create(Registries.STRUCTURE, canonicalStructureId))
                 .flatMap(holder -> {
                     StructureStart start = level.structureManager()
                             .getStructureWithPieceAt(playerPos, HolderSet.direct(holder));
                     if (!start.isValid()) {
                         return Optional.empty();
                     }
-                    return Optional.of(new StructureVisit(structureId, start.getBoundingBox().getCenter()));
+                    return Optional.of(new StructureVisit(canonicalStructureId, start.getBoundingBox().getCenter()));
                 });
     }
 
@@ -362,12 +376,14 @@ public final class VillagerInteractionTracker {
         if (data.getOrEmptyForRead(villager.getUUID(), player.getUUID()).hasMet()) {
             return false;
         }
-        return VillageMembership.resolve(level, villager)
-                .map(area -> !data.hasVillageEncounter(player.getUUID(), villageEncounterKey(level, area))
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        return encounterVillage(level, villager, registry)
+                .map(villageId -> !data.hasVillageEncounter(player.getUUID(), villageId, registry)
                         && !data.hasMetWithAny(
-                                area.members().stream().map(Villager::getUUID).toList(),
-                                player.getUUID()
-                        ))
+                        registry.canonicalRecord(villageId)
+                                .map(record -> record.residents().keySet())
+                                .orElse(Set.of()),
+                        player.getUUID()))
                 .orElse(false);
     }
 
@@ -501,20 +517,37 @@ public final class VillagerInteractionTracker {
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
         long day = level.getDayTime() / 24000L;
         boolean changed = entry.markSeenDay(day);
-        changed |= VillageMembership.resolve(level, villager)
-                .map(area -> data.rememberVillageEncounter(player.getUUID(), villageEncounterKey(level, area)))
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        changed |= encounterVillage(level, villager, registry)
+                .map(id -> data.rememberVillageEncounter(player.getUUID(), id))
                 .orElse(false);
         if (changed) {
             data.setDirty();
         }
     }
 
-    private static String villageEncounterKey(ServerLevel level, VillageMembership.VillageArea area) {
-        BlockPos center = area.centerBlock();
-        return level.dimension().location() + ":"
-                + Math.floorDiv(center.getX(), VILLAGE_ENCOUNTER_REGION_SIZE)
-                + ","
-                + Math.floorDiv(center.getZ(), VILLAGE_ENCOUNTER_REGION_SIZE);
+    public static boolean isRoutineChatMuted(ServerLevel level, Villager villager, ServerPlayer player) {
+        return VillagerInteractionSavedData.get(level)
+                .getOrEmptyForRead(villager.getUUID(), player.getUUID())
+                .routineChatMuted();
+    }
+
+    public static void setRoutineChatMuted(ServerLevel level, Villager villager, ServerPlayer player, boolean muted) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        if (entry.setRoutineChatMuted(muted)) {
+            data.setDirty();
+        }
+    }
+
+    private static Optional<VillageAllegianceId> encounterVillage(
+            ServerLevel level,
+            Villager villager,
+            VillageAllegianceRegistrySavedData registry) {
+        Optional<VillageAllegianceId> home = VillageAllegianceApi.canonicalPrimary(level, villager);
+        return home.isPresent()
+                ? home
+                : registry.resolveAt(level, villager.blockPosition()).flatMap(registry::canonical);
     }
 
     public static Optional<RecruitmentMemory> recruitmentMemory(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -639,6 +672,9 @@ public final class VillagerInteractionTracker {
         return data.contextReports(villager.getUUID(), player.getUUID(), level.getGameTime());
     }
 
+    public record DialogueUsage(int count, long lastUsedGameTime) {
+    }
+
     public record ContextReports(
             CartographerMapReport cartographerMapReport,
             StoryHintReport storyHintReport,
@@ -712,6 +748,7 @@ public final class VillagerInteractionTracker {
                 case VILLAGE_EVENT_REPORT -> this.villageEventReportUseCount;
                 case APOLOGY -> this.apologyUseCount;
                 case VILLAGE_DEFENSE_REPORT -> this.villageDefenseReportUseCount;
+                case RAID_VICTORY_ACKNOWLEDGEMENT -> 0;
                 case STORY -> this.storyUseCount;
                 case SHARE_STORY -> this.shareStoryUseCount;
                 case JOKE -> this.jokeUseCount;

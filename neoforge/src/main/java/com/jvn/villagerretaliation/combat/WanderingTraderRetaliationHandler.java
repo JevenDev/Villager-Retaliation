@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.Act
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -17,7 +18,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -56,7 +56,7 @@ public final class WanderingTraderRetaliationHandler {
         }
 
         if (event.getEntity() instanceof WanderingTrader trader) {
-            VillagerRetaliationVillagerCombatUtil.resolveAttacker(trader, event.getSource()).ifPresent(attacker -> {
+            VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(trader, event.getSource()).ifPresent(attacker -> {
                 if (!shouldRetaliateAgainstAttacker(attacker)) {
                     return;
                 }
@@ -73,7 +73,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(traderLlama, event.getSource()).ifPresent(attacker -> {
+        VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(traderLlama, event.getSource()).ifPresent(attacker -> {
             if (!shouldRetaliateAgainstAttacker(attacker)) {
                 return;
             }
@@ -95,7 +95,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(trader, event.getSource())
+        VillagerRetaliationVillagerCombatUtil.resolveDeathAttacker(trader, event.getSource())
                 .filter(attacker -> !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker))
                 .filter(WanderingTraderRetaliationHandler::shouldRetaliateAgainstAttacker)
                 .ifPresent(attacker -> angerNearbyTraders(trader, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
@@ -106,7 +106,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        if (RETALIATION.hasAnger(trader)) {
+        if (shouldSuppressVanillaAvoidance(trader)) {
             suppressVanillaPanic(trader);
         }
     }
@@ -119,6 +119,10 @@ public final class WanderingTraderRetaliationHandler {
         VillagerRetaliationVillagerCombatUtil.updateSwingAnimation(trader);
         if (trader.level().isClientSide) {
             return;
+        }
+        if (trader.getTarget() instanceof LivingEntity target
+                && VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)) {
+            clearAnger(trader);
         }
 
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()) {
@@ -151,7 +155,7 @@ public final class WanderingTraderRetaliationHandler {
             VillagerRangedCombatHelper.clearState(trader);
             VillagerRetaliationRetaliationUtil.restoreCombatMovement(trader);
             RETALIATION.restoreTemporaryWeapon(trader);
-            trader.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(trader);
             return;
         }
         if (!VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(trader, target)) {
@@ -180,7 +184,7 @@ public final class WanderingTraderRetaliationHandler {
         boolean canUseMeleeCombat = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(trader);
         boolean canMeleeHit = canUseMeleeCombat && VillagerRetaliationRetaliationUtil.canMeleeHit(trader, target);
         if (canMeleeHit) {
-            trader.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(trader);
             VillagerRetaliationRetaliationUtil.clearPathingState(trader);
         } else {
             VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(trader, target, ACTOR_POLICY.movementSpeed(trader));
@@ -188,8 +192,9 @@ public final class WanderingTraderRetaliationHandler {
         if (canMeleeHit && RETALIATION.isAttackReady(trader, gameTime)) {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(trader);
             trader.swing(attackHand, true);
-            syncMeleeAttackAttributes(trader);
-            trader.doHurtTarget(target);
+            if (syncMeleeAttackAttributes(trader)) {
+                trader.doHurtTarget(target);
+            }
             RETALIATION.setNextAttackTick(trader, gameTime + ACTOR_POLICY.attackCooldown(trader));
         }
     }
@@ -199,6 +204,16 @@ public final class WanderingTraderRetaliationHandler {
             return false;
         }
 
+        if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)) {
+            RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader));
+            return false;
+        }
+
+        if (player.isInvisible()) {
+            return trader.getTarget() == player
+                    || RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader));
+        }
+
         if (!RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader))
                 && !isDespisedBy(trader, player)) {
             return false;
@@ -206,6 +221,15 @@ public final class WanderingTraderRetaliationHandler {
 
         VillagerRetaliationRetaliationUtil.spawnMadParticles(trader);
         return true;
+    }
+
+    public static boolean shouldSuppressVanillaAvoidance(WanderingTrader trader) {
+        if (trader.level().isClientSide || !VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()) {
+            return false;
+        }
+
+        RETALIATION.restorePersistedAngerIfNeeded(trader);
+        return RETALIATION.hasAnger(trader);
     }
 
     public static boolean tryPacifyWithEmeralds(WanderingTrader trader, Player player, ItemStack interactionStack) {
@@ -277,7 +301,7 @@ public final class WanderingTraderRetaliationHandler {
         }
 
         long gameTime = trader.level().getGameTime();
-        if (!consumeScanSlot(trader.getUUID(), gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.consume(trader.getUUID(), NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
@@ -309,13 +333,13 @@ public final class WanderingTraderRetaliationHandler {
         double radius = VillagerRetaliationConfig.DESPISED_SIGHT_RADIUS.get();
         AABB area = trader.getBoundingBox().inflate(radius);
         for (Player player : level.getEntitiesOfClass(Player.class, area)) {
-            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+            if (!player.isAlive() || player.isInvisible() || player.isCreative() || player.isSpectator()) {
                 continue;
             }
             if (!trader.hasLineOfSight(player)) {
                 continue;
             }
-            if (VillagerAggressionPolicy.shouldAttackOnSight(trader, player)) {
+            if (VillagerAggressionPolicy.shouldProactivelyAttackOnSight(trader, player)) {
                 anger(trader, player);
                 return true;
             }
@@ -336,13 +360,16 @@ public final class WanderingTraderRetaliationHandler {
                 trader,
                 ACTOR_POLICY.movementSpeed(trader),
                 () -> RETALIATION.discardTemporaryWeapon(trader),
-                gameTime
+                gameTime,
+                true,
+                false
         );
     }
 
     private static boolean shouldRetaliateAgainstAttacker(LivingEntity attacker) {
-        return VillagerRetaliationConfig.WANDERING_TRADERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
-                || !isHostileMobAttacker(attacker);
+        return !VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(attacker)
+                && (VillagerRetaliationConfig.WANDERING_TRADERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
+                || !isHostileMobAttacker(attacker));
     }
 
     private static boolean isHostileMobAttacker(LivingEntity attacker) {
@@ -368,19 +395,11 @@ public final class WanderingTraderRetaliationHandler {
         RETALIATION.clearTransientState(trader);
         trader.setAggressive(false);
         trader.setTarget(null);
-        trader.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(trader);
     }
 
-    private static void syncMeleeAttackAttributes(WanderingTrader trader) {
-        AttributeInstance attackDamage = trader.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (attackDamage == null) {
-            return;
-        }
-
-        double desiredBaseDamage = ACTOR_POLICY.meleeAttackDamageBase(trader);
-        if (attackDamage.getBaseValue() != desiredBaseDamage) {
-            attackDamage.setBaseValue(desiredBaseDamage);
-        }
+    private static boolean syncMeleeAttackAttributes(WanderingTrader trader) {
+        return VillagerCombatAttributeCompat.syncMeleeAttackAttributes(trader);
     }
 
     private static void angerNearbyTraders(Entity sourceEntity, LivingEntity attacker, double radius) {
@@ -405,6 +424,7 @@ public final class WanderingTraderRetaliationHandler {
 
     private static void suppressVanillaPanic(WanderingTrader trader) {
         VillagerRetaliationVillagerBrainUtil.clearThreatMemories(trader);
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearMovement(trader);
     }
 
     private static void equipCombatWeapon(WanderingTrader trader) {
@@ -435,6 +455,10 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
+        clearRuntimeState(trader);
+    }
+
+    private static void clearRuntimeState(WanderingTrader trader) {
         VillagerRangedCombatHelper.clearState(trader);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(trader);
         if (trader.isAlive()) {
@@ -451,26 +475,17 @@ public final class WanderingTraderRetaliationHandler {
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(trader.getUUID());
     }
 
-    private static boolean consumeScanSlot(UUID traderId, long gameTime, long intervalTicks) {
-        Long nextScan = NEXT_NATURAL_TARGET_SCAN_TICKS.get(traderId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(traderId, intervalTicks);
-            if (firstScan > gameTime) {
-                NEXT_NATURAL_TARGET_SCAN_TICKS.put(traderId, firstScan);
-                return false;
+    public static void clearRuntimeState(net.minecraft.server.MinecraftServer server) {
+        if (server != null) {
+            for (ServerLevel level : server.getAllLevels()) {
+                for (Entity entity : level.getAllEntities()) {
+                    if (entity instanceof WanderingTrader trader) {
+                        clearRuntimeState(trader);
+                    }
+                }
             }
-        } else if (gameTime < nextScan) {
-            return false;
         }
-
-        NEXT_NATURAL_TARGET_SCAN_TICKS.put(traderId, gameTime + Math.max(1L, intervalTicks));
-        return true;
-    }
-
-    private static long scanStagger(UUID entityId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(entityId.getMostSignificantBits() ^ entityId.getLeastSignificantBits(), intervalTicks);
+        RETALIATION.clearRuntimeState();
+        NEXT_NATURAL_TARGET_SCAN_TICKS.clear();
     }
 }

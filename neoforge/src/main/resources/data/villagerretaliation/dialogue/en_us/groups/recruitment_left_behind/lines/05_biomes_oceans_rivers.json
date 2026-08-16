@@ -13,7 +13,17 @@
         "Please do not leave me somewhere so open that every direction feels exposed.",
         "The Beach looked calm, but calm does not help much when I am alone.",
         "Every wave sounded closer once I realized you were gone.",
-        "I was standing between the sea and the open sand, wishing either one felt safe."
+        "I was standing between the sea and the open sand, wishing either one felt safe.",
+        "I fixed my eyes on the bend in the shoreline while the tide kept narrowing the dry sand.",
+        "I tried to follow, but waves washed your prints clean.",
+        "Alone in Beach, I counted the food in my pack and wondered how long I might be stranded.",
+        "I waited at the lee side of a sand bank instead of risking deeper water alone.",
+        "While I waited in Beach, each wave made it harder to believe you knew where I was.",
+        "After you vanished in Beach, I called across the water until I realized the surf was swallowing my voice.",
+        "The changing light worried me more than the water at first. I was still alone in Beach.",
+        "If we travel through Beach again, keep the shore or the boat in sight.",
+        "If we get separated in Beach again, leave me a boat and a direction next time, not an empty horizon.",
+        "I will face Beach again. I just need to know I am not facing it by myself."
       ],
       "conditions": [
         {
@@ -33,7 +43,7 @@
       "request": "recruitment_followup",
       "lines": [
         "Don't leave me near the Deep Lukewarm Ocean. Deep water is still deep water even when it feels mild.",
-        "The Deep Lukewarm Ocean sounded gentler than it felt once I was alone beside it.",
+        "The Deep Lukewarm <aqua><wavy>Ocean</wavy></aqua> sounded gentler than it felt once I was alone beside it.",
         "I was stranded near the Deep Lukewarm Ocean with too much water and too little certainty.",
         "If you wander off by a Deep Lukewarm Ocean, I still have to worry about what is moving below.",
         "That water looked calm enough to trick someone careless. I was trying not to be careless.",
@@ -41,7 +51,17 @@
         "Please do not leave me beside deep water just because it looks warm and harmless.",
         "The air felt mild, but the ocean still felt too large.",
         "Every ripple made me wonder what I could not see underneath it.",
-        "I was alone by deep water, trying not to let my thoughts sink with it."
+        "I was alone by deep water, trying not to let my thoughts sink with it.",
+        "I fixed my eyes on the reef below the boat while deep water left me nowhere safe to step.",
+        "I tried to follow, but the current carried away anything you dropped.",
+        "Alone in Deep Lukewarm Ocean, I counted the food in my pack and wondered how long I might be stranded.",
+        "I waited at the boat beside a coral shelf instead of risking deeper water alone.",
+        "While I waited in Deep Lukewarm Ocean, each wave made it harder to believe you knew where I was.",
+        "After you vanished in Deep Lukewarm Ocean, I called across the water until I realized the surf was swallowing my voice.",
+        "The changing light worried me more than the water at first. I was still alone in Deep Lukewarm Ocean.",
+        "If we travel through Deep Lukewarm Ocean again, keep the shore or the boat in sight.",
+        "If we get separated in Deep Lukewarm Ocean again, leave me a boat and a direction next time, not an empty horizon.",
+        "I will face Deep Lukewarm Ocean again. I just need to know I am not facing it by myself."
       ],
       "conditions": [
         {
@@ -69,7 +89,17 @@
         "Please do not leave me beside water that looks like it has no bottom.",
         "The Deep Ocean made the world feel too wide and too empty.",
         "Every sound from the waves felt heavier than it should have.",
-        "I was alone with dark water, and my imagination did not stay kind."
+        "I was alone with dark water, and my imagination did not stay kind.",
+        "I fixed my eyes on the dark water beyond the shelf while the depth made the shore feel farther away.",
+        "I tried to follow, but waves erased every sign of your direction.",
+        "Alone in Deep Ocean, I counted the food in my pack and wondered how long I might be stranded.",
+        "I waited at the lee side of a rocky islet instead of risking deeper water alone.",
+        "While I waited in Deep Ocean, each wave made it harder to believe you knew where I was.",
+        "After you vanished in Deep Ocean, I called across the water until I realized the surf was swallowing my voice.",
+        "The changing light worried me more than the water at first. I was still alone in Deep Ocean.",
+        "If we travel through Deep Ocean again, keep the shore or the boat in sight.",
+        "If we get separated in Deep Ocean again, leave me a boat and a direction next time, not an empty horizon.",
+        "I will face Deep Ocean again. I just need to know I am not facing it by myself."
       ],
       "conditions": [
         {
@@ -91,13 +121,23 @@
         "Don't leave me by the Lukewarm Ocean. Calm water still hides problems underneath it.",
         "The Lukewarm Ocean looked gentle right up until I had to wait beside it alone.",
         "I stood near the Lukewarm Ocean wondering what was moving below the surface while you were gone.",
-        "If you wander off beside a Lukewarm Ocean, I still have to fear what I cannot see.",
+        "If you wander off beside a Lukewarm Ocean, I still have to <dark_gray><wavy>fear</wavy></dark_gray> what I cannot see.",
         "The water was pleasant enough to look at, which made it worse when I started worrying.",
         "I kept watching the surface for shapes that were not there until they were.",
         "Please do not leave me where calm waves can make danger look polite.",
         "The Lukewarm Ocean was quiet, but not quiet enough to comfort me.",
         "Every little splash made me turn my head.",
-        "I was alone beside calm water, trying to remember that calm does not mean safe."
+        "I was alone beside calm water, trying to remember that calm does not mean safe.",
+        "I fixed my eyes on the coral visible through the water while the current kept pulling me off the shallows.",
+        "I tried to follow, but ripples broke up your wake.",
+        "Alone in Lukewarm Ocean, I counted the food in my pack and wondered how long I might be stranded.",
+        "I waited at a sandbar beside the reef instead of risking deeper water alone.",
+        "While I waited in Lukewarm Ocean, each wave made it harder to believe you knew where I was.",
+        "After you vanished in Lukewarm Ocean, I called across the water until I realized the surf was swallowing my voice.",
+        "The changing light worried me more than the water at first. I was still alone in Lukewarm Ocean.",
+        "If we travel through Lukewarm Ocean again, keep the shore or the boat in sight.",
+        "If we get separated in Lukewarm Ocean again, leave me a boat and a direction next time, not an empty horizon.",
+        "I will face Lukewarm Ocean again. I just need to know I am not facing it by myself."
       ],
       "conditions": [
         {
@@ -125,7 +165,17 @@
         "Please do not leave me where the world opens up and gives me nowhere to shelter.",
         "The Ocean made waiting feel small and exposed.",
         "Every wave kept arriving, and none of them brought you back.",
-        "I was alone beside too much water, hoping you remembered where you left me."
+        "I was alone beside too much water, hoping you remembered where you left me.",
+        "I fixed my eyes on the last strip of visible shore while open water gave me no landmark to follow.",
+        "I tried to follow, but your wake disappeared behind the waves.",
+        "Alone in Ocean, I counted the food in my pack and wondered how long I might be stranded.",
+        "I waited at the sheltered side of a small island instead of risking deeper water alone.",
+        "While I waited in Ocean, each wave made it harder to believe you knew where I was.",
+        "After you vanished in Ocean, I called across the water until I realized the surf was swallowing my voice.",
+        "The changing light worried me more than the water at first. I was still alone in Ocean.",
+        "If we travel through Ocean again, keep the shore or the boat in sight.",
+        "If we get separated in Ocean again, leave me a boat and a direction next time, not an empty horizon.",
+        "I will face Ocean again. I just need to know I am not facing it by myself."
       ],
       "conditions": [
         {
@@ -153,7 +203,17 @@
         "Please do not leave me where the ground is slick and the water is faster than it looks.",
         "The River made every route feel like it could turn muddy in a hurry.",
         "I could hear the water, the grass, and every sound that was not you.",
-        "I was alone by the bank, hoping I would not have to move quickly."
+        "I was alone by the bank, hoping I would not have to move quickly.",
+        "I fixed my eyes on the bend around the gravel bank while the current made crossing alone a bad choice.",
+        "I tried to follow, but water cut through your tracks at the edge.",
+        "Alone in River, I counted the food in my pack and wondered how long I might be stranded.",
+        "I waited at a dry patch beneath the bank instead of risking deeper water alone.",
+        "While I waited in River, each wave made it harder to believe you knew where I was.",
+        "After you vanished in River, I called across the water until I realized the surf was swallowing my voice.",
+        "The changing light worried me more than the water at first. I was still alone in River.",
+        "If we travel through River again, keep the shore or the boat in sight.",
+        "If we get separated in River again, leave me a boat and a direction next time, not an empty horizon.",
+        "I will face River again. I just need to know I am not facing it by myself."
       ],
       "conditions": [
         {
@@ -181,7 +241,17 @@
         "Please do not leave me somewhere the shore itself feels like a hazard.",
         "The waves made the stones shine, and that only made me trust them less.",
         "I had water on one side, hard rock under me, and no sign of you anywhere.",
-        "I was balancing on slick stone, hoping nothing forced me to move fast."
+        "I was balancing on slick stone, hoping nothing forced me to move fast.",
+        "I fixed my eyes on the tallest stone on the beach while loose rocks rolled under every hurried step.",
+        "I tried to follow, but surf washed between the stones and cleared your trail.",
+        "Alone in Stony Shore, I counted the food in my pack and wondered how long I might be stranded.",
+        "I waited at a notch above the tide line instead of risking deeper water alone.",
+        "While I waited in Stony Shore, each wave made it harder to believe you knew where I was.",
+        "After you vanished in Stony Shore, I called across the water until I realized the surf was swallowing my voice.",
+        "The changing light worried me more than the water at first. I was still alone in Stony Shore.",
+        "If we travel through Stony Shore again, keep the shore or the boat in sight.",
+        "If we get separated in Stony Shore again, leave me a boat and a direction next time, not an empty horizon.",
+        "I will face Stony Shore again. I just need to know I am not facing it by myself."
       ],
       "conditions": [
         {
@@ -209,7 +279,17 @@
         "Please do not leave me somewhere that looks safe just because it is beautiful.",
         "The Warm Ocean was too calm to trust and too open to ignore.",
         "Every splash made me remember I was alone.",
-        "I was standing by warm water, but there was nothing warm about being left there."
+        "I was standing by warm water, but there was nothing warm about being left there.",
+        "I fixed my eyes on the bright coral shelf while the calm surface hid a strong current.",
+        "I tried to follow, but warm waves erased your wake.",
+        "Alone in Warm Ocean, I counted the food in my pack and wondered how long I might be stranded.",
+        "I waited at a shallow sandbar by the reef instead of risking deeper water alone.",
+        "While I waited in Warm Ocean, each wave made it harder to believe you knew where I was.",
+        "After you vanished in Warm Ocean, I called across the water until I realized the surf was swallowing my voice.",
+        "The changing light worried me more than the water at first. I was still alone in Warm Ocean.",
+        "If we travel through Warm Ocean again, keep the shore or the boat in sight.",
+        "If we get separated in Warm Ocean again, leave me a boat and a direction next time, not an empty horizon.",
+        "I will face Warm Ocean again. I just need to know I am not facing it by myself."
       ],
       "conditions": [
         {

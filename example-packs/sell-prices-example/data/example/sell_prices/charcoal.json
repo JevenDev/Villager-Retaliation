@@ -1,0 +1,8 @@
+{
+  "item": "minecraft:charcoal",
+  "item_count": {
+    "min": 12,
+    "max": 20
+  },
+  "currency_count": 1
+}

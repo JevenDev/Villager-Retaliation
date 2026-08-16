@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.berry_picking.description": {
+      "lines": [
+        "Bring sweet berries for quick meals and traveling pouches."
+      ]
+    },
+    "quest.village_supply.berry_picking.dialogue.already_completed": {
+      "lines": [
+        "I remember your first return. We already settled Berry Picking.",
+        "You finished what I asked. The travel pantry has the sweet berries you brought.",
+        "Your earlier work still stands. I counted your 16 sweet berries. We are square.",
+        "I remember your first return. The gatherers already put that delivery to work.",
+        "I remember your first return. You solved the problem of empty travel pouches.",
+        "No one needs this done twice. There is no reason to gather another load of sweet berries.",
+        "I remember your first return. Berry Picking is crossed off the sweet berries work list.",
+        "We settled this one already. Your part in helping us pack quick meals is finished.",
+        "We settled this one already. The last sweet berries batch is still serving the village.",
+        "I will not reopen a finished account. I remember who filled the sweet berries order, and it was you.",
+        "You finished what I asked. The reward was paid when the sweet berries delivery came in.",
+        "You finished what I asked. You did enough the first time. I will leave the old entry filed under Berry Picking.",
+        "Leave the old tally alone. We can give travelers something easy to carry because you answered Berry Picking.",
+        "I remember your first return. The full sweet berries count reached the travel pantry. Nothing is missing.",
+        "The matter ended well enough. The gatherers would object if I asked you twice.",
+        "The matter ended well enough. Your sweet berries delivery passed inspection and went into use.",
+        "What was owed has been paid. That empty spot in the travel pantry belongs to yesterday.",
+        "No one needs this done twice. The record shows 16 sweet berries received from you.",
+        "There is no second payment here. You did the quiet sweet berries work that keeps everyone going.",
+        "Nothing remains to be earned from this. The first ending was good enough for Berry Picking."
+      ]
+    },
+    "quest.village_supply.berry_picking.dialogue.inactive": {
+      "lines": [
+        "We have no need of it yet. The berry baskets are not being counted right now.",
+        "There is no reason to begin yet. There is no open order for sweet berries today.",
+        "Nothing calls for this work today. The travel pantry is being counted before I ask for more.",
+        "For now, let the matter rest. The gatherers have not posted a fresh request.",
+        "The village can wait on this one. Hold off on the sweet berries. We have nowhere useful to put them.",
+        "For now, let the matter rest. The need to pack quick meals will return, but not today.",
+        "Nothing calls for this work today. I am waiting for the next tally before opening Berry Picking.",
+        "For now, let the matter rest. Bringing 16 sweet berries now would crowd the stores.",
+        "We have no need of it yet. The last sweet berries batch has not been used up yet.",
+        "We have no need of it yet. Ask again after the gatherers check what remains.",
+        "There is no reason to begin yet. I will not invent an urgent need for sweet berries.",
+        "For now, let the matter rest. The travel pantry is quiet, so this can wait.",
+        "For now, let the matter rest. We are between work orders for sweet berries.",
+        "I will post it when it matters. Nothing is wrong at the travel pantry. The timing is simply off.",
+        "I will post it when it matters. Save your effort until we actually need sweet berries.",
+        "There is no reason to begin yet. The board has no current mark beside Berry Picking.",
+        "We have no need of it yet. Today is not the day for another sweet berries run.",
+        "The board can wait. Once empty travel pouches becomes a concern, I will reopen this.",
+        "Nothing calls for this work today. I would rather delay than waste good sweet berries.",
+        "Leave that work alone for now. Wait for the stores to change before asking me about Berry Picking."
+      ]
+    },
+    "quest.village_supply.berry_picking.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current berry order. Ask again after the storehouse has been checked.",
+        "The storehouse tally is missing, so I will not ask you to gather sweet berries yet.",
+        "No one has confirmed how much sweet berries the storehouse needs today.",
+        "The work note is incomplete. Let me settle the berry count first.",
+        "I will not send you after sweet berries until the village confirms the order.",
+        "The storehouse has not posted a trustworthy berry count.",
+        "I checked the work slate twice; the berry request is not ready.",
+        "This order can wait until I have a current berry tally.",
+        "Someone needs to check the storehouse before I hand you this order.",
+        "The village has not agreed on the berry count yet.",
+        "I have an old berry tally and no current one.",
+        "The storehouse may need sweet berries, but I will not turn a guess into work.",
+        "Come back after the storehouse finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the storehouse tally.",
+        "Let me confirm who needs the sweet berries before you start gathering.",
+        "No work yet. The village has not approved this berry request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the berry order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.berry_picking.dialogue.missing_proof": {
+      "lines": [
+        "The evidence still matters. Bring the sweet berries before I call the baskets full.",
+        "You returned without the one thing I asked for. I need the sweet berries here before I sign this off.",
+        "The evidence still matters. A promise does not fill the travel pantry. Bring the sweet berries delivery.",
+        "Bring back something the village can verify. You may have gathered them, but the gatherers have not received them.",
+        "I believe you went, but that is not enough. Set the 16 sweet berries down here and I can close the sweet berries order.",
+        "You returned without the one thing I asked for. Handing over the sweet berries is the proof on this supply job.",
+        "The last requirement is still missing. I cannot inspect ripe berries that survived the thorns while your hands are empty.",
+        "What you carried home decides this. Your report sounds fine. I still need the actual sweet berries.",
+        "I believe you went, but that is not enough. Nothing has reached the travel pantry yet.",
+        "The proof has to reach my hands. Bring what you collected before we discuss the Berry Picking reward.",
+        "A story cannot close the ledger. The travel pantry needs usable sweet berries, not a story about them.",
+        "The evidence still matters. I will count the sweet berries as soon as you place them here.",
+        "You returned without the one thing I asked for. Do not leave the sweet berries delivery in another chest.",
+        "A story cannot close the ledger. The gatherers are waiting on the sweet berries bundle itself.",
+        "I cannot sign off on an empty return. The last step is simple. Hand over the sweet berries.",
+        "I cannot sign off on an empty return. I cannot pack quick meals with an empty counter.",
+        "I cannot sign off on an empty return. Come back carrying the sweet berries order, and we will be done.",
+        "I need something I can hold. The sweet berries work counts once the travel pantry receives it.",
+        "You returned without the one thing I asked for. You are one handoff away from finishing Berry Picking.",
+        "Show me what came back with you. Let me see the sweet berries before I call this complete."
+      ]
+    },
+    "quest.village_supply.berry_picking.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the sweet berries.",
+        "I counted twice; the full order of 16 sweet berries is not here yet.",
+        "This helps, but the storehouse still needs the remaining sweet berries.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 16 sweet berries; the pile is still short.",
+        "Bring the missing sweet berries, and then I can settle the order.",
+        "The storehouse has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The storehouse is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 16 sweet berries.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the storehouse short.",
+        "The order stays open until all 16 sweet berries are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The storehouse is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.berry_picking.dialogue.reminder": {
+      "lines": [
+        "Do not lose the thread now. Sixteen sweet berries for the stores. Mind the thorns. They are very committed.",
+        "You are not finished yet. I am still waiting on 16 sweet berries for the travel pantry.",
+        "Hold to the instructions I gave you. Look for ripe berries that survived the thorns. Bad supplies only move the problem.",
+        "Keep the return trip in your plans. The gatherers need those sweet berries to pack quick meals.",
+        "Keep the return trip in your plans. The count is 16 sweet berries. Check it before returning.",
+        "Keep the return trip in your plans. This sweet berries delivery means we can give travelers something easy to carry.",
+        "Bring this to a proper finish. If you are choosing between loads, bring the sweet berries first.",
+        "Stay with the work you accepted. Keep the sweet berries order together so the sweet berries tally stays easy.",
+        "Bring this to a proper finish. The travel pantry has space waiting for the full bundle.",
+        "Remember what the village is waiting for. Do not let a simple request turn into empty travel pouches.",
+        "Bring this to a proper finish. There is no hidden part to Berry Picking. Bring the agreed sweet berries count.",
+        "Stay with the work you accepted. Handle them carefully. I want ripe berries that survived the thorns.",
+        "Do not lose the thread now. Bring all the sweet berries at once if you can manage it.",
+        "Stay with the work you accepted. The gatherers are planning their next work around your return.",
+        "Do not let one finished step distract you. I wrote 16 sweet berries on the sweet berries slate so neither of us has to guess.",
+        "Do not let one finished step distract you. The sooner these arrive, the sooner we can pack quick meals.",
+        "Do not let one finished step distract you. Nothing else is missing from the sweet berries order.",
+        "Do not lose the thread now. Return when the sweet berries are ready to hand over.",
+        "Before you leave, hear this again. You know how many sweet berries the travel pantry needs. The rest is gathering.",
+        "Before you leave, hear this again. A complete sweet berries bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.berry_picking.dialogue.start": {
+      "lines": [
+        "The village has work for you. Bring 16 sweet berries. Easy to bruise, easier to miss when they are gone.",
+        "Here is the work. The sweet berries order needs 16 sweet berries. Can you handle that?",
+        "I am trusting you with something important. The gatherers are trying to pack quick meals, and supplies are thin.",
+        "Listen closely. Bring me 16 sweet berries. I want ripe berries that survived the thorns.",
+        "Listen closely. I have a plain job with a useful result. Find 16 sweet berries.",
+        "The village has work for you. We can give travelers something easy to carry if you fill the sweet berries order.",
+        "I am trusting you with something important. Empty travel pouches is a small problem until everyone needs the same thing.",
+        "Let us be clear about the job. The count on the sweet berries slate is 16 sweet berries.",
+        "I have a difficult request. Gather the sweet berries and bring the whole delivery here.",
+        "I have a difficult request. Stocking the travel pantry is not glory, but it matters.",
+        "Listen closely. The gatherers asked me to find someone reliable for this run.",
+        "I am trusting you with something important. I need a clean delivery for the travel pantry.",
+        "Take this seriously. If you can spare the time, 16 sweet berries would settle the sweet berries shortage.",
+        "Let us be clear about the job. The need is real, which makes the instructions for Berry Picking simple.",
+        "The village has work for you. Bring the sweet berries when you have the complete count.",
+        "Before you agree, hear all of it. Good sweet berries will let us pack quick meals.",
+        "This needs a careful hand. The village should not reach empty travel pouches before we act.",
+        "Take this seriously. Take care with the sweet berries bundle. We need ripe berries that survived the thorns.",
+        "Listen closely. I will pay when the travel pantry receives the full order.",
+        "Let us be clear about the job. Find 16 sweet berries, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.berry_picking.dialogue.turn_in": {
+      "lines": [
+        "You brought the work to a proper end. Fresh enough. The children will call it dessert, and I will let them.",
+        "This return was worth waiting for. The count is right. I will get these to the travel pantry.",
+        "Now I can close the ledger. The gatherers can pack quick meals now.",
+        "You delivered exactly what was needed. These are ripe berries that survived the thorns. You chose well.",
+        "The hard part is behind us. That delivery keeps us from empty travel pouches.",
+        "The village can use this. Good work. All the sweet berries arrived together.",
+        "You brought the work to a proper end. I have your sweet berries, and you earned the Berry Picking reward.",
+        "You saw it through. The travel pantry looks less bare already.",
+        "This return was worth waiting for. This will help us give travelers something easy to carry.",
+        "The village can use this. You saved the gatherers from making do with scraps.",
+        "You brought the work to a proper end. Everything on the sweet berries slate is here.",
+        "The village can use this. A useful sweet berries job, done without fuss. Thank you.",
+        "You brought the work to a proper end. I will put the sweet berries away before someone borrows them.",
+        "The hard part is behind us. The village is better stocked because you completed Berry Picking.",
+        "Good, you made it back. You brought exactly the sweet berries I asked for.",
+        "This will make a real difference. The sweet berries delivery is sound from top to bottom.",
+        "This will make a real difference. The travel pantry has one less shortage waiting to surprise us.",
+        "The village can use this. The village may not cheer for sweet berries, but it would notice their absence.",
+        "The village can use this. Take your payment. The sweet berries count gives me no complaint.",
+        "Good, you made it back. I can hand the sweet berries order to the gatherers with confidence."
+      ]
+    },
+    "quest.village_supply.berry_picking.dialogue.unavailable": {
+      "lines": [
+        "This calls for someone we know better. The berry request is closed for now.",
+        "Some work must wait until trust catches up. I cannot hand you the work filed under Berry Picking yet.",
+        "This work is not yours today. The sweet berries order is for someone the travel pantry already knows.",
+        "This work is not yours today. The gatherers need a delivery they can count on.",
+        "No, the risk is too high. Show the village steadier work before taking Berry Picking.",
+        "No, the risk is too high. The sweet berries matter too much to gamble on a stranger.",
+        "The village needs a steadier hand. I am not opening the sweet berries slate to you today.",
+        "I will not place this burden on you. Build some trust, then ask about Berry Picking again.",
+        "You are not ready for this request. I need someone who will return with the whole 16 sweet berries.",
+        "This calls for someone we know better. Gathering sweet berries is simple, but reliability is not optional.",
+        "This calls for someone we know better. For now, the sweet berries order stays with regular hands.",
+        "The answer is no for now. I cannot promise the travel pantry a delivery from you yet.",
+        "I will not place this burden on you. There will be other work before we trust you with the travel pantry.",
+        "You are not ready for this request. The village has not cleared you for this sweet berries run.",
+        "This work is not yours today. I would rather wait than risk empty travel pouches.",
+        "I need proof of your judgment first. This is not punishment. Show better judgment before I open Berry Picking.",
+        "You are not ready for this request. The gatherers asked for a familiar runner this time.",
+        "Come back after you have earned more trust. Come back for the sweet berries order after your name carries more weight.",
+        "The answer is no for now. I am not taking new help for Berry Picking.",
+        "You are not ready for this request. Earn some confidence here, and we can revisit Berry Picking."
+      ]
+    },
+    "quest.village_supply.berry_picking.objective.bring_berries.complete_text": {
+      "lines": [
+        "The berry baskets are full."
+      ]
+    },
+    "quest.village_supply.berry_picking.objective.bring_berries.text": {
+      "lines": [
+        "Gather 16 sweet berries for village stores."
+      ]
+    },
+    "quest.village_supply.berry_picking.stage.return.dialogue.turn_in.label": "About Berry Picking",
+    "quest.village_supply.berry_picking.stage.return.dialogue.turn_in.lines": [
+      "These will keep longer than they took to pick. Mind the thorns next time.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.berry_picking.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.berry_picking.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.berry_picking.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "These will keep longer than they took to pick. Mind the thorns next time.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.berry_picking.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.berry_picking.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.berry_picking.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.berry_picking.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Berry Picking is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.berry_picking.stage.return.scene.turn_in_wait.lines": [
+      "Bring 16 sweet berries for the village stores",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.berry_picking.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.berry_picking.stage.work.dialogue.offer.label": "Berry Picking",
+    "quest.village_supply.berry_picking.stage.work.dialogue.offer.lines": [
+      "The berry jars are empty, and winter never asks before arriving.",
+      "Bring 16 sweet berries for the village stores, and the shelves will look less worried.",
+      "Bring 16 sweet berries for the village stores. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.berry_picking.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.berry_picking.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.berry_picking.stage.work.dialogue.reminder.label": "About Berry Picking",
+    "quest.village_supply.berry_picking.stage.work.dialogue.reminder.lines": [
+      "Bring 16 sweet berries for the village stores",
+      "Bring 16 sweet berries for the village stores.",
+      "Bring 16 sweet berries for the village stores, and the shelves will look less worried."
+    ],
+    "quest.village_supply.berry_picking.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.berry_picking.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.berry_picking.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.berry_picking.stage.work.scene.abandon_confirm.lines": [
+      "Put Berry Picking aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.berry_picking.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.berry_picking.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Berry Picking is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.leave.lines": [
+      "Bring 16 sweet berries for the village stores",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 16 sweet berries for the village stores",
+      "Bring 16 sweet berries for the village stores.",
+      "Bring 16 sweet berries for the village stores, and the shelves will look less worried."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Berry Picking is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Berry Picking is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 16 sweet berries for the village stores. Keep the full count together on the road back.",
+      "Bring 16 sweet berries for the village stores.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.berry_picking.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Berry Picking is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.berry_picking.stage.work.ui.tracker_text": "Bring 16 sweet berries for the village stores.",
+    "quest.village_supply.berry_picking.title": {
+      "lines": [
+        "Berry Picking"
+      ]
+    },
+    "quest.village_supply.berry_picking.tracker.proof.text": {
+      "lines": [
+        "Gather 16 sweet berries for village stores."
+      ]
+    },
+    "quest.village_supply.berry_picking.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the sweet berries."
+      ]
+    },
+    "quest.village_supply.berry_picking.tracker.title": {
+      "lines": [
+        "Berry Picking"
+      ]
+    }
+  }
+}

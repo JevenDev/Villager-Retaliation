@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.util;
 import com.jvn.toucanlib.util.ToucanBrainMemories;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.party.PartyService;
 import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -21,6 +22,7 @@ import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.AABB;
 
 public final class VillagerRetaliationVillagerCombatUtil {
@@ -91,7 +93,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
         AABB searchArea = villager.getBoundingBox().inflate(radius);
         TargetingConditions targetingConditions = TargetingConditions.forCombat()
                 .range(radius)
-                .selector(LivingEntity::isAlive);
+                .selector(target -> target.isAlive() && !isConcealedFromVillagers(target));
         Creeper closestVisible = level.getNearestEntity(
                 Creeper.class,
                 targetingConditions,
@@ -115,16 +117,23 @@ public final class VillagerRetaliationVillagerCombatUtil {
         if (attacker instanceof LivingEntity livingEntity) {
             return Optional.of(livingEntity);
         }
+        if (attacker instanceof Projectile projectile && projectile.getOwner() instanceof LivingEntity owner) {
+            return Optional.of(owner);
+        }
 
         Entity direct = source.getDirectEntity();
         if (direct instanceof LivingEntity livingEntity) {
             return Optional.of(livingEntity);
         }
+        if (direct instanceof Projectile projectile && projectile.getOwner() instanceof LivingEntity owner) {
+            return Optional.of(owner);
+        }
 
         return Optional.empty();
     }
 
-    public static Optional<LivingEntity> resolveAttacker(LivingEntity victim, DamageSource source) {
+    /** Resolves only attribution carried by this damage event; stale kill credit is intentionally excluded. */
+    public static Optional<LivingEntity> resolveDamageAttacker(LivingEntity victim, DamageSource source) {
         Optional<LivingEntity> directAttacker = resolveAttacker(source);
         if (directAttacker.isPresent()) {
             return directAttacker;
@@ -133,21 +142,43 @@ public final class VillagerRetaliationVillagerCombatUtil {
         Optional<LivingEntity> hazardOwner = ToucanHazardAttribution.resolveVanillaHazardOwner(victim, source)
                 .filter(LivingEntity.class::isInstance)
                 .map(LivingEntity.class::cast);
-        if (hazardOwner.isPresent()) {
-            return hazardOwner;
-        }
+        return hazardOwner;
+    }
 
-        return Optional.ofNullable(victim.getKillCredit());
+    /** Death attribution may use vanilla's recent kill credit after explicit event attribution is exhausted. */
+    public static Optional<LivingEntity> resolveDeathAttacker(LivingEntity victim, DamageSource source) {
+        return resolveDamageAttacker(victim, source)
+                .or(() -> Optional.ofNullable(victim.getKillCredit()));
     }
 
     public static boolean shouldIgnoreAttacker(LivingEntity attacker) {
-        if (attacker instanceof AbstractVillager || attacker instanceof IronGolem || attacker instanceof NeutralMob) {
+        if (isConcealedFromVillagers(attacker)
+                || attacker instanceof AbstractVillager
+                || attacker instanceof IronGolem
+                || attacker instanceof NeutralMob) {
             return true;
         }
 
         return attacker instanceof Player player
                 && (player.isSpectator()
                 || VillagerRetaliationConfig.NEARBY_VILLAGERS_IGNORE_CREATIVE_PLAYERS.get() && player.isCreative());
+    }
+
+    public static boolean shouldIgnoreRetaliationAttacker(LivingEntity attacker) {
+        return shouldIgnoreAttacker(attacker)
+                && !(attacker instanceof Villager && PartyService.getPartyForEntity(attacker).isPresent());
+    }
+
+    public static boolean isConcealedFromVillagers(LivingEntity entity) {
+        if (!entity.isInvisible()) {
+            return false;
+        }
+        for (var armorStack : entity.getArmorSlots()) {
+            if (!armorStack.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static boolean isVillagerGolemConflict(Entity first, Entity second) {
@@ -163,17 +194,18 @@ public final class VillagerRetaliationVillagerCombatUtil {
 
     public static void updateSwingAnimation(AbstractVillager villager) {
         int swingDuration = Math.max(1, villager.getCurrentSwingDuration());
+        villager.oAttackAnim = villager.attackAnim;
         if (villager.swinging) {
             villager.swingTime++;
             if (villager.swingTime >= swingDuration) {
-                villager.swingTime = 0;
+                villager.swingTime = swingDuration;
                 villager.swinging = false;
             }
         } else {
             villager.swingTime = 0;
         }
 
-        villager.attackAnim = (float) villager.swingTime / (float) swingDuration;
+        villager.attackAnim = villager.swinging ? (float) villager.swingTime / (float) swingDuration : 0.0F;
     }
 
     public static <T> Optional<T> getMemoryIfRegistered(AbstractVillager villager, MemoryModuleType<T> memoryType) {
@@ -191,6 +223,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
     public static boolean isNaturalHostileTarget(AbstractVillager villager, LivingEntity target) {
         return target != villager
                 && target.isAlive()
+                && !isConcealedFromVillagers(target)
                 && !(target instanceof Creeper)
                 && !(target instanceof Slime)
                 && !target.isAlliedTo(villager)

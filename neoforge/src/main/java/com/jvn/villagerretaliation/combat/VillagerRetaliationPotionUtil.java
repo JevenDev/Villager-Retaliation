@@ -28,6 +28,11 @@ public final class VillagerRetaliationPotionUtil {
         return isPotion(stack) && contents.is(Potions.HEALING);
     }
 
+    public static boolean isHealingOrRegenerationPotion(ItemStack stack) {
+        PotionContents contents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+        return isPotion(stack) && (contents.is(Potions.HEALING) || contents.is(Potions.REGENERATION));
+    }
+
     public static boolean shouldSuppressCombatWhileUsingPotion(Villager villager) {
         return VillagerClericPotionHelper.isDrinkingPotion(villager)
                 || villager.isUsingItem()

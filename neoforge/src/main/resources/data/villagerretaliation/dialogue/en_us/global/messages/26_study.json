@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.interaction",
+      "scope.global",
+      "section.messages",
+      "feature.study"
+    ],
+    "topic": "global.study"
+  },
+  "messages": [
+    {
+      "key": "interaction.study.busy",
+      "lines": [
+        "I'm busy studying {skill} right now.",
+        "Give me a moment. I'm studying {skill}.",
+        "I'm in the middle of studying {skill}.",
+        "Not now. I'm working on my {skill}.",
+        "I'd rather not lose my place. I'm studying {skill}.",
+        "I need to finish this chapter on {skill}.",
+        "I'm focusing on {skill} at the moment.",
+        "Come back later. I'm studying {skill}.",
+        "I've got some {skill} studying to finish.",
+        "Let me finish studying {skill} first."
+      ],
+      "weight": 10,
+      "id": "global.messages.26_study.messages.interaction.study.busy.000"
+    },
+    {
+      "key": "interaction.study.started",
+      "lines": [
+        "I'll begin studying {skill}."
+      ],
+      "weight": 1,
+      "id": "global.messages.26_study.messages.interaction.study.started.001"
+    },
+    {
+      "key": "interaction.study.cooldown",
+      "lines": [
+        "I can study again in {study_cooldown}."
+      ],
+      "weight": 1,
+      "id": "global.messages.26_study.messages.interaction.study.cooldown.002"
+    },
+    {
+      "key": "interaction.study.maxed",
+      "lines": [
+        "My {skill} is already at its peak."
+      ],
+      "weight": 1,
+      "id": "global.messages.26_study.messages.interaction.study.maxed.003"
+    },
+    {
+      "key": "interaction.study.unavailable",
+      "lines": [
+        "I can't begin studying right now."
+      ],
+      "weight": 1,
+      "id": "global.messages.26_study.messages.interaction.study.unavailable.004"
+    },
+    {
+      "key": "interaction.study.low_reputation",
+      "lines": [
+        "I don't trust you enough to take study orders from you."
+      ],
+      "weight": 1,
+      "id": "global.messages.26_study.messages.interaction.study.low_reputation.005"
+    }
+  ]
+}

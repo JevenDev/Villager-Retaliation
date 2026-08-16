@@ -1,19 +1,41 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision;
+import com.jvn.villagerretaliation.allegiance.AllegianceEntityClassifier;
+import com.jvn.villagerretaliation.allegiance.UnlawfulOrderService;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
+import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.duel.DuelService;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
+import com.jvn.villagerretaliation.party.PartyCombatMode;
+import com.jvn.villagerretaliation.party.PartyRecord;
+import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartyTargetPolicy;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
+import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
-import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.TickThrottle;
+import com.jvn.villagerretaliation.util.VillagerEquipmentDurability;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -28,33 +50,26 @@ import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.Mth;
-import net.minecraft.world.Difficulty;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.Brain;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.OwnableEntity;
+import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.Snowball;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
-import net.minecraft.world.entity.projectile.ThrownEgg;
 import net.minecraft.world.entity.schedule.Activity;
-import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -69,23 +84,10 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationHandler {
     private static final long NATURAL_TARGET_SCAN_INTERVAL_TICKS = 20L;
+    private static final long PARTY_KOS_TARGET_SCAN_INTERVAL_TICKS = 20L;
+    private static final double PARTY_KOS_TARGET_RADIUS = 16.0D;
     private static final long CREEPER_AVOIDANCE_SCAN_INTERVAL_TICKS = 10L;
     private static final long ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS = 40L;
-    private static final double HOSTILE_HARASS_THROW_MAX_DISTANCE_SQR = 144.0D;
-    private static final long ARMORER_SHIELD_AXE_BREAK_TICKS = 100L;
-    private static final int ARMORER_COUNTER_SWINGS_AFTER_BLOCK = 1;
-    private static final int ARMORER_COUNTER_ATTACK_DELAY_MIN_TICKS = 10;
-    private static final int ARMORER_COUNTER_ATTACK_DELAY_MAX_TICKS = 30;
-    private static final double ARMORER_BLOCKING_SPEED_FACTOR = 0.45D;
-    private static final double ARMORER_SHIELD_TRIGGER_RANGE = 7.0D;
-    private static final double ARMORER_SHIELD_TRIGGER_RANGE_SQR = ARMORER_SHIELD_TRIGGER_RANGE * ARMORER_SHIELD_TRIGGER_RANGE;
-    private static final long SMITH_IRON_GOLEM_REPAIR_COOLDOWN_TICKS = 6000L;
-    private static final long SMITH_IRON_GOLEM_REPAIR_SCAN_INTERVAL_TICKS = 100L;
-    private static final long SMITH_IRON_GOLEM_REPAIR_APPROACH_RETRY_TICKS = 60L;
-    private static final long SMITH_IRON_GOLEM_REPAIR_PATH_FAILURE_COOLDOWN_TICKS = 200L;
-    private static final double SMITH_IRON_GOLEM_REPAIR_SEARCH_RADIUS = 12.0D;
-    private static final double SMITH_IRON_GOLEM_REPAIR_REACH_SQR = 9.0D;
-    private static final float SMITH_IRON_GOLEM_REPAIR_HEAL_AMOUNT = 25.0F;
     private static final long ROYALTY_AGGRO_BYPASS_NOTICE_COOLDOWN_TICKS = 20L * 5L;
     private static final int VERY_LOW_GUTS_RALLY_THRESHOLD = 20;
     private static final int LOW_GUTS_FLEE_THRESHOLD = 34;
@@ -93,19 +95,14 @@ public final class VillagerRetaliationHandler {
     private static final long WAVERING_UNARMED_COUNTER_GIVE_UP_TICKS = 80L;
     private static final String ROYALTY_AGGRO_BYPASS_MESSAGE_KEY = "retaliation.royalty_aggro_bypass";
     private static final String PERSISTENT_TAG_ROOT = "VillagerRetaliationPersistentHostility";
-    private static final String PERSISTENT_ARMORER_SHIELD_ROLLED_TAG = "VillagerRetaliationArmorerShieldRolled";
     private static final VillagerRetaliationRetaliationRuntime<Villager> RETALIATION =
             new VillagerRetaliationRetaliationRuntime<>(PERSISTENT_TAG_ROOT);
     private static final RetaliationActorPolicy<Villager> ACTOR_POLICY = VillagerCombatRoles.policy();
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_PARTY_KOS_TARGET_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_CREEPER_AVOIDANCE_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS = new HashMap<>();
-    private static final Map<UUID, Long> NEXT_HOSTILE_HARASS_THROW_TICKS = new HashMap<>();
-    private static final Map<UUID, Long> ARMORER_SHIELD_DISABLED_UNTIL_TICKS = new HashMap<>();
-    private static final Map<UUID, Integer> ARMORER_PENDING_COUNTER_SWINGS = new HashMap<>();
-    private static final Map<UUID, Long> ARMORER_COUNTER_ATTACK_READY_TICKS = new HashMap<>();
-    private static final Map<UUID, Long> NEXT_IRON_GOLEM_REPAIR_TICKS = new HashMap<>();
     private static final Map<PlayerVillagerKey, Long> NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS = new HashMap<>();
     private static final Map<PlayerVillagerKey, Long> WAVERING_UNARMED_COUNTERS = new HashMap<>();
     private static final Map<PlayerVillagerKey, Long> LOW_GUTS_RALLY_USED_UNTIL_TICKS = new HashMap<>();
@@ -114,9 +111,22 @@ public final class VillagerRetaliationHandler {
     }
 
     public static void releaseTemporaryWeaponForInventory(Villager villager) {
+        VillagerWeaponDrawService.sheathe(villager);
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
         VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
+    }
+
+    public static void suspendCombatForInteraction(Villager villager) {
+        clearAnger(villager);
+    }
+
+    public static void clearCustomTarget(Villager villager) {
+        clearAnger(villager, false);
+    }
+
+    public static void suppressCombatForPartyOrder(Villager villager) {
+        clearAnger(villager, false, false);
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
@@ -136,23 +146,43 @@ public final class VillagerRetaliationHandler {
         }
 
         ensureProfessionMainHand(villager);
-        if (villager.level() instanceof ServerLevel level) {
-            VillagerRetaliationVillagerBrainUtil.removeTradePreviewBehavior(level, villager);
-        }
-        if (!VillagerCombatRoles.isArmorer(villager)
-                || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
-                || !isHardMode(villager)) {
-            return;
-        }
-
-        tryRollArmorerSpawnShield(villager);
+        VillagerArmorerCombatTactics.ensureSpawnShieldRoll(villager);
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        LivingEntity damaged = event.getEntity();
+        Optional<LivingEntity> resolvedAttacker =
+                VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(damaged, event.getSource());
+        boolean disciplinary = resolvedAttacker
+                .map(attacker -> VillagerDisciplineService.isCommitting(attacker, damaged))
+                .orElse(false);
+        if (!disciplinary && resolvedAttacker.filter(Villager.class::isInstance)
+                .filter(attacker -> PartyService.areInSameOrAlliedParty(attacker, damaged)
+                        && !PlayerRaidService.areOpposingParticipants(attacker, damaged))
+                .isPresent()) {
+            event.setAmount(0.0F);
+            return;
+        }
+        if (!disciplinary && damaged.level() instanceof ServerLevel level && resolvedAttacker.isPresent()) {
+            LivingEntity attacker = resolvedAttacker.get();
+            boolean authorized = VillageCombatAuthorizationService.isAuthorized(attacker, damaged);
+            AllegianceCombatContext damageContext = attacker instanceof Player
+                    ? AllegianceCombatContext.DIRECT_PLAYER_DAMAGE
+                    : AllegianceCombatContext.DAMAGE;
+            if (VillageAllegianceCombatPolicy.evaluate(
+                    level, attacker, damaged, damageContext, authorized).denied()) {
+                event.setAmount(0.0F);
+                return;
+            }
+        }
         if (!(event.getEntity() instanceof Villager villager)) {
             return;
         }
-        if (tryHandleArmorerShieldBlock(villager, event)) {
+        if (VillagerArmorerCombatTactics.tryHandleShieldBlock(
+                villager,
+                event,
+                VillagerRetaliationHandler::angerFromArmorerShield,
+                VillagerRetaliationHandler::angerNearbyFromArmorerShield)) {
             return;
         }
         if (!VillagerCombatRoles.isCleric(villager) || !VillagerRetaliationConfig.CLERICS_USE_POTIONS.get()) {
@@ -170,71 +200,12 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    private static boolean tryHandleArmorerShieldBlock(Villager villager, LivingIncomingDamageEvent event) {
-        if (!VillagerCombatRoles.isArmorer(villager)
-                || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
-                || !isArmorerActivelyBlocking(villager)) {
-            return false;
-        }
-
-        DamageSource source = event.getSource();
-        if (!villager.isDamageSourceBlocked(source)) {
-            return false;
-        }
-
-        float incomingDamage = event.getAmount();
-        event.setCanceled(true);
-        event.setAmount(0.0F);
-        villager.playSound(SoundEvents.SHIELD_BLOCK, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
-
-        boolean shieldBroke = applyShieldDurabilityDamage(villager, incomingDamage);
-        boolean disabledByAxe = false;
-        Optional<LivingEntity> attacker = VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, source);
-        if (attacker.isPresent()) {
-            LivingEntity resolvedAttacker = attacker.get();
-            anger(villager, resolvedAttacker);
-            if (!VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get()) {
-                angerNearbyVillagers(villager, resolvedAttacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
-            }
-
-            if (!shieldBroke && isAxeAttacker(resolvedAttacker)) {
-                disabledByAxe = true;
-                breakArmorerShieldGuard(villager);
-            }
-        }
-        if (!shieldBroke && !disabledByAxe) {
-            UUID villagerId = villager.getUUID();
-            ARMORER_PENDING_COUNTER_SWINGS.put(villagerId, ARMORER_COUNTER_SWINGS_AFTER_BLOCK);
-            ARMORER_COUNTER_ATTACK_READY_TICKS.put(villagerId, villager.level().getGameTime() + nextCounterAttackDelayTicks(villager));
-            ensureArmorerShieldBlocking(villager);
-        }
-        return true;
+    private static void angerFromArmorerShield(Villager villager, LivingEntity attacker) {
+        anger(villager, attacker);
     }
 
-    private static boolean applyShieldDurabilityDamage(Villager villager, float blockedDamage) {
-        ItemStack shield = villager.getOffhandItem();
-        if (!shield.is(Items.SHIELD)) {
-            return false;
-        }
-
-        int durabilityLoss = blockedDamage >= 3.0F ? 1 + Mth.floor(blockedDamage) : 1;
-        shield.hurtAndBreak(durabilityLoss, villager, EquipmentSlot.OFFHAND);
-        return !villager.getOffhandItem().is(Items.SHIELD);
-    }
-
-    private static boolean isAxeAttacker(LivingEntity attacker) {
-        return attacker.getMainHandItem().getItem() instanceof AxeItem
-                || attacker.getOffhandItem().getItem() instanceof AxeItem;
-    }
-
-    private static void breakArmorerShieldGuard(Villager villager) {
-        long gameTime = villager.level().getGameTime();
-        UUID villagerId = villager.getUUID();
-        ARMORER_SHIELD_DISABLED_UNTIL_TICKS.put(villagerId, gameTime + ARMORER_SHIELD_AXE_BREAK_TICKS);
-        ARMORER_PENDING_COUNTER_SWINGS.remove(villagerId);
-        ARMORER_COUNTER_ATTACK_READY_TICKS.remove(villagerId);
-        stopArmorerShieldBlocking(villager);
-        villager.playSound(SoundEvents.SHIELD_BREAK, 0.8F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
+    private static void angerNearbyFromArmorerShield(Villager villager, LivingEntity attacker, double radius) {
+        angerNearbyVillagers(villager, attacker, radius);
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
@@ -243,12 +214,18 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(event.getEntity(), event.getSource())
+                .ifPresent(attacker -> {
+                    rallyPartyVillagers(event.getEntity(), attacker, false);
+                    rallyPartyVillagers(attacker, event.getEntity(), true);
+                });
+
         if (!(event.getEntity() instanceof Villager villager)) {
             return;
         }
 
         if (villager.isBaby()) {
-            VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
+            VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(villager, event.getSource()).ifPresent(attacker -> {
                 if (shouldRetaliateAgainstAttacker(villager, attacker)) {
                     rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get(), false);
                 }
@@ -260,7 +237,7 @@ public final class VillagerRetaliationHandler {
             villager.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 0));
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
+        VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(villager, event.getSource()).ifPresent(attacker -> {
             if (!shouldRetaliateAgainstAttacker(villager, attacker)) {
                 return;
             }
@@ -296,7 +273,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
         Optional<LivingEntity> attacker = event.getEntity() instanceof LivingEntity livingEntity
-                ? VillagerRetaliationVillagerCombatUtil.resolveAttacker(livingEntity, event.getSource())
+                ? VillagerRetaliationVillagerCombatUtil.resolveDeathAttacker(livingEntity, event.getSource())
                 : VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource());
         double radius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
         List<Villager> witnessVillagers = witnessVillagersNear(deceased, radius);
@@ -307,7 +284,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (attacker.isEmpty() || VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker.get())) {
+        if (attacker.isEmpty() || VillagerRetaliationVillagerCombatUtil.shouldIgnoreRetaliationAttacker(attacker.get())) {
             return;
         }
 
@@ -325,10 +302,6 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (villager.level() instanceof ServerLevel level) {
-            VillagerRetaliationVillagerBrainUtil.removeTradePreviewBehaviorIfDue(level, villager);
-        }
-
         if (shouldSuppressFleeingForRetaliation(villager)) {
             suppressVanillaPanic(villager);
         }
@@ -344,13 +317,29 @@ public final class VillagerRetaliationHandler {
             return;
         }
         ServerLevel serverLevel = (ServerLevel) villager.level();
+        VillagerWeaponDrawService.tick(villager);
+        if (villager.getTarget() instanceof LivingEntity target
+                && VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)) {
+            clearAnger(villager);
+        }
 
-        ensureArmorerSpawnShieldRoll(villager);
-        if (!VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+        boolean transientMainHandActive = VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                || RETALIATION.hasTemporaryWeapon(villager)
+                || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager);
+        if (!transientMainHandActive
+                && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
+            HiredJobInventory.maintainEquipmentSlots(villager);
+        }
+        VillagerArmorerCombatTactics.ensureSpawnShieldRoll(villager);
+        if (!transientMainHandActive
                 && VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
             VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager);
         }
-        if (shouldMaintainProfessionMainHand(villager, serverLevel.getGameTime())) {
+        boolean maintainingSelectedLoadout = !VillagerInventoryAccess.hasOpenInventory(villager)
+                && !VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                && !VillagerCombatStateMachine.hasActiveMode(villager)
+                && VillagerCombatLoadoutService.maintainEquippedPreference(villager);
+        if (!maintainingSelectedLoadout && shouldMaintainProfessionMainHand(villager, serverLevel.getGameTime())) {
             ensureProfessionMainHand(villager);
         }
 
@@ -365,14 +354,31 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        if (VillagerDisciplineService.tickVillager(villager)) {
+            return;
+        }
+
+        if (com.jvn.villagerretaliation.party.PartyQuickCommandService.overridesCombatTargeting(villager)) {
+            suppressCombatForPartyOrder(villager);
+            handlePassivePotionState(villager);
+            return;
+        }
+
         RETALIATION.restorePersistedAngerIfNeeded(villager);
+        com.jvn.villagerretaliation.party.PartyQuickCommandService.maintainManualAttackAuthorization(villager);
+        tryAcquirePartyKillOnSightTarget(villager);
         tryAcquireHostileTarget(villager);
 
         ActiveRetaliationTarget retaliationTarget = VillagerRetaliationRetaliationUtil.resolveActiveRetaliationTarget(
                 villager,
                 RETALIATION,
-                ACTOR_POLICY::canFightBack,
-                () -> clearAnger(villager)
+                VillagerRetaliationHandler::canContinueRetaliation,
+                () -> clearAnger(villager),
+                target -> ForcedDialogueService.triggerRetaliationDisengagementChat(
+                        serverLevel,
+                        villager,
+                        target,
+                        ForcedDialogueTrigger.RETALIATION_SEARCH_EXPIRED)
         );
         if (retaliationTarget == null) {
             if (tryFleeVisibleCreeper(villager)) {
@@ -385,6 +391,17 @@ public final class VillagerRetaliationHandler {
 
         ServerLevel level = retaliationTarget.level();
         LivingEntity target = retaliationTarget.target();
+        if (DuelService.isParticipant(target) && !DuelService.isParticipant(villager)) {
+            clearAnger(villager);
+            handlePassivePotionState(villager);
+            return;
+        }
+        boolean authorizedTarget = VillageCombatAuthorizationService.isAuthorized(villager, target);
+        if (VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.TARGET_CONTINUATION, authorizedTarget).denied()) {
+            clearAnger(villager);
+            return;
+        }
         long gameTime = retaliationTarget.gameTime();
         double distanceSqr = villager.distanceToSqr(target);
         if (isNaturalHostileTarget(villager, target)
@@ -405,18 +422,36 @@ public final class VillagerRetaliationHandler {
             villager.setAggressive(false);
             villager.setChasing(false);
             villager.setTarget(null);
-            resetArmorerShieldState(villager);
+            VillagerArmorerCombatTactics.resetState(villager);
             handlePassivePotionState(villager);
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             return;
         }
-        if (!VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)) {
+        wakeSleepingVillagerTargetForPartyAttacker(level, villager, target);
+        if (!PlayerRaidService.areOpposingParticipants(villager, target)
+                && !VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)) {
+            ForcedDialogueService.triggerRetaliationDisengagementChat(
+                    level,
+                    villager,
+                    target,
+                    ForcedDialogueTrigger.RETALIATION_TARGET_ESCAPED);
             clearAnger(villager);
+            handlePassivePotionState(villager);
+            return;
+        }
+        if (isHiredHunter(level, villager)
+                && !VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target)) {
+            clearAnger(villager, false);
             handlePassivePotionState(villager);
             return;
         }
         boolean waveringUnarmedCounter = isWaveringUnarmedCounter(villager, target, gameTime);
         if (shouldGiveUpWaveringUnarmedCounter(villager, target, gameTime)) {
+            ForcedDialogueService.triggerRetaliationDisengagementChat(
+                    level,
+                    villager,
+                    target,
+                    ForcedDialogueTrigger.LOW_GUTS_PURSUIT_ABANDONED);
             clearWaveringUnarmedCounter(villager, target);
             clearAnger(villager, false);
             enterFleeState(villager, target, gameTime);
@@ -436,24 +471,41 @@ public final class VillagerRetaliationHandler {
         }
 
         if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             return;
         }
 
-        if (!waveringUnarmedCounter) {
-            tryBorrowInventoryCombatWeapon(villager);
+        boolean meleeAttackReady = RETALIATION.isAttackReady(villager, gameTime);
+        boolean holdingStandGuard = shouldHoldStandGuard(villager, target, meleeAttackReady);
+        if (!holdingStandGuard) {
+            com.jvn.villagerretaliation.party.PartyQuickCommandService.prepareGuardAttack(villager);
+        }
+        if (!waveringUnarmedCounter && !holdingStandGuard) {
+            VillagerCombatStateMachine.prepare(villager, target, distanceSqr);
             if (tryAcquireGroundWeapon(villager, gameTime)) {
                 return;
             }
-
-            equipCombatWeapon(villager);
         }
         VillagerInteractionTracker.markGearReportsUsedInCombat(level, villager, hasEquippedWeaponGear(villager), hasEquippedArmorGear(villager));
         VillagerRetaliationRetaliationUtil.boostCombatMovement(villager);
 
+        if (holdingStandGuard) {
+            if (VillagerClericPotionHelper.tryCombat(villager, target, level, distanceSqr)) {
+                return;
+            }
+            if (VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target)) {
+                VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+                VillagerRetaliationRetaliationUtil.clearPathingState(villager);
+            } else {
+                double guardSpeed = VillagerMountSpeedPolicy.toward(
+                        villager, target, ACTOR_POLICY.movementSpeed(villager));
+                VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(villager, target, guardSpeed);
+            }
+            return;
+        }
+
         handleDefensiveRole(villager, gameTime);
-        boolean meleeAttackReady = RETALIATION.isAttackReady(villager, gameTime);
-        boolean allowMeleeAttack = handleArmorerShieldCombatTactics(villager, target, distanceSqr, gameTime, meleeAttackReady);
+        boolean allowMeleeAttack = VillagerArmorerCombatTactics.handleCombatTactics(villager, target, distanceSqr, gameTime, meleeAttackReady);
 
         if (VillagerClericPotionHelper.tryCombat(villager, target, level, distanceSqr)) {
             return;
@@ -464,19 +516,20 @@ public final class VillagerRetaliationHandler {
         }
 
         if (VillagerRetaliationPotionUtil.shouldSuppressCombatWhileUsingPotion(villager)) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             return;
         }
-        if (tryHostileTierHarassThrow(villager, target, level, gameTime, distanceSqr)) {
+        if (VillagerHostileTierHarass.tryThrow(villager, target, level, gameTime, distanceSqr)) {
             return;
         }
 
         double movementSpeed = ACTOR_POLICY.movementSpeed(villager)
-                * (isArmorerActivelyBlocking(villager) ? ARMORER_BLOCKING_SPEED_FACTOR : 1.0D);
+                * VillagerArmorerCombatTactics.movementSpeedFactor(villager);
+        movementSpeed = VillagerMountSpeedPolicy.toward(villager, target, movementSpeed);
         boolean canUseMeleeCombat = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager);
         boolean canMeleeHit = canUseMeleeCombat && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
         if (canMeleeHit) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             VillagerRetaliationRetaliationUtil.clearPathingState(villager);
         } else {
             VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(villager, target, movementSpeed);
@@ -484,18 +537,21 @@ public final class VillagerRetaliationHandler {
         if (canMeleeHit && allowMeleeAttack && meleeAttackReady) {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(villager);
             villager.swing(attackHand, true);
-            syncMeleeAttackAttributes(villager);
-            villager.doHurtTarget(target);
+            boolean shieldBroken = VillagerCombatStateMachine.tryBreakTargetShield(villager, target);
+            if (!shieldBroken && syncMeleeAttackAttributes(villager) && villager.doHurtTarget(target)) {
+                VillagerEquipmentDurability.postMeleeHit(villager, target, attackHand);
+            }
             RETALIATION.setNextAttackTick(
                     villager,
-                    gameTime + VillagerSocialAttributeBehavior.adjustCombatCooldownTicks(
-                            level,
-                            villager,
-                            ACTOR_POLICY.attackCooldown(villager)
-                    )
+                    gameTime + ACTOR_POLICY.attackCooldown(villager)
             );
-            onArmorerMeleeAttackCommitted(villager);
+            VillagerArmorerCombatTactics.onMeleeAttackCommitted(villager);
             if (waveringUnarmedCounter) {
+                ForcedDialogueService.triggerRetaliationDisengagementChat(
+                        level,
+                        villager,
+                        target,
+                        ForcedDialogueTrigger.LOW_GUTS_COUNTER_COMPLETED);
                 clearWaveringUnarmedCounter(villager, target);
                 clearAnger(villager, false, false);
                 enterFleeState(villager, target, gameTime);
@@ -522,6 +578,28 @@ public final class VillagerRetaliationHandler {
     public static boolean isHostileTowards(Villager villager, Player player) {
         if (villager.level().isClientSide || !villager.isAlive() || !player.isAlive()) {
             return false;
+        }
+
+        // A villager can only retain one combat target, but every player snapshotted on the
+        // attacking side of a Player Raid is still an aggressor. The raid snapshot outranks
+        // later party or alliance changes until the raid is settled.
+        if (PlayerRaidService.areOpposingParticipants(villager, player)) {
+            return true;
+        }
+
+        if (PartyService.areInSameOrAlliedParty(villager, player)) {
+            clearAnger(villager);
+            return false;
+        }
+
+        if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)) {
+            RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager));
+            return false;
+        }
+
+        if (player.isInvisible()) {
+            return villager.getTarget() == player
+                    || RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager));
         }
 
         if (isRoyaltyFor(villager, player)) {
@@ -609,12 +687,73 @@ public final class VillagerRetaliationHandler {
         anger(villager, attacker, false, false);
     }
 
+    public static boolean hasRetaliationTarget(Villager villager, LivingEntity target) {
+        if (villager == null || target == null) {
+            return false;
+        }
+        AngerTarget angerTarget = RETALIATION.angerTarget(villager);
+        return angerTarget != null && angerTarget.targetId().equals(target.getUUID());
+    }
+
+    private static boolean canContinueRetaliation(Villager villager) {
+        if (ACTOR_POLICY.canFightBack(villager)) {
+            return true;
+        }
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        AngerTarget angerTarget = RETALIATION.angerTarget(villager);
+        if (angerTarget == null || !(level.getEntity(angerTarget.targetId()) instanceof LivingEntity target)) {
+            return false;
+        }
+        return PlayerRaidService.areOpposingParticipants(villager, target);
+    }
+
+    public static boolean hasActiveRetaliationTarget(Villager villager) {
+        return villager != null && RETALIATION.hasAnger(villager);
+    }
+
     private static void anger(Villager villager, LivingEntity attacker) {
         anger(villager, attacker, true, true);
     }
 
+    public static boolean engageCustomTarget(Villager villager, LivingEntity target, boolean announceRetaliation) {
+        if (villager == null
+                || target == null
+                || !villager.isAlive()
+                || !target.isAlive()
+                || DuelService.isParticipant(target) && !DuelService.isParticipant(villager)
+                || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)
+                || villager == target
+                || PartyService.areInSameOrAlliedParty(villager, target)
+                    && !PlayerRaidService.areOpposingParticipants(villager, target)
+                || !villager.canAttack(target)) {
+            return false;
+        }
+        if (villager.level() instanceof ServerLevel level
+                && VillageAllegianceCombatPolicy.evaluate(
+                        level,
+                        villager,
+                        target,
+                        AllegianceCombatContext.CUSTOM_TARGET,
+                        VillageCombatAuthorizationService.isAuthorized(villager, target)).denied()) {
+            return false;
+        }
+        anger(villager, target, false, announceRetaliation);
+        return true;
+    }
+
     private static void anger(Villager villager, LivingEntity attacker, boolean allowForcedDialogue, boolean announceRetaliation) {
+        if (DuelService.isParticipant(attacker) && !DuelService.isParticipant(villager)) {
+            clearAnger(villager);
+            return;
+        }
         if (villager.isBaby()) {
+            return;
+        }
+        if (PartyService.areInSameOrAlliedParty(villager, attacker)
+                && !PlayerRaidService.areOpposingParticipants(villager, attacker)) {
+            clearAnger(villager);
             return;
         }
         if (attacker instanceof Creeper creeper) {
@@ -637,6 +776,7 @@ public final class VillagerRetaliationHandler {
         }
         AngerTarget previousTarget = RETALIATION.angerTarget(villager);
         if (RETALIATION.anger(villager, attacker) && villager.level() instanceof ServerLevel level) {
+            com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
             VillagerMoodService.recordRetaliationStarted(level, villager, attacker);
             if ((previousTarget == null || !previousTarget.targetId().equals(attacker.getUUID()))
                     && announceRetaliation) {
@@ -661,12 +801,14 @@ public final class VillagerRetaliationHandler {
     private static void tryAcquireHostileTarget(Villager villager) {
         if (RETALIATION.hasAnger(villager)
                 || !villager.isAlive()
+                || (villager.level() instanceof ServerLevel level
+                        && PartyService.isRecruitedPartyVillager(level, villager.getUUID()))
                 || !VillagerRetaliationConfig.VILLAGERS_TARGET_HOSTILE_MOBS.get()) {
             return;
         }
 
         long gameTime = villager.level().getGameTime();
-        if (!consumeScanSlot(villager, NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.consume(villager.getUUID(), NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
             return;
         }
         if (!VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
@@ -685,6 +827,107 @@ public final class VillagerRetaliationHandler {
         VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(villager, naturalDefenseRadius)
                 .filter(target -> !shouldAvoidVisibleCreeper(villager, target))
                 .ifPresent(target -> anger(villager, target));
+    }
+
+    private static void tryAcquirePartyKillOnSightTarget(Villager villager) {
+        if (!villager.isAlive()
+                || villager.isBaby()
+                || com.jvn.villagerretaliation.party.PartyQuickCommandService.suppressesPartyTargetAcquisition(villager)) {
+            return;
+        }
+        ServerLevel level = (ServerLevel) villager.level();
+        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+        if (record == null
+                || record.combatMode() != PartyCombatMode.KILL_ON_SIGHT
+                || !ACTOR_POLICY.canFightBack(villager)) {
+            return;
+        }
+        if (RETALIATION.hasAnger(villager)) {
+            maintainPartyKillOnSightAuthorization(level, villager, party, record);
+            return;
+        }
+        long gameTime = level.getGameTime();
+        if (!TickThrottle.consume(
+                villager.getUUID(),
+                NEXT_PARTY_KOS_TARGET_SCAN_TICKS,
+                gameTime,
+                PARTY_KOS_TARGET_SCAN_INTERVAL_TICKS)) {
+            return;
+        }
+
+        LivingEntity nearest = level.getEntitiesOfClass(
+                        LivingEntity.class,
+                        villager.getBoundingBox().inflate(PARTY_KOS_TARGET_RADIUS),
+                        target -> isEligiblePartyKillOnSightTarget(level, villager, party, record, target))
+                .stream()
+                .min(java.util.Comparator.comparingDouble(villager::distanceToSqr))
+                .orElse(null);
+        if (nearest == null) {
+            return;
+        }
+        if (!authorizePartyKillOnSightTarget(level, villager, nearest)) {
+            return;
+        }
+        anger(villager, nearest, false, true);
+    }
+
+    private static void maintainPartyKillOnSightAuthorization(
+            ServerLevel level,
+            Villager villager,
+            PartyRecord party,
+            PartyVillagerRecord record) {
+        AngerTarget angerTarget = RETALIATION.angerTarget(villager);
+        if (angerTarget == null
+                || !(level.getEntity(angerTarget.targetId()) instanceof LivingEntity target)
+                || !isEligiblePartyKillOnSightTarget(level, villager, party, record, target)
+                || VillageCombatAuthorizationService.isAuthorized(villager, target)) {
+            return;
+        }
+        authorizePartyKillOnSightTarget(level, villager, target);
+    }
+
+    private static boolean authorizePartyKillOnSightTarget(
+            ServerLevel level,
+            Villager villager,
+            LivingEntity target) {
+        AllegianceCombatDecision decision = VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false);
+        if (decision.denied()) {
+            return false;
+        }
+        return decision.action() != AllegianceCombatDecision.Action.ALLOW
+                || VillageCombatAuthorizationService.isAuthorized(villager, target)
+                || VillageCombatAuthorizationService.authorize(level, villager, target);
+    }
+
+    private static boolean isEligiblePartyKillOnSightTarget(
+            ServerLevel level,
+            Villager villager,
+            PartyRecord party,
+            PartyVillagerRecord record,
+            LivingEntity target) {
+        boolean playerRaidOpponents = PlayerRaidService.areOpposingParticipants(villager, target);
+        if (target == villager
+                || !target.isAlive()
+                || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)
+                || !villager.canAttack(target)
+                || !playerRaidOpponents && target.isAlliedTo(villager)
+                || !playerRaidOpponents && PartyService.areInSameOrAlliedParty(villager, target)
+                || (target instanceof Villager targetVillager
+                        && PartyVillagerContractService.hasExpiredContractWithParty(targetVillager, party.id()))
+                || (target instanceof AbstractVillager && !(target instanceof Villager))
+                || (target instanceof OwnableEntity ownable && ownable.getOwnerUUID() != null)
+                || (target instanceof TamableAnimal tamable && tamable.isTame())
+                || (!(target instanceof Villager)
+                        && !(target instanceof IronGolem)
+                        && VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target))
+                || !VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target)
+                || !PartyTargetPolicy.allows(record.attackMode(), villager, target)) {
+            return false;
+        }
+        return !VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false).denied();
     }
 
     private static boolean isNaturalHostileTarget(Villager villager, LivingEntity target) {
@@ -709,7 +952,7 @@ public final class VillagerRetaliationHandler {
         }
 
         long gameTime = villager.level().getGameTime();
-        if (!consumeScanSlot(villager, NEXT_CREEPER_AVOIDANCE_SCAN_TICKS, gameTime, CREEPER_AVOIDANCE_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.consume(villager.getUUID(), NEXT_CREEPER_AVOIDANCE_SCAN_TICKS, gameTime, CREEPER_AVOIDANCE_SCAN_INTERVAL_TICKS)) {
             return false;
         }
 
@@ -740,8 +983,8 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean tryAcquireGroundWeapon(Villager villager, long gameTime) {
+        boolean allowWeapons = ACTOR_POLICY.canScavengeGroundWeapons(villager);
         if (!villager.isAlive()
-                || !ACTOR_POLICY.canScavengeGroundWeapons(villager)
                 || VillagerInventoryAccess.hasOpenInventory(villager)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
             return false;
@@ -751,23 +994,10 @@ public final class VillagerRetaliationHandler {
                 villager,
                 ACTOR_POLICY.movementSpeed(villager),
                 () -> RETALIATION.discardTemporaryWeapon(villager),
-                gameTime
+                gameTime,
+                allowWeapons,
+                true
         );
-    }
-
-    private static boolean tryBorrowInventoryCombatWeapon(Villager villager) {
-        if (VillagerInventoryAccess.hasOpenInventory(villager)
-                || VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
-                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
-            return false;
-        }
-
-        boolean borrowed = VillagerInventoryAccess.tryBorrowCombatWeapon(villager);
-        if (borrowed) {
-            RETALIATION.discardTemporaryWeapon(villager);
-            VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
-        }
-        return borrowed;
     }
 
     private static void clearAnger(Villager villager) {
@@ -782,9 +1012,11 @@ public final class VillagerRetaliationHandler {
         RETALIATION.clearPersistentAnger(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
-        NEXT_HOSTILE_HARASS_THROW_TICKS.remove(villager.getUUID());
-        resetArmorerShieldState(villager);
-        VillagerRangedCombatHelper.clearState(villager);
+        NEXT_PARTY_KOS_TARGET_SCAN_TICKS.remove(villager.getUUID());
+        VillagerHostileTierHarass.clearState(villager);
+        VillagerArmorerCombatTactics.resetState(villager);
+        VillagerCombatStateMachine.clearState(villager);
+        VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         boolean preservePotionUse = VillagerClericPotionHelper.isDrinkingPotion(villager);
         if (preservePotionUse && RETALIATION.hasTemporaryWeapon(villager)) {
             VillagerClericPotionHelper.setPostDrinkMainHand(villager, RETALIATION.temporaryWeaponFallback(villager));
@@ -793,27 +1025,95 @@ public final class VillagerRetaliationHandler {
             VillagerClericPotionHelper.clearAllState(villager);
         }
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
-        if (restoreWeapon && !preservePotionUse) {
+        boolean keepSelectedLoadout = VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)
+                && !VillagerInventoryAccess.hasOpenInventory(villager);
+        if (keepSelectedLoadout && !preservePotionUse) {
+            RETALIATION.restoreTemporaryWeapon(villager);
+            VillagerCombatLoadoutService.maintainEquippedPreference(villager);
+        } else if (restoreWeapon && !preservePotionUse) {
             RETALIATION.restoreTemporaryWeapon(villager);
             VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         } else {
             RETALIATION.discardTemporaryWeapon(villager);
             VillagerInventoryAccess.clearBorrowedCombatWeapon(villager);
         }
-        VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager);
+        if (keepSelectedLoadout) {
+            VillagerCombatLoadoutService.maintainEquippedPreference(villager);
+        } else {
+            VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager);
+        }
         RETALIATION.clearTransientState(villager);
         villager.setAggressive(false);
         villager.setChasing(false);
         villager.setTarget(null);
         villager.setLastHurtByMob(null);
         if (stopNavigation) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         }
     }
 
     private static boolean shouldRetaliateAgainstAttacker(Villager villager, LivingEntity attacker) {
+        if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(attacker)
+                || villager != null
+                    && PartyService.areInSameOrAlliedParty(villager, attacker)
+                    && !PlayerRaidService.areOpposingParticipants(villager, attacker)) {
+            return false;
+        }
         return VillagerRetaliationConfig.VILLAGERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
                 || !isHostileMobAttacker(villager, attacker);
+    }
+
+    private static void rallyPartyVillagers(Entity partyMember, LivingEntity target, boolean attackingWithParty) {
+        if (!(partyMember.level() instanceof ServerLevel level)
+                || partyMember == target
+                || PartyService.areInSameOrAlliedParty(partyMember, target)
+                    && !PlayerRaidService.areOpposingParticipants(partyMember, target)) {
+            return;
+        }
+        PartyRecord party = PartyService.getPartyForEntity(partyMember).orElse(null);
+        if (party == null) {
+            return;
+        }
+        for (PartyVillagerRecord member : party.villagers()) {
+            if (member.combatMode() != PartyCombatMode.ATTACK_WITH_PARTY) {
+                continue;
+            }
+            Entity entity = level.getEntity(member.villagerId());
+            if (!(entity instanceof Villager villager)
+                    || villager == partyMember
+                    || villager.isBaby()
+                    || !villager.isAlive()
+                    || com.jvn.villagerretaliation.party.PartyQuickCommandService.suppressesPartyTargetAcquisition(villager)
+                    || !canWitnessRetaliationEvent(villager, partyMember)
+                    || (attackingWithParty && !PartyTargetPolicy.allows(member.attackMode(), villager, target))
+                    || !shouldRetaliateAgainstAttacker(villager, target)) {
+                continue;
+            }
+            AllegianceCombatContext context = attackingWithParty
+                    ? AllegianceCombatContext.PARTY_ATTACK
+                    : AllegianceCombatContext.PARTY_DEFEND;
+            var decision = VillageAllegianceCombatPolicy.evaluate(
+                    level, villager, target, context, false);
+            if (decision.denied()) {
+                if (AllegianceEntityClassifier.protectedCivilian(target)
+                        && decision.reason() == AllegianceCombatDecision.Reason.SAME_CANONICAL_ALLEGIANCE) {
+                    UUID responsiblePlayer = partyMember instanceof Player
+                            ? partyMember.getUUID()
+                            : party.leaderId();
+                    UnlawfulOrderService.record(level, villager, responsiblePlayer, target.getUUID());
+                }
+                continue;
+            }
+            if (decision.action() == AllegianceCombatDecision.Action.ALLOW
+                    && !VillageCombatAuthorizationService.authorize(level, villager, target)) {
+                continue;
+            }
+            anger(villager, target);
+        }
+    }
+
+    private static boolean isHiredHunter(ServerLevel level, Villager villager) {
+        return HiredVillagerContractService.activeRole(level, villager) == HiredVillagerRole.HUNTING;
     }
 
     private static boolean tryHandleUnarmedLowGutsPlayerHit(Villager villager, LivingEntity attacker) {
@@ -940,16 +1240,8 @@ public final class VillagerRetaliationHandler {
                 || VillagerRetaliationVillagerRules.canStandGroundAgainstHostileMobs(villager);
     }
 
-    private static void syncMeleeAttackAttributes(Villager villager) {
-        AttributeInstance attackDamage = villager.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (attackDamage == null) {
-            return;
-        }
-
-        double desiredBaseDamage = ACTOR_POLICY.meleeAttackDamageBase(villager);
-        if (attackDamage.getBaseValue() != desiredBaseDamage) {
-            attackDamage.setBaseValue(desiredBaseDamage);
-        }
+    private static boolean syncMeleeAttackAttributes(Villager villager) {
+        return VillagerCombatAttributeCompat.syncMeleeAttackAttributes(villager);
     }
 
     private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius) {
@@ -966,6 +1258,7 @@ public final class VillagerRetaliationHandler {
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
             if (nearby != sourceEntity
                     && !nearby.isBaby()
+                    && belongsToHarmedCommunity(level, nearby, sourceEntity)
                     && canWitnessRetaliationEvent(nearby, sourceEntity)
                     && shouldAggroFromWitness(nearby, attacker, false)) {
                 anger(nearby, attacker);
@@ -993,6 +1286,7 @@ public final class VillagerRetaliationHandler {
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
             if (nearby != sourceEntity
                     && !nearby.isBaby()
+                    && belongsToHarmedCommunity(level, nearby, sourceEntity)
                     && canWitnessRetaliationEvent(nearby, sourceEntity)
                     && shouldAggroFromWitness(nearby, attacker, witnessedVillagerKill)) {
                 anger(nearby, attacker, announceRetaliation, announceRetaliation);
@@ -1008,7 +1302,9 @@ public final class VillagerRetaliationHandler {
         List<Villager> witnesses = new ArrayList<>();
         AABB area = sourceEntity.getBoundingBox().inflate(radius);
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (nearby != sourceEntity && canWitnessRetaliationEvent(nearby, sourceEntity)) {
+            if (nearby != sourceEntity
+                    && belongsToHarmedCommunity(level, nearby, sourceEntity)
+                    && canWitnessRetaliationEvent(nearby, sourceEntity)) {
                 witnesses.add(nearby);
             }
         }
@@ -1045,11 +1341,22 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean shouldAggroFromWitness(Villager witness, LivingEntity attacker, boolean witnessedVillagerKill) {
+        if (PartyService.areInSameOrAlliedParty(witness, attacker)
+                && !PlayerRaidService.areOpposingParticipants(witness, attacker)) {
+            return false;
+        }
         if (!(attacker instanceof Player player)) {
             return true;
         }
         int pendingReputationChange = witnessedVillagerKill ? VillagerRetaliationConfig.WITNESSED_KILL_PENALTY.get() : 0;
         return VillagerAggressionPolicy.shouldAggroFromWitnessedPlayerCrime(witness, player, pendingReputationChange);
+    }
+
+    private static boolean belongsToHarmedCommunity(ServerLevel level, Villager witness, Entity sourceEntity) {
+        if (!AllegianceEntityClassifier.bearsAllegiance(sourceEntity)) {
+            return true;
+        }
+        return VillageAllegianceRelations.sharesCommunity(level, sourceEntity, witness);
     }
 
     private static void rallyNearbyVillagers(Villager alarmVillager, LivingEntity attacker, double radius) {
@@ -1068,19 +1375,6 @@ public final class VillagerRetaliationHandler {
         WanderingTraderRetaliationHandler.angerNearbyTradersFrom(alarmVillager, attacker, radius);
     }
 
-    private static void rallyFromNearbyNitwits(Entity sourceEntity, LivingEntity attacker, double radius) {
-        if (!(sourceEntity.level() instanceof ServerLevel level)) {
-            return;
-        }
-
-        AABB area = sourceEntity.getBoundingBox().inflate(radius);
-        for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (isNitwitAlarm(nearby) && canWitnessRetaliationEvent(nearby, sourceEntity)) {
-                rallyNearbyVillagers(nearby, attacker, radius);
-            }
-        }
-    }
-
     private static void triggerNitwitWitnessedDeathFlee(List<Villager> witnesses, LivingEntity attacker) {
         long gameTime = attacker == null ? 0L : attacker.level().getGameTime();
         for (Villager nearby : witnesses) {
@@ -1091,7 +1385,7 @@ public final class VillagerRetaliationHandler {
             if (attacker != null) {
                 VillagerRetaliationVillagerBrainUtil.enterFleeState(nearby, attacker, gameTime);
             } else {
-                nearby.getNavigation().stop();
+                VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(nearby);
             }
         }
     }
@@ -1111,16 +1405,11 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void suppressVanillaPanic(Villager villager) {
-        Brain<Villager> brain = villager.getBrain();
-        VillagerRetaliationVillagerBrainUtil.clearThreatMemories(villager);
-        brain.eraseMemory(MemoryModuleType.HEARD_BELL_TIME);
-        brain.eraseMemory(MemoryModuleType.HIDING_PLACE);
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
-        if (brain.isActive(Activity.PANIC) || brain.isActive(Activity.HIDE)) {
-            brain.setDefaultActivity(Activity.IDLE);
-            brain.setActiveActivityIfPossible(Activity.IDLE);
+        if (villager.level() instanceof ServerLevel level) {
+            VillagerRetaliationVillagerBrainUtil.suppressVanillaFleeState(level, villager);
+        } else {
+            VillagerRetaliationVillagerBrainUtil.clearFleeMemories(villager);
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearMovement(villager);
         }
     }
 
@@ -1129,131 +1418,53 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (VillagerCombatRoles.isFarmer(villager)
-                && VillagerRetaliationConfig.FARMERS_USE_BREAD.get()
-                && villager.getHealth() < villager.getMaxHealth() * 0.6F) {
-            villager.heal(4.0F);
-            NEXT_SPECIAL_TICKS.put(villager.getUUID(), gameTime + 120L);
-        }
-    }
-
-    private static boolean tryHostileTierHarassThrow(
-            Villager villager,
-            LivingEntity target,
-            ServerLevel level,
-            long gameTime,
-            double distanceSqr
-    ) {
-        if (!VillagerRetaliationConfig.HOSTILE_TIER_HARASS_THROW_ENABLED.get()
-                || !(target instanceof Player player)
-                || !player.isAlive()
-                || player.isCreative()
-                || player.isSpectator()
-                || distanceSqr > HOSTILE_HARASS_THROW_MAX_DISTANCE_SQR
-                || !villager.hasLineOfSight(player)
-                || !isHostileTierAgainstPlayer(villager, player)) {
-            return false;
-        }
-
-        if (gameTime < NEXT_HOSTILE_HARASS_THROW_TICKS.getOrDefault(villager.getUUID(), 0L)) {
-            return false;
-        }
-
-        NEXT_HOSTILE_HARASS_THROW_TICKS.put(villager.getUUID(), gameTime + nextHarassThrowDelayTicks(villager));
-        if (villager.getRandom().nextBoolean()) {
-            ThrownEgg egg = new ThrownEgg(level, villager);
-            egg.setItem(new ItemStack(Items.EGG));
-            shootHarassProjectile(villager, egg, player, level);
-        } else {
-            Snowball poisonousPotato = new Snowball(level, villager);
-            poisonousPotato.setItem(new ItemStack(Items.POISONOUS_POTATO));
-            shootHarassProjectile(villager, poisonousPotato, player, level);
-        }
-        return true;
-    }
-
-    private static void shootHarassProjectile(
-            Villager villager,
-            ThrowableItemProjectile projectile,
-            Player target,
-            ServerLevel level
-    ) {
-        double dx = target.getX() + target.getDeltaMovement().x - villager.getX();
-        double dy = target.getY(0.3333333333333333D) - projectile.getY();
-        double dz = target.getZ() + target.getDeltaMovement().z - villager.getZ();
-        double horizontal = Math.sqrt(dx * dx + dz * dz);
-        projectile.shoot(dx, dy + horizontal * 0.2D, dz, 1.1F, (float) (16 - level.getDifficulty().getId() * 4));
-        level.addFreshEntity(projectile);
-        villager.swing(InteractionHand.MAIN_HAND, true);
-        villager.playSound(SoundEvents.EGG_THROW, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
-    }
-
-    private static boolean isHostileTierAgainstPlayer(Villager villager, Player player) {
-        if (!(villager.level() instanceof ServerLevel level) || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
-            return false;
-        }
-        VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
-        return reputationLevel == VillagerReputationLevel.HOSTILE
-                || reputationLevel == VillagerReputationLevel.DESPISED
-                || reputationLevel == VillagerReputationLevel.FEARED;
-    }
-
-    private static int nextHarassThrowDelayTicks(Villager villager) {
-        int minDelay = Math.max(1, VillagerRetaliationConfig.HOSTILE_TIER_HARASS_THROW_MIN_INTERVAL_TICKS.get());
-        int maxDelay = Math.max(1, VillagerRetaliationConfig.HOSTILE_TIER_HARASS_THROW_MAX_INTERVAL_TICKS.get());
-        if (maxDelay < minDelay) {
-            int swap = minDelay;
-            minDelay = maxDelay;
-            maxDelay = swap;
-        }
-        return minDelay + villager.getRandom().nextInt(maxDelay - minDelay + 1);
+        // Recovery consumables are handled by VillagerRecoveryService for every profession.
     }
 
     private static void handleSleepingCombatState(Villager villager) {
         villager.setAggressive(false);
         villager.setChasing(false);
         villager.setTarget(null);
-        resetArmorerShieldState(villager);
-        VillagerRangedCombatHelper.clearState(villager);
+        VillagerArmorerCombatTactics.resetState(villager);
+        VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         VillagerClericPotionHelper.clearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
         VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
-        villager.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
     }
 
-    private static void equipCombatWeapon(Villager villager) {
-        if (VillagerInventoryAccess.hasOpenInventory(villager)) {
-            RETALIATION.restoreTemporaryWeapon(villager);
-            VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
-            return;
+    private static void wakeSleepingVillagerTargetForPartyAttacker(
+            ServerLevel level,
+            Villager attacker,
+            LivingEntity target) {
+        if (target instanceof Villager targetVillager
+                && targetVillager.isSleeping()
+                && PartyService.isRecruitedPartyVillager(level, attacker.getUUID())) {
+            targetVillager.stopSleeping();
         }
+    }
 
-        if (VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
-            return;
+    private static boolean shouldHoldStandGuard(
+            Villager villager,
+            LivingEntity target,
+            boolean meleeAttackReady
+    ) {
+        if (!com.jvn.villagerretaliation.party.PartyQuickCommandService.isStandingGuard(villager)
+                || !villager.getMainHandItem().is(Items.SHIELD)
+                || villager.isUsingItem() && !villager.getUseItem().is(Items.SHIELD)) {
+            return false;
         }
-
-        if (VillagerInventoryAccess.maintainBorrowedCombatWeapon(villager)) {
-            RETALIATION.discardTemporaryWeapon(villager);
-            return;
+        var preference = VillagerCombatLoadoutService.preference(villager);
+        boolean rangedGuard = preference == com.jvn.villagerretaliation.party.PartyWeaponPreference.RANGED
+                || preference == com.jvn.villagerretaliation.party.PartyWeaponPreference.AUTO
+                && (VillagerRangedCombatHelper.hasState(villager)
+                || VillagerInventoryAccess.hasCarriedItem(
+                        villager, VillagerRetaliationVillagerWeapons::isRangedWeapon));
+        if (rangedGuard) {
+            return VillagerRangedCombatHelper.tickGuardInterval(villager);
         }
-
-        if (RETALIATION.maintainTemporaryWeapon(villager)) {
-            return;
-        }
-
-        if (VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager)) {
-            RETALIATION.discardTemporaryWeapon(villager);
-            return;
-        }
-
-        if (VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
-            return;
-        }
-
-        if (tryBorrowInventoryCombatWeapon(villager)) {
-            return;
-        }
+        return !meleeAttackReady || !VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
     }
 
     private static boolean hasEquippedWeaponGear(Villager villager) {
@@ -1272,6 +1483,7 @@ public final class VillagerRetaliationHandler {
 
     private static void ensureProfessionMainHand(Villager villager) {
         if (VillagerInventoryAccess.hasOpenInventory(villager)
+                || VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)
                 || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
                 || RETALIATION.hasTemporaryWeapon(villager)
                 || VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
@@ -1286,116 +1498,12 @@ public final class VillagerRetaliationHandler {
         String roleKey = BuiltInRegistries.VILLAGER_PROFESSION
                 .getKey(villager.getVillagerData().getProfession())
                 .toString();
-        VillagerRetaliationVillagerEquipment.suppressVanillaTradePreviewMainHand(villager, roleWeapon);
         VillagerRetaliationVillagerEquipment.ensureRoleMainHand(villager, roleKey, roleWeapon);
     }
 
-    private static boolean handleArmorerShieldCombatTactics(Villager villager, LivingEntity target, double distanceSqr, long gameTime, boolean meleeAttackReady) {
-        if (!VillagerCombatRoles.isArmorer(villager)
-                || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
-                || !isHardMode(villager)
-                || VillagerRetaliationRetaliationUtil.isUsingRangedCombatMode(villager)) {
-            clearArmorerShieldTacticState(villager, true);
-            return true;
-        }
-
-        if (!hasArmorerShield(villager)) {
-            clearArmorerShieldTacticState(villager, true);
-            return true;
-        }
-
-        boolean inMeleeRange = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager)
-                && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
-        boolean inShieldTriggerRange = distanceSqr <= ARMORER_SHIELD_TRIGGER_RANGE_SQR;
-
-        UUID villagerId = villager.getUUID();
-        long shieldDisabledUntil = ARMORER_SHIELD_DISABLED_UNTIL_TICKS.getOrDefault(villagerId, 0L);
-        if (gameTime < shieldDisabledUntil) {
-            stopArmorerShieldBlocking(villager);
-            return true;
-        }
-        if (shieldDisabledUntil != 0L) {
-            ARMORER_SHIELD_DISABLED_UNTIL_TICKS.remove(villagerId);
-        }
-
-        int pendingCounterSwings = ARMORER_PENDING_COUNTER_SWINGS.getOrDefault(villagerId, 0);
-        if (pendingCounterSwings > 0) {
-            long counterAttackReadyTick = ARMORER_COUNTER_ATTACK_READY_TICKS.getOrDefault(villagerId, gameTime);
-            if (gameTime < counterAttackReadyTick || !meleeAttackReady || !inMeleeRange) {
-                if (!inShieldTriggerRange) {
-                    stopArmorerShieldBlocking(villager);
-                    return true;
-                }
-                ensureArmorerShieldBlocking(villager);
-                return false;
-            }
-            stopArmorerShieldBlocking(villager);
-            return true;
-        }
-
-        if (inMeleeRange && meleeAttackReady) {
-            stopArmorerShieldBlocking(villager);
-            return true;
-        }
-
-        if (!inShieldTriggerRange) {
-            stopArmorerShieldBlocking(villager);
-            return true;
-        }
-
-        ensureArmorerShieldBlocking(villager);
-        return false;
-    }
-
-    private static void ensureArmorerShieldBlocking(Villager villager) {
-        if (!isArmorerActivelyBlocking(villager) && hasArmorerShield(villager)) {
-            villager.startUsingItem(InteractionHand.OFF_HAND);
-        }
-    }
-
-    private static void stopArmorerShieldBlocking(Villager villager) {
-        if (villager.isUsingItem() && villager.getUsedItemHand() == InteractionHand.OFF_HAND) {
-            villager.stopUsingItem();
-        }
-    }
-
-    private static void clearArmorerShieldTacticState(Villager villager, boolean stopBlocking) {
-        UUID villagerId = villager.getUUID();
-        ARMORER_SHIELD_DISABLED_UNTIL_TICKS.remove(villagerId);
-        ARMORER_PENDING_COUNTER_SWINGS.remove(villagerId);
-        ARMORER_COUNTER_ATTACK_READY_TICKS.remove(villagerId);
-        if (stopBlocking) {
-            stopArmorerShieldBlocking(villager);
-        }
-    }
-
-    private static boolean isArmorerActivelyBlocking(Villager villager) {
-        return villager.isUsingItem()
-                && villager.getUsedItemHand() == InteractionHand.OFF_HAND
-                && hasArmorerShield(villager);
-    }
-
-    private static void onArmorerMeleeAttackCommitted(Villager villager) {
-        if (!VillagerCombatRoles.isArmorer(villager) || !hasArmorerShield(villager)) {
-            return;
-        }
-
-        UUID villagerId = villager.getUUID();
-        int pendingCounterSwings = ARMORER_PENDING_COUNTER_SWINGS.getOrDefault(villagerId, 0);
-        if (pendingCounterSwings > 0) {
-            ARMORER_PENDING_COUNTER_SWINGS.put(villagerId, pendingCounterSwings - 1);
-            ARMORER_COUNTER_ATTACK_READY_TICKS.remove(villagerId);
-        }
-        stopArmorerShieldBlocking(villager);
-    }
-
-    private static int nextCounterAttackDelayTicks(Villager villager) {
-        return ARMORER_COUNTER_ATTACK_DELAY_MIN_TICKS
-                + villager.getRandom().nextInt(ARMORER_COUNTER_ATTACK_DELAY_MAX_TICKS - ARMORER_COUNTER_ATTACK_DELAY_MIN_TICKS + 1);
-    }
-
     private static void handlePassivePotionState(Villager villager) {
-        resetArmorerShieldStateIfActive(villager);
+        VillagerArmorerCombatTactics.resetStateIfActive(villager);
+        VillagerCombatStateMachine.clearState(villager);
         clearRangedStateIfActive(villager);
         if (VillagerInventoryAccess.hasOpenInventory(villager)) {
             suspendCombatForOpenInventory(villager);
@@ -1403,7 +1511,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
             return;
         }
@@ -1419,7 +1527,11 @@ public final class VillagerRetaliationHandler {
             return;
         }
         if (villager.level() instanceof ServerLevel level
-                && tryRepairNearbyIronGolem(villager, level, level.getGameTime())) {
+                && VillagerSmithGolemRepairSupport.tryRepairNearbyIronGolem(
+                villager,
+                level,
+                level.getGameTime(),
+                ACTOR_POLICY.movementSpeed(villager))) {
             return;
         }
 
@@ -1427,72 +1539,14 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void suspendCombatForOpenInventory(Villager villager) {
-        villager.getNavigation().stop();
-        resetArmorerShieldState(villager);
-        VillagerRangedCombatHelper.clearState(villager);
+        VillagerWeaponDrawService.sheathe(villager);
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+        VillagerArmorerCombatTactics.resetState(villager);
+        VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         VillagerClericPotionHelper.clearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
         VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
-    }
-
-    private static boolean tryRepairNearbyIronGolem(Villager villager, ServerLevel level, long gameTime) {
-        if (!canProfessionRepairIronGolems(villager)
-                || !consumeScanSlot(villager, NEXT_IRON_GOLEM_REPAIR_TICKS, gameTime, SMITH_IRON_GOLEM_REPAIR_SCAN_INTERVAL_TICKS)) {
-            return false;
-        }
-
-        IronGolem ironGolem = findNearbyDamagedIronGolem(villager, level);
-        if (ironGolem == null) {
-            NEXT_IRON_GOLEM_REPAIR_TICKS.put(villager.getUUID(), gameTime + SMITH_IRON_GOLEM_REPAIR_SCAN_INTERVAL_TICKS);
-            return false;
-        }
-
-        if (!villager.hasLineOfSight(ironGolem)
-                || villager.distanceToSqr(ironGolem) > SMITH_IRON_GOLEM_REPAIR_REACH_SQR) {
-            if (!villager.getNavigation().isDone()) {
-                NEXT_IRON_GOLEM_REPAIR_TICKS.put(villager.getUUID(), gameTime + SMITH_IRON_GOLEM_REPAIR_APPROACH_RETRY_TICKS);
-                return true;
-            }
-
-            boolean pathStarted = villager.getNavigation().moveTo(ironGolem, ACTOR_POLICY.movementSpeed(villager) * 0.6D);
-            NEXT_IRON_GOLEM_REPAIR_TICKS.put(
-                    villager.getUUID(),
-                    gameTime + (pathStarted
-                            ? SMITH_IRON_GOLEM_REPAIR_APPROACH_RETRY_TICKS
-                            : SMITH_IRON_GOLEM_REPAIR_PATH_FAILURE_COOLDOWN_TICKS)
-            );
-            return true;
-        }
-
-        ironGolem.heal(SMITH_IRON_GOLEM_REPAIR_HEAL_AMOUNT);
-        villager.swing(InteractionHand.MAIN_HAND, true);
-        NEXT_IRON_GOLEM_REPAIR_TICKS.put(villager.getUUID(), gameTime + SMITH_IRON_GOLEM_REPAIR_COOLDOWN_TICKS);
-        return true;
-    }
-
-    private static IronGolem findNearbyDamagedIronGolem(Villager villager, ServerLevel level) {
-        AABB area = villager.getBoundingBox().inflate(SMITH_IRON_GOLEM_REPAIR_SEARCH_RADIUS);
-        IronGolem bestTarget = null;
-        float mostMissingHealth = 0.0F;
-        for (IronGolem candidate : level.getEntitiesOfClass(IronGolem.class, area, ironGolem -> ironGolem.isAlive() && ironGolem.getHealth() < ironGolem.getMaxHealth())) {
-            float missingHealth = candidate.getMaxHealth() - candidate.getHealth();
-            if (missingHealth > mostMissingHealth
-                    || (missingHealth == mostMissingHealth
-                    && bestTarget != null
-                    && villager.distanceToSqr(candidate) < villager.distanceToSqr(bestTarget))) {
-                mostMissingHealth = missingHealth;
-                bestTarget = candidate;
-            }
-        }
-        return bestTarget;
-    }
-
-    private static boolean canProfessionRepairIronGolems(Villager villager) {
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        return profession == VillagerProfession.ARMORER
-                || profession == VillagerProfession.WEAPONSMITH
-                || profession == VillagerProfession.TOOLSMITH;
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
@@ -1500,8 +1554,13 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        resetArmorerShieldState(villager);
-        VillagerRangedCombatHelper.clearState(villager);
+        clearRuntimeState(villager);
+    }
+
+    private static void clearRuntimeState(Villager villager) {
+        VillagerArmorerCombatTactics.resetState(villager);
+        VillagerCombatStateMachine.clearState(villager);
+        VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         if (villager.isAlive()) {
@@ -1513,10 +1572,12 @@ public final class VillagerRetaliationHandler {
         RETALIATION.clearTransientState(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
+        NEXT_PARTY_KOS_TARGET_SCAN_TICKS.remove(villager.getUUID());
         NEXT_CREEPER_AVOIDANCE_SCAN_TICKS.remove(villager.getUUID());
         NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.remove(villager.getUUID());
-        NEXT_HOSTILE_HARASS_THROW_TICKS.remove(villager.getUUID());
-        NEXT_IRON_GOLEM_REPAIR_TICKS.remove(villager.getUUID());
+        VillagerHostileTierHarass.clearState(villager);
+        VillagerSmithGolemRepairSupport.clearState(villager);
+        NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS.keySet().removeIf(key -> key.villagerId().equals(villager.getUUID()));
         WAVERING_UNARMED_COUNTERS.keySet().removeIf(key -> key.villagerId().equals(villager.getUUID()));
         LOW_GUTS_RALLY_USED_UNTIL_TICKS.keySet().removeIf(key -> key.villagerId().equals(villager.getUUID()));
         if (villager.isAlive()) {
@@ -1526,59 +1587,38 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    private static boolean isHardMode(Villager villager) {
-        return villager.level().getDifficulty() == Difficulty.HARD;
-    }
-
-    private static void ensureArmorerSpawnShieldRoll(Villager villager) {
-        if (villager.isBaby()
-                || !VillagerCombatRoles.isArmorer(villager)
-                || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
-                || !isHardMode(villager)) {
-            return;
+    public static void clearRuntimeState(net.minecraft.server.MinecraftServer server) {
+        if (server != null) {
+            for (ServerLevel level : server.getAllLevels()) {
+                for (Entity entity : level.getAllEntities()) {
+                    if (entity instanceof Villager villager) {
+                        clearRuntimeState(villager);
+                    }
+                }
+            }
         }
-
-        tryRollArmorerSpawnShield(villager);
-    }
-
-    private static void tryRollArmorerSpawnShield(Villager villager) {
-        var persistentData = villager.getPersistentData();
-        if (persistentData.getBoolean(PERSISTENT_ARMORER_SHIELD_ROLLED_TAG)) {
-            return;
-        }
-        persistentData.putBoolean(PERSISTENT_ARMORER_SHIELD_ROLLED_TAG, true);
-
-        if (villager.getOffhandItem().isEmpty()
-                && villager.getRandom().nextDouble() < VillagerRetaliationConfig.ARMORER_SHIELD_CHANCE_HARD.get()) {
-            VillagerRetaliationVillagerEquipment.setRoleEquipment(villager, EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
-        }
-    }
-
-    private static boolean hasArmorerShield(Villager villager) {
-        return villager.getOffhandItem().is(Items.SHIELD);
-    }
-
-    private static void resetArmorerShieldStateIfActive(Villager villager) {
-        if (VillagerCombatRoles.isArmorer(villager) || isArmorerActivelyBlocking(villager) || hasArmorerShieldTacticState(villager)) {
-            resetArmorerShieldState(villager);
-        }
-    }
-
-    private static void resetArmorerShieldState(Villager villager) {
-        stopArmorerShieldBlocking(villager);
-        clearArmorerShieldTacticState(villager, false);
-    }
-
-    private static boolean hasArmorerShieldTacticState(Villager villager) {
-        UUID villagerId = villager.getUUID();
-        return ARMORER_SHIELD_DISABLED_UNTIL_TICKS.containsKey(villagerId)
-                || ARMORER_PENDING_COUNTER_SWINGS.containsKey(villagerId)
-                || ARMORER_COUNTER_ATTACK_READY_TICKS.containsKey(villagerId);
+        RETALIATION.clearRuntimeState();
+        NEXT_SPECIAL_TICKS.clear();
+        NEXT_NATURAL_TARGET_SCAN_TICKS.clear();
+        NEXT_PARTY_KOS_TARGET_SCAN_TICKS.clear();
+        NEXT_CREEPER_AVOIDANCE_SCAN_TICKS.clear();
+        NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.clear();
+        NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS.clear();
+        WAVERING_UNARMED_COUNTERS.clear();
+        LOW_GUTS_RALLY_USED_UNTIL_TICKS.clear();
+        VillagerArmorerCombatTactics.clearRuntimeState();
+        VillagerCombatStateMachine.clearRuntimeState();
+        VillagerRangedCombatHelper.clearRuntimeState();
+        VillagerClericPotionHelper.clearRuntimeState();
+        VillagerHostileTierHarass.clearRuntimeState();
+        VillagerSmithGolemRepairSupport.clearRuntimeState();
+        VillagerRetaliationRetaliationUtil.clearRuntimeState();
+        VillagerRetaliationVillagerWeapons.clearCache();
     }
 
     private static void clearRangedStateIfActive(Villager villager) {
         if (VillagerRangedCombatHelper.hasState(villager) || villager.isUsingItem()) {
-            VillagerRangedCombatHelper.clearState(villager);
+            VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         }
     }
 
@@ -1589,50 +1629,19 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void returnBorrowedCombatWeaponIfActive(Villager villager) {
-        if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)) {
+        if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
+                && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)
+                && !VillagerWeaponDrawService.isDrawn(villager)) {
             VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         }
     }
 
-    private static boolean consumeScanSlot(Villager villager, Map<UUID, Long> nextScanTicks, long gameTime, long intervalTicks) {
-        UUID villagerId = villager.getUUID();
-        Long nextScan = nextScanTicks.get(villagerId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(villagerId, intervalTicks);
-            if (firstScan > gameTime) {
-                nextScanTicks.put(villagerId, firstScan);
-                return false;
-            }
-        } else if (gameTime < nextScan) {
-            return false;
-        }
-
-        nextScanTicks.put(villagerId, gameTime + Math.max(1L, intervalTicks));
-        return true;
-    }
-
     private static boolean shouldMaintainProfessionMainHand(Villager villager, long gameTime) {
-        UUID villagerId = villager.getUUID();
-        Long nextCheck = NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.get(villagerId);
-        if (nextCheck == null) {
-            long firstCheck = gameTime + scanStagger(villagerId, ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS);
-            if (firstCheck > gameTime) {
-                NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.put(villagerId, firstCheck);
-                return false;
-            }
-        } else if (gameTime < nextCheck) {
-            return false;
-        }
-
-        NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.put(villagerId, gameTime + ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS);
-        return true;
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
+        return TickThrottle.consume(
+                villager.getUUID(),
+                NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS,
+                gameTime,
+                ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS);
     }
 
     private record PlayerVillagerKey(UUID playerId, UUID villagerId) {

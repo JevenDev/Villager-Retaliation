@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/honest_work",
+  "display": {
+    "icon": {
+      "id": "villagerretaliation:construction_blueprint"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.blueprint_for_success.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.blueprint_for_success.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

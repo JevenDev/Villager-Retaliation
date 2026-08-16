@@ -1,0 +1,375 @@
+.developer-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  color: var(--muted);
+}
+
+.developer-summary span {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel-2);
+  color: #eee9f1;
+  padding: 2px 7px;
+  font-size: 13px;
+}
+
+.developer-summary svg {
+  width: 14px;
+  height: 14px;
+  color: var(--warn);
+}
+
+.path-list,
+.system-list,
+.pack-list,
+.related-list {
+  display: grid;
+  gap: 10px;
+}
+
+.path-link,
+.system-link,
+.pack-entry,
+.related-link {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 6px 10px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.path-link:hover,
+.system-link:hover,
+.related-link:hover {
+  border-color: #4f4657;
+  background: var(--panel-2);
+  color: #ffffff;
+}
+
+.path-link:focus-visible,
+.system-link:focus-visible,
+.related-link:focus-visible {
+  outline: 1px solid rgba(231, 183, 79, 0.8);
+  outline-offset: 1px;
+}
+
+.path-link > svg,
+.system-link > svg,
+.related-link > svg,
+.pack-entry > svg {
+  width: 20px;
+  height: 20px;
+  color: var(--warn);
+}
+
+.path-copy,
+.system-copy,
+.pack-copy,
+.related-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.path-copy strong,
+.system-copy strong,
+.pack-copy strong,
+.related-copy strong {
+  color: #ffffff;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.path-copy span,
+.system-copy span,
+.pack-copy span,
+.related-copy span {
+  color: #ddd8e1;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.link-heading {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+
+.path-copy .link-heading strong,
+.system-copy .link-heading strong,
+.related-copy .link-heading strong {
+  font-size: 17px;
+}
+
+.path-copy .link-meta,
+.system-copy .link-meta,
+.related-copy .link-meta {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.doc-section p + .path-list,
+.doc-section p + .system-list,
+.doc-section p + .pack-list,
+.doc-section p + .related-list {
+  margin-top: 12px;
+}
+
+.doc-section > h2 + .group-heading {
+  margin-top: 0;
+}
+
+.group-heading {
+  margin: 30px 0 10px;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+
+.markdown-body {
+  margin-top: 34px;
+  color: #ddd8e1;
+}
+
+.markdown-body h2 {
+  margin: 34px 0 12px;
+  color: #ffffff;
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: 0;
+  font-weight: 750;
+  scroll-margin-top: 76px;
+}
+
+.markdown-body > h2:first-child {
+  margin-top: 0;
+}
+
+.markdown-body h3 {
+  margin: 26px 0 10px;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.35;
+  letter-spacing: 0;
+  scroll-margin-top: 76px;
+}
+
+.markdown-body h4 {
+  margin: 22px 0 8px;
+  color: #ffffff;
+  font-size: 16px;
+  scroll-margin-top: 76px;
+}
+
+.markdown-body p {
+  max-width: 76ch;
+  margin: 0;
+}
+
+.markdown-body :not(pre) > code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.markdown-body p + p {
+  margin-top: 11px;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  max-width: 76ch;
+  margin: 12px 0;
+  padding-left: 20px;
+}
+
+.markdown-body li + li {
+  margin-top: 8px;
+}
+
+.markdown-body blockquote {
+  max-width: 76ch;
+  margin: 12px 0;
+}
+
+.markdown-body .table-wrap {
+  margin: 12px 0;
+}
+
+.code-block {
+  position: relative;
+  max-width: 100%;
+  margin: 12px 0;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--code);
+  line-height: 1.55;
+}
+
+.code-block pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #d8d8d8;
+  font-size: 13px;
+}
+
+.copy-code {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel-2);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.copy-code:hover,
+.copy-code:focus-visible {
+  border-color: rgba(231, 183, 79, 0.8);
+  color: #ffffff;
+  outline: 1px solid rgba(231, 183, 79, 0.34);
+  outline-offset: 0;
+}
+
+.example-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.example-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.example-filter-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+.example-filter-count {
+  color: var(--faint);
+}
+
+.example-filter:hover,
+.example-filter:focus-visible,
+.example-filter.is-active {
+  border-color: rgba(231, 183, 79, 0.8);
+  background: var(--panel-2);
+  color: #ffffff;
+  outline: 0;
+}
+
+.example-list {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.example-entry {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel);
+}
+
+.example-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+}
+
+.example-heading h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.example-level {
+  color: #eac674;
+  font-size: 13px;
+}
+
+.example-origin {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pack-entry {
+  grid-template-columns: 20px minmax(0, 1fr);
+}
+
+.pack-files {
+  margin-top: 3px;
+  color: var(--muted) !important;
+  font-size: 13px !important;
+}
+
+.copy-status {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 50;
+  display: none;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel-3);
+  color: #ffffff;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+}
+
+.copy-status.is-visible {
+  display: block;
+}
+
+.nav-list > .nav-link + .nav-group {
+  margin-top: 14px;
+}
+
+.nav-link .nav-count {
+  margin-left: auto;
+  color: var(--faint);
+  font-size: 11px;
+}

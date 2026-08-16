@@ -44,11 +44,12 @@ public final class WanderingTraderCombatRoles {
     }
 
     public static double meleeAttackDamageBase(WanderingTrader trader) {
-        return RetaliationCombatStats.meleeAttackDamageBase(trader.getMainHandItem());
+        return RetaliationCombatStats.meleeAttackDamageBase(
+                trader.getMainHandItem(), trader.level().getDifficulty());
     }
 
     public static double movementSpeed(WanderingTrader trader) {
-        return RetaliationCombatStats.PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER;
+        return RetaliationCombatStats.COMBAT_SPEED_MODIFIER;
     }
 
     public static int attackCooldown(WanderingTrader trader) {

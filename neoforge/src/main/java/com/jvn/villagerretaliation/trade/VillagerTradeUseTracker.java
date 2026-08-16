@@ -14,6 +14,10 @@ public final class VillagerTradeUseTracker {
     private VillagerTradeUseTracker() {
     }
 
+    public static void clearRuntimeState() {
+        OFFER_USES.clear();
+    }
+
     public static void snapshotOffers(AbstractVillager villager) {
         MerchantOffers offers = villager.getOffers();
         for (int index = 0; index < offers.size(); index++) {

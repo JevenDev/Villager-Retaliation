@@ -1,0 +1,133 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.ink_and_bearings.description": {
+      "lines": [
+        "Prepare the atlas index and choose whether its first principle favors roads or wonders."
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.dialogue.reminder.label": "About Ink and Bearings",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.dialogue.reminder.lines": [
+      "The index is ready. This principle is permanent: roads reward practical navigation supplies on the first expedition; wonders reward rare survey tools."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.dialogue.reminder.response.details.label": "Repeat the choice",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.dialogue.reminder.response.leave.label": "I will choose",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.objective.choose_principle.tracker.complete_text": "Atlas principle chosen: {objective_choice_value}.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.objective.choose_principle.tracker.text": "Choose the atlas principle with the cartographer.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.response.roads.action.notification.text": "The atlas will favor reliable roads.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.response.roads.label": "Favor reliable roads",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.response.roads.text": "Atlas principle chosen: roads.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.response.wonders.action.notification.text": "The atlas will favor strange wonders.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.response.wonders.label": "Favor strange wonders",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.response.wonders.text": "Atlas principle chosen: wonders.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.scene.leave.lines": [
+      "Choose what you can live with following."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.scene.reminder_details.action.remind.lines.reminder": [
+      "Choose roads for a compass-and-iron expedition kit, or wonders for a spyglass-and-amethyst kit. The principle is permanent."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.scene.reminder_details.action.remind.lines.unavailable": [
+      "We are not carrying that atlas principle right now."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.choose_principle.ui.tracker_text": "Choose the atlas principle from the cartographer's branch options.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.dialogue.offer.label": "Ink and Bearings",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.dialogue.offer.lines": [
+      "A blank atlas can become a diary, a warning, or a trophy shelf. We should choose better than that.",
+      "Bring fine pens and glass for the index. Then make a permanent atlas choice: roads prepare a compass-and-iron route kit, while wonders prepare a spyglass-and-amethyst survey kit for the first expedition."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.dialogue.offer.response.accept.label": "Prepare the index",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.dialogue.reminder.label": "About Ink and Bearings",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.dialogue.reminder.lines": [
+      "The atlas index still needs fine pens and panes before we choose its first rule."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.dialogue.reminder.response.abandon.label": "Abandon quest",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.dialogue.reminder.response.details.label": "Repeat the list",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.objective.bring_feathers.tracker.complete_text": "The map pens are ready.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.objective.bring_feathers.tracker.text": "Bring 2 feathers for fine map pens.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.objective.bring_glass.tracker.complete_text": "The index panes are ready.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.objective.bring_glass.tracker.text": "Bring 6 glass panes to protect the index pages.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.abandon_confirm.lines": [
+      "Set aside the atlas index for now?"
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.abandon_confirm.response.cancel.label": "Keep the index",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.abandon_confirm.response.confirm.label": "Abandon quest",
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "I will keep the index loose until you return."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "There is no atlas index open right now."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.decline.lines": [
+      "Then the atlas can wait before it starts having opinions."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.leave.lines": [
+      "A good bearing survives a pause."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 2 feathers and 6 glass panes. Once the index is ready, choose whether the atlas favors roads or wonders."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have your atlas index open right now."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.start_quest.action.start.lines.already_completed": [
+      "The atlas already has its first principle."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.start_quest.action.start.lines.started": [
+      "Bring 2 feathers and 6 glass panes. Good maps need clear ink and clearer intentions."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.scene.start_quest.action.start.lines.unavailable": [
+      "The first folio must be bound before the index matters."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.prepare_index.ui.tracker_text": "Bring 2 feathers and 6 glass panes for the atlas index.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.roads_ready.dialogue.turn_in.label": "About Ink and Bearings",
+    "quest.cartographers_atlas.ink_and_bearings.stage.roads_ready.dialogue.turn_in.lines": [
+      "Roads, then. A map should first get people home."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.roads_ready.dialogue.turn_in.response.complete.label": "Set the road principle",
+    "quest.cartographers_atlas.ink_and_bearings.stage.roads_ready.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.ink_and_bearings.stage.roads_ready.scene.complete_quest.action.turn_in.lines.completed": [
+      "I have inked roads into the index. The atlas will look for ways back before it looks for glory."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.roads_ready.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Choose the atlas principle before I set the index."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.roads_ready.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The index still needs the proof we agreed on."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.roads_ready.scene.leave.lines": [
+      "A good road waits at both ends."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.roads_ready.ui.tracker_text": "Return to the cartographer to set the road principle.",
+    "quest.cartographers_atlas.ink_and_bearings.stage.wonders_ready.dialogue.turn_in.label": "About Ink and Bearings",
+    "quest.cartographers_atlas.ink_and_bearings.stage.wonders_ready.dialogue.turn_in.lines": [
+      "Wonders, then. A map should leave room for the impossible."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.wonders_ready.dialogue.turn_in.response.complete.label": "Set the wonder principle",
+    "quest.cartographers_atlas.ink_and_bearings.stage.wonders_ready.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.ink_and_bearings.stage.wonders_ready.scene.complete_quest.action.turn_in.lines.completed": [
+      "I have inked wonders into the index. The atlas will not mistake a hard road for an empty one."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.wonders_ready.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Choose the atlas principle before I set the index."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.wonders_ready.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The index still needs the proof we agreed on."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.wonders_ready.scene.leave.lines": [
+      "A wonder only looks impossible until someone writes it down."
+    ],
+    "quest.cartographers_atlas.ink_and_bearings.stage.wonders_ready.ui.tracker_text": "Return to the cartographer to set the wonder principle.",
+    "quest.cartographers_atlas.ink_and_bearings.title": {
+      "lines": [
+        "Ink and Bearings"
+      ]
+    },
+    "quest.cartographers_atlas.ink_and_bearings.tracker.title": {
+      "lines": [
+        "Ink and Bearings"
+      ]
+    }
+  }
+}

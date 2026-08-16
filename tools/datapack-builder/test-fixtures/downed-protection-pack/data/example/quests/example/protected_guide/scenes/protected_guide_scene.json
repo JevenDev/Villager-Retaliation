@@ -1,0 +1,35 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "example:protected_guide_scene",
+  "ownership": "quest_instance",
+  "entry_step": "wait_for_guide",
+  "actors": [
+    {
+      "alias": "guide",
+      "type": "villagerretaliation:villager",
+      "required": true,
+      "binding_source": "quest_provider",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "block",
+      "lethal_damage_policy": "downed",
+      "death_policy": "apply_missing_policy"
+    }
+  ],
+  "steps": [
+    {
+      "id": "wait_for_guide",
+      "type": "villagerretaliation:wait_ticks",
+      "actors": [
+        "guide"
+      ],
+      "data": {
+        "ticks": 20
+      },
+      "next": "complete"
+    },
+    {
+      "id": "complete",
+      "type": "villagerretaliation:scene_complete"
+    }
+  ]
+}

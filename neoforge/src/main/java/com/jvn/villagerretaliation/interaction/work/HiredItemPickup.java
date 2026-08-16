@@ -1,0 +1,191 @@
+package com.jvn.villagerretaliation.interaction.work;
+
+import com.jvn.villagerretaliation.villager.VillagerItemPickupReach;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import java.util.Map;
+import java.util.function.Predicate;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.pathfinder.Path;
+
+public final class HiredItemPickup {
+    private HiredItemPickup() {
+    }
+
+    public static WorkResult collectNearestOutputItem(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            AbstractBlockWorker worker,
+            Predicate<ItemStack> itemFilter,
+            double reachSqr,
+            double speed,
+            Messages messages) {
+        ItemEntity item = findNearestOutputItem(level, villager, context, itemFilter);
+        if (item == null) {
+            return null;
+        }
+
+        context.setProgressTicks(0);
+        BlockPos itemPos = item.blockPosition();
+        if (!context.hasOutputSpace()) {
+            AbstractBlockWorker.OutputFullHandling outputFull = worker.handleOutputFullInventory(
+                    level,
+                    context,
+                    villager,
+                    speed,
+                    itemPos,
+                    messages.outputFullDepositing(),
+                    messages.outputFullBlocked());
+            if (outputFull.deposited()) {
+                return WorkResult.progressed(messages.outputFullDepositing());
+            }
+            return outputFull.result();
+        }
+
+        if (!canCollectFromCurrentPosition(villager, context, item, reachSqr)) {
+            worker.setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, itemPos);
+            if (!moveToItem(level, villager, context, worker, item, reachSqr, speed)) {
+                if (worker.recordWorkPathFailure(level, villager, itemPos)) {
+                    HiredWorkerBrain.setFailure(context, messages.unreachableFailure(), level.getGameTime() + 20L * 30L);
+                    worker.setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, itemPos);
+                    return WorkResult.idle(messages.unreachable());
+                }
+                return WorkResult.progressed(messages.repositioning());
+            }
+            return WorkResult.progressed(messages.moving());
+        }
+
+        worker.clearWorkPathFailure(villager, itemPos);
+        worker.stopWorkNavigation(villager);
+        worker.faceBlock(villager, item.position());
+        HiredWorkerBrain.clearFailure(context);
+        worker.setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, itemPos);
+
+        ItemStack stack = item.getItem();
+        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, stack.copy());
+        int moved = stack.getCount() - remainder.getCount();
+        if (moved <= 0) {
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            worker.setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, itemPos);
+            return WorkResult.idle(messages.outputFullBlocked());
+        }
+
+        villager.onItemPickup(item);
+        villager.take(item, moved);
+        if (remainder.isEmpty()) {
+            item.discard();
+        } else {
+            item.setItem(remainder);
+        }
+        worker.swingWorkItem(level, villager, stack);
+        if (messages.idleAfterCollected()) {
+            worker.setTaskState(context, HiredWorkerTaskState.IDLE);
+        }
+        return messages.completed()
+                ? WorkResult.completed(messages.collected(), Map.of("count", Integer.toString(moved)))
+                : WorkResult.progressed(messages.collected(), Map.of("count", Integer.toString(moved)));
+    }
+
+    public static BlockPos nearestOutputItemPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Predicate<ItemStack> itemFilter) {
+        ItemEntity item = findNearestOutputItem(level, villager, context, itemFilter);
+        return item == null ? null : item.blockPosition();
+    }
+
+    private static ItemEntity findNearestOutputItem(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Predicate<ItemStack> itemFilter) {
+        Predicate<ItemStack> safeFilter = itemFilter == null ? ignored -> true : itemFilter;
+        return HiredEntitySearch.nearest(
+                level,
+                ItemEntity.class,
+                context.assignment().entitySearchBounds(),
+                item -> isCollectableOutputItem(level, context, villager, item, safeFilter),
+                villager::distanceToSqr);
+    }
+
+    private static boolean isCollectableOutputItem(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            ItemEntity item,
+            Predicate<ItemStack> itemFilter) {
+        BlockPos pos = item.blockPosition();
+        return item.isAlive()
+                && itemFilter.test(item.getItem())
+                && context.isInsideWorkAreaOrRoute(pos)
+                && context.isLoaded(level, pos)
+                && !HiredPathMemory.isAvoided(level, villager, pos);
+    }
+
+    private static boolean canCollectFromCurrentPosition(
+            Villager villager,
+            HiredWorkContext context,
+            ItemEntity item,
+            double reachSqr) {
+        return context.isInsideWorkAreaOrRoute(villager.blockPosition())
+                && context.isInsideWorkAreaOrRoute(item.blockPosition())
+                && VillagerItemPickupReach.isWithinReach(villager, item, reachSqr);
+    }
+
+    private static boolean moveToItem(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            AbstractBlockWorker worker,
+            ItemEntity item,
+            double reachSqr,
+            double speed) {
+        if (!context.isInsideWorkAreaOrRoute(villager.blockPosition())
+                || !context.isInsideWorkAreaOrRoute(item.blockPosition())) {
+            worker.stopWorkNavigation(villager);
+            return false;
+        }
+        if (VillagerItemPickupReach.isWithinReach(villager, item, reachSqr)) {
+            worker.stopWorkNavigation(villager);
+            worker.faceBlock(villager, item.position());
+            return true;
+        }
+
+        BlockPos targetPos = item.blockPosition();
+        Path currentPath = villager.getNavigation().getPath();
+        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, context::isInsideWorkAreaOrRoute)) {
+            worker.stopWorkNavigation(villager);
+            return false;
+        }
+        Path path = HiredPathMemory.createPath(level, villager, targetPos, 0);
+        if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkAreaOrRoute)) {
+            villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, targetPos, speed, 0);
+            if (moved) {
+                HiredPathMemory.rememberNavigationProgress(level, villager, targetPos, villager.distanceToSqr(targetPos.getCenter()));
+            }
+            return moved;
+        }
+        HiredPathMemory.clearNavigationProgress(villager);
+        return false;
+    }
+
+    public record Messages(
+            String outputFullDepositing,
+            String outputFullBlocked,
+            String unreachableFailure,
+            String unreachable,
+            String repositioning,
+            String moving,
+            String collected,
+            boolean completed,
+            boolean idleAfterCollected) {
+    }
+}

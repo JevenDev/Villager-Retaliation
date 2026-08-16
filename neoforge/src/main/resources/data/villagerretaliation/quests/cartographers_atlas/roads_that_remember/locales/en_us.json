@@ -1,0 +1,109 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.roads_that_remember.description": {
+      "lines": [
+        "Record a village defense memory and turn it into a road the atlas can understand."
+      ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.dialogue.offer.label": "Roads That Remember",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.dialogue.offer.lines": [
+      "Maps remember places. Villages remember what happened there. A useful atlas should learn both.",
+      "When a village survives danger, bring that memory back with a written account. Roads matter most when people need to return by them."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.dialogue.offer.response.accept.label": "Record the road memory",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.dialogue.reminder.label": "About Roads That Remember",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.dialogue.reminder.lines": [
+      "The atlas still needs a living road: a memory of a village defended, then a written account."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.dialogue.reminder.response.abandon.label": "Abandon quest",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.dialogue.reminder.response.details.label": "Repeat the task",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.objective.witness_defense.tracker.complete_text": "A village defense memory is ready for the atlas.",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.objective.witness_defense.tracker.text": "Help or witness a village defense so the atlas has a living road to record.",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.abandon_confirm.lines": [
+      "Leave this memory unwritten for now?"
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.abandon_confirm.response.cancel.label": "Keep listening",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.abandon_confirm.response.confirm.label": "Abandon quest",
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "I will leave the page blank until the road has something to say."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "There is no road memory open right now."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.decline.lines": [
+      "Fair. Some stories should not be chased while they are still happening."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.leave.lines": [
+      "Keep your ears open. Roads talk after danger."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.reminder_details.action.remind.lines.reminder": [
+      "Help or witness a village defense, then bring me a book so I can write the account into the atlas."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have that road memory open for you right now."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.start_quest.action.start.lines.already_completed": [
+      "The atlas already has its first living road."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.start_quest.action.start.lines.started": [
+      "Listen for a village that survives danger. When the memory is fresh, bring a book and I will set it down properly."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.scene.start_quest.action.start.lines.unavailable": [
+      "The first field marker must be inked before the atlas can weigh memories."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.hear_story.ui.tracker_text": "Help or witness a village defense memory.",
+    "quest.cartographers_atlas.roads_that_remember.stage.return.dialogue.turn_in.label": "About Roads That Remember",
+    "quest.cartographers_atlas.roads_that_remember.stage.return.dialogue.turn_in.lines": [
+      "A defended village, a written account, and an atlas that knows the difference between distance and meaning."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.roads_that_remember.stage.return.dialogue.turn_in.response.record.label": "Record the road memory",
+    "quest.cartographers_atlas.roads_that_remember.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Now the atlas has a road that remembers why it mattered. That will change how it judges every future mark."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The atlas needs both the defense memory and the book before I can write this account."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the book here, and we can keep the memory clean."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "This road memory still needs your account before I can close it."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.return.scene.leave.lines": [
+      "No hurry. Some memories need a quiet hand."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.return.ui.tracker_text": "Return to the cartographer with the road account.",
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.dialogue.reminder.label": "About Roads That Remember",
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.dialogue.reminder.lines": [
+      "The memory is there. Bring a book so the atlas can keep it without bending it into rumor."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.dialogue.reminder.response.details.label": "Repeat the task",
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.objective.bring_book.tracker.complete_text": "The road account can be written.",
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.objective.bring_book.tracker.text": "Bring 1 book for the road account.",
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.scene.leave.lines": [
+      "A remembered road deserves a clean page."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 1 book. The defense memory is ready; the account still needs a page."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have that road memory open for you right now."
+    ],
+    "quest.cartographers_atlas.roads_that_remember.stage.write_account.ui.tracker_text": "Bring 1 book to record the village defense memory.",
+    "quest.cartographers_atlas.roads_that_remember.title": {
+      "lines": [
+        "Roads That Remember"
+      ]
+    },
+    "quest.cartographers_atlas.roads_that_remember.tracker.title": {
+      "lines": [
+        "Roads That Remember"
+      ]
+    }
+  }
+}

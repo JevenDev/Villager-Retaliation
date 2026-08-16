@@ -17,6 +17,11 @@ public final class VillagerReputationTradePricing {
     }
 
     public static void refreshPricesForPlayer(ServerLevel level, AbstractVillager villager, Player player) {
+        if (player.isInvisible()) {
+            resetAnonymousTradePrices(villager, player);
+            return;
+        }
+
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || !VillagerRetaliationConfig.ENABLE_REPUTATION_TRADE_PRICING.get()
                 || villager.getOffers().isEmpty()) {
@@ -38,28 +43,44 @@ public final class VillagerReputationTradePricing {
             applyHeroDiscount(player, offer);
         }
 
-        if (player instanceof ServerPlayer serverPlayer && serverPlayer.containerMenu instanceof MerchantMenu menu) {
-            int merchantLevel = 0;
-            int merchantXp = 0;
-            boolean showProgressBar = false;
-            boolean canRestock = false;
-            if (villager instanceof Villager villageResident) {
-                merchantLevel = villageResident.getVillagerData().getLevel();
-                merchantXp = villageResident.getVillagerXp();
-                showProgressBar = villageResident.showProgressBar();
-                canRestock = villageResident.canRestock();
-            }
+        syncOffers(villager, player);
+    }
 
-            menu.setOffers(villager.getOffers());
-            serverPlayer.sendMerchantOffers(
-                    menu.containerId,
-                    villager.getOffers(),
-                    merchantLevel,
-                    merchantXp,
-                    showProgressBar,
-                    canRestock
-            );
+    private static void resetAnonymousTradePrices(AbstractVillager villager, Player player) {
+        if (villager.getOffers().isEmpty()) {
+            return;
         }
+        for (MerchantOffer offer : villager.getOffers()) {
+            offer.resetSpecialPriceDiff();
+        }
+        syncOffers(villager, player);
+    }
+
+    private static void syncOffers(AbstractVillager villager, Player player) {
+        if (!(player instanceof ServerPlayer serverPlayer) || !(serverPlayer.containerMenu instanceof MerchantMenu menu)) {
+            return;
+        }
+
+        int merchantLevel = 0;
+        int merchantXp = 0;
+        boolean showProgressBar = false;
+        boolean canRestock = false;
+        if (villager instanceof Villager villageResident) {
+            merchantLevel = villageResident.getVillagerData().getLevel();
+            merchantXp = villageResident.getVillagerXp();
+            showProgressBar = villageResident.showProgressBar();
+            canRestock = villageResident.canRestock();
+        }
+
+        menu.setOffers(villager.getOffers());
+        serverPlayer.sendMerchantOffers(
+                menu.containerId,
+                villager.getOffers(),
+                merchantLevel,
+                merchantXp,
+                showProgressBar,
+                canRestock
+        );
     }
 
     private static int resolveTierReputationEquivalent(VillagerReputationLevel level, int scaledReputation) {

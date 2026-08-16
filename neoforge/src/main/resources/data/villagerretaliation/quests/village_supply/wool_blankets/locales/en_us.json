@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.wool_blankets.description": {
+      "lines": [
+        "Bring wool for clean bedding and warm wraps."
+      ]
+    },
+    "quest.village_supply.wool_blankets.dialogue.already_completed": {
+      "lines": [
+        "There is no second payment here. We already settled Wool Blankets.",
+        "No one needs this done twice. The bedding cupboard has the white wool you brought.",
+        "Leave the old tally alone. I counted your 12 white wool. We are square.",
+        "No one needs this done twice. The healers already put that delivery to work.",
+        "Leave the old tally alone. You solved the problem of cold beds in the infirmary.",
+        "I remember your first return. There is no reason to gather another load of white wool.",
+        "Leave the old tally alone. Wool Blankets is crossed off the white wool work list.",
+        "Your earlier work still stands. Your part in helping us make clean blankets and warm wraps is finished.",
+        "Your earlier work still stands. The last white wool batch is still serving the village.",
+        "I remember your first return. I remember who filled the white wool order, and it was you.",
+        "Nothing remains to be earned from this. The reward was paid when the white wool delivery came in.",
+        "I remember your first return. You did enough the first time. I will leave the old entry filed under Wool Blankets.",
+        "Nothing remains to be earned from this. We can keep the sickbeds warm because you answered Wool Blankets.",
+        "You finished what I asked. The full white wool count reached the bedding cupboard. Nothing is missing.",
+        "Your earlier work still stands. The healers would object if I asked you twice.",
+        "What was owed has been paid. Your white wool delivery passed inspection and went into use.",
+        "I will not reopen a finished account. That empty spot in the bedding cupboard belongs to yesterday.",
+        "You finished what I asked. The record shows 12 white wool received from you.",
+        "That chapter is closed. You did the quiet white wool work that keeps everyone going.",
+        "I will not reopen a finished account. The first ending was good enough for Wool Blankets."
+      ]
+    },
+    "quest.village_supply.wool_blankets.dialogue.inactive": {
+      "lines": [
+        "Not today. The bedding request is not open right now.",
+        "For now, let the matter rest. There is no open order for white wool today.",
+        "There is no reason to begin yet. The bedding cupboard is being counted before I ask for more.",
+        "I will post it when it matters. The healers have not posted a fresh request.",
+        "Ask me after the stores change. Hold off on the white wool. We have nowhere useful to put it.",
+        "Leave that work alone for now. The need to make clean blankets and warm wraps will return, but not today.",
+        "The board can wait. I am waiting for the next tally before opening Wool Blankets.",
+        "Ask me after the stores change. Bringing 12 white wool now would crowd the stores.",
+        "There is no reason to begin yet. The last white wool batch has not been used up yet.",
+        "Leave that work alone for now. Ask again after the healers check what remains.",
+        "Ask me after the stores change. I will not invent an urgent need for white wool.",
+        "There is no reason to begin yet. The bedding cupboard is quiet, so this can wait.",
+        "Not today. We are between work orders for white wool.",
+        "For now, let the matter rest. Nothing is wrong at the bedding cupboard. The timing is simply off.",
+        "The time is wrong. Save your effort until we actually need white wool.",
+        "For now, let the matter rest. The board has no current mark beside Wool Blankets.",
+        "The board can wait. Today is not the day for another white wool run.",
+        "We have no need of it yet. Once cold beds in the infirmary becomes a concern, I will reopen this.",
+        "For now, let the matter rest. I would rather delay than waste good white wool.",
+        "Nothing calls for this work today. Wait for the stores to change before asking me about Wool Blankets."
+      ]
+    },
+    "quest.village_supply.wool_blankets.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current wool order. Ask again after the bedding cupboard has been checked.",
+        "The bedding cupboard tally is missing, so I will not ask you to gather white wool yet.",
+        "No one has confirmed how much white wool the bedding cupboard needs today.",
+        "The work note is incomplete. Let me settle the wool count first.",
+        "I will not send you after white wool until the village confirms the order.",
+        "The bedding cupboard has not posted a trustworthy wool count.",
+        "I checked the work slate twice; the wool request is not ready.",
+        "This order can wait until I have a current wool tally.",
+        "Someone needs to check the bedding cupboard before I hand you this order.",
+        "The village has not agreed on the wool count yet.",
+        "I have an old wool tally and no current one.",
+        "The bedding cupboard may need white wool, but I will not turn a guess into work.",
+        "Come back after the bedding cupboard finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the bedding cupboard tally.",
+        "Let me confirm who needs the white wool before you start gathering.",
+        "No work yet. The village has not approved this wool request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the wool order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.wool_blankets.dialogue.missing_proof": {
+      "lines": [
+        "I believe you went, but that is not enough. Bring the white <green><wavy>wool</wavy></green> before I mark the beds supplied.",
+        "A story cannot close the ledger. I need the white wool here before I sign this off.",
+        "I cannot sign off on an empty return. A promise does not fill the bedding cupboard. Bring the white wool delivery.",
+        "I need something I can hold. You may have gathered it, but the healers have not received it.",
+        "I need something I can hold. Set the 12 white wool down here and I can close the white wool order.",
+        "I believe you went, but that is not enough. Handing over the white wool is the proof on this supply job.",
+        "The last requirement is still missing. I cannot inspect clean white wool while your hands are empty.",
+        "I cannot sign off on an empty return. Your report sounds fine. I still need the actual white wool.",
+        "Bring back something the village can verify. Nothing has reached the bedding cupboard yet.",
+        "Show me what came back with you. Bring what you collected before we discuss the Wool Blankets reward.",
+        "The proof has to reach my hands. The bedding cupboard needs usable white wool, not a story about it.",
+        "You returned without the one thing I asked for. I will count the white wool as soon as you place it here.",
+        "You returned without the one thing I asked for. Do not leave the white wool delivery in another chest.",
+        "Bring back something the village can verify. The healers are waiting on the white wool bundle itself.",
+        "I believe you went, but that is not enough. The last step is simple. Hand over the white wool.",
+        "I cannot sign off on an empty return. I cannot make clean blankets and warm wraps with an empty counter.",
+        "The proof has to reach my hands. Come back carrying the white wool order, and we will be done.",
+        "Bring back something the village can verify. The white wool work counts once the bedding cupboard receives it.",
+        "I need something I can hold. You are one handoff away from finishing Wool Blankets.",
+        "What you carried home decides this. Let me see the white wool before I call this complete."
+      ]
+    },
+    "quest.village_supply.wool_blankets.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the white wool.",
+        "I counted twice; the full order of 12 blocks of white wool is not here yet.",
+        "This helps, but the bedding cupboard still needs the remaining white wool.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 12 blocks of white wool; the pile is still short.",
+        "Bring the missing white wool, and then I can settle the order.",
+        "The bedding cupboard has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The bedding cupboard is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 12 blocks of white wool.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the bedding cupboard short.",
+        "The order stays open until all 12 blocks of white wool are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The bedding cupboard is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.wool_blankets.dialogue.reminder": {
+      "lines": [
+        "The job still has loose ends. Twelve white wool for the sickbeds. Soft, clean, and preferably not argued over by sheep.",
+        "Keep the return trip in your plans. I am still waiting on 12 white wool for the bedding cupboard.",
+        "Remember what the village is waiting for. Look for clean white wool. Bad supplies only move the problem.",
+        "Do not lose the thread now. The healers need those white wool to make clean blankets and warm wraps.",
+        "Do not lose the thread now. The count is 12 white wool. Check it before returning.",
+        "Hold to the instructions I gave you. This white wool delivery means we can keep the sickbeds warm.",
+        "The next step still matters. If you are choosing between loads, bring the white wool first.",
+        "Do not let one finished step distract you. Keep the white wool order together so the white wool tally stays easy.",
+        "The job still has loose ends. The bedding cupboard has space waiting for the full bundle.",
+        "Remember what the village is waiting for. Do not let a simple request turn into cold beds in the infirmary.",
+        "The next step still matters. There is no hidden part to Wool Blankets. Bring the agreed white wool count.",
+        "Stay with the work you accepted. Handle it carefully. I want clean white wool.",
+        "You are not finished yet. Bring all the white wool at once if you can manage it.",
+        "Before you leave, hear this again. The healers are planning their next work around your return.",
+        "Stay with the work you accepted. I wrote 12 white wool on the white wool slate so neither of us has to guess.",
+        "Do not lose the thread now. The sooner this arrive, the sooner we can make clean blankets and warm wraps.",
+        "Keep the return trip in your plans. Nothing else is missing from the white wool order.",
+        "Do not let one finished step distract you. Return when the white wool is ready to hand over.",
+        "The next step still matters. You know how many white wool the bedding cupboard needs. The rest is gathering.",
+        "Remember what the village is waiting for. A complete white wool bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.wool_blankets.dialogue.start": {
+      "lines": [
+        "I need you to see this through. Bring 12 white wool. Clean bedding does more healing than people admit.",
+        "I am trusting you with something important. The white wool order needs 12 white wool. Can you handle that?",
+        "Here is the work. The healers are trying to make clean blankets and warm wraps, and supplies are thin.",
+        "I am trusting you with something important. Bring me 12 white wool. I want clean white wool.",
+        "There is a reason I chose you. I have a plain job with a useful result. Find 12 white wool.",
+        "The village has work for you. We can keep the sickbeds warm if you fill the white wool order.",
+        "I have a difficult request. Cold beds in the infirmary is a small problem until everyone needs the same thing.",
+        "Before you agree, hear all of it. The count on the white wool slate is 12 white wool.",
+        "Take the task only if you are ready. Gather the white wool and bring the whole delivery here.",
+        "Here is the work. Stocking the bedding cupboard is not glory, but it matters.",
+        "I need you to see this through. The healers asked me to find someone reliable for this run.",
+        "Here is the work. I need a clean delivery for the bedding cupboard.",
+        "This needs a careful hand. If you can spare the time, 12 white wool would settle the white wool shortage.",
+        "Let us be clear about the job. The need is real, which makes the instructions for Wool Blankets simple.",
+        "Take the task only if you are ready. Bring the white wool when you have the complete count.",
+        "Let us be clear about the job. Good white wool will let us make clean blankets and warm wraps.",
+        "The village has work for you. The village should not reach cold beds in the infirmary before we act.",
+        "Before you agree, hear all of it. Take care with the white wool bundle. We need clean white wool.",
+        "Take this seriously. I will pay when the bedding cupboard receives the full order.",
+        "Listen closely. Find 12 white wool, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.wool_blankets.dialogue.turn_in": {
+      "lines": [
+        "You saw it through. Good. That is comfort with corners folded in.",
+        "Good, you made it back. The count is right. I will get this to the bedding cupboard.",
+        "This will make a real difference. The healers can make clean blankets and warm wraps now.",
+        "The hard part is behind us. This is clean white wool. You chose well.",
+        "The hard part is behind us. That delivery keeps us from cold beds in the infirmary.",
+        "Good, you made it back. Good work. All the white wool arrived together.",
+        "That is the result I needed. I have your white wool, and you earned the Wool Blankets reward.",
+        "This will make a real difference. The bedding cupboard looks less bare already.",
+        "The village can use this. This will help us keep the sickbeds warm.",
+        "I am glad to see you home. You saved the healers from making do with scraps.",
+        "Now I can close the ledger. Everything on the white wool slate is here.",
+        "This will make a real difference. A useful white wool job, done without fuss. Thank you.",
+        "The village can use this. I will put the white wool away before someone borrows it.",
+        "The hard part is behind us. The village is better stocked because you completed Wool Blankets.",
+        "You delivered exactly what was needed. You brought exactly the white wool I asked for.",
+        "You delivered exactly what was needed. The white wool delivery is sound from top to bottom.",
+        "You brought the work to a proper end. The bedding cupboard has one less shortage waiting to surprise us.",
+        "You brought the work to a proper end. The village may not cheer for white wool, but it would notice their absence.",
+        "You brought the work to a proper end. Take your payment. The white wool count gives me no complaint.",
+        "You saw it through. I can hand the white wool order to the healers with confidence."
+      ]
+    },
+    "quest.village_supply.wool_blankets.dialogue.unavailable": {
+      "lines": [
+        "Earn our confidence before asking again. The wool blanket request is closed for now.",
+        "The answer is no for now. I cannot hand you the work filed under Wool Blankets yet.",
+        "No, the risk is too high. The white wool order is for someone the bedding cupboard already knows.",
+        "Some work must wait until trust catches up. The healers need a delivery they can count on.",
+        "The answer is no for now. Show the village steadier work before taking Wool Blankets.",
+        "The answer is no for now. The white wool matters too much to gamble on a stranger.",
+        "Come back after you have earned more trust. I am not opening the white wool slate to you today.",
+        "Some work must wait until trust catches up. Build some trust, then ask about Wool Blankets again.",
+        "I cannot trust you with this yet. I need someone who will return with the whole 12 white wool.",
+        "I cannot trust you with this yet. Gathering white wool is simple, but reliability is not optional.",
+        "Earn our confidence before asking again. For now, the white wool order stays with regular hands.",
+        "Come back after you have earned more trust. I cannot promise the bedding cupboard a delivery from you yet.",
+        "No, the risk is too high. There will be other work before we trust you with the bedding cupboard.",
+        "I need proof of your judgment first. The village has not cleared you for this white wool run.",
+        "I need proof of your judgment first. I would rather wait than risk cold beds in the infirmary.",
+        "This work is not yours today. This is not punishment. Show better judgment before I open Wool Blankets.",
+        "This work is not yours today. The healers asked for a familiar runner this time.",
+        "I cannot trust you with this yet. Come back for the white wool order after your name carries more weight.",
+        "I cannot trust you with this yet. I am not taking new help for Wool Blankets.",
+        "I will not place this burden on you. Earn some confidence here, and we can revisit Wool Blankets."
+      ]
+    },
+    "quest.village_supply.wool_blankets.objective.bring_wool.complete_text": {
+      "lines": [
+        "The wool bundles are clean and ready."
+      ]
+    },
+    "quest.village_supply.wool_blankets.objective.bring_wool.text": {
+      "lines": [
+        "Bring 12 white wool for sickbeds."
+      ]
+    },
+    "quest.village_supply.wool_blankets.stage.return.dialogue.turn_in.label": "About Wool Blankets",
+    "quest.village_supply.wool_blankets.stage.return.dialogue.turn_in.lines": [
+      "Soft, clean wool. No villager should shiver under a roof now.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.wool_blankets.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.wool_blankets.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.wool_blankets.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Soft, clean wool. No villager should shiver under a roof now.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.wool_blankets.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.wool_blankets.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.wool_blankets.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.wool_blankets.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Wool Blankets is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.wool_blankets.stage.return.scene.turn_in_wait.lines": [
+      "Bring 12 white wool for warm blankets",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.wool_blankets.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.wool_blankets.stage.work.dialogue.offer.label": "Wool Blankets",
+    "quest.village_supply.wool_blankets.stage.work.dialogue.offer.lines": [
+      "Beds are meant to stop the cold, not merely give it somewhere to sit.",
+      "Bring 12 white wool for warm blankets, and the shelves will look less worried.",
+      "Bring 12 white wool for warm blankets. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.wool_blankets.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.wool_blankets.stage.work.dialogue.reminder.label": "About Wool Blankets",
+    "quest.village_supply.wool_blankets.stage.work.dialogue.reminder.lines": [
+      "Bring 12 white wool for warm blankets",
+      "Bring 12 white wool for warm blankets.",
+      "Bring 12 white wool for warm blankets, and the shelves will look less worried."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.wool_blankets.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.wool_blankets.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.wool_blankets.stage.work.scene.abandon_confirm.lines": [
+      "Put Wool Blankets aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.wool_blankets.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.wool_blankets.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Wool Blankets is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.leave.lines": [
+      "Bring 12 white wool for warm blankets",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 12 white wool for warm blankets",
+      "Bring 12 white wool for warm blankets.",
+      "Bring 12 white wool for warm blankets, and the shelves will look less worried."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Wool Blankets is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Wool Blankets is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 12 white wool for warm blankets. Keep the full count together on the road back.",
+      "Bring 12 white wool for warm blankets.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Wool Blankets is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.wool_blankets.stage.work.ui.tracker_text": "Bring 12 white wool for warm blankets.",
+    "quest.village_supply.wool_blankets.title": {
+      "lines": [
+        "Wool Blankets"
+      ]
+    },
+    "quest.village_supply.wool_blankets.tracker.proof.text": {
+      "lines": [
+        "Bring 12 white wool for sickbeds."
+      ]
+    },
+    "quest.village_supply.wool_blankets.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the white wool."
+      ]
+    },
+    "quest.village_supply.wool_blankets.tracker.title": {
+      "lines": [
+        "Wool Blankets"
+      ]
+    }
+  }
+}

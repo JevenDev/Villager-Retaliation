@@ -2,6 +2,7 @@
   "entries": [
     {
       "id": "example_template.forced.retaliation_chat",
+      "message_prefix": "forced.example_template.retaliation_chat",
       "trigger": "retaliation_started",
       "output": {
         "mode": "chat",

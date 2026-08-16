@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/honest_work",
+  "display": {
+    "icon": {
+      "id": "villagerretaliation:payment_box"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.payday.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.payday.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

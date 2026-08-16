@@ -1,16 +1,16 @@
 package com.jvn.villagerretaliation.client.quest;
 
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer;
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer.ExperimentalNotificationPanel;
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer.ShaderRect;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import com.jvn.villagerretaliation.client.ui.VillagerNineSlice;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -18,21 +18,25 @@ import net.minecraft.util.Mth;
 final class VillagerQuestHudRenderer {
     private static final int PANEL_GAP = 4;
     private static final int NOTIFICATION_MIN_HEIGHT = 70;
-    private static final int NOTIFICATION_MAX_HEIGHT = 112;
-    private static final int NOTIFICATION_SCROLL_TOP_HOLD_TICKS = 52;
-    private static final int NOTIFICATION_SCROLL_TICKS = 96;
     private static final int TRACKER_SCROLL_HOLD_TICKS = 54;
     private static final int TRACKER_SCROLL_TICKS = 96;
     private static final int PRIMARY_HEIGHT = 90;
     private static final int SECONDARY_HEIGHT = 44;
-    private static final int SLIDE_DISTANCE = 8;
+    private static final int SLIDE_DISTANCE = 6;
 
-    private static final int PADDING_X = 10;
-    private static final int PADDING_Y = 7;
+    private static final int PADDING_X = 8;
+    private static final int PADDING_Y = 8;
     private static final int LINE_STEP = 10;
-    private static final float QUEST_PANEL_SLANT = 0.0F;
-    private static final int BACKGROUND_COLOR = 0xC00B0D12;
     private static final int TEXT_Z = 210;
+    private static final VillagerNineSlice OPTIONS_LIST_BACKGROUND_NINE_SLICE =
+            new VillagerNineSlice(
+                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_TEXTURE,
+                    49,
+                    23,
+                    8,
+                    8,
+                    8,
+                    8);
 
     private VillagerQuestHudRenderer() {
     }
@@ -49,22 +53,16 @@ final class VillagerQuestHudRenderer {
         return showRecentQuests ? Math.min(QuestTrackerSyncPayload.MAX_TRACKER_ENTRIES, entryCount) : 1;
     }
 
-    static int trackerHeight(int entryCount) {
-        return primaryHeight() + Math.max(0, entryCount - 1) * (secondaryHeight() + panelGap());
+    static int trackerHeight(Font font, List<QuestTrackerSyncPayload.Entry> entries, int entryCount, int width) {
+        int height = primaryHeight();
+        for (int index = 1; index < entryCount; index++) {
+            height += secondaryHeight(font, entries.get(index), width) + panelGap();
+        }
+        return height;
     }
 
     static int notificationWidth(Font font, QuestTrackerSyncPayload.Entry entry, int screenWidth) {
         return trackerWidth(screenWidth);
-    }
-
-    private static int maxScaledTextWidth(Font font, QuestTrackerSyncPayload.Entry entry) {
-        return Math.max(
-                VillagerClientUiUtil.scaledTextWidth(font, entry.title(), textScale()),
-                Math.max(
-                        VillagerClientUiUtil.scaledTextWidth(font, entry.objective(), textScale()),
-                        Math.max(
-                                VillagerClientUiUtil.scaledTextWidth(font, entry.status(), textScale()),
-                                VillagerClientUiUtil.scaledTextWidth(font, entry.metadata(), textScale()))));
     }
 
     static int panelGap() {
@@ -79,8 +77,17 @@ final class VillagerQuestHudRenderer {
         return VillagerAdaptiveGuiScale.unit(PRIMARY_HEIGHT);
     }
 
-    static int secondaryHeight() {
-        return VillagerAdaptiveGuiScale.unit(SECONDARY_HEIGHT);
+    static int secondaryHeight(Font font, QuestTrackerSyncPayload.Entry entry, int width) {
+        int height = VillagerAdaptiveGuiScale.unit(SECONDARY_HEIGHT);
+        if (!entry.showProgress() || entry.objective().isBlank()) {
+            return height;
+        }
+        int contentWidth = width - paddingX() * 2;
+        int wrapWidth = VillagerClientUiUtil.scaledWrapWidth(contentWidth, textScale());
+        int objectiveLines = Math.min(
+                2,
+                font.split(Component.literal(entry.objective()), wrapWidth).size());
+        return height + Math.max(0, objectiveLines - 1) * lineStep(font);
     }
 
     static int slideDistance() {
@@ -98,28 +105,6 @@ final class VillagerQuestHudRenderer {
             float alpha,
             int age) {
         renderEntry(graphics, font, entry, x, y, width, height, alpha, true, age);
-    }
-
-    private static List<NotificationLine> buildNotificationLines(
-            Font font,
-            QuestTrackerSyncPayload.Entry entry,
-            int contentWidth,
-            int lineStep) {
-        List<NotificationLine> lines = new ArrayList<>();
-        int wrapWidth = VillagerClientUiUtil.scaledWrapWidth(contentWidth, textScale());
-        int y = 0;
-        y = addNotificationLines(lines, font, entry.title(), wrapWidth, VillagerQuestUi.TITLE_COLOR, true, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(3, 1));
-        y = addNotificationLines(lines, font, entry.objective(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
-        if (!entry.status().isBlank()) {
-            y = addNotificationLines(lines, font, entry.status(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
-        }
-        if (!entry.questItems().isEmpty()) {
-            y = addNotificationLines(lines, font, questItemsLine(entry), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
-        }
-        if (!entry.metadata().isBlank()) {
-            addNotificationLines(lines, font, entry.metadata(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, 0);
-        }
-        return lines;
     }
 
     private static int addNotificationLines(
@@ -151,25 +136,6 @@ final class VillagerQuestHudRenderer {
         return lastLine.top() + lineStep;
     }
 
-    private static int notificationContentTopOffset(int contentHeight, int viewportHeight, int overflow) {
-        if (overflow > 0 || contentHeight <= 0) {
-            return 0;
-        }
-        return Math.max(0, (viewportHeight - contentHeight) / 2);
-    }
-
-    private static int notificationScroll(int age, int overflow) {
-        if (overflow <= 0) {
-            return 0;
-        }
-        float progress = Mth.clamp(
-                (age - NOTIFICATION_SCROLL_TOP_HOLD_TICKS) / (float) NOTIFICATION_SCROLL_TICKS,
-                0.0F,
-                1.0F);
-        float eased = progress * progress * (3.0F - 2.0F * progress);
-        return Math.round(overflow * eased);
-    }
-
     private static int trackerScroll(int age, int overflow) {
         if (overflow <= 0) {
             return 0;
@@ -199,9 +165,14 @@ final class VillagerQuestHudRenderer {
     private static String questItemsLine(QuestTrackerSyncPayload.Entry entry) {
         List<String> names = new ArrayList<>();
         for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
-            names.add(item.count() > 1 ? item.label() + " x" + item.count() : item.label());
+            names.add(questItemProgressLine(item));
         }
-        return "Quest item: " + String.join(", ", names);
+        return Component.translatable("villagerretaliation.gui.quest_item_marker", String.join(", ", names)).getString();
+    }
+
+    private static String questItemProgressLine(QuestTrackerSyncPayload.QuestItem item) {
+        int current = Math.max(0, Math.min(item.count(), item.currentCount()));
+        return item.label() + " " + current + "/" + item.count();
     }
 
     static void renderEntry(
@@ -217,7 +188,7 @@ final class VillagerQuestHudRenderer {
             int age) {
         int titleColor = VillagerClientUiUtil.withAlphaRound(primary ? VillagerQuestUi.TITLE_COLOR : VillagerQuestUi.TEXT_COLOR, alpha);
         int textColor = VillagerClientUiUtil.withAlphaRound(primary ? VillagerQuestUi.TEXT_COLOR : VillagerQuestUi.MUTED_TEXT_COLOR, alpha);
-        renderPanelChrome(graphics, x, y, width, height, alpha, primary, age);
+        renderPanelBackground(graphics, x, y, width, height, alpha * (primary ? 1.0F : 0.72F));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         if (primary) {
@@ -235,8 +206,7 @@ final class VillagerQuestHudRenderer {
         if (entry.showProgress()) {
             int barLeft = contentLeft;
             int barRight = x + width - paddingX();
-            int barTop = y + height - VillagerAdaptiveGuiScale.unit(6);
-            VillagerQuestUi.renderProgressBar(graphics, barLeft, barTop, barRight, VillagerAdaptiveGuiScale.unitAtLeast(2, 1), entry.progress(), alpha, age, false, true);
+            VillagerQuestUi.renderProgressBar(graphics, barLeft, progressBarTop(y, height), barRight, progressBarHeight(), entry.progress(), alpha, true);
         }
     }
 
@@ -254,7 +224,7 @@ final class VillagerQuestHudRenderer {
         int contentWidth = width - paddingX() * 2;
         int lineStep = lineStep(font);
         int barTop = entry.showProgress()
-                ? y + height - VillagerAdaptiveGuiScale.unit(6)
+                ? progressBarTop(y, height)
                 : y + height - paddingY();
         int titleTop = y + paddingY();
         int titleColor = VillagerClientUiUtil.withAlphaRound(VillagerQuestUi.TITLE_COLOR, alpha);
@@ -290,7 +260,7 @@ final class VillagerQuestHudRenderer {
         if (entry.showProgress()) {
             int barLeft = contentLeft;
             int barRight = x + width - paddingX();
-            VillagerQuestUi.renderProgressBar(graphics, barLeft, barTop, barRight, VillagerAdaptiveGuiScale.unitAtLeast(2, 1), entry.progress(), alpha, age, false, true);
+            VillagerQuestUi.renderProgressBar(graphics, barLeft, barTop, barRight, progressBarHeight(), entry.progress(), alpha, true);
         }
     }
 
@@ -306,10 +276,55 @@ final class VillagerQuestHudRenderer {
                 y = addNotificationLines(lines, font, part, wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
             }
         }
+        String runtime = runtimeJournalLine(entry);
+        if (!runtime.isBlank()) {
+            y = addNotificationLines(lines, font, runtime, wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
+        }
+        String waypoint = waypointLine(entry);
+        if (!waypoint.isBlank()) {
+            y = addNotificationLines(lines, font, waypoint, wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
+        }
         if (!entry.questItems().isEmpty()) {
             addNotificationLines(lines, font, questItemsLine(entry), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, 0);
         }
         return lines;
+    }
+
+    private static String runtimeJournalLine(QuestTrackerSyncPayload.Entry entry) {
+        Minecraft minecraft = Minecraft.getInstance();
+        long now = minecraft.level == null ? 0L : minecraft.level.getGameTime();
+        long expiresAt = entry.journal().expiresAtGameTime();
+        if (expiresAt <= 0L || !"active".equalsIgnoreCase(entry.state())) {
+            return "";
+        }
+        return Component.translatable("villagerretaliation.gui.quest_journal.expires", formatDuration(Math.max(0L, expiresAt - now))).getString();
+    }
+
+    private static String waypointLine(QuestTrackerSyncPayload.Entry entry) {
+        QuestTrackerSyncPayload.Waypoint waypoint = entry.journal().waypoint();
+        if (!waypoint.present()) {
+            return "";
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        String distance = "";
+        if (minecraft.player != null && minecraft.level != null
+                && minecraft.level.dimension().location().toString().equals(waypoint.dimension())) {
+            int dx = waypoint.x() - minecraft.player.blockPosition().getX();
+            int dz = waypoint.z() - minecraft.player.blockPosition().getZ();
+            distance = " • " + Math.round(Math.sqrt((double) dx * dx + (double) dz * dz)) + " blocks";
+        }
+        return Component.translatable("villagerretaliation.gui.quest_journal.waypoint",
+                waypoint.x(), waypoint.y(), waypoint.z(), waypoint.dimension(), distance).getString();
+    }
+
+    private static String formatDuration(long ticks) {
+        long seconds = Math.max(0L, ticks / 20L);
+        long hours = seconds / 3600L;
+        long minutes = (seconds % 3600L) / 60L;
+        long remainder = seconds % 60L;
+        if (hours > 0L) return hours + "h " + minutes + "m";
+        if (minutes > 0L) return minutes + "m " + remainder + "s";
+        return remainder + "s";
     }
 
     private static List<String> visibleMetadataParts(QuestTrackerSyncPayload.Entry entry) {
@@ -321,24 +336,14 @@ final class VillagerQuestHudRenderer {
                 .toList();
     }
 
-    private static void renderPanelChrome(
+    private static void renderPanelBackground(
             GuiGraphics graphics,
             int x,
             int y,
             int width,
             int height,
-            float alpha,
-            boolean primary,
-            int age) {
-        VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
-                graphics,
-                new ExperimentalNotificationPanel(
-                        new ShaderRect(x, y, x + width, y + height),
-                        VillagerQuestUi.ACCENT_COLOR,
-                        alpha * (primary ? 0.98F : 0.72F),
-                        age,
-                        1.0F,
-                        QUEST_PANEL_SLANT));
+            float alpha) {
+        OPTIONS_LIST_BACKGROUND_NINE_SLICE.render(graphics, x, y, width, height, alpha);
     }
 
     private static void renderWrappedText(
@@ -371,6 +376,14 @@ final class VillagerQuestHudRenderer {
 
     private static int paddingY() {
         return VillagerAdaptiveGuiScale.unit(PADDING_Y);
+    }
+
+    private static int progressBarTop(int y, int height) {
+        return y + height - paddingY() - progressBarHeight();
+    }
+
+    private static int progressBarHeight() {
+        return VillagerAdaptiveGuiScale.unitAtLeast(2, 1);
     }
 
     private static int lineStep(Font font) {

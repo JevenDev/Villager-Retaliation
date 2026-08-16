@@ -12,16 +12,26 @@
     {
       "id": "farmer_opening",
       "lines": [
-        "Mind the fields. What do you need?",
-        "Step clear of the fields. What do you need?",
-        "Mind the fields. I'm listening.",
-        "There you are. I was just near the fields, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one."
+        "Step between the rows, not across them. What do you need?",
+        "Morning. I have soil on my hands, but I can listen.",
+        "If you came to help, the spare hoe is by the fence.",
+        "Come closer before the wind carries your words away.",
+        "I have a minute before the water reaches the next bed.",
+        "Mind that seed tray. It took all morning to sort.",
+        "You caught me checking the leaves for pests.",
+        "Hello. Did you need me or the bread?",
+        "Stand in the shade if you plan to stay awhile.",
+        "The field can spare me for a short conversation.",
+        "If this is about the fence, I already know.",
+        "Good to see you. The weather has been less polite.",
+        "Wipe your boots if you are heading inside afterward.",
+        "I was just counting what survived the last rain.",
+        "Come by the composter. It is quieter there.",
+        "You look hungry. Talk first, then we will find something.",
+        "I can listen while I tie these stalks.",
+        "Careful near the irrigation ditch. Now, what is it?",
+        "The animals are fed and the rows are watered. Your timing is good.",
+        "Go on. I am taking a break before my back decides for me."
       ]
     }
   ]

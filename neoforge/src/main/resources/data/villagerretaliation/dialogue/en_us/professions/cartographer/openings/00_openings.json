@@ -12,16 +12,26 @@
     {
       "id": "cartographer_opening",
       "lines": [
-        "Mind the map table. What do you need?",
-        "Step clear of the map table. What do you need?",
-        "Mind the map table. I'm listening.",
-        "There you are. I was just near the map table, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one."
+        "Mind the wet ink. What can I help you find?",
+        "Come around this side of the table. The map is easier to read here.",
+        "If you have news about a road, start with where it went wrong.",
+        "Hello. Give me a moment to finish this coastline.",
+        "You look like you have been farther than the edge of my map.",
+        "Did you come for directions or to correct mine?",
+        "Set your bag down, but keep it off the parchment.",
+        "I can talk while the ink dries.",
+        "Tell me where you started, then we can work out where you ended.",
+        "Good timing. I was about to compare two very different reports.",
+        "If this is about a shortcut, I want the whole story first.",
+        "Come in. The compass has been better company than the weather.",
+        "I have room for one more road on this sheet.",
+        "Before you speak, look at the map and point to the trouble.",
+        "You are back. Did the route hold?",
+        "I was hoping someone with muddy boots would bring useful news.",
+        "Keep your sleeve clear of the ink and go ahead.",
+        "If you are lost, say so. It saves both of us time.",
+        "I have a question about the north road, if you have a moment.",
+        "All right. What needs marking?"
       ]
     }
   ]

@@ -14,11 +14,27 @@ java {
     withSourcesJar()
 }
 
+sourceSets {
+    gameTest {
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+    }
+}
+
+configurations {
+    gameTestImplementation.extendsFrom implementation
+    gameTestCompileOnly.extendsFrom compileOnly
+    gameTestRuntimeOnly.extendsFrom runtimeOnly
+    gameTestAnnotationProcessor.extendsFrom annotationProcessor
+}
+
 sourceSets.main.resources {
     srcDir('src/generated/resources')
     exclude('**/*.bbmodel')
     exclude('src/generated/**/.cache')
 }
+
+def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('3733')
 
 neoForge {
     version = rootProject.neo_version
@@ -31,18 +47,19 @@ neoForge {
     runs {
         client {
             client()
-            systemProperty 'neoforge.enabledGameTestNamespaces', rootProject.mod_id
         }
 
         server {
             server()
             programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', rootProject.mod_id
         }
 
         gameTestServer {
             type = 'gameTestServer'
-            systemProperty 'neoforge.enabledGameTestNamespaces', rootProject.mod_id
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(layout.buildDirectory.dir('gametest-run'))
+            systemProperty 'villagerretaliation.gametestOriginSeed', gameTestOriginSeed.get()
+            systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
         }
 
         data {
@@ -61,17 +78,112 @@ neoForge {
     mods {
         "${rootProject.mod_id}" {
             sourceSet(sourceSets.main)
+            sourceSet(sourceSets.gameTest)
+        }
+    }
+
+    addModdingDependenciesTo sourceSets.gameTest
+}
+
+tasks.named('runGameTestServer') {
+    doFirst {
+        delete(layout.buildDirectory.dir('gametest-run/world'))
+    }
+}
+
+// A running Windows dev client keeps the generated NeoForge jar open. When
+// IntelliJ refreshes Gradle after an AT/version change, NeoForm cannot replace
+// that jar. Stop only Java processes that Windows confirms hold these outputs.
+tasks.named('createMinecraftArtifacts') {
+    doFirst {
+        if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            def artifactDirectory = layout.buildDirectory.dir('moddev/artifacts').get().asFile
+            def unlockScript = rootProject.file('gradle/windows-unlock-moddev-artifacts.ps1')
+            def unlockProcess = new ProcessBuilder(
+                    'powershell.exe',
+                    '-NoProfile',
+                    '-NonInteractive',
+                    '-ExecutionPolicy', 'Bypass',
+                    '-File', unlockScript.absolutePath,
+                    '-ArtifactDirectory', artifactDirectory.absolutePath)
+                    .inheritIO()
+                    .start()
+
+            def exitCode = unlockProcess.waitFor()
+            if (exitCode != 0) {
+                throw new GradleException(
+                        "Could not release locked ModDevGradle artifacts (PowerShell exit code ${exitCode}).")
+            }
         }
     }
 }
 
-configurations {
-    runtimeClasspath.extendsFrom localRuntime
+def skipGameTests = providers.gradleProperty('skipGameTests')
+        .map { it.toBoolean() }
+        .orElse(false)
+
+tasks.register('gameTest') {
+    group = 'verification'
+    description = 'Runs the NeoForge GameTest server. Use -PskipGameTests=true to skip during quick local checks.'
+    dependsOn tasks.named('runGameTestServer')
+    onlyIf { !skipGameTests.get() }
+}
+
+tasks.register('generateQuestRegistryMetadata', JavaExec) {
+    group = 'datapack tooling'
+    description = 'Exports quest registry metadata for Node/browser datapack tooling.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.quest.QuestRegistryMetadataTool'
+    args rootProject.file('tools/datapack-builder/quest-registry-metadata.json').absolutePath
+}
+
+tasks.register('generateQuestV2Schema', JavaExec) {
+    group = 'datapack tooling'
+    description = 'Exports the quest module v2 JSON Schema for Node/browser datapack tooling.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.quest.schema.v2.QuestV2SchemaTool'
+    args rootProject.file('tools/datapack-builder/quest-v2.schema.json').absolutePath
+}
+
+tasks.register('generateSceneSchemas', JavaExec) {
+    group = 'datapack tooling'
+    description = 'Exports scene v1 and encounter v1 JSON Schemas.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.scene.schema.SceneSchemaTool'
+    args rootProject.file('tools/datapack-builder/scene-v1.schema.json').absolutePath,
+            rootProject.file('tools/datapack-builder/encounter-v1.schema.json').absolutePath
+}
+
+tasks.register('generateSkillTradeSchema', JavaExec) {
+    group = 'datapack tooling'
+    description = 'Exports the skill-trade JSON Schema for Node/browser datapack tooling.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.trade.SkillTradeSchemaTool'
+    args rootProject.file('tools/datapack-builder/skill-trades.schema.json').absolutePath
+}
+
+tasks.named('runGameTestServer') {
+    onlyIf { !skipGameTests.get() }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('gameTest')
 }
 
 dependencies {
     implementation "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
     annotationProcessor "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
+    implementation "dev.architectury:architectury-neoforge:${rootProject.architectury_version}"
+    compileOnly "dev.emi:emi-neoforge:${rootProject.emi_version}:api"
+    compileOnly "mezz.jei:jei-${rootProject.minecraft_version}-common-api:${rootProject.jei_version}"
+    compileOnly "mezz.jei:jei-${rootProject.minecraft_version}-neoforge-api:${rootProject.jei_version}"
+    compileOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rootProject.rei_version}"
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${rootProject.curios_version}:api"
+    compileOnly "io.wispforest:accessories-neoforge:${rootProject.accessories_version}"
 
     if (rootProject.enable_toucanlib.toBoolean()) {
         if (rootProject.useLocalToucanLib.toBoolean()) {
@@ -90,6 +202,7 @@ tasks.named('processResources', ProcessResources).configure {
             loader_version_range   : rootProject.loader_version_range,
             toucanlib_version      : rootProject.toucanlib_version,
             owo_version            : rootProject.owo_version,
+            architectury_version   : rootProject.architectury_version,
             mod_id                 : rootProject.mod_id,
             mod_name               : rootProject.mod_name,
             mod_license            : rootProject.mod_license,
@@ -113,6 +226,31 @@ type="required"
 versionRange="[${rootProject.owo_version},)"
 ordering="AFTER"
 side="BOTH"
+""",
+            neoforge_architectury_dependency: """[[dependencies."${rootProject.mod_id}"]]
+modId="architectury"
+type="required"
+versionRange="[${rootProject.architectury_version},)"
+ordering="AFTER"
+side="BOTH"
+""",
+            neoforge_emi_dependency: """[[dependencies."${rootProject.mod_id}"]]
+modId="emi"
+type="optional"
+ordering="AFTER"
+side="CLIENT"
+""",
+            neoforge_jei_dependency: """[[dependencies."${rootProject.mod_id}"]]
+modId="jei"
+type="optional"
+ordering="AFTER"
+side="CLIENT"
+""",
+            neoforge_rei_dependency: """[[dependencies."${rootProject.mod_id}"]]
+modId="roughlyenoughitems"
+type="optional"
+ordering="AFTER"
+side="CLIENT"
 """,
     ]
     inputs.properties replaceProperties

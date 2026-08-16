@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
-    <div class="app-shell">
+    <div class="app-shell" inert aria-hidden="true">
       <header class="app-header">
         <div class="brand">
           <img src="./assets/villager_retaliation_logo.png" alt="Villager Retaliation logo">
@@ -24,6 +24,10 @@
             <i data-lucide="book-open" class="button-icon" aria-hidden="true"></i>
             Wiki
           </button>
+          <a class="button button-secondary has-tooltip" href="../quest-builder/index.html" data-tooltip="Open the visual Quest v2 authoring tool.">
+            <i data-lucide="git-branch" class="button-icon" aria-hidden="true"></i>
+            Quest Builder
+          </a>
           <a class="button button-secondary has-tooltip" href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noopener noreferrer" data-tooltip="Open the Villager Retaliation repository on GitHub.">
             <i data-lucide="git-branch" class="button-icon" aria-hidden="true"></i>
             Repo
@@ -81,6 +85,22 @@
                 <span class="tab-detail">Event conversations</span>
               </span>
               <span class="tab-count" aria-label="Forced dialogue entry count">0</span>
+            </button>
+            <button class="tab has-tooltip" type="button" data-section="quests" data-tooltip="Create quest module v2 files with embedded dialogue, events, rewards, and UI.">
+              <i data-lucide="scroll-text" class="tab-icon" aria-hidden="true"></i>
+              <span class="tab-copy">
+                <span class="tab-label">Quests</span>
+                <span class="tab-detail">Modules and stages</span>
+              </span>
+              <span class="tab-count" aria-label="Quest module count">0</span>
+            </button>
+            <button class="tab has-tooltip" type="button" data-section="skillTrades" data-tooltip="Create skill-gated merchant offers and targetable Special Orders.">
+              <i data-lucide="handshake" class="tab-icon" aria-hidden="true"></i>
+              <span class="tab-copy">
+                <span class="tab-label">Skill Trades</span>
+                <span class="tab-detail">Offers and requests</span>
+              </span>
+              <span class="tab-count" aria-label="Skill trade count">0</span>
             </button>
             <button class="tab has-tooltip" type="button" data-section="notifications" data-tooltip="Create HUD notifications and ambient world text entries.">
               <i data-lucide="bell-ring" class="tab-icon" aria-hidden="true"></i>
@@ -203,6 +223,16 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+    <div class="construction-gate">
+      <section class="construction-dialog" role="alertdialog" aria-modal="true" aria-labelledby="construction-title" aria-describedby="construction-copy" tabindex="0" autofocus>
+        <img src="./assets/villager_retaliation_logo.png" alt="">
+        <div>
+          <h1 id="construction-title">Under construction</h1>
+          <p id="construction-copy">The Datapack Generator is temporarily unavailable. Its functionality is being kept in place, but active maintenance is paused until there is time to support it properly.</p>
+        </div>
+      </section>
+    </div>
+
     <div id="settings-dialog" class="modal-overlay" aria-hidden="true">
       <section class="modal-window settings-window" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div class="modal-title">
@@ -294,6 +324,7 @@
     </script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="./wiki-snapshot.js"></script>
+    <script src="../quest-builder/quest-model.js"></script>
     <script src="./backend.js"></script>
     <script src="./app.js"></script>
   </body>

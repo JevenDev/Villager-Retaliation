@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Create, validate, and export linear or branching Villager Retaliation quests.">
+    <title>Villager Retaliation Quest Builder</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell" inert aria-hidden="true">
+      <header class="app-header">
+        <a class="brand" href="./index.html" aria-label="Quest Builder home">
+          <img src="../datapack-builder/assets/villager_retaliation_logo.png" alt="Villager Retaliation logo">
+          <span>Quest Builder</span>
+        </a>
+
+        <div class="save-state" id="save-state" role="status" aria-live="polite">Loading project…</div>
+
+        <nav class="suite-links" aria-label="Villager Retaliation tools">
+          <a href="../index.html">Wiki</a>
+          <a href="../datapack-builder/index.html">Datapack Generator</a>
+        </nav>
+
+        <div class="toolbar" aria-label="Project actions">
+          <button class="icon-button" id="undo-button" type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled>
+            <i data-lucide="undo-2" aria-hidden="true"></i>
+          </button>
+          <button class="icon-button" id="redo-button" type="button" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" disabled>
+            <i data-lucide="redo-2" aria-hidden="true"></i>
+          </button>
+          <button class="button button-secondary" id="import-button" type="button">
+            <i data-lucide="upload" aria-hidden="true"></i>Import
+          </button>
+          <button class="button button-secondary" id="new-project-button" type="button">
+            <i data-lucide="file-plus-2" aria-hidden="true"></i>New
+          </button>
+          <button class="button button-primary" id="export-button" type="button">
+            <i data-lucide="package-check" aria-hidden="true"></i>Export
+          </button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <aside class="left-panel" aria-label="Quest project navigation">
+          <div class="project-header">
+            <label for="project-name">Project</label>
+            <input id="project-name" type="text" autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="panel-heading">
+            <h2>Quests</h2>
+            <button class="icon-button" id="add-quest-button" type="button" aria-label="Add quest" title="Add quest">
+              <i data-lucide="plus" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="quest-list" id="quest-list"></div>
+
+          <nav class="workflow-nav" aria-label="Quest authoring steps">
+            <button type="button" data-view="setup" class="is-active">
+              <i data-lucide="settings-2" aria-hidden="true"></i>
+              <span><strong>Quest setup</strong><small>Identity and availability</small></span>
+            </button>
+            <button type="button" data-view="stages">
+              <i data-lucide="git-branch" aria-hidden="true"></i>
+              <span><strong>Stages</strong><small>Objectives and paths</small></span>
+            </button>
+            <button type="button" data-view="dialogue">
+              <i data-lucide="messages-square" aria-hidden="true"></i>
+              <span><strong>Dialogue</strong><small>Offers and responses</small></span>
+            </button>
+            <button type="button" data-view="rewards">
+              <i data-lucide="gift" aria-hidden="true"></i>
+              <span><strong>Rewards</strong><small>Completion outcomes</small></span>
+            </button>
+            <button type="button" data-view="scenes">
+              <i data-lucide="clapperboard" aria-hidden="true"></i>
+              <span><strong>Scenes</strong><small>Actors and stable steps</small></span>
+            </button>
+            <button type="button" data-view="review">
+              <i data-lucide="scan-text" aria-hidden="true"></i>
+              <span><strong>Review</strong><small>Generated Quest v2 JSON</small></span>
+            </button>
+          </nav>
+
+          <div class="stage-shortcuts" id="stage-shortcuts"></div>
+        </aside>
+
+        <main class="editor" id="editor" tabindex="-1"></main>
+
+        <aside class="checks-panel" aria-label="Quest validation">
+          <div class="checks-header">
+            <div>
+              <h2>Checks</h2>
+              <span id="check-summary">Checking quest…</span>
+            </div>
+            <button class="icon-button" id="checks-toggle" type="button" aria-label="Collapse checks" title="Collapse checks">
+              <i data-lucide="panel-right-close" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="checks-list" id="checks-list" aria-live="polite"></div>
+        </aside>
+      </div>
+    </div>
+
+    <div class="construction-gate">
+      <section class="construction-dialog" role="alertdialog" aria-modal="true" aria-labelledby="construction-title" aria-describedby="construction-copy" tabindex="0" autofocus>
+        <img src="../datapack-builder/assets/villager_retaliation_logo.png" alt="">
+        <div>
+          <h1 id="construction-title">Under construction</h1>
+          <p id="construction-copy">The Quest Builder is temporarily unavailable. Its functionality is being kept in place, but active maintenance is paused until there is time to support it properly.</p>
+        </div>
+      </section>
+    </div>
+
+    <input id="import-input" type="file" accept=".json,.zip,application/json,application/zip" multiple hidden>
+
+    <div class="modal-overlay" id="template-dialog" aria-hidden="true">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="template-title">
+        <div class="modal-header">
+          <h2 id="template-title">Add a quest</h2>
+          <button class="icon-button" type="button" data-close-modal aria-label="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+        </div>
+        <div class="template-options">
+          <button type="button" data-template="linear">
+            <i data-lucide="arrow-right" aria-hidden="true"></i>
+            <strong>Linear quest</strong>
+            <span>A clear sequence of stages ending in a turn-in.</span>
+          </button>
+          <button type="button" data-template="branching">
+            <i data-lucide="git-fork" aria-hidden="true"></i>
+            <strong>Branching quest</strong>
+            <span>A player choice splits into two paths that reconnect.</span>
+          </button>
+          <button type="button" data-template="blank">
+            <i data-lucide="square-dashed" aria-hidden="true"></i>
+            <strong>Minimal quest</strong>
+            <span>One empty stage with only the required Quest v2 fields.</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-overlay" id="confirm-dialog" aria-hidden="true">
+      <section class="modal modal-small" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="modal-header">
+          <h2 id="confirm-title">Confirm action</h2>
+          <button class="icon-button" type="button" data-close-modal aria-label="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+        </div>
+        <p id="confirm-message"></p>
+        <div class="modal-actions">
+          <button class="button button-secondary" type="button" data-close-modal>Cancel</button>
+          <button class="button button-danger" id="confirm-action" type="button">Continue</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-overlay" id="export-dialog" aria-hidden="true">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
+        <div class="modal-header">
+          <h2 id="export-title">Export project</h2>
+          <button class="icon-button" type="button" data-close-modal aria-label="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+        </div>
+        <div id="export-dialog-content"></div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="./quest-model.js"></script>
+    <script src="./zip-utils.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

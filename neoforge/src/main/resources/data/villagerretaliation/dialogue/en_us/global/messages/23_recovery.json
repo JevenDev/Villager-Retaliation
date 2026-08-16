@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.recovery"
+  },
+  "messages": [
+    {
+      "key": "recovery.shortage",
+      "lines": [
+        "I'm hurt and completely out of food.",
+        "I can't recover without something to eat.",
+        "My food is gone, and these wounds are not closing.",
+        "I've got nothing left to heal with.",
+        "I need food or a healing potion.",
+        "My recovery supplies are empty.",
+        "I'm starving and still wounded.",
+        "There isn't a bite of food left in my pack.",
+        "I need something restorative before I get back on my feet.",
+        "Hunger is making these injuries harder to bear.",
+        "I used the last of my food trying to recover.",
+        "I cannot mend while my stomach is empty.",
+        "Please bring me food before my condition gets worse.",
+        "I checked every slot and found no recovery supplies.",
+        "A meal would help me start healing again.",
+        "I am too weak to keep going without food.",
+        "The wounds are still open because I have nothing to restore my strength.",
+        "I need help. My pack is empty and I am badly hurt.",
+        "I can recover if someone brings me something to eat.",
+        "Do not send me back into danger like this. I need food first."
+      ],
+      "id": "global.messages.23_recovery.messages.recovery.shortage.000"
+    }
+  ]
+}

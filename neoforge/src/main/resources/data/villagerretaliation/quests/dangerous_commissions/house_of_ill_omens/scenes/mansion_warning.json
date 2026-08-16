@@ -1,0 +1,108 @@
+{
+  "actors": [
+    {
+      "alias": "player",
+      "binding_source": "owner_player",
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "death_policy": "block",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 600,
+      "type": "villagerretaliation:player"
+    },
+    {
+      "alias": "informant",
+      "binding_source": "quest_provider",
+      "capabilities": [
+        "villagerretaliation:capability/dialogue",
+        "villagerretaliation:capability/living"
+      ],
+      "death_policy": "continue_with_snapshot",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 600,
+      "type": "villagerretaliation:villager"
+    }
+  ],
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "none",
+  "definition_version": 1,
+  "entry_step": "face_hunter",
+  "failure_policy": "block_for_repair",
+  "id": "villagerretaliation:mansion_warning",
+  "metadata": {
+    "quest": "villagerretaliation:house_of_ill_omens",
+    "title": {
+      "key": "#scene.mansion_warning.metadata.title"
+    }
+  },
+  "ownership": "quest_instance",
+  "schema": "villagerretaliation:scene/v1",
+  "steps": [
+    {
+      "actors": [
+        "informant",
+        "player"
+      ],
+      "data": {
+        "actor": "informant",
+        "target_actor": "player"
+      },
+      "failure_step": "failed",
+      "id": "face_hunter",
+      "next": "first_warning",
+      "type": "villagerretaliation:face_actor"
+    },
+    {
+      "actors": [
+        "informant"
+      ],
+      "data": {
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20,
+        "text": {
+          "key": "#scene.mansion_warning.step.first_warning.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "first_warning",
+      "next": "let_warning_settle",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "data": {
+        "ticks": 45
+      },
+      "id": "let_warning_settle",
+      "next": "final_warning",
+      "type": "villagerretaliation:wait_ticks"
+    },
+    {
+      "actors": [
+        "informant"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.mansion_warning.step.final_warning.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "final_warning",
+      "next": "completed",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ],
+  "timeout_ticks": 1200
+}

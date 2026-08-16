@@ -1,0 +1,13 @@
+{
+  "item": "minecraft:coal",
+  "rates": [
+    {
+      "item_count": {
+        "min": 15,
+        "max": 24
+      },
+      "currency_count": 1
+    }
+  ],
+  "market_group": "villagerretaliation:fuel"
+}

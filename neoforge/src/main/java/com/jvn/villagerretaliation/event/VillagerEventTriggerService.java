@@ -3,24 +3,28 @@ package com.jvn.villagerretaliation.event;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionExecutor;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
+import com.jvn.villagerretaliation.scene.SceneLaunchService;
+import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
+import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialoguePlaceholders;
+import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
-import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -70,10 +74,8 @@ public final class VillagerEventTriggerService {
             if (context == null) {
                 return;
             }
-            for (DialogueCondition condition : definition.conditions()) {
-                if (!condition.matches(context)) {
-                    return;
-                }
+            if (!DialogueCondition.matchesAll(context, definition.conditions())) {
+                return;
             }
         }
 
@@ -138,7 +140,25 @@ public final class VillagerEventTriggerService {
             VillagerEventTriggerDefinition definition,
             Map<String, String> replacements) {
         boolean ran = false;
-        for (VillagerActionDefinition action : definition.actions()) {
+        for (int index = 0; index < definition.actions().size(); index++) {
+            VillagerActionDefinition action = definition.actions().get(index);
+            if (action.kind() == VillagerActionDefinition.Kind.START_SCENE && action.waitForScene()) {
+                SceneLaunchService.LaunchResult launch = SceneLaunchService.launch(context, action);
+                boolean suspended = false;
+                if (launch.accepted()) {
+                    SceneSavedData data = SceneSavedData.get(context.level());
+                    var scene = data.get(launch.instanceId()).orElse(null);
+                    if (scene != null) {
+                        data.suspendContinuation(scene, context.player().getUUID(), context.villager().getUUID(),
+                                "quest_trigger/" + index + "/" + action.sceneOperationId(),
+                                definition.actions(), index + 1, replacements);
+                        suspended = true;
+                        ran = true;
+                    }
+                }
+                if (suspended || action.required()) break;
+                continue;
+            }
             VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
             replacements.putAll(result.replacements());
             if (result.flashTracker()) {
@@ -183,11 +203,30 @@ public final class VillagerEventTriggerService {
                 }
                 case MEMORY -> {
                     if (action.memoryTag() != null) {
-                        VillageEventMemory.remember(level, action.memoryTag(), event.pos(), villager, player);
-                        ran = true;
+                        ran |= VillageEventMemory.remember(
+                                level,
+                                action.memoryTag(),
+                                event.pos(),
+                                villager,
+                                player,
+                                action.memoryScope()).changed();
                     }
                 }
-                case FORCED_DIALOGUE, QUEST, REPUTATION, GOSSIP, LOOT, NONE -> {
+                case PROFILE_ATTRIBUTE -> {
+                    VillagerSocialAttribute attribute =
+                            VillagerSocialAttribute.bySerializedName(action.factKey());
+                    if (villager != null && attribute != null && action.amount() != 0) {
+                        ran |= VillagerProfileManager.adjustAttribute(
+                                level, villager, attribute, action.amount());
+                    }
+                }
+                case DRAW_WEAPON -> {
+                    if (villager != null) {
+                        ran |= VillagerWeaponDrawService.draw(villager, action.amount());
+                    }
+                }
+                case FORCED_DIALOGUE, QUEST, QUEST_TRANSITION, REPUTATION, GOSSIP, LOOT,
+                        SET_TAG, CLEAR_TAG, SET_VARIABLE, COUNTER, START_SCENE, NONE -> {
                 }
             }
         }
@@ -221,13 +260,7 @@ public final class VillagerEventTriggerService {
     }
 
     private static String villageScopeKey(ServerLevel level, Villager villager, VillageEventMemory.MemoryEvent event) {
-        return VillageMembership.resolve(level, villager)
-                .map(area -> "village:" + level.dimension().location() + ":" + posKey(area.centerBlock()))
-                .orElseGet(() -> "village:" + level.dimension().location() + ":" + posKey(event.pos()));
-    }
-
-    private static String posKey(BlockPos pos) {
-        return pos.getX() + "," + pos.getY() + "," + pos.getZ();
+        return VillageScopeKeys.forResolvedVillageOrPosition(level, villager, event.pos());
     }
 
     private record CooldownKey(ResourceLocation triggerId, String scopeKey) {

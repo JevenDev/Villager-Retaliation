@@ -13,7 +13,17 @@
         "Most days, I am at the forge, trying to keep straps and plates from becoming everyone else's problem.",
         "People think armor is simple until something goes wrong and suddenly it is very important.",
         "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good hammer more than a loud promise. The hammer has less to prove."
+        "I trust a good hammer more than a loud promise. The hammer has less to prove.",
+        "Armor looks simple until it has to keep a life inside it.",
+        "Good metal has patience in it. Bad metal only has shine.",
+        "I listen to plates and buckles more than most people listen to advice.",
+        "A dent can tell you what kind of day someone survived.",
+        "The best armor is noticed after the danger, not during it.",
+        "I trust a clean rivet more than a brave speech.",
+        "Heat, hammer, cooling water, then checking everything twice. That is most of the job.",
+        "A helmet is only useful if the head inside remembers caution.",
+        "Some folks want armor to make them fearless. I would rather it make them wiser.",
+        "A village sleeps easier when the shields are dry and the straps are sound."
       ],
       "weight": 172
     },
@@ -27,10 +37,20 @@
         "Following you taught me that plans sound much safer before anyone starts walking.",
         "I kept up, mostly. My feet have a harsher opinion of the trip.",
         "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
+        "I learned two things out there, stay close, and ask better questions earlier.",
         "You move like danger is a normal part of the route. I am still adjusting to that.",
         "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "If I followed you again, I would pack more food and fewer assumptions.",
+        "The road looked shorter from home.",
+        "My feet remember every mile.",
+        "I packed too much and asked too little.",
+        "Familiar roofs were a welcome sight.",
+        "I learned what to leave behind next time.",
+        "The trip gave me stories and sore legs.",
+        "I know the way home better now.",
+        "Bad weather found us twice.",
+        "Camp never felt as safe as the village.",
+        "I would travel lighter next time."
       ],
       "conditions": [
         {
@@ -48,13 +68,23 @@
         "Armor is not made for sitting in a boat. I learned that while following you.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
         "A boat can make a bad plan quieter. It can't make me forget it.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "I wondered how quickly mail sinks.",
+        "The water stayed outside the boat.",
+        "Every wave made my buckles heavier.",
+        "I prefer ground that stays still.",
+        "The hull creaked and somehow held.",
+        "I kept one hand on the rail.",
+        "Rowing in armor is miserable.",
+        "The shore improved with every splash.",
+        "A chestplate hates boat benches.",
+        "Someone else carries the shields next time.",
+        "I counted every leak twice.",
+        "The oars moved more easily than I did.",
+        "Land felt unusually trustworthy.",
+        "I heard every creak through my boots.",
+        "The crossing was calm. I was not.",
+        "We arrived without testing my buoyancy.",
+        "The dock was the best sight all day."
       ],
       "conditions": [
         {
@@ -79,7 +109,17 @@
         "I trust a good hammer more than a loud promise. The hammer has less to prove.",
         "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
         "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the forge has done to me."
+        "I notice the little things. That is either a skill or what the forge has done to me.",
+        "I test every fastening before it leaves.",
+        "A quiet hour here can save a life.",
+        "I redo weak straps without arguing.",
+        "The work is heat, weight, and listening.",
+        "A plate should move with its wearer.",
+        "Good steel has a sound before cooling.",
+        "Pretty metal is easy. Safe metal takes time.",
+        "The forge punishes careless guesses.",
+        "A small flaw becomes a large wound.",
+        "The last check matters most."
       ],
       "show_for_babies": false,
       "weight": 18

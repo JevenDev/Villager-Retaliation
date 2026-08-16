@@ -12,11 +12,13 @@ Use a datapack for behavior and authored text:
   data/
     villagerretaliation/
       gifts/
+      currency/
       notifications/
       pacification/
       profession_loot/
       villager_names/
     my_pack/
+      builder_structures/
       dialogue/en_us/
       dialogue_trees/en_us/
       forced_dialogue/
@@ -36,7 +38,6 @@ Use a resource pack for GUI text, textures, and model JSON:
     villagerretaliation/
       lang/en_us.json
       models/entity/villager/combat_villager.json
-      models/entity/villager/render_options.json
       textures/entity/villager/villager.png
 ```
 
@@ -48,6 +49,7 @@ These systems are intentionally fixed to the mod namespace:
 | --- | --- |
 | Notifications | `villagerretaliation` |
 | Gifts | `villagerretaliation` |
+| Currency | `villagerretaliation` |
 | Pacification | `villagerretaliation` |
 | Profession loot rules | `villagerretaliation` |
 | Villager names | `villagerretaliation` |
@@ -59,6 +61,7 @@ These systems can live in your own namespace:
 - Quests
 - Forced dialogue
 - Skill trades
+- Builder structures
 - Story structures
 - Story biomes
 - Referenced loot tables
@@ -69,6 +72,7 @@ Example:
 data/my_pack/dialogue/en_us/global/lines/rumors.json
 data/my_pack/quests/lost_civilization/echo_shard.json
 data/my_pack/skill_trades/cartographer.json
+data/my_pack/builder_structures/custom_houses.json
 data/my_pack/loot_table/villager/profession/alchemist/common.json
 ```
 
@@ -78,7 +82,17 @@ Minecraft resolves exact resource paths first. Villager Retaliation then merges 
 
 - A file at the same resource path as a built-in file replaces that built-in file before VR reads it.
 - Inside many systems, a later entry with the same `id` replaces an earlier entry without replacing the whole file.
-- Top-level `replace: true` clears the loaded pool for that file type before the current file is applied.
+- For quests, dialogue trees, and forced dialogue, top-level `replace: true` puts that loader in replacement mode: VR skips built-in resources for that system, then applies add-on resources.
+- For normal dialogue, top-level `replace: true` clears the current dialogue pool, and `replace_sections` can clear only selected sections.
+- Top-level `remove: true` removes one quest, dialogue tree, or forced-dialogue definition by `id`.
+
+| System | Additive by default | Clear everything | Remove one entry |
+| --- | --- | --- | --- |
+| Dialogue | Yes | `replace: true` or `replace_sections` | Replace by same entry `id` |
+| Dialogue trees | Yes | `replace: true` | `remove: true` with `id` |
+| Quests | Yes | `replace: true` | `remove: true` with `id` |
+| Forced dialogue | Yes | `replace: true` | `remove: true` with `id` |
+| Notifications, gifts, pacification, names | Loader-specific merge rules | Same-path replacement | Usually replace by file or entry `id` |
 
 Use your own file names when you want additive content:
 
@@ -86,7 +100,16 @@ Use your own file names when you want additive content:
 data/my_pack/dialogue/en_us/my_pack/lines/rumors.json
 data/villagerretaliation/notifications/en_us/my_pack/world_text.json
 data/villagerretaliation/gifts/my_pack_preferences.json
+data/villagerretaliation/currency/default.json
 ```
+
+Use a small control file when you want a complete overhaul:
+
+```json
+{ "replace": true }
+```
+
+For quests, dialogue trees, and forced dialogue, a control-only `replace` file disables the built-ins without registering a dummy quest, tree, or forced-dialogue entry. Put your replacement content in the same file or any other add-on file for that system.
 
 ## Suggested Workflow
 

@@ -1,0 +1,372 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.dangerous_commissions.gilded_debt.description": {
+      "lines": [
+        "Reach a Bastion Remnant and bring back Gilded Blackstone for a risky settlement."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.already_completed": {
+      "lines": [
+        "There is no second payment here. We already settled Gilded Debt.",
+        "I will not reopen a finished account. You already came back from the Bastion Remnant with what we needed.",
+        "No one needs this done twice. Gilded Debt is closed. I am not sending you through piglins and lava twice.",
+        "We settled this one already. Your route to the Bastion Remnant is already in the ledger.",
+        "Leave the old tally alone. I remember the day you returned with the Gilded Blackstone.",
+        "No one needs this done twice. You earned the reward for Gilded Debt, and it was paid.",
+        "There is no second payment here. We have a costly promise because you finished the journey to the Bastion Remnant.",
+        "There is no second payment here. Nothing remains to be recovered from the bastion.",
+        "No one needs this done twice. What you brought from the Bastion Remnant is still helping the village.",
+        "That chapter is closed. You proved the bastion route once. That is enough.",
+        "You finished what I asked. The ledger carries your name beside the completed mark.",
+        "I will not reopen a finished account. Leave Gilded Debt in the past where it belongs.",
+        "There is no second payment here. You settled every part of Gilded Debt on your first return.",
+        "The matter ended well enough. The Bastion Remnant was reached and the Gilded Blackstone evidence delivered.",
+        "I remember your first return. I will find you a road beyond the Bastion Remnant before sending you back there.",
+        "That chapter is closed. Nobody forgot what the journey to the Bastion Remnant cost you.",
+        "I remember your first return. Gilded Debt at the Bastion Remnant needs no second visit from you.",
+        "Leave the old tally alone. You gave us the Gilded Blackstone, not another rumor.",
+        "Your earlier work still stands. Gilded Debt ended properly, and it stays ended.",
+        "No one needs this done twice. We can look ahead now. Gilded Debt is done."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.inactive": {
+      "lines": [
+        "The village can wait on this one. The conditions for Gilded Debt are not right at the moment.",
+        "I will post it when it matters. The mark for the Bastion Remnant is not open today.",
+        "Ask me after the stores change. I have no reason to risk you against piglins and lava just now.",
+        "For now, let the matter rest. The village is not ready to use Gilded Blackstone and one gold block.",
+        "The time is wrong. Wait until the ledger calls for the journey to the Bastion Remnant.",
+        "There is no reason to begin yet. A trip to the Bastion Remnant without a need is only danger.",
+        "I will post it when it matters. The bastion route can stay folded until the timing improves.",
+        "The board can wait. I am holding Gilded Debt off the board for now.",
+        "Ask me after the stores change. Nothing at the Bastion Remnant needs our answer today.",
+        "Nothing calls for this work today. Keep your gear ready for the Bastion Remnant, but do not leave yet.",
+        "The village can wait on this one. Gilded Debt is real. The moment for it is not.",
+        "Nothing calls for this work today. I will not send you toward piglins and lava to satisfy an old note.",
+        "The village can wait on this one. The Bastion Remnant can wait until we have a use for the return.",
+        "We have no need of it yet. Ask again after the village reviews the ledger.",
+        "The board can wait. There is no active claim on the Gilded Blackstone today.",
+        "There is no reason to begin yet. The road toward the Bastion Remnant is quiet, and I mean to leave it that way.",
+        "I will post it when it matters. Starting Gilded Debt now would spend courage for no useful result.",
+        "Leave that work alone for now. Gilded Debt has not been posted to any traveler.",
+        "We have no need of it yet. Give Gilded Debt time to become necessary.",
+        "We have no need of it yet. For the moment, stay on this side of the journey to the Bastion Remnant."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.locate_failed": {
+      "lines": [
+        "Something is wrong with the chart. The bastion will not show itself. I refuse to chase a debt blind.",
+        "My map has failed us. I cannot put a trustworthy mark on the Bastion Remnant.",
+        "I found no safe bearing to give you. Every route I checked breaks down before the bastion.",
+        "The old directions no longer agree. The Bastion Remnant maps disagree, and piglins and lava leave no room for guessing.",
+        "I cannot send you out blind. I found rumors of the Bastion Remnant, but no road I would hand you.",
+        "No mark is better than a false one. The Bastion Remnant has slipped beyond my Bastion Remnant charts.",
+        "A doubtful map is too much risk. Without a firm bearing, Gilded Debt would be wandering.",
+        "I found no safe bearing to give you. My best map is blank where the bastion should be.",
+        "Something is wrong with the chart. I traced three routes toward the Bastion Remnant and trusted none.",
+        "The old directions no longer agree. The old Bastion Remnant directions end before danger begins.",
+        "Something is wrong with the chart. I will not pretend a guess can mark the Bastion Remnant.",
+        "I found no safe bearing to give you. No scout has confirmed the mark for the Bastion Remnant.",
+        "The trail has gone cold. The trail to the Bastion Remnant went cold before I could mark it.",
+        "Something is wrong with the chart. I need Bastion Remnant coordinates, not campfire stories.",
+        "My map has failed us. The Bastion Remnant may be there, but I cannot prove where.",
+        "Something is wrong with the chart. None of the Bastion Remnant bearings lead to the same ground.",
+        "The search turned up nothing solid. Let me find an honest bastion route before you prepare to leave.",
+        "I will not guess at a route. The ledger offers warnings today, not directions.",
+        "No mark is better than a false one. The Bastion Remnant map gives me doubt when I need certainty.",
+        "No mark is better than a false one. Come back after the road to the Bastion Remnant gives us an answer."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.missing_proof": {
+      "lines": [
+        "I cannot sign off on an empty return. Gilded Blackstone is the proof. Without it, this is only an expensive apology.",
+        "What you carried home decides this. The Gilded Blackstone is still missing from your return.",
+        "What you carried home decides this. I cannot close the ledger without the agreed Gilded Blackstone evidence.",
+        "The evidence still matters. You faced the Bastion Remnant, but the village still needs the Gilded Blackstone.",
+        "A story cannot close the ledger. Bring back Gilded Blackstone and one gold block before we settle Gilded Debt.",
+        "You returned without the one thing I asked for. Your story may be true. I still need the Gilded Blackstone.",
+        "The evidence still matters. The journey to the Bastion Remnant ends here when the Gilded Blackstone changes hands.",
+        "I need something I can hold. Do not reach the Bastion Remnant and forget the Gilded Blackstone that verifies it.",
+        "Bring back something the village can verify. I know you traveled. I need a result from the Bastion Remnant.",
+        "I cannot sign off on an empty return. The Gilded Debt reward waits on the Gilded Blackstone evidence, not the telling.",
+        "I cannot sign off on an empty return. Show me the Gilded Blackstone, and Gilded Debt can close.",
+        "The last requirement is still missing. The empty place in the ledger waits for what you recovered.",
+        "What you carried home decides this. Words cannot stand in for a costly promise.",
+        "The proof has to reach my hands. Check your packs before you make the journey to the Bastion Remnant twice.",
+        "The proof has to reach my hands. Gilded Debt named its proof from the beginning.",
+        "The last requirement is still missing. Bring the Gilded Blackstone evidence here rather than leaving it in storage.",
+        "The last requirement is still missing. The village asked for Gilded Blackstone and one gold block, and that remains unfinished.",
+        "Show me what came back with you. I can record the bastion route after I see what came from it.",
+        "You returned without the one thing I asked for. One Gilded Blackstone handoff separates Gilded Debt from completion.",
+        "Bring back something the village can verify. Return when the Gilded Blackstone is in your hands."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.missing_target": {
+      "lines": [
+        "Going near it does not count. Do not hand me gold and call it courage. Reach the bastion first.",
+        "You cannot skip the heart of the task. You have not confirmed the Bastion Remnant itself.",
+        "You still owe the road its last mile. The cargo means little if the Bastion Remnant was never reached.",
+        "You cannot skip the heart of the task. Gilded Debt includes the road as well as the return.",
+        "I need the site confirmed. Set foot in the bastion before you bring me evidence.",
+        "Going near it does not count. I asked for proof from the Bastion Remnant, not somewhere else.",
+        "You cannot skip the heart of the task. The Bastion Remnant remains untouched in the ledger.",
+        "I need the site confirmed. Finish the outward journey before claiming the Gilded Debt reward.",
+        "The place itself must be reached. A borrowed Gilded Blackstone cannot replace reaching the Bastion Remnant.",
+        "The place itself must be reached. The Bastion Remnant map still says you stopped short.",
+        "You still owe the road its last mile. Go to the marked place and see Gilded Debt through there.",
+        "The map still shows unfinished travel. The bastion route must end at the Bastion Remnant, not near it.",
+        "I need the site confirmed. I need your eyes on the Bastion Remnant before I trust the report.",
+        "The journey stopped too soon. Do not skip the part that puts piglins and lava in front of you.",
+        "You have not gone far enough yet. The village asked you to confirm the bastion existed.",
+        "The road must end where I sent you. Your return is early. the Bastion Remnant still waits.",
+        "Finish the outward journey first. Reach the Bastion Remnant, then recover Gilded Blackstone and one gold block.",
+        "You have not gone far enough yet. The journey to the Bastion Remnant is not complete while the final mark is unvisited.",
+        "Finish the outward journey first. The ledger needs a confirmed place, not only an item.",
+        "The place itself must be reached. Turn back toward the Bastion Remnant and finish what you began."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.reminder": {
+      "lines": [
+        "Hold to the instructions I gave you. Bastion near {target_x}, {target_z}. Gilded Blackstone for proof, one gold block for settlement. No second ledger.",
+        "You are not finished yet. The Bastion Remnant is still near {target_x}, {target_z}.",
+        "Keep the whole task in mind. The mark remains near {target_x}, {target_z}, so keep to the planned bastion route.",
+        "Stay with the work you accepted. Check the map again. Bastion Remnant is still near {target_x}, {target_z}.",
+        "Remember what the village is waiting for. Gilded Debt still calls for Gilded Blackstone and one gold block.",
+        "Stay with the work you accepted. Watch for piglins and lava on the way in.",
+        "The job still has loose ends. Do not leave the Bastion Remnant without the Gilded Blackstone.",
+        "Do not let one finished step distract you. Your return should give us a costly promise.",
+        "Remember what the village is waiting for. Check the Bastion Remnant bearing at {target_x}, {target_z} before landmarks blur.",
+        "Bring this to a proper finish. Keep the Gilded Blackstone safe once you recover it.",
+        "Remember what the village is waiting for. The ledger stays open until you come home.",
+        "Keep the whole task in mind. Do not rush blind toward the Bastion Remnant. Follow the mark and return whole.",
+        "The next step still matters. The Bastion Remnant has not moved from {target_x}, {target_z}.",
+        "Keep the return trip in your plans. Remember why you are going. We need to settle an old debt.",
+        "Do not lose the thread now. If the bastion route feels wrong, check your position against {target_x}, {target_z}.",
+        "Keep the return trip in your plans. The hard part is reaching the bastion and leaving with evidence.",
+        "You are not finished yet. Bastion Remnant still waits near {target_x}, {target_z}.",
+        "Do not lose the thread now. Bring every part of Gilded Blackstone and one gold block back together.",
+        "Hold to the instructions I gave you. I would rather wait than receive half the agreed Gilded Blackstone.",
+        "Bring this to a proper finish. Find the Bastion Remnant, do Gilded Debt there, and return to me."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.start": {
+      "lines": [
+        "There is a reason I chose you. The bastion is {direction}, about {distance} blocks away, near {target_x}, {target_z}. Bring Gilded Blackstone and one gold block. If you abandon this, I close the matter for good.",
+        "Listen closely. I marked the Bastion Remnant near {target_x}, {target_z}.",
+        "I have a difficult request. Travel {direction} for about {distance} blocks and look for the bastion.",
+        "I need you to see this through. The job is to settle an old debt.",
+        "Before you agree, hear all of it. Come home with Gilded Blackstone and one gold block so the village has more than rumors.",
+        "Here is the work. The road leads through piglins and lava, so prepare before leaving.",
+        "Listen closely. I need someone willing to reach the Bastion Remnant and return with proof.",
+        "The village has work for you. The Bastion Remnant sits near {target_x}, {target_z}, according to my map.",
+        "I have a difficult request. Follow the {direction} bearing and keep the ledger dry.",
+        "Listen closely. Gilded Debt begins at the Bastion Remnant and ends when the Gilded Blackstone reaches me.",
+        "Take the task only if you are ready. The Bastion Remnant mark is about {distance} blocks away. Do not mistake speed for care.",
+        "I have a difficult request. Bring Gilded Blackstone and one gold block, and I can turn this risk into something useful.",
+        "Take this seriously. The village needs a costly promise, not boasting at the fire.",
+        "Let us be clear about the job. I trust you with the bastion route because it is not kind.",
+        "Here is the work. Make for {target_x}, {target_z} and confirm the Bastion Remnant yourself.",
+        "There is a reason I chose you. Prepare for piglins and lava before crossing the last safe ground.",
+        "The village has work for you. The outward journey proves the Bastion Remnant map. The return proves you.",
+        "Before you agree, hear all of it. Do not come back empty from the bastion.",
+        "Listen closely. Take Gilded Debt only if you mean to finish the travel and recovery.",
+        "Take this seriously. When you have Gilded Blackstone and one gold block, bring it straight here."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.turn_in": {
+      "lines": [
+        "Now I can close the ledger. Settled. The village gains relief, and a few whispers it will deserve. Some rewards are complicated.",
+        "That settles what I asked of you. You reached the Bastion Remnant and brought the Gilded Blackstone home.",
+        "You saw it through. The ledger finally has a true ending.",
+        "That is the result I needed. This is a costly promise, solid enough to hold.",
+        "Good, you made it back. The village can settle an old debt because you took the risk.",
+        "You brought the work to a proper end. I asked for Gilded Blackstone and one gold block, and you returned with every part.",
+        "This will make a real difference. You went through piglins and lava and kept your head.",
+        "This will make a real difference. The bastion route is confirmed now, not merely drawn.",
+        "You delivered exactly what was needed. I can pay Gilded Debt without a doubt.",
+        "This return was worth waiting for. The Gilded Blackstone tells the story better than any boast.",
+        "This return was worth waiting for. You made the dangerous road to the Bastion Remnant useful to everyone here.",
+        "You brought the work to a proper end. The Bastion Remnant is no longer just a warning on a map.",
+        "The hard part is behind us. I will put your Bastion Remnant findings where the village can study them.",
+        "This will make a real difference. Gilded Debt is clean, even if the journey to the Bastion Remnant was not.",
+        "This return was worth waiting for. That is the Gilded Blackstone evidence I hoped to see.",
+        "This will make a real difference. You returned from the Bastion Remnant with more than survival. You brought an answer.",
+        "This return was worth waiting for. Gilded Debt closes with the village better prepared.",
+        "Good, you made it back. The next traveler to the Bastion Remnant will have your route.",
+        "This will make a real difference. Take the Gilded Debt reward. You earned it beyond the safe roads.",
+        "Good, you made it back. I am glad to see both the Gilded Blackstone and person carrying it."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.dialogue.unavailable": {
+      "lines": [
+        "This work is not yours today. No. This ledger opens only for someone already trusted with sharp endings.",
+        "I will not place this burden on you. Gilded Debt demands trust I do not have in you yet.",
+        "Some work must wait until trust catches up. I cannot hand you a route through piglins and lava today.",
+        "I need proof of your judgment first. The Bastion Remnant is no ground for an untested ally.",
+        "I need proof of your judgment first. Do steadier work here before asking for the Bastion Remnant map.",
+        "You are not ready for this request. I need someone I can trust to return from the Bastion Remnant.",
+        "The village needs a steadier hand. The ledger stays closed to you for now.",
+        "I need proof of your judgment first. Gilded Debt risks more than the traveler's life.",
+        "I will not place this burden on you. Earn our confidence, then ask about the bastion again.",
+        "This work is not yours today. I will not send a stranger after a costly promise.",
+        "I will not place this burden on you. The Bastion Remnant is dangerous enough without doubt between us.",
+        "This work is not yours today. Your name has not reached the trusted page of the ledger.",
+        "This work is not yours today. There are safer tasks than Gilded Debt that can show me how you work.",
+        "This work is not yours today. I need proof of judgment before offering the journey to the Bastion Remnant.",
+        "You are not ready for this request. For now, the Bastion Remnant map remains folded.",
+        "The village needs a steadier hand. The village is not ready to stake settle an old debt on you.",
+        "I need proof of your judgment first. Ask about the Bastion Remnant after you have stood with us longer.",
+        "Some work must wait until trust catches up. Courage may reach the Bastion Remnant. Reliability brings the Gilded Blackstone home.",
+        "Earn our confidence before asking again. Gilded Debt stays with proven hands.",
+        "Some work must wait until trust catches up. I will tell you when we trust you with the road to the Bastion Remnant."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.objective.bring_gold_block.complete_text": {
+      "lines": [
+        "The settlement gold is ready."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.objective.bring_gold_block.text": {
+      "lines": [
+        "Bring 1 gold block to settle the debt cleanly."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.stage.return.dialogue.turn_in.label": "About Gilded Debt",
+    "quest.dangerous_commissions.gilded_debt.stage.return.dialogue.turn_in.lines": [
+      "The route is proven and the payment is sealed for the informants. No promise is chasing the village now.",
+      "Gold set aside on time buys more than goods. Once the informants receive it, the road stays open.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.dangerous_commissions.gilded_debt.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.dangerous_commissions.gilded_debt.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The route is proven and the payment is sealed for the informants. No promise is chasing the village now.",
+      "Gold set aside on time buys more than goods. Once the informants receive it, the road stays open."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Gilded Debt is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.return.scene.turn_in_wait.lines": [
+      "The bastion mark, one gilded blackstone, and one gold block for the debt.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.dialogue.offer.label": "Gilded Debt",
+    "quest.dangerous_commissions.gilded_debt.stage.work.dialogue.offer.lines": [
+      "The mansion informants kept their word. Now the gold promised for their Nether route is due.",
+      "Return with one gold block and gilded blackstone; the village will send the payment once the route is proven.",
+      "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.dialogue.reminder.label": "About Gilded Debt",
+    "quest.dangerous_commissions.gilded_debt.stage.work.dialogue.reminder.lines": [
+      "The bastion mark, one gilded blackstone, and one gold block for the debt.",
+      "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block.",
+      "Return with one gold block and gilded blackstone; the village will send the payment once the route is proven."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.objective.bring_gilded_stone.tracker.complete_text": "The gilded blackstone is ready.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.objective.bring_gilded_stone.tracker.text": "Bring 1 gilded blackstone as proof.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.objective.bring_gold.tracker.complete_text": "The settlement payment is ready.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.objective.bring_gold.tracker.text": "Bring 1 gold block for the settlement payment.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.objective.visit_bastion.tracker.complete_text": "The bastion debt route is confirmed.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.objective.visit_bastion.tracker.text": "Reach the marked Bastion Remnant.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.abandon_confirm.lines": [
+      "Put Gilded Debt aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Gilded Debt is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.decline.lines": [
+      "Then the debt waits, but Nether debts grow dangerous when ignored."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.leave.lines": [
+      "The bastion mark, one gilded blackstone, and one gold block for the debt.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "The bastion mark, one gilded blackstone, and one gold block for the debt.",
+      "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block.",
+      "Return with one gold block and gilded blackstone; the village will send the payment once the route is proven."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Gilded Debt is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Gilded Debt is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.start_quest.action.start.lines.started": [
+      "Wear gold where piglins can see it, and keep the payment where brutes cannot.",
+      "Reach the marked Bastion Remnant and bring 1 gilded blackstone and 1 gold block."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Gilded Debt is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.gilded_debt.stage.work.ui.tracker_text": "Reach the Bastion Remnant and return with gilded blackstone and a gold block.",
+    "quest.dangerous_commissions.gilded_debt.title": {
+      "lines": [
+        "Gilded Debt"
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.tracker.bring_gold_block.text": {
+      "lines": [
+        "Add 1 gold block to settle the old debt."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.tracker.proof.text": {
+      "lines": [
+        "Bring Gilded Blackstone and 1 gold block."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the gilded proof."
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.tracker.title": {
+      "lines": [
+        "Gilded Debt"
+      ]
+    },
+    "quest.dangerous_commissions.gilded_debt.tracker.travel.text": {
+      "lines": [
+        "Find the Bastion Remnant near {target_x}, {target_z}."
+      ]
+    }
+  }
+}

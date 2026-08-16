@@ -1,0 +1,372 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.dangerous_commissions.nether_wart_warranty.description": {
+      "lines": [
+        "Reach a Nether Fortress and return with Nether Wart and a Blaze Rod."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.dialogue.already_completed": {
+      "lines": [
+        "The matter ended well enough. We already settled Nether Wart Warranty.",
+        "I remember your first return. You already came back from the Nether Fortress with what we needed.",
+        "That chapter is closed. Nether Wart Warranty is closed. I am not sending you through blazes and open lava twice.",
+        "That chapter is closed. Your route to the Nether Fortress is already in the brewing notes.",
+        "Nothing remains to be earned from this. I remember the day you returned with the Nether Wart.",
+        "I will not reopen a finished account. You earned the reward for Nether Wart Warranty, and it was paid.",
+        "There is no second payment here. We have the cure because you finished the journey to the Nether Fortress.",
+        "Nothing remains to be earned from this. Nothing remains to be recovered from the fortress.",
+        "Leave the old tally alone. What you brought from the Nether Fortress is still helping the village.",
+        "That chapter is closed. You proved the fortress route once. That is enough.",
+        "The matter ended well enough. The brewing notes carries your name beside the completed mark.",
+        "Your earlier work still stands. Leave Nether Wart Warranty in the past where it belongs.",
+        "The matter ended well enough. You settled every part of Nether Wart Warranty on your first return.",
+        "Nothing remains to be earned from this. The Nether Fortress was reached and the Nether Wart evidence delivered.",
+        "That chapter is closed. I will find you a road beyond the Nether Fortress before sending you back there.",
+        "The matter ended well enough. Nobody forgot what the journey to the Nether Fortress cost you.",
+        "What was owed has been paid. Nether Wart Warranty at the Nether Fortress needs no second visit from you.",
+        "You finished what I asked. You gave us the Nether Wart, not another rumor.",
+        "No one needs this done twice. Nether Wart Warranty ended properly, and it stays ended.",
+        "No one needs this done twice. We can look ahead now. Nether Wart Warranty is done."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.dialogue.inactive": {
+      "lines": [
+        "I will post it when it matters. The conditions for Nether Wart Warranty are not right at the moment.",
+        "There is no reason to begin yet. The mark for the Nether Fortress is not open today.",
+        "The time is wrong. I have no reason to risk you against blazes and open lava just now.",
+        "There is no reason to begin yet. The village is not ready to use Nether Wart and one Blaze Rod.",
+        "I am keeping this off the board. Wait until the brewing notes calls for the journey to the Nether Fortress.",
+        "Ask me after the stores change. A trip to the Nether Fortress without a need is only danger.",
+        "Nothing calls for this work today. The fortress route can stay folded until the timing improves.",
+        "Leave that work alone for now. I am holding Nether Wart Warranty off the board for now.",
+        "For now, let the matter rest. Nothing at the Nether Fortress needs our answer today.",
+        "Ask me after the stores change. Keep your gear ready for the Nether Fortress, but do not leave yet.",
+        "There is no reason to begin yet. Nether Wart Warranty is real. The moment for it is not.",
+        "We have no need of it yet. I will not send you toward blazes and open lava to satisfy an old note.",
+        "For now, let the matter rest. The Nether Fortress can wait until we have a use for the return.",
+        "The time is wrong. Ask again after the village reviews the brewing notes.",
+        "Not today. There is no active claim on the Nether Wart today.",
+        "Not today. The road toward the Nether Fortress is quiet, and I mean to leave it that way.",
+        "Leave that work alone for now. Starting Nether Wart Warranty now would spend courage for no useful result.",
+        "The board can wait. Nether Wart Warranty has not been posted to any traveler.",
+        "Nothing calls for this work today. Give Nether Wart Warranty time to become necessary.",
+        "Leave that work alone for now. For the moment, stay on this side of the journey to the Nether Fortress."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.dialogue.locate_failed": {
+      "lines": [
+        "No mark is better than a false one. I cannot read a fortress route from here. The Nether is being unusually honest about being hostile.",
+        "Something is wrong with the chart. I cannot put a trustworthy mark on the Nether Fortress.",
+        "The trail has gone cold. Every route I checked breaks down before the fortress.",
+        "My map has failed us. The Nether Fortress maps disagree, and blazes and open lava leave no room for guessing.",
+        "The trail has gone cold. I found rumors of the Nether Fortress, but no road I would hand you.",
+        "Until I know the way, you stay here. The Nether Fortress has slipped beyond my Nether Fortress charts.",
+        "Until I know the way, you stay here. Without a firm bearing, Nether Wart Warranty would be wandering.",
+        "Until I know the way, you stay here. My best map is blank where the fortress should be.",
+        "No mark is better than a false one. I traced three routes toward the Nether Fortress and trusted none.",
+        "A doubtful map is too much risk. The old Nether Fortress directions end before danger begins.",
+        "My map has failed us. I will not pretend a guess can mark the Nether Fortress.",
+        "I found no safe bearing to give you. No scout has confirmed the mark for the Nether Fortress.",
+        "The search turned up nothing solid. The trail to the Nether Fortress went cold before I could mark it.",
+        "My map has failed us. I need Nether Fortress coordinates, not campfire stories.",
+        "The trail has gone cold. The Nether Fortress may be there, but I cannot prove where.",
+        "The old directions no longer agree. None of the Nether Fortress bearings lead to the same ground.",
+        "The trail has gone cold. Let me find an honest fortress route before you prepare to leave.",
+        "I will not guess at a route. The brewing notes offers warnings today, not directions.",
+        "I will not guess at a route. The Nether Fortress map gives me doubt when I need certainty.",
+        "My map has failed us. Come back after the road to the Nether Fortress gives us an answer."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_proof": {
+      "lines": [
+        "The evidence still matters. Bring Nether Wart. The whole request is written around it.",
+        "The proof has to reach my hands. The Nether Wart is still missing from your return.",
+        "You returned without the one thing I asked for. I cannot close the brewing notes without the agreed Nether Wart evidence.",
+        "The evidence still matters. You faced the Nether Fortress, but the village still needs the Nether Wart.",
+        "Your word is not the missing piece. Bring back Nether Wart and one Blaze Rod before we settle Nether Wart Warranty.",
+        "The evidence still matters. Your story may be true. I still need the Nether Wart.",
+        "What you carried home decides this. The journey to the Nether Fortress ends here when the Nether Wart changes hands.",
+        "I cannot sign off on an empty return. Do not reach the Nether Fortress and forget the Nether Wart that verifies it.",
+        "I cannot sign off on an empty return. I know you traveled. I need a result from the Nether Fortress.",
+        "The evidence still matters. The Nether Wart Warranty reward waits on the Nether Wart evidence, not the telling.",
+        "Your word is not the missing piece. Show me the Nether Wart, and Nether Wart Warranty can close.",
+        "Your word is not the missing piece. The empty place in the brewing notes waits for what you recovered.",
+        "I believe you went, but that is not enough. Words cannot stand in for the cure.",
+        "Show me what came back with you. Check your packs before you make the journey to the Nether Fortress twice.",
+        "You returned without the one thing I asked for. Nether Wart Warranty named its proof from the beginning.",
+        "Bring back something the village can verify. Bring the Nether Wart evidence here rather than leaving it in storage.",
+        "I need something I can hold. The village asked for Nether Wart and one Blaze Rod, and that remains unfinished.",
+        "I believe you went, but that is not enough. I can record the fortress route after I see what came from it.",
+        "I cannot sign off on an empty return. One Nether Wart handoff separates Nether Wart Warranty from completion.",
+        "The last requirement is still missing. Return when the Nether Wart is in your hands."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_target": {
+      "lines": [
+        "You have not gone far enough yet. Nether Wart without the fortress route is a guess. I need the place confirmed.",
+        "You have not gone far enough yet. You have not confirmed the Nether Fortress itself.",
+        "You cannot skip the heart of the task. The cargo means little if the Nether Fortress was never reached.",
+        "I need the site confirmed. Nether Wart Warranty includes the road as well as the return.",
+        "Going near it does not count. Set foot in the fortress before you bring me evidence.",
+        "Reaching the mark is part of the promise. I asked for proof from the Nether Fortress, not somewhere else.",
+        "The place itself must be reached. The Nether Fortress remains untouched in the brewing notes.",
+        "The place itself must be reached. Finish the outward journey before claiming the Nether Wart Warranty reward.",
+        "You cannot skip the heart of the task. A borrowed Nether Wart cannot replace reaching the Nether Fortress.",
+        "You have not gone far enough yet. The Nether Fortress map still says you stopped short.",
+        "Finish the outward journey first. Go to the marked place and see Nether Wart Warranty through there.",
+        "I need the site confirmed. The fortress route must end at the Nether Fortress, not near it.",
+        "The map still shows unfinished travel. I need your eyes on the Nether Fortress before I trust the report.",
+        "Finish the outward journey first. Do not skip the part that puts blazes and open lava in front of you.",
+        "The map still shows unfinished travel. The village asked you to confirm the fortress existed.",
+        "Reaching the mark is part of the promise. Your return is early. the Nether Fortress still waits.",
+        "The road must end where I sent you. Reach the Nether Fortress, then recover Nether Wart and one Blaze Rod.",
+        "I need the site confirmed. The journey to the Nether Fortress is not complete while the final mark is unvisited.",
+        "This task was never only about the cargo. The brewing notes needs a confirmed place, not only an item.",
+        "This task was never only about the cargo. Turn back toward the Nether Fortress and finish what you began."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.dialogue.reminder": {
+      "lines": [
+        "You are not finished yet. Fortress near {target_x}, {target_z}. Nether Wart is the cure. A <gradient:gold:red><pulse>Blaze</pulse></gradient> Rod proves you reached the heat of it.",
+        "Stay with the work you accepted. The Nether Fortress is still near {target_x}, {target_z}.",
+        "Before you leave, hear this again. The mark remains near {target_x}, {target_z}, so keep to the planned fortress route.",
+        "Remember what the village is waiting for. Check the map again. Nether Fortress is still near {target_x}, {target_z}.",
+        "The job still has loose ends. Nether Wart Warranty still calls for Nether Wart and one <gradient:gold:red><pulse>Blaze</pulse></gradient> Rod.",
+        "Hold to the instructions I gave you. Watch for blazes and open lava on the way in.",
+        "Bring this to a proper finish. Do not leave the Nether Fortress without the Nether Wart.",
+        "Keep the return trip in your plans. Your return should give us the cure.",
+        "Before you leave, hear this again. Check the Nether Fortress bearing at {target_x}, {target_z} before landmarks blur.",
+        "Remember what the village is waiting for. Keep the Nether Wart safe once you recover it.",
+        "Do not let one finished step distract you. The brewing notes stays open until you come home.",
+        "Stay with the work you accepted. Do not rush blind toward the Nether Fortress. Follow the mark and return whole.",
+        "You are not finished yet. The Nether Fortress has not moved from {target_x}, {target_z}.",
+        "You are not finished yet. Remember why you are going. We need to secure medicine from the fortress.",
+        "Do not let one finished step distract you. If the fortress route feels wrong, check your position against {target_x}, {target_z}.",
+        "Stay with the work you accepted. The hard part is reaching the fortress and leaving with evidence.",
+        "Bring this to a proper finish. Nether Fortress still waits near {target_x}, {target_z}.",
+        "Hold to the instructions I gave you. Bring every part of Nether Wart and one <gradient:gold:red><pulse>Blaze</pulse></gradient> Rod back together.",
+        "Keep the whole task in mind. I would rather wait than receive half the agreed Nether Wart.",
+        "Keep the whole task in mind. Find the Nether Fortress, do Nether Wart Warranty there, and return to me."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.dialogue.start": {
+      "lines": [
+        "Before you agree, hear all of it. The fortress mark sits {direction}, about {distance} blocks away, near {target_x}, {target_z}. Bring Nether Wart and one <gradient:gold:red><pulse>Blaze</pulse></gradient> Rod.",
+        "Before you agree, hear all of it. I marked the Nether Fortress near {target_x}, {target_z}.",
+        "There is a reason I chose you. Travel {direction} for about {distance} blocks and look for the fortress.",
+        "Take the task only if you are ready. The job is to secure medicine from the fortress.",
+        "Let us be clear about the job. Come home with Nether Wart and one <gradient:gold:red><pulse>Blaze</pulse></gradient> Rod so the village has more than rumors.",
+        "Take the task only if you are ready. The road leads through blazes and open lava, so prepare before leaving.",
+        "Take the task only if you are ready. I need someone willing to reach the Nether Fortress and return with proof.",
+        "Listen closely. The Nether Fortress sits near {target_x}, {target_z}, according to my map.",
+        "Here is the work. Follow the {direction} bearing and keep the brewing notes dry.",
+        "Take this seriously. Nether Wart Warranty begins at the Nether Fortress and ends when the Nether Wart reaches me.",
+        "Here is the work. The Nether Fortress mark is about {distance} blocks away. Do not mistake speed for care.",
+        "I am trusting you with something important. Bring Nether Wart and one <gradient:gold:red><pulse>Blaze</pulse></gradient> Rod, and I can turn this risk into something useful.",
+        "Before you agree, hear all of it. The village needs the cure, not boasting at the fire.",
+        "I have a difficult request. I trust you with the fortress route because it is not kind.",
+        "I need you to see this through. Make for {target_x}, {target_z} and confirm the Nether Fortress yourself.",
+        "Let us be clear about the job. Prepare for blazes and open lava before crossing the last safe ground.",
+        "I am trusting you with something important. The outward journey proves the Nether Fortress map. The return proves you.",
+        "This needs a careful hand. Do not come back empty from the fortress.",
+        "I am trusting you with something important. Take Nether Wart Warranty only if you mean to finish the travel and recovery.",
+        "Take the task only if you are ready. When you have Nether Wart and one <gradient:gold:red><pulse>Blaze</pulse></gradient> Rod, bring it straight here."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.dialogue.turn_in": {
+      "lines": [
+        "You saw it through. That will brew into more than medicine. It will brew into confidence. Take your reward.",
+        "The village can use this. You reached the Nether Fortress and brought the Nether Wart home.",
+        "The hard part is behind us. The brewing notes finally has a true ending.",
+        "You brought the work to a proper end. This is the cure, solid enough to hold.",
+        "You saw it through. The village can secure medicine from the fortress because you took the risk.",
+        "You brought the work to a proper end. I asked for Nether Wart and one Blaze Rod, and you returned with every part.",
+        "Good, you made it back. You went through blazes and open lava and kept your head.",
+        "You saw it through. The fortress route is confirmed now, not merely drawn.",
+        "This will make a real difference. I can pay Nether Wart Warranty without a doubt.",
+        "Good, you made it back. The Nether Wart tells the story better than any boast.",
+        "I am glad to see you home. You made the dangerous road to the Nether Fortress useful to everyone here.",
+        "That is the result I needed. The Nether Fortress is no longer just a warning on a map.",
+        "You brought the work to a proper end. I will put your Nether Fortress findings where the village can study them.",
+        "This return was worth waiting for. Nether Wart Warranty is clean, even if the journey to the Nether Fortress was not.",
+        "Now I can close the ledger. That is the Nether Wart evidence I hoped to see.",
+        "This return was worth waiting for. You returned from the Nether Fortress with more than survival. You brought an answer.",
+        "You saw it through. Nether Wart Warranty closes with the village better prepared.",
+        "Now I can close the ledger. The next traveler to the Nether Fortress will have your route.",
+        "Now I can close the ledger. Take the Nether Wart Warranty reward. You earned it beyond the safe roads.",
+        "The village can use this. I am glad to see both the Nether Wart and person carrying it."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.dialogue.unavailable": {
+      "lines": [
+        "You are not ready for this request. This request needs steadier hands than you have shown me so far.",
+        "I cannot trust you with this yet. Nether Wart Warranty demands trust I do not have in you yet.",
+        "This calls for someone we know better. I cannot hand you a route through blazes and open lava today.",
+        "I cannot trust you with this yet. The Nether Fortress is no ground for an untested ally.",
+        "No, the risk is too high. Do steadier work here before asking for the Nether Fortress map.",
+        "No, the risk is too high. I need someone I can trust to return from the Nether Fortress.",
+        "Earn our confidence before asking again. The brewing notes stays closed to you for now.",
+        "The village needs a steadier hand. Nether Wart Warranty risks more than the traveler's life.",
+        "The answer is no for now. Earn our confidence, then ask about the fortress again.",
+        "I need proof of your judgment first. I will not send a stranger after the cure.",
+        "The answer is no for now. The Nether Fortress is dangerous enough without doubt between us.",
+        "The village needs a steadier hand. Your name has not reached the trusted page of the brewing notes.",
+        "This work is not yours today. There are safer tasks than Nether Wart Warranty that can show me how you work.",
+        "I will not place this burden on you. I need proof of judgment before offering the journey to the Nether Fortress.",
+        "I will not place this burden on you. For now, the Nether Fortress map remains folded.",
+        "You are not ready for this request. The village is not ready to stake secure medicine from the fortress on you.",
+        "The answer is no for now. Ask about the Nether Fortress after you have stood with us longer.",
+        "No, the risk is too high. Courage may reach the Nether Fortress. Reliability brings the Nether Wart home.",
+        "I will not place this burden on you. Nether Wart Warranty stays with proven hands.",
+        "This calls for someone we know better. I will tell you when we trust you with the road to the Nether Fortress."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.complete_text": {
+      "lines": [
+        "The blaze rod proves the route."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.text": {
+      "lines": [
+        "Bring 1 blaze rod so the cleric knows the fortress was real."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.dialogue.turn_in.label": "About Nether Wart Warranty",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.dialogue.turn_in.lines": [
+      "The wart is alive, the rod is real, and the brewing stand finally has work.",
+      "One dangerous trip can seed every potion we brew after it.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The wart is alive, the rod is real, and the brewing stand finally has work.",
+      "One dangerous trip can seed every potion we brew after it."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Nether Wart Warranty is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.scene.turn_in_wait.lines": [
+      "The fortress mark, eight Nether Wart, and one blaze rod.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.dialogue.offer.label": "Nether Wart Warranty",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.dialogue.offer.lines": [
+      "The brewing stand has bottles, powder, and no Nether Wart. That makes it a very tidy shelf.",
+      "Find the fortress garden and bring back enough wart to start a village crop, plus one blaze rod to prove the route.",
+      "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.dialogue.reminder.label": "About Nether Wart Warranty",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.dialogue.reminder.lines": [
+      "The fortress mark, eight Nether Wart, and one blaze rod.",
+      "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod.",
+      "Find the fortress garden and bring back enough wart to start a village crop, plus one blaze rod to prove the route."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.objective.bring_rod.tracker.complete_text": "The blaze rod is ready.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.objective.bring_rod.tracker.text": "Bring 1 blaze rod as route proof.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.objective.bring_wart.tracker.complete_text": "The Nether Wart is sealed.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.objective.bring_wart.tracker.text": "Bring 8 Nether Wart for the brewing stand.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.objective.visit_fortress.tracker.complete_text": "The fortress route is confirmed.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.objective.visit_fortress.tracker.text": "Reach the marked Nether Fortress.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.abandon_confirm.lines": [
+      "Put Nether Wart Warranty aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Nether Wart Warranty is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.decline.lines": [
+      "The brewing stand can wait. Fire is a poor reason to hurry."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.leave.lines": [
+      "The fortress mark, eight Nether Wart, and one blaze rod.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "The fortress mark, eight Nether Wart, and one blaze rod.",
+      "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod.",
+      "Find the fortress garden and bring back enough wart to start a village crop, plus one blaze rod to prove the route."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Nether Wart Warranty is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Nether Wart Warranty is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.start_quest.action.start.lines.started": [
+      "Take more than one way home. Fortress bridges have a habit of ending under your feet.",
+      "Reach the marked Nether Fortress and bring 8 Nether Wart and 1 blaze rod."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Nether Wart Warranty is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.dangerous_commissions.nether_wart_warranty.stage.work.ui.tracker_text": "Reach the Nether Fortress and return with 8 Nether Wart and 1 blaze rod.",
+    "quest.dangerous_commissions.nether_wart_warranty.title": {
+      "lines": [
+        "Nether Wart Warranty"
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.tracker.bring_blaze_rod.text": {
+      "lines": [
+        "Bring 1 blaze rod with the nether wart."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.tracker.proof.text": {
+      "lines": [
+        "Collect nether wart and a blaze rod."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the Nether proof."
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.tracker.title": {
+      "lines": [
+        "Nether Wart Warranty"
+      ]
+    },
+    "quest.dangerous_commissions.nether_wart_warranty.tracker.travel.text": {
+      "lines": [
+        "Find the fortress near {target_x}, {target_z}."
+      ]
+    }
+  }
+}

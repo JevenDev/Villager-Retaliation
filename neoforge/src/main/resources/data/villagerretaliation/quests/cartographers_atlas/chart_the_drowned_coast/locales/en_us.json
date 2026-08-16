@@ -1,0 +1,104 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.cartographers_atlas.chart_the_drowned_coast.description": {
+      "lines": [
+        "Follow the coast horizon to an Ocean Monument and bring back prismarine proof."
+      ]
+    },
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.dialogue.turn_in.label": "About the Drowned Coast",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.dialogue.turn_in.lines": [
+      "You smell like salt and stubborn stone. Show me the coast proof."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.dialogue.turn_in.response.complete.label": "Hand over the prismarine notes",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.dialogue.turn_in.response.leave.label": "Not yet",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The drowned coast is charted. The atlas now knows how waves hide a road without erasing it."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The coast page still needs its monument, guardian count, and prismarine."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the prismarine proof before I trust the coast mark."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The prismarine needs the monument bearing behind it."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "The coast still needs its proof before I can close the page."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.scene.leave.lines": [
+      "Keep the shards wrapped. Wet ink is honest but messy."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.return.ui.tracker_text": "Return to the cartographer with prismarine proof.",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.dialogue.offer.label": "Drowned Coast",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.dialogue.offer.lines": [
+      "You chose the coast, so the atlas is listening for drowned stone now.",
+      "An Ocean Monument is singing through the ink. Chart it, survive its guardians, and bring prismarine back."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.dialogue.offer.response.accept.label": "Chart the coast",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.dialogue.offer.response.decline.label": "Another time",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.dialogue.reminder.label": "About the Drowned Coast",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.dialogue.reminder.lines": [
+      "The coast route still needs a monument bearing, guardian proof, and prismarine shards."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.dialogue.reminder.response.abandon.label": "Abandon quest",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.dialogue.reminder.response.details.label": "Remind me where",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.dialogue.reminder.response.leave.label": "Never mind",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.objective.bring_prismarine.tracker.complete_text": "The prismarine proof is ready.",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.objective.bring_prismarine.tracker.text": "Bring 8 prismarine shards from the drowned coast.",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.objective.defeat_guardians.tracker.complete_text": "The guardian count is recorded.",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.objective.defeat_guardians.tracker.text": "Defeat 3 guardians near the drowned coast route.",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.objective.visit_monument.tracker.complete_text": "The drowned coast monument has been charted.",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.objective.visit_monument.tracker.text": "Reach the Ocean Monument near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.abandon_confirm.lines": [
+      "Let the drowned coast sink back under the ink for now?"
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.abandon_confirm.response.cancel.label": "Keep charting",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.abandon_confirm.response.confirm.label": "Abandon quest",
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "I will dry the coast page for now. The tide can rise again later."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will dry the coast page for a day before we ask it to open again."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "There is no drowned coast route active right now."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.decline.lines": [
+      "Then keep your boots dry a little longer."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.leave.lines": [
+      "Mind the waterline."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.reminder_details.action.remind.lines.reminder": [
+      "Ocean Monument near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, defeat 3 guardians, and bring 8 prismarine shards."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.reminder_details.action.remind.lines.unavailable": [
+      "I do not have the drowned coast page open for you right now."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.start_quest.action.start.lines.already_completed": [
+      "The drowned coast is already charted."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.start_quest.action.start.lines.locate_failed": [
+      "The coast is throwing glare across the page today. I would rather wait than hand you a false monument mark."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.start_quest.action.start.lines.started": [
+      "The monument mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, survive the guardians, and bring prismarine."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.scene.start_quest.action.start.lines.unavailable": [
+      "The atlas must choose the coast horizon before this route opens."
+    ],
+    "quest.cartographers_atlas.chart_the_drowned_coast.stage.survey.ui.tracker_text": "Reach the Ocean Monument near {target_x}, {target_z}.",
+    "quest.cartographers_atlas.chart_the_drowned_coast.title": {
+      "lines": [
+        "Chart the Drowned Coast"
+      ]
+    },
+    "quest.cartographers_atlas.chart_the_drowned_coast.tracker.title": {
+      "lines": [
+        "Chart the Drowned Coast"
+      ]
+    }
+  }
+}

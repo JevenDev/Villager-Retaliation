@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.options"
+    ],
+    "topic": "global.mount_ownership"
+  },
+  "options": [
+    {
+      "id": "mount.ownership",
+      "label": "That's my {mount}",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": -4,
+      "show_for_babies": false
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "actors": [
+    {
+      "alias": "player",
+      "binding_source": "owner_player",
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "death_policy": "block",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 600,
+      "type": "villagerretaliation:player"
+    },
+    {
+      "alias": "surveyor",
+      "binding_source": "quest_provider",
+      "capabilities": [
+        "villagerretaliation:capability/dialogue",
+        "villagerretaliation:capability/living"
+      ],
+      "death_policy": "continue_with_snapshot",
+      "missing_actor_policy": "wait_until_timeout",
+      "replacement_policy": "fixed",
+      "required": true,
+      "timeout_ticks": 600,
+      "type": "villagerretaliation:villager"
+    }
+  ],
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "none",
+  "definition_version": 1,
+  "entry_step": "face_explorer",
+  "failure_policy": "block_for_repair",
+  "id": "villagerretaliation:trial_chamber_briefing",
+  "metadata": {
+    "quest": "villagerretaliation:trial_chamber_recall",
+    "title": {
+      "key": "#scene.trial_chamber_briefing.metadata.title"
+    }
+  },
+  "ownership": "quest_instance",
+  "schema": "villagerretaliation:scene/v1",
+  "steps": [
+    {
+      "actors": [
+        "surveyor",
+        "player"
+      ],
+      "data": {
+        "actor": "surveyor",
+        "target_actor": "player"
+      },
+      "failure_step": "failed",
+      "id": "face_explorer",
+      "next": "read_the_mark",
+      "type": "villagerretaliation:face_actor"
+    },
+    {
+      "actors": [
+        "surveyor"
+      ],
+      "data": {
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20,
+        "text": {
+          "key": "#scene.trial_chamber_briefing.step.read_the_mark.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "read_the_mark",
+      "next": "check_the_map",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "data": {
+        "ticks": 40
+      },
+      "id": "check_the_map",
+      "next": "name_the_proof",
+      "type": "villagerretaliation:wait_ticks"
+    },
+    {
+      "actors": [
+        "surveyor"
+      ],
+      "data": {
+        "text": {
+          "key": "#scene.trial_chamber_briefing.step.name_the_proof.data.text"
+        }
+      },
+      "failure_step": "failed",
+      "id": "name_the_proof",
+      "next": "completed",
+      "type": "villagerretaliation:dialogue"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ],
+  "timeout_ticks": 1200
+}

@@ -26,6 +26,26 @@ side="BOTH"
 
 ${neoforge_owo_dependency}
 
+${neoforge_architectury_dependency}
+
+${neoforge_emi_dependency}
+
+${neoforge_jei_dependency}
+
+${neoforge_rei_dependency}
+
+[[dependencies."${mod_id}"]]
+modId="curios"
+type="optional"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies."${mod_id}"]]
+modId="accessories"
+type="optional"
+ordering="AFTER"
+side="BOTH"
+
 ${neoforge_toucanlib_dependency}
 
 [[dependencies."${mod_id}"]]
@@ -39,6 +59,19 @@ modId="entity_texture_features"
 type="optional"
 ordering="NONE"
 side="CLIENT"
+
+[[dependencies."${mod_id}"]]
+modId="secondwind"
+type="optional"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies."${mod_id}"]]
+modId="mebahelrpgrquest"
+type="incompatible"
+reason="Mebahel's slop is incompatible with Villager Retaliation."
+ordering="NONE"
+side="BOTH"
 
 [[dependencies."${mod_id}"]]
 modId="minecraft"

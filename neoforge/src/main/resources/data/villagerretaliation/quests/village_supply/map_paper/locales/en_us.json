@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.map_paper.description": {
+      "lines": [
+        "Bring paper so village records, maps, and warnings can stay current."
+      ]
+    },
+    "quest.village_supply.map_paper.dialogue.already_completed": {
+      "lines": [
+        "Leave the old tally alone. We already settled Map Paper.",
+        "That chapter is closed. The map desk has the paper you brought.",
+        "The matter ended well enough. I counted your 24 paper. We are square.",
+        "That chapter is closed. The cartographers already put that delivery to work.",
+        "You finished what I asked. You solved the problem of maps crowded into their margins.",
+        "Nothing remains to be earned from this. There is no reason to gather another load of paper.",
+        "I will not reopen a finished account. Map Paper is crossed off the paper work list.",
+        "That chapter is closed. Your part in helping us copy routes and public warnings is finished.",
+        "The matter ended well enough. The last paper batch is still serving the village.",
+        "You finished what I asked. I remember who filled the paper order, and it was you.",
+        "What was owed has been paid. The reward was paid when the paper delivery came in.",
+        "Nothing remains to be earned from this. You did enough the first time. I will leave the old entry filed under Map Paper.",
+        "Nothing remains to be earned from this. We can keep records current because you answered Map Paper.",
+        "That chapter is closed. The full paper count reached the map desk. Nothing is missing.",
+        "You finished what I asked. The cartographers would object if I asked you twice.",
+        "We settled this one already. Your paper delivery passed inspection and went into use.",
+        "That chapter is closed. That empty spot in the map desk belongs to yesterday.",
+        "Your earlier work still stands. The record shows 24 paper received from you.",
+        "We settled this one already. You did the quiet paper work that keeps everyone going.",
+        "What was owed has been paid. The first ending was good enough for Map Paper."
+      ]
+    },
+    "quest.village_supply.map_paper.dialogue.inactive": {
+      "lines": [
+        "We have no need of it yet. The <gradient:aqua:green>map</gradient> desk is not taking paper right now.",
+        "We have no need of it yet. There is no open order for paper today.",
+        "The village can wait on this one. The map desk is being counted before I ask for more.",
+        "I am keeping this off the board. The cartographers have not posted a fresh request.",
+        "There is no reason to begin yet. Hold off on the paper. We have nowhere useful to put it.",
+        "There is no reason to begin yet. The need to copy routes and public warnings will return, but not today.",
+        "The board can wait. I am waiting for the next tally before opening Map Paper.",
+        "The village can wait on this one. Bringing 24 paper now would crowd the stores.",
+        "Not today. The last paper batch has not been used up yet.",
+        "We have no need of it yet. Ask again after the cartographers check what remains.",
+        "Not today. I will not invent an urgent need for paper.",
+        "The village can wait on this one. The map desk is quiet, so this can wait.",
+        "I will post it when it matters. We are between work orders for paper.",
+        "The board can wait. Nothing is wrong at the map desk. The timing is simply off.",
+        "Leave that work alone for now. Save your effort until we actually need paper.",
+        "We have no need of it yet. The board has no current mark beside Map Paper.",
+        "We have no need of it yet. Today is not the day for another paper run.",
+        "Ask me after the stores change. Once maps crowded into their margins becomes a concern, I will reopen this.",
+        "There is no reason to begin yet. I would rather delay than waste good paper.",
+        "The board can wait. Wait for the stores to change before asking me about Map Paper."
+      ]
+    },
+    "quest.village_supply.map_paper.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current paper order. Ask again after the map desk has been checked.",
+        "The map desk tally is missing, so I will not ask you to gather paper yet.",
+        "No one has confirmed how much paper the map desk needs today.",
+        "The work note is incomplete. Let me settle the paper count first.",
+        "I will not send you after paper until the village confirms the order.",
+        "The map desk has not posted a trustworthy paper count.",
+        "I checked the work slate twice; the paper request is not ready.",
+        "This order can wait until I have a current paper tally.",
+        "Someone needs to check the map desk before I hand you this order.",
+        "The village has not agreed on the paper count yet.",
+        "I have an old paper tally and no current one.",
+        "The map desk may need paper, but I will not turn a guess into work.",
+        "Come back after the map desk finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the map desk tally.",
+        "Let me confirm who needs the paper before you start gathering.",
+        "No work yet. The village has not approved this paper request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the paper order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.map_paper.dialogue.missing_proof": {
+      "lines": [
+        "Show me what came back with you. Bring the paper before I copy the records.",
+        "The last requirement is still missing. I need the paper here before I sign this off.",
+        "Show me what came back with you. A promise does not fill the map desk. Bring the paper delivery.",
+        "I believe you went, but that is not enough. You may have gathered it, but the cartographers have not received it.",
+        "A story cannot close the ledger. Set the 24 paper down here and I can close the paper order.",
+        "I believe you went, but that is not enough. Handing over the paper is the proof on this supply job.",
+        "Show me what came back with you. I cannot inspect clean sheets without mystery stains while your hands are empty.",
+        "A story cannot close the ledger. Your report sounds fine. I still need the actual paper.",
+        "Bring back something the village can verify. Nothing has reached the map desk yet.",
+        "I cannot sign off on an empty return. Bring what you collected before we discuss the Map Paper reward.",
+        "The last requirement is still missing. The map desk needs usable paper, not a story about it.",
+        "The proof has to reach my hands. I will count the paper as soon as you place it here.",
+        "You returned without the one thing I asked for. Do not leave the paper delivery in another chest.",
+        "The evidence still matters. The cartographers are waiting on the paper bundle itself.",
+        "Your word is not the missing piece. The last step is simple. Hand over the paper.",
+        "The last requirement is still missing. I cannot copy routes and public warnings with an empty counter.",
+        "Bring back something the village can verify. Come back carrying the paper order, and we will be done.",
+        "What you carried home decides this. The paper work counts once the map desk receives it.",
+        "A story cannot close the ledger. You are one handoff away from finishing Map Paper.",
+        "A story cannot close the ledger. Let me see the paper before I call this complete."
+      ]
+    },
+    "quest.village_supply.map_paper.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the paper.",
+        "I counted twice; the full order of 24 sheets of paper is not here yet.",
+        "This helps, but the map desk still needs the remaining paper.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 24 sheets of paper; the pile is still short.",
+        "Bring the missing paper, and then I can settle the order.",
+        "The map desk has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The map desk is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 24 sheets of paper.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the map desk short.",
+        "The order stays open until all 24 sheets of paper are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The map desk is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.map_paper.dialogue.reminder": {
+      "lines": [
+        "Remember what the village is waiting for. Twenty-four paper. Clean sheets, if possible. Mystery stains become official history.",
+        "The job still has loose ends. I am still waiting on 24 paper for the map desk.",
+        "Remember what the village is waiting for. Look for clean sheets without mystery stains. Bad supplies only move the problem.",
+        "Hold to the instructions I gave you. The cartographers need those paper to copy routes and public warnings.",
+        "Remember what the village is waiting for. The count is 24 paper. Check it before returning.",
+        "Before you leave, hear this again. This paper delivery means we can keep records current.",
+        "Before you leave, hear this again. If you are choosing between loads, bring the paper first.",
+        "The job still has loose ends. Keep the paper order together so the paper tally stays easy.",
+        "Keep the whole task in mind. The map desk has space waiting for the full bundle.",
+        "You are not finished yet. Do not let a simple request turn into maps crowded into their margins.",
+        "Bring this to a proper finish. There is no hidden part to Map Paper. Bring the agreed paper count.",
+        "Bring this to a proper finish. Handle it carefully. I want clean sheets without mystery stains.",
+        "The next step still matters. Bring all the paper at once if you can manage it.",
+        "The job still has loose ends. The cartographers are planning their next work around your return.",
+        "Stay with the work you accepted. I wrote 24 paper on the paper slate so neither of us has to guess.",
+        "Before you leave, hear this again. The sooner this arrive, the sooner we can copy routes and public warnings.",
+        "Before you leave, hear this again. Nothing else is missing from the paper order.",
+        "You are not finished yet. Return when the paper is ready to hand over.",
+        "Do not lose the thread now. You know how many paper the map desk needs. The rest is gathering.",
+        "Remember what the village is waiting for. A complete paper bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.map_paper.dialogue.start": {
+      "lines": [
+        "I have a difficult request. Bring 24 paper. Nothing heroic, unless you have seen what happens when records go missing.",
+        "Take the task only if you are ready. The paper order needs 24 paper. Can you handle that?",
+        "Listen closely. The cartographers are trying to copy routes and public warnings, and supplies are thin.",
+        "There is a reason I chose you. Bring me 24 paper. I want clean sheets without mystery stains.",
+        "Listen closely. I have a plain job with a useful result. Find 24 paper.",
+        "I need you to see this through. We can keep records current if you fill the paper order.",
+        "Take this seriously. Maps crowded into their margins is a small problem until everyone needs the same thing.",
+        "Take this seriously. The count on the paper slate is 24 paper.",
+        "There is a reason I chose you. Gather the paper and bring the whole delivery here.",
+        "Let us be clear about the job. Stocking the map desk is not glory, but it matters.",
+        "Here is the work. The cartographers asked me to find someone reliable for this run.",
+        "Before you agree, hear all of it. I need a clean delivery for the map desk.",
+        "Listen closely. If you can spare the time, 24 paper would settle the paper shortage.",
+        "Before you agree, hear all of it. The need is real, which makes the instructions for Map Paper simple.",
+        "I have a difficult request. Bring the paper when you have the complete count.",
+        "Let us be clear about the job. Good paper will let us copy routes and public warnings.",
+        "There is a reason I chose you. The village should not reach maps crowded into their margins before we act.",
+        "Take the task only if you are ready. Take care with the paper bundle. We need clean sheets without mystery stains.",
+        "I have a difficult request. I will pay when the map desk receives the full order.",
+        "Here is the work. Find 24 paper, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.map_paper.dialogue.turn_in": {
+      "lines": [
+        "You brought the work to a proper end. Good paper. The kind that makes a warning look worth reading.",
+        "You saw it through. The count is right. I will get this to the map desk.",
+        "That settles what I asked of you. The cartographers can copy routes and public warnings now.",
+        "I am glad to see you home. This is clean sheets without mystery stains. You chose well.",
+        "Good, you made it back. That delivery keeps us from maps crowded into their margins.",
+        "That is the result I needed. Good work. All the paper arrived together.",
+        "Good, you made it back. I have your paper, and you earned the Map Paper reward.",
+        "The hard part is behind us. The map desk looks less bare already.",
+        "Good, you made it back. This will help us keep records current.",
+        "Now I can close the ledger. You saved the cartographers from making do with scraps.",
+        "That is the result I needed. Everything on the paper slate is here.",
+        "You delivered exactly what was needed. A useful paper job, done without fuss. Thank you.",
+        "The village can use this. I will put the paper away before someone borrows it.",
+        "This return was worth waiting for. The village is better stocked because you completed Map Paper.",
+        "You delivered exactly what was needed. You brought exactly the paper I asked for.",
+        "This return was worth waiting for. The paper delivery is sound from top to bottom.",
+        "That settles what I asked of you. The map desk has one less shortage waiting to surprise us.",
+        "That is the result I needed. The village may not cheer for paper, but it would notice their absence.",
+        "That is the result I needed. Take your payment. The paper count gives me no complaint.",
+        "You saw it through. I can hand the paper order to the cartographers with confidence."
+      ]
+    },
+    "quest.village_supply.map_paper.dialogue.unavailable": {
+      "lines": [
+        "I cannot trust you with this yet. The paper request is closed for now.",
+        "This calls for someone we know better. I cannot hand you the work filed under Map Paper yet.",
+        "Earn our confidence before asking again. The paper order is for someone the map desk already knows.",
+        "I cannot trust you with this yet. The cartographers need a delivery they can count on.",
+        "This calls for someone we know better. Show the village steadier work before taking Map Paper.",
+        "You are not ready for this request. The paper matters too much to gamble on a stranger.",
+        "Come back after you have earned more trust. I am not opening the paper slate to you today.",
+        "Earn our confidence before asking again. Build some trust, then ask about Map Paper again.",
+        "You are not ready for this request. I need someone who will return with the whole 24 paper.",
+        "Come back after you have earned more trust. Gathering paper is simple, but reliability is not optional.",
+        "Earn our confidence before asking again. For now, the paper order stays with regular hands.",
+        "This work is not yours today. I cannot promise the map desk a delivery from you yet.",
+        "The village needs a steadier hand. There will be other work before we trust you with the map desk.",
+        "I cannot trust you with this yet. The village has not cleared you for this paper run.",
+        "I need proof of your judgment first. I would rather wait than risk maps crowded into their margins.",
+        "I cannot trust you with this yet. This is not punishment. Show better judgment before I open Map Paper.",
+        "Come back after you have earned more trust. The cartographers asked for a familiar runner this time.",
+        "The village needs a steadier hand. Come back for the paper order after your name carries more weight.",
+        "Some work must wait until trust catches up. I am not taking new help for Map Paper.",
+        "Earn our confidence before asking again. Earn some confidence here, and we can revisit Map Paper."
+      ]
+    },
+    "quest.village_supply.map_paper.objective.bring_paper.complete_text": {
+      "lines": [
+        "The paper stack is ready."
+      ]
+    },
+    "quest.village_supply.map_paper.objective.bring_paper.text": {
+      "lines": [
+        "Bring 24 paper for village notes and maps."
+      ]
+    },
+    "quest.village_supply.map_paper.stage.return.dialogue.turn_in.label": "About Map Paper",
+    "quest.village_supply.map_paper.stage.return.dialogue.turn_in.lines": [
+      "Clean paper and square edges. The next map has somewhere to begin.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.map_paper.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.map_paper.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.map_paper.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Clean paper and square edges. The next map has somewhere to begin.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.map_paper.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.map_paper.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.map_paper.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.map_paper.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Map Paper is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.map_paper.stage.return.scene.turn_in_wait.lines": [
+      "Bring 24 paper for the cartography table",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.map_paper.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.map_paper.stage.work.dialogue.offer.label": "Map Paper",
+    "quest.village_supply.map_paper.stage.work.dialogue.offer.lines": [
+      "There are more roads to draw than sheets left in the drawer.",
+      "Bring 24 paper for the cartography table, and the shelves will look less worried.",
+      "Bring 24 paper for the cartography table. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.map_paper.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.map_paper.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.map_paper.stage.work.dialogue.reminder.label": "About Map Paper",
+    "quest.village_supply.map_paper.stage.work.dialogue.reminder.lines": [
+      "Bring 24 paper for the cartography table",
+      "Bring 24 paper for the cartography table.",
+      "Bring 24 paper for the cartography table, and the shelves will look less worried."
+    ],
+    "quest.village_supply.map_paper.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.map_paper.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.map_paper.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.map_paper.stage.work.scene.abandon_confirm.lines": [
+      "Put Map Paper aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.map_paper.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.map_paper.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Map Paper is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.leave.lines": [
+      "Bring 24 paper for the cartography table",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 24 paper for the cartography table",
+      "Bring 24 paper for the cartography table.",
+      "Bring 24 paper for the cartography table, and the shelves will look less worried."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Map Paper is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Map Paper is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 24 paper for the cartography table. Keep the full count together on the road back.",
+      "Bring 24 paper for the cartography table.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.map_paper.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Map Paper is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.map_paper.stage.work.ui.tracker_text": "Bring 24 paper for the cartography table.",
+    "quest.village_supply.map_paper.title": {
+      "lines": [
+        "Map Paper"
+      ]
+    },
+    "quest.village_supply.map_paper.tracker.proof.text": {
+      "lines": [
+        "Bring 24 paper for village notes and maps."
+      ]
+    },
+    "quest.village_supply.map_paper.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the paper."
+      ]
+    },
+    "quest.village_supply.map_paper.tracker.title": {
+      "lines": [
+        "Map Paper"
+      ]
+    }
+  }
+}

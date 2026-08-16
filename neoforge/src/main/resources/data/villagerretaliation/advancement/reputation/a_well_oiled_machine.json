@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/full_employment",
+  "display": {
+    "icon": {
+      "id": "villagerretaliation:clipboard"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.a_well_oiled_machine.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.a_well_oiled_machine.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

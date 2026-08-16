@@ -6,17 +6,26 @@
     ],
     "topic": "trade_refresh"
   },
+  "message_prefix": "forced.trade_refresh",
   "entries": [
     {
+      "id": "trade_refresh.available_options",
+      "message_prefix": "forced.trade_refresh.available_options",
+      "trigger": "trade_refresh",
+      "line": "Trade refresh available option set.",
+      "requires_line_of_sight": false,
+      "force_camera_towards_villager": true,
       "options": [
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.trade.royalty",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "royalty"
           ],
+          "end_conversation": false,
           "responses": [
             "Of course. I kept the counter ready for you.",
             "Back to trade, then. I will make the numbers behave.",
@@ -26,12 +35,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.trade.revered",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "revered"
           ],
+          "end_conversation": false,
           "responses": [
             "Gladly. I trust you to know what you are after.",
             "Back to business. I will keep the good offers in reach.",
@@ -41,12 +52,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.trade.respected",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "respected"
           ],
+          "end_conversation": false,
           "responses": [
             "Right. Back to the counter with someone sensible.",
             "Of course. Your business is worth keeping orderly.",
@@ -56,12 +69,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.trade.trusted",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "trusted"
           ],
+          "end_conversation": false,
           "responses": [
             "Sure. You have earned a straightforward deal.",
             "Back to trade, then. I know you will be fair about it.",
@@ -71,12 +86,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.trade.neutral",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "neutral"
           ],
+          "end_conversation": false,
           "responses": [
             "Right. Back to the counter, then.",
             "Of course. Let us keep this simple.",
@@ -86,12 +103,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.trade.suspicious",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "suspicious"
           ],
+          "end_conversation": false,
           "responses": [
             "Trade, yes. I will be <pulse>watching</pulse> the counts closely.",
             "Fine. The counter is open, but my eyes are too.",
@@ -101,12 +120,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.trade.hostile",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "hostile"
           ],
+          "end_conversation": false,
           "responses": [
             "Trade if you must. <bold>Touch only what you pay for.</bold>",
             "Fine. Quick deals, clear hands, no nonsense.",
@@ -116,12 +137,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.trade.despised",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "despised"
           ],
+          "end_conversation": false,
           "responses": [
             "Trade. Briefly. <bold>Do not make this worse.</bold>",
             "Fine. Buy, sell, and step back from my counter.",
@@ -131,12 +154,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.trade.feared",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "feared"
           ],
+          "end_conversation": false,
           "responses": [
             "Trade, then. I would rather finish quickly.",
             "Fine. I will keep the counter between us.",
@@ -146,12 +171,14 @@
         },
         {
           "id": "trade_refresh.thanks",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.thanks.royalty",
           "label": "Thanks!",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.thanks.label",
           "order": 1,
-          "end_conversation": true,
           "reputation_levels": [
             "royalty"
           ],
+          "end_conversation": true,
           "responses": [
             "You are welcome. I will make sure tomorrow's offer is worthy.",
             "For you, it is no trouble. I will look properly.",
@@ -161,12 +188,14 @@
         },
         {
           "id": "trade_refresh.thanks",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.thanks.revered",
           "label": "Thanks!",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.thanks.label",
           "order": 1,
-          "end_conversation": true,
           "reputation_levels": [
             "revered"
           ],
+          "end_conversation": true,
           "responses": [
             "You are welcome. I will put real care into it.",
             "Gladly. You have done enough for me to look twice.",
@@ -176,12 +205,14 @@
         },
         {
           "id": "trade_refresh.thanks",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.thanks.respected",
           "label": "Thanks!",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.thanks.label",
           "order": 1,
-          "end_conversation": true,
           "reputation_levels": [
             "respected"
           ],
+          "end_conversation": true,
           "responses": [
             "You are welcome. I will see what I can find.",
             "I appreciate that. I will make the effort worthwhile.",
@@ -191,12 +222,14 @@
         },
         {
           "id": "trade_refresh.thanks",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.thanks.trusted",
           "label": "Thanks!",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.thanks.label",
           "order": 1,
-          "end_conversation": true,
           "reputation_levels": [
             "trusted"
           ],
+          "end_conversation": true,
           "responses": [
             "You are welcome. Give me a day to sort it out.",
             "Thanks noted. I will look into the stock properly.",
@@ -206,12 +239,14 @@
         },
         {
           "id": "trade_refresh.thanks",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.thanks.neutral",
           "label": "Thanks!",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.thanks.label",
           "order": 1,
-          "end_conversation": true,
           "reputation_levels": [
             "neutral"
           ],
+          "end_conversation": true,
           "responses": [
             "You are welcome. A little patience keeps the shelves sensible.",
             "Do not thank me yet. Tomorrow decides whether I was clever.",
@@ -221,12 +256,14 @@
         },
         {
           "id": "trade_refresh.thanks",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.thanks.suspicious",
           "label": "Thanks!",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.thanks.label",
           "order": 1,
-          "end_conversation": true,
           "reputation_levels": [
             "suspicious"
           ],
+          "end_conversation": true,
           "responses": [
             "You are welcome, I suppose. I will still check the stock carefully.",
             "Thanks are easy. Come back tomorrow and we will see.",
@@ -236,12 +273,14 @@
         },
         {
           "id": "trade_refresh.thanks",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.thanks.hostile",
           "label": "Thanks!",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.thanks.label",
           "order": 1,
-          "end_conversation": true,
           "reputation_levels": [
             "hostile"
           ],
+          "end_conversation": true,
           "responses": [
             "You are welcome. That does not make us friendly.",
             "Fine. I will look into it because I said I would.",
@@ -251,12 +290,14 @@
         },
         {
           "id": "trade_refresh.thanks",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.thanks.despised",
           "label": "Thanks!",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.thanks.label",
           "order": 1,
-          "end_conversation": true,
           "reputation_levels": [
             "despised"
           ],
+          "end_conversation": true,
           "responses": [
             "Your thanks are unexpected. I will still handle the request.",
             "Fine. Gratitude received, though trust is not included.",
@@ -266,12 +307,14 @@
         },
         {
           "id": "trade_refresh.thanks",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.thanks.feared",
           "label": "Thanks!",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.thanks.label",
           "order": 1,
-          "end_conversation": true,
           "reputation_levels": [
             "feared"
           ],
+          "end_conversation": true,
           "responses": [
             "You are welcome. I will take care of it.",
             "I understand. I will have an answer tomorrow.",
@@ -281,12 +324,14 @@
         },
         {
           "id": "trade_refresh.why_so_long",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.royalty",
           "label": "Why so long?",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.label",
           "order": 2,
-          "end_conversation": false,
           "reputation_levels": [
             "royalty"
           ],
+          "end_conversation": false,
           "responses": [
             "Because a worthy replacement deserves more than a hurried rummage.",
             "I need a day to find something that matches your standing.",
@@ -296,12 +341,14 @@
         },
         {
           "id": "trade_refresh.why_so_long",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.revered",
           "label": "Why so long?",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.label",
           "order": 2,
-          "end_conversation": false,
           "reputation_levels": [
             "revered"
           ],
+          "end_conversation": false,
           "responses": [
             "Because I would rather not waste your time with a careless swap.",
             "A day lets me check stock, prices, and whether the trade is actually better.",
@@ -311,12 +358,14 @@
         },
         {
           "id": "trade_refresh.why_so_long",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.respected",
           "label": "Why so long?",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.label",
           "order": 2,
-          "end_conversation": false,
           "reputation_levels": [
             "respected"
           ],
+          "end_conversation": false,
           "responses": [
             "Because I need to make sure the replacement is worth offering.",
             "A day gives me time to check supply without overpromising.",
@@ -326,12 +375,14 @@
         },
         {
           "id": "trade_refresh.why_so_long",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.trusted",
           "label": "Why so long?",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.label",
           "order": 2,
-          "end_conversation": false,
           "reputation_levels": [
             "trusted"
           ],
+          "end_conversation": false,
           "responses": [
             "Because I have to check the shelves and the numbers first.",
             "A day is enough time to find something fair instead of guessing.",
@@ -341,12 +392,14 @@
         },
         {
           "id": "trade_refresh.why_so_long",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.neutral",
           "label": "Why so long?",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.label",
           "order": 2,
-          "end_conversation": false,
           "reputation_levels": [
             "neutral"
           ],
+          "end_conversation": false,
           "responses": [
             "Because good stock does not appear just because you ask for it.",
             "I have to check supplies, prices, and whether the swap makes sense.",
@@ -356,12 +409,14 @@
         },
         {
           "id": "trade_refresh.why_so_long",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.suspicious",
           "label": "Why so long?",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.label",
           "order": 2,
-          "end_conversation": false,
           "reputation_levels": [
             "suspicious"
           ],
+          "end_conversation": false,
           "responses": [
             "Because I am not rushing my stock for someone I still have questions about.",
             "I need time to check the shelves and the ledger twice.",
@@ -371,12 +426,14 @@
         },
         {
           "id": "trade_refresh.why_so_long",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.hostile",
           "label": "Why so long?",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.label",
           "order": 2,
-          "end_conversation": false,
           "reputation_levels": [
             "hostile"
           ],
+          "end_conversation": false,
           "responses": [
             "Because I am not scrambling through my stock for you on command.",
             "I need time to check what I can spare without regretting it.",
@@ -386,12 +443,14 @@
         },
         {
           "id": "trade_refresh.why_so_long",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.despised",
           "label": "Why so long?",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.label",
           "order": 2,
-          "end_conversation": false,
           "reputation_levels": [
             "despised"
           ],
+          "end_conversation": false,
           "responses": [
             "Because I will not turn my trade list inside out for you in one breath.",
             "I need time to decide what I can offer without handing you leverage.",
@@ -401,12 +460,14 @@
         },
         {
           "id": "trade_refresh.why_so_long",
+          "message_prefix": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.feared",
           "label": "Why so long?",
+          "label_key": "forced.trade_refresh.available_options.option.trade_refresh.why_so_long.label",
           "order": 2,
-          "end_conversation": false,
           "reputation_levels": [
             "feared"
           ],
+          "end_conversation": false,
           "responses": [
             "Because I need time to find it safely and correctly.",
             "A day lets me prepare without mistakes.",
@@ -416,12 +477,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.available_options.option.leave.royalty",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.available_options.option.leave.label",
           "order": 3,
-          "end_conversation": true,
           "reputation_levels": [
             "royalty"
           ],
+          "end_conversation": true,
           "responses": [
             "Leaving already? I will pretend that was regal efficiency.",
             "Of course. Ask a favor, vanish with dignity. Very impressive.",
@@ -432,12 +495,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.available_options.option.leave.revered",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.available_options.option.leave.label",
           "order": 3,
-          "end_conversation": true,
           "reputation_levels": [
             "revered"
           ],
+          "end_conversation": true,
           "responses": [
             "Leaving so soon? I will count that as mysterious wisdom.",
             "You ask, I agree, and you drift away. Very inspiring.",
@@ -448,12 +513,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.available_options.option.leave.respected",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.available_options.option.leave.label",
           "order": 3,
-          "end_conversation": true,
           "reputation_levels": [
             "respected"
           ],
+          "end_conversation": true,
           "responses": [
             "No reply after a favor? I expected slightly better manners from you.",
             "Fine, go. I will add graceful exits to your list of skills.",
@@ -464,12 +531,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.available_options.option.leave.trusted",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.available_options.option.leave.label",
           "order": 3,
-          "end_conversation": true,
           "reputation_levels": [
             "trusted"
           ],
+          "end_conversation": true,
           "responses": [
             "Leaving already? I will trust that was meant politely.",
             "You could say thanks, but apparently mystery is faster.",
@@ -480,12 +549,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.available_options.option.leave.neutral",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.available_options.option.leave.label",
           "order": 3,
-          "end_conversation": true,
           "reputation_levels": [
             "neutral"
           ],
+          "end_conversation": true,
           "responses": [
             "Ah, the silent gratitude of a satisfied customer. Inspiring.",
             "You ask me to improve my stock, then walk off. Very warm. Very personal.",
@@ -496,12 +567,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.available_options.option.leave.suspicious",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.available_options.option.leave.label",
           "order": 3,
-          "end_conversation": true,
           "reputation_levels": [
             "suspicious"
           ],
+          "end_conversation": true,
           "responses": [
             "Leaving without a word. That does fit the pattern.",
             "Fine. Ask for a favor, then disappear before I count the shelves.",
@@ -512,12 +585,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.available_options.option.leave.hostile",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.available_options.option.leave.label",
           "order": 3,
-          "end_conversation": true,
           "reputation_levels": [
             "hostile"
           ],
+          "end_conversation": true,
           "responses": [
             "Good. Silence is one of your better contributions.",
             "Ask a favor, leave without answering. Somehow still on brand.",
@@ -528,12 +603,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.available_options.option.leave.despised",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.available_options.option.leave.label",
           "order": 3,
-          "end_conversation": true,
           "reputation_levels": [
             "despised"
           ],
+          "end_conversation": true,
           "responses": [
             "Leaving? That may be the kindest thing you have done today.",
             "Ask for help, then offer silence. A perfect little summary.",
@@ -544,12 +621,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.available_options.option.leave.feared",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.available_options.option.leave.label",
           "order": 3,
-          "end_conversation": true,
           "reputation_levels": [
             "feared"
           ],
+          "end_conversation": true,
           "responses": [
             "Leaving now is fine. I can work better with distance.",
             "No answer needed. I will take the quiet.",
@@ -558,23 +637,26 @@
             "Very well. I will finish the request while things stay calm."
           ]
         }
-      ],
-      "force_camera_towards_villager": true,
-      "id": "trade_refresh.available_options",
-      "line": "Trade refresh available option set.",
-      "requires_line_of_sight": false,
-      "trigger": "trade_refresh"
+      ]
     },
     {
+      "id": "trade_refresh.unavailable_options",
+      "message_prefix": "forced.trade_refresh.unavailable_options",
+      "trigger": "trade_refresh",
+      "line": "Trade refresh unavailable option set.",
+      "requires_line_of_sight": false,
+      "force_camera_towards_villager": true,
       "options": [
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.royalty",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "royalty"
           ],
+          "end_conversation": false,
           "responses": [
             "The better trade is not ready, but the counter is yours.",
             "I cannot improve that one yet. The current offers remain at your service.",
@@ -584,12 +666,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.revered",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "revered"
           ],
+          "end_conversation": false,
           "responses": [
             "I cannot improve that trade yet, but I will gladly trade what I can.",
             "Back to business, then. I wish I had better news for you.",
@@ -599,12 +683,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.respected",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "respected"
           ],
+          "end_conversation": false,
           "responses": [
             "That much I can do. The current offers are still fair.",
             "I cannot improve that one yet, but the counter is open.",
@@ -614,12 +700,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.trusted",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "trusted"
           ],
+          "end_conversation": false,
           "responses": [
             "We can still trade. I just cannot make that one better yet.",
             "Of course. The offers I know are still on the counter.",
@@ -629,12 +717,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.neutral",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "neutral"
           ],
+          "end_conversation": false,
           "responses": [
             "That much I can still do. The current offers are on the counter.",
             "Of course. I cannot improve that one yet, but we can still trade.",
@@ -644,12 +734,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.suspicious",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "suspicious"
           ],
+          "end_conversation": false,
           "responses": [
             "We can trade. The offer stays as it is, and so does my caution.",
             "Fine. Current stock only, counted carefully.",
@@ -659,12 +751,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.hostile",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "hostile"
           ],
+          "end_conversation": false,
           "responses": [
             "Trade, if that is all. The list will not improve for you today.",
             "Fine. Current offers only, and quickly.",
@@ -674,12 +768,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.despised",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "despised"
           ],
+          "end_conversation": false,
           "responses": [
             "Trade if you must. I have nothing better for you.",
             "The current offers stand. That is all you get today.",
@@ -689,12 +785,14 @@
         },
         {
           "id": "trade_refresh.trade",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.feared",
           "label": "Trade",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.trade.label",
           "order": 0,
-          "end_conversation": false,
           "reputation_levels": [
             "feared"
           ],
+          "end_conversation": false,
           "responses": [
             "We can trade what is listed. I cannot offer more yet.",
             "Fine. The current offers are available.",
@@ -704,12 +802,14 @@
         },
         {
           "id": "trade_refresh.requirements",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.royalty",
           "label": "What do you need?",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.label",
           "order": 1,
-          "end_conversation": false,
           "reputation_levels": [
             "royalty"
           ],
+          "end_conversation": false,
           "responses": [
             "More mastery, rarer supply, and a little time to source it properly.",
             "I need the skill to make the replacement worthy of your attention.",
@@ -719,12 +819,14 @@
         },
         {
           "id": "trade_refresh.requirements",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.revered",
           "label": "What do you need?",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.label",
           "order": 1,
-          "end_conversation": false,
           "reputation_levels": [
             "revered"
           ],
+          "end_conversation": false,
           "responses": [
             "More practice and better stock. I will not hand you a weak replacement.",
             "I need to learn the route, supplier, or craft before I can offer it honestly.",
@@ -734,12 +836,14 @@
         },
         {
           "id": "trade_refresh.requirements",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.respected",
           "label": "What do you need?",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.label",
           "order": 1,
-          "end_conversation": false,
           "reputation_levels": [
             "respected"
           ],
+          "end_conversation": false,
           "responses": [
             "More skill, better supply, or both. You deserve the real answer.",
             "I need enough experience to offer it without guessing.",
@@ -749,12 +853,14 @@
         },
         {
           "id": "trade_refresh.requirements",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.trusted",
           "label": "What do you need?",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.label",
           "order": 1,
-          "end_conversation": false,
           "reputation_levels": [
             "trusted"
           ],
+          "end_conversation": false,
           "responses": [
             "I need more experience before I can promise a better option.",
             "More trades, more practice, and maybe a better supplier.",
@@ -764,12 +870,14 @@
         },
         {
           "id": "trade_refresh.requirements",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.neutral",
           "label": "What do you need?",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.label",
           "order": 1,
-          "end_conversation": false,
           "reputation_levels": [
             "neutral"
           ],
+          "end_conversation": false,
           "responses": [
             "More skill, better supply, or both. A trade is only useful if I can stand behind it.",
             "Time and experience. I cannot offer goods I do not know how to source properly.",
@@ -779,12 +887,14 @@
         },
         {
           "id": "trade_refresh.requirements",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.suspicious",
           "label": "What do you need?",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.label",
           "order": 1,
-          "end_conversation": false,
           "reputation_levels": [
             "suspicious"
           ],
+          "end_conversation": false,
           "responses": [
             "I need more skill, and frankly more reason to hurry for you.",
             "Better supply would help. So would a little trust.",
@@ -794,12 +904,14 @@
         },
         {
           "id": "trade_refresh.requirements",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.hostile",
           "label": "What do you need?",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.label",
           "order": 1,
-          "end_conversation": false,
           "reputation_levels": [
             "hostile"
           ],
+          "end_conversation": false,
           "responses": [
             "I need skill, stock, and a reason to spend either on you.",
             "More experience. I am not risking a weak replacement for a hostile customer.",
@@ -809,12 +921,14 @@
         },
         {
           "id": "trade_refresh.requirements",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.despised",
           "label": "What do you need?",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.label",
           "order": 1,
-          "end_conversation": false,
           "reputation_levels": [
             "despised"
           ],
+          "end_conversation": false,
           "responses": [
             "I need more skill, and you need far more patience.",
             "Better stock is not the problem I am eager to solve for you.",
@@ -824,12 +938,14 @@
         },
         {
           "id": "trade_refresh.requirements",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.feared",
           "label": "What do you need?",
+          "label_key": "forced.trade_refresh.unavailable_options.option.trade_refresh.requirements.label",
           "order": 1,
-          "end_conversation": false,
           "reputation_levels": [
             "feared"
           ],
+          "end_conversation": false,
           "responses": [
             "I need more skill and a safe way to source it.",
             "Better supply would help. I do not have it yet.",
@@ -839,12 +955,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.leave.royalty",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.unavailable_options.option.leave.label",
           "order": 2,
-          "end_conversation": true,
           "reputation_levels": [
             "royalty"
           ],
+          "end_conversation": true,
           "responses": [
             "Come back later, and I will try to have an answer fit for you.",
             "I will keep an eye out. I would rather disappoint you only once.",
@@ -855,12 +973,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.leave.revered",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.unavailable_options.option.leave.label",
           "order": 2,
-          "end_conversation": true,
           "reputation_levels": [
             "revered"
           ],
+          "end_conversation": true,
           "responses": [
             "Come back another day. I will keep looking for a worthy replacement.",
             "Fair enough. I wish I had better stock for you now.",
@@ -871,12 +991,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.leave.respected",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.unavailable_options.option.leave.label",
           "order": 2,
-          "end_conversation": true,
           "reputation_levels": [
             "respected"
           ],
+          "end_conversation": true,
           "responses": [
             "Come back when I have learned enough to make it worth changing.",
             "Fair enough. I will keep an eye out, but no promises today.",
@@ -887,12 +1009,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.leave.trusted",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.unavailable_options.option.leave.label",
           "order": 2,
-          "end_conversation": true,
           "reputation_levels": [
             "trusted"
           ],
+          "end_conversation": true,
           "responses": [
             "Check again later. I will be honest if I learn a better trade.",
             "Fair enough. I need more time before that slot can improve.",
@@ -903,12 +1027,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.leave.neutral",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.unavailable_options.option.leave.label",
           "order": 2,
-          "end_conversation": true,
           "reputation_levels": [
             "neutral"
           ],
+          "end_conversation": true,
           "responses": [
             "Come back when I have learned enough to make that trade worth changing.",
             "Fair enough. I will keep an eye out, but no promises today.",
@@ -919,12 +1045,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.leave.suspicious",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.unavailable_options.option.leave.label",
           "order": 2,
-          "end_conversation": true,
           "reputation_levels": [
             "suspicious"
           ],
+          "end_conversation": true,
           "responses": [
             "Come back later, preferably with cleaner business behind you.",
             "Fine. I will watch the stock and the counter.",
@@ -935,12 +1063,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.leave.hostile",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.unavailable_options.option.leave.label",
           "order": 2,
-          "end_conversation": true,
           "reputation_levels": [
             "hostile"
           ],
+          "end_conversation": true,
           "responses": [
             "Leave, then. Come back only if you can keep this civil.",
             "Fine. I need better stock and less of your mood.",
@@ -951,12 +1081,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.leave.despised",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.unavailable_options.option.leave.label",
           "order": 2,
-          "end_conversation": true,
           "reputation_levels": [
             "despised"
           ],
+          "end_conversation": true,
           "responses": [
             "Leaving is sensible. Try that first next time.",
             "Go on. I have no better trade and little desire to pretend.",
@@ -967,12 +1099,14 @@
         },
         {
           "id": "leave",
+          "message_prefix": "forced.trade_refresh.unavailable_options.option.leave.feared",
           "label": "Leave",
+          "label_key": "forced.trade_refresh.unavailable_options.option.leave.label",
           "order": 2,
-          "end_conversation": true,
           "reputation_levels": [
             "feared"
           ],
+          "end_conversation": true,
           "responses": [
             "Go on. I will check the stock when I can.",
             "Come back later. I may know more by then.",
@@ -981,14 +1115,15 @@
             "Very well. I will keep working quietly until I have a better trade to show you."
           ]
         }
-      ],
-      "force_camera_towards_villager": true,
-      "id": "trade_refresh.unavailable_options",
-      "line": "Trade refresh unavailable option set.",
-      "requires_line_of_sight": false,
-      "trigger": "trade_refresh"
+      ]
     },
     {
+      "id": "trade_refresh.ready_options",
+      "message_prefix": "forced.trade_refresh.ready_options",
+      "trigger": "trade_refresh",
+      "line": "Trade refresh ready option set.",
+      "requires_line_of_sight": false,
+      "force_camera_towards_villager": true,
       "options": [
         {
           "id": "trade_refresh.trade",
@@ -1042,14 +1177,15 @@
             "That is alright. {restocked_summary} can wait on the counter a little longer."
           ]
         }
-      ],
-      "force_camera_towards_villager": true,
-      "id": "trade_refresh.ready_options",
-      "line": "Trade refresh ready option set.",
-      "requires_line_of_sight": false,
-      "trigger": "trade_refresh"
+      ]
     },
     {
+      "id": "trade_refresh.revered_options",
+      "message_prefix": "forced.trade_refresh.revered_options",
+      "trigger": "trade_refresh",
+      "line": "Special order option set.",
+      "requires_line_of_sight": false,
+      "force_camera_towards_villager": true,
       "options": [
         {
           "id": "trade_refresh.surprise_me",
@@ -1095,16 +1231,15 @@
             "Then I will leave the ledger as it is."
           ]
         }
-      ],
-      "force_camera_towards_villager": true,
-      "id": "trade_refresh.revered_options",
-      "line": "Special order option set.",
-      "requires_line_of_sight": false,
-      "trigger": "trade_refresh"
+      ]
     },
     {
-      "force_camera_towards_villager": true,
       "id": "trade_refresh.special_order_select_options",
+      "message_prefix": "forced.trade_refresh.special_order_select_options",
+      "trigger": "trade_refresh",
+      "line": "Special order selection option set.",
+      "requires_line_of_sight": false,
+      "force_camera_towards_villager": true,
       "leave_option": {
         "label": "Never mind",
         "order": 500,
@@ -1114,12 +1249,15 @@
           "Then I will not set anything aside.",
           "No order placed. The counter stays as it was."
         ]
-      },
-      "line": "Special order selection option set.",
-      "requires_line_of_sight": false,
-      "trigger": "trade_refresh"
+      }
     },
     {
+      "id": "trade_refresh.special_order_confirm_options",
+      "message_prefix": "forced.trade_refresh.special_order_confirm_options",
+      "trigger": "trade_refresh",
+      "line": "Special order confirmation option set.",
+      "requires_line_of_sight": false,
+      "force_camera_towards_villager": true,
       "options": [
         {
           "id": "trade_refresh.confirm_special_order",
@@ -1145,16 +1283,15 @@
             "Then I will not reserve anything yet."
           ]
         }
-      ],
-      "force_camera_towards_villager": true,
-      "id": "trade_refresh.special_order_confirm_options",
-      "line": "Special order confirmation option set.",
-      "requires_line_of_sight": false,
-      "trigger": "trade_refresh"
+      ]
     },
     {
-      "force_camera_towards_villager": true,
       "id": "trade_refresh.special_order_status_options",
+      "message_prefix": "forced.trade_refresh.special_order_status_options",
+      "trigger": "trade_refresh",
+      "line": "Special order status option set.",
+      "requires_line_of_sight": false,
+      "force_camera_towards_villager": true,
       "leave_option": {
         "label": "That's all",
         "order": 500,
@@ -1164,10 +1301,7 @@
           "Good. I will keep the orders moving.",
           "Come back when you need the count again."
         ]
-      },
-      "line": "Special order status option set.",
-      "requires_line_of_sight": false,
-      "trigger": "trade_refresh"
+      }
     }
   ]
 }

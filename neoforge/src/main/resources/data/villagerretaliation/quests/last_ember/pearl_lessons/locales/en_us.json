@@ -1,0 +1,68 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.last_ember.pearl_lessons.description": "Begin the Last Ember line by studying ender pearls without treating fear as wisdom.",
+    "quest.last_ember.pearl_lessons.stage.return.dialogue.turn_in.label": "About Pearls",
+    "quest.last_ember.pearl_lessons.stage.return.dialogue.turn_in.lines": [
+      "Pearls and paper. A small start, but every last road begins with a first note."
+    ],
+    "quest.last_ember.pearl_lessons.stage.return.dialogue.turn_in.response.complete.label": "Write the lesson.",
+    "quest.last_ember.pearl_lessons.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.last_ember.pearl_lessons.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good. The first note says this: fear is information, not a master."
+    ],
+    "quest.last_ember.pearl_lessons.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The lesson still needs its pearls and book."
+    ],
+    "quest.last_ember.pearl_lessons.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the materials here before we write anything down."
+    ],
+    "quest.last_ember.pearl_lessons.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "I cannot close the pearl lesson right now."
+    ],
+    "quest.last_ember.pearl_lessons.stage.return.scene.leave.lines": [
+      "The page stays open. Do not let it stare back too long."
+    ],
+    "quest.last_ember.pearl_lessons.stage.return.ui.tracker_text": "Return with the pearl study materials.",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.dialogue.offer.label": "Pearls",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.dialogue.offer.lines": [
+      "Some things make villagers lower their voices because old fear taught them manners.",
+      "Ender pearls are like that. Bring two, and a book. We will study what frightens us without bowing to it."
+    ],
+    "quest.last_ember.pearl_lessons.stage.study_pearls.dialogue.offer.response.accept.label": "I will bring the pearls.",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.dialogue.offer.response.decline.label": "Not yet.",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.dialogue.reminder.label": "About Pearls",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.dialogue.reminder.lines": [
+      "Bring 2 ender pearls and a book. We are making notes, not omens."
+    ],
+    "quest.last_ember.pearl_lessons.stage.study_pearls.dialogue.reminder.response.details.label": "Repeat the lesson.",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.dialogue.reminder.response.leave.label": "I will bring them.",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.objective.bring_book.tracker.complete_text": "The study book is ready.",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.objective.bring_book.tracker.text": "Bring 1 book to keep the first notes.",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.objective.bring_ender_pearls.tracker.complete_text": "The pearls are ready.",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.objective.bring_ender_pearls.tracker.text": "Bring 2 ender pearls for study.",
+    "quest.last_ember.pearl_lessons.stage.study_pearls.scene.decline.lines": [
+      "Good. A lesson about fear should not begin with a dare."
+    ],
+    "quest.last_ember.pearl_lessons.stage.study_pearls.scene.leave.lines": [
+      "Do not throw the pearls unless you are prepared to explain your landing."
+    ],
+    "quest.last_ember.pearl_lessons.stage.study_pearls.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 2 ender pearls and 1 book for the first Last Ember lesson."
+    ],
+    "quest.last_ember.pearl_lessons.stage.study_pearls.scene.reminder_details.action.remind.lines.unavailable": [
+      "The pearl lesson is not counting right now."
+    ],
+    "quest.last_ember.pearl_lessons.stage.study_pearls.scene.start_quest.action.start.lines.already_completed": [
+      "The first pearl lesson is already written down."
+    ],
+    "quest.last_ember.pearl_lessons.stage.study_pearls.scene.start_quest.action.start.lines.started": [
+      "Bring 2 ender pearls and 1 book. Keep your eyes steady if the pearls make the room feel watched."
+    ],
+    "quest.last_ember.pearl_lessons.stage.study_pearls.scene.start_quest.action.start.lines.unavailable": [
+      "This lesson is not ready to open right now."
+    ],
+    "quest.last_ember.pearl_lessons.stage.study_pearls.ui.tracker_text": "Bring 2 ender pearls and 1 book.",
+    "quest.last_ember.pearl_lessons.title": "Pearls"
+  }
+}

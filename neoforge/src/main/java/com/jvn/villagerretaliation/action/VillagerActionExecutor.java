@@ -1,32 +1,46 @@
 package com.jvn.villagerretaliation.action;
 
+import com.mojang.logging.LogUtils;
+import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialoguePlaceholders;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.quest.QuestScopeKey;
+import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.scene.SceneLaunchService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import org.slf4j.Logger;
 
 public final class VillagerActionExecutor {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private VillagerActionExecutor() {
     }
 
     public static VillagerActionResult execute(
+            DialogueContext context,
+            VillagerActionDefinition action,
+            Map<String, String> inheritedReplacements) {
+        return VillagerActionRegistry.execute(context, action, inheritedReplacements).legacyResult();
+    }
+
+    static VillagerActionResult executeDirect(
             DialogueContext context,
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements) {
@@ -43,11 +57,23 @@ public final class VillagerActionExecutor {
             case TRACKER -> VillagerActionResult.tracker(action.flashTracker());
             case FORCED_DIALOGUE -> executeForcedDialogue(context, action, replacements);
             case QUEST -> executeQuestAction(context, action, replacements);
+            case QUEST_TRANSITION -> VillagerQuestService.applyCompiledTransition(context, action.questTransition(), replacements);
             case EXPERIENCE -> awardExperience(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case REPUTATION -> changeReputation(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case GOSSIP -> spreadGossip(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
-            case MEMORY -> rememberMemory(context, action.memoryTag()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
+            case PROFILE_ATTRIBUTE -> changeProfileAttribute(context, action.factKey(), action.amount())
+                    ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
+            case MEMORY -> rememberMemory(context, action.memoryTag(), action.memoryScope())
+                    ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case LOOT -> giveLoot(context, action.lootTable()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
+            case SET_TAG -> executeSetFactTag(context, action, replacements);
+            case CLEAR_TAG -> executeClearFactTag(context, action, replacements);
+            case SET_VARIABLE -> executeSetFactVariable(context, action, replacements);
+            case COUNTER -> executeCounter(context, action, replacements);
+            case DRAW_WEAPON -> VillagerWeaponDrawService.draw(context.villager(), action.amount())
+                    ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
+            case START_SCENE -> SceneLaunchService.launch(context, action).accepted()
+                    ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case NONE -> VillagerActionResult.EMPTY;
         };
     }
@@ -76,34 +102,51 @@ public final class VillagerActionExecutor {
         return true;
     }
 
+    public static boolean changeProfileAttribute(DialogueContext context, String attributeName, int amount) {
+        if (context == null || amount == 0) {
+            return false;
+        }
+        VillagerSocialAttribute attribute = VillagerSocialAttribute.bySerializedName(attributeName);
+        if (attribute == null) {
+            return false;
+        }
+        return VillagerProfileManager.adjustAttribute(
+                context.level(), context.villager(), attribute, amount);
+    }
+
     public static boolean rememberMemory(DialogueContext context, ResourceLocation memoryTag) {
+        return rememberMemory(context, memoryTag, VillageEventMemory.MemoryScope.BOTH);
+    }
+
+    public static boolean rememberMemory(
+            DialogueContext context,
+            ResourceLocation memoryTag,
+            VillageEventMemory.MemoryScope memoryScope) {
         if (context == null || memoryTag == null) {
             return false;
         }
-        VillageEventMemory.remember(
+        return VillageEventMemory.remember(
                 context.level(),
                 memoryTag,
                 context.villager().blockPosition(),
                 context.villager(),
-                context.player());
-        return true;
+                context.player(),
+                memoryScope).changed();
     }
 
     public static boolean giveLoot(DialogueContext context, ResourceLocation lootTableId) {
         if (context == null || lootTableId == null) {
             return false;
         }
-        ResourceKey<LootTable> lootTableKey = ResourceKey.create(Registries.LOOT_TABLE, lootTableId);
-        LootTable table = context.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
-        if (table == LootTable.EMPTY) {
+        QuestRewardResolver.RollResult roll = QuestRewardResolver.roll(
+                context.level(), context.player().getLuck(), lootTableId, context.random());
+        if (!roll.resolution().resolved()) {
+            LOGGER.warn("{}", roll.resolution().diagnostic());
             return false;
         }
 
         boolean gaveAny = false;
-        LootParams params = new LootParams.Builder(context.level())
-                .withLuck(context.player().getLuck())
-                .create(LootContextParamSets.EMPTY);
-        for (ItemStack stack : table.getRandomItems(params, context.random())) {
+        for (ItemStack stack : roll.items()) {
             if (stack.isEmpty()) {
                 continue;
             }
@@ -123,14 +166,22 @@ public final class VillagerActionExecutor {
             VillagerActionDefinition action,
             Map<String, String> replacements) {
         String trigger = action.notificationTrigger().isBlank() ? "quest.trigger" : action.notificationTrigger();
+        Map<String, String> notificationReplacements = new LinkedHashMap<>(replacements);
+        if (action.questId() != null) {
+            String questTitle = VillagerQuestResources.quest(context.level().getServer(), action.questId())
+                    .map(definition -> definition.title())
+                    .orElse(action.questId().toString());
+            notificationReplacements.putIfAbsent("quest", questTitle);
+            notificationReplacements.putIfAbsent("quest_id", action.questId().toString());
+        }
         String fallback = action.text().isBlank() ? "Quest updated: {quest}" : action.text();
         VillagerNotifications.sendHud(
                 context.player(),
                 context.level(),
                 context.villager(),
                 trigger,
-                replacements,
-                VillagerDialogueResources.resolveTemplate(fallback, replacements),
+                notificationReplacements,
+                VillagerDialogueResources.resolveTemplate(fallback, notificationReplacements),
                 VillagerReputationNoticeKind.QUEST
         );
         return VillagerActionResult.success();
@@ -158,11 +209,19 @@ public final class VillagerActionExecutor {
                     Map<String, String> replacements = new LinkedHashMap<>(inheritedReplacements);
                     replacements.putAll(outcome.replacements());
                     List<String> overrideLines = action.linesForStatus(outcome.status());
-                    String text = overrideLines.isEmpty()
+                    List<String> overrideKeys = action.lineKeysForStatus(outcome.status());
+                    String fallback = overrideLines.isEmpty()
                             ? outcome.text()
                             : VillagerDialogueResources.resolveTemplate(
                                     overrideLines.get(context.random().nextInt(overrideLines.size())),
                                     replacements);
+                    String text = overrideKeys.isEmpty()
+                            ? fallback
+                            : VillagerDialogueResources.message(
+                                            context,
+                                            overrideKeys.get(context.random().nextInt(overrideKeys.size())),
+                                            replacements)
+                                    .orElse(fallback);
                     return new VillagerActionResult(
                             true,
                             outcome.lineId(),
@@ -171,5 +230,77 @@ public final class VillagerActionExecutor {
                             false);
                 })
                 .orElse(VillagerActionResult.EMPTY);
+    }
+
+    private static VillagerActionResult executeSetFactTag(
+            DialogueContext context,
+            VillagerActionDefinition action,
+            Map<String, String> inheritedReplacements) {
+        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
+        boolean changed = VillagerQuestFacts.get(context.level()).setTag(scopeKey, action.factTag());
+        return changed
+                ? factResult(action, inheritedReplacements, scopeKey.asString(), "", 0)
+                : VillagerActionResult.EMPTY;
+    }
+
+    private static VillagerActionResult executeClearFactTag(
+            DialogueContext context,
+            VillagerActionDefinition action,
+            Map<String, String> inheritedReplacements) {
+        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
+        boolean changed = VillagerQuestFacts.get(context.level()).clearTag(scopeKey, action.factTag());
+        return changed
+                ? factResult(action, inheritedReplacements, scopeKey.asString(), "", 0)
+                : VillagerActionResult.EMPTY;
+    }
+
+    private static VillagerActionResult executeSetFactVariable(
+            DialogueContext context,
+            VillagerActionDefinition action,
+            Map<String, String> inheritedReplacements) {
+        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
+        String value = VillagerDialogueResources.resolveTemplate(action.factValue(), inheritedReplacements);
+        if ("stage".equals(action.factKey()) && action.factScope() == QuestFactScope.QUEST) {
+            return VillagerQuestService.syncQuestStage(context, action.questId(), value)
+                    ? factResult(action, inheritedReplacements, scopeKey.asString(), value, 0)
+                    : VillagerActionResult.EMPTY;
+        }
+
+        boolean changed = VillagerQuestFacts.get(context.level()).setVariable(scopeKey, action.factKey(), value);
+        return changed
+                ? factResult(action, inheritedReplacements, scopeKey.asString(), value, 0)
+                : VillagerActionResult.EMPTY;
+    }
+
+    private static VillagerActionResult executeCounter(
+            DialogueContext context,
+            VillagerActionDefinition action,
+            Map<String, String> inheritedReplacements) {
+        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
+        int value = VillagerQuestFacts.get(context.level()).addCounter(scopeKey, action.factKey(), action.amount());
+        return factResult(action, inheritedReplacements, scopeKey.asString(), Integer.toString(value), value);
+    }
+
+    private static VillagerActionResult factResult(
+            VillagerActionDefinition action,
+            Map<String, String> inheritedReplacements,
+            String scopeKey,
+            String value,
+            int counterValue) {
+        if (scopeKey == null || scopeKey.isBlank()) {
+            return VillagerActionResult.EMPTY;
+        }
+        Map<String, String> replacements = new LinkedHashMap<>(inheritedReplacements);
+        replacements.put("quest_fact_scope", action.factScope().name().toLowerCase(java.util.Locale.ROOT));
+        replacements.put("quest_fact_scope_key", scopeKey);
+        replacements.put("quest_fact_tag", action.factTag() == null ? "" : action.factTag().toString());
+        replacements.put("quest_fact_key", action.factKey());
+        replacements.put("quest_fact_value", value == null ? "" : value);
+        replacements.put("quest_fact_counter", Integer.toString(counterValue));
+        if ("stage".equals(action.factKey())) {
+            replacements.put("quest_stage", value == null ? "" : value);
+            replacements.put("current_stage", value == null ? "" : value);
+        }
+        return new VillagerActionResult(true, "", "", replacements, action.flashTracker());
     }
 }

@@ -1,0 +1,328 @@
+{
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "kindle",
+  "id": "villagerretaliation:first_fire",
+  "metadata": {
+    "description": {
+      "key": "#description"
+    },
+    "questline": "hearthbound",
+    "tags": [
+      "group.hearthbound",
+      "role.side",
+      "activity.deliver",
+      "activity.gather",
+      "destination.village",
+      "tier.early",
+      "difficulty.easy",
+      "commitment.standard",
+      "theme.community"
+    ],
+    "title": {
+      "key": "#title"
+    }
+  },
+  "provider": {
+    "filters": {
+      "min_villager_level": "novice",
+      "professions": [
+        "minecraft:farmer",
+        "minecraft:butcher",
+        "minecraft:fisherman"
+      ],
+      "skills": {
+        "cooking": {
+          "min": 5
+        }
+      }
+    },
+    "type": "villagerretaliation:villager"
+  },
+  "rewards": {
+    "experience": 80,
+    "gossip_reputation": 3,
+    "loot_table": "villagerretaliation:quest/first_fire",
+    "memory_event": "player_completed_quest",
+    "reputation": 7
+  },
+  "schema": "villagerretaliation:quest/v2",
+  "stages": [
+    {
+      "complete_when": [
+        "bring_campfire",
+        "bring_charcoal",
+        "bring_bowls",
+        "bring_cooked_cod"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stage.kindle.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stage.kindle.dialogue.offer.lines"
+          },
+          "order": -23,
+          "request": "question",
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stage.kindle.dialogue.offer.response.accept.label"
+              },
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stage.kindle.dialogue.offer.response.decline.label"
+              },
+              "scene": "decline"
+            }
+          ],
+          "show_for_babies": false
+        },
+        "reminder": {
+          "label": {
+            "key": "#stage.kindle.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stage.kindle.dialogue.reminder.lines"
+          },
+          "order": -23,
+          "request": "question",
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stage.kindle.dialogue.reminder.response.details.label"
+              },
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.kindle.dialogue.reminder.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "kindle",
+      "next": "return",
+      "objectives": [
+        {
+          "count": 1,
+          "id": "bring_campfire",
+          "item": "minecraft:campfire",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.kindle.objective.bring_campfire.tracker.complete_text"
+            },
+            "progress": 0.4,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.kindle.objective.bring_campfire.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 6,
+          "id": "bring_charcoal",
+          "item": "minecraft:charcoal",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.kindle.objective.bring_charcoal.tracker.complete_text"
+            },
+            "progress": 0.55,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.kindle.objective.bring_charcoal.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 6,
+          "id": "bring_bowls",
+          "item": "minecraft:bowl",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.kindle.objective.bring_bowls.tracker.complete_text"
+            },
+            "progress": 0.75,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.kindle.objective.bring_bowls.tracker.text"
+            }
+          },
+          "type": "item_check"
+        },
+        {
+          "count": 6,
+          "id": "bring_cooked_cod",
+          "item": "minecraft:cooked_cod",
+          "tracker": {
+            "complete_text": {
+              "key": "#stage.kindle.objective.bring_cooked_cod.tracker.complete_text"
+            },
+            "progress": 0.85,
+            "show_progress": true,
+            "text": {
+              "key": "#stage.kindle.objective.bring_cooked_cod.tracker.text"
+            }
+          },
+          "type": "item_check"
+        }
+      ],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "start",
+              "lines": {
+                "already_completed": {
+                  "key": "#stage.kindle.scene.start_quest.action.start.lines.already_completed"
+                },
+                "started": {
+                  "key": "#stage.kindle.scene.start_quest.action.start.lines.started"
+                },
+                "unavailable": {
+                  "key": "#stage.kindle.scene.start_quest.action.start.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "start_quest"
+        },
+        {
+          "actions": [
+            {
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#stage.kindle.scene.reminder_details.action.remind.lines.reminder"
+                },
+                "unavailable": {
+                  "key": "#stage.kindle.scene.reminder_details.action.remind.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "reminder_details"
+        },
+        {
+          "id": "decline",
+          "lines": {
+            "key": "#stage.kindle.scene.decline.lines"
+          }
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.kindle.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 0.85,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.kindle.ui.tracker_text"
+        }
+      }
+    },
+    {
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#stage.return.dialogue.turn_in.label"
+          },
+          "lines": {
+            "key": "#stage.return.dialogue.turn_in.lines"
+          },
+          "order": -23,
+          "request": "question",
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.complete.label"
+              },
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stage.return.dialogue.turn_in.response.leave.label"
+              },
+              "scene": "leave"
+            }
+          ],
+          "show_for_babies": false
+        }
+      },
+      "id": "return",
+      "objectives": [],
+      "scenes": [
+        {
+          "actions": [
+            {
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.completed"
+                },
+                "missing_objectives": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives"
+                },
+                "missing_proof": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.missing_proof"
+                },
+                "unavailable": {
+                  "key": "#stage.return.scene.complete_quest.action.turn_in.lines.unavailable"
+                }
+              },
+              "type": "quest"
+            }
+          ],
+          "id": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#stage.return.scene.leave.lines"
+          }
+        }
+      ],
+      "ui": {
+        "progress": 1,
+        "show_progress": true,
+        "tracker_text": {
+          "key": "#stage.return.ui.tracker_text"
+        }
+      }
+    }
+  ],
+  "ui": {
+    "color": "#E08A3E",
+    "icon": "minecraft:campfire",
+    "title": {
+      "key": "#title"
+    }
+  },
+  "localization_prefix": "quest.hearthbound.first_fire"
+}

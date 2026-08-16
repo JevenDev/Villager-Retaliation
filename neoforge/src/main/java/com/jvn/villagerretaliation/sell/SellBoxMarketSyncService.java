@@ -1,0 +1,171 @@
+package com.jvn.villagerretaliation.sell;
+
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.block.SellBoxBlockEntity;
+import com.jvn.villagerretaliation.block.SellBoxMenu;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+
+public final class SellBoxMarketSyncService {
+    private static final Map<UUID, SyncKey> SYNCED = new LinkedHashMap<>();
+    private static final Map<UUID, Integer> SYNCED_CONTAINERS = new LinkedHashMap<>();
+
+    private SellBoxMarketSyncService() {
+    }
+
+    public static void onServerTickPost(ServerTickEvent.Post event) {
+        MinecraftServer server = event.getServer();
+        long day = VillageSellMarket.currentDay(server);
+        long generation = SellPriceResources.generation();
+        Set<UUID> openPlayers = new HashSet<>();
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (!(player.containerMenu instanceof SellBoxMenu menu)) {
+                continue;
+            }
+            SellBoxBlockEntity sellBox = menu.sellBox();
+            if (sellBox == null) {
+                continue;
+            }
+            openPlayers.add(player.getUUID());
+            SyncKey key = syncKey(player, sellBox, day, generation);
+            if (!key.equals(SYNCED.get(player.getUUID()))) {
+                menu.sync(player);
+            }
+        }
+        SYNCED.keySet().removeIf(playerId -> !openPlayers.contains(playerId));
+        SYNCED_CONTAINERS.keySet().removeIf(playerId -> !openPlayers.contains(playerId));
+    }
+
+    public static boolean shouldSyncEntries(
+            ServerPlayer player,
+            SellBoxBlockEntity sellBox,
+            int containerId) {
+        if (player == null || sellBox == null) {
+            return true;
+        }
+        SyncKey previous = SYNCED.get(player.getUUID());
+        return previous == null
+                || !Integer.valueOf(containerId).equals(SYNCED_CONTAINERS.get(player.getUUID()))
+                || !syncKey(
+                        player,
+                        sellBox,
+                        VillageSellMarket.currentDay(player.getServer()),
+                        SellPriceResources.generation())
+                        .sameQuoteCatalog(previous);
+    }
+
+    public static void markSynced(ServerPlayer player, SellBoxBlockEntity sellBox) {
+        int containerId = player == null ? -1 : player.containerMenu.containerId;
+        markSynced(player, sellBox, containerId);
+    }
+
+    public static void markSynced(ServerPlayer player, SellBoxBlockEntity sellBox, int containerId) {
+        if (player != null && sellBox != null) {
+            SYNCED.put(player.getUUID(), syncKey(
+                    player,
+                    sellBox,
+                    VillageSellMarket.currentDay(player.getServer()),
+                    SellPriceResources.generation()));
+            SYNCED_CONTAINERS.put(player.getUUID(), containerId);
+        }
+    }
+
+    static boolean isSynced(ServerPlayer player, SellBoxBlockEntity sellBox) {
+        if (player == null || sellBox == null) {
+            return false;
+        }
+        return syncKey(
+                        player,
+                        sellBox,
+                        VillageSellMarket.currentDay(player.getServer()),
+                        SellPriceResources.generation())
+                .equals(SYNCED.get(player.getUUID()));
+    }
+
+    private static SyncKey syncKey(
+            ServerPlayer player,
+            SellBoxBlockEntity sellBox,
+            long day,
+            long generation) {
+        ServerLevel level = player.serverLevel();
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> village =
+                VillageSellMarket.resolveVillage(registry, level, sellBox.getBlockPos());
+        long revision = village
+                .map(id -> VillageMarketSavedData.get(level).revision(registry, id))
+                .orElse(0L);
+        return new SyncKey(
+                level.dimension(),
+                sellBox.getBlockPos(),
+                village.orElse(null),
+                revision,
+                inventorySignature(player),
+                pendingSignature(sellBox),
+                day,
+                generation);
+    }
+
+    private static int inventorySignature(ServerPlayer player) {
+        TreeSet<Integer> variants = new TreeSet<>();
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (!stack.isEmpty()) {
+                variants.add(ItemStack.hashItemAndComponents(stack));
+            }
+        }
+        int signature = 1;
+        for (int variant : variants) {
+            signature = 31 * signature + variant;
+        }
+        return signature;
+    }
+
+    private static int pendingSignature(SellBoxBlockEntity sellBox) {
+        ItemStack pending = sellBox.getItem(0);
+        return 31 * ItemStack.hashItemAndComponents(pending) + pending.getCount();
+    }
+
+    public static void clear() {
+        SYNCED.clear();
+        SYNCED_CONTAINERS.clear();
+    }
+
+    private record SyncKey(
+            ResourceKey<Level> dimension,
+            BlockPos position,
+            VillageAllegianceId village,
+            long revision,
+            int inventorySignature,
+            int pendingSignature,
+            long day,
+            long generation) {
+        private SyncKey {
+            position = position.immutable();
+        }
+
+        private boolean sameQuoteCatalog(SyncKey other) {
+            return other != null
+                    && this.dimension.equals(other.dimension)
+                    && this.position.equals(other.position)
+                    && java.util.Objects.equals(this.village, other.village)
+                    && this.revision == other.revision
+                    && this.inventorySignature == other.inventorySignature
+                    && this.day == other.day
+                    && this.generation == other.generation;
+        }
+    }
+}

@@ -1,0 +1,145 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.nether_routes.choose_a_road.description": "Choose a fortress route or a bastion route through the Nether.",
+    "quest.nether_routes.choose_a_road.scene.nether_road_choice.metadata.title": "Nether road choice",
+    "quest.nether_routes.choose_a_road.scene.nether_road_choice.step.bastion_charge.data.text": "Bastion road. Watch the brutes, trust no open chest, and bring gilded stone for the route ledger.",
+    "quest.nether_routes.choose_a_road.scene.nether_road_choice.step.fortress_charge.data.text": "Fortress road. Count blaze fire before every crossing, and bring back rods to mark the safe turns.",
+    "quest.nether_routes.choose_a_road.scene.nether_road_choice.step.unroll_the_route.data.text": "The charcoal route is fixed. From here, every mark must survive fire and bad judgment.",
+    "quest.nether_routes.choose_a_road.stage.bastion_return.dialogue.turn_in.label": "About Choose a Road",
+    "quest.nether_routes.choose_a_road.stage.bastion_return.dialogue.turn_in.lines": [
+      "The bastion bearing is true, and the gilded stone proves you crossed its walls.",
+      "The bastion road is marked. The final route will follow broken gold."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.nether_routes.choose_a_road.stage.bastion_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.nether_routes.choose_a_road.stage.bastion_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The bastion road is marked. The final route will follow broken gold.",
+      "The bastion bearing is true, and the gilded stone proves you crossed its walls."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Reach the bastion mark, defeat two brutes, and bring four gilded blackstone."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.dialogue.reminder.label": "About Choose a Road",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.dialogue.reminder.lines": [
+      "Reach the bastion mark, defeat two brutes, and bring four gilded blackstone.",
+      "Bastion road. Wear gold, watch the brutes, and do not admire anything with your hands."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.objective.bring_gilded_stone.tracker.complete_text": "The gilded blackstone is ready.",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.objective.bring_gilded_stone.tracker.text": "Bring 4 gilded blackstone.",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.objective.defeat_brutes.tracker.complete_text": "Two Piglin Brutes have been cleared.",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.objective.defeat_brutes.tracker.text": "Defeat 2 Piglin Brutes.",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.objective.visit_bastion.tracker.complete_text": "The bastion route is marked.",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.objective.visit_bastion.tracker.text": "Reach the marked Bastion Remnant.",
+    "quest.nether_routes.choose_a_road.stage.bastion_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Reach the bastion mark, defeat two brutes, and bring four gilded blackstone.",
+      "Bastion road. Wear gold, watch the brutes, and do not admire anything with your hands."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.nether_routes.choose_a_road.stage.bastion_work.ui.tracker_text": "Reach the bastion mark, defeat two brutes, and bring four gilded blackstone.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.offer.label": "Choose a Road",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.offer.lines": [
+      "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+      "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance; the harder bastion work offers a rare Ancient Debris chance."
+    ],
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.offer.response.bastion.action.notification.text": "You chose the Bastion Remnant road.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.offer.response.bastion.label": "Follow the bastion",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.offer.response.bastion.text": "Bastion road. Wear gold, watch the brutes, and do not admire anything with your hands.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.offer.response.decline.label": "Not yet.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.offer.response.fortress.action.notification.text": "You chose the Nether Fortress road.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.offer.response.fortress.label": "Follow the fortress",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.offer.response.fortress.text": "Fortress road. Mark every bridge and never stand where a blaze can see both sides of you.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.label": "About Choose a Road",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.lines": [
+      "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+      "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance; the harder bastion work offers a rare Ancient Debris chance."
+    ],
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.response.bastion.action.notification.text": "You chose the Bastion Remnant road.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.response.bastion.label": "Follow the bastion",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.response.bastion.text": "Bastion road. Wear gold, watch the brutes, and do not admire anything with your hands.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.response.decline.label": "Not yet.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.response.details.label": "Repeat the choice.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.response.fortress.action.notification.text": "You chose the Nether Fortress road.",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.response.fortress.label": "Follow the fortress",
+    "quest.nether_routes.choose_a_road.stage.choose.dialogue.reminder.response.fortress.text": "Fortress road. Mark every bridge and never stand where a blaze can see both sides of you.",
+    "quest.nether_routes.choose_a_road.stage.choose.objective.choose_route.tracker.complete_text": "Route chosen: {objective_choice_value}.",
+    "quest.nether_routes.choose_a_road.stage.choose.objective.choose_route.tracker.text": "Choose the route with the quest giver.",
+    "quest.nether_routes.choose_a_road.stage.choose.scene.decline.lines": [
+      "Then the portal remains a doorway without a road."
+    ],
+    "quest.nether_routes.choose_a_road.stage.choose.scene.reminder_details.action.remind.lines.reminder": [
+      "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+      "This choice closes the other Nether road. Fortress work offers a rare Wither Skeleton Skull chance; the harder bastion work offers a rare Ancient Debris chance."
+    ],
+    "quest.nether_routes.choose_a_road.stage.choose.scene.reminder_details.action.remind.lines.unavailable": [
+      "That choice is not open right now."
+    ],
+    "quest.nether_routes.choose_a_road.stage.choose.ui.tracker_text": "Choose a route.",
+    "quest.nether_routes.choose_a_road.stage.fortress_return.dialogue.turn_in.label": "About Choose a Road",
+    "quest.nether_routes.choose_a_road.stage.fortress_return.dialogue.turn_in.lines": [
+      "The bridge bearings are clear and the blaze count is written in ash.",
+      "The fortress road is marked. The final route will follow black brick."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_return.dialogue.turn_in.response.complete.label": "Finish this route.",
+    "quest.nether_routes.choose_a_road.stage.fortress_return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.nether_routes.choose_a_road.stage.fortress_return.scene.complete_route.action.turn_in.lines.completed": [
+      "The fortress road is marked. The final route will follow black brick.",
+      "The bridge bearings are clear and the blaze count is written in ash."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_return.scene.complete_route.action.turn_in.lines.missing_objectives": [
+      "Reach the fortress mark, defeat four blazes, and bring two rods."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_return.scene.complete_route.action.turn_in.lines.missing_proof": [
+      "Bring the route proof here before we close the map."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_return.scene.complete_route.action.turn_in.lines.unavailable": [
+      "That route cannot be closed right now."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_return.scene.leave.lines": [
+      "The route stays open until you are ready."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_return.ui.tracker_text": "Return to the quest giver.",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.dialogue.reminder.label": "About Choose a Road",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.dialogue.reminder.lines": [
+      "Reach the fortress mark, defeat four blazes, and bring two rods.",
+      "Fortress road. Mark every bridge and never stand where a blaze can see both sides of you."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_work.dialogue.reminder.response.details.label": "Repeat the route.",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.objective.bring_rods.tracker.complete_text": "The blaze rods are ready.",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.objective.bring_rods.tracker.text": "Bring 2 blaze rods.",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.objective.defeat_blazes.tracker.complete_text": "Four blazes have been cleared.",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.objective.defeat_blazes.tracker.text": "Defeat 4 blazes.",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.objective.visit_fortress.tracker.complete_text": "The fortress route is marked.",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.objective.visit_fortress.tracker.text": "Reach the marked Nether Fortress.",
+    "quest.nether_routes.choose_a_road.stage.fortress_work.scene.leave.lines": [
+      "Keep to the route you chose."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_work.scene.reminder_details.action.remind.lines.reminder": [
+      "Reach the fortress mark, defeat four blazes, and bring two rods.",
+      "Fortress road. Mark every bridge and never stand where a blaze can see both sides of you."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_work.scene.reminder_details.action.remind.lines.unavailable": [
+      "That route is not active right now."
+    ],
+    "quest.nether_routes.choose_a_road.stage.fortress_work.ui.tracker_text": "Reach the fortress mark, defeat four blazes, and bring two rods.",
+    "quest.nether_routes.choose_a_road.title": "Choose a Road"
+  }
+}

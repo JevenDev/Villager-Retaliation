@@ -1,17 +1,35 @@
 package com.jvn.villagerretaliation.reputation;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.BiomeStoryResources;
-import com.jvn.villagerretaliation.dialogue.DangerousStructureStoryResources;
+import com.jvn.villagerretaliation.dialogue.resources.BiomeStoryResources;
+import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.item.OminousBannerRecognition;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import com.jvn.villagerretaliation.raid.PlayerRaidSavedData;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.mojang.logging.LogUtils;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -21,15 +39,18 @@ import java.util.UUID;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import org.slf4j.Logger;
@@ -42,6 +63,14 @@ public final class VillagerReputationAdvancements {
     private static final int COMMUNITY_SUPPORT_VILLAGERS = 5;
     private static final int VILLAGE_ENEMY_HOSTILES = 5;
     private static final int MOB_JUSTICE_HOSTILES = 8;
+    private static final int MULTI_VILLAGE_THRESHOLD = 3;
+    private static final int PEOPLE_CHAMPION_VILLAGERS = 10;
+    private static final int LARGE_RAID_DEFENSE = 15;
+    private static final int DISTINCT_BLUEPRINTS = 10;
+    private static final int DISTINCT_ACTIVE_ROLES = 10;
+    private static final int RELATED_VILLAGERS = 3;
+    private static final int FOLLOW_DISTANCE_BLOCKS = 5_000;
+    private static final long WORKFORCE_CHECK_INTERVAL_TICKS = 200L;
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 40L;
     private static final double HOSTILITY_SCAN_RADIUS = 64.0D;
     private static final double DIALOGUE_MAP_FOUND_RADIUS = 64.0D;
@@ -57,6 +86,23 @@ public final class VillagerReputationAdvancements {
     private static final Map<UUID, Set<UUID>> HOSTILE_OR_WORSE_HISTORY = new HashMap<>();
     private static final Map<UUID, Long> NEXT_DISCOVERY_SCAN = new HashMap<>();
     private static final Map<UUID, Long> NEXT_BIOME_STORY_SCAN = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_WORKFORCE_CHECK = new HashMap<>();
+
+    private static final Set<VillagerProfession> SUPPORTED_WORK_PROFESSIONS = Set.of(
+            VillagerProfession.ARMORER,
+            VillagerProfession.BUTCHER,
+            VillagerProfession.CARTOGRAPHER,
+            VillagerProfession.CLERIC,
+            VillagerProfession.FARMER,
+            VillagerProfession.FISHERMAN,
+            VillagerProfession.FLETCHER,
+            VillagerProfession.LEATHERWORKER,
+            VillagerProfession.LIBRARIAN,
+            VillagerProfession.MASON,
+            VillagerProfession.NITWIT,
+            VillagerProfession.SHEPHERD,
+            VillagerProfession.TOOLSMITH,
+            VillagerProfession.WEAPONSMITH);
 
     private static final ResourceLocation ROOT = advancementId("reputation/root");
     private static final ResourceLocation COMMONFOLK = advancementId("reputation/commonfolk");
@@ -91,12 +137,58 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation STORY_KEEPER = advancementId("reputation/story_keeper");
     private static final ResourceLocation VILLAGE_CHRONICLER = advancementId("reputation/village_chronicler");
     private static final ResourceLocation LEGEND_TRADER = advancementId("reputation/legend_trader");
+    private static final ResourceLocation STEADY_GAZE = advancementId("reputation/steady_gaze");
+    private static final ResourceLocation THE_MARK_YOU_CHOSE = advancementId("reputation/the_mark_you_chose");
+    private static final ResourceLocation SOUND_THE_HORN = advancementId("reputation/sound_the_horn");
+    private static final ResourceLocation THE_VILLAGE_FALLS = advancementId("reputation/the_village_falls");
+    private static final ResourceLocation QUARTER_GIVEN = advancementId("reputation/quarter_given");
+    private static final ResourceLocation ARMY_OF_ONE = advancementId("reputation/army_of_one");
+    private static final ResourceLocation ET_TU_BRUTE = advancementId("reputation/et_tu_brute");
+    private static final ResourceLocation WAR_PARTY = advancementId("reputation/war_party");
+    private static final ResourceLocation YOU_AND_WHAT_ARMY = advancementId("reputation/you_and_what_army");
+    private static final ResourceLocation HONEST_WORK = advancementId("reputation/honest_work");
+    private static final ResourceLocation FULL_EMPLOYMENT = advancementId("reputation/full_employment");
+    private static final ResourceLocation VILLAGE_HOPPER = advancementId("reputation/village_hopper");
+    private static final ResourceLocation PEOPLES_CHAMPION = advancementId("reputation/peoples_champion");
+    private static final ResourceLocation LIVING_LEGEND = advancementId("reputation/living_legend");
+    private static final ResourceLocation HOUSEWARMING = advancementId("reputation/housewarming");
+    private static final ResourceLocation BLUEPRINT_FOR_SUCCESS = advancementId("reputation/blueprint_for_success");
+    private static final ResourceLocation URBAN_PLANNER = advancementId("reputation/urban_planner");
+    private static final ResourceLocation MASTER_OF_THE_CRAFT = advancementId("reputation/master_of_the_craft");
+    private static final ResourceLocation MASTER_OF_ALL_TRADES = advancementId("reputation/master_of_all_trades");
+    private static final ResourceLocation A_WELL_OILED_MACHINE = advancementId("reputation/a_well_oiled_machine");
+    private static final ResourceLocation SUPPLY_AND_DEMAND = advancementId("reputation/supply_and_demand");
+    private static final ResourceLocation PAYDAY = advancementId("reputation/payday");
+    private static final ResourceLocation ON_THE_PAYROLL = advancementId("reputation/on_the_payroll");
+    private static final ResourceLocation EMERALD_ECONOMY = advancementId("reputation/emerald_economy");
+    private static final ResourceLocation FRIENDLY_COMPETITION = advancementId("reputation/friendly_competition");
+    private static final ResourceLocation ITS_THE_THOUGHT_THAT_COUNTS = advancementId("reputation/its_the_thought_that_counts");
+    private static final ResourceLocation FAMILY_BUSINESS = advancementId("reputation/family_business");
+    private static final ResourceLocation CHOOSE_YOUR_OWN_ADVENTURE = advancementId("reputation/choose_your_own_adventure");
+    private static final ResourceLocation ALL_ROADS_LEAD_SOMEWHERE = advancementId("reputation/all_roads_lead_somewhere");
+    private static final ResourceLocation ARE_WE_THERE_YET = advancementId("reputation/are_we_there_yet");
 
     private VillagerReputationAdvancements() {
     }
 
+    public static void clearRuntimeState() {
+        TRADE_COUNTS.clear();
+        TRADED_VILLAGERS.clear();
+        RECENT_DIRECT_VILLAGER_HITS.clear();
+        HOSTILE_OR_WORSE_HISTORY.clear();
+        NEXT_DISCOVERY_SCAN.clear();
+        NEXT_BIOME_STORY_SCAN.clear();
+        NEXT_WORKFORCE_CHECK.clear();
+    }
+
     public static void onVillagerInteraction(ServerPlayer player) {
         award(player, COMMONFOLK);
+    }
+
+    public static void onVillagerConversationStarted(ServerPlayer player) {
+        if (OminousBannerRecognition.isDisplaying(player)) {
+            award(player, THE_MARK_YOU_CHOSE);
+        }
     }
 
     public static void onVillagerPacified(ServerPlayer player) {
@@ -113,6 +205,204 @@ public final class VillagerReputationAdvancements {
 
     public static void onSleepingVillagerBedBroken(ServerPlayer player) {
         award(player, NO_REST_FOR_THE_WICKED);
+    }
+
+    public static void onVillagerMouseStared(ServerPlayer player) {
+        award(player, STEADY_GAZE);
+    }
+
+    public static void onPlayerRaidDeclared(ServerPlayer player) {
+        award(player, SOUND_THE_HORN);
+    }
+
+    public static void onPlayerRaidDeclared(ServerPlayer player, PlayerRaidSavedData.RaidRecord raid) {
+        onPlayerRaidDeclared(player);
+        if (raid != null && !raid.defectors().isEmpty()) {
+            award(player, ET_TU_BRUTE);
+        }
+    }
+
+    public static void onPlayerRaidWon(ServerPlayer player) {
+        award(player, THE_VILLAGE_FALLS);
+    }
+
+    public static void onPlayerRaidWon(ServerPlayer player, PlayerRaidSavedData.RaidRecord raid) {
+        onPlayerRaidWon(player);
+        if (raid == null) {
+            return;
+        }
+        int defenseSize = raid.initialDefenderCount() + raid.initialMercyCandidateCount();
+        if (defenseSize >= LARGE_RAID_DEFENSE) {
+            award(player, YOU_AND_WHAT_ARMY);
+        }
+        if (defenseSize >= 20 && raid.raiderPlayers().size() == 1 && raid.raiderVillagers().isEmpty()) {
+            award(player, ARMY_OF_ONE);
+        }
+        if (raid.raiderPlayers().size() == 3 && raid.raiderVillagers().size() == 4) {
+            award(player, WAR_PARTY);
+        }
+    }
+
+    public static void onVillagerSparedDuringRaid(ServerPlayer player) {
+        award(player, QUARTER_GIVEN);
+    }
+
+    public static void onHiredAssignmentCompleted(ServerPlayer player, Villager villager) {
+        award(player, HONEST_WORK);
+        recordFamilyProgress(player, villager.getUUID());
+        checkWellOiledMachine(player);
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        if (!SUPPORTED_WORK_PROFESSIONS.contains(profession)) {
+            return;
+        }
+        ResourceLocation professionId = BuiltInRegistries.VILLAGER_PROFESSION.getKey(profession);
+        if (professionId != null) {
+            awardCriterion(player, FULL_EMPLOYMENT, professionId.getPath());
+        }
+    }
+
+    public static void onHousewarming(ServerPlayer player) {
+        award(player, HOUSEWARMING);
+    }
+
+    public static void onBlueprintCompleted(ServerPlayer player, ResourceLocation structureId) {
+        award(player, BLUEPRINT_FOR_SUCCESS);
+        int distinct = AdvancementProgressSavedData.get(player.serverLevel())
+                .recordBlueprint(player.getUUID(), structureId);
+        if (distinct >= DISTINCT_BLUEPRINTS) {
+            award(player, URBAN_PLANNER);
+        }
+    }
+
+    public static void onSkillMaxedThroughWork(ServerPlayer player, Villager villager, VillagerSkill skill) {
+        if (skill == null) return;
+        award(player, MASTER_OF_THE_CRAFT);
+        VillagerSkillSet skills = VillagerProfileManager.getSkills(player.serverLevel(), villager);
+        for (VillagerSkill candidate : VillagerSkill.values()) {
+            if (skills.get(candidate) < VillagerSkillSet.MAX_VALUE) return;
+        }
+        award(player, MASTER_OF_ALL_TRADES);
+    }
+
+    public static void onCourierMaterialUsed(ServerPlayer player) {
+        award(player, SUPPLY_AND_DEMAND);
+    }
+
+    public static void onWagesPaid(ServerLevel level, UUID playerId, int emeraldValue) {
+        if (level == null || playerId == null || emeraldValue <= 0) return;
+        long total = AdvancementProgressSavedData.get(level).addWages(playerId, emeraldValue);
+        ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
+        if (player == null) return;
+        if (total >= 100L) award(player, PAYDAY);
+        if (total >= 1_000L) award(player, ON_THE_PAYROLL);
+        if (total >= 10_000L) award(player, EMERALD_ECONOMY);
+    }
+
+    public static void onDuelWon(ServerPlayer player) {
+        award(player, FRIENDLY_COMPETITION);
+    }
+
+    public static void onPreferredGift(ServerPlayer player) {
+        award(player, ITS_THE_THOUGHT_THAT_COUNTS);
+    }
+
+    public static void onFollowerJourneyUpdated(ServerPlayer player, int distanceBlocks) {
+        if (distanceBlocks >= FOLLOW_DISTANCE_BLOCKS) award(player, ARE_WE_THERE_YET);
+    }
+
+    public static void onQuestCompleted(ServerPlayer player) {
+        Map<String, Set<UUID>> villagersByVillage = new HashMap<>();
+        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry
+                : VillagerQuestSavedData.get(player.serverLevel()).progress(player.getUUID())) {
+            for (VillagerQuestSavedData.CompletionHistoryEntry completion : entry.getValue().completionHistory()) {
+                if (completion.issuerId() == null || !VillageScopeKeys.isVillageKey(completion.issuerVillageKey())) {
+                    continue;
+                }
+                Set<UUID> villagers = villagersByVillage.computeIfAbsent(
+                        completion.issuerVillageKey(), ignored -> new HashSet<>());
+                villagers.add(completion.issuerId());
+                if (villagers.size() >= PEOPLE_CHAMPION_VILLAGERS) {
+                    award(player, PEOPLES_CHAMPION);
+                    return;
+                }
+            }
+        }
+    }
+
+    public static void onQuestCompleted(
+            ServerPlayer player,
+            QuestDefinition definition,
+            UUID issuerId,
+            ResourceKey<Level> issuerDimension) {
+        onQuestCompleted(player);
+        recordFamilyProgress(player, issuerId);
+        if (Level.OVERWORLD.equals(issuerDimension)) {
+            awardCriterion(player, ALL_ROADS_LEAD_SOMEWHERE, "overworld");
+        } else if (Level.NETHER.equals(issuerDimension)) {
+            awardCriterion(player, ALL_ROADS_LEAD_SOMEWHERE, "nether");
+        } else if (Level.END.equals(issuerDimension)) {
+            awardCriterion(player, ALL_ROADS_LEAD_SOMEWHERE, "end");
+        }
+        if (definition != null && isTerminalBranchingQuest(player, definition)) {
+            award(player, CHOOSE_YOUR_OWN_ADVENTURE);
+        }
+    }
+
+    private static boolean isTerminalBranchingQuest(ServerPlayer player, QuestDefinition completed) {
+        if (completed.questline().isBlank()) return false;
+        List<QuestDefinition> questline = VillagerQuestResources.quests(player.server).stream()
+                .filter(candidate -> completed.questline().equals(candidate.questline()))
+                .toList();
+        boolean branching = questline.stream().anyMatch(definition ->
+                definition.tags().contains("feature.branching")
+                        || definition.stages().values().stream().anyMatch(stage -> !stage.branches().isEmpty())
+                        || definition.rules().branching().exclusiveGroup() != null
+                        || !definition.rules().branching().blocksOnStart().isEmpty()
+                        || !definition.rules().branching().blocksOnCompletion().isEmpty());
+        return branching && questline.stream()
+                .noneMatch(candidate -> candidate.prerequisites().contains(completed.id()));
+    }
+
+    private static void recordFamilyProgress(ServerPlayer player, UUID villagerId) {
+        if (player == null || villagerId == null) return;
+        Set<UUID> completed = AdvancementProgressSavedData.get(player.serverLevel())
+                .recordCompletedVillager(player.getUUID(), villagerId);
+        if (completed.size() < RELATED_VILLAGERS) return;
+        VillagerSocialGraphSavedData graph = VillagerSocialGraphSavedData.get(player.serverLevel());
+        Set<UUID> family = new HashSet<>();
+        family.add(villagerId);
+        for (VillagerSocialGraphSavedData.RelationshipType type : List.of(
+                VillagerSocialGraphSavedData.RelationshipType.PARENT,
+                VillagerSocialGraphSavedData.RelationshipType.CHILD,
+                VillagerSocialGraphSavedData.RelationshipType.BIRTH_PARENT,
+                VillagerSocialGraphSavedData.RelationshipType.BIRTH_CHILD,
+                VillagerSocialGraphSavedData.RelationshipType.ADOPTIVE_PARENT,
+                VillagerSocialGraphSavedData.RelationshipType.ADOPTIVE_CHILD,
+                VillagerSocialGraphSavedData.RelationshipType.SIBLING,
+                VillagerSocialGraphSavedData.RelationshipType.SPOUSE)) {
+            family.addAll(graph.relationships(villagerId, type));
+        }
+        family.retainAll(completed);
+        if (family.size() >= RELATED_VILLAGERS) award(player, FAMILY_BUSINESS);
+    }
+
+    private static void checkWellOiledMachine(ServerPlayer player) {
+        long gameTime = player.serverLevel().getGameTime();
+        if (!consumePlayerScanSlot(
+                player.getUUID(), NEXT_WORKFORCE_CHECK, gameTime, WORKFORCE_CHECK_INTERVAL_TICKS)) return;
+        Set<HiredVillagerRole> roles = EnumSet.noneOf(HiredVillagerRole.class);
+        for (HiredVillagerIndex.Target target : HiredVillagerIndex.targetsFor(player)) {
+            Villager villager = target.villager();
+            ServerLevel level = target.level();
+            if (!HiredVillagerWorkService.isActivelyWorking(villager)
+                    || !AssignedStorageService.hasLoadedAssignedStorage(level, villager)
+                    || !AssignedStorageService.hasLoadedAssignedPaymentStorage(level, villager)) continue;
+            roles.add(HiredVillagerContractService.activeRole(level, villager));
+            if (roles.size() >= DISTINCT_ACTIVE_ROLES) {
+                award(player, A_WELL_OILED_MACHINE);
+                return;
+            }
+        }
     }
 
     public static void onSharedStory(ServerPlayer player, int sharedStoryCount) {
@@ -312,26 +602,7 @@ public final class VillagerReputationAdvancements {
             long gameTime,
             long intervalTicks
     ) {
-        Long nextScan = nextScanTicks.get(playerId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(playerId, intervalTicks);
-            if (firstScan > gameTime) {
-                nextScanTicks.put(playerId, firstScan);
-                return false;
-            }
-        } else if (gameTime < nextScan) {
-            return false;
-        }
-
-        nextScanTicks.put(playerId, gameTime + Math.max(1L, intervalTicks));
-        return true;
-    }
-
-    private static long scanStagger(UUID playerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(playerId.getMostSignificantBits() ^ playerId.getLeastSignificantBits(), intervalTicks);
+        return TickThrottle.consume(playerId, nextScanTicks, gameTime, intervalTicks);
     }
 
     public static void onVillagerDirectlyDamaged(ServerLevel level, ServerPlayer player, AbstractVillager villager) {
@@ -431,6 +702,10 @@ public final class VillagerReputationAdvancements {
             VillagerReputationLevel newLevel) {
         if (crossedInto(previousLevel, newLevel, VillagerReputationLevel.TRUSTED)) {
             award(player, FAMILIAR_FACE);
+            if (countTrackedVillagesAtOrAbove(level, player.getUUID(), VillagerReputationLevel.TRUSTED)
+                    >= MULTI_VILLAGE_THRESHOLD) {
+                award(player, VILLAGE_HOPPER);
+            }
             if (hasTradeHistory(player, villager)) {
                 award(player, PRICE_OF_TRUST);
             }
@@ -445,6 +720,10 @@ public final class VillagerReputationAdvancements {
         }
         if (crossedInto(previousLevel, newLevel, VillagerReputationLevel.REVERED)) {
             award(player, LOCAL_LEGEND);
+            if (countTrackedVillagesAtOrAbove(level, player.getUUID(), VillagerReputationLevel.REVERED)
+                    >= MULTI_VILLAGE_THRESHOLD) {
+                award(player, LIVING_LEGEND);
+            }
         }
         if (crossedInto(previousLevel, newLevel, VillagerReputationLevel.ROYALTY)) {
             award(player, CROWNED_BY_THE_VILLAGE);
@@ -499,6 +778,25 @@ public final class VillagerReputationAdvancements {
             VillagerReputationLevel threshold) {
         return previousLevel.trustRank() > threshold.trustRank()
                 && newLevel.trustRank() <= threshold.trustRank();
+    }
+
+    static int countTrackedVillagesAtOrAbove(
+            ServerLevel level,
+            UUID playerId,
+            VillagerReputationLevel threshold) {
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillagerReputationSavedData reputations = VillagerReputationSavedData.get(level);
+        return (int) registry.records().stream()
+                .filter(record -> registry.canonical(record.id())
+                        .map(record.id()::equals)
+                        .orElse(false))
+                .filter(record -> record.residents().keySet().stream().anyMatch(villagerId -> {
+                    VillagerReputationSavedData.ReputationEntry entry = reputations.get(villagerId, playerId);
+                    return entry != null
+                            && VillagerReputationLevel.fromReputation(entry.reputation()).trustRank()
+                            >= threshold.trustRank();
+                }))
+                .count();
     }
 
     private static boolean hasTrustedVillageCore(ServerLevel level, Villager anchor, ServerPlayer player) {
@@ -580,6 +878,20 @@ public final class VillagerReputationAdvancements {
             awardDirect(player, ROOT);
         }
         awardDirect(player, advancementId);
+    }
+
+    private static void awardCriterion(
+            ServerPlayer player,
+            ResourceLocation advancementId,
+            String criterion) {
+        if (!advancementId.equals(ROOT)) {
+            awardDirect(player, ROOT);
+        }
+        AdvancementHolder advancement = player.server.getAdvancements().get(advancementId);
+        if (advancement == null) {
+            return;
+        }
+        player.getAdvancements().award(advancement, criterion);
     }
 
     private static void awardDirect(ServerPlayer player, ResourceLocation advancementId) {

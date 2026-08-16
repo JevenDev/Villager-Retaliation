@@ -13,15 +13,25 @@
       "id": "librarian_opening",
       "lines": [
         "Mind the lectern. What do you need?",
-        "Step clear of the lectern. What do you need?",
-        "Mind the lectern. I'm listening.",
-        "There you are. I was just near the lectern, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one."
+        "I can spare a moment. Make it useful.",
+        "Come in. The floor is quieter than the doorway.",
+        "What are you looking for?",
+        "I was about to take a break. Your timing is acceptable.",
+        "If this concerns a missing book, begin with the truth.",
+        "You look like you have a question and no patience for the index.",
+        "Give me a moment to finish this line.",
+        "I am listening. Please keep your hands away from the wet ink.",
+        "Tell me whether you need an answer or advice.",
+        "Close the door behind you, then speak.",
+        "I have the records out already. That may save us time.",
+        "Go on. I can shelve and listen at once.",
+        "If this is urgent, say so before I start guessing.",
+        "You found me. What happened?",
+        "There is room by the desk if you do not lean on it.",
+        "Ask plainly. It saves both of us trouble.",
+        "I hope you brought details. They improve nearly every conversation.",
+        "Let me put this page somewhere safe first.",
+        "All right. Start wherever the facts become clear."
       ]
     }
   ]

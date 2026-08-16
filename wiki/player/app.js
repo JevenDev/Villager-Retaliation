@@ -1,0 +1,1824 @@
+const DATA = window.VR_WIKI_DATA || { quests: [], reputation: [], gifts: {}, pacification: [], skillTrades: [], sellPrices: [], advancements: [] };
+
+const PAGES = [
+  {
+    id: "home",
+    title: "Overview",
+    group: "Start Here",
+    icon: "home",
+    description: "Explore reputation, quests, village life, and more than 35,000 villager dialogue entries.",
+    render: renderHome
+  },
+  {
+    id: "quests",
+    title: "Quest Walkthroughs",
+    group: "Start Here",
+    icon: "map",
+    description: "Every built-in quest, offer gate, step, turn-in item, and potential reward.",
+    render: renderQuests
+  },
+  {
+    id: "reputation",
+    title: "Reputation",
+    group: "Core Systems",
+    icon: "shield",
+    description: "Trust tiers, penalties, pacification, and what low reputation changes for players.",
+    render: renderReputation
+  },
+  {
+    id: "dialogue",
+    title: "Dialogue And Interaction",
+    group: "Core Systems",
+    icon: "message-square-text",
+    description: "Talking, gifts, recruitment, relationships, stories, and the quest journal.",
+    render: renderDialogue
+  },
+  {
+    id: "combat",
+    title: "Retaliation And Combat",
+    group: "Core Systems",
+    icon: "swords",
+    description: "How villagers fight, flee, rally, and respond to hostile mobs.",
+    render: renderCombat
+  },
+  {
+    id: "player-raids",
+    title: "Player Raids",
+    group: "Core Systems",
+    icon: "flag",
+    description: "How to declare a village siege, who joins each side, and how the village defends itself.",
+    render: renderPlayerRaids
+  },
+  {
+    id: "gifts",
+    title: "Gifts And Keepsakes",
+    group: "Player Guides",
+    icon: "gift",
+    description: "Gift reactions, profession preferences, and high-reputation reward rolls.",
+    render: renderGifts
+  },
+  {
+    id: "skill-trades",
+    title: "Skill Trades",
+    group: "Player Guides",
+    icon: "badge-percent",
+    description: "Profession skill trades, Special Orders, ranks, and reputation gates.",
+    render: renderSkillTrades
+  },
+  {
+    id: "watched-containers",
+    title: "Watched Containers",
+    group: "Player Guides",
+    icon: "package-open",
+    description: "What happens when villagers see you opening, breaking, or stealing from protected chests.",
+    render: renderContainers
+  },
+  {
+    id: "advancements",
+    title: "Advancements",
+    group: "Reference",
+    icon: "trophy",
+    description: "Milestones for trust, village life, hired work, quests, exploration, and conflict.",
+    render: renderAdvancements
+  },
+  {
+    id: "settings",
+    title: "Controls And Settings",
+    group: "Reference",
+    icon: "settings",
+    description: "Quest controls, interaction shortcuts, and ways to change local settings.",
+    render: renderSettings
+  }
+];
+
+const els = {
+  nav: document.querySelector("#wiki-nav"),
+  content: document.querySelector("#wiki-content"),
+  toc: document.querySelector("#page-toc"),
+  crumb: document.querySelector("#page-crumb"),
+  search: document.querySelector("#wiki-search"),
+  searchQueryLabel: document.querySelector("#wiki-search-query"),
+  palette: document.querySelector("#search-palette"),
+  paletteSearch: document.querySelector("#palette-search"),
+  paletteResults: document.querySelector("#palette-results"),
+  paletteStatus: document.querySelector("#palette-status"),
+  menuToggle: document.querySelector("#menu-toggle"),
+  sidebar: document.querySelector(".sidebar")
+};
+
+let searchQuery = "";
+let paletteQuery = "";
+let paletteActiveIndex = -1;
+let cachedSearchItems = null;
+let activeRouteKey = "";
+let scrollRestoreFrame = 0;
+
+const NAV_GROUP_STATE_KEY = "villager-retaliation-wiki-nav-groups-v1";
+const ROUTE_SCROLL_STATE_KEY = "villager-retaliation-wiki-scroll-v1";
+
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+function readLocalState(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalState(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // The wiki still works when storage is unavailable or full.
+  }
+}
+
+function routeKey(route) {
+  return `${route.type}:${route.id || "home"}`;
+}
+
+function saveRouteScroll(key = activeRouteKey) {
+  if (!key) return;
+  const positions = readLocalState(ROUTE_SCROLL_STATE_KEY);
+  positions[key] = Math.max(0, Math.round(window.scrollY));
+  writeLocalState(ROUTE_SCROLL_STATE_KEY, positions);
+}
+
+function restoreRouteScroll(route) {
+  const key = routeKey(route);
+  const positions = readLocalState(ROUTE_SCROLL_STATE_KEY);
+  const savedPosition = Number(positions[key]);
+  activeRouteKey = key;
+  if (scrollRestoreFrame) window.cancelAnimationFrame(scrollRestoreFrame);
+  scrollRestoreFrame = window.requestAnimationFrame(() => {
+    if (activeRouteKey !== key) return;
+    window.scrollTo({ top: Number.isFinite(savedPosition) ? savedPosition : 0, left: 0, behavior: "auto" });
+  });
+}
+
+function cleanRenderedCopy(...roots) {
+  roots.forEach((root) => window.VR_WIKI_SEARCH.cleanTypographyWithin(root));
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function slugFor(text) {
+  return String(text).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
+}
+
+function compactId(id) {
+  return String(id || "").split(":").pop().replaceAll("_", " ");
+}
+
+function titleCase(text) {
+  return compactId(text).replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatList(items, empty = "Any") {
+  return (items || []).length ? items.join(", ") : empty;
+}
+
+function plural(count, singular, pluralWord = `${singular}s`) {
+  return count === 1 ? `${count} ${singular}` : `${count} ${pluralWord}`;
+}
+
+function capitalizeStatValue(value) {
+  const text = String(value ?? "");
+  const withLeadingNumber = text.match(/^(\d+\s+)([a-z])/);
+  if (withLeadingNumber) {
+    const [, prefix, firstChar] = withLeadingNumber;
+    return text.replace(prefix + firstChar, `${prefix}${firstChar.toUpperCase()}`);
+  }
+  return text.length > 0 ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : text;
+}
+
+function pageUrl(id) {
+  return `#/page/${id}`;
+}
+
+function questUrl(slug) {
+  return `#/quest/${slug}`;
+}
+
+function questlineUrl(id) {
+  return `#/questline/${encodeURIComponent(String(id || ""))}`;
+}
+
+function advancementUrl(id) {
+  return `#/advancement/${encodeURIComponent(String(id || ""))}`;
+}
+
+function normalizeAdvancementKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/^.*:/, "")
+    .replace(/[\s-]+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+}
+
+function findAdvancement(value) {
+  const key = normalizeAdvancementKey(value);
+  if (!key) return null;
+  return (Array.isArray(DATA.advancements) ? DATA.advancements : []).find((advancement) => {
+    const idKey = normalizeAdvancementKey(advancement.id);
+    const titleKey = normalizeAdvancementKey(advancement.title);
+    return idKey === key || titleKey === key;
+  }) || null;
+}
+
+function advancementRowId(advancementId) {
+  return `advancement-${slugFor(advancementId)}`;
+}
+
+function focusAdvancementRow(advancementId) {
+  if (!advancementId) return;
+  const row = document.getElementById(advancementRowId(advancementId));
+  if (!row) return;
+  const disclosure = row.closest("details");
+  if (disclosure) disclosure.open = true;
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function currentRoute() {
+  const hash = location.hash.replace(/^#\/?/, "");
+  const [routePath, queryString = ""] = hash.split("?");
+  const searchQuery = new URLSearchParams(queryString).get("search") || "";
+  if (!routePath) return { type: "page", id: "home", searchQuery };
+  const [type, ...rest] = routePath.split("/");
+  if (type === "quest") return { type: "quest", id: rest.join("/"), searchQuery };
+  if (type === "questline") return { type: "questline", id: decodeURIComponent(rest.join("/")), searchQuery };
+  if (type === "advancement") return { type: "advancement", id: decodeURIComponent(rest.join("/")), searchQuery };
+  if (type === "search") return { type: "search", id: "search", searchQuery };
+  if (type === "page") return { type: "page", id: rest[0] || "home", searchQuery };
+  return { type: "page", id: type || "home", searchQuery };
+}
+
+function groupBy(items, key) {
+  return items.reduce((groups, item) => {
+    const group = item[key] || "Other";
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(item);
+    return groups;
+  }, {});
+}
+
+function icon(name, className = "inline-icon") {
+  return `<i data-lucide="${escapeHtml(name)}" class="${className}" aria-hidden="true"></i>`;
+}
+
+function renderIcons() {
+  if (!window.lucide) return;
+  window.lucide.createIcons({
+    attrs: {
+      "stroke-width": 1.8
+    }
+  });
+}
+
+function questIcon(quest) {
+  const icons = {
+    cartographers_atlas: "map",
+    exploration: "map",
+    dangerous_commissions: "skull",
+    lost_civilization: "landmark",
+    old_roads: "signpost",
+    village_defense: "shield-alert",
+    village_supply: "wheat"
+  };
+  return icons[quest.questline] || icons[quest.group] || "scroll-text";
+}
+
+function questlineSummaries() {
+  const byId = new Map();
+  for (const quest of DATA.quests) {
+    if (!quest.questline) continue;
+    if (!byId.has(quest.questline)) {
+      byId.set(quest.questline, {
+        id: quest.questline,
+        label: quest.questlineLabel || titleCase(quest.questline),
+        quests: []
+      });
+    }
+    byId.get(quest.questline).quests.push(quest);
+  }
+  return [...byId.values()].map((line) => ({
+    ...line,
+    quests: line.quests
+      .slice()
+      .sort((a, b) => (a.questlineOrder ?? 0) - (b.questlineOrder ?? 0) || a.title.localeCompare(b.title))
+  })).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function questRewardPreview(quest) {
+  const rewards = quest?.rewards || {};
+  const parts = [];
+  if (typeof rewards.reputation === "number") parts.push(`${rewards.reputation} reputation`);
+  if (typeof rewards.experience === "number") parts.push(`${rewards.experience} XP`);
+  if (typeof rewards.gossipReputation === "number" && rewards.gossipReputation !== 0) {
+    parts.push(`${rewards.gossipReputation} gossip`);
+  }
+  const loot = Array.isArray(rewards.loot) ? rewards.loot : [];
+  if (loot.length > 0) {
+    const first = loot[0];
+    const label = first?.item ? `${first.count || ""} ${first.item}`.trim() : "loot roll";
+    const suffix = loot.length > 1 ? ` +${loot.length - 1} more` : "";
+    parts.push(`${label}${suffix}`);
+  }
+  return parts.length ? `Rewards: ${parts.join(" • ")}` : "No additional rewards";
+}
+
+function resultIcon(type) {
+  if (type === "Advancement") return "trophy";
+  if (type === "Market") return "store";
+  return type === "Quest" ? "scroll-text" : "file-text";
+}
+
+function renderNav() {
+  const route = currentRoute();
+  const navGroupState = readLocalState(NAV_GROUP_STATE_KEY);
+  const currentQuest = route.type === "quest"
+    ? DATA.quests.find((item) => item.slug === route.id)
+    : null;
+  const navPages = PAGES.filter((page) => page.id !== "quests");
+  const byGroup = groupBy(navPages, "group");
+  const groups = Object.entries(byGroup).map(([group, pages]) => {
+    const groupIsActive = pages.some((page) =>
+      (route.type === "page" && route.id === page.id)
+      || (route.type === "advancement" && page.id === "advancements")
+    );
+    const groupIsOpen = groupIsActive || navGroupState[group] === true;
+    return `
+    <details class="nav-group nav-page-group" data-nav-group="${escapeHtml(group)}" ${groupIsOpen ? "open" : ""}>
+      <summary class="nav-heading">${icon("chevron-right", "disclosure-icon")}<span>${escapeHtml(group)}</span></summary>
+      <div class="nav-page-links">
+        ${pages.map((page) => `
+          <a class="nav-link ${(route.type === "page" && route.id === page.id) || (route.type === "advancement" && page.id === "advancements") ? "is-active" : ""}" href="${pageUrl(page.id)}">
+            ${icon(page.icon)}
+            <span>${escapeHtml(page.title)}</span>
+          </a>
+        `).join("")}
+      </div>
+    </details>`;
+  }).join("");
+
+  const questLinks = DATA.quests.map((quest) => `
+    <a class="nav-link nav-link-small ${route.type === "quest" && route.id === quest.slug ? "is-active" : ""}" href="${questUrl(quest.slug)}">
+      ${icon(questIcon(quest))}
+      <span>${escapeHtml(quest.title)}</span>
+    </a>
+  `).join("");
+  const questlineLinks = questlineSummaries().map((line) => `
+    <a class="nav-link nav-link-small ${route.type === "questline" && route.id === line.id ? "is-active" : ""}" href="${questlineUrl(line.id)}">
+      ${icon("map")}
+      <span>${escapeHtml(line.label)}</span>
+    </a>
+  `).join("");
+  const questsAreActive = route.type === "quest"
+    || route.type === "questline"
+    || (route.type === "page" && route.id === "quests");
+  const questsAreOpen = questsAreActive || navGroupState.Quests === true;
+
+  els.nav.innerHTML = `${groups}
+    <details class="nav-group nav-page-group" data-nav-group="Quests" ${questsAreOpen ? "open" : ""}>
+      <summary class="nav-heading">${icon("chevron-right", "disclosure-icon")}<span>Quests</span></summary>
+      <div class="nav-page-links">
+        <a class="nav-link ${route.type === "page" && route.id === "quests" ? "is-active" : ""}" href="${pageUrl("quests")}">
+          ${icon("list")}
+          <span>All quests</span>
+        </a>
+        ${questlineLinks ? `
+          <details class="nav-disclosure" ${route.type === "questline" || currentQuest?.questline ? "open" : ""}>
+            <summary>${icon("chevron-right", "disclosure-icon")}<span>Questlines</span></summary>
+            <div class="nav-disclosure-list">${questlineLinks}</div>
+          </details>
+        ` : ""}
+        <details class="nav-disclosure" ${route.type === "quest" ? "open" : ""}>
+          <summary>${icon("chevron-right", "disclosure-icon")}<span>Individual quests</span></summary>
+          <div class="nav-disclosure-list">${questLinks}</div>
+        </details>
+      </div>
+    </details>`;
+
+  els.nav.querySelectorAll(".nav-page-group[data-nav-group]").forEach((group) => {
+    group.addEventListener("toggle", () => {
+      const state = readLocalState(NAV_GROUP_STATE_KEY);
+      state[group.dataset.navGroup] = group.open;
+      writeLocalState(NAV_GROUP_STATE_KEY, state);
+    });
+  });
+}
+
+function render() {
+  const route = currentRoute();
+  try {
+    renderNav();
+    if (route.type === "quest") {
+      const quest = DATA.quests.find((item) => item.slug === route.id) || DATA.quests[0];
+      if (quest) renderDocument(quest.title, quest.description, renderQuestDetail(quest), {
+        icon: questIcon(quest),
+        parent: "Quest Walkthroughs",
+        section: quest.questlineLabel || quest.groupLabel
+      });
+      return;
+    }
+    if (route.type === "questline") {
+      const summary = questlineSummaries().find((line) => line.id === route.id) || questlineSummaries()[0];
+      if (summary) renderDocument(summary.label, `${summary.quests.length} connected quests in this progression.`, renderQuestlineDetail(summary), {
+        icon: "map",
+        parent: "Quest Walkthroughs",
+        section: "Questlines"
+      });
+      return;
+    }
+    if (route.type === "advancement") {
+      const advancement = findAdvancement(route.id);
+      renderDocument("Advancements", advancement
+        ? `Focused on ${advancement.title}.`
+        : "Milestones for trust, village life, hired work, quests, exploration, and conflict.", renderAdvancements({
+        focusedAdvancementId: advancement?.id || ""
+      }), {
+        icon: "trophy",
+        parent: "Reference"
+      });
+      if (advancement) window.requestAnimationFrame(() => focusAdvancementRow(advancement.id));
+      return;
+    }
+    if (route.type === "search") {
+      renderSearch();
+      return;
+    }
+    const page = PAGES.find((item) => item.id === route.id) || PAGES[0];
+    renderDocument(page.title, page.description, page.render(), {
+      icon: page.icon,
+      parent: page.group,
+      heroImage: page.id === "home"
+        ? "https://cdn.modrinth.com/data/cached_images/16269e99f4ef7ac15b6d24f3b523e5fa5778d5f5.png"
+        : null
+    });
+  } finally {
+    cleanRenderedCopy(els.nav, els.content, els.toc, els.crumb);
+    restoreRouteScroll(route);
+    if (route.searchQuery) {
+      window.requestAnimationFrame(() => {
+        const firstMatch = window.VR_WIKI_SEARCH.highlightWithin(els.content, route.searchQuery);
+        firstMatch?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  }
+}
+function renderDocument(title, description, body, meta = {}) {
+  const parent = meta.section ? `${meta.parent} / ${meta.section}` : meta.parent;
+  const heroImage = meta.heroImage
+    ? `<img src="${escapeHtml(meta.heroImage)}" alt="Villager Retaliation overview" style="display:block;width:100%;height:auto;border-radius:10px;margin:0 0 16px;" />`
+    : "";
+  els.crumb.innerHTML = `
+    ${meta.icon ? icon(meta.icon) : ""}
+    <span>${escapeHtml(parent || "Wiki")}</span>
+    <strong>${escapeHtml(title)}</strong>
+  `;
+  els.content.innerHTML = `
+    ${heroImage}
+    <header class="doc-header">
+      <div class="doc-title-row">
+        ${meta.icon ? icon(meta.icon, "title-icon") : ""}
+        <h1>${escapeHtml(title)}</h1>
+      </div>
+      <p>${escapeHtml(description)}</p>
+    </header>
+    ${body}
+  `;
+  renderToc();
+  renderIcons();
+  els.content.focus({ preventScroll: true });
+}
+
+function renderToc() {
+  const headings = [...els.content.querySelectorAll("h2[id], h3[id]")];
+  if (!headings.length) {
+    els.toc.innerHTML = "";
+    return;
+  }
+  const routeHash = location.hash || "#/home";
+  els.toc.innerHTML = `
+    <div class="toc-title">On this page</div>
+    ${headings.map((heading) => `<a class="toc-link ${heading.tagName === "H3" ? "is-sub" : ""}" href="${routeHash}" data-toc-target="${escapeHtml(heading.id)}">${escapeHtml(heading.textContent)}</a>`).join("")}
+  `;
+}
+
+function section(title, body, level = 2) {
+  const id = slugFor(title);
+  return `<section class="doc-section"><h${level} id="${id}">${escapeHtml(title)}</h${level}>${body}</section>`;
+}
+
+function countedSection(title, count, body) {
+  const id = slugFor(title);
+  return `
+    <section class="doc-section">
+      <div class="section-heading-row">
+        <h2 id="${id}">${escapeHtml(title)}</h2>
+        <span class="section-count">${escapeHtml(count)}</span>
+      </div>
+      ${body}
+    </section>
+  `;
+}
+
+function statGrid(stats) {
+  return `<div class="stat-grid">${stats.map((stat) => `
+    <div class="stat-card">
+      ${icon(stat.icon || "sparkles")}
+      <div class="card-copy">
+        <strong>${escapeHtml(capitalizeStatValue(stat.value))}</strong>
+        ${stat.label ? `<span class="stat-label">${escapeHtml(stat.label)}</span>` : ""}
+      </div>
+    </div>
+  `).join("")}</div>`;
+}
+
+function simpleList(items) {
+  return `<ul class="plain-list">${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+}
+
+function pillList(items) {
+  return `<div class="pill-row">${(items || []).map((item) => `<span class="pill">${escapeHtml(item)}</span>`).join("")}</div>`;
+}
+
+function renderHome() {
+  const questlines = new Set(DATA.quests.map((quest) => quest.questline).filter(Boolean)).size;
+  const questGroups = new Set(DATA.quests.map((quest) => quest.group).filter(Boolean)).size;
+  const reputationTiers = Array.isArray(DATA.reputation) ? DATA.reputation.length : 0;
+  return `
+    ${statGrid([
+      { value: plural(DATA.quests.length, "quest"), label: "Built-in walkthroughs", icon: "scroll-text" },
+      { value: plural(questlines, "questline"), label: "Questlines", icon: "map" },
+      { value: plural(questGroups, "quest group"), label: "Browsable quest tags", icon: "tags" },
+      { value: plural(reputationTiers, "reputation tier"), label: "Relationship levels", icon: "shield" },
+      { value: plural(DATA.advancements.length, "advancement"), label: "Reputation tab entries", icon: "trophy" },
+      { value: "20K+ Dialogue lines", label: "Estimated total", icon: "message-square-text" },
+      { value: "11.9 Quadrillion", label: "Villager DNA combinations", icon: "fingerprint" },
+      { value: "18 Villager skills", label: "Core progression stats", icon: "brain-circuit" },
+      { value: plural(DATA.skillTrades.reduce((sum, group) => sum + group.count, 0), "skill trade"), label: "Skill-generated trade entries", icon: "badge-percent" }
+    ])}
+    ${section("What The Mod Changes", `
+      <p>Villager Retaliation makes villagers remember how each player treats them. Adults can defend themselves, nearby witnesses can react to crimes, and reputation changes how dialogue, trade access, gifts, pacification, and some combat behavior feel.</p>
+      <br />
+      ${simpleList([
+        "Attack a villager and that villager can fight back.",
+        "Kill or harm villagers in public and witnesses may rally or remember it.",
+        "Build trust through trading, gifts, defending villages, quest completion, and good history.",
+        "Talk to villagers through a reputation-aware interaction screen with stories, quests, gifts, recruitment, and relationships.",
+        "Follow data-driven quests with tracker text, quest item highlighting, HUD notices, and authored dialogue scenes."
+      ].map(escapeHtml))}
+    `)}
+    ${section("Best First Steps", `
+      <ol class="step-list icon-step-list">
+        <li>${icon("handshake")}<strong>Start harmless.</strong><span>Trade, talk, and avoid watched containers until you know who trusts you.</span></li>
+        <li>${icon("gift")}<strong>Use gifts carefully.</strong><span>Emeralds, diamonds, food, tools, books, and profession items are usually safer than hazards or rotten loot.</span></li>
+        <li>${icon("book-open")}<strong>Open the Quest Journal.</strong><span>Default keybinds are <kbd>J</kbd> for the journal and <kbd>K</kbd> for the tracker.</span></li>
+        <li>${icon("list-checks")}<strong>Read quest gates.</strong><span>Many quests require a villager profession, trade level, and hidden skill minimum before they appear.</span></li>
+      </ol>
+    `)}
+    ${section("Main Pages", `
+      <div class="card-grid two">
+        ${PAGES.filter((page) => page.id !== "home").map((page) => `
+          <a class="feature-card" href="${pageUrl(page.id)}">
+            ${icon(page.icon)}
+            <div class="card-copy">
+              <strong>${escapeHtml(page.title)}</strong>
+              <span>${escapeHtml(page.description)}</span>
+            </div>
+          </a>
+        `).join("")}
+      </div>
+    `)}
+  `;
+}
+
+function questCard(quest) {
+  const objectives = Array.isArray(quest.objectives) ? quest.objectives : [];
+  const requirements = quest.requirements || {};
+  const rewards = quest.rewards || {};
+  const goal = quest.target?.destinations?.join(" or ") || quest.target?.structure || objectives[0] || quest.description || "See the walkthrough for objectives";
+  const minLevel = requirements.minLevel || "Any";
+  const reputationReward = rewards.reputation ?? "0";
+  const experienceReward = rewards.experience ?? "0";
+  const rewardPreview = questRewardPreview(quest);
+  return `
+    <a class="quest-card" href="${questUrl(quest.slug)}" data-questline="${escapeHtml(quest.questline)}" data-group="${escapeHtml(quest.group)}">
+      ${icon(questIcon(quest))}
+      <span class="card-kicker">${escapeHtml(quest.questlineLabel || quest.groupLabel)}</span>
+      <strong>${escapeHtml(quest.title)}</strong>
+      <span>${escapeHtml(quest.description)}</span>
+      <p>${escapeHtml(goal)}</p>
+      <div class="mini-meta">
+        <span>${escapeHtml(minLevel)} villager</span>
+        <span>${escapeHtml(reputationReward)} reputation</span>
+        <span>${escapeHtml(experienceReward)} XP</span>
+      </div>
+      <p class="quest-reward-preview">${escapeHtml(rewardPreview)}</p>
+    </a>
+  `;
+}
+
+function renderQuests() {
+  const byGroup = groupBy(DATA.quests, "groupLabel");
+  return `
+    <section class="quest-guide" aria-label="How to use quest walkthroughs">
+      <div class="quest-guide-card feature-card">
+        ${icon("message-square-text")}
+        <div class="card-copy">
+          <strong>Get the offer</strong>
+          <span>Find a villager who meets the profession, trade-level, and skill requirements.</span>
+        </div>
+      </div>
+      <div class="quest-guide-card feature-card">
+        ${icon("map-pin")}
+        <div class="card-copy">
+          <strong>Follow the tracker</strong>
+          <span>Use the Journal and Tracker to follow objectives, coordinates, and current progress.</span>
+        </div>
+      </div>
+      <div class="quest-guide-card feature-card">
+        ${icon("package-check")}
+        <div class="card-copy">
+          <strong>Return cleanly</strong>
+          <span>Complete every objective, then return to the required quest giver with any requested items.</span>
+        </div>
+      </div>
+    </section>
+    ${Object.entries(byGroup).map(([group, quests]) => countedSection(group, plural(quests.length, "quest"), `
+      <div class="card-grid two">${quests.map(questCard).join("")}</div>
+    `)).join("")}
+  `;
+}
+
+function questRelationInfo(quest) {
+  const relationKey = quest.relationKey || (quest.questline ? `questline:${quest.questline}` : `group:${quest.group}`);
+  const related = DATA.quests
+    .filter((item) => (item.relationKey || (item.questline ? `questline:${item.questline}` : `group:${item.group}`)) === relationKey)
+    .sort((a, b) => (a.questlineOrder ?? 0) - (b.questlineOrder ?? 0) || a.title.localeCompare(b.title));
+  const isQuestline = Boolean(quest.questline);
+  return {
+    related,
+    isQuestline,
+    label: isQuestline ? "Questline" : "Quest Group"
+  };
+}
+
+function questPathModel(quests) {
+  const byId = new Map(quests.map((item) => [item.id, item]));
+  const children = new Map(quests.map((item) => [item.id, []]));
+  for (const item of quests) {
+    if (item.parent && byId.has(item.parent)) children.get(item.parent).push(item);
+  }
+  for (const entries of children.values()) {
+    entries.sort((a, b) => (a.questlineOrder ?? 0) - (b.questlineOrder ?? 0) || a.title.localeCompare(b.title));
+  }
+  const roots = quests
+    .filter((item) => !item.parent || !byId.has(item.parent))
+    .sort((a, b) => (a.questlineOrder ?? 0) - (b.questlineOrder ?? 0) || a.title.localeCompare(b.title));
+  const choicePoints = quests.filter((item) => item.branchChoices?.length || (children.get(item.id)?.length || 0) > 1);
+  return { byId, children, roots, choicePoints };
+}
+
+function questBranchLabel(quest, parent) {
+  if (!parent) return "";
+  const gate = (quest.branchRequirements || []).find((requirement) => requirement.questId === parent.id)
+    || (quest.branchRequirements || [])[0];
+  if (!gate) return "";
+  const authoredChoice = (parent.branchChoices || []).find((choice) => choice.id === gate.value);
+  return authoredChoice?.label || titleCase(gate.value);
+}
+
+function renderQuestPathNode(item, model, currentId, options = {}) {
+  const children = model.children.get(item.id) || [];
+  const isCurrent = item.id === currentId;
+  const parent = item.parent ? model.byId.get(item.parent) : null;
+  const gateLabel = questBranchLabel(item, parent);
+  const hasDecision = Boolean(item.branchChoices?.length);
+  const gatedChildren = children.filter((child) => questBranchLabel(child, item));
+  const decisionChangesRoute = gatedChildren.length > 0;
+  const prerequisiteLabel = parent
+    ? `After ${parent.title}`
+    : (item.prerequisites || []).length
+      ? `Requires ${(item.prerequisites || []).map((entry) => model.byId.get(entry.id)?.title || titleCase(entry.id)).join(" or ")}`
+      : "Questline start";
+  const routeLabel = gateLabel || options.routeLabel || "";
+
+  return `
+    <div class="quest-path-step${isCurrent ? " is-current" : ""}${hasDecision ? " has-decision" : ""}">
+      <article class="quest-path-card">
+        <div class="quest-path-marker">${icon(isCurrent ? "map-pin" : hasDecision ? "git-branch" : "scroll-text")}</div>
+        <div class="quest-path-card-copy">
+          <div class="quest-path-eyebrow">
+            ${routeLabel ? `<span class="quest-route-badge">${icon("corner-down-right")}${escapeHtml(routeLabel)}</span>` : ""}
+            <span>${escapeHtml(prerequisiteLabel)}</span>
+          </div>
+          <a href="${questUrl(item.slug)}" ${isCurrent ? `aria-current="page"` : ""}>${escapeHtml(item.title)}</a>
+          <p>${escapeHtml(item.description || "Continue this questline.")}</p>
+          ${hasDecision ? `
+            <div class="quest-decision">
+              ${icon("split")}
+              <div>
+                <strong>${decisionChangesRoute ? "Your choice changes what unlocks next" : "This quest records a decision"}</strong>
+                <span>${escapeHtml(item.branchChoices.map((choice) => choice.label).join(" or "))}</span>
+              </div>
+            </div>
+          ` : ""}
+        </div>
+        ${isCurrent ? `<span class="current-quest-badge">You are here</span>` : ""}
+      </article>
+      ${children.length === 1 ? `
+        <div class="quest-path-continuation">
+          ${renderQuestPathNode(children[0], model, currentId)}
+        </div>
+      ` : ""}
+      ${children.length > 1 ? `
+        <div class="quest-path-fork">
+          <div class="quest-fork-label">
+            ${icon("git-fork")}
+            <div>
+              <strong>${gatedChildren.length ? "Paths split here" : "Multiple quests unlock"}</strong>
+              <span>${gatedChildren.length
+                ? "Choice-labeled routes require that decision. Other routes only require the previous quest."
+                : "These quests share the same prerequisite and can become available from this point."}</span>
+            </div>
+          </div>
+          <div class="quest-path-branches">
+            ${children.map((child, index) => {
+              const choiceLabel = questBranchLabel(child, item);
+              const routeLabel = choiceLabel || "Also unlocks";
+              return `
+                <div class="quest-path-branch">
+                  <div class="quest-branch-heading">
+                    <span>${choiceLabel ? `Choice ${index + 1}` : "Next quest"}</span>
+                    <strong>${escapeHtml(choiceLabel || child.title)}</strong>
+                  </div>
+                  ${renderQuestPathNode(child, model, currentId, { routeLabel })}
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
+function questPathMap(quests, currentId = "") {
+  const model = questPathModel(quests);
+  return `
+    <div class="quest-path-map">
+      <div class="quest-path-help">
+        <div>
+          ${icon("route")}
+          <p><strong>Follow the lines from top to bottom.</strong> Gold cards mark decisions. Teal labels explain exactly how each route unlocks.</p>
+        </div>
+        <div class="quest-path-legend" aria-label="Quest path legend">
+          <span><i class="legend-swatch is-current"></i>Current</span>
+          <span><i class="legend-swatch is-decision"></i>Decision</span>
+          <span><i class="legend-swatch is-route"></i>Choice route</span>
+        </div>
+      </div>
+      <div class="quest-path-tree${model.roots.length > 1 ? " has-multiple-roots" : ""}">
+        ${model.roots.map((root) => renderQuestPathNode(root, model, currentId)).join("")}
+      </div>
+      ${model.choicePoints.length ? `<p class="quest-path-footnote">${plural(model.choicePoints.length, "decision point")} in this questline. A choice may make other paths unavailable in this playthrough.</p>` : ""}
+    </div>
+  `;
+}
+
+function questlinePanel(quest) {
+  const relation = questRelationInfo(quest);
+  const related = relation.related;
+  if (related.length <= 1) return "";
+  const model = questPathModel(related);
+  const summary = [
+    plural(related.length, "quest"),
+    model.choicePoints.length ? plural(model.choicePoints.length, "decision") : "linear story"
+  ].join(" · ");
+
+  return section(relation.label, `
+    <div class="questline-panel">
+      <div class="questline-summary">
+        ${icon(questIcon(quest))}
+        <div>
+          <strong>${escapeHtml(quest.questlineLabel || quest.groupLabel)}</strong>
+          <span>${escapeHtml(summary)}</span>
+        </div>
+      </div>
+      ${questPathMap(related, quest.id)}
+    </div>
+  `);
+}
+
+function renderQuestlineDetail(summary) {
+  const quests = summary.quests || [];
+  const model = questPathModel(quests);
+  return `
+    ${statGrid([
+      { value: plural(quests.length, "quest"), label: "Connected quests", icon: "scroll-text" },
+      { value: model.choicePoints.length ? plural(model.choicePoints.length, "decision point") : "Linear path", label: "Progression shape", icon: "git-branch" }
+    ])}
+    ${section("Questline", `
+      <div class="questline-panel">
+        <div class="questline-summary">
+          ${icon("map")}
+          <div>
+            <strong>${escapeHtml(summary.label)}</strong>
+            <span>${escapeHtml(plural(quests.length, "quest"))}</span>
+          </div>
+        </div>
+        ${questPathMap(quests)}
+      </div>
+    `)}
+    ${section("Quests", `
+      <div class="card-grid two">${quests.map(questCard).join("")}</div>
+    `)}
+  `;
+}
+
+function renderQuestDetail(quest) {
+  const relation = questRelationInfo(quest);
+  const target = quest.target;
+  const totalLootWeight = quest.rewards.loot.reduce((sum, loot) => sum + (Number(loot.weight) || 0), 0);
+  const minLootWeight = quest.rewards.loot.reduce((min, loot) => {
+    const weight = Number(loot.weight);
+    return Number.isFinite(weight) && weight > 0 ? Math.min(min, weight) : min;
+  }, Number.POSITIVE_INFINITY);
+  const rewardLoot = quest.rewards.loot.length ? quest.rewards.loot.map((loot) => {
+    const weight = Number(loot.weight) || 0;
+    const chance = totalLootWeight > 0 ? (weight / totalLootWeight) * 100 : 0;
+    const chanceText = `${chance.toFixed(1).replace(/\.0$/, "")}%`;
+    const detail = loot.note ? loot.note : "Possible reward";
+    const isRarest = Number.isFinite(minLootWeight) && weight === minLootWeight;
+    return `
+    <div class="loot-card${isRarest ? " loot-card-rarest" : ""}">
+      ${icon("package")}
+      <strong>${escapeHtml(loot.count)} ${escapeHtml(loot.item)}</strong>
+      <span class="loot-chance">${escapeHtml(chanceText)}</span>
+      <span>${escapeHtml(detail)}</span>
+    </div>
+  `;
+  }).join("") : `<div class="loot-card">${icon("package-check")}<strong>Fixed rewards only</strong><span>This quest does not add a random item reward.</span></div>`;
+  const skillText = quest.requirements.skills.length
+    ? quest.requirements.skills.map((skill) => `${escapeHtml(skill.skill)} ${skill.min != null ? `${escapeHtml(skill.min)} or higher` : ""}`).join(", ")
+    : "No skill minimum";
+  const locationLabel = target?.destinations?.join(" or ") || target?.structure || quest.objectives[0] || "Complete the listed objectives";
+  const rulesText = quest.rules.length ? quest.rules.join(", ") : "No extra restrictions";
+  const professionText = formatList(quest.requirements.professions, "Any profession");
+  const levelText = quest.requirements.minLevel && quest.requirements.minLevel !== "Any"
+    ? `${quest.requirements.minLevel.toLowerCase()} or higher`
+    : "any trade level";
+  const objectiveSummary = quest.objectives.length > 1
+    ? `${quest.objectives[0]} + ${quest.objectives.length - 1} more`
+    : quest.objectives[0] || "Follow the quest tracker";
+
+  return `
+    <div class="back-row"><a href="${pageUrl("quests")}">${icon("arrow-left")}Back to all quests</a></div>
+
+    <section class="quest-summary-panel" aria-label="Quest summary">
+      <div class="quest-brief">
+        <div>
+          ${icon("users")}
+          <strong>Quest giver</strong>
+          <span>${escapeHtml(professionText)}</span>
+        </div>
+        <div>
+          ${icon(target ? "map-pin" : "package-check")}
+          <strong>Main goal</strong>
+          <span>${escapeHtml(locationLabel)}</span>
+        </div>
+        <div>
+          ${icon("package-check")}
+          <strong>Objectives</strong>
+          <span>${escapeHtml(objectiveSummary)}</span>
+        </div>
+      </div>
+      <p class="quest-summary-copy">Find a quest giver who meets the profession and trade-level requirements above. Complete the tracked objectives, then return to that villager to finish the quest and collect its rewards.</p>
+    </section>
+
+    ${statGrid([
+      { value: quest.questlineLabel || quest.groupLabel, label: relation.label, icon: questIcon(quest) },
+      { value: quest.requirements.minLevel, label: "Required trade level", icon: "badge-check" },
+      { value: `${quest.rewards.reputation} reputation`, label: "Relationship reward", icon: "heart-handshake" },
+      { value: `${quest.rewards.experience} XP`, label: "Player experience", icon: "sparkles" }
+    ])}
+
+    ${questlinePanel(quest)}
+
+    ${section("Requirements", `
+      <div class="info-grid info-grid-before">
+        <div class="info-card">${icon("briefcase-business")}<strong>Quest giver profession</strong><span>${escapeHtml(professionText)}</span></div>
+        <div class="info-card">${icon("badge-check")}<strong>Trade level</strong><span>${escapeHtml(levelText)}</span></div>
+        <div class="info-card">${icon("activity")}<strong>Skill requirement</strong><span>${skillText}</span></div>
+      </div>
+      <div class="info-card info-card-wide">${icon("scroll-text")}<strong>Availability</strong><span>${escapeHtml(rulesText)}</span></div>
+    `)}
+
+    ${section("Quest Flow", `
+      <ol class="quest-flow">
+        ${quest.steps.map((step, index) => `
+          <li>
+            <div class="flow-marker">
+              ${icon(questFlowIcon(step.id))}
+              <span>${index + 1}</span>
+            </div>
+            <div>
+              <strong>${escapeHtml(step.label)}</strong>
+              <p>${escapeHtml(step.text)}${step.hint ? ` Hint: ${escapeHtml(step.hint)}.` : ""}</p>
+            </div>
+          </li>
+        `).join("")}
+      </ol>
+    `)}
+
+    ${section("Turn In And Rewards", `
+      <div class="turnin-layout">
+        <div class="turnin-card">
+          ${icon("clipboard-check")}
+          <strong>Complete before returning</strong>
+          ${pillList(quest.objectives)}
+        </div>
+        <div class="turnin-card">
+          ${icon("heart-handshake")}
+          <strong>Relationship reward</strong>
+          <span>${escapeHtml(quest.rewards.reputation)} personal reputation and ${escapeHtml(quest.rewards.gossipReputation)} shared gossip reputation.</span>
+        </div>
+      </div>
+      <div class="loot-grid">${rewardLoot}</div>
+    `)}
+
+    ${target ? section("Finding The Target", `
+      <dl class="fact-list">
+        <div><dt>Destination</dt><dd>${escapeHtml(target.destinations?.join(" or ") || target.structure || "Follow the tracker")}</dd></div>
+        <div><dt>Bring back</dt><dd>${escapeHtml(target.proofItem || "No proof item required")}</dd></div>
+        <div><dt>Search area</dt><dd>${target.searchRadius ? `${escapeHtml(target.searchRadius)} blocks from the marked area` : "The tracker gives the destination directly"}</dd></div>
+        <div><dt>Objective range</dt><dd>${target.discoveryRadius ? `Move within ${escapeHtml(target.discoveryRadius)} blocks` : "Reach the marked destination"}</dd></div>
+      </dl>
+    `) : ""}
+
+    ${section("Quest Dialogue", renderQuestDialogueReference(quest))}
+  `;
+}
+
+function renderQuestDialogueReference(quest) {
+  const dialogue = quest.dialogue || {};
+  const commonStages = (dialogue.commonStages || []).filter(dialogueStageHasContent);
+  const branches = dialogue.branches || [];
+  if (commonStages.length || branches.length) {
+    return `
+      <details class="reference-panel">
+        <summary>${icon("message-square-text")}Read quest dialogue</summary>
+        <div class="dialogue-reference-body">
+          ${commonStages.length ? `
+            <div class="dialogue-route">
+              <div class="dialogue-route-title">
+                <strong>Before the choice</strong>
+                <span>Dialogue you may see before choosing a route.</span>
+              </div>
+              ${renderDialogueStageList(commonStages)}
+            </div>
+          ` : ""}
+          ${branches.map(renderDialogueBranchGroup).join("")}
+        </div>
+      </details>
+    `;
+  }
+  return `
+    <details class="reference-panel">
+      <summary>${icon("message-square-text")}Read quest dialogue</summary>
+      <div class="quote-stack">
+        ${quoteBlock("Offer", dialogue.offer)}
+        ${quoteBlock("Started", dialogue.started)}
+        ${quoteBlock("Reminder", dialogue.reminder)}
+        ${quoteBlock("Completion", dialogue.completed)}
+        ${quoteBlock("Missing Items", dialogue.missing)}
+      </div>
+    </details>
+  `;
+}
+
+function dialogueStageHasContent(stage) {
+  return stage?.slots?.length || stage?.choices?.length || stage?.actions?.length || stage?.scenes?.length;
+}
+
+function renderDialogueBranchGroup(branch) {
+  return `
+    <div class="dialogue-branch-group">
+      <div class="dialogue-route-title">
+        <strong>Choice at ${escapeHtml(branch.label || titleCase(branch.stageId))}</strong>
+      </div>
+      <div class="dialogue-choice-grid">
+        ${(branch.choices || []).map((choice) => `
+          <div class="dialogue-choice">
+            <div class="dialogue-choice-head">
+              <strong>${escapeHtml(choice.label || titleCase(choice.id))}</strong>
+            </div>
+            ${choice.lines?.length ? `<div class="dialogue-lines">${choice.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>` : ""}
+            ${choice.destination ? `<p class="dialogue-destination">Continues to ${escapeHtml(titleCase(choice.destination))}</p>` : ""}
+            ${choice.stages?.length ? renderDialogueStageList(choice.stages) : `<p class="dialogue-empty">This choice has no additional dialogue.</p>`}
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderDialogueStageList(stages) {
+  return `<div class="dialogue-stage-list">${(stages || []).filter(dialogueStageHasContent).map(renderDialogueStage).join("")}</div>`;
+}
+
+function renderDialogueStage(stage) {
+  return `
+    <div class="dialogue-stage">
+      <div class="dialogue-stage-head">
+        <strong>${escapeHtml(stage.label || titleCase(stage.stageId))}</strong>
+      </div>
+      ${stage.trackerText ? `<p class="dialogue-tracker">${escapeHtml(stage.trackerText)}</p>` : ""}
+      ${(stage.slots || []).map(renderDialogueSlot).join("")}
+      ${stage.choices?.length ? renderDialogueChoices("Branch options", stage.choices) : ""}
+      ${(stage.actions || []).map((group) => renderDialogueLineGroup(group.label, group.lines)).join("")}
+      ${(stage.scenes || []).map((group) => renderDialogueLineGroup(group.label, group.lines)).join("")}
+    </div>
+  `;
+}
+
+function renderDialogueSlot(slot) {
+  return `
+    <div class="dialogue-block">
+      <div class="dialogue-block-title">
+        <strong>${escapeHtml(slot.title || "Dialogue")}</strong>
+        ${slot.label && slot.label !== slot.title ? `<span>${escapeHtml(slot.label)}</span>` : ""}
+      </div>
+      ${slot.lines?.length ? `<div class="dialogue-lines">${slot.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>` : ""}
+      ${slot.responses?.length ? renderDialogueChoices("Options", slot.responses) : ""}
+    </div>
+  `;
+}
+
+function renderDialogueChoices(title, choices) {
+  return `
+    <div class="dialogue-options">
+      <strong>${escapeHtml(title)}</strong>
+      <ul>
+        ${(choices || []).map((choice) => `
+          <li>
+            <span>${escapeHtml(choice.label || titleCase(choice.id))}</span>
+            ${choice.destination ? `<em>${escapeHtml(choice.destination)}</em>` : ""}
+            ${choice.lines?.length ? choice.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("") : ""}
+          </li>
+        `).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function renderDialogueLineGroup(title, lines) {
+  if (!lines?.length) return "";
+  return `
+    <div class="dialogue-block">
+      <div class="dialogue-block-title"><strong>${escapeHtml(title)}</strong></div>
+      <div class="dialogue-lines">${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>
+    </div>
+  `;
+}
+
+function questFlowIcon(stepId) {
+  if (stepId === "travel") return "map-pin";
+  if (stepId === "proof") return "package-search";
+  if (stepId === "return") return "undo-2";
+  if (stepId.startsWith("bring_")) return "package-check";
+  return "circle-dot";
+}
+
+function quoteBlock(title, lines) {
+  if (!lines || !lines.length) return "";
+  return `<blockquote><strong>${escapeHtml(title)}</strong>${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</blockquote>`;
+}
+
+function renderReputation() {
+  return `
+    ${section("Reputation Is Personal", `
+      <p>Reputation is tracked per villager and per player. One villager can trust you while another despises you, and nearby witnesses can carry consequences through gossip.</p>
+      <p>Low trust can affect trade prices, pacification, anger duration, fleeing, attack-on-sight behavior, cleric support, dialogue tone, interaction availability, and advancement progress.</p>
+    `)}
+    ${section("Default Tiers", `
+      <div class="table-wrap"><table><thead><tr><th>Tier</th><th>Default threshold</th><th>Effect</th></tr></thead><tbody>
+        ${DATA.reputation.map((tier) => `<tr><td>${escapeHtml(tier.level)}</td><td>${escapeHtml(tier.threshold)}</td><td>${escapeHtml(tier.effect)}</td></tr>`).join("")}
+      </tbody></table></div>
+    `)}
+    ${section("Pacification", `
+      <p>Hostile villagers can be calmed with datapack-defined payment items unless reputation has fallen too low or the config blocks that outcome.</p>
+      <div class="card-grid two">${DATA.pacification.map((payment) => `<div class="feature-card no-icon"><div class="card-copy"><strong>${escapeHtml(payment.item)}</strong><span>${escapeHtml(payment.min)} to ${escapeHtml(payment.max)} ${escapeHtml(payment.name)}</span></div></div>`).join("")}</div>
+    `)}
+    ${section("Ways To Recover", `
+      ${simpleList([
+        "Trade with villagers who still allow it.",
+        "Give liked or loved gifts, especially profession-specific items.",
+        "Defend villagers and villages from hostile mobs.",
+        "Complete quests and return proof cleanly.",
+        "Avoid watched containers until suspicion cools down."
+      ].map(escapeHtml))}
+    `)}
+  `;
+}
+
+function renderDialogue() {
+  return `
+    ${section("Interaction Screen", `
+      <p>The interaction screen lets players talk, give gifts, inspect relationship context, recruit eligible villagers, and follow quest scenes. Dialogue reacts to personal reputation, profession, recent village events, family ties, gear, weather, time, and whether this is the first meeting.</p>
+    `)}
+    ${section("Stories And Maps", `
+      <p>Villagers can share discovered structure and biome stories. Trusted villagers can point players toward map hints, and story sharing feeds advancements such as Once Upon a Time, Story Keeper, Village Chronicler, and Legend Trader.</p>
+    `)}
+    ${section("Quests In Dialogue", `
+      <p>Quest offers, reminders, turn-ins, abandonment prompts, and event follow-ups are authored as dialogue trees. If a quest is available, in progress, or ready to complete, the relevant option appears in the villager conversation menu.</p>
+      <p>Default quest keybinds are <kbd>J</kbd> for the Quest Journal and <kbd>K</kbd> for the Quest Tracker.</p>
+    `)}
+  `;
+}
+
+function renderCombat() {
+  return `
+    ${section("Retaliation", `
+      <p>By default, hitting a villager angers that villager. Killing an adult villager can also anger nearby adult witnesses when visibility rules are met. Anger expires after a configurable duration and can spread through witness-based retaliation events.</p>
+      <br />
+      ${simpleList([
+        "Hostile villagers and wandering traders can block trading while hostile.",
+        "Hostile villagers can be pacified with datapack-defined item payments unless reputation is too low.",
+        "Villagers can use melee weapons, ranged weapons, shields, and armor through combat roles and inventory interaction.",
+        "While threatened, villagers and wandering traders can pick up nearby dropped weapons, and temporary retaliation weapons can drop on death at configurable chances.",
+        "Clerics can use defensive and splash potions, heal allies, and support trusted-or-better players."
+      ].map(escapeHtml))}
+    `)}
+    ${section("Hostile Mob Defense", `
+      <p>When enabled, villagers and wandering traders can target, retaliate against, or stand ground against hostile mobs. This keeps villages more self-protective without replacing vanilla villagers or removing profession identity.</p>
+    `)}
+    ${section("Environmental Blame", `
+      <p>If a player places lava, uses flint and steel, or uses a fire charge, nearby lava or fire damage can be attributed to that player for a short window (2 real-time minutes by default). Village witnesses can connect that damage to the player for retaliation, reputation, and related systems instead of treating it as ordinary environmental harm.</p>
+    `)}
+  `;
+}
+
+function renderPlayerRaids() {
+  return `
+    ${section("Declaring A Raid", `
+      <p>Attach a banner to a helmet, wear it inside a tracked village, and begin using a goat horn. The player and their current party are snapshotted as raiders. The raid cannot overlap a vanilla raid, another Player Raid involving the village or a participant, or a defended-village cooldown.</p>
+    `)}
+    ${section("When A Party Member Calls It Home", `
+      <p>Recruited villagers from the target village permanently leave the party and confront the initiating player in a chained conversation before preparations begin. They call the raiders traitors, rejoin their neighbors, and count among the defenders.</p>
+      <p>Every villager recorded as belonging to that village sets every raider player's reputation to at most -250. Reputation already below -250 loses another 250.</p>
+    `)}
+    ${section("Preparation And Defenses", `
+      ${simpleList([
+        "The red raid bar fills for 10 seconds by default, then shows the number of snapshotted villagers remaining.",
+        "Adult non-nitwits fill empty equipment slots with difficulty-weighted militia weapons and armor.",
+        "Babies and nitwits hide while capable villagers engage the raiders.",
+        "Aligned iron golems arrive in fixed-budget batches at activation and the 75%, 50%, and 25% defender thresholds.",
+        "Raid equipment and surviving summoned golems remain after the outcome."
+      ].map(escapeHtml))}
+    `)}
+    ${section("Winning Or Abandoning", `
+      <p>Raiders win once every snapshotted defender is dead or converted. Villagers born later and visitors are not added to the objective, and golems never count as remaining villagers.</p>
+      <p>The village wins if no living, non-spectator raider player stays inside the village footprint for 30 seconds by default. A surviving village then receives a three-day cooldown.</p>
+    `)}
+  `;
+}
+
+function giftRatingClass(rating) {
+  const value = Math.max(-3, Math.min(3, Number(rating) || 0));
+  if (value > 0) return `gift-rating-positive-${value}`;
+  if (value < 0) return `gift-rating-negative-${Math.abs(value)}`;
+  return "gift-rating-neutral";
+}
+
+function sortedGiftPreferences(entries) {
+  return (entries || []).slice().sort((a, b) => (
+    Number(b.rating) - Number(a.rating)
+    || String(a.category || "").localeCompare(String(b.category || ""))
+  ));
+}
+
+function renderGiftPreferenceEntries(entries) {
+  return sortedGiftPreferences(entries).map((entry) => `
+    <div class="profession-gift-group gift-rating-group ${giftRatingClass(entry.rating)}">
+      <div class="gift-rating-heading">
+        <strong><span class="gift-rating-symbol">${escapeHtml(entry.ratingLabel || "0")}</span> ${escapeHtml(entry.category || "Gift")}</strong>
+        <span class="gift-rating-reaction">${escapeHtml(entry.reaction || "Neutral")}</span>
+      </div>
+      ${pillList(entry.items || [])}
+    </div>
+  `).join("");
+}
+
+function renderGiftPreferencePanel(name, entries, extraClass = "") {
+  const preferences = sortedGiftPreferences(entries);
+  const selectorCount = new Set(preferences.flatMap((entry) => entry.items || [])).size;
+  return `
+    <details class="profession-gift-panel ${extraClass}">
+      <summary>
+        <span class="profession-gift-name">${escapeHtml(name)}</span>
+        <span class="profession-gift-meta">${plural(preferences.length, "category", "categories")}, ${plural(selectorCount, "selector")}</span>
+        ${icon("chevron-down", "profession-gift-chevron")}
+      </summary>
+      <div class="profession-gift-body">
+        ${preferences.length ? renderGiftPreferenceEntries(preferences) : '<p class="profession-gift-empty">No explicit preferences.</p>'}
+      </div>
+    </details>
+  `;
+}
+
+function renderGiftRatingScale() {
+  const stages = Array.isArray(DATA.gifts.ratingScale) ? DATA.gifts.ratingScale : [];
+  return `<div class="table-wrap"><table class="gift-rating-table"><thead><tr><th>Rating</th><th>Reaction</th><th>Meaning</th></tr></thead><tbody>${stages.map((stage) => `
+    <tr class="${giftRatingClass(stage.rating)}">
+      <td><strong class="gift-rating-symbol">${escapeHtml(stage.label)}</strong></td>
+      <td>${escapeHtml(stage.reaction)}</td>
+      <td>${escapeHtml(stage.description)}</td>
+    </tr>
+  `).join("")}</tbody></table></div>`;
+}
+
+function renderGifts() {
+  const professionPanels = (DATA.gifts.professionPreferences || [])
+    .slice()
+    .sort((a, b) => String(a.profession || "").localeCompare(String(b.profession || "")))
+    .map((group) => renderGiftPreferencePanel(group.profession, group.entries))
+    .join("");
+
+  const globalPanel = renderGiftPreferencePanel(
+    "Global gifts",
+    DATA.gifts.globalPreferences || [],
+    "profession-gift-panel-global"
+  );
+
+  const rewardGroups = new Map();
+  (DATA.gifts.rewards || []).forEach((reward) => {
+    const professions = Array.isArray(reward.professions) && reward.professions.length ? reward.professions : ["Any"];
+    professions.forEach((profession) => {
+      if (!rewardGroups.has(profession)) rewardGroups.set(profession, []);
+      rewardGroups.get(profession).push(reward);
+    });
+  });
+  const rewardPanels = [...rewardGroups.entries()]
+    .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+    .map(([profession, rewards]) => `
+      <details class="profession-gift-panel reward-panel">
+        <summary>
+          <span class="profession-gift-name">${escapeHtml(profession)}</span>
+          <span class="profession-gift-meta">${plural(rewards.length, "possible reward")}</span>
+          ${icon("chevron-down", "profession-gift-chevron")}
+        </summary>
+        <div class="profession-gift-body reward-panel-body">
+          ${rewards.map((reward) => `
+            <div class="profession-gift-group reward-gift-group">
+              <strong>${escapeHtml(formatList(reward.levels))}</strong>
+              ${pillList([`${reward.count} ${reward.item}`])}
+            </div>
+          `).join("")}
+        </div>
+      </details>
+    `).join("");
+
+  return `
+    ${section("Choosing A Gift", `
+      <p>Villagers have shared tastes as well as profession-specific preferences. Ratings run from <strong>+++</strong> for the strongest preference to <strong>---</strong> for the strongest dislike.</p>
+      <p>Higher-priority and more specific categories can override broader ones; profession-specific rules win otherwise equivalent matches. Items marked <strong>(tag)</strong> represent every item supplied by that Minecraft item tag, so modpacks can expand those categories.</p>
+      <p>Items without an explicit preference are neutral. The villager must have enough inventory space to accept the full stack.</p>
+      <p>Positive gift reputation belongs to your relationship with that villager. Repeating the same gift on the same Minecraft day normally gives only 10% of its reputation, and positive gift reputation is capped at 120 per relationship each day. Disliked gifts keep their full penalty.</p>
+      ${statGrid([
+        { value: DATA.gifts.totals?.preferences || 0, label: "Gift preferences", icon: "sparkles" },
+        { value: DATA.gifts.totals?.rewards || 0, label: "High-trust rewards", icon: "gift" }
+      ])}
+    `)}
+    ${section("Gift Rating Scale", renderGiftRatingScale())}
+    ${section("Profession Gift Preferences", `
+      <div class="profession-gift-list">
+        ${globalPanel}
+        ${professionPanels}
+      </div>
+    `)}
+    ${section("High-Reputation Rewards", `
+      <div class="profession-gift-list reward-panel-list">
+        ${rewardPanels}
+      </div>
+    `)}
+  `;
+}
+
+function renderSkillTrades() {
+  return `
+    ${section("Unlocking Skill Trades", `
+      <p>A villager's profession, trade level, individual skills, and relationship with you determine which advanced trades can appear. When your reputation is high enough, Special Orders let you request an eligible trade directly.</p>
+    `)}
+    ${DATA.skillTrades.map((group) => section(group.profession, `
+      <div class="table-wrap"><table class="skill-trade-table"><colgroup><col class="rank-col"><col class="level-col"><col class="cost-col"><col class="result-col"><col class="chance-col"><col class="order-col"></colgroup><thead><tr><th>Rank</th><th>Level</th><th>Cost</th><th>Result</th><th>Chance</th><th>Special Order</th></tr></thead><tbody>
+        ${group.trades.map((trade) => `<tr><td>${escapeHtml(trade.rank)}</td><td>${escapeHtml(trade.level || "")}</td><td>${escapeHtml(trade.cost)}</td><td>${escapeHtml(trade.result)}</td><td>${trade.chance == null ? "" : `${escapeHtml(trade.chance)}%`}</td><td>${trade.requestable ? escapeHtml(trade.minReputation || "Yes") : "No"}</td></tr>`).join("")}
+      </tbody></table></div>
+    `)).join("")}
+  `;
+}
+
+function renderContainers() {
+  return `
+    ${section("Village Property", `
+      <p>Villagers may confront you for opening, breaking, or stealing from protected village containers. Your reputation and any nearby witnesses affect how seriously they respond.</p>
+    `)}
+    ${section("Breaking Chests Is Worse", `
+      <p>Breaking a protected container counts the items released from it before applying the reputation loss. Destroying a stocked village chest is therefore worse than disturbing an empty one.</p>
+    `)}
+  `;
+}
+
+function normalizedAdvancementParent(parent) {
+  if (!parent) return "";
+  const slashTail = String(parent).split("/").pop() || "";
+  return slashTail.split(":").pop() || "";
+}
+
+function advancementFrameWeight(frame) {
+  const normalized = String(frame || "").toLowerCase();
+  if (normalized === "task") return 0;
+  if (normalized === "goal") return 1;
+  if (normalized === "challenge") return 2;
+  return 3;
+}
+
+function advancementDepth(advancementId, byId, visiting = new Set()) {
+  if (!advancementId || !byId.has(advancementId)) return 0;
+  if (visiting.has(advancementId)) return 0;
+  const advancement = byId.get(advancementId);
+  const parentId = normalizedAdvancementParent(advancement.parent);
+  if (!parentId || !byId.has(parentId)) return 0;
+  visiting.add(advancementId);
+  const depth = 1 + advancementDepth(parentId, byId, visiting);
+  visiting.delete(advancementId);
+  return depth;
+}
+
+function advancementRows() {
+  const advancements = Array.isArray(DATA.advancements) ? DATA.advancements : [];
+  const byId = new Map(advancements.map((advancement) => [advancement.id, advancement]));
+  return advancements.map((advancement) => {
+    const parentId = normalizedAdvancementParent(advancement.parent);
+    const parent = byId.get(parentId);
+    return {
+      ...advancement,
+      parentId,
+      parentTitle: parent?.hidden ? "Hidden advancement" : (parent?.title || ""),
+      depth: advancementDepth(advancement.id, byId)
+    };
+  });
+}
+
+function groupedAdvancements() {
+  const rows = advancementRows();
+  const groupedIds = {
+    foundation: [
+      "root",
+      "commonfolk",
+      "familiar_face",
+      "respect_is_earned",
+      "regular_customer",
+      "second_chance",
+      "changed_my_mind",
+      "im_sorry",
+      "the_village_remembers"
+    ],
+    village: [
+      "housewarming",
+      "its_the_thought_that_counts",
+      "family_business"
+    ],
+    work: [
+      "blueprint_for_success",
+      "urban_planner",
+      "master_of_the_craft",
+      "a_well_oiled_machine",
+      "supply_and_demand",
+      "payday",
+      "on_the_payroll",
+      "emerald_economy"
+    ],
+    trust: [
+      "friend_of_the_village",
+      "community_support",
+      "price_of_trust",
+      "local_legend",
+      "crowned_by_the_village",
+      "trusted_directions"
+    ],
+    story: [
+      "once_upon_a_time",
+      "story_keeper",
+      "village_chronicler",
+      "legend_trader",
+      "choose_your_own_adventure",
+      "all_roads_lead_somewhere"
+    ],
+    retaliation: [
+      "bad_first_impression",
+      "hands_off",
+      "refused_service",
+      "marked",
+      "the_village_has_eyes",
+      "village_enemy",
+      "mob_justice",
+      "hero_not_menace",
+      "friendly_competition",
+      "an_unwise_decision"
+    ],
+    hidden: []
+  };
+
+  const labels = {
+    foundation: "Trust Foundations",
+    trust: "Reputation Growth",
+    village: "Village Life",
+    work: "Work And Economy",
+    story: "Story Progression",
+    retaliation: "Conflict And Consequences",
+    hidden: "Hidden Advancements",
+    other: "Other Advancements"
+  };
+
+  const order = ["foundation", "trust", "village", "work", "story", "retaliation", "hidden", "other"];
+  const idToGroup = new Map();
+  Object.entries(groupedIds).forEach(([group, ids]) => ids.forEach((id) => idToGroup.set(id, group)));
+
+  const groups = {
+    foundation: [],
+    trust: [],
+    village: [],
+    work: [],
+    story: [],
+    retaliation: [],
+    hidden: [],
+    other: []
+  };
+
+  rows.forEach((row) => {
+    const group = row.hidden ? "hidden" : (idToGroup.get(row.id) || "other");
+    groups[group].push(row);
+  });
+
+  const rowSort = (a, b) => {
+    if (a.depth !== b.depth) return a.depth - b.depth;
+    if (a.hidden !== b.hidden) return Number(a.hidden) - Number(b.hidden);
+    const frameDelta = advancementFrameWeight(a.frame) - advancementFrameWeight(b.frame);
+    if (frameDelta !== 0) return frameDelta;
+    return String(a.title).localeCompare(String(b.title));
+  };
+
+  return order
+    .map((key) => ({
+      key,
+      title: labels[key],
+      rows: groups[key].sort(rowSort)
+    }))
+    .filter((group) => group.rows.length > 0);
+}
+
+function renderAdvancements(options = {}) {
+  const focusedAdvancementId = options.focusedAdvancementId || "";
+  const groups = groupedAdvancements();
+  const groupedSections = groups
+    .map((group) => {
+      const table = `
+        <div class="table-wrap"><table class="advancement-flow-table"><colgroup><col class="adv-col-title"><col class="adv-col-parent"><col class="adv-col-type"><col class="adv-col-description"><col class="adv-col-hidden"></colgroup><thead><tr><th>Advancement</th><th>Unlocks After</th><th>Type</th><th>Description</th><th>Hidden</th></tr></thead><tbody>
+          ${group.rows.map((advancement) => `<tr id="${escapeHtml(advancementRowId(advancement.id))}" class="${advancement.id === focusedAdvancementId ? "advancement-row-target" : ""}"><td>${escapeHtml(advancement.title)}</td><td>${escapeHtml(advancement.parentTitle || "Root")}</td><td>${escapeHtml(advancement.frame)}</td><td>${escapeHtml(advancement.description)}</td><td>${advancement.hidden ? "Yes" : "No"}</td></tr>`).join("")}
+        </tbody></table></div>
+      `;
+      if (group.key === "hidden") {
+        const isFocused = group.rows.some((advancement) => advancement.id === focusedAdvancementId);
+        return section(group.title, `
+          <details class="reference-panel advancement-spoiler-panel"${isFocused ? " open" : ""}>
+            <summary>Show hidden advancement spoilers</summary>
+            <div class="advancement-spoiler-content">${table}</div>
+          </details>
+        `);
+      }
+      return section(group.title, table);
+    })
+    .join("");
+
+  return `
+    ${section("Reputation Milestones", `
+      <p>The Reputation advancement tab tracks trust, village life, hired work, quests, exploration, and conflict milestones. Related visible milestones are grouped below so you can see what each one follows.</p>
+    `)}
+    ${groupedSections}
+  `;
+}
+
+function renderSettings() {
+  return `
+    ${section("Keybinds", `
+      <dl class="fact-list">
+        <div><dt>Quest Journal</dt><dd><kbd>J</kbd></dd></div>
+        <div><dt>Quest Tracker</dt><dd><kbd>K</kbd></dd></div>
+      </dl>
+    `)}
+    ${section("Changing Settings", `
+      <p>Open Minecraft's <strong>Mods</strong> menu, select Villager Retaliation, and choose its configuration screen. Multiplayer gameplay rules are controlled by the server.</p>
+    `)}
+  `;
+}
+
+function pageSearchText(page) {
+  try {
+    const container = document.createElement("div");
+    container.innerHTML = page.render();
+    return container.textContent || "";
+  } catch {
+    return "";
+  }
+}
+
+function searchIndex() {
+  if (cachedSearchItems) return cachedSearchItems;
+
+  const featuredPages = new Set(["home", "reputation", "quests", "jobs", "market", "combat", "settings"]);
+  const pageResults = PAGES.map((page) => ({
+    kind: "page",
+    type: page.group || "Page",
+    title: page.title,
+    description: page.description,
+    url: pageUrl(page.id),
+    icon: page.icon || "file-text",
+    keywords: `${page.id} ${page.group || ""} ${pageSearchText(page)} guide controls gameplay feature`,
+    featured: featuredPages.has(page.id),
+    boost: featuredPages.has(page.id) ? 30 : 0
+  }));
+  const questResults = DATA.quests.map((quest) => ({
+    kind: "quest",
+    type: "Quest",
+    title: quest.title,
+    description: `${quest.questlineLabel || quest.groupLabel} - ${quest.description}`,
+    url: questUrl(quest.slug),
+    icon: questIcon(quest),
+    keywords: [
+      quest.questlineLabel,
+      quest.groupLabel,
+      ...(quest.tags || []),
+      ...(quest.objectives || []),
+      ...(quest.requirements?.professions || []),
+      ...(quest.requirements?.skills || []).map((skill) => skill.skill),
+      JSON.stringify(quest.rewards || {})
+    ].join(" ")
+  }));
+  const marketResults = (Array.isArray(DATA.sellPrices) ? DATA.sellPrices : []).map((price) => ({
+    kind: "market",
+    type: "Market price",
+    title: price.item,
+    description: `${price.itemCount} item${price.itemCount === "1" ? "" : "s"} for ${price.currencyCount} currency`,
+    url: pageUrl("market"),
+    icon: "store",
+    keywords: `${price.itemId} sell box market price currency ${price.itemCount} ${price.currencyCount}`
+  }));
+  const advancements = Array.isArray(DATA.advancements) ? DATA.advancements : [];
+  const advancementResults = advancements.filter((advancement) => !advancement.hidden).map((advancement) => ({
+    kind: "advancement",
+    type: "Advancement",
+    title: advancement.title,
+    description: `${advancement.frame} - ${advancement.description || "Reputation tab advancement."}`,
+    url: advancementUrl(advancement.id),
+    icon: "trophy",
+    keywords: `${advancement.id} ${compactId(advancement.id)} ${advancement.parent || ""} reputation advancement challenge`
+  }));
+
+  cachedSearchItems = [...pageResults, ...questResults, ...marketResults, ...advancementResults];
+  return cachedSearchItems;
+}
+
+function runWikiSearch(query, limit = 12) {
+  return window.VR_WIKI_SEARCH.search(searchIndex(), query, { limit });
+}
+
+function highlightSearchText(value, query) {
+  return window.VR_WIKI_SEARCH.highlight(value, query);
+}
+
+function searchResultUrl(url, query) {
+  const value = String(query || "").trim();
+  if (!value) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}search=${encodeURIComponent(value)}`;
+}
+
+function renderSearch() {
+  const query = searchQuery.trim();
+  const outcome = query ? runWikiSearch(query, 40) : { total: 0, results: [] };
+  const resultLabel = outcome.total === 1 ? "1 result" : `${outcome.total} results`;
+  renderDocument("Search", query ? `${resultLabel} for ${query}` : "Search the player wiki.", `
+    ${section("Results", `
+      ${outcome.results.length ? `<div class="search-results">${outcome.results.map((result) => `
+        <a class="search-result" href="${searchResultUrl(result.url, query)}">
+          ${icon(result.icon || resultIcon(result.type))}
+          <span>${escapeHtml(result.type)}</span>
+          <strong>${highlightSearchText(result.title, query)}</strong>
+          <p>${highlightSearchText(result.description, query)}</p>
+        </a>
+      `).join("")}</div>` : `<p>${query ? `No results for "${escapeHtml(query)}". Try fewer words or search for a quest, market item, villager profession, reward, or feature.` : "Search for a quest, market item, villager profession, reward, control, or feature."}</p>`}
+    `)}
+  `, {
+    icon: "search",
+    parent: "Wiki"
+  });
+}
+
+function paletteResultElements() {
+  return [...els.paletteResults.querySelectorAll(".palette-result")];
+}
+
+function setPaletteActive(index, options = {}) {
+  const results = paletteResultElements();
+  if (!results.length) {
+    paletteActiveIndex = -1;
+    els.paletteSearch.removeAttribute("aria-activedescendant");
+    return;
+  }
+
+  paletteActiveIndex = Math.max(0, Math.min(index, results.length - 1));
+  results.forEach((result, resultIndex) => {
+    const isCurrent = resultIndex === paletteActiveIndex;
+    result.classList.toggle("is-current", isCurrent);
+    result.setAttribute("aria-selected", String(isCurrent));
+  });
+
+  const activeResult = results[paletteActiveIndex];
+  els.paletteSearch.setAttribute("aria-activedescendant", activeResult.id);
+  if (options.scroll !== false) activeResult.scrollIntoView({ block: "nearest" });
+}
+
+function movePaletteSelection(direction) {
+  const results = paletteResultElements();
+  if (!results.length) return;
+  const current = paletteActiveIndex < 0 ? 0 : paletteActiveIndex;
+  setPaletteActive((current + direction + results.length) % results.length);
+}
+
+function renderPaletteResults() {
+  const query = paletteQuery.trim();
+  const outcome = runWikiSearch(query, 12);
+  els.paletteStatus.textContent = query
+    ? `${outcome.total} result${outcome.total === 1 ? "" : "s"} for "${query}"`
+    : "Suggested pages and guides";
+
+  els.paletteResults.innerHTML = outcome.results.length ? outcome.results.map((result, index) => `
+    <a id="palette-result-${index}" class="palette-result ${index === 0 ? "is-current" : ""}" href="${searchResultUrl(result.url, query)}" role="option" aria-selected="${index === 0}">
+      ${icon(result.icon || resultIcon(result.type))}
+      <span>${escapeHtml(result.type)}</span>
+      <strong>${highlightSearchText(result.title, query)}</strong>
+      <p>${highlightSearchText(result.description, query)}</p>
+    </a>
+  `).join("") : `
+    <div class="palette-empty">
+      <strong>No results for "${escapeHtml(query)}".</strong>
+      <span>Try fewer words, check the spelling, or search for a feature, quest, item, or profession.</span>
+    </div>
+  `;
+  cleanRenderedCopy(els.paletteResults, els.paletteStatus);
+  renderIcons();
+  setPaletteActive(outcome.results.length ? 0 : -1, { scroll: false });
+}
+
+function openPalette(seed = "") {
+  paletteQuery = seed;
+  els.paletteSearch.value = seed;
+  renderPaletteResults();
+  document.body.classList.add("is-search-open");
+  els.palette.classList.add("is-open");
+  els.palette.setAttribute("aria-hidden", "false");
+  els.search.setAttribute("aria-expanded", "true");
+  window.requestAnimationFrame(() => {
+    els.paletteSearch.focus();
+    els.paletteSearch.select();
+  });
+}
+
+function closePalette() {
+  document.body.classList.remove("is-search-open");
+  els.palette.classList.remove("is-open");
+  els.palette.setAttribute("aria-hidden", "true");
+  els.search.setAttribute("aria-expanded", "false");
+  els.paletteSearch.removeAttribute("aria-activedescendant");
+  paletteActiveIndex = -1;
+}
+
+function followPaletteResult(result) {
+  if (!result) return;
+  closePalette();
+  location.hash = result.getAttribute("href");
+}
+
+function openSearchFromSidebar() {
+  if (els.palette.classList.contains("is-open")) return;
+  openPalette(paletteQuery);
+}
+
+els.search.addEventListener("click", openSearchFromSidebar);
+els.search.addEventListener("keydown", (event) => {
+  if (event.key !== "ArrowDown") return;
+  event.preventDefault();
+  openSearchFromSidebar();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.altKey && event.key.toLowerCase() === "q") {
+    event.preventDefault();
+    openPalette(paletteQuery);
+    return;
+  }
+
+  if (event.key === "Escape" && els.palette.classList.contains("is-open")) {
+    event.preventDefault();
+    closePalette();
+  }
+});
+
+els.paletteSearch.addEventListener("input", () => {
+  paletteQuery = els.paletteSearch.value;
+  els.searchQueryLabel.textContent = paletteQuery || "Search Wiki";
+  renderPaletteResults();
+});
+
+els.paletteSearch.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    movePaletteSelection(1);
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    movePaletteSelection(-1);
+  } else if (event.key === "Home") {
+    event.preventDefault();
+    setPaletteActive(0);
+  } else if (event.key === "End") {
+    event.preventDefault();
+    setPaletteActive(paletteResultElements().length - 1);
+  } else if (event.key === "Enter") {
+    event.preventDefault();
+    followPaletteResult(paletteResultElements()[paletteActiveIndex]);
+  }
+});
+
+els.paletteResults.addEventListener("mousemove", (event) => {
+  const result = event.target.closest(".palette-result");
+  if (!result) return;
+  setPaletteActive(paletteResultElements().indexOf(result), { scroll: false });
+});
+
+els.paletteResults.addEventListener("click", (event) => {
+  const result = event.target.closest(".palette-result");
+  if (!result) return;
+  event.preventDefault();
+  followPaletteResult(result);
+});
+
+els.palette.addEventListener("click", (event) => {
+  if (event.target === els.palette) closePalette();
+});
+
+els.menuToggle.addEventListener("click", () => {
+  const open = document.body.classList.toggle("is-menu-open");
+  els.menuToggle.setAttribute("aria-expanded", String(open));
+});
+
+els.nav.addEventListener("click", () => {
+  document.body.classList.remove("is-menu-open");
+  els.menuToggle.setAttribute("aria-expanded", "false");
+});
+
+els.toc.addEventListener("click", (event) => {
+  const link = event.target.closest(".toc-link[data-toc-target]");
+  if (!link) return;
+  event.preventDefault();
+  const targetId = link.getAttribute("data-toc-target");
+  if (!targetId) return;
+  const heading = document.getElementById(targetId);
+  if (!heading) return;
+  heading.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+window.addEventListener("hashchange", () => {
+  saveRouteScroll();
+  render();
+});
+window.addEventListener("pagehide", () => saveRouteScroll());
+
+const developerWikiLink = document.querySelector("#developer-wiki-link");
+if (developerWikiLink && location.protocol === "file:") {
+  developerWikiLink.href = "../dev/index.html";
+}
+
+if (!location.hash) location.hash = "#/home";
+render();

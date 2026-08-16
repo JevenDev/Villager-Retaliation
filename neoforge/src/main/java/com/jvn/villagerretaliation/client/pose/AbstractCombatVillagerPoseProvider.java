@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.pose;
 
+import com.jvn.villagerretaliation.client.villager.VillagerWorkAnimationClientCache;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
@@ -15,6 +16,9 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
 
     @Override
     public VillagerArmPose getArmPose(T villager, float attackTime) {
+        if (VillagerWorkAnimationClientCache.isUsingItem(villager)) {
+            return VillagerArmPose.WORK_ITEM_USE;
+        }
         if (villager.isUsingItem()) {
             ItemStack useItem = villager.getUseItem();
             if (useItem.is(Items.SHIELD)) {
@@ -50,9 +54,12 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
             return isInCombat(villager) ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
         if (isHoldingRangedWeapon(villager)) {
-            return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.NONE;
+            return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
         if (hasCustomHeldItemPose(villager)) {
+            return heldItemPose(villager, attackTime);
+        }
+        if (shouldRenderHeldItem(villager)) {
             return heldItemPose(villager, attackTime);
         }
         if (villager.swinging || isAggressivelyPostured(villager)) {
@@ -63,6 +70,9 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
 
     @Override
     public boolean shouldUseCombatModel(T villager) {
+        if (VillagerWorkAnimationClientCache.isActive(villager)) {
+            return true;
+        }
         if (villager.isUsingItem() && shouldUseCombatModelWhileUsingItem(villager, villager.getUseItem())) {
             return true;
         }

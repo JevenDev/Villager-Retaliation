@@ -1,31 +1,71 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceState;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceEntityData;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
+import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.config.VillagerChatBroadcastMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
-import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
-import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
-import com.jvn.villagerretaliation.dialogue.DialogueTextEffects;
-import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
+import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignmentSummaryMessage;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem.SelectedStoragePosition;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker;
+import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
+import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
+import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
+import com.jvn.villagerretaliation.network.ConstructionBlueprintPlacementPayload;
+import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
+import com.jvn.villagerretaliation.network.VillagerAllegianceActionPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
+import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerStudyRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerReputationRequestPayload;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.mount.VillagerMountOwnershipDialogue;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
@@ -34,35 +74,83 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.study.VillagerStudyDialogueService;
+import com.jvn.villagerretaliation.study.VillagerStudyService;
 import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
+import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerInteractionService {
     private static final UUID LOUD_LITTEN_PLAYER_ID = UUID.fromString("38492a05-b711-40d4-a39f-a3f783aa541f");
+    private static final String[] MOUSE_STARE_EASTER_EGG_LINES = {
+            "My eyes are up here. Unfortunately, so is yours.",
+            "Blink. For both our sakes.",
+            "That is the exact spot where patience goes to retire.",
+            "If you are checking for thoughts, I assure you I had several.",
+            "Yes, the bridge of my nose is structurally sound.",
+            "You are making eye contact with the space between eye contact.",
+            "I admire your focus. I fear your focus.",
+            "Did a lectern teach you to stare like that?",
+            "The village has decided this is weird.",
+            "I was going to say something wise, but you stared it away."
+    };
     private static final String EDMUNDO_EASTER_EGG_DEFINITION_ID = "villagerretaliation:easter_egg/edmundo_warning";
+    private static final String BLUEPRINT_START_OPTION_ID = "construction_blueprint_start";
+    private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
+    private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
+    private static final String BLUEPRINT_OPENING_KEY = "interaction.work.builder.blueprint_review";
+    private static final String BLUEPRINT_OPENING_FALLBACK = "Let me look over that blueprint. How would you like to proceed?";
+    private static final ThreadLocal<TradeOpenPermit> VANILLA_TRADE_OPEN_PERMIT = new ThreadLocal<>();
+    private static final ClassValue<Boolean> HAS_INNATE_RIGHT_CLICK_BEHAVIOR = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(Class<?> itemClass) {
+            return overridesItemMethod(
+                    itemClass, "use", Level.class, Player.class, InteractionHand.class)
+                    || overridesItemMethod(
+                    itemClass,
+                    "interactLivingEntity",
+                    ItemStack.class, Player.class, LivingEntity.class, InteractionHand.class);
+        }
+    };
     private static final String EDMUNDO_OMINOUS_FORCED_LINE =
             "Loud, I am aware of what you have done. Do not think the village has forgotten. Do not mistake this calm for mercy. Even when the roads fall silent, your name still travels in whispers after dark. Jvn has tried to silence me, it will only be a matter of time before all is revealed.";
 
@@ -71,29 +159,125 @@ public final class VillagerInteractionService {
 
     public static boolean shouldHandleInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
-                && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && (VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() || player.isInvisible())
+                && canStartVillagerInteractionWithHeldItems(player)
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
-                && shouldStayConversable(player, villager);
+                && shouldInterceptVanillaInteraction(
+                player,
+                villager,
+                VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+    }
+
+    public static boolean shouldSuppressClientVanillaInteraction(Villager villager, Player player, InteractionHand hand) {
+        if (hand != InteractionHand.MAIN_HAND
+                || (!VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() && !player.isInvisible())
+                || !canStartVillagerInteractionWithHeldItems(player)
+                || shouldBypassInteractionScreen(player.getItemInHand(hand))
+                || villager.isTrading()
+                || !villager.isAlive()
+                || player.isSpectator()
+                || !player.isAlive()) {
+            return false;
+        }
+        if (!villager.isBaby()
+                && player.isShiftKeyDown()
+                && VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get()) {
+            return false;
+        }
+        double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
+        return player.distanceToSqr(villager) <= maxDistance * maxDistance;
+    }
+
+    /**
+     * Final guard for vanilla's {@link Villager#mobInteract(Player, InteractionHand)} path.
+     *
+     * <p>NeoForge can deliver an entity-specific hit before the ordinary entity interaction, and
+     * vanilla measures interaction reach against the hit box rather than entity-center distance.
+     * Consequently, the normal event interceptor can legitimately decline a boundary click while
+     * vanilla still accepts it and opens trading. Do not apply the dialogue-distance check here:
+     * a click that cannot open our screen must still not become an accidental vanilla-trade bypass.
+     */
+    public static boolean shouldSuppressVanillaTradeFallback(
+            Villager villager,
+            Player player,
+            InteractionHand hand) {
+        if (VillagerBehaviorSuppressionPolicy.suppresses(
+                villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING)
+                || VillagerRetaliationHandler.isHostileTowards(villager, player)) {
+            return true;
+        }
+        TradeOpenPermit permit = VANILLA_TRADE_OPEN_PERMIT.get();
+        if (permit != null && permit.matches(villager, player, hand)) {
+            return false;
+        }
+        if (hand != InteractionHand.MAIN_HAND
+                || (!VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() && !player.isInvisible())
+                || !canStartVillagerInteractionWithHeldItems(player)
+                || shouldBypassInteractionScreen(player.getItemInHand(hand))
+                || villager.isTrading()
+                || !villager.isAlive()
+                || player.isSpectator()
+                || !player.isAlive()) {
+            return false;
+        }
+        return villager.isBaby()
+                || !player.isShiftKeyDown()
+                || !VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get();
     }
 
     public static boolean shouldHandleSleepingInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && canStartVillagerInteractionWithHeldItems(player)
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && villager.isSleeping()
                 && shouldStayConversable(player, villager);
     }
 
+    public static boolean shouldHandleClipboardInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
+        return hand == InteractionHand.MAIN_HAND
+                && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && VillagerRetaliationItems.isClipboard(player.getItemInHand(hand))
+                && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+    }
+
+    public static boolean shouldHandleConstructionBlueprintInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
+        return hand == InteractionHand.MAIN_HAND
+                && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && ConstructionBlueprintItem.isBlueprint(player.getItemInHand(hand))
+                && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+    }
+
+    public static boolean shouldHandleItemFilterInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
+        return hand == InteractionHand.MAIN_HAND
+                && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && VillagerRetaliationItems.isFilter(player.getItemInHand(hand))
+                && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+    }
+
     public static InteractionResult handleVillagerRightClick(Villager villager, ServerPlayer player) {
+        if (VillagerDownedService.isDowned(villager)) {
+            sendVillagerNotice(player, villager, "interaction.incapacitated");
+            return InteractionResult.FAIL;
+        }
         if (villager.isSleeping()) {
             return handleSleepingVillagerInteraction(villager, player);
         }
 
-        if (VillagerRecruitmentService.isFollowing(villager, player)) {
+        if (player.isInvisible()) {
+            if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)
+                    && (villager.getTarget() == player || VillagerRetaliationHandler.hasRetaliationTarget(villager, player))) {
+                VillagerRetaliationHandler.clearCustomTarget(villager);
+            }
+            sendVillagerNotice(player, villager, "interaction.invisible_trade");
+            return openTrading(player, villager, true);
+        }
+
+        if (player.isShiftKeyDown() && VillagerRecruitmentService.isFollowing(villager, player)) {
             VillagerRecruitmentService.stopFollowing(player.serverLevel(), villager, player);
             VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
             focusVillagerOnPlayer(villager, player);
-            sendVillagerNotice(player, villager, "interaction.follow_stay");
+            sendVillagerNotice(player, villager, "interaction.follow_stop");
             return InteractionResult.SUCCESS;
         }
 
@@ -115,12 +299,27 @@ public final class VillagerInteractionService {
             return InteractionResult.FAIL;
         }
 
+        if (isForeignHiredWorkerWithoutQuest(player, villager)) {
+            sendVillagerNotice(player, villager, foreignHiredWorkerDialogueKey(player, villager));
+            focusVillagerOnPlayer(villager, player);
+            return InteractionResult.CONSUME;
+        }
+
+        if (isCombatBusy(villager) && canInterruptCombatForInteraction(player, villager)) {
+            VillagerRetaliationHandler.suspendCombatForInteraction(villager);
+        }
+
         if (shouldTriggerEdmundoEasterEgg(player, villager)
                 && ForcedDialogueService.openSimpleForcedDialogue(
                         player,
                         villager,
                         EDMUNDO_EASTER_EGG_DEFINITION_ID,
                         EDMUNDO_OMINOUS_FORCED_LINE)) {
+            return InteractionResult.CONSUME;
+        }
+
+        if (villager.level() instanceof ServerLevel level
+                && HiredVillagerContractService.tryOpenJobInventoryOverflowReminder(level, villager, player)) {
             return InteractionResult.CONSUME;
         }
 
@@ -133,10 +332,95 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.busy");
             return InteractionResult.FAIL;
         }
+        VillagerReputationAdvancements.onVillagerConversationStarted(player);
         openInteractionScreen(player, villager);
+        focusVillagerOnPlayer(villager, player);
+        return InteractionResult.CONSUME;
+    }
+
+    public static InteractionResult handleClipboardVillagerRightClick(Villager villager, ServerPlayer player) {
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "interaction.refuse_despised");
+            return InteractionResult.FAIL;
+        }
+        if (VillagerRetaliationHandler.isHostileTowards(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "interaction.refuse_angry");
+            return InteractionResult.FAIL;
+        }
+        if (!VillagerConversationService.start(player, villager)) {
+            sendVillagerNotice(player, villager, "interaction.busy");
+            return InteractionResult.FAIL;
+        }
+        VillagerInteractionScreenOpener.openClipboard(player, villager, false);
         focusVillagerOnPlayer(villager, player);
         return InteractionResult.SUCCESS;
     }
+
+    public static InteractionResult handleConstructionBlueprintVillagerRightClick(Villager villager, ServerPlayer player) {
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "interaction.refuse_despised");
+            return InteractionResult.FAIL;
+        }
+        if (VillagerRetaliationHandler.isHostileTowards(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "interaction.refuse_angry");
+            return InteractionResult.FAIL;
+        }
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return InteractionResult.FAIL;
+        }
+        ItemStack blueprint = player.getMainHandItem();
+        Optional<ConstructionBlueprintItem.PreviewData> preview = ConstructionBlueprintItem.previewData(blueprint);
+        if (preview.isEmpty()) {
+            return InteractionResult.FAIL;
+        }
+        if (preview.get().expired()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.blueprint_expired");
+            return InteractionResult.FAIL;
+        }
+        if (preview.get().completed()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.blueprint_completed");
+            return InteractionResult.SUCCESS;
+        }
+        if (preview.get().started()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.blueprint_started");
+            return InteractionResult.SUCCESS;
+        }
+        if (!canUseBuilderBlueprintService(player, level, villager)) {
+            return InteractionResult.FAIL;
+        }
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
+        if (BuilderTaskState.hasTask(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
+            return InteractionResult.SUCCESS;
+        }
+        if (!openForcedDialogue(
+                player, villager, constructionBlueprintOpening(createDialogueContext(level, player, villager)),
+                constructionBlueprintOptions(), true)) {
+            sendVillagerNotice(player, villager, "interaction.busy");
+            return InteractionResult.FAIL;
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    public static InteractionResult handleItemFilterVillagerRightClick(Villager villager, ServerPlayer player) {
+        return VillagerItemFilterInteractionHandler.open(villager, player);
+    }
+    private static List<DialogueOptionDefinition> constructionBlueprintOptions() {
+        return List.of(
+                DialogueOptionDefinition.simple(BLUEPRINT_START_OPTION_ID, "Start job", DialogueRequestType.QUESTION, 0),
+                DialogueOptionDefinition.simple(BLUEPRINT_CHANGE_OPTION_ID, "Change blueprint", DialogueRequestType.QUESTION, 1),
+                DialogueOptionDefinition.simple(BLUEPRINT_NEVERMIND_OPTION_ID, "Never mind", DialogueRequestType.QUESTION, 2));
+    }
+    static String constructionBlueprintOpening(DialogueContext context) {
+        return VillagerDialogueResources.message(context, BLUEPRINT_OPENING_KEY)
+                .orElse(BLUEPRINT_OPENING_FALLBACK);
+    }
+
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager) {
         openInteractionScreen(player, villager, false);
@@ -191,7 +475,66 @@ public final class VillagerInteractionService {
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
+        if (com.jvn.villagerretaliation.duel.DuelDialogueService.handle(player, entityId, optionId)) {
+            return;
+        }
+        if (com.jvn.villagerretaliation.raid.PlayerRaidMercyService.handleDialogueRequest(player, entityId, optionId)) {
+            return;
+        }
+        if (com.jvn.villagerretaliation.raid.PlayerRaidDialogueService.handleDialogueRequest(player, entityId, optionId)) {
+            return;
+        }
+        if (VillagerItemFilterInteractionHandler.handleDialogueRequest(player, entityId, optionId)) {
+            return;
+        }
+        if (handleConstructionBlueprintDialogueRequest(player, entityId, optionId)) {
+            return;
+        }
         VillagerDialogueRequestHandler.handle(player, entityId, optionId);
+    }
+
+    public static void handleMouseEasterEggRequest(
+            ServerPlayer player,
+            int entityId,
+            VillagerMouseEasterEggPayload.Kind kind) {
+        if (kind == null || !ServerboundRequestLimiter.tryAcquire(
+                player, VillagerMouseEasterEggPayload.TYPE.id(), 20L)) {
+            return;
+        }
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireDialogueConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        Villager villager = target.get().villager();
+        String line = MOUSE_STARE_EASTER_EGG_LINES[player.getRandom().nextInt(MOUSE_STARE_EASTER_EGG_LINES.length)];
+        PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(villager.getId(), line, ""));
+        VillagerReputationAdvancements.onVillagerMouseStared(player);
+    }
+
+    private static boolean handleConstructionBlueprintDialogueRequest(ServerPlayer player, int entityId, String optionId) {
+        if (!BLUEPRINT_START_OPTION_ID.equals(optionId)
+                && !BLUEPRINT_CHANGE_OPTION_ID.equals(optionId)
+                && !BLUEPRINT_NEVERMIND_OPTION_ID.equals(optionId)) {
+            return false;
+        }
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager)
+                || !VillagerConversationService.isForced(player, villager)
+                || !canUseForcedInteractionSystem(player, villager)
+                || !VillagerConversationService.validate(player, villager)) {
+            VillagerConversationService.endForPlayer(player, true);
+            return true;
+        }
+        if (BLUEPRINT_NEVERMIND_OPTION_ID.equals(optionId)) {
+            VillagerConversationService.endForPlayer(player, true);
+            return true;
+        }
+        if (BLUEPRINT_CHANGE_OPTION_ID.equals(optionId)) {
+            sendForcedDialogueReputation(player, villager, constructionBlueprintOptions(), true);
+            return true;
+        }
+        startConstructionBlueprintJob(player, player.serverLevel(), villager);
+        return true;
     }
 
     public static void handleTradeRequest(ServerPlayer player, int entityId) {
@@ -210,6 +553,20 @@ public final class VillagerInteractionService {
         openTrading(player, villager, true);
     }
 
+    public static void handleRoutineChatToggle(ServerPlayer player, int entityId, boolean muted) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRoutineChatConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        if (VillagerReputationManager.getReputationLevel(contextTarget.level(), villager, player.getUUID())
+                != VillagerReputationLevel.ROYALTY) {
+            return;
+        }
+        VillagerInteractionTracker.setRoutineChatMuted(contextTarget.level(), villager, player, muted);
+    }
+
     public static void handleTradeRefreshRequest(ServerPlayer player, int entityId, int offerIndex) {
         VillagerTradeRefreshService.handleRequest(player, entityId, offerIndex);
     }
@@ -221,22 +578,105 @@ public final class VillagerInteractionService {
         }
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
-        ServerLevel level = contextTarget.level();
-        if (!VillagerInventoryAccess.canAccess(level, villager, player)) {
+        if (!VillagerInventoryAccess.canOpenPreferred(contextTarget.level(), villager, player)) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
 
         focusVillagerOnPlayer(villager, player);
         VillagerConversationService.endForPlayer(player, true);
-        VillagerInventoryAccess.open(player, villager);
+        VillagerInventoryAccess.openPreferred(player, villager);
     }
 
-    public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot) {
-        VillagerGiftRequestHandler.handle(player, entityId, inventorySlot);
+    public static void handleJobInventoryRequest(ServerPlayer player, int entityId, boolean jobInventory) {
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager) || !canUseInteractionSystem(player, villager)) {
+            sendNotice(player, entityId, "interaction.inventory_unavailable");
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        boolean canAccessPersonalInventory = VillagerInventoryAccess.canAccess(level, villager, player);
+        boolean canAccessJobInventory = com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(
+                level,
+                villager,
+                player);
+        if (jobInventory && !canAccessJobInventory) {
+            sendVillagerNotice(player, villager, "interaction.job_inventory.requires_hirer");
+            return;
+        }
+        if (!jobInventory && !canAccessPersonalInventory) {
+            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
+            return;
+        }
+
+        focusVillagerOnPlayer(villager, player);
+        if (player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerInventoryMenu menu
+                && menu.villagerEntityId() == entityId) {
+            menu.switchViewMode(jobInventory
+                    ? menu.workInventoryViewMode()
+                    : com.jvn.villagerretaliation.inventory.VillagerInventoryMenu.ViewMode.PERSONAL);
+            menu.broadcastFullState();
+            return;
+        }
+        if (jobInventory) {
+            VillagerInventoryAccess.openJobInventory(player, villager);
+        } else {
+            VillagerInventoryAccess.open(player, villager);
+        }
     }
 
-    public static void handleRecruitRequest(ServerPlayer player, int entityId, VillagerRecruitRequestPayload.Action action) {
+    public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot, int amount) {
+        VillagerGiftRequestHandler.handle(player, entityId, inventorySlot, amount);
+    }
+
+    public static void handleRecruitRequest(
+            ServerPlayer player,
+            int entityId,
+            VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole,
+            long expectedRevision) {
+        Entity rawEntity = player.serverLevel().getEntity(entityId);
+        Villager villager = rawEntity instanceof Villager found ? found : null;
+        VillagerAssignmentSnapshot before = villager == null
+                ? VillagerAssignmentSnapshot.unassigned(0L)
+                : ensureAssignmentSnapshot(player.serverLevel(), villager);
+        if (expectedRevision < 0L || before.revision() != expectedRevision) {
+            sendRecruitmentResult(player, entityId, false,
+                    com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.STALE_STATE,
+                    before);
+            return;
+        }
+        boolean wasFollowingPlayer = villager != null && VillagerRecruitmentService.isFollowing(villager, player);
+        boolean wasStayingHere = villager != null && VillagerRecruitmentService.isStayingHere(villager, player);
+        handleRecruitRequestInternal(player, entityId, action, selectedRole);
+        VillagerAssignmentSnapshot after = villager == null
+                ? VillagerAssignmentSnapshot.unassigned(0L)
+                : ensureAssignmentSnapshot(player.serverLevel(), villager);
+        boolean success = recruitmentTransitionSatisfied(
+                player, villager, action, selectedRole, after, wasFollowingPlayer, wasStayingHere);
+        sendRecruitmentResult(
+                player,
+                entityId,
+                success,
+                success
+                        ? com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.NONE
+                        : recruitmentFailureReason(player, villager, action, selectedRole),
+                after);
+    }
+
+    public static void handleRecruitRequest(
+            ServerPlayer player,
+            int entityId,
+            VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole) {
+        handleRecruitRequest(player, entityId, action, selectedRole, -1L);
+    }
+
+    private static void handleRecruitRequestInternal(
+            ServerPlayer player,
+            int entityId,
+            VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole) {
         Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
         if (target.isEmpty()) {
             return;
@@ -244,27 +684,1700 @@ public final class VillagerInteractionService {
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
-        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
+        boolean ownsContract = HiredVillagerContractService.isHiredBy(level, villager, player);
+        com.jvn.villagerretaliation.party.PartyRecord recruitedParty =
+                com.jvn.villagerretaliation.party.PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        com.jvn.villagerretaliation.party.PartyVillagerRecord partyVillager = recruitedParty == null
+                ? null
+                : recruitedParty.villager(villager.getUUID());
+        boolean ownsPartyContract = recruitedParty != null
+                && partyVillager != null
+                && recruitedParty.playerIds().contains(player.getUUID())
+                && recruitedParty.hasAdminPrivileges(player.getUUID());
+        boolean belongsToPartyContract = recruitedParty != null
+                && partyVillager != null
+                && recruitedParty.playerIds().contains(player.getUUID());
+        boolean canAdministerContract = ownsContract && isContractAdministrationAction(action);
+        boolean canAdministerPartyContract = (ownsPartyContract && isPartyAdministrationAction(action))
+                || (belongsToPartyContract && isPartyContractMemberAction(action));
+        boolean canOpenJobInventory = action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
+                && com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player);
+        boolean canIssueFollowCommand = action == VillagerRecruitRequestPayload.Action.FOLLOW
+                && VillagerRecruitmentService.canFollow(level, villager, player);
+        boolean canIssueStayCommand = action == VillagerRecruitRequestPayload.Action.STAY_HERE
+                && VillagerRecruitmentService.canCommandStayHere(level, villager, player);
+        boolean canStopFollowCommand = (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
+                && VillagerRecruitmentService.isFollowing(villager, player))
+                || (action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE
+                && VillagerRecruitmentService.isStayingHere(villager, player));
+        if (action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
+                && recruitedParty != null
+                && !canOpenJobInventory) {
+            sendVillagerNotice(player, villager, "interaction.party.error.job_inventory_denied");
+            return;
+        }
+        if (!VillagerRecruitmentService.canRecruit(level, villager, player)
+                && !canAdministerContract
+                && !canAdministerPartyContract
+                && !canOpenJobInventory
+                && !canIssueFollowCommand
+                && !canIssueStayCommand
+                && !canStopFollowCommand) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
 
         focusVillagerOnPlayer(villager, player);
-        if (action == VillagerRecruitRequestPayload.Action.HIRE) {
-            sendVillagerNotice(player, villager, "interaction.hire_unavailable");
+        if (handlePartyVillagerRequest(player, level, villager, action, recruitedParty, partyVillager)) {
+            return;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.FOLLOW
+                || action == VillagerRecruitRequestPayload.Action.STAY_HERE
+                || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
+                || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
+
+            String responseKey;
+            if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
+                if (!VillagerRecruitmentService.startFollowing(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.follow_command_requires_owner");
+                    return;
+                }
+                responseKey = "interaction.follow_start";
+            } else if (action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
+                if (!VillagerRecruitmentService.canCommandStayHere(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
+                    return;
+                }
+                if (!VillagerRecruitmentService.stayHere(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.follow_command_requires_owner");
+                    return;
+                }
+                responseKey = "interaction.follow_hold_position";
+            } else {
+                if (!VillagerRecruitmentService.stopFollowing(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.follow_command_requires_owner");
+                    return;
+                }
+                if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING) {
+                    VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
+                    responseKey = "interaction.follow_stop";
+                } else {
+                    VillagerRecruitmentService.sendMovingFreelyNotice(player, villager);
+                    responseKey = "interaction.stay_stop";
+                }
+            }
+            String responseText = message(createDialogueContext(level, player, villager), responseKey);
+            sendVillagerNotice(player, villager, responseText);
+            trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
+            VillagerConversationService.endForPlayer(player, false);
             return;
         }
 
-        boolean nowFollowing = VillagerRecruitmentService.toggleFollow(level, villager, player);
-        String responseText = message(createDialogueContext(level, player, villager), nowFollowing ? "interaction.follow_start" : "interaction.follow_stay");
-        sendVillagerNotice(player, villager, responseText);
-        PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
-        VillagerConversationService.endForPlayer(player, false);
+        if (HiredContractRequestHandler.handle(player, level, villager, action, selectedRole)) {
+            return;
+        }
+        if (handleHiredRoleRequest(player, level, villager, action)) {
+            return;
+        }
+        if (handleHiredWorkRequest(player, level, villager, action)) {
+            return;
+        }
+
+        switch (action) {
+            case VIEW_CONTRACT -> sendHiredContractNotice(player, level, villager);
+            case VIEW_ROLE -> sendHiredRoleNotice(player, level, villager);
+            case PROMPT_END_HIRE_CONFIRMATION -> sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_prompt");
+            case DECLINE_END_HIRE_CONFIRMATION -> sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_declined");
+            case OPEN_JOB_INVENTORY -> {
+                if (!com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.job_inventory.requires_hirer");
+                    return;
+                }
+                VillagerConversationService.endForPlayer(player, true);
+                VillagerInventoryAccess.openJobInventory(player, villager);
+            }
+            case SHOW_STORAGE -> showAssignedStorage(player, level, villager);
+            case DEPOSIT_EARNINGS -> depositEarnings(player, level, villager);
+            case REMOVE_STORAGE -> removeAssignedStorage(player, level, villager);
+            case SHOW_PAYMENT_STORAGE -> showAssignedPaymentStorage(player, level, villager);
+            case REMOVE_PAYMENT_STORAGE -> removeAssignedPaymentStorage(player, level, villager);
+            case TOGGLE_AUTO_PAYMENT -> toggleAutoPayment(player, level, villager);
+            case START_MOUNT_ASSIGNMENT ->
+                    com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.startTargeting(player, villager);
+            case UNASSIGN_MOUNT -> {
+                com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.unassign(player, villager);
+                VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            }
+            case TOGGLE_MOUNTED_TRAVEL -> {
+                boolean enabled = HiredVillagerContractService.toggleMountedTravel(level, villager);
+                sendVillagerNotice(player, villager, enabled
+                        ? "interaction.mount.mounted_travel_enabled"
+                        : "interaction.mount.mounted_travel_disabled");
+                VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            }
+            case END_HIRE -> {
+                if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.hire.end_requires_hirer");
+                    return;
+                }
+                int refund = HiredVillagerContractService.endHireContract(level, villager, player);
+                if (refund > 0) {
+                    giveCurrency(player, refund);
+                }
+                VillagerRecruitmentService.sendFiredNotice(player, villager);
+                if (refund > 0) {
+                    sendVillagerNotice(
+                            player,
+                            villager,
+                            "interaction.end_hire_confirmation_accepted_refund",
+                            Map.of("refund_amount", formatCurrency(level, refund))
+                    );
+                } else {
+                    sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_accepted");
+                }
+                VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            }
+            default -> sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
+        }
+    }
+
+    public static void handleBrewingOrderRequest(
+            ServerPlayer player,
+            int entityId,
+            ResourceLocation itemId,
+            ResourceLocation potionId,
+            int amount,
+            boolean continuous) {
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager) || !canUseInteractionSystem(player, villager)) {
+            sendNotice(player, entityId, "interaction.inventory_unavailable");
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BREWING) {
+            sendVillagerNotice(player, villager, "interaction.work.brewing.requires_role_choose");
+            return;
+        }
+        if (!continuous && amount <= 0) {
+            sendVillagerNotice(player, villager, "interaction.work.brewing.choose_amount");
+            return;
+        }
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
+        if (BrewingWorker.hasOrder(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.brewing.already_brewing");
+            return;
+        }
+        Optional<HiredBrewingRecipeCatalog.BrewingRoute> route = HiredBrewingRecipeCatalog.find(level, itemId, potionId);
+        if (route.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.work.brewing.unknown_recipe");
+            return;
+        }
+        BrewingWorker.setOrder(
+                state,
+                itemId,
+                potionId,
+                amount,
+                continuous,
+                HiredVillagerContractService.currentContractId(villager).orElse(null));
+        String quantity = continuous ? "continuously" : Integer.toString(amount);
+        String orderDescription = BrewingWorker.orderDescription(
+                level, VillagerLocale.locale(player), route.get().output(), amount, continuous);
+        HiredVillagerWorkService.stopWork(
+                level,
+                villager,
+                HiredVillagerRole.BREWING,
+                "interaction.work.brewing.order_summary",
+                Map.of(
+                        "amount", quantity,
+                        "item", route.get().output().getHoverName().getString(),
+                        "order", orderDescription));
+        sendVillagerNotice(player, villager, "interaction.work.brewing.order_summary", Map.of(
+                "amount", quantity,
+                "item", route.get().output().getHoverName().getString(),
+                "order", orderDescription));
+    }
+
+    public static void handleBuilderOrderRequest(
+            ServerPlayer player,
+            int entityId,
+            HiredBuilderOrderPayload.Action action,
+            ResourceLocation structureId) {
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager) || !canUseInteractionSystem(player, villager)) {
+            sendNotice(player, entityId, "interaction.inventory_unavailable");
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        if (!canUseBuilderBlueprintService(player, level, villager)) {
+            return;
+        }
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
+        if (action != HiredBuilderOrderPayload.Action.CANCEL && BuilderTaskState.hasTask(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
+            return;
+        }
+        switch (action) {
+            case PREVIEW -> previewBuilderOrder(player, level, villager, state, structureId);
+            case CONFIRM -> confirmBuilderOrder(player, level, villager, state, structureId);
+            case CANCEL -> cancelBuilderOrder(player, level, villager, state);
+        }
+    }
+
+    private static VillagerAssignmentSnapshot ensureAssignmentSnapshot(ServerLevel level, Villager villager) {
+        return HiredVillagerContractService.synchronizeAssignment(level, villager);
+    }
+
+    private static boolean recruitmentTransitionSatisfied(
+            ServerPlayer player,
+            Villager villager,
+            VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole,
+            VillagerAssignmentSnapshot assignment,
+            boolean wasFollowingPlayer,
+            boolean wasStayingHere) {
+        if (RecruitmentActionMappings.hireDays(action) > 0) {
+            return assignment.ownedBy(player.getUUID())
+                    && HiredVillagerContractService.isHiredBy(player.serverLevel(), villager, player);
+        }
+        return switch (action) {
+            case FOLLOW -> VillagerRecruitmentService.isFollowing(villager, player);
+            case STAY_HERE -> VillagerRecruitmentService.isStayingHere(villager, player);
+            case STOP_FOLLOWING -> wasFollowingPlayer && !VillagerRecruitmentService.isFollowing(villager, player);
+            case STOP_STAYING_HERE -> wasStayingHere && !VillagerRecruitmentService.isStayingHere(villager, player);
+            case END_HIRE -> assignment.state() == VillagerAssignmentState.UNASSIGNED;
+            case SET_ROLE_COMBAT, SET_ROLE_HUNTING, SET_ROLE_MINING, SET_ROLE_LOGGING,
+                 SET_ROLE_FARMING, SET_ROLE_FISHING, SET_ROLE_BREWING, SET_ROLE_CRAFTSMAN,
+                 SET_ROLE_BUILDER, SET_ROLE_ANIMAL_HANDLING, SET_ROLE_NITWIT, SET_ROLE_COOK,
+                 SET_ROLE_SMELTER, SET_ROLE_COURIER -> assignment.role() == RecruitmentActionMappings.role(action);
+            default -> true;
+        };
+    }
+
+    private static com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason recruitmentFailureReason(
+            ServerPlayer player, Villager villager, VillagerRecruitRequestPayload.Action action, HiredVillagerRole role) {
+        if (villager == null) return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INVALID_TARGET;
+        if (!VillagerConversationService.validate(player, villager)) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.CONVERSATION_ENDED;
+        }
+        if (villager.isBaby()) return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INELIGIBLE;
+        if (villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.BUSY;
+        }
+        if (!VillagerRecruitmentService.canRecruit(player.serverLevel(), villager, player)) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.REPUTATION_TOO_LOW;
+        }
+        if (HiredVillagerContractService.isHired(player.serverLevel(), villager)
+                && !HiredVillagerContractService.isHiredBy(player.serverLevel(), villager, player)) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.ALREADY_OWNED;
+        }
+        HiredVillagerRole requestedRole = role == null ? HiredVillagerRoles.defaultRole(player.serverLevel(), villager) : role;
+        if (requestedRole != null
+                && !HiredVillagerRoles.availableContractRoles(player.serverLevel(), villager).contains(requestedRole)) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INVALID_ROLE;
+        }
+        int days = RecruitmentActionMappings.hireDays(action);
+        if (days > 0) {
+            if (countCurrency(player) < HiredVillagerContractService.getHireCost(
+                    player.serverLevel(), villager, player, days, requestedRole)) {
+                return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INSUFFICIENT_PAYMENT;
+            }
+            HiredVillagerIndex.reconcileLoadedFor(player);
+            if (HiredVillagerIndex.targetsFor(player).size() >= HiredVillagerIndex.MAX_ASSIGNMENTS_PER_PLAYER) {
+                return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.HIRE_CAP_REACHED;
+            }
+        }
+        return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.NOT_OWNER;
+    }
+
+    private static void sendRecruitmentResult(
+            ServerPlayer player,
+            int entityId,
+            boolean success,
+            com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason reason,
+            VillagerAssignmentSnapshot assignment) {
+        trySendToPlayer(player, new com.jvn.villagerretaliation.network.RecruitmentResultPayload(
+                entityId, success, reason, assignment, ""));
+    }
+
+    private static boolean isContractAdministrationAction(VillagerRecruitRequestPayload.Action action) {
+        return switch (action) {
+            case EXTEND_ONE_DAY,
+                 EXTEND_THREE_DAYS,
+                 EXTEND_FIVE_DAYS,
+                 EXTEND_SEVEN_DAYS,
+                 EXTEND_FIFTEEN_DAYS,
+                 EXTEND_THIRTY_DAYS,
+                 VIEW_CONTRACT,
+                 OPEN_JOB_INVENTORY,
+                 SHOW_STORAGE,
+                 DEPOSIT_EARNINGS,
+                 REMOVE_STORAGE,
+                 SHOW_PAYMENT_STORAGE,
+                 REMOVE_PAYMENT_STORAGE,
+                 TOGGLE_AUTO_PAYMENT,
+                 START_MOUNT_ASSIGNMENT,
+                 UNASSIGN_MOUNT,
+                 TOGGLE_MOUNTED_TRAVEL,
+                 PROMPT_END_HIRE_CONFIRMATION,
+                 DECLINE_END_HIRE_CONFIRMATION,
+                 END_HIRE,
+                 VIEW_ROLE,
+                 SET_ROLE_COMBAT,
+                 SET_ROLE_HUNTING,
+                 SET_ROLE_MINING,
+                 SET_ROLE_LOGGING,
+                 SET_ROLE_FARMING,
+                 SET_ROLE_FISHING,
+                 SET_ROLE_BREWING,
+                 SET_ROLE_CRAFTSMAN,
+                 SET_ROLE_BUILDER,
+                 SET_ROLE_ANIMAL_HANDLING,
+                 SET_ROLE_NITWIT,
+                 SET_ROLE_COOK,
+                 SET_ROLE_SMELTER,
+                 SET_ROLE_COURIER,
+                 VIEW_WORK_STATUS,
+                 TOGGLE_WORK_ENABLED,
+                 TOGGLE_USE_ASSIGNED_SUPPLIES,
+                 TOGGLE_AUTO_DEPOSIT_OUTPUTS,
+                 CONFIGURE_COMBAT,
+                 CONFIGURE_HUNTING,
+                 CONFIGURE_MINING,
+                 TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING,
+                 CONFIGURE_LOGGING,
+                 CONFIGURE_FARMING,
+                 CONFIGURE_FISHING,
+                 CONFIGURE_BREWING,
+                 CONFIGURE_BUILDER,
+                 CONFIGURE_ANIMAL_HANDLING,
+                 CONFIGURE_NITWIT,
+                 CYCLE_CRAFTSMAN_MODE,
+                 STOP_BREWING,
+                 STOP_BUILDER_BUILD -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isPartyAdministrationAction(VillagerRecruitRequestPayload.Action action) {
+        return switch (action) {
+            case EXTEND_ONE_DAY,
+                 EXTEND_THREE_DAYS,
+                 EXTEND_FIVE_DAYS,
+                 EXTEND_SEVEN_DAYS,
+                 EXTEND_FIFTEEN_DAYS,
+                 EXTEND_THIRTY_DAYS,
+                 EXTEND_MAX_DAYS,
+                 VIEW_CONTRACT,
+                 OPEN_JOB_INVENTORY,
+                 FOLLOW,
+                 STAY_HERE,
+                 CYCLE_PARTY_COMBAT_MODE,
+                 CYCLE_PARTY_ATTACK_MODE,
+                 CYCLE_PARTY_DROP_COLLECTION,
+                 START_MOUNT_ASSIGNMENT,
+                 UNASSIGN_MOUNT,
+                 PROMPT_PARTY_DISMISS_CONFIRMATION,
+                 DECLINE_PARTY_DISMISS_CONFIRMATION,
+                 PARTY_DISMISS -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isPartyContractMemberAction(VillagerRecruitRequestPayload.Action action) {
+        return switch (action) {
+            case EXTEND_ONE_DAY,
+                 EXTEND_THREE_DAYS,
+                 EXTEND_FIVE_DAYS,
+                 EXTEND_SEVEN_DAYS,
+                 EXTEND_FIFTEEN_DAYS,
+                 EXTEND_THIRTY_DAYS,
+                 EXTEND_MAX_DAYS,
+                 VIEW_CONTRACT -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean handlePartyVillagerRequest(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            VillagerRecruitRequestPayload.Action action,
+            com.jvn.villagerretaliation.party.PartyRecord party,
+            com.jvn.villagerretaliation.party.PartyVillagerRecord record) {
+        if (action == VillagerRecruitRequestPayload.Action.PROMPT_PARTY_RECRUIT_CONFIRMATION) {
+            sendVillagerNotice(player, villager, "interaction.party.recruit_confirmation", Map.of(
+                    "cost", Integer.toString(com.jvn.villagerretaliation.party.PartyVillagerContractService.DAILY_EMERALD_COST)));
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.DECLINE_PARTY_RECRUIT_CONFIRMATION) {
+            sendVillagerNotice(player, villager, "interaction.party.action_cancelled");
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.PARTY_RECRUIT) {
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                    com.jvn.villagerretaliation.party.PartyVillagerContractService.recruit(player, villager);
+            sendPartyContractResult(player, villager, result);
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
+        }
+        if (party == null || record == null) {
+            return false;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.CYCLE_PARTY_COMBAT_MODE
+                || action == VillagerRecruitRequestPayload.Action.CYCLE_PARTY_ATTACK_MODE
+                || action == VillagerRecruitRequestPayload.Action.CYCLE_PARTY_DROP_COLLECTION) {
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result = switch (action) {
+                case CYCLE_PARTY_COMBAT_MODE ->
+                        com.jvn.villagerretaliation.party.PartyVillagerContractService.cycleCombatMode(player, villager);
+                case CYCLE_PARTY_ATTACK_MODE ->
+                        com.jvn.villagerretaliation.party.PartyVillagerContractService.cycleAttackMode(player, villager);
+                case CYCLE_PARTY_DROP_COLLECTION ->
+                        com.jvn.villagerretaliation.party.PartyVillagerContractService.cycleDropCollectionMode(player, villager);
+                default -> throw new IllegalStateException("Unexpected party villager setting action: " + action);
+            };
+            if (!result.success()) {
+                sendVillagerNotice(player, villager, "interaction.party.error.leader_only");
+            }
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.FOLLOW
+                || action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                    action == VillagerRecruitRequestPayload.Action.FOLLOW
+                            ? com.jvn.villagerretaliation.party.PartyVillagerContractService.setFollowing(player, villager)
+                            : com.jvn.villagerretaliation.party.PartyVillagerContractService.setStaying(player, villager);
+            sendPartyContractResult(player, villager, result);
+            if (result.success()) {
+                trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), ""));
+                VillagerConversationService.endForPlayer(player, false);
+            }
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT) {
+            com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.startTargeting(player, villager);
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT) {
+            com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.unassign(player, villager);
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
+        }
+        int extensionDays = switch (action) {
+            case EXTEND_ONE_DAY -> 1;
+            case EXTEND_THREE_DAYS -> 3;
+            case EXTEND_FIVE_DAYS -> 5;
+            case EXTEND_SEVEN_DAYS -> 7;
+            case EXTEND_FIFTEEN_DAYS -> 15;
+            case EXTEND_THIRTY_DAYS -> 30;
+            case EXTEND_MAX_DAYS -> record.availableExtensionDays(
+                    level.getServer().overworld().getGameTime(),
+                    VillagerContractTime.MAX_PREPAID_DAYS);
+            default -> 0;
+        };
+        if (extensionDays > 0) {
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                    com.jvn.villagerretaliation.party.PartyVillagerContractService.extend(player, villager, extensionDays);
+            sendPartyContractResult(player, villager, result);
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.VIEW_CONTRACT) {
+            sendVillagerNotice(player, villager, "interaction.party.contract_remaining", Map.of(
+                    "time_remaining", Integer.toString(record.remainingDays(level.getServer().overworld().getGameTime())),
+                    "cost", Integer.toString(com.jvn.villagerretaliation.party.PartyVillagerContractService.DAILY_EMERALD_COST)));
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.PROMPT_PARTY_DISMISS_CONFIRMATION) {
+            sendVillagerNotice(player, villager, "interaction.party.dismiss_confirmation");
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.DECLINE_PARTY_DISMISS_CONFIRMATION) {
+            sendVillagerNotice(player, villager, "interaction.party.action_cancelled");
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.PARTY_DISMISS) {
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                    com.jvn.villagerretaliation.party.PartyVillagerContractService.dismiss(player, villager);
+            sendPartyContractResult(player, villager, result);
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
+                || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
+            sendVillagerNotice(player, villager, "interaction.party.must_follow_or_stay");
+            return true;
+        }
+        return false;
+    }
+
+    public static void sendPartyContractResult(
+            ServerPlayer player,
+            Villager villager,
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result) {
+        String dialogueKey = switch (result.messageKey()) {
+            case "villagerretaliation.party.villager_recruited" -> "interaction.party.recruited";
+            case "villagerretaliation.party.contract_extended" -> "interaction.party.contract_extended";
+            case "villagerretaliation.party.villager_following" -> "interaction.party.following";
+            case "villagerretaliation.party.villager_staying" -> "interaction.party.staying";
+            case "villagerretaliation.party.villager_dismissed" -> "interaction.party.dismissed";
+            case "villagerretaliation.party.error.leader_only" -> "interaction.party.error.leader_only";
+            case "villagerretaliation.party.error.villager_limit" -> "interaction.party.error.villager_limit";
+            case "villagerretaliation.party.error.villager_already_in_party" -> "interaction.party.error.already_in_party";
+            case "villagerretaliation.party.error.villager_already_hired" -> "interaction.party.error.already_hired";
+            case "villagerretaliation.party.error.insufficient_emeralds" -> "interaction.party.error.insufficient_emeralds";
+            case "villagerretaliation.party.error.contract_inactive" -> "interaction.party.error.contract_inactive";
+            case "villagerretaliation.party.error.contract_maximum" -> "interaction.party.error.contract_maximum";
+            default -> "interaction.party.error.unavailable";
+        };
+        sendVillagerNotice(player, villager, dialogueKey, Map.of(
+                "time_remaining", Integer.toString(result.days()),
+                "emerald_cost", Integer.toString(result.emeraldCost())));
+        if (result.success() && "villagerretaliation.party.villager_recruited".equals(result.messageKey())) {
+            sendPartyNotification(
+                    player,
+                    villager,
+                    "party.villager_recruited",
+                    VillagerPresetNameRegistry.resolveDisplayName(villager).getString() + " joined your party.",
+                    VillagerReputationNoticeKind.VILLAGER_FOLLOWING);
+        } else if (result.success() && "villagerretaliation.party.villager_dismissed".equals(result.messageKey())) {
+            sendPartyNotification(
+                    player,
+                    villager,
+                    "party.villager_dismissed",
+                    VillagerPresetNameRegistry.resolveDisplayName(villager).getString() + " left your party.",
+                    VillagerReputationNoticeKind.VILLAGER_DISMISSED);
+        } else if (result.success() && "villagerretaliation.party.villager_following".equals(result.messageKey())) {
+            sendPartyNotification(
+                    player,
+                    villager,
+                    "recruitment.follow_start",
+                    VillagerPresetNameRegistry.resolveDisplayName(villager).getString() + " is following you.",
+                    VillagerReputationNoticeKind.VILLAGER_FOLLOWING);
+        } else if (result.success() && "villagerretaliation.party.villager_staying".equals(result.messageKey())) {
+            sendPartyNotification(
+                    player,
+                    villager,
+                    "recruitment.stay_here",
+                    VillagerPresetNameRegistry.resolveDisplayName(villager).getString() + " will stay here.",
+                    VillagerReputationNoticeKind.VILLAGER_FOLLOWING);
+        } else if (result.success()) {
+            sendPartySystemSummary(player, result.messageKey(), result.days(), result.emeraldCost());
+        }
+    }
+
+    private static void sendPartyNotification(
+            ServerPlayer player,
+            Villager villager,
+            String trigger,
+            String fallbackText,
+            VillagerReputationNoticeKind kind) {
+        VillagerNotifications.sendHud(
+                player,
+                player.serverLevel(),
+                villager,
+                trigger,
+                VillagerNotifications.replacements(
+                        "villager",
+                        VillagerPresetNameRegistry.resolveDisplayName(villager).getString()),
+                fallbackText,
+                kind);
+    }
+
+    private static void sendPartySystemSummary(ServerPlayer player, String translationKey, Object... arguments) {
+        player.sendSystemMessage(Component.translatable(translationKey, arguments)
+                .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+    }
+
+    private static boolean canUseBuilderBlueprintService(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
+            return false;
+        }
+        if (!HiredVillagerRoles.canOfferBuilderService(level, villager)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.service_unavailable");
+            return false;
+        }
+        if (HiredVillagerContractService.isHired(level, villager)
+                && !HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
+            return false;
+        }
+        if (HiredVillagerContractService.isHiredBy(level, villager, player)
+                && !HiredVillagerContractService.isOneOffBuilderJob(level, villager)
+                && HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BUILDER) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.already_hired_for_other_job", Map.of(
+                    "role", HiredVillagerContractService.activeRole(level, villager).label()));
+            return false;
+        }
+        return true;
+    }
+
+    public static void handleConstructionBlueprintDeploy(ServerPlayer player, ItemStack blueprint, BlockPos targetPos) {
+        Optional<ConstructionBlueprintItem.PreviewData> preview = ConstructionBlueprintItem.previewData(blueprint);
+        if (preview.isEmpty()) {
+            return;
+        }
+        handleConstructionBlueprintPlacement(player, blueprint, preview.get(), ConstructionBlueprintPlacementPayload.Action.DEPLOY_AT, 1, targetPos);
+    }
+
+    public static void handleConstructionBlueprintPlacement(
+            ServerPlayer player,
+            UUID jobId,
+            ConstructionBlueprintPlacementPayload.Action action,
+            int steps,
+            BlockPos targetPos) {
+        if (player == null || jobId == null || action == null) {
+            return;
+        }
+        ItemStack blueprint = findConstructionBlueprint(player, jobId);
+        Optional<ConstructionBlueprintItem.PreviewData> preview = ConstructionBlueprintItem.previewData(blueprint);
+        if (preview.isEmpty()) {
+            return;
+        }
+        if (action == ConstructionBlueprintPlacementPayload.Action.TOGGLE_LOCK) {
+            ConstructionBlueprintItem.togglePlacementLocked(blueprint).ifPresent(locked ->
+                    player.displayClientMessage(Component.translatable(locked
+                            ? "villagerretaliation.clipboard.message.blueprint_locked"
+                            : "villagerretaliation.clipboard.message.blueprint_unlocked"), true));
+            return;
+        }
+        if (preview.get().locked() || preview.get().placementLocked()) {
+            return;
+        }
+        handleConstructionBlueprintPlacement(player, blueprint, preview.get(), action, steps, targetPos);
+    }
+
+    private static void handleConstructionBlueprintPlacement(
+            ServerPlayer player,
+            ItemStack blueprint,
+            ConstructionBlueprintItem.PreviewData preview,
+            ConstructionBlueprintPlacementPayload.Action action,
+            int steps,
+            BlockPos targetPos) {
+        if (preview.locked() || preview.placementLocked()) {
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.blueprint_move_unavailable"), true);
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        if (!level.dimension().equals(preview.dimension())) {
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.blueprint_wrong_dimension"), true);
+            return;
+        }
+
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(player.server, preview.structureId());
+        if (entry.isEmpty()) {
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.blueprint_structure_unavailable"), true);
+            return;
+        }
+
+        PlacementUpdate update = placementUpdate(level, entry.get(), preview, action, Math.max(1, Math.min(8, steps)), targetPos);
+        if (update == null || update.plan().isEmpty()) {
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.blueprint_structure_unavailable"), true);
+            return;
+        }
+
+        ConstructionBlueprintItem.updatePlacement(blueprint, level, update.plan().get(), update.origin(), update.rotation());
+        player.displayClientMessage(Component.translatable(
+                "villagerretaliation.clipboard.message.blueprint_site", HiredWorkerBrain.formatPos(update.origin())), true);
+    }
+
+    public static void handleClipboardStorageAction(ServerPlayer player, int entityId, ClipboardStorageActionPayload.Action action) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        ItemStack clipboard = findClipboard(player);
+        if (clipboard.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.clipboard.storage.hold_clipboard");
+            return;
+        }
+
+        focusVillagerOnPlayer(villager, player);
+        switch (action) {
+            case ASSIGN -> assignClipboardStorage(player, level, villager, clipboard, false);
+            case ASSIGN_KEEP_SELECTION -> assignClipboardStorage(player, level, villager, clipboard, true);
+            case SHOW -> showAssignedStorage(player, level, villager);
+            case REMOVE -> removeAssignedStorage(player, level, villager);
+            case REMOVE_SELECTION -> removeSelectedStorage(player, level, villager, clipboard);
+            case CHANGE_SELECTION -> changeSelectedStorage(player, level, villager, clipboard);
+            case CLEAR_SELECTION -> {
+                HiredStorageClipboardItem.clearSelection(player, clipboard);
+                sendVillagerNotice(player, villager, "interaction.clipboard.selection_cleared");
+            }
+        }
+    }
+
+    public static void handleClipboardWorkAreaAction(ServerPlayer player, UUID villagerId, ClipboardWorkAreaActionPayload.Action action, int steps) {
+        if (player == null || player.server == null || villagerId == null || action == null) {
+            return;
+        }
+        int stepCount = Math.max(1, Math.min(5, steps));
+        Optional<HiredVillagerIndex.Target> target = HiredVillagerIndex.find(player, villagerId);
+        if (target.isEmpty()) {
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.worker_unavailable"), true);
+            return;
+        }
+
+        HiredVillagerIndex.Target contextTarget = target.get();
+        ServerLevel level = contextTarget.level();
+        Villager villager = contextTarget.villager();
+        if (findClipboard(player).isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.clipboard.work_area.hold_clipboard");
+            return;
+        }
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return;
+        }
+
+        if (action == ClipboardWorkAreaActionPayload.Action.SET_CENTER_HERE
+                && !level.dimension().equals(player.serverLevel().dimension())) {
+            sendVillagerNotice(player, villager, "interaction.clipboard.work_area.same_dimension");
+            return;
+        }
+
+        if (level == player.serverLevel()) {
+            focusVillagerOnPlayer(villager, player);
+        }
+        switch (action) {
+            case SET_CENTER_HERE -> HiredVillagerWorkService.setWorkCenterHere(player, level, villager);
+            case RESET_CENTER_TO_VILLAGER -> HiredVillagerWorkService.resetWorkCenterToVillager(player, level, villager);
+            case APPLY_HELD_DRAFT -> HiredStorageClipboardItem.assignHeldWorkAreaDraft(player, level, villager);
+            case PREVIEW -> HiredVillagerWorkService.previewWorkArea(player, level, villager);
+            case CONFIGURE_ROLE -> HiredVillagerWorkService.configureRole(player, level, villager, HiredVillagerContractService.activeRole(level, villager));
+            case INCREASE_HORIZONTAL_RANGE -> HiredVillagerWorkService.changeRadius(player, level, villager, 4 * stepCount);
+            case DECREASE_HORIZONTAL_RANGE -> HiredVillagerWorkService.changeRadius(player, level, villager, -4 * stepCount);
+            case INCREASE_VERTICAL_RANGE -> HiredVillagerWorkService.changeVerticalRadius(player, level, villager, 2 * stepCount);
+            case DECREASE_VERTICAL_RANGE -> HiredVillagerWorkService.changeVerticalRadius(player, level, villager, -2 * stepCount);
+            case EXPAND_NORTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.NORTH, stepCount);
+            case EXPAND_EAST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.EAST, stepCount);
+            case EXPAND_SOUTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.SOUTH, stepCount);
+            case EXPAND_WEST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.WEST, stepCount);
+            case CONTRACT_NORTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.NORTH, -stepCount);
+            case CONTRACT_EAST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.EAST, -stepCount);
+            case CONTRACT_SOUTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.SOUTH, -stepCount);
+            case CONTRACT_WEST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.WEST, -stepCount);
+            case EXPAND_UP -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.UP, stepCount);
+            case EXPAND_DOWN -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.DOWN, stepCount);
+            case CONTRACT_UP -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.UP, -stepCount);
+            case CONTRACT_DOWN -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.DOWN, -stepCount);
+        }
+        if (actionPreviewsWorkArea(action)) {
+            HiredVillagerWorkService.previewWorkArea(player, level, villager);
+        }
+    }
+
+    private static boolean actionPreviewsWorkArea(ClipboardWorkAreaActionPayload.Action action) {
+        return switch (action) {
+            case SET_CENTER_HERE,
+                    RESET_CENTER_TO_VILLAGER,
+                    INCREASE_HORIZONTAL_RANGE,
+                    DECREASE_HORIZONTAL_RANGE,
+                    INCREASE_VERTICAL_RANGE,
+                    DECREASE_VERTICAL_RANGE,
+                    EXPAND_NORTH,
+                    EXPAND_EAST,
+                    EXPAND_SOUTH,
+                    EXPAND_WEST,
+                    CONTRACT_NORTH,
+                    CONTRACT_EAST,
+                    CONTRACT_SOUTH,
+                    CONTRACT_WEST,
+                    EXPAND_UP,
+                    EXPAND_DOWN,
+                    CONTRACT_UP,
+                    CONTRACT_DOWN -> true;
+            case APPLY_HELD_DRAFT, PREVIEW, CONFIGURE_ROLE -> false;
+        };
+    }
+
+    private static boolean handleHiredRoleRequest(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            VillagerRecruitRequestPayload.Action action) {
+        HiredVillagerRole role = RecruitmentActionMappings.role(action);
+        if (role == null) {
+            return false;
+        }
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.role_requires_hire");
+            return true;
+        }
+        if (!HiredVillagerContractService.setActiveRole(level, villager, role)) {
+            sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.role_not_suitable",
+                    Map.of("role", role.label())
+            );
+            return true;
+        }
+        sendVillagerNotice(
+                player,
+                villager,
+                "interaction.role_assigned",
+                Map.of("role", role.label())
+        );
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+        return true;
+    }
+
+    private static boolean handleHiredWorkRequest(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            VillagerRecruitRequestPayload.Action action) {
+        HiredVillagerRole configureRole = switch (action) {
+            case CONFIGURE_COMBAT -> HiredVillagerRole.COMBAT;
+            case CONFIGURE_HUNTING -> HiredVillagerRole.HUNTING;
+            case CONFIGURE_MINING -> HiredVillagerRole.MINING;
+            case CONFIGURE_LOGGING -> HiredVillagerRole.LOGGING;
+            case CONFIGURE_FARMING -> HiredVillagerRole.FARMING;
+            case CONFIGURE_FISHING -> HiredVillagerRole.FISHING;
+            case CONFIGURE_BREWING -> HiredVillagerRole.BREWING;
+            case CONFIGURE_BUILDER -> HiredVillagerRole.BUILDER;
+            case CONFIGURE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
+            case CONFIGURE_NITWIT -> HiredVillagerRole.NITWIT;
+            default -> null;
+        };
+        boolean workAction = configureRole != null
+                || action == VillagerRecruitRequestPayload.Action.VIEW_WORK_STATUS
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING
+                || action == VillagerRecruitRequestPayload.Action.CYCLE_CRAFTSMAN_MODE
+                || action == VillagerRecruitRequestPayload.Action.STOP_BREWING
+                || action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD;
+        if (!workAction) {
+            return false;
+        }
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return true;
+        }
+        if (configureRole != null && HiredVillagerContractService.activeRole(level, villager) != configureRole) {
+            sendVillagerNotice(player, villager, "interaction.work.configure.requires_role", Map.of("role", configureRole.label()));
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.CYCLE_CRAFTSMAN_MODE
+                && HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.CRAFTSMAN) {
+            return true;
+        }
+        switch (action) {
+            case VIEW_WORK_STATUS -> HiredVillagerWorkService.sendStatus(player, level, villager);
+            case TOGGLE_WORK_ENABLED -> HiredVillagerWorkService.toggleEnabled(player, level, villager);
+            case TOGGLE_USE_ASSIGNED_SUPPLIES -> HiredVillagerWorkService.toggleAssignedSupplies(player, level, villager);
+            case TOGGLE_AUTO_DEPOSIT_OUTPUTS -> HiredVillagerWorkService.toggleAutoDeposit(player, level, villager);
+            case TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING -> HiredVillagerWorkService.toggleHorizontalMiningFloorPatching(player, level, villager);
+            case CYCLE_CRAFTSMAN_MODE -> {
+                var mode = com.jvn.villagerretaliation.interaction.work.CraftsmanWorker
+                        .cycleMode(HiredWorkStateStore.state(villager));
+                sendVillagerNotice(player, villager, "interaction.work.craftsman.mode_changed", Map.of("mode", mode.label()));
+            }
+            case STOP_BREWING -> stopBrewingOrder(player, level, villager);
+            case STOP_BUILDER_BUILD -> cancelBuilderOrder(player, level, villager, HiredWorkStateStore.state(villager));
+            default -> HiredVillagerWorkService.configureRole(player, level, villager, configureRole);
+        }
+        return true;
+    }
+
+    private static void previewBuilderOrder(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            CompoundTag state,
+            ResourceLocation structureId) {
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(player.server, structureId);
+        if (entry.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.unknown_structure");
+            return;
+        }
+        Optional<BuilderStructureScanner.StructurePlan> plan = BuilderStructureScanner.scan(level, entry.get(), Rotation.NONE);
+        if (plan.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.structure_unavailable", Map.of("structure", entry.get().menuLabel()));
+            return;
+        }
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
+        int jobCost = plan.get().price();
+        int blueprintCost = builderBlueprintCost(jobCost);
+        BlockPos initialSite = defaultBlueprintOrigin(level, player, plan.get());
+        BuilderTaskState.setPendingStructure(state, entry.get().id());
+        sendVillagerNotice(player, villager, "interaction.work.builder.preview", Map.of(
+                        "structure", entry.get().menuLabel(),
+                        "blueprint_cost", formatCurrency(level, blueprintCost),
+                        "cost", formatCurrency(level, jobCost),
+                        "blocks", Integer.toString(plan.get().blocks().size()),
+                        "materials", plan.get().materialSummary(5),
+                        "missing", missing.summary(),
+                        "site", HiredWorkerBrain.formatPos(initialSite)));
+    }
+
+    private static void confirmBuilderOrder(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            CompoundTag state,
+            ResourceLocation structureId) {
+        Optional<ResourceLocation> pending = BuilderTaskState.pendingStructure(state);
+        if (pending.isEmpty() || !pending.get().equals(structureId)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.preview_first");
+            return;
+        }
+        if (BuilderTaskState.hasTask(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
+            return;
+        }
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(player.server, structureId);
+        if (entry.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.unknown_structure");
+            return;
+        }
+        Optional<BuilderStructureScanner.StructurePlan> plan = BuilderStructureScanner.scan(level, entry.get(), Rotation.NONE);
+        if (plan.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.structure_unavailable", Map.of("structure", entry.get().menuLabel()));
+            return;
+        }
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
+        int cost = plan.get().price();
+        int blueprintCost = builderBlueprintCost(cost);
+        if (countCurrency(player) < blueprintCost) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.need_blueprint_payment", Map.of(
+                    "structure", entry.get().menuLabel(),
+                    "blueprint_cost", formatCurrency(level, blueprintCost)));
+            return;
+        }
+
+        removeCurrency(player, blueprintCost);
+        VillagerWalletService.addCurrency(villager, blueprintCost);
+        BuilderTaskState.clearPendingStructure(state);
+        BlockPos origin = defaultBlueprintOrigin(level, player, plan.get());
+        giveConstructionBlueprint(
+                player,
+                level,
+                null,
+                plan.get(),
+                origin,
+                UUID.randomUUID(),
+                blueprintCost,
+                cost,
+                missing.summary(),
+                0L);
+        sendVillagerNotice(player, villager, "interaction.work.builder.blueprint_ready", Map.of(
+                "structure", entry.get().menuLabel(),
+                "blueprint_cost", formatCurrency(level, blueprintCost),
+                "cost", formatCurrency(level, cost),
+                "blocks", Integer.toString(plan.get().blocks().size()),
+                "materials", missing.summary(),
+                "site", HiredWorkerBrain.formatPos(origin)));
+        VillagerConversationService.start(player, villager);
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+    }
+
+    private static void startConstructionBlueprintJob(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!canUseBuilderBlueprintService(player, level, villager)) {
+            sendForcedDialogueReputation(player, villager, constructionBlueprintOptions(), true);
+            return;
+        }
+        ItemStack blueprint = findHeldConstructionBlueprint(player);
+        Optional<ConstructionBlueprintItem.PreviewData> optionalPreview = ConstructionBlueprintItem.previewData(blueprint);
+        if (optionalPreview.isEmpty()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_missing");
+            return;
+        }
+        ConstructionBlueprintItem.PreviewData preview = optionalPreview.get();
+        if (preview.expired()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_expired");
+            return;
+        }
+        if (preview.completed()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_completed");
+            return;
+        }
+        if (preview.started()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_started");
+            return;
+        }
+        if (!level.dimension().equals(preview.dimension())) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.clipboard.work_area.same_dimension");
+            return;
+        }
+
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
+        if (BuilderTaskState.hasTask(state)) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
+            return;
+        }
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(player.server, preview.structureId());
+        if (entry.isEmpty()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.unknown_structure");
+            return;
+        }
+        Optional<BuilderStructureScanner.StructurePlan> plan =
+                BuilderStructureScanner.scan(level, entry.get(), preview.rotation());
+        if (plan.isEmpty()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.structure_unavailable", Map.of("structure", entry.get().menuLabel()));
+            return;
+        }
+        BuilderSitePlanner.SiteResult site = BuilderSitePlanner.validateSite(
+                level,
+                player,
+                villager,
+                null,
+                plan.get(),
+                preview.origin());
+        if (!site.valid()) {
+            rejectConstructionBlueprintStart(player, villager, site.statusKey(), site.replacements());
+            return;
+        }
+
+        int cost = preview.jobCost() > 0 ? preview.jobCost() : plan.get().price();
+        if (countCurrency(player) < cost) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.need_payment", Map.of(
+                    "structure", entry.get().menuLabel(),
+                    "cost", formatCurrency(level, cost)));
+            return;
+        }
+        removeCurrency(player, cost);
+
+        if (!HiredVillagerContractService.isHired(level, villager)) {
+            HiredVillagerContractService.startOneOffBuilderJob(level, villager, player);
+        }
+
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
+        state.remove("NextWorkGameTime");
+        state.remove("ProgressTicks");
+        long startedGameTime = level.getGameTime();
+        BuilderTaskState.start(state, entry.get(), plan.get(), preview.origin(), preview.rotation(), cost, startedGameTime, preview.jobId());
+        BuilderPaymentEscrowService.escrow(villager, preview.jobId(), cost);
+        ConstructionBlueprintItem.updatePlacement(blueprint, level, plan.get(), preview.origin(), preview.rotation());
+        ConstructionBlueprintItem.markStarted(blueprint, villager, cost, startedGameTime);
+        state.putString("Status", "interaction.work.builder.started");
+        sendVillagerNotice(player, villager, missing.ready()
+                ? "interaction.work.builder.started"
+                : "interaction.work.builder.started_waiting_materials", Map.of(
+                "structure", entry.get().menuLabel(),
+                "cost", formatCurrency(level, cost),
+                "blocks", Integer.toString(plan.get().blocks().size()),
+                "materials", missing.dialogueList(),
+                "site", HiredWorkerBrain.formatPos(preview.origin()),
+                "storage_radius", Integer.toString(Math.max(1, VillagerRetaliationConfig.HIRED_BUILDER_MATERIAL_STORAGE_RADIUS.get()))));
+        VillagerConversationService.start(player, villager);
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+    }
+
+    private static void rejectConstructionBlueprintStart(ServerPlayer player, Villager villager, String messageKey) {
+        rejectConstructionBlueprintStart(player, villager, messageKey, Map.of());
+    }
+
+    private static void rejectConstructionBlueprintStart(
+            ServerPlayer player,
+            Villager villager,
+            String messageKey,
+            Map<String, String> replacements) {
+        sendVillagerNotice(player, villager, messageKey, replacements);
+        sendForcedDialogueReputation(player, villager, constructionBlueprintOptions(), true);
+    }
+
+    private static int builderBlueprintCost(int jobCost) {
+        return Math.max(1, Math.min(5, Math.max(1, jobCost) / 10));
+    }
+
+    private static void cancelBuilderOrder(ServerPlayer player, ServerLevel level, Villager villager, CompoundTag state) {
+        BuilderTaskState.clearPendingStructure(state);
+        if (!BuilderTaskState.hasTask(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.cancelled");
+            return;
+        }
+        Optional<UUID> jobId = BuilderTaskState.jobId(state);
+        int paid = BuilderTaskState.paidCurrency(state);
+        int placed = BuilderTaskState.placedIndex(state);
+        int refund = 0;
+        if (placed == 0 && paid > 0) {
+            refund = BuilderPaymentEscrowService.refund(player, villager, jobId, paid);
+            if (refund <= 0) {
+                sendVillagerNotice(player, villager, "interaction.work.builder.cancel_refund_unavailable", Map.of("cost", formatCurrency(level, paid)));
+                return;
+            }
+        } else {
+            BuilderPaymentEscrowService.releaseToWallet(villager, jobId);
+        }
+        jobId.ifPresent(id -> ConstructionBlueprintItem.expireMatchingBlueprints(player, id));
+        BuilderTaskState.clearTask(state);
+        HiredVillagerWorkService.cancelWork(level, villager, HiredVillagerRole.BUILDER, "interaction.work.builder.cancelled");
+        if (HiredVillagerContractService.isOneOffBuilderJob(level, villager)) {
+            HiredVillagerContractService.finishOneOffBuilderJob(level, villager, "interaction.work.builder.cancelled");
+        }
+        if (refund > 0) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.cancelled_refund", Map.of("cost", formatCurrency(level, refund)));
+        } else {
+            sendVillagerNotice(player, villager, "interaction.work.builder.cancelled");
+        }
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+    }
+
+    private static void giveConstructionBlueprint(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            UUID jobId,
+            int paidCurrency,
+            int jobCost,
+            String missingMaterials,
+            long startedGameTime) {
+        ItemStack blueprint = ConstructionBlueprintItem.create(
+                level,
+                villager,
+                plan,
+                origin,
+                jobId,
+                paidCurrency,
+                jobCost,
+                missingMaterials,
+                startedGameTime);
+        if (!player.getInventory().add(blueprint)) {
+            player.drop(blueprint, false);
+        }
+    }
+
+    private static void stopBrewingOrder(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BREWING) {
+            sendVillagerNotice(player, villager, "interaction.work.brewing.requires_role_change");
+            return;
+        }
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
+        BrewingWorker.clearOrder(state);
+        HiredVillagerWorkService.stopWork(level, villager, HiredVillagerRole.BREWING, "interaction.work.brewing.stopped");
+        sendVillagerNotice(player, villager, "interaction.work.brewing.stopped");
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+    }
+
+    public static void handleLoggingFilterRequest(ServerPlayer player, int entityId, String filterId) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.toggleLoggingFilter(player, level, villager, filterId);
+    }
+
+    public static void handleLoggingOptionRequest(ServerPlayer player, int entityId, String optionId) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.toggleLoggingOption(player, level, villager, optionId);
+    }
+
+    public static void handleFarmingOptionRequest(ServerPlayer player, int entityId, String optionId) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.toggleFarmingOption(player, level, villager, optionId);
+    }
+
+    public static void handleHuntingTargetRequest(ServerPlayer player, int entityId, String targetId) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.toggleHuntingTarget(player, level, villager, targetId);
+    }
+
+    public static void handleAnimalBreedingTargetRequest(ServerPlayer player, int entityId, String targetId) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.toggleAnimalBreedingTarget(player, level, villager, targetId);
+    }
+
+    public static void handleAnimalHandlingOptionRequest(ServerPlayer player, int entityId, String optionId) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.toggleAnimalHandlingOption(player, level, villager, optionId);
+    }
+
+    public static void handleAnimalCullCapRequest(ServerPlayer player, int entityId, int cap) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.setAnimalCullCap(player, level, villager, cap);
+    }
+
+    private static void sendHiredRoleNotice(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHired(level, villager)) {
+            sendVillagerNotice(player, villager, "interaction.role_requires_hire");
+            return;
+        }
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.role.manage_requires_hirer");
+            return;
+        }
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        sendVillagerNotice(
+                player,
+                villager,
+                "interaction.role_overview",
+                Map.of(
+                        "role", role.label(),
+                        "available_roles", HiredVillagerRoles.roleSummary(level, villager)
+                )
+        );
+    }
+
+    static void sendHiredContractNotice(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHired(level, villager)) {
+            int dailyCost = HiredVillagerContractService.getDailyCost(level, villager, player);
+            sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.contract_offer_overview",
+                    Map.of(
+                            "available_roles", HiredVillagerRoles.roleSummary(level, villager),
+                            "contract_cost", formatCurrency(level, dailyCost)
+                    )
+            );
+            return;
+        }
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
+            return;
+        }
+        int remainingDays = HiredVillagerContractService.getRemainingHireDays(level, villager);
+        sendVillagerNotice(
+                player,
+                villager,
+                "interaction.hired_contract_days_left",
+                Map.of("time_remaining", formatDaysRemaining(remainingDays))
+        );
+    }
+
+    private static void assignClipboardStorage(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            ItemStack clipboard,
+            boolean keepSelection) {
+        if (!canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.storage.assign_requires_access");
+            return;
+        }
+        List<SelectedStoragePosition> selected = HiredStorageClipboardItem.selectedStoragePositions(
+                clipboard,
+                HiredStorageClipboardItem.mode(clipboard).assignmentPurpose());
+        if (selected.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.storage.select_with_clipboard");
+            return;
+        }
+        Optional<AssignmentSummaryMessage> message = HiredStorageClipboardItem.assignSelectedStorage(
+                player,
+                level,
+                villager,
+                clipboard,
+                selected,
+                keepSelection);
+        message.ifPresent(summary -> sendVillagerNotice(player, villager, summary.key(), summary.replacements()));
+    }
+
+    private static void removeSelectedStorage(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            ItemStack clipboard) {
+        List<SelectedStoragePosition> selected = selectedClipboardStorage(clipboard);
+        if (selected.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.storage.select_with_clipboard");
+            return;
+        }
+        List<AssignedContainerRecord> assigned = selectedAssignments(level, villager, selected);
+        if (assigned.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.storage.selected_not_assigned");
+            return;
+        }
+        if (!canManageSelectedAssignments(player, level, villager, assigned)) {
+            return;
+        }
+        int removed = AssignedStorageService.removeAssignedStorageAt(
+                level, villager, selected.stream().map(SelectedStoragePosition::position).toList());
+        if (assigned.stream().anyMatch(record -> AssignedStorageService.PAYMENT_PURPOSE.equals(
+                AssignedStorageService.normalizePurpose(record.purpose())))
+                && !AssignedStorageService.hasAssignedPaymentStorage(level, villager)) {
+            HiredVillagerContractService.setAutoPaymentEnabled(villager, false);
+        }
+        if (removed > 0) {
+            HiredStorageClipboardItem.clearSelection(player, clipboard);
+        }
+        sendVillagerNotice(player, villager, "interaction.storage.selected_removed_count", Map.of(
+                "count", Integer.toString(removed),
+                "plural", plural(removed)));
+    }
+
+    private static void changeSelectedStorage(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            ItemStack clipboard) {
+        List<SelectedStoragePosition> selected = selectedClipboardStorage(clipboard);
+        if (selected.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.storage.select_with_clipboard");
+            return;
+        }
+        List<AssignedContainerRecord> assigned = selectedAssignments(level, villager, selected);
+        if (assigned.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.storage.selected_not_assigned");
+            return;
+        }
+        if (!canManageSelectedAssignments(player, level, villager, assigned)) {
+            return;
+        }
+        List<SelectedStoragePosition> changes = selected.stream()
+                .filter(selection -> assigned.stream().anyMatch(record ->
+                        record.dimension().equals(selection.position().dimension())
+                                && record.pos().equals(selection.position().pos())))
+                .toList();
+        for (SelectedStoragePosition change : changes) {
+            ServerLevel targetLevel = player.server.getLevel(change.position().dimension());
+            if (targetLevel == null || !AssignedStorageService.isValidContainerForPurpose(
+                    targetLevel, change.position().pos(), change.purpose())) {
+                sendVillagerNotice(player, villager, "interaction.storage.change_invalid");
+                return;
+            }
+        }
+        if (changes.stream().anyMatch(SelectedStoragePosition::paymentPurpose)
+                && !HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.payment_storage.requires_hire");
+            return;
+        }
+        if (changes.stream().anyMatch(change -> !change.paymentPurpose())
+                && !canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.storage.assign_requires_access");
+            return;
+        }
+
+        AssignedStorageService.removeAssignedStorageAt(
+                level, villager, changes.stream().map(SelectedStoragePosition::position).toList());
+        HiredStorageClipboardItem.assignSelectedStorage(player, level, villager, clipboard, changes, false);
+        sendVillagerNotice(player, villager, "interaction.storage.selected_changed_count", Map.of(
+                "count", Integer.toString(changes.size()),
+                "plural", plural(changes.size())));
+    }
+
+    private static List<SelectedStoragePosition> selectedClipboardStorage(ItemStack clipboard) {
+        return HiredStorageClipboardItem.selectedStoragePositions(
+                clipboard, HiredStorageClipboardItem.mode(clipboard).assignmentPurpose());
+    }
+
+    private static List<AssignedContainerRecord> selectedAssignments(
+            ServerLevel level,
+            Villager villager,
+            List<SelectedStoragePosition> selected) {
+        return AssignedStorageService.assignedStorageAt(
+                level, villager, selected.stream().map(SelectedStoragePosition::position).toList());
+    }
+
+    private static boolean canManageSelectedAssignments(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            List<AssignedContainerRecord> assigned) {
+        boolean includesPayment = assigned.stream().anyMatch(record -> AssignedStorageService.PAYMENT_PURPOSE.equals(
+                AssignedStorageService.normalizePurpose(record.purpose())));
+        boolean includesStorage = assigned.stream().anyMatch(record -> !AssignedStorageService.PAYMENT_PURPOSE.equals(
+                AssignedStorageService.normalizePurpose(record.purpose())));
+        if (includesPayment && !HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.payment_storage.remove_requires_hirer");
+            return false;
+        }
+        if (includesStorage && !canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.storage.remove_requires_access");
+            return false;
+        }
+        return true;
+    }
+
+    static boolean clipboardSelectionHasAssignment(ServerPlayer player, ServerLevel level, Villager villager) {
+        ItemStack clipboard = findClipboard(player);
+        if (clipboard.isEmpty()) {
+            return false;
+        }
+        List<SelectedStoragePosition> selected = selectedClipboardStorage(clipboard);
+        return !selected.isEmpty() && !selectedAssignments(level, villager, selected).isEmpty();
+    }
+
+    private static void showAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.storage.inspect_requires_access");
+            return;
+        }
+        List<AssignedContainerRecord> assigned = AssignedStorageService.assignedStorage(level, villager);
+        HiredStorageClipboardItem.sendAssignedStorageOutlines(player, assigned);
+        int count = assigned.size();
+        sendVillagerNotice(player, villager, "interaction.storage.assigned_count", Map.of("count", Integer.toString(count)));
+    }
+
+    private static void showAssignedPaymentStorage(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.payment_storage.requires_hire");
+            return;
+        }
+        List<AssignedContainerRecord> assigned = AssignedStorageService.assignedPaymentStorage(level, villager);
+        HiredStorageClipboardItem.sendAssignedStorageOutlines(player, assigned);
+        int count = assigned.size();
+        sendVillagerNotice(player, villager, "interaction.payment_storage.assigned_count", Map.of(
+                "count", Integer.toString(count),
+                "auto_payment", HiredVillagerContractService.isAutoPaymentEnabled(level, villager) ? "on" : "off"));
+    }
+
+    private static void depositEarnings(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.earnings.deposit_requires_access");
+            return;
+        }
+        int excess = VillagerWalletService.getDepositAmount(villager);
+        if (excess <= 0) {
+            sendVillagerNotice(player, villager, "interaction.earnings.no_excess");
+            return;
+        }
+        VillagerWalletService.DepositResult result = VillagerWalletService.tryDepositExcessCurrency(villager);
+        if (result.storageUnavailable()) {
+            sendVillagerNotice(player, villager, "interaction.earnings.storage_unavailable");
+        } else if (!result.assignedStorageAvailable()) {
+            sendVillagerNotice(player, villager, "interaction.earnings.no_assigned_storage");
+        } else if (result.deposited() <= 0) {
+            sendVillagerNotice(player, villager, "interaction.earnings.storage_full");
+        } else if (result.remaining() > 0) {
+            sendVillagerNotice(player, villager, "interaction.earnings.deposited_partial", Map.of(
+                    "deposited", formatCurrency(level, result.deposited()),
+                    "remaining", formatCurrency(level, result.remaining())));
+        } else {
+            sendVillagerNotice(player, villager, "interaction.earnings.deposited_all", Map.of(
+                    "deposited", formatCurrency(level, result.deposited())));
+        }
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+    }
+
+    private static void removeAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.storage.remove_requires_access");
+            return;
+        }
+        int removed = AssignedStorageService.removeAssignedStorage(level, villager);
+        sendVillagerNotice(player, villager, "interaction.storage.removed_count", Map.of(
+                "count", Integer.toString(removed),
+                "plural", plural(removed)));
+    }
+
+    private static void removeAssignedPaymentStorage(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.payment_storage.remove_requires_hirer");
+            return;
+        }
+        int removed = AssignedStorageService.removeAssignedPaymentStorage(level, villager);
+        if (removed > 0) {
+            HiredVillagerContractService.setAutoPaymentEnabled(villager, false);
+        }
+        sendVillagerNotice(player, villager, "interaction.payment_storage.removed_count", Map.of(
+                "count", Integer.toString(removed),
+                "plural", plural(removed)));
+    }
+
+    private static void toggleAutoPayment(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.auto_payment.requires_hire");
+            return;
+        }
+        if (!AssignedStorageService.hasAssignedPaymentStorage(level, villager)) {
+            sendVillagerNotice(player, villager, "interaction.auto_payment.requires_storage");
+            return;
+        }
+        boolean enabled = HiredVillagerContractService.toggleAutoPayment(level, villager);
+        sendVillagerNotice(player, villager, enabled
+                ? "interaction.auto_payment.enabled"
+                : "interaction.auto_payment.disabled");
+    }
+
+    public static boolean canManageAssignedStorage(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (HiredVillagerContractService.isHired(level, villager)) {
+            return HiredVillagerContractService.isHiredBy(level, villager, player);
+        }
+        return VillagerInventoryAccess.canAccess(level, villager, player);
+    }
+
+    static ItemStack findClipboard(ServerPlayer player) {
+        ItemStack mainHand = player.getMainHandItem();
+        if (VillagerRetaliationItems.isClipboard(mainHand)) {
+            return mainHand;
+        }
+        ItemStack offhand = player.getOffhandItem();
+        return VillagerRetaliationItems.isClipboard(offhand) ? offhand : ItemStack.EMPTY;
+    }
+
+    private static ItemStack findHeldConstructionBlueprint(ServerPlayer player) {
+        ItemStack mainHand = player.getMainHandItem();
+        if (ConstructionBlueprintItem.isBlueprint(mainHand)) {
+            return mainHand;
+        }
+        ItemStack offhand = player.getOffhandItem();
+        return ConstructionBlueprintItem.isBlueprint(offhand) ? offhand : ItemStack.EMPTY;
+    }
+
+    private static ItemStack findConstructionBlueprint(ServerPlayer player, UUID jobId) {
+        ItemStack mainHand = player.getMainHandItem();
+        if (ConstructionBlueprintItem.previewData(mainHand).filter(data -> data.jobId().equals(jobId)).isPresent()) {
+            return mainHand;
+        }
+        ItemStack offhand = player.getOffhandItem();
+        if (ConstructionBlueprintItem.previewData(offhand).filter(data -> data.jobId().equals(jobId)).isPresent()) {
+            return offhand;
+        }
+        for (ItemStack stack : player.getInventory().items) {
+            if (ConstructionBlueprintItem.previewData(stack).filter(data -> data.jobId().equals(jobId)).isPresent()) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private static PlacementUpdate placementUpdate(
+            ServerLevel level,
+            BuilderStructureCatalog.Entry entry,
+            ConstructionBlueprintItem.PreviewData preview,
+            ConstructionBlueprintPlacementPayload.Action action,
+            int steps,
+            BlockPos targetPos) {
+        Rotation rotation = preview.rotation();
+        BlockPos origin = preview.origin();
+        Optional<BuilderStructureScanner.StructurePlan> plan = BuilderStructureScanner.scan(level, entry, rotation);
+        if (plan.isEmpty()) {
+            return new PlacementUpdate(Optional.empty(), origin, rotation);
+        }
+
+        switch (action) {
+            case DEPLOY_AT -> origin = originForDeployTarget(plan.get(), targetPos);
+            case MOVE_NORTH -> origin = origin.relative(Direction.NORTH, steps);
+            case MOVE_EAST -> origin = origin.relative(Direction.EAST, steps);
+            case MOVE_SOUTH -> origin = origin.relative(Direction.SOUTH, steps);
+            case MOVE_WEST -> origin = origin.relative(Direction.WEST, steps);
+            case MOVE_UP -> origin = origin.above(steps);
+            case MOVE_DOWN -> origin = origin.below(steps);
+            case TOGGLE_LOCK -> {
+            }
+            case ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE -> {
+                Rotation nextRotation = rotation.getRotated(action == ConstructionBlueprintPlacementPayload.Action.ROTATE_CLOCKWISE
+                        ? Rotation.CLOCKWISE_90
+                        : Rotation.COUNTERCLOCKWISE_90);
+                Optional<BuilderStructureScanner.StructurePlan> rotatedPlan = BuilderStructureScanner.scan(level, entry, nextRotation);
+                if (rotatedPlan.isEmpty()) {
+                    return new PlacementUpdate(Optional.empty(), origin, rotation);
+                }
+                BlockPos center = preview.worldCenter();
+                origin = center.subtract(rotatedPlan.get().localCenter());
+                rotation = nextRotation;
+                plan = rotatedPlan;
+            }
+        }
+        return new PlacementUpdate(plan, origin.immutable(), rotation);
+    }
+
+    private static BlockPos originForDeployTarget(BuilderStructureScanner.StructurePlan plan, BlockPos targetPos) {
+        BlockPos center = plan.localCenter();
+        return new BlockPos(targetPos.getX() - center.getX(), targetPos.getY(), targetPos.getZ() - center.getZ());
+    }
+
+    private static BlockPos defaultBlueprintOrigin(
+            ServerLevel level,
+            ServerPlayer player,
+            BuilderStructureScanner.StructurePlan plan) {
+        BlockPos center = player.blockPosition().relative(player.getDirection(), 5);
+        int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, center.getX(), center.getZ());
+        BlockPos localCenter = plan.localCenter();
+        return new BlockPos(
+                center.getX() - localCenter.getX(),
+                groundY - plan.localMin().getY(),
+                center.getZ() - localCenter.getZ());
+    }
+
+    private static int countCurrency(ServerPlayer player) {
+        return VillagerCurrencyPayment.count(player);
+    }
+
+    private static void removeCurrency(ServerPlayer player, int count) {
+        VillagerCurrencyPayment.tryRemove(player, count);
+    }
+
+    private static void giveCurrency(ServerPlayer player, int count) {
+        VillagerCurrencyPayment.give(player, count);
+    }
+
+    static String formatCurrency(ServerLevel level, int count) {
+        return VillagerCurrencyResources.format(level.getServer(), count);
+    }
+
+    private static String plural(int count) {
+        return count == 1 ? "" : "s";
+    }
+
+    static String formatDaysRemaining(int count) {
+        return count + " day" + plural(count);
     }
 
     public static void handleReputationRequest(ServerPlayer player, int entityId) {
+        if (!ServerboundRequestLimiter.tryAcquire(player, VillagerReputationRequestPayload.TYPE.id(), 5L)) {
+            return;
+        }
         Entity entity = player.serverLevel().getEntity(entityId);
-        if (!(entity instanceof Villager villager) || !villager.isAlive() || villager.isBaby()) {
+        if (!(entity instanceof Villager villager) || !villager.isAlive()) {
             return;
         }
 
@@ -280,7 +2393,52 @@ public final class VillagerInteractionService {
         VillagerReputationNetworking.sendReputation(player, villager, reputation);
     }
 
+    public static void handleStudyRequest(ServerPlayer player, int entityId, String skillId) {
+        if (!ServerboundRequestLimiter.tryAcquire(player, VillagerStudyRequestPayload.TYPE.id(), 5L)) {
+            return;
+        }
+        Optional<InteractionTargetContext> target =
+                InteractionRequestValidator.requireStudyConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+
+        Villager villager = target.get().villager();
+        ServerLevel level = target.get().level();
+        VillagerSkill skill = VillagerSkill.bySerializedName(skillId);
+        VillagerStudyService.StartResult result = VillagerStudyService.requestStart(level, villager, player, skill);
+        if (result.started()) {
+            sendVillagerNotice(player, villager, "interaction.study.started",
+                    Map.of("skill", VillagerStudyDialogueService.localizedSkillName(skill)));
+            return;
+        }
+
+        if (result.eligibility() == VillagerStudyService.Eligibility.LOW_REPUTATION) {
+            sendVillagerNotice(player, villager, "interaction.study.low_reputation");
+        } else if (result.eligibility() == VillagerStudyService.Eligibility.COOLDOWN) {
+            long remaining = result.state().cooldownRemaining(level.getServer().overworld().getGameTime());
+            sendVillagerNotice(player, villager, "interaction.study.cooldown",
+                    Map.of("study_cooldown", formatStudyTicks(remaining)));
+        } else if (result.eligibility() == VillagerStudyService.Eligibility.SKILL_MAXED && skill != null) {
+            sendVillagerNotice(player, villager, "interaction.study.maxed",
+                    Map.of("skill", VillagerStudyDialogueService.localizedSkillName(skill)));
+        } else {
+            sendVillagerNotice(player, villager, "interaction.study.unavailable");
+        }
+        VillagerReputationNetworking.sendStudyState(player, villager);
+    }
+
+    private static String formatStudyTicks(long ticks) {
+        long seconds = Math.max(0L, (ticks + 19L) / 20L);
+        long minutes = seconds / 60L;
+        long remainder = seconds % 60L;
+        return minutes > 0L ? minutes + "m " + remainder + "s" : remainder + "s";
+    }
+
     public static void handleProfileRequest(ServerPlayer player, int entityId) {
+        if (!ServerboundRequestLimiter.tryAcquire(player, VillagerProfileRequestPayload.TYPE.id(), 5L)) {
+            return;
+        }
         Entity entity = player.serverLevel().getEntity(entityId);
         if (!(entity instanceof AbstractVillager villager) || !villager.isAlive()) {
             return;
@@ -294,11 +2452,78 @@ public final class VillagerInteractionService {
             return;
         }
 
+        if (villager instanceof Villager conversationVillager
+                && VillagerConversationService.isConversing(player)
+                && !VillagerConversationService.validate(player, conversationVillager)) {
+            return;
+        }
+
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(player.serverLevel(), villager);
         VillagerReputationNetworking.sendProfile(player, villager, profile);
     }
 
+    public static void handleAllegianceAction(
+            ServerPlayer player,
+            int entityId,
+            VillagerAllegianceActionPayload.Action action) {
+        if (action != VillagerAllegianceActionPayload.Action.REASSIGN_TO_CURRENT_VILLAGE) {
+            return;
+        }
+        Villager villager = resolveVillager(player, entityId);
+        if (villager == null || villager.isBaby() || !VillagerConversationService.validate(player, villager)) {
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> current = VillageAllegianceService.activeVillageAt(
+                level, villager.blockPosition());
+        if (current.isEmpty() || registry.canonicalRecord(current.get())
+                .filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE).isEmpty()) {
+            sendVillagerNotice(player, villager, "There is no active village here for me to join.");
+            return;
+        }
+        if (VillageAllegianceApi.canonicalPrimary(level, villager).filter(current.get()::equals).isPresent()) {
+            sendVillagerNotice(player, villager, "This is already my home village.");
+            return;
+        }
+        VillageAllegianceReassignmentService.Eligibility eligibility =
+                VillageAllegianceReassignmentService.eligibility(level, player, villager, current.get());
+        if (!eligibility.allowed()) {
+            sendVillagerNotice(player, villager, VillageAllegianceReassignmentService.describe(eligibility));
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return;
+        }
+        if (!VillageAllegianceReassignmentService.confirmOrArm(level, player, villager, current.get())) {
+            sendVillagerNotice(player, villager,
+                    "That would change where I belong and which village I defend. Ask me once more within 30 seconds if you are certain.");
+            return;
+        }
+        boolean wasUnaffiliated = VillageAllegianceApi.get(villager)
+                .map(data -> data.state() == AllegianceState.UNAFFILIATED)
+                .orElse(false);
+        if (!VillageAllegianceService.reassignToCurrentVillage(level, villager)) {
+            sendVillagerNotice(player, villager, "I cannot change my allegiance right now.");
+            return;
+        }
+        VillageAllegianceReassignmentService.complete(villager);
+        if (wasUnaffiliated) {
+            VillagerReputationAdvancements.onHousewarming(player);
+        }
+        VillageAllegianceEntityData.annotateLatestHistoryActor(villager, player.getUUID());
+        String villageName = registry.canonicalRecord(current.get())
+                .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
+                .orElse("this village");
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+        sendVillagerNotice(player, villager, "From now on, I will call " + villageName + " my home.");
+    }
+
     public static void handleConversationEndRequest(ServerPlayer player, int entityId) {
+        if (com.jvn.villagerretaliation.raid.PlayerRaidMercyService.handleConversationEndRequest(player, entityId)) {
+            return;
+        }
+        if (com.jvn.villagerretaliation.raid.PlayerRaidDialogueService.handleConversationEndRequest(player, entityId)) {
+            return;
+        }
         Villager villager = resolveVillager(player, entityId);
         if (villager == null) {
             Entity entity = player.serverLevel().getEntity(entityId);
@@ -332,9 +2557,13 @@ public final class VillagerInteractionService {
                 reputation.level()
         ));
         VillagerAmbientIndicatorService.onConversationClosed(level, villager, player);
-        broadcastVillagerChat(level, villager, goodbyeText);
-        PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
+        broadcastRoutineVillagerChat(level, villager, goodbyeText);
+        trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
         VillagerConversationService.endForPlayer(player, false);
+    }
+
+    public static void handleConversationActivity(ServerPlayer player, int entityId) {
+        VillagerConversationService.recordActivity(player, entityId);
     }
 
     public static DialogueContext createDialogueContext(ServerLevel level, ServerPlayer player, Villager villager) {
@@ -412,9 +2641,11 @@ public final class VillagerInteractionService {
                 reports.giftAdviceResultReport(),
                 contextSnapshots.familyTree(),
                 contextSnapshots.relationships(),
-                contextSnapshots.recentEvents(),
+                contextSnapshots.personalEvents(),
+                contextSnapshots.villageEvents(),
                 villager.getRandom(),
-                VillagerLocale.locale(player)
+                VillagerLocale.locale(player),
+                VillageScopeKeys.forVillager(level, villager)
         );
     }
 
@@ -422,6 +2653,7 @@ public final class VillagerInteractionService {
         return new DialogueContextSnapshots(
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager),
+                VillageEventMemory.lazyRecentForVillager(level, villager),
                 VillageEventMemory.lazyRecentForVillage(level, villager)
         );
     }
@@ -453,7 +2685,7 @@ public final class VillagerInteractionService {
         DialogueContext context = createDialogueContext(level, player, villager);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
-        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
+        trySendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
                 reputation.value(),
                 reputation.level(),
@@ -461,8 +2693,7 @@ public final class VillagerInteractionService {
                 context.primaryMood(),
                 forceCameraTowardsVillager,
                 dialogueOptions,
-                giftKnowledge.likedGiftNames(),
-                giftKnowledge.dislikedGiftNames()
+                giftKnowledge.preferences()
         ));
     }
 
@@ -485,10 +2716,14 @@ public final class VillagerInteractionService {
         DialogueDisposition mood = requestType == null || reputationEffect == null
                 ? VillagerDialogueService.moodFor(context)
                 : VillagerDialogueService.moodFor(context, requestType, reputationEffect);
-        java.util.List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(context, mood);
+        java.util.List<DialogueOptionDefinition> dialogueOptions = VillagerMountOwnershipDialogue.addAvailableOption(
+                level,
+                player,
+                villager,
+                VillagerDialogueResources.dialogueOptions(context, mood));
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
-        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
+        trySendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
                 reputation.value(),
                 reputation.level(),
@@ -496,8 +2731,7 @@ public final class VillagerInteractionService {
                 context.primaryMood(),
                 forceCameraTowardsVillager,
                 dialogueOptions,
-                giftKnowledge.likedGiftNames(),
-                giftKnowledge.dislikedGiftNames()
+                giftKnowledge.preferences()
         ));
     }
 
@@ -513,6 +2747,13 @@ public final class VillagerInteractionService {
         if (!canUseInteractionSystem(player, villager)) {
             if (sendFailureMessage) {
                 sendVillagerNotice(player, villager, "interaction.trade_unavailable");
+            }
+            return InteractionResult.FAIL;
+        }
+        if (VillagerBehaviorSuppressionPolicy.suppresses(
+                villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING)) {
+            if (sendFailureMessage) {
+                sendVillagerNotice(player, villager, "interaction.party.trade_unavailable");
             }
             return InteractionResult.FAIL;
         }
@@ -535,6 +2776,7 @@ public final class VillagerInteractionService {
             return InteractionResult.FAIL;
         }
         if (villager.level() instanceof ServerLevel level) {
+            VillagerSpecialOrderService.deliverRefunds(player, villager);
             VillagerTradeRefreshService.ReadyRefreshResult readyRefreshes =
                     VillagerTradeRefreshService.applyReadyRefreshesDetailed(level, villager, player);
             VillagerTradeRefreshService.sendState(player, villager);
@@ -551,7 +2793,17 @@ public final class VillagerInteractionService {
             return InteractionResult.CONSUME;
         }
 
-        return villager.mobInteract(player, InteractionHand.MAIN_HAND);
+        TradeOpenPermit previousPermit = VANILLA_TRADE_OPEN_PERMIT.get();
+        VANILLA_TRADE_OPEN_PERMIT.set(new TradeOpenPermit(villager, player));
+        try {
+            return villager.mobInteract(player, InteractionHand.MAIN_HAND);
+        } finally {
+            if (previousPermit == null) {
+                VANILLA_TRADE_OPEN_PERMIT.remove();
+            } else {
+                VANILLA_TRADE_OPEN_PERMIT.set(previousPermit);
+            }
+        }
     }
 
     private static Villager resolveVillager(ServerPlayer player, int entityId) {
@@ -563,11 +2815,29 @@ public final class VillagerInteractionService {
     }
 
     public static boolean canUseInteractionSystem(ServerPlayer player, Villager villager) {
-        return canUseInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+        return canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
 
     public static boolean canUseForcedInteractionSystem(ServerPlayer player, Villager villager) {
         return canUseInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get());
+    }
+
+    /** Eligibility for server-authorized forced scenes that intentionally permit hostile disposition. */
+    public static boolean canUseForcedInteractionSystemIgnoringDisposition(ServerPlayer player, Villager villager) {
+        double maxDistance = VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get();
+        return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
+                && !villager.isSleeping()
+                && !villager.isTrading()
+                && player.isAlive()
+                && !player.isSpectator()
+                && player.distanceToSqr(villager) <= maxDistance * maxDistance;
+    }
+
+    static void prepareForInteractionSession(ServerPlayer player, Villager villager) {
+        if (isCombatBusy(villager) && canInterruptCombatForInteraction(player, villager)) {
+            VillagerRetaliationHandler.suspendCombatForInteraction(villager);
+        }
     }
 
     public static boolean shouldStayConversable(ServerPlayer player, Villager villager) {
@@ -584,6 +2854,7 @@ public final class VillagerInteractionService {
     static boolean shouldStayForcedConversationSession(ServerPlayer player, Villager villager) {
         double maxDistance = VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get();
         return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
                 && !villager.isSleeping()
                 && !villager.isTrading()
                 && player.isAlive()
@@ -594,11 +2865,15 @@ public final class VillagerInteractionService {
     private static boolean shouldBypassInteractionScreen(ItemStack stack) {
         return stack.is(Items.VILLAGER_SPAWN_EGG)
                 || stack.is(Items.NAME_TAG)
+                || VillagerRetaliationItems.isClipboard(stack)
+                || ConstructionBlueprintItem.isBlueprint(stack)
+                || VillagerRetaliationItems.isFilter(stack)
                 || VillagerRetaliationDebugItems.isDebugVillagerTool(stack.getItem());
     }
 
     private static boolean canUseInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping, double maxDistance) {
         return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
                 && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
                 && !isCombatBusy(villager)
@@ -608,8 +2883,134 @@ public final class VillagerInteractionService {
                 && player.distanceToSqr(villager) <= maxDistance * maxDistance;
     }
 
+    private static boolean canOpenInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping, double maxDistance) {
+        return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
+                && (allowSleeping || !villager.isSleeping())
+                && !villager.isTrading()
+                && (!isCombatBusy(villager) || canInterruptCombatForInteraction(player, villager))
+                && !VillagerRetaliationHandler.isHostileTowards(villager, player)
+                && player.isAlive()
+                && !player.isSpectator()
+                && player.distanceToSqr(villager) <= maxDistance * maxDistance;
+    }
+
+    static boolean canStartNormalConversation(ServerPlayer player, Villager villager) {
+        return !isForeignHiredWorker(player, villager)
+                || hasActiveQuestWithVillager(player, villager)
+                || VillagerMountOwnershipDialogue.isAvailable(player.serverLevel(), player, villager);
+    }
+
+    static boolean isForeignHiredWorker(ServerPlayer player, Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !HiredVillagerContractService.isHired(level, villager)
+                || HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            return false;
+        }
+        // Party interactions retain their normal lifetime and close conditions even if stale
+        // contract data temporarily overlaps a recruited villager.
+        return PartyService.getPartyForVillager(level, villager.getUUID()).isEmpty();
+    }
+
+    private static boolean isForeignHiredWorkerWithoutQuest(ServerPlayer player, Villager villager) {
+        return isForeignHiredWorker(player, villager)
+                && !hasActiveQuestWithVillager(player, villager)
+                && !VillagerMountOwnershipDialogue.isAvailable(player.serverLevel(), player, villager);
+    }
+
+    private static boolean hasActiveQuestWithVillager(ServerPlayer player, Villager villager) {
+        return VillagerQuestSavedData.get(player.serverLevel())
+                .activeProgress(player.getUUID()).stream()
+                .anyMatch(entry -> villager.getUUID().equals(entry.getValue().startedVillagerId()));
+    }
+
+    private static String foreignHiredWorkerDialogueKey(ServerPlayer player, Villager villager) {
+        VillagerReputationLevel level = VillagerReputationManager.getReputationLevel(
+                player.serverLevel(), villager, player.getUUID());
+        return switch (level) {
+            case ROYALTY, REVERED -> "interaction.foreign_hired_working.respectful";
+            case RESPECTED, TRUSTED -> "interaction.foreign_hired_working.friendly";
+            case NEUTRAL -> "interaction.foreign_hired_working.neutral";
+            case SUSPICIOUS, HOSTILE -> "interaction.foreign_hired_working.cautious";
+            case DESPISED, FEARED -> "interaction.foreign_hired_working.hostile";
+        };
+    }
+
     private static boolean isCombatBusy(Villager villager) {
         return villager.getTarget() != null || villager.getLastHurtByMob() != null;
+    }
+
+    private static boolean canInterruptCombatForInteraction(ServerPlayer player, Villager villager) {
+        return villager.level() instanceof ServerLevel level
+                && (HiredVillagerContractService.isHiredBy(level, villager, player)
+                || PartyService.arePlayerAndVillagerInSameParty(
+                level,
+                player.getUUID(),
+                villager.getUUID()));
+    }
+
+    /**
+     * Returns whether normal villager interaction may claim the current right click.
+     *
+     * <p>Minecraft tries entity interaction before an item's general {@code use} action. Returning
+     * {@link InteractionResult#PASS} for a villager is therefore required for food, shields,
+     * equippable items, projectiles, and modded right-click items to receive the input. Items that
+     * only implement block-targeted use remain non-conflicting when the player targets a villager.
+     */
+    public static boolean canStartVillagerInteractionWithHeldItems(Player player) {
+        return player != null
+                && !hasRightClickBehavior(player.getMainHandItem(), player)
+                && !hasRightClickBehavior(player.getOffhandItem(), player);
+    }
+
+    public static boolean shouldDeferVillagerInteractionToHeldItem(
+            Player player,
+            InteractionHand hand) {
+        return player != null
+                && hand != null
+                && !shouldBypassInteractionScreen(player.getItemInHand(hand))
+                && !canStartVillagerInteractionWithHeldItems(player);
+    }
+
+    public static boolean shouldDeferVillagerInteractionToHeldItem(
+            Villager villager,
+            Player player,
+            InteractionHand hand) {
+        TradeOpenPermit permit = VANILLA_TRADE_OPEN_PERMIT.get();
+        return (permit == null || !permit.matches(villager, player, hand))
+                && shouldDeferVillagerInteractionToHeldItem(player, hand);
+    }
+
+    private static boolean hasRightClickBehavior(ItemStack stack, Player player) {
+        return !stack.isEmpty()
+                && (stack.getFoodProperties(player) != null
+                || HAS_INNATE_RIGHT_CLICK_BEHAVIOR.get(stack.getItem().getClass()));
+    }
+
+    private static boolean overridesItemMethod(
+            Class<?> itemClass,
+            String name,
+            Class<?>... parameterTypes) {
+        try {
+            return itemClass.getMethod(name, parameterTypes).getDeclaringClass() != Item.class;
+        } catch (ReflectiveOperationException | SecurityException ignored) {
+            // Unknown item implementations should keep their input instead of opening a menu.
+            return true;
+        }
+    }
+
+    private static boolean shouldInterceptVanillaInteraction(
+            ServerPlayer player,
+            Villager villager,
+            double maxDistance) {
+        return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
+                && !villager.isSleeping()
+                && !villager.isTrading()
+                && !VillagerRetaliationHandler.isHostileTowards(villager, player)
+                && player.isAlive()
+                && !player.isSpectator()
+                && player.distanceToSqr(villager) <= maxDistance * maxDistance;
     }
 
     private static boolean shouldRefuseDespisedConversation(Villager villager, ServerPlayer player) {
@@ -620,7 +3021,7 @@ public final class VillagerInteractionService {
         String resolvedText = VillagerDialogueResources
                 .globalMessage(player.getServer(), player.getRandom(), text, VillagerLocale.locale(player))
                 .orElse(text);
-        PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(entityId, resolvedText, ""));
+        trySendToPlayer(player, new VillagerInteractionNoticePayload(entityId, resolvedText, ""));
     }
 
     public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text) {
@@ -628,10 +3029,7 @@ public final class VillagerInteractionService {
         if (villager.level() instanceof ServerLevel level) {
             resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text).orElse(text);
         }
-        PacketDistributor.sendToPlayer(
-                player,
-                new VillagerInteractionNoticePayload(villager.getId(), resolvedText, "")
-        );
+        sendPersonalVillagerChat(player, villager, resolvedText);
     }
 
     public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text, Map<String, String> replacements) {
@@ -639,10 +3037,21 @@ public final class VillagerInteractionService {
         if (villager.level() instanceof ServerLevel level) {
             resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text, replacements).orElse(text);
         }
-        PacketDistributor.sendToPlayer(
+        sendPersonalVillagerChat(player, villager, resolvedText);
+    }
+
+    public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text, Map<String, String> replacements, double nearbyBroadcastRadius) {
+        String resolvedText = text;
+        if (villager.level() instanceof ServerLevel level) {
+            resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text, replacements).orElse(text);
+        }
+        sendPersonalVillagerChat(
                 player,
-                new VillagerInteractionNoticePayload(villager.getId(), resolvedText, "")
-        );
+                villager,
+                resolvedText,
+                DialogueTextSegment.parse(resolvedText, DialogueTextEffects.NONE),
+                nearbyBroadcastRadius,
+                true);
     }
 
     public static void sendReceivedItemNotice(ServerPlayer player, Villager villager, ItemStack stack) {
@@ -654,8 +3063,10 @@ public final class VillagerInteractionService {
                 player.serverLevel(),
                 villager,
                 "gift.received_item",
-                VillagerNotifications.replacements("item", itemName(stack), "villager", displayName(villager)),
-                "Received item: " + itemName(stack),
+                VillagerNotifications.replacements(
+                        "item", VillagerItemText.stackName(player.server, VillagerLocale.locale(player), stack),
+                        "villager", displayName(villager)),
+                "Received item: " + VillagerItemText.stackName(player.server, VillagerLocale.locale(player), stack),
                 VillagerReputationNoticeKind.RECEIVED_ITEM
         );
     }
@@ -667,9 +3078,10 @@ public final class VillagerInteractionService {
 
         DialogueContext context = createDialogueContext(level, player, villager);
         String responseText = VillagerDialogueResources
-                .professionPriorityMessage(context, "gift_given", Map.of("gift_item", itemName(stack)))
+                .professionPriorityMessage(context, "gift_given", Map.of(
+                        "gift_item", VillagerItemText.dialogueName(level.getServer(), context.locale(), stack)))
                 .orElse("");
-        broadcastVillagerChat(level, villager, responseText);
+        sendPersonalVillagerChat(player, villager, responseText);
     }
 
     public static void sendGiftTakenBackDialogue(ServerPlayer player, Villager villager, ItemStack stack, int count, boolean stolen) {
@@ -683,12 +3095,12 @@ public final class VillagerInteractionService {
                 .message(
                         context,
                         stolen ? "gift_taken_back.stolen" : "gift_taken_back.returned",
-                        Map.of("gift_item", itemName(displayedStack))
+                        Map.of("gift_item", VillagerItemText.dialogueName(level.getServer(), context.locale(), displayedStack))
                 )
                 .orElse("");
         focusVillagerOnPlayer(villager, player);
         playGiftFeedback(level, villager, -1);
-        broadcastVillagerChat(level, villager, responseText);
+        sendPersonalVillagerChat(player, villager, responseText);
     }
 
     public static void sendTradePaymentTakenBackDialogue(ServerPlayer player, Villager villager, ItemStack stack, int count, boolean stolen) {
@@ -702,16 +3114,30 @@ public final class VillagerInteractionService {
                 .message(
                         context,
                         stolen ? "trade_payment_taken_back.stolen" : "trade_payment_taken_back.returned",
-                        Map.of("trade_item", itemName(displayedStack))
+                        Map.of("trade_item", VillagerItemText.dialogueName(level.getServer(), context.locale(), displayedStack))
                 )
                 .orElse("");
         focusVillagerOnPlayer(villager, player);
         playGiftFeedback(level, villager, -1);
-        broadcastVillagerChat(level, villager, responseText);
+        sendPersonalVillagerChat(player, villager, responseText);
     }
 
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text) {
         broadcastVillagerChat(level, villager, text, "");
+    }
+
+    public static void broadcastRoutineVillagerChat(ServerLevel level, Villager villager, String text) {
+        broadcastVillagerChat(
+                level,
+                villager,
+                text,
+                "",
+                configuredVillagerChatBroadcastRadius(),
+                DialogueTextSegment.parse(text, DialogueTextEffects.NONE),
+                null,
+                false,
+                true
+        );
     }
 
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, DialogueTextEffects textEffects) {
@@ -719,11 +3145,80 @@ public final class VillagerInteractionService {
     }
 
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, List<DialogueTextSegment> textSegments) {
-        broadcastVillagerChat(level, villager, text, "", VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get(), textSegments);
+        broadcastVillagerChat(level, villager, text, "", configuredVillagerChatBroadcastRadius(), textSegments);
     }
 
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel) {
-        broadcastVillagerChat(level, villager, text, speakerLabel, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+        broadcastVillagerChat(level, villager, text, speakerLabel, configuredVillagerChatBroadcastRadius());
+    }
+
+    public static void sendPersonalVillagerChat(ServerPlayer player, Villager villager, String text) {
+        sendPersonalVillagerChat(player, villager, text, DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
+    }
+
+    public static void sendPersonalRoutineVillagerChat(ServerPlayer player, Villager villager, String text) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        List<DialogueTextSegment> textSegments = DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
+
+        if (!(villager.level() instanceof ServerLevel level) || !isRoutineChatSilencedFor(level, villager, player)) {
+            trySendToPlayer(player, new VillagerInteractionNoticePayload(villager.getId(), text, "", textSegments));
+        }
+        if (VillagerRetaliationConfig.SHOW_PERSONAL_INTERACTION_DIALOGUE_TO_NEARBY_PLAYERS.get()
+                && villager.level() instanceof ServerLevel level) {
+            broadcastVillagerChat(
+                    level,
+                    villager,
+                    text,
+                    "",
+                    configuredVillagerChatBroadcastRadius(),
+                    textSegments,
+                    player.getUUID(),
+                    false,
+                    true
+            );
+        }
+    }
+
+    public static void sendPersonalVillagerChat(
+            ServerPlayer player,
+            Villager villager,
+            String text,
+            List<DialogueTextSegment> textSegments) {
+        sendPersonalVillagerChat(player, villager, text, textSegments, configuredVillagerChatBroadcastRadius(), false);
+    }
+
+    private static void sendPersonalVillagerChat(
+            ServerPlayer player,
+            Villager villager,
+            String text,
+            List<DialogueTextSegment> textSegments,
+            double nearbyBroadcastRadius,
+            boolean forceLocalBroadcast) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        VillagerInteractionNoticePayload payload = new VillagerInteractionNoticePayload(
+                villager.getId(),
+                text,
+                "",
+                textSegments
+        );
+        trySendToPlayer(player, payload);
+        if (VillagerRetaliationConfig.SHOW_PERSONAL_INTERACTION_DIALOGUE_TO_NEARBY_PLAYERS.get()
+                && villager.level() instanceof ServerLevel level) {
+            broadcastVillagerChat(
+                    level,
+                    villager,
+                    text,
+                    "",
+                    nearbyBroadcastRadius,
+                    textSegments,
+                    player.getUUID(),
+                    forceLocalBroadcast
+            );
+        }
     }
 
     public static void broadcastForcedVillagerChat(ServerLevel level, Villager villager, String text) {
@@ -763,7 +3258,63 @@ public final class VillagerInteractionService {
             return;
         }
 
-        double radiusSqr = radius * radius;
+        broadcastVillagerChat(level, villager, text, speakerLabel, radius, textSegments, null);
+    }
+
+    private static void broadcastVillagerChat(
+            ServerLevel level,
+            Villager villager,
+            String text,
+            String speakerLabel,
+            double radius,
+            List<DialogueTextSegment> textSegments,
+            UUID excludedPlayerId) {
+        broadcastVillagerChat(level, villager, text, speakerLabel, radius, textSegments, excludedPlayerId, false);
+    }
+
+    private static void broadcastVillagerChat(
+            ServerLevel level,
+            Villager villager,
+            String text,
+            String speakerLabel,
+            double radius,
+            List<DialogueTextSegment> textSegments,
+            UUID excludedPlayerId,
+            boolean forceLocalDistance) {
+        broadcastVillagerChat(
+                level,
+                villager,
+                text,
+                speakerLabel,
+                radius,
+                textSegments,
+                excludedPlayerId,
+                forceLocalDistance,
+                false
+        );
+    }
+
+    private static void broadcastVillagerChat(
+            ServerLevel level,
+            Villager villager,
+            String text,
+            String speakerLabel,
+            double radius,
+            List<DialogueTextSegment> textSegments,
+            UUID excludedPlayerId,
+            boolean forceLocalDistance,
+            boolean routineChat) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+
+        VillagerChatBroadcastMode mode = villagerChatBroadcastMode();
+        if (!mode.enabled()) {
+            return;
+        }
+
+        double radiusSqr = effectiveVillagerChatBroadcastRadius(radius) * effectiveVillagerChatBroadcastRadius(radius);
+        boolean usesDistance = forceLocalDistance || mode.usesDistance();
         VillagerInteractionNoticePayload payload = new VillagerInteractionNoticePayload(
                 villager.getId(),
                 text,
@@ -773,10 +3324,42 @@ public final class VillagerInteractionService {
         for (ServerPlayer nearbyPlayer : level.players()) {
             if (!nearbyPlayer.isAlive()
                     || nearbyPlayer.isSpectator()
-                    || nearbyPlayer.distanceToSqr(villager) > radiusSqr) {
+                    || (excludedPlayerId != null && nearbyPlayer.getUUID().equals(excludedPlayerId))
+                    || (usesDistance && nearbyPlayer.distanceToSqr(villager) > radiusSqr)) {
                 continue;
             }
-            PacketDistributor.sendToPlayer(nearbyPlayer, payload);
+            if (routineChat && isRoutineChatSilencedFor(level, villager, nearbyPlayer)) {
+                continue;
+            }
+            trySendToPlayer(nearbyPlayer, payload);
+        }
+    }
+
+    private static boolean isRoutineChatSilencedFor(ServerLevel level, Villager villager, ServerPlayer player) {
+        return VillagerInteractionTracker.isRoutineChatMuted(level, villager, player)
+                && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID())
+                == VillagerReputationLevel.ROYALTY;
+    }
+
+    private static VillagerChatBroadcastMode villagerChatBroadcastMode() {
+        VillagerChatBroadcastMode mode = VillagerRetaliationConfig.VILLAGER_CHAT_BROADCAST_MODE.get();
+        return mode == null ? VillagerChatBroadcastMode.LOCAL : mode;
+    }
+
+    private static int configuredVillagerChatBroadcastRadius() {
+        return Math.clamp(VillagerRetaliationConfig.VILLAGER_CHAT_BROADCAST_RADIUS.get(), 1, 64);
+    }
+
+    private static double effectiveVillagerChatBroadcastRadius(double requestedRadius) {
+        double clampedRequested = Math.clamp(requestedRadius, 1.0D, 64.0D);
+        return Math.min(clampedRequested, configuredVillagerChatBroadcastRadius());
+    }
+
+    private static void trySendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
+        try {
+            PacketDistributor.sendToPlayer(player, payload);
+        } catch (UnsupportedOperationException ignored) {
+            // Mock server players used by GameTests do not negotiate custom client payload channels.
         }
     }
 
@@ -789,11 +3372,6 @@ public final class VillagerInteractionService {
                 .professionName(villager.getVillagerData().getProfession(), "")
                 .trim();
         return profession.isBlank() ? name : profession + " " + name;
-    }
-
-    private static String itemName(ItemStack stack) {
-        String name = stack.getHoverName().getString();
-        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
     }
 
     private static String displayName(Villager villager) {
@@ -850,6 +3428,7 @@ public final class VillagerInteractionService {
     public static InteractionResult handleSleepingVillagerBedInteraction(ServerLevel level, ServerPlayer player, BlockPos pos, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND
                 || !VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                || !canStartVillagerInteractionWithHeldItems(player)
                 || player.getItemInHand(hand).is(Items.VILLAGER_SPAWN_EGG)
                 || !level.getBlockState(pos).is(BlockTags.BEDS)) {
             return InteractionResult.PASS;
@@ -941,17 +3520,32 @@ public final class VillagerInteractionService {
         );
     }
 
-    static void focusVillagerOnPlayer(Villager villager, ServerPlayer player) {
+    public static void focusVillagerOnPlayer(Villager villager, ServerPlayer player) {
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
     }
 
     private record ReputationSnapshot(int value, VillagerReputationLevel level) {
     }
 
+    private record PlacementUpdate(
+            Optional<BuilderStructureScanner.StructurePlan> plan,
+            BlockPos origin,
+            Rotation rotation) {
+    }
+
+    private record TradeOpenPermit(Villager villager, Player player) {
+        private boolean matches(Villager candidateVillager, Player candidatePlayer, InteractionHand hand) {
+            return this.villager == candidateVillager
+                    && this.player == candidatePlayer
+                    && hand == InteractionHand.MAIN_HAND;
+        }
+    }
+
     private record DialogueContextSnapshots(
             VillagerFamilyTreeSnapshot familyTree,
             VillagerRelationshipSnapshot relationships,
-            List<VillageEventMemory.MemoryEvent> recentEvents) {
+            List<VillageEventMemory.MemoryEvent> personalEvents,
+            List<VillageEventMemory.MemoryEvent> villageEvents) {
     }
 
 }

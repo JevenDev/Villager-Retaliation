@@ -20,4 +20,12 @@ final class VillagerPayloads {
             Function<RegistryFriendlyByteBuf, T> decoder) {
         return StreamCodec.of(encoder::accept, decoder::apply);
     }
+
+    static int readCollectionSize(RegistryFriendlyByteBuf buffer, int maxSize, String fieldName) {
+        int size = buffer.readVarInt();
+        if (size < 0 || size > maxSize) {
+            throw new IllegalArgumentException(fieldName + " size " + size + " is outside 0.." + maxSize);
+        }
+        return size;
+    }
 }

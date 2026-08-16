@@ -14,14 +14,24 @@
       "lines": [
         "Fine. I was getting tired of being angry anyway.",
         "Fine. I'll set this down before it gets heavier.",
-        "Fine. I can step back, but do not make me regret it.",
+        "I can stop the fight. I would like that more than winning it.",
         "Fine. I can let this cool, but do not mistake calm for forgetting.",
         "That helps. Keep your hands peaceful and we may still end this properly.",
-        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-        "You are short. A nervous apology does not settle a public mistake.",
-        "No. I am too angry to bargain while you are standing there like that.",
-        "Put the weapon away first. I will not discuss peace with steel in my face.",
-        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+        "I accept. The angry part of me may take another minute.",
+        "Fine. Nobody needs another bruise to make this official.",
+        "That settles the payment. The memory can sort itself out later.",
+        "Alright. I am lowering my guard, but not dropping my sense.",
+        "We can end this here. Here is a very good place to end things.",
+        "I will take it and let the village breathe normally again.",
+        "Fine. I prefer emeralds on the ground to teeth on the ground.",
+        "That is enough. Step back while I remember how peace stands.",
+        "I agree. Let us both walk away in different useful directions.",
+        "The offer is fair, and I am too tired to stay furious for decoration.",
+        "We are settled. Do not poke the settlement to see if it moves.",
+        "Alright. My fists can go back to being ordinary hands.",
+        "I accept your terms. Keep your next idea gentle.",
+        "Fine. The fight is over before either of us becomes more ridiculous.",
+        "That will do. Leave quietly and let quiet remain."
       ],
       "outcomes": [
         "success"
@@ -33,14 +43,24 @@
       "lines": [
         "I counted, then forgot, then counted again. It should be {emerald_cost} {emeralds}.",
         "That's short of the full repair. Bring {emerald_cost} {emeralds}.",
-        "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
-        "Fine. I can let this cool, but do not mistake calm for forgetting.",
-        "That helps. Keep your hands peaceful and we may still end this properly.",
         "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-        "You are short. A nervous apology does not settle a public mistake.",
-        "No. I am too angry to bargain while you are standing there like that.",
-        "Put the weapon away first. I will not discuss peace with steel in my face.",
-        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+        "I may lose count sometimes, but even I can see that is not {emerald_cost} {emeralds}.",
+        "The offer needs {emerald_cost} {emeralds}, not a hopeful little pile.",
+        "Bring {emerald_cost} {emeralds}. I wrote the number on my hand this time.",
+        "You are missing part of the payment. The whole part is important.",
+        "I need {emerald_cost} {emeralds}, and wishing does not make the pile taller.",
+        "I counted twice and asked someone better at counting. It is still {emerald_cost} {emeralds}.",
+        "This does not cover the harm. Bring the full amount.",
+        "Come back with {emerald_cost} {emeralds}. Then we can both stop counting.",
+        "You cannot bargain with the empty space beside those emeralds.",
+        "The price is {emerald_cost} {emeralds}. My fingers agree.",
+        "This ends when all {emerald_cost} {emeralds} are here.",
+        "The pile is too small. I checked from two angles.",
+        "I am not lowering the cost because your pockets made a sad sound.",
+        "The offer is incomplete. It needs the rest of its emeralds.",
+        "You know the amount now. Return with {emerald_cost} {emeralds}.",
+        "Short payment does not mend the full harm.",
+        "I will wait for the proper {emerald_cost} {emeralds}. Waiting is free."
       ],
       "outcomes": [
         "not_enough_emeralds"
@@ -50,16 +70,26 @@
     {
       "id": "nitwit_pacify_blocked",
       "lines": [
-        "No. Even I know this is not fixed.",
         "No. Some damage has to cool before payment matters.",
         "No. Keep {payment_items}. Trust is not ready to trade.",
-        "Fine. I can let this cool, but do not mistake calm for forgetting.",
-        "That helps. Keep your hands peaceful and we may still end this properly.",
-        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-        "You are short. A nervous apology does not settle a public mistake.",
-        "No. I am too angry to bargain while you are standing there like that.",
+        "No payment matters while the danger is still standing here.",
+        "Put {payment_items} away. My hands are not calm enough to bargain.",
+        "You are trying to pay for damage that is still happening.",
+        "I will not take {payment_items} and pretend my knees stopped shaking.",
+        "Not now. Give the village room before you offer anything.",
+        "I need safety first. We can count debts after everyone can breathe.",
+        "Keep {payment_items}. Taking them would make this look more settled than it is.",
+        "I am not putting a price on trust while you are still breaking it.",
+        "Step back. Distance is the only payment I want right now.",
+        "The village is still bracing when you move. That means no deal.",
+        "You cannot buy calm while people are hiding from you.",
+        "Stop making new harm before you offer to pay for the old harm.",
+        "I do not want {payment_items}. I want the doors to feel safe again.",
+        "No. The threat must end before the counting begins.",
+        "I cannot trust an offer from someone I still cannot turn my back on.",
+        "I know you brought {emerald_cost} {emeralds}. I am still not accepting them.",
         "Put the weapon away first. I will not discuss peace with steel in my face.",
-        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+        "No bargain today. Take {payment_items} and go."
       ],
       "outcomes": [
         "blocked_by_reputation"

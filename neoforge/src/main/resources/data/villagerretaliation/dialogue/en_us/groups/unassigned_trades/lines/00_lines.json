@@ -13,7 +13,17 @@
         "People with jobs are always busy. People without jobs are always being <pulse>watched</pulse>.",
         "I am not idle. I am <italic>observing inefficiently</italic>.",
         "The village keeps waiting for me to become useful. I keep waiting for the village to lower its <shake>standards</shake>.",
-        "No tools, no counter, no schedule. Just me, the street, and a <wavy>suspicious</wavy> amount of free time."
+        "No tools, no counter, no schedule. Just me, the street, and a <wavy>suspicious</wavy> amount of free time.",
+        "I help where I can and avoid jobs that begin with shouting.",
+        "Someone has to notice when every workstation is busy.",
+        "I know a little about most trades and enough to stay out of the way.",
+        "The village keeps offering advice instead of employment.",
+        "I have time to listen, which is why nobody can keep a secret from me.",
+        "My schedule is open. My enthusiasm depends on the task.",
+        "I am considering several careers and rejecting them carefully.",
+        "Today I carried water, found a lost chicken, and remained unpaid.",
+        "Not having a trade means every chore can find me.",
+        "I may lack a workstation, but I never lack an opinion."
       ],
       "professions": [
         "unemployed",
@@ -35,7 +45,17 @@
         "I do not know what you did, but the air around your name has <pulse>changed</pulse>.",
         "People are either <color:green>softer</color> about you or <color:red>sharper</color>. Hard to tell yet, but it is not the same.",
         "You should know the <wavy>gossip</wavy> moved. I followed it for a while.",
-        "Around here, reputation changes one <italic>whispered sentence</italic> at a time."
+        "Around here, reputation changes one <italic>whispered sentence</italic> at a time.",
+        "More people wave when you pass now. Or fewer. You probably noticed.",
+        "Someone defended your name at the well today.",
+        "The village remembers what you did, even if I forgot the details.",
+        "Doors open faster for people the village likes.",
+        "I heard three stories about you, and two were almost the same.",
+        "Folks watch you less closely than they used to. That seems good.",
+        "You get a different kind of silence in the square now.",
+        "People made up their minds about you while pretending not to.",
+        "Your name sounds better in conversation lately.",
+        "Whatever you did changed how everyone looks at you."
       ],
       "event_tags": [
         "reputation_changed"

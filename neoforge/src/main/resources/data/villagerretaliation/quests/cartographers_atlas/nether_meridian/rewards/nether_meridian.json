@@ -1,0 +1,70 @@
+{
+  "schema": "villagerretaliation:quest_reward/v1",
+  "id": "villagerretaliation:quest/nether_meridian",
+  "table": {
+    "pools": [
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 42,
+                  "min": 28,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:emerald",
+            "type": "minecraft:item"
+          }
+        ],
+        "rolls": 1
+      },
+      {
+        "bonus_rolls": 0,
+        "entries": [
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 24,
+                  "min": 12,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:gold_ingot",
+            "type": "minecraft:item",
+            "weight": 2
+          },
+          {
+            "name": "minecraft:magma_cream",
+            "type": "minecraft:item",
+            "weight": 1
+          },
+          {
+            "functions": [
+              {
+                "count": {
+                  "max": 20,
+                  "min": 12,
+                  "type": "minecraft:uniform"
+                },
+                "function": "minecraft:set_count"
+              }
+            ],
+            "name": "minecraft:experience_bottle",
+            "type": "minecraft:item",
+            "weight": 2
+          }
+        ],
+        "rolls": 1
+      }
+    ],
+    "type": "minecraft:generic"
+  }
+}

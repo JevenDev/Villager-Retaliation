@@ -159,7 +159,7 @@ const CONSTANTS = {
     "player_container_theft",
     "villager_retaliation_started"
   ],
-  itemSlots: ["main_hand", "off_hand", "hands", "armor", "hotbar", "inventory", "equipment", "any"],
+  itemSlots: ["main_hand", "off_hand", "hands", "armor", "hotbar", "inventory", "accessories", "equipment", "any"],
   dialogueItemDestinations: ["discard", "villager_inventory", "drop_at_villager"],
   forcedItemDestinations: ["discard", "villager_inventory", "villager_inventory_then_source_container", "source_container", "drop_at_villager", "drop_at_container"],
   weather: ["clear", "rain", "thunder"],
@@ -288,17 +288,22 @@ const PACK_VERSIONS = [
   {
     id: "1.0.0-beta.11",
     label: "VR 1.0.0-beta.11",
-    packFormat: 34,
+    packFormat: 48,
     feature: "beta.11"
   },
   {
     id: "1.0.0-beta.12",
     label: "VR 1.0.0-beta.12",
-    packFormat: 34,
+    packFormat: 48,
     feature: "beta.12"
+  },
+  {
+    id: "1.0.0-beta.13",
+    label: "VR 1.0.0-beta.13",
+    packFormat: 48,
+    feature: "beta.13"
   }
 ];
-
 const CURRENT_PACK_VERSION = PACK_VERSIONS[PACK_VERSIONS.length - 1].id;
 const PACK_VERSION_IDS = PACK_VERSIONS.map((version) => version.id);
 const PACK_VERSION_STORAGE_KEY = "pack_version";
@@ -311,6 +316,11 @@ const WIKI_PAGE_FILES = [
   "Datapack-Generator.md",
   "Pack-Format-Changes.md",
   "JSON-Reference.md",
+  "First-Quest.md",
+  "Quests.md",
+  "Dialogue-And-Quests.md",
+  "Dialogue-Trees.md",
+  "Quest-Scenes.md",
   "Dialogue.md",
   "Forced-Dialogue.md",
   "Dialogue-Requests.md",
@@ -321,6 +331,7 @@ const WIKI_PAGE_FILES = [
   "Gifts.md",
   "Pacification.md",
   "Profession-Loot.md",
+  "Builder-Structures.md",
   "Story-Discovery.md",
   "Villager-Names.md",
   "Resource-Pack-Models.md",
@@ -446,6 +457,14 @@ const FIELD_TOOLTIPS = {
   "forced-requires_witness_armed": "Requires the witnessing villager to have a usable weapon in either hand.",
   "forced-player_items": "For player_item_proximity, requires the nearby player to carry one matching item or item tag. Prefix tags with #.",
   "forced-player_item_slots": "Where to check player items. Defaults to hands when player_items is set.",
+  "forced-draw_weapon": "Makes a matching villager visibly equip a carried weapon without assigning a target or starting retaliation.",
+  "forced-draw_weapon_duration_seconds": "Minimum draw time. Ongoing player-item proximity matches refresh it, making this the delay before the villager sheathes after the condition stops.",
+  "forced-requires_held_trade_item": "For player_item_proximity, matches when the player holds an active trade cost item for this villager.",
+  "forced-requires_player_aiming_at_witness": "Requires the player sight ray to hit the witnessing villager before another living entity.",
+  "forced-required_aim_duration_seconds": "Continuous aim time required before this dialogue can fire. Set to 0 or leave blank for an instant response.",
+  "forced-requires_same_party": "Requires the witnessing villager and nearby player to belong to the same party.",
+  "forced-min_trade_level": "Minimum villager trade level from 1 to 5.",
+  "forced-max_trade_level": "Maximum villager trade level from 1 to 5.",
   "forced-min_player_item_durability": "Minimum remaining durability required on the matched player item.",
   "forced-max_player_item_durability": "Maximum remaining durability allowed on the matched player item.",
   "forced-min_player_item_durability_percent": "Minimum remaining durability percent required on the matched player item.",
@@ -817,6 +836,7 @@ const BETA_13_PLANNED_DIALOGUE_DEPRECATION_REPLACEMENT = "`conditions` blocks";
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const PREVIEW_EXACT_WRAP_LINE_LIMIT = 2500;
+const QUEST_MODULE_SCHEMA_ID = "villagerretaliation:quest/v2";
 const datapackBackend = window.VR_DATAPACK_BACKEND.create({
   constants: CONSTANTS,
   dialogueKindKeys: DIALOGUE_KIND_KEYS,
@@ -867,6 +887,12 @@ let importDragDepth = 0;
 let entryFormDirty = false;
 let unsavedShakeTimer = null;
 let exportIssueDialogResolve = null;
+let questRegistryMetadata = null;
+let questV2Schema = null;
+let skillTradeSchema = null;
+let sceneV1Schema = null;
+let encounterV1Schema = null;
+let questMetadataLoadStatus = "loading";
 
 const els = {
   workspace: document.querySelector(".workspace"),
@@ -1019,6 +1045,76 @@ function renderIcons() {
       // Text labels keep the builder usable if the icon CDN is unavailable.
     }
   }
+}
+
+async function loadQuestAuthoringMetadata() {
+  questMetadataLoadStatus = "loading";
+  try {
+    const [metadataResponse, schemaResponse, sceneSchemaResponse, encounterSchemaResponse, skillTradeSchemaResponse] = await Promise.all([
+      fetch("quest-registry-metadata.json", { cache: "no-store" }),
+      fetch("quest-v2.schema.json", { cache: "no-store" }),
+      fetch("scene-v1.schema.json", { cache: "no-store" }),
+      fetch("encounter-v1.schema.json", { cache: "no-store" }),
+      fetch("skill-trades.schema.json", { cache: "no-store" })
+    ]);
+    if (!metadataResponse.ok || !schemaResponse.ok || !sceneSchemaResponse.ok || !encounterSchemaResponse.ok || !skillTradeSchemaResponse.ok) {
+      throw new Error("Quest metadata fetch failed.");
+    }
+    questRegistryMetadata = await metadataResponse.json();
+    questV2Schema = await schemaResponse.json();
+    sceneV1Schema = await sceneSchemaResponse.json();
+    encounterV1Schema = await encounterSchemaResponse.json();
+    skillTradeSchema = await skillTradeSchemaResponse.json();
+    questMetadataLoadStatus = "ready";
+  } catch {
+    questRegistryMetadata = null;
+    questV2Schema = null;
+    sceneV1Schema = null;
+    encounterV1Schema = null;
+    skillTradeSchema = null;
+    questMetadataLoadStatus = "error";
+  }
+  invalidateCurrentViewSnapshot();
+  renderTabs();
+  if (activeSection === "quests") {
+    renderPanel();
+    renderChecks();
+    renderIcons();
+  }
+}
+
+function questRegistryItems(registry) {
+  return Array.isArray(questRegistryMetadata?.registries?.[registry])
+    ? questRegistryMetadata.registries[registry]
+    : [];
+}
+
+function questRegistryIds(registry, { includeAliases = false } = {}) {
+  return questRegistryItems(registry).flatMap((item) => [
+    item.id,
+    ...(includeAliases ? item.aliases || [] : [])
+  ]).filter(Boolean);
+}
+
+function questRegistryIdSet(registry, options) {
+  return new Set(questRegistryIds(registry, options));
+}
+
+function questRegistrySummary(registry, limit = 12) {
+  const ids = questRegistryIds(registry);
+  if (ids.length === 0) return "Metadata not loaded.";
+  return ids.slice(0, limit).join(", ") + (ids.length > limit ? `, +${ids.length - limit}` : "");
+}
+
+function questMetadataStatusText() {
+  if (questMetadataLoadStatus === "ready") {
+    const objectiveCount = questRegistryIds("objectives").length;
+    const actionCount = questRegistryIds("actions").length;
+    const triggerCount = questRegistryIds("triggers").length;
+    return `${objectiveCount} objectives, ${actionCount} actions, ${triggerCount} triggers`;
+  }
+  if (questMetadataLoadStatus === "error") return "Registry metadata unavailable";
+  return "Loading registry metadata";
 }
 
 function readKeybinds() {
@@ -1296,11 +1392,6 @@ function normalizeWikiHighlights(values) {
     });
   }
   return highlights.slice(0, 80);
-}
-
-function wikiSavedHighlightEntries() {
-  return normalizeWikiHighlights(wikiState.highlights)
-    .filter((entry) => !entry.file || entry.file === wikiState.selectedFile);
 }
 
 function sanitizeWikiHighlightHtml(value) {
@@ -1671,12 +1762,12 @@ async function ensureWikiLoaded(version) {
   renderWiki();
   try {
     const snapshot = window.VR_WIKI_SNAPSHOT?.[version];
+    const availableFiles = snapshot
+      ? WIKI_PAGE_FILES.filter((file) => Object.hasOwn(snapshot, file))
+      : WIKI_PAGE_FILES;
     const docs = snapshot
-      ? WIKI_PAGE_FILES.map((file) => {
-        if (!Object.hasOwn(snapshot, file)) throw new Error(`Missing ${file}`);
-        return buildWikiDoc(file, snapshot[file]);
-      })
-      : await Promise.all(WIKI_PAGE_FILES.map(async (file) => {
+      ? availableFiles.map((file) => buildWikiDoc(file, snapshot[file]))
+      : await Promise.all(availableFiles.map(async (file) => {
         const response = await fetch(`./wiki/${encodeURIComponent(version)}/${file}`);
         if (!response.ok) throw new Error(`Missing ${file}`);
         const markdown = await response.text();
@@ -3169,6 +3260,10 @@ function forcedDialoguePath() {
   return datapackBackend.forcedDialoguePath(state);
 }
 
+function skillTradesPath() {
+  return datapackBackend.skillTradesPath(state);
+}
+
 function notificationsPath() {
   return datapackBackend.notificationsPath(state);
 }
@@ -3258,6 +3353,14 @@ function generatedForcedDialogueFiles() {
   return datapackBackend.generatedForcedDialogueFiles(state);
 }
 
+function generatedQuestFiles() {
+  return datapackBackend.generatedQuestFiles(state);
+}
+
+function questModulePath(entry, index = 0) {
+  return datapackBackend.questModulePath(state, entry, index);
+}
+
 function pathsFromGeneratedFiles(fileMap, fallbackPath) {
   const paths = Object.keys(fileMap);
   return paths.length > 0 ? paths : [fallbackPath];
@@ -3269,6 +3372,7 @@ function storyPaths() {
 
 function primaryGeneratedPaths() {
   return [
+    ...pathsFromGeneratedFiles(generatedQuestFiles(), questModulePath({}, 0)),
     dialoguePath(),
     forcedDialoguePath(),
     notificationsPath(),
@@ -3284,6 +3388,9 @@ function pathsForCheck(check) {
   if (check.title === "Preview JSON") return previewEditError?.path ? [previewEditError.path] : [];
   if (check.title === "Pack format" || check.title === "VR version") return ["pack.mcmeta"];
   if (check.title === "File slug") return primaryGeneratedPaths();
+  if (check.title.startsWith("Quest")) {
+    return pathsFromGeneratedFiles(generatedQuestFiles(), questModulePath({}, 0));
+  }
   if (check.title.startsWith("Dialogue") || check.title === "Pacify outcome") {
     return pathsFromGeneratedFiles(generatedDialogueFiles(), dialoguePath());
   }
@@ -3331,8 +3438,416 @@ function issueSeverityFromEntries(entries, tests) {
   return severity;
 }
 
+function stripQuestBuilderFields(value) {
+  if (Array.isArray(value)) return value.map(stripQuestBuilderFields);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value)
+      .filter(([key]) => !key.startsWith("__"))
+      .map(([key, child]) => [key, stripQuestBuilderFields(child)]));
+  }
+  return value;
+}
+
+function questModulePayload(entry) {
+  return stripQuestBuilderFields(entry || {});
+}
+
+function questSchemaRequiredFields() {
+  return Array.isArray(questV2Schema?.required) ? questV2Schema.required : ["schema", "id", "provider", "entry_stage", "stages"];
+}
+
+function questSchemaConst(property) {
+  return questV2Schema?.properties?.[property]?.const || "";
+}
+
+function questTopLevelIssueDetail(entry) {
+  const module = questModulePayload(entry);
+  if (!module || typeof module !== "object" || Array.isArray(module)) {
+    return issueDetail("Quest JSON", "a JSON object", module, "quest-json");
+  }
+  if (entry?.__sourcePath && !datapackBackend.questBundlePathInfo(entry.__sourcePath)) {
+    return issueDetail("Quest file path", "data/<namespace>/quests/<questline>/<quest-slug>/quest.json", entry.__sourcePath, "quest-sourcePath");
+  }
+  const schemaId = questSchemaConst("schema") || QUEST_MODULE_SCHEMA_ID;
+  if (module.schema !== schemaId) {
+    return issueDetail("Quest schema", schemaId, module.schema, "quest-json");
+  }
+  const missingRequired = questSchemaRequiredFields().find((key) => module[key] === undefined);
+  if (missingRequired) {
+    return issueDetail(`Quest ${missingRequired}`, "required by quest-v2.schema.json", module[missingRequired], "quest-json");
+  }
+  if (!isValidResourceLocation(module.id, { requireNamespace: true })) {
+    return issueDetail("Quest id", "a full resource location such as my_pack:first_steps", module.id, "quest-json");
+  }
+  if (!module.provider || typeof module.provider !== "object" || Array.isArray(module.provider)) {
+    return issueDetail("Provider", "a provider object", module.provider, "quest-json");
+  }
+  if (!module.entry_stage) {
+    return issueDetail("Entry stage", "a non-empty stage id", module.entry_stage, "quest-json");
+  }
+  if (!Array.isArray(module.stages) || module.stages.length === 0) {
+    return issueDetail("Stages", "at least one stage object", module.stages, "quest-json");
+  }
+  return null;
+}
+
+function questModuleIssueDetail(entry) {
+  const topLevel = questTopLevelIssueDetail(entry);
+  if (topLevel) return topLevel;
+  const module = questModulePayload(entry);
+  if (questHasExternalScene(module)) {
+    return issueDetail(
+      "Quest structural dialogue",
+      "inline dialogue in quest.json",
+      "external dialogue reference",
+      "quest-json"
+    );
+  }
+  const stages = module.stages || [];
+  const stageIds = stages.map((stage) => String(stage?.id || "").trim()).filter(Boolean);
+  const duplicateStage = firstDuplicate(stageIds);
+  if (duplicateStage) {
+    return issueDetail("Stage ids", "unique stage ids", duplicateStage, "quest-json", "warning");
+  }
+  if (!stageIds.includes(module.entry_stage)) {
+    return issueDetail("Entry stage", "one of the stage ids", module.entry_stage, "quest-json");
+  }
+  const missingStageId = stages.find((stage) => !stage?.id);
+  if (missingStageId) {
+    return issueDetail("Stage id", "a non-empty stage id", missingStageId?.id, "quest-json");
+  }
+  const missingObjectives = stages.find((stage) => !Array.isArray(stage.objectives));
+  if (missingObjectives) {
+    return issueDetail("Stage objectives", "an objectives array", missingObjectives?.objectives, "quest-json");
+  }
+  const duplicateObjective = firstDuplicate(stages.flatMap((stage) => (stage.objectives || []).map((objective) => objective?.id).filter(Boolean)));
+  if (duplicateObjective) {
+    return issueDetail("Objective ids", "unique objective ids within the module", duplicateObjective, "quest-json", "warning");
+  }
+  const badObjective = firstQuestRegistryMiss(module, "objectives", "type");
+  if (badObjective) {
+    return issueDetail("Objective type", `one of ${questRegistrySummary("objectives", 8)}`, badObjective, "quest-json");
+  }
+  const badAction = firstQuestRegistryMiss(module, "actions", ["type", "action"]);
+  if (badAction) {
+    return issueDetail("Action type", `one of ${questRegistrySummary("actions", 8)}`, badAction, "quest-json");
+  }
+  const badCondition = firstQuestRegistryMiss(module, "conditions", "type");
+  if (badCondition) {
+    return issueDetail("Condition type", `one of ${questRegistrySummary("conditions", 8)}`, badCondition, "quest-json");
+  }
+  const badTrigger = firstQuestRegistryMiss(module, "triggers", ["type", "trigger", "event"]);
+  if (badTrigger) {
+    return issueDetail("Event trigger", `one of ${questRegistrySummary("triggers", 8)}`, badTrigger, "quest-json");
+  }
+  const conflict = firstQuestTransitionConflict(module);
+  if (conflict) {
+    return infoIssueDetail(`Response ${conflict} has both direct transition fields and transition actions. Keep one transition source.`, "quest-json");
+  }
+  if (questMetadataLoadStatus === "error") {
+    return infoIssueDetail("Quest registry metadata could not load; run the Node or Java validators before exporting.", "quest-json");
+  }
+  return null;
+}
+
+function skillTradeIssueDetail(entry) {
+  const fieldIds = ["skillTrade-json"];
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return issueDetail("Skill trade", "a JSON object", entry, fieldIds);
+  if (!entry.id || !isValidResourceLocation(entry.id)) return issueDetail("Skill trade id", "a stable resource location", entry.id, fieldIds);
+  if (entry.remove === true) return null;
+  const skills = entryValues(entry, ["skills", "skill"]);
+  const supportedSkills = skillTradeSchema?.$defs?.skill?.enum || [];
+  if (!skills.length || skills.some((value) => !isValidResourceLocation(value) || (supportedSkills.length && !supportedSkills.includes(value)))) return issueDetail("Skills", "one or more supported skill ids", entry.skills ?? entry.skill, fieldIds);
+  const professions = entryValues(entry, ["professions", "profession"]);
+  if (professions.some((value) => !isValidResourceLocation(value))) return issueDetail("Professions", "valid profession ids", entry.professions ?? entry.profession, fieldIds);
+  const resultItems = entryValues(entry.result || {}, ["items", "item"]);
+  if (!entry.result || typeof entry.result !== "object" || !resultItems.length || resultItems.some((value) => !isValidResourceLocation(value))) {
+    return issueDetail("Result", "an object with at least one item id", entry.result, fieldIds);
+  }
+  const ranks = skillTradeSchema?.$defs?.rank?.enum || ["novice", "apprentice", "skilled", "expert", "master"];
+  if (entry.min_rank !== undefined && !ranks.includes(entry.min_rank)) return issueDetail("Minimum rank", "a supported rank", entry.min_rank, fieldIds);
+  if (entry.max_rank !== undefined && !ranks.includes(entry.max_rank)) return issueDetail("Maximum rank", "a supported rank", entry.max_rank, fieldIds);
+  if (entry.min_rank && entry.max_rank && ranks.indexOf(entry.max_rank) < ranks.indexOf(entry.min_rank)) return issueDetail("Rank range", "max_rank at or above min_rank", entry, fieldIds);
+  const numericRules = [[entry, "villager_level", 1, 5, true], [entry, "chance", 0, 1, false], [entry, "weight", 1, 10000, true], [entry, "xp", 0, 10000, true], [entry, "price_multiplier", 0, 1, false], [entry.result, "count", 1, 64, true], [entry.cost || {}, "count", 1, 64, true]];
+  for (const [owner, key, min, max, integer] of numericRules) {
+    if (owner[key] === undefined) continue;
+    const value = owner[key];
+    if (typeof value !== "number" || !Number.isFinite(value) || (integer && !Number.isInteger(value)) || value < min || value > max) return issueDetail(humanize(key), `${integer ? "an integer" : "a number"} from ${min} to ${max}`, owner[key], fieldIds);
+  }
+  const pools = skillTradeSchema?.$defs?.entry?.properties?.pool?.enum || [];
+  if (entry.pool !== undefined && pools.length && !pools.includes(entry.pool)) return issueDetail("Pool", "a supported villager or wandering-trader pool", entry.pool, fieldIds);
+  if (entry.max_uses !== undefined && !(Number.isInteger(entry.max_uses) || (entry.max_uses && typeof entry.max_uses === "object" && !Array.isArray(entry.max_uses)))) return issueDetail("Max uses", "an integer or bounded object", entry.max_uses, fieldIds);
+  if (entry.conditions !== undefined && (!entry.conditions || typeof entry.conditions !== "object" || Array.isArray(entry.conditions))) return issueDetail("Conditions", "a config-flag object", entry.conditions, fieldIds);
+  if (entry.quality_scaling !== undefined && typeof entry.quality_scaling !== "boolean" && (!entry.quality_scaling || typeof entry.quality_scaling !== "object" || Array.isArray(entry.quality_scaling))) return issueDetail("Quality scaling", "a boolean or scaling object", entry.quality_scaling, fieldIds);
+  if (entry.request !== undefined) {
+    if (!entry.request || typeof entry.request !== "object" || Array.isArray(entry.request)) return issueDetail("Request", "an object", entry.request, fieldIds);
+    if (entry.request.targetable !== undefined && typeof entry.request.targetable !== "boolean") return issueDetail("Request targetable", "true or false", entry.request.targetable, fieldIds);
+    const reputationValues = skillTradeSchema?.$defs?.request?.properties?.min_reputation?.enum || CONSTANTS.reputationLevels;
+    if (entry.request.min_reputation && !reputationValues.includes(String(entry.request.min_reputation).toLowerCase())) return issueDetail("Request reputation", "a named reputation level", entry.request.min_reputation, fieldIds);
+    for (const key of ["wait_days", "cooldown_days"]) {
+      const value = entry.request[key];
+      if (value !== undefined && (!Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > 3650)) return issueDetail(humanize(key), "an integer from 0 to 3650", value, fieldIds);
+    }
+    if (entry.request.extra_cost) {
+      const cost = entry.request.extra_cost;
+      if (!isValidResourceLocation(cost.item) || !Number.isInteger(Number(cost.count)) || Number(cost.count) < 1 || Number(cost.count) > 64) return issueDetail("Request extra cost", "an item and count from 1 to 64", cost, fieldIds);
+    }
+  }
+  return null;
+}
+
+function isLocalizedTextReference(value) {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value)
+    && Object.keys(value).length === 1 && typeof value.key === "string" && value.key.length > 0);
+}
+
+function sceneResourceIssueDetail(path, resource) {
+  const isScene = path.includes("/scenes/");
+  const schema = isScene ? sceneV1Schema : encounterV1Schema;
+  const schemaId = isScene ? "villagerretaliation:scene/v1" : "villagerretaliation:encounter/v1";
+  const required = Array.isArray(schema?.required)
+    ? schema.required
+    : isScene ? ["schema", "id", "ownership", "entry_step", "actors", "steps"] : ["schema", "id"];
+  if (!resource || typeof resource !== "object" || Array.isArray(resource)) {
+    return issueDetail(isScene ? "Scene resource" : "Encounter resource", "a JSON object", resource, "json-preview");
+  }
+  if (resource.schema !== schemaId) {
+    return issueDetail(isScene ? "Scene schema" : "Encounter schema", schemaId, resource.schema, "json-preview");
+  }
+  const missing = required.find((key) => resource[key] === undefined);
+  if (missing) return issueDetail(`${isScene ? "Scene" : "Encounter"} ${missing}`, "a required field", resource[missing], "json-preview");
+  if (!isValidResourceLocation(resource.id, { requireNamespace: true })) {
+    return issueDetail(`${isScene ? "Scene" : "Encounter"} id`, "a namespaced resource location", resource.id, "json-preview");
+  }
+  if (isScene && Array.isArray(resource.steps)) {
+    for (const step of resource.steps.filter((entry) => entry?.type === "villagerretaliation:start_encounter" || entry?.type === "start_encounter")) {
+      const data = step.data || {};const hasTemplate = data.template !== undefined || data.encounter_template !== undefined;const hasVariants = data.variants !== undefined;if (hasTemplate === hasVariants) return issueDetail(`Scene encounter step ${step.id}`, "exactly one template or variants array", data, "json-preview");if (hasVariants) { const variants = data.variants;if (!Array.isArray(variants) || variants.length < 1 || variants.length > 32) return issueDetail(`Scene encounter step ${step.id} variants`, "between 1 and 32 variants", variants, "json-preview");const duplicate = firstDuplicate(variants.map((variant) => variant?.id));if (duplicate) return issueDetail(`Scene encounter step ${step.id} variant ids`, "unique stable ids", duplicate, "json-preview");const invalid = variants.find((variant) => !variant || typeof variant !== "object" || Array.isArray(variant) || Object.keys(variant).some((key) => !["id", "weight", "template"].includes(key)) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(variant.id || "") || !isValidResourceLocation(variant.template, { requireNamespace: true }) || (variant.weight !== undefined && (!Number.isInteger(variant.weight) || variant.weight < 1 || variant.weight > 10000)));if (invalid) return issueDetail(`Scene encounter step ${step.id} variant`, "a stable id, namespaced template, and optional weight from 1 to 10000", invalid, "json-preview"); }
+    }
+  }
+  if (!isScene) {
+    const explicitWaves = Array.isArray(resource.waves);
+    const explicitVariants = Array.isArray(resource.variants);if ([Array.isArray(resource.members), explicitWaves, explicitVariants].filter(Boolean).length !== 1) return issueDetail("Encounter composition", "exactly one of members, waves, or variants", { members: resource.members, waves: resource.waves, variants: resource.variants }, "json-preview");
+    if (explicitVariants) { if (resource.variants.length < 1 || resource.variants.length > 32) return issueDetail("Encounter variants", "between 1 and 32 variants", resource.variants, "json-preview");const duplicate = firstDuplicate(resource.variants.map((variant) => variant?.id));if (duplicate) return issueDetail("Encounter variant ids", "unique stable ids", duplicate, "json-preview");const invalid = resource.variants.find((variant) => !variant || typeof variant !== "object" || Array.isArray(variant) || Object.keys(variant).some((key) => !["id", "weight", "template"].includes(key)) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(variant.id || "") || !isValidResourceLocation(variant.template, { requireNamespace: true }) || (variant.weight !== undefined && (!Number.isInteger(variant.weight) || variant.weight < 1 || variant.weight > 10000)));if (invalid) return issueDetail("Encounter variant", "a stable id, namespaced template, and optional weight from 1 to 10000", invalid, "json-preview");const unreachable = Object.keys(resource).find((key) => !["schema", "id", "version", "controller", "variants"].includes(key));if (unreachable) return issueDetail("Encounter variant selector field", "only schema, id, version, controller, and variants", unreachable, "json-preview");return null; }
+    if (explicitWaves && (resource.waves.length < 1 || resource.waves.length > 32)) return issueDetail("Encounter waves", "between 1 and 32 waves", resource.waves, "json-preview");
+    if (explicitWaves && ["wave_count", "wave_interval_ticks", "wave_trigger"].some((key) => resource[key] !== undefined)) return issueDetail("Encounter wave shorthand", "omitted when waves is authored", resource, "json-preview");
+    const allMembers = explicitWaves ? resource.waves.flatMap((wave) => Array.isArray(wave?.members) ? wave.members : []) : resource.members;
+    if (!Array.isArray(allMembers) || allMembers.length === 0) return issueDetail("Encounter members", "at least one allowlisted entity member", allMembers, "json-preview");
+    const invalidMember = allMembers.find((member) => !isValidResourceLocation(member?.entity, { requireNamespace: true }) || (member.id !== undefined && !/^[a-z][a-z0-9_.-]{0,63}$/.test(member.id)) || (member.count !== undefined && (!Number.isInteger(member.count) || member.count < 1 || member.count > 64)));
+    if (invalidMember) return issueDetail("Encounter member", "a namespaced entity and positive integer count", invalidMember, "json-preview");
+    const duplicateMemberId = firstDuplicate(allMembers.map((member) => member.id).filter(Boolean));if (duplicateMemberId) return issueDetail("Encounter member ids", "unique stable ids", duplicateMemberId, "json-preview");
+    const attributeBounds = { "minecraft:max_health": [1, 2048], "minecraft:movement_speed": [0, 4], "minecraft:attack_damage": [0, 2048], "minecraft:armor": [0, 30], "minecraft:knockback_resistance": [0, 1] };
+    const directAttributes = { health: "minecraft:max_health", movement_speed: "minecraft:movement_speed", attack_damage: "minecraft:attack_damage", armor: "minecraft:armor", knockback_resistance: "minecraft:knockback_resistance" };
+    for (const member of allMembers) {
+      if (member.custom_name !== undefined && !isLocalizedTextReference(member.custom_name)) return issueDetail("Encounter custom name", "a localized reference", member.custom_name, "json-preview");
+      for (const key of ["name_visible", "glowing", "persistent", "boss"]) if (member[key] !== undefined && typeof member[key] !== "boolean") return issueDetail(`Encounter member ${key}`, "a boolean", member[key], "json-preview");
+      if (member.name_visible === true && !member.custom_name) return issueDetail("Encounter visible name", "custom_name when name_visible is true", member, "json-preview");
+      if ((member.boss_bar_color !== undefined || member.boss_bar_overlay !== undefined) && member.boss !== true) return issueDetail("Encounter boss presentation", "boss true", member, "json-preview");
+      if (member.boss_bar_color !== undefined && !["pink", "blue", "red", "green", "yellow", "purple", "white"].includes(member.boss_bar_color)) return issueDetail("Encounter boss-bar color", "a supported boss-bar color", member.boss_bar_color, "json-preview");
+      if (member.boss_bar_overlay !== undefined && !["progress", "notched_6", "notched_10", "notched_12", "notched_20"].includes(member.boss_bar_overlay)) return issueDetail("Encounter boss-bar overlay", "a supported boss-bar overlay", member.boss_bar_overlay, "json-preview");
+      const attributes = member.attributes === undefined ? {} : member.attributes;
+      if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) return issueDetail("Encounter attributes", "an allowlisted attribute object", attributes, "json-preview");
+      const unknownAttribute = Object.keys(attributes).find((id) => !Object.hasOwn(attributeBounds, id));
+      if (unknownAttribute) return issueDetail("Encounter attribute", "an allowlisted attribute id", unknownAttribute, "json-preview");
+      for (const [id, value] of Object.entries(attributes)) { const [min, max] = attributeBounds[id];if (!Number.isFinite(value) || value < min || value > max) return issueDetail(`Encounter attribute ${id}`, `a number from ${min} to ${max}`, value, "json-preview"); }
+      for (const [field, id] of Object.entries(directAttributes)) if (member[field] !== undefined) { const [min, max] = attributeBounds[id];if (!Number.isFinite(member[field]) || member[field] < min || member[field] > max) return issueDetail(`Encounter ${field}`, `a number from ${min} to ${max}`, member[field], "json-preview");if (Object.hasOwn(attributes, id)) return issueDetail("Encounter duplicate attribute", `only ${field} or attributes.${id}`, member, "json-preview"); }
+    }
+    if (explicitWaves) {
+      const ids = resource.waves.map((wave) => wave?.id);const duplicate = firstDuplicate(ids);
+      const invalidWave = resource.waves.find((wave) => !wave || typeof wave !== "object" || !/^[a-z][a-z0-9_.-]{0,63}$/.test(wave.id || "") || !Array.isArray(wave.members) || wave.members.length === 0 || (wave.delay_ticks !== undefined && (!Number.isInteger(wave.delay_ticks) || wave.delay_ticks < 0 || wave.delay_ticks > 12000)) || (wave.trigger !== undefined && !["all_defeated", "timer"].includes(wave.trigger)));
+      if (duplicate || invalidWave) return issueDetail("Encounter wave", "a unique stable id, members, bounded delay, and known trigger", duplicate || invalidWave, "json-preview");
+      const invalidBossTitle = resource.waves.find((wave) => wave.boss_bar_title !== undefined && !isLocalizedTextReference(wave.boss_bar_title));
+      if (invalidBossTitle) return issueDetail("Encounter wave boss-bar title", "a localized reference", invalidBossTitle.boss_bar_title, "json-preview");
+      const invalidHook = resource.waves.flatMap((wave) => [...(wave.scene_actions || []), ...(wave.dialogue_hook ? [wave.dialogue_hook] : [])]).find((hook) => !/^[a-z][a-z0-9_.-]{0,63}$/.test(hook?.id || "") || (hook.type !== undefined && !["notification", "dialogue"].includes(hook.type)) || !isLocalizedTextReference(hook?.text));
+      if (invalidHook) return issueDetail("Encounter wave scene action", "a stable id, optional notification/dialogue type, and localized text reference", invalidHook, "json-preview");
+    }
+    if (resource.location_message !== undefined && !isLocalizedTextReference(resource.location_message)) return issueDetail("Encounter location message", "a localized reference", resource.location_message, "json-preview");
+    if (resource.area !== undefined) {
+      const area = resource.area;
+      if (!area || typeof area !== "object" || Array.isArray(area)) return issueDetail("Encounter area", "an object", area, "json-preview");
+      const allowed = new Set(["radius", "vertical_radius", "leave_behavior", "leave_timeout_ticks", "mob_behavior", "mob_timeout_ticks"]);
+      const unknown = Object.keys(area).find((key) => !allowed.has(key));
+      if (unknown) return issueDetail("Encounter area field", "a supported area field", unknown, "json-preview");
+      if (!Number.isInteger(area.radius) || area.radius < 1 || area.radius > 256) return issueDetail("Encounter area radius", "an integer from 1 to 256", area.radius, "json-preview");
+      if (area.vertical_radius !== undefined && (!Number.isInteger(area.vertical_radius) || area.vertical_radius < 1 || area.vertical_radius > 128)) return issueDetail("Encounter area vertical radius", "an integer from 1 to 128", area.vertical_radius, "json-preview");
+      if (area.leave_behavior !== undefined && !["ignore", "warn", "pause", "fail"].includes(area.leave_behavior)) return issueDetail("Encounter leave behavior", "ignore, warn, pause, or fail", area.leave_behavior, "json-preview");
+      if (area.mob_behavior !== undefined && !["ignore", "return", "teleport"].includes(area.mob_behavior)) return issueDetail("Encounter mob behavior", "ignore, return, or teleport", area.mob_behavior, "json-preview");
+      for (const key of ["leave_timeout_ticks", "mob_timeout_ticks"]) if (area[key] !== undefined && (!Number.isInteger(area[key]) || area[key] < 1 || area[key] > 12000)) return issueDetail(`Encounter ${key}`, "an integer from 1 to 12000", area[key], "json-preview");
+      if (area.mob_timeout_ticks !== undefined && area.mob_behavior !== "teleport") return issueDetail("Encounter mob timeout", "mob_behavior teleport", area.mob_behavior, "json-preview");
+    }
+    if (resource.spawn_selection !== undefined && !["random", "sequential", "weighted", "nearest_player", "farthest_player", "one_group_per_point"].includes(resource.spawn_selection)) return issueDetail("Encounter spawn selection", "a supported selection mode", resource.spawn_selection, "json-preview");
+    if (resource.spawn_selection !== undefined && !Array.isArray(resource.spawn_points)) return issueDetail("Encounter spawn selection", "a non-empty spawn_points array", resource.spawn_points, "json-preview");
+    if (resource.spawn_points !== undefined) {
+      const points = resource.spawn_points;
+      if (!Array.isArray(points) || points.length < 1 || points.length > 64) return issueDetail("Encounter spawn points", "between 1 and 64 named points", points, "json-preview");
+      if (resource.spawn_mode === "near_player") return issueDetail("Encounter spawn points", "a spawn_mode other than near_player", resource.spawn_mode, "json-preview");
+      const ids = points.map((point) => point?.id);const duplicate = firstDuplicate(ids);
+      if (duplicate) return issueDetail("Encounter spawn point ids", "unique stable ids", duplicate, "json-preview");
+      for (const point of points) {
+        if (!point || typeof point !== "object" || Array.isArray(point) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(point.id || "")) return issueDetail("Encounter spawn point", "an object with a stable id", point, "json-preview");
+        const allowed = new Set(["id", "actor", "marker", "dimension", "x", "y", "z", "offset_x", "offset_y", "offset_z", "weight"]);const unknown = Object.keys(point).find((key) => !allowed.has(key));
+        if (unknown) return issueDetail(`Encounter spawn point ${point.id} field`, "a supported spawn-point field", unknown, "json-preview");
+        const actor = point.actor !== undefined;const marker = point.marker !== undefined;const coordinates = ["x", "y", "z"].filter((key) => point[key] !== undefined);
+        if ((actor ? 1 : 0) + (marker ? 1 : 0) + (coordinates.length ? 1 : 0) !== 1 || (coordinates.length !== 0 && coordinates.length !== 3)) return issueDetail(`Encounter spawn point ${point.id}`, "exactly one actor, marker, or complete x/y/z source", point, "json-preview");
+        const alias = actor ? point.actor : marker ? point.marker : "";if (alias && !/^[a-z][a-z0-9_.-]{0,63}$/.test(alias)) return issueDetail(`Encounter spawn point ${point.id} alias`, "a stable scene actor alias", alias, "json-preview");
+        if (point.dimension !== undefined && !isValidResourceLocation(point.dimension, { requireNamespace: true })) return issueDetail(`Encounter spawn point ${point.id} dimension`, "a namespaced resource location", point.dimension, "json-preview");
+        if ((actor || marker) && point.dimension !== undefined) return issueDetail(`Encounter spawn point ${point.id} dimension`, "dimension only with coordinate sources", point.dimension, "json-preview");
+        const bounds = { x: [-30000000, 30000000], y: [-2048, 2048], z: [-30000000, 30000000], offset_x: [-256, 256], offset_y: [-256, 256], offset_z: [-256, 256], weight: [1, 10000] };
+        for (const [key, [min, max]] of Object.entries(bounds)) if (point[key] !== undefined && (!Number.isInteger(point[key]) || point[key] < min || point[key] > max)) return issueDetail(`Encounter spawn point ${point.id} ${key}`, `an integer from ${min} to ${max}`, point[key], "json-preview");
+        if (coordinates.length && ["offset_x", "offset_y", "offset_z"].some((key) => point[key] !== undefined)) return issueDetail(`Encounter spawn point ${point.id} offsets`, "offsets only with actor or marker sources", point, "json-preview");
+      }
+    }
+    if (resource.allies !== undefined) {
+      const allies = resource.allies;if (!Array.isArray(allies) || allies.length < 1 || allies.length > 32) return issueDetail("Encounter allies", "between 1 and 32 controlled allies", allies, "json-preview");const duplicateAlly = firstDuplicate(allies.map((ally) => ally?.id));if (duplicateAlly) return issueDetail("Encounter ally ids", "unique stable ids", duplicateAlly, "json-preview");let totalAllies = 0;
+      const allyAllowed = new Set(["id", "entity", "actor", "count", "equipment", "custom_name", "name_visible", "glowing", "persistent", "health", "movement_speed", "attack_damage", "armor", "knockback_resistance", "attributes", "required_survival", "invulnerable", "revivable", "revive_delay_ticks", "replacement_policy", "cleanup_policy", "affects_completion"]);
+      for (const ally of allies) {
+        if (!ally || typeof ally !== "object" || Array.isArray(ally) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(ally.id || "")) return issueDetail("Encounter ally", "an object with a stable id", ally, "json-preview");const unknown = Object.keys(ally).find((key) => !allyAllowed.has(key));if (unknown) return issueDetail(`Encounter ally ${ally.id} field`, "a supported ally field", unknown, "json-preview");const entity = ally.entity !== undefined, actor = ally.actor !== undefined;if (entity === actor) return issueDetail(`Encounter ally ${ally.id} source`, "exactly one entity or bound actor", ally, "json-preview");if (entity && !isValidResourceLocation(ally.entity, { requireNamespace: true })) return issueDetail(`Encounter ally ${ally.id} entity`, "a namespaced entity id", ally.entity, "json-preview");if (actor && !/^[a-z][a-z0-9_.-]{0,63}$/.test(ally.actor || "")) return issueDetail(`Encounter ally ${ally.id} actor`, "a stable scene actor alias", ally.actor, "json-preview");const count = ally.count ?? 1;if (!Number.isInteger(count) || count < 1 || count > 16 || actor && count !== 1) return issueDetail(`Encounter ally ${ally.id} count`, "1-16 for entities and exactly 1 for bound actors", count, "json-preview");totalAllies += count;
+        if (actor) { const unreachable = ["count", "equipment", "custom_name", "name_visible", "glowing", "persistent", "health", "movement_speed", "attack_damage", "armor", "knockback_resistance", "attributes"].find((key) => ally[key] !== undefined);if (unreachable) return issueDetail(`Encounter ally ${ally.id} field`, "entity options only for entity-defined allies", unreachable, "json-preview"); } else if (ally.custom_name !== undefined && !isLocalizedTextReference(ally.custom_name)) return issueDetail(`Encounter ally ${ally.id} custom name`, "a localized reference", ally.custom_name, "json-preview");
+        if (ally.required_survival === true && ally.revivable === true) return issueDetail(`Encounter ally ${ally.id} survival`, "required_survival or revivable, not both", ally, "json-preview");if (ally.revive_delay_ticks !== undefined && (ally.revivable !== true || !Number.isInteger(ally.revive_delay_ticks) || ally.revive_delay_ticks < 1 || ally.revive_delay_ticks > 12000)) return issueDetail(`Encounter ally ${ally.id} revive delay`, "1-12000 ticks with revivable true", ally.revive_delay_ticks, "json-preview");if (ally.replacement_policy !== undefined && !["never", "missing_if_loaded"].includes(ally.replacement_policy)) return issueDetail(`Encounter ally ${ally.id} replacement`, "never or missing_if_loaded", ally.replacement_policy, "json-preview");if (ally.cleanup_policy !== undefined && !["remove", "preserve"].includes(ally.cleanup_policy)) return issueDetail(`Encounter ally ${ally.id} cleanup`, "remove or preserve", ally.cleanup_policy, "json-preview");
+      }
+      if (totalAllies > 64) return issueDetail("Encounter ally instances", "at most 64 total controlled allies", totalAllies, "json-preview");
+    }
+    if (resource.failure !== undefined) {
+      const failure = resource.failure;if (!failure || typeof failure !== "object" || Array.isArray(failure)) return issueDetail("Encounter failure policy", "an object", failure, "json-preview");const allowed = new Set(["on_player_death", "on_protected_actor_death", "retry_delay_ticks", "max_attempts", "retain_defeated", "branch_step"]);const unknown = Object.keys(failure).find((key) => !allowed.has(key));if (unknown) return issueDetail("Encounter failure field", "a supported failure field", unknown, "json-preview");const actions = [failure.on_player_death ?? "fail", failure.on_protected_actor_death ?? "fail"];const known = ["fail", "reset_wave", "restart_encounter", "pause", "branch_scene"];if (actions.some((action) => !known.includes(action))) return issueDetail("Encounter failure action", "fail, reset_wave, restart_encounter, pause, or branch_scene", failure, "json-preview");if (failure.retry_delay_ticks !== undefined && (!Number.isInteger(failure.retry_delay_ticks) || failure.retry_delay_ticks < 0 || failure.retry_delay_ticks > 12000)) return issueDetail("Encounter retry delay", "an integer from 0 to 12000", failure.retry_delay_ticks, "json-preview");if (failure.max_attempts !== undefined && (!Number.isInteger(failure.max_attempts) || failure.max_attempts < 1 || failure.max_attempts > 16)) return issueDetail("Encounter max attempts", "an integer from 1 to 16", failure.max_attempts, "json-preview");if (failure.retain_defeated !== undefined && typeof failure.retain_defeated !== "boolean") return issueDetail("Encounter retained progress", "a boolean", failure.retain_defeated, "json-preview");const branches = actions.includes("branch_scene");if (branches !== (typeof failure.branch_step === "string" && /^[a-z][a-z0-9_.-]{0,63}$/.test(failure.branch_step))) return issueDetail("Encounter failure branch", "a stable branch_step exactly when branch_scene is used", failure.branch_step, "json-preview");
+    }
+    if (resource.environment !== undefined) {
+      const environment=resource.environment;if(!environment||typeof environment!=="object"||Array.isArray(environment))return issueDetail("Encounter environment","an object",environment,"json-preview");const unknown=Object.keys(environment).find((key)=>!["cues","temporary_blocks"].includes(key));if(unknown)return issueDetail("Encounter environment field","cues or temporary_blocks",unknown,"json-preview");const cues=environment.cues??[],blocks=environment.temporary_blocks??[];if(!Array.isArray(cues)||cues.length>32||!Array.isArray(blocks)||blocks.length>64||cues.length+blocks.length<1)return issueDetail("Encounter environment","1-32 cues and/or 1-64 temporary blocks",environment,"json-preview");const ids=[...cues,...blocks].map((entry)=>entry?.id);const duplicate=firstDuplicate(ids);if(duplicate)return issueDetail("Encounter environment ids","unique stable ids",duplicate,"json-preview");const badCue=cues.find((cue)=>!cue||!/^[a-z][a-z0-9_.-]{0,63}$/.test(cue.id||"")||!["sound","music","particles","glowing_column"].includes(cue.type)||(cue.type==="sound"||cue.type==="music"?!isValidResourceLocation(cue.sound,{requireNamespace:true}):!isValidResourceLocation(cue.particle,{requireNamespace:true})));if(badCue)return issueDetail("Encounter environment cue","a stable id, safe type, and namespaced sound or particle",badCue,"json-preview");const safeBlocks=new Set(["minecraft:barrier","minecraft:light","minecraft:structure_void","minecraft:glass"]);const badBlock=blocks.find((block)=>!block||!/^[a-z][a-z0-9_.-]{0,63}$/.test(block.id||"")||!safeBlocks.has(block.block));if(badBlock)return issueDetail("Encounter temporary block","a stable id and allowlisted block",badBlock,"json-preview");for(const entry of [...cues,...blocks])for(const key of ["offset_x","offset_y","offset_z"])if(entry[key]!==undefined&&(!Number.isInteger(entry[key])||Math.abs(entry[key])>64))return issueDetail(`Encounter environment ${key}`,"an integer from -64 to 64",entry[key],"json-preview");
+    }
+    if (resource.guidance !== undefined) {
+      const guidance=resource.guidance;if(!guidance||typeof guidance!=="object"||Array.isArray(guidance))return issueDetail("Encounter guidance","an object",guidance,"json-preview");if(resource.location_message!==undefined)return issueDetail("Encounter guidance message","guidance.coordinate_message or legacy location_message, not both",resource.location_message,"json-preview");const allowed=new Set(["coordinate_message","arrival_message","discovery_radius","arrival_radius","distance_tracker","compass_target","directional_particles","hud_marker","exact_coordinates","update_interval_ticks"]);const unknown=Object.keys(guidance).find((key)=>!allowed.has(key));if(unknown)return issueDetail("Encounter guidance field","a supported guidance field",unknown,"json-preview");for(const key of ["coordinate_message","arrival_message"])if(guidance[key]!==undefined&&(typeof guidance[key]!=="string"||guidance[key].length>512))return issueDetail(`Encounter guidance ${key}`,"a string up to 512 characters",guidance[key],"json-preview");for(const key of ["distance_tracker","compass_target","directional_particles","hud_marker"])if(guidance[key]!==undefined&&typeof guidance[key]!=="boolean")return issueDetail(`Encounter guidance ${key}`,"a boolean",guidance[key],"json-preview");const discovery=guidance.discovery_radius??64,arrival=guidance.arrival_radius??8,interval=guidance.update_interval_ticks??20;if(!Number.isInteger(discovery)||discovery<1||discovery>512||!Number.isInteger(arrival)||arrival<1||arrival>64||arrival>discovery)return issueDetail("Encounter guidance radii","discovery 1-512 and arrival 1-64 no larger than discovery",guidance,"json-preview");if(!Number.isInteger(interval)||interval<10||interval>200)return issueDetail("Encounter guidance update interval","an integer from 10 to 200",interval,"json-preview");if(guidance.exact_coordinates!==undefined&&!["always","after_discovery","never"].includes(guidance.exact_coordinates))return issueDetail("Encounter exact coordinates","always, after_discovery, or never",guidance.exact_coordinates,"json-preview");
+    }
+    if (resource.rewards !== undefined) {
+      const rewards=resource.rewards;if(!rewards||typeof rewards!=="object"||Array.isArray(rewards)||Object.keys(rewards).length===0)return issueDetail("Encounter rewards","a non-empty object",rewards,"json-preview");const unknown=Object.keys(rewards).find((key)=>!["waves","phases","completion","trophies","drop_policy"].includes(key));if(unknown)return issueDetail("Encounter rewards field","waves, phases, completion, trophies, or drop_policy",unknown,"json-preview");const waveIds=new Set(explicitWaves?resource.waves.map((wave)=>wave.id):Array.from({length:resource.wave_count||1},(_,index)=>`repeat_${index+1}`)),phaseIds=new Set((resource.phases||[]).map((phase)=>phase.id)),memberIds=new Set(allMembers.map((member)=>member.id).filter(Boolean)),ids=[];let rewardTotal=0;for(const [key,target,known] of [["waves","wave",waveIds],["phases","phase",phaseIds],["completion","",null]]){const list=rewards[key]??[];if(!Array.isArray(list)||list.length>32||(rewards[key]!==undefined&&list.length<1))return issueDetail(`Encounter rewards ${key}`,"1-32 entries when present",list,"json-preview");rewardTotal+=list.length;for(const reward of list){if(!reward||typeof reward!=="object"||Array.isArray(reward)||!/^[a-z][a-z0-9_.-]{0,63}$/.test(reward.id||""))return issueDetail(`Encounter reward ${key}`,"an object with a stable id",reward,"json-preview");ids.push(reward.id);const allowed=new Set(["id",...(target?[target]:[]),"loot_table","item","count","trophy_name"]),field=Object.keys(reward).find((name)=>!allowed.has(name));if(field)return issueDetail(`Encounter reward ${reward.id} field`,"a reachable reward field",field,"json-preview");if(target&&!known.has(reward[target]))return issueDetail(`Encounter reward ${reward.id} ${target}`,`an authored ${target} id`,reward[target],"json-preview");const hasLoot=reward.loot_table!==undefined,hasItem=reward.item!==undefined;if(hasLoot===hasItem||hasLoot&&!isValidResourceLocation(reward.loot_table,{requireNamespace:true})||hasItem&&!isValidResourceLocation(reward.item,{requireNamespace:true}))return issueDetail(`Encounter reward ${reward.id} source`,"exactly one namespaced loot_table or item",reward,"json-preview");if(hasLoot&&(reward.count!==undefined||reward.trophy_name!==undefined))return issueDetail(`Encounter reward ${reward.id} loot fields`,"count and trophy_name only for item rewards",reward,"json-preview");if(reward.count!==undefined&&(!Number.isInteger(reward.count)||reward.count<1||reward.count>64)||reward.trophy_name!==undefined&&!isLocalizedTextReference(reward.trophy_name))return issueDetail(`Encounter reward ${reward.id} item fields`,"count 1-64 and trophy_name as a localized reference",reward,"json-preview");}}
+      const trophies=rewards.trophies??[];if(!Array.isArray(trophies)||trophies.length>32||(rewards.trophies!==undefined&&trophies.length<1))return issueDetail("Encounter trophies","1-32 entries when present",trophies,"json-preview");for(const trophy of trophies){if(!trophy||!/^[a-z][a-z0-9_.-]{0,63}$/.test(trophy.id||"")||!memberIds.has(trophy.member)||!isValidResourceLocation(trophy.item,{requireNamespace:true})||trophy.count!==undefined&&(!Number.isInteger(trophy.count)||trophy.count<1||trophy.count>64)||trophy.name!==undefined&&(typeof trophy.name!=="string"||trophy.name.length>128))return issueDetail("Encounter trophy","a stable id, named member, namespaced item, and safe count/name",trophy,"json-preview");ids.push(trophy.id);}const duplicate=firstDuplicate(ids);if(duplicate)return issueDetail("Encounter reward ids","unique across rewards and trophies",duplicate,"json-preview");if(rewardTotal>64)return issueDetail("Encounter rewards","at most 64 wave, phase, and completion rewards",rewardTotal,"json-preview");const policy=rewards.drop_policy??"normal";if(!["normal","suppress","authored_only","trophy_only"].includes(policy))return issueDetail("Encounter drop policy","normal, suppress, authored_only, or trophy_only",policy,"json-preview");if(policy==="trophy_only"&&trophies.length===0)return issueDetail("Encounter trophy-only drops","at least one trophy",trophies,"json-preview");if(policy==="authored_only"&&!allMembers.some((member)=>Object.values(member.equipment||{}).some((gear)=>Number(gear.drop_chance||0)>0)))return issueDetail("Encounter authored-only drops","equipment with drop_chance above zero",resource,"json-preview");
+    }
+    if (resource.phases !== undefined) {
+      const phases = resource.phases;if (!Array.isArray(phases) || phases.length < 1 || phases.length > 64) return issueDetail("Encounter phases", "between 1 and 64 phases", phases, "json-preview");const duplicatePhase = firstDuplicate(phases.map((phase) => phase?.id));if (duplicatePhase) return issueDetail("Encounter phase ids", "unique stable ids", duplicatePhase, "json-preview");
+      const waveIds = new Set(explicitWaves ? resource.waves.map((wave) => wave.id) : Array.from({ length: resource.wave_count || 1 }, (_, index) => `repeat_${index + 1}`));const membersById = new Map(allMembers.filter((member) => member.id).map((member) => [member.id, member]));
+      for (const phase of phases) {
+        if (!phase || typeof phase !== "object" || Array.isArray(phase) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(phase.id || "")) return issueDetail("Encounter phase", "an object with a stable id", phase, "json-preview");const phaseAllowed = new Set(["id", "trigger", "actions", "repeatable", "repeat_interval_ticks", "max_fires"]);const unknownPhase = Object.keys(phase).find((key) => !phaseAllowed.has(key));if (unknownPhase) return issueDetail(`Encounter phase ${phase.id} field`, "a supported phase field", unknownPhase, "json-preview");
+        const trigger = phase.trigger;const triggerFields = { wave_started: "wave", wave_completed: "wave", remaining_percentage: "percentage", elapsed_time: "ticks", elite_defeated: "member" };const triggerField = triggerFields[trigger?.type];if (!triggerField || trigger[triggerField] === undefined) return issueDetail(`Encounter phase ${phase.id} trigger`, "a supported trigger with its required field", trigger, "json-preview");const unexpectedTrigger = Object.keys(trigger).find((key) => key !== "type" && key !== triggerField);if (unexpectedTrigger) return issueDetail(`Encounter phase ${phase.id} trigger field`, `only ${triggerField} for ${trigger.type}`, unexpectedTrigger, "json-preview");if ((trigger.type === "wave_started" || trigger.type === "wave_completed") && !waveIds.has(trigger.wave)) return issueDetail(`Encounter phase ${phase.id} wave`, "an authored wave id", trigger.wave, "json-preview");if (trigger.type === "remaining_percentage" && (!Number.isInteger(trigger.percentage) || trigger.percentage < 0 || trigger.percentage > 100)) return issueDetail(`Encounter phase ${phase.id} percentage`, "an integer from 0 to 100", trigger.percentage, "json-preview");if (trigger.type === "elapsed_time" && (!Number.isInteger(trigger.ticks) || trigger.ticks < 1 || trigger.ticks > 1728000)) return issueDetail(`Encounter phase ${phase.id} ticks`, "an integer from 1 to 1728000", trigger.ticks, "json-preview");if (trigger.type === "elite_defeated") { const member = membersById.get(trigger.member);const enhanced = member && (member.custom_name || member.boss || Object.keys(member.attributes || {}).length > 0 || ["health", "movement_speed", "attack_damage", "armor", "knockback_resistance"].some((key) => member[key] !== undefined));const scales = member && (resource.extra_per_player || 0) > 0 && (resource.max_party_size || 4) > 1 && (explicitWaves ? resource.waves.some((wave) => wave.members?.[0] === member) : resource.members?.[0] === member);if (!member || (member.count || 1) !== 1 || scales || !enhanced) return issueDetail(`Encounter phase ${phase.id} elite`, "a single named or enhanced member id", trigger.member, "json-preview"); }
+        if (!Array.isArray(phase.actions) || phase.actions.length < 1 || phase.actions.length > 32) return issueDetail(`Encounter phase ${phase.id} actions`, "between 1 and 32 allowlisted actions", phase.actions, "json-preview");const duplicateAction = firstDuplicate(phase.actions.map((action) => action?.id));if (duplicateAction) return issueDetail(`Encounter phase ${phase.id} action ids`, "unique stable ids", duplicateAction, "json-preview");let transitions = 0;
+        for (const action of phase.actions) { if (!action || !/^[a-z][a-z0-9_.-]{0,63}$/.test(action.id || "") || !["notification", "dialogue", "fact", "transition"].includes(action.type)) return issueDetail(`Encounter phase ${phase.id} action`, "a stable id and allowlisted type", action, "json-preview");const actionAllowed = { notification: ["id", "type", "text"], dialogue: ["id", "type", "text"], fact: ["id", "type", "scope", "tag", "key", "value"], transition: ["id", "type", "target"] }[action.type];const unknownAction = Object.keys(action).find((key) => !actionAllowed.includes(key));if (unknownAction) return issueDetail(`Encounter phase ${phase.id} action ${action.id} field`, "a reachable field for its action type", unknownAction, "json-preview");if ((action.type === "notification" || action.type === "dialogue") && !isLocalizedTextReference(action.text)) return issueDetail(`Encounter phase ${phase.id} action ${action.id} text`, "a localized reference", action.text, "json-preview");if (action.type === "fact") { const hasTag = action.tag !== undefined;const hasKey = action.key !== undefined || action.value !== undefined;if (hasTag === hasKey || (hasTag && !isValidResourceLocation(action.tag, { requireNamespace: true })) || (hasKey && (!/^[a-zA-Z0-9_.:-]{1,128}$/.test(action.key || "") || typeof action.value !== "string" || action.value.length > 128)) || (action.scope !== undefined && !["player", "quest", "world"].includes(action.scope))) return issueDetail(`Encounter phase ${phase.id} fact ${action.id}`, "one valid tag or key/value with a safe scope", action, "json-preview"); }if (action.type === "transition") { transitions++;if (!/^[a-z][a-z0-9_.-]{0,63}$/.test(action.target || "")) return issueDetail(`Encounter phase ${phase.id} transition`, "a stable scene step id", action.target, "json-preview"); } }
+        if (transitions > 1 || (phase.repeatable === true && transitions > 0)) return issueDetail(`Encounter phase ${phase.id} transitions`, "at most one transition on a non-repeatable phase", phase.actions, "json-preview");if (phase.repeatable === true) { if (!Number.isInteger(phase.repeat_interval_ticks) || phase.repeat_interval_ticks < 1 || phase.repeat_interval_ticks > 12000 || !Number.isInteger(phase.max_fires) || phase.max_fires < 2 || phase.max_fires > 64) return issueDetail(`Encounter phase ${phase.id} repeat policy`, "a bounded interval and 2-64 max fires", phase, "json-preview"); } else if (phase.repeat_interval_ticks !== undefined || phase.max_fires !== undefined) return issueDetail(`Encounter phase ${phase.id} repeat policy`, "repeat fields only when repeatable is true", phase, "json-preview");
+      }
+    }
+    if (resource.completion_condition !== undefined && resource.completion_objectives !== undefined) return issueDetail("Encounter completion", "either completion_condition or completion_objectives, not both", resource.completion_objectives, "json-preview");
+    if (resource.completion_objectives !== undefined) {
+      const composition = resource.completion_objectives;
+      if (!composition || typeof composition !== "object" || Array.isArray(composition) || !Array.isArray(composition.objectives) || composition.objectives.length < 1 || composition.objectives.length > 32) return issueDetail("Encounter completion objectives", "an object containing 1-32 objectives", composition, "json-preview");
+      const unknownComposition = Object.keys(composition).find((key) => !["mode", "objectives"].includes(key));if (unknownComposition || (composition.mode !== undefined && !["all", "any"].includes(composition.mode))) return issueDetail("Encounter completion composition", "mode all/any and objectives only", unknownComposition || composition.mode, "json-preview");
+      const duplicate = firstDuplicate(composition.objectives.map((objective) => objective?.id));if (duplicate) return issueDetail("Encounter objective ids", "unique stable ids", duplicate, "json-preview");
+      const pointIds = new Set((resource.spawn_points || []).map((point) => point.id));const memberIds = new Set(allMembers.map((member) => member.id).filter(Boolean));
+      const fields = { all_defeated: [], all_gone: [], survive_duration: ["duration_ticks"], protect_actor: ["actor", "duration_ticks"], prevent_entry: ["point", "duration_ticks", "radius", "vertical_radius"], escort_actor: ["actor", "point", "radius", "vertical_radius"], destroy_targets: ["actors"], defeat_leader: ["member"], retrieve_item: ["item", "components", "durability", "custom_data", "nbt", "count"], hold_areas: ["points", "duration_ticks", "radius", "vertical_radius"] };
+      for (const objective of composition.objectives) {
+        if (!objective || typeof objective !== "object" || Array.isArray(objective) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(objective.id || "") || !fields[objective.type]) return issueDetail("Encounter objective", "a stable id and supported objective type", objective, "json-preview");
+        const unknown = Object.keys(objective).find((key) => !["id", "type", ...fields[objective.type]].includes(key));if (unknown) return issueDetail(`Encounter objective ${objective.id} field`, `a reachable field for ${objective.type}`, unknown, "json-preview");
+        const durationRequired = ["survive_duration", "protect_actor", "prevent_entry", "hold_areas"].includes(objective.type);if (durationRequired && (!Number.isInteger(objective.duration_ticks) || objective.duration_ticks < 1 || objective.duration_ticks > 1728000)) return issueDetail(`Encounter objective ${objective.id} duration`, "an integer from 1 to 1728000", objective.duration_ticks, "json-preview");
+        for (const key of ["radius", "vertical_radius"]) if (objective[key] !== undefined && (!Number.isInteger(objective[key]) || objective[key] < 1 || objective[key] > 64)) return issueDetail(`Encounter objective ${objective.id} ${key}`, "an integer from 1 to 64", objective[key], "json-preview");
+        if (["protect_actor", "escort_actor"].includes(objective.type) && !/^[a-z][a-z0-9_.-]{0,63}$/.test(objective.actor || "")) return issueDetail(`Encounter objective ${objective.id} actor`, "a stable scene actor alias", objective.actor, "json-preview");
+        if (["prevent_entry", "escort_actor"].includes(objective.type) && !pointIds.has(objective.point)) return issueDetail(`Encounter objective ${objective.id} point`, "an authored spawn point id", objective.point, "json-preview");
+        if (objective.type === "destroy_targets" && (!Array.isArray(objective.actors) || objective.actors.length < 1 || objective.actors.length > 32 || objective.actors.some((actor) => !/^[a-z][a-z0-9_.-]{0,63}$/.test(actor)) || firstDuplicate(objective.actors))) return issueDetail(`Encounter objective ${objective.id} actors`, "1-32 unique stable scene actor aliases", objective.actors, "json-preview");
+        if (objective.type === "defeat_leader" && !memberIds.has(objective.member)) return issueDetail(`Encounter objective ${objective.id} member`, "an authored member id", objective.member, "json-preview");
+        if (objective.type === "retrieve_item" && (!isValidResourceLocation(objective.item, { requireNamespace: true }) || (objective.count !== undefined && (!Number.isInteger(objective.count) || objective.count < 1 || objective.count > 64)))) return issueDetail(`Encounter objective ${objective.id} item`, "a namespaced item and count from 1 to 64", objective, "json-preview");
+        if (objective.type === "retrieve_item") { for (const key of ["components", "durability", "custom_data", "nbt"]) if (objective[key] !== undefined && (!objective[key] || typeof objective[key] !== "object" || Array.isArray(objective[key]))) return issueDetail(`Encounter objective ${objective.id} ${key}`, "an object", objective[key], "json-preview"); }
+        if (objective.type === "hold_areas" && (!Array.isArray(objective.points) || objective.points.length < 1 || objective.points.length > 16 || objective.points.some((point) => !pointIds.has(point)) || firstDuplicate(objective.points))) return issueDetail(`Encounter objective ${objective.id} points`, "1-16 unique authored spawn point ids", objective.points, "json-preview");
+      }
+    }
+    return null;
+  }
+
+  const actors = Array.isArray(resource.actors) ? resource.actors : [];
+  const steps = Array.isArray(resource.steps) ? resource.steps : [];
+  const aliases = actors.map((actor) => actor?.alias).filter(Boolean);
+  const stepIds = steps.map((step) => step?.id).filter(Boolean);
+  const duplicateAlias = firstDuplicate(aliases);
+  if (duplicateAlias) return issueDetail("Scene actor aliases", "unique aliases", duplicateAlias, "json-preview");
+  const duplicateStep = firstDuplicate(stepIds);
+  if (duplicateStep) return issueDetail("Scene step ids", "unique stable ids", duplicateStep, "json-preview");
+  if (!stepIds.includes(resource.entry_step)) return issueDetail("Scene entry step", "one of the authored stable step ids", resource.entry_step, "json-preview");
+  const actorTypeIds = questRegistryIdSet("actor_types", { includeAliases: true });
+  const badActorType = metadataStatusReady() && actorTypeIds.size > 0
+    ? actors.find((actor) => actor?.type && !actorTypeIds.has(actor.type))?.type
+    : "";
+  if (badActorType) return issueDetail("Scene actor type", `a registered actor type`, badActorType, "json-preview");
+  const stepTypeIds = questRegistryIdSet("scene_steps", { includeAliases: true });
+  const badStepType = metadataStatusReady() && stepTypeIds.size > 0
+    ? steps.find((step) => step?.type && !stepTypeIds.has(step.type))?.type
+    : "";
+  if (badStepType) return issueDetail("Scene step type", "a registered scene step type", badStepType, "json-preview");
+  const references = steps.flatMap((step) => [step?.next, step?.failure_step, ...Object.values(step?.transitions || {})]).filter(Boolean);
+  const missingReference = references.find((id) => !stepIds.includes(id));
+  return missingReference ? issueDetail("Scene transition", "an existing stable step id", missingReference, "json-preview") : null;
+}
+
+function metadataStatusReady() {
+  return questMetadataLoadStatus === "ready";
+}
+
+function firstQuestRegistryMiss(module, registry, keys) {
+  if (questMetadataLoadStatus !== "ready") return "";
+  const allowed = questRegistryIdSet(registry, { includeAliases: true });
+  if (allowed.size === 0) return "";
+  const keyList = Array.isArray(keys) ? keys : [keys];
+  for (const block of questBlocksForRegistry(module, registry)) {
+    const value = keyList.map((key) => block?.[key]).find(Boolean);
+    if (value && !allowed.has(String(value))) return String(value);
+  }
+  return "";
+}
+
+function questBlocksForRegistry(module, registry) {
+  if (registry === "objectives") return questNestedArrayEntries(module, "objectives");
+  if (registry === "actions") return [
+    ...questNestedArrayEntries(module, "actions"),
+    ...questNestedArrayEntries(module, "entry_actions"),
+    ...questNestedArrayEntries(module, "exit_actions")
+  ];
+  if (registry === "conditions") return questNestedArrayEntries(module, "conditions");
+  if (registry === "triggers") return questNestedArrayEntries(module, "events");
+  return [];
+}
+
+function questNestedArrayEntries(value, key) {
+  const entries = [];
+  const visit = (node) => {
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node[key])) {
+      entries.push(...node[key].filter((entry) => entry && typeof entry === "object"));
+    }
+    Object.values(node).forEach(visit);
+  };
+  visit(value);
+  return entries;
+}
+
+function firstQuestTransitionConflict(module) {
+  const transitionActionIds = new Set(questRegistryItems("actions")
+    .filter((item) => item.kind === "quest_transition")
+    .flatMap((item) => [item.id, ...(item.aliases || [])])
+    .filter(Boolean));
+  const responses = questNestedArrayEntries(module, "responses");
+  for (const response of responses) {
+    const hasDirectTransition = Boolean(response.transition || response.next || response.stage || response.scene || response.complete || response.abandon || response.fail);
+    if (!hasDirectTransition || !Array.isArray(response.actions)) continue;
+    const hasActionTransition = response.actions.some((action) => {
+      const id = action?.type || action?.action || "";
+      return transitionActionIds.has(id) || Boolean(action?.transition || action?.next || action?.stage);
+    });
+    if (hasActionTransition) return response.id || response.label || "response";
+  }
+  return "";
+}
+
 function entryIssueSeverity(section, kind, entry) {
   if (!entry) return "";
+  if (section === "skillTrades") return skillTradeIssueDetail(entry)?.severity || "";
+  if (section === "quests") {
+    return questModuleIssueDetail(entry)?.severity || "";
+  }
   if (section === "dialogue") {
     const tests = [
       { severity: "error", predicate: (item) => kind === "options" && (!item.id || !item.label || !isValidDialogueOptionType(item) || !item.request) },
@@ -3643,6 +4158,10 @@ function invalidSocialAttributeRange(entry) {
 
 function entryIssueDetail(section, kind, entry) {
   if (!entry) return null;
+  if (section === "skillTrades") return skillTradeIssueDetail(entry);
+  if (section === "quests") {
+    return questModuleIssueDetail(entry);
+  }
   if (section === "dialogue") {
     if (kind === "options") {
       if (!entry.id) return issueDetail("Option id", "a non-empty stable id", entry.id, "dialogue-id");
@@ -3768,6 +4287,8 @@ function entryIssueDetail(section, kind, entry) {
     const forcedNumberSpecs = [
       { key: "priority", label: "Priority", expected: "a valid priority number, positive or negative", fieldId: "forced-priority", valid: Number.isFinite },
       { key: "witness_radius", label: "Witness radius", expected: "a number greater than or equal to 1", fieldId: "forced-witness_radius", valid: (value) => value >= 1 },
+      { key: "draw_weapon_duration_seconds", label: "Draw weapon duration", expected: "a number greater than or equal to 1", fieldId: "forced-draw_weapon_duration_seconds", valid: (value) => Number.isFinite(value) && value >= 1 },
+      { key: "required_aim_duration_seconds", label: "Required aim duration", expected: "a number greater than or equal to 0", fieldId: "forced-required_aim_duration_seconds", valid: (value) => Number.isFinite(value) && value >= 0 },
       { key: "min_recent_retaliations", label: "Min prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-min_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 },
       { key: "max_recent_retaliations", label: "Max prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-max_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 },
       { key: "min_player_item_enchantment_level", label: "Minimum enchantment level", expected: "a number greater than or equal to 1", fieldId: "forced-min_player_item_enchantment_level", valid: (value) => value >= 1 },
@@ -3931,6 +4452,12 @@ function sectionIssueSeverity(section) {
   if (section === "forcedDialogue") {
     return entryCollectionIssueSeverity(section, "entries") || (!isValidFileName(state.forcedDialogue.fileName) ? "error" : "");
   }
+  if (section === "quests") {
+    return entryCollectionIssueSeverity(section, "modules");
+  }
+  if (section === "skillTrades") {
+    return entryCollectionIssueSeverity(section, "entries") || (!isValidFileName(state.skillTrades.fileName) ? "error" : "");
+  }
   if (section === "notifications") {
     return entryCollectionIssueSeverity(section, "notifications") || (!isValidFileName(state.notifications.fileName) ? "error" : "");
   }
@@ -4013,6 +4540,8 @@ function entryPath(section, entry, kind = activeDialogueKind, index = 0) {
   if (entry?.__sourcePath) return entry.__sourcePath;
   if (section === "dialogue") return dialoguePath(kind, entry, index);
   if (section === "forcedDialogue") return forcedDialoguePath();
+  if (section === "quests") return questModulePath(entry, index);
+  if (section === "skillTrades") return skillTradesPath();
   if (section === "notifications") return notificationsPath();
   if (section === "gifts") return giftsPath();
   if (section === "pacification") return pacificationPath();
@@ -4191,6 +4720,17 @@ function validate() {
   if (!isValidFileName(state.forcedDialogue.fileName)) {
     addCheck(checks, "error", "Forced dialogue file", "Forced dialogue file names must be lowercase datapack path names.");
   }
+  if (!isValidFileName(state.skillTrades.fileName)) {
+    addCheck(checks, "error", "Skill trade file", "Skill trade file names must be lowercase datapack path names.");
+  }
+  for (const [index, entry] of state.skillTrades.entries.entries()) {
+    const detail = skillTradeIssueDetail(entry);
+    if (detail) addCheck(checks, detail.severity || "error", "Skill trade", `Entry ${index + 1}: ${detail.message}`, {
+      locations: [{ section: "skillTrades", kind: "entries", index, path: entryPath("skillTrades", entry, "entries", index), fieldId: "skillTrade-json" }]
+    });
+  }
+  const duplicateSkillTrade = firstDuplicate(state.skillTrades.entries.map((entry) => entry.id));
+  if (duplicateSkillTrade) addCheck(checks, "warning", "Skill trade ids", `Duplicate skill trade id: ${duplicateSkillTrade}.`);
   if (!isValidFileName(state.notifications.fileName)) {
     addCheck(checks, "error", "Notification file", "Notification file names must be lowercase datapack path names.");
   }
@@ -4539,6 +5079,47 @@ function validate() {
     }
   }
 
+  for (let index = 0; index < state.quests.modules.length; index += 1) {
+    const entry = state.quests.modules[index];
+    const detail = questModuleIssueDetail(entry);
+    if (!detail) continue;
+    const locations = entryLocations("quests", "modules", [{ entry, index }], detail.fieldIds[0] || "quest-json");
+    addCheck(checks, detail.severity || "error", "Quest module", detail.message, {
+      locations,
+      paths: locations.map((location) => location.path)
+    });
+    break;
+  }
+  const duplicateQuestPath = firstDuplicate(state.quests.modules.map((entry, index) => questModulePath(entry, index)));
+  if (duplicateQuestPath) {
+    addCheck(checks, "warning", "Quest file path", `Multiple quest modules export to ${duplicateQuestPath}.`, {
+      paths: [duplicateQuestPath]
+    });
+  }
+  if (state.quests.v1Imports.length > 0) {
+    addCheck(checks, "info", "Quest migration", `${state.quests.v1Imports.length} legacy quest import${state.quests.v1Imports.length === 1 ? "" : "s"} preserved with migration suggestions.`);
+  }
+
+  const legacyQuestPaths = Object.keys(state.extraFiles)
+    .filter((path) => datapackBackend.isLegacyQuestResourcePath(path));
+  if (legacyQuestPaths.length > 0) {
+    addCheck(checks, "error", "Unsupported quest layout", `Move legacy quest resources into data/<namespace>/quests/<questline>/<quest-slug>/ or quests/_shared/. Found: ${legacyQuestPaths.join(", ")}`, { paths: legacyQuestPaths });
+  }
+
+  for (const [path, source] of Object.entries(state.extraFiles)) {
+    if (!/^data\/[^/]+\/quests\/(?:_shared\/|[^/]+\/[^/]+\/)(?:scenes|encounters)\/.+\.json$/.test(path)) continue;
+    let resource;
+    try {
+      resource = JSON.parse(source);
+    } catch {
+      addCheck(checks, "error", "Scene resource JSON", `${path} is not valid JSON.`, { paths: [path] });
+      continue;
+    }
+    const detail = sceneResourceIssueDetail(path, resource);
+    if (!detail) continue;
+    addCheck(checks, detail.severity || "error", path.includes("/scenes/") ? "Scene resource" : "Encounter resource", detail.message, { paths: [path] });
+  }
+
   for (const entry of state.notifications.notifications) {
     if (!entry.trigger || !hasNotificationText(entry)) {
       addCheck(checks, "error", "Notification", "Every notification needs a trigger and text.");
@@ -4852,6 +5433,8 @@ function sectionCounts() {
       state.dialogue.pacify
     ),
     forcedDialogue: totalEntries(state.forcedDialogue.entries),
+    quests: totalEntries(state.quests.modules),
+    skillTrades: totalEntries(state.skillTrades.entries),
     notifications: totalEntries(state.notifications.notifications),
     gifts: totalEntries(state.gifts.preferences, state.gifts.rewards),
     pacification: totalEntries(state.pacification.payments),
@@ -4945,6 +5528,8 @@ function fileTreeEntryItems() {
   };
   for (const kind of DIALOGUE_KIND_KEYS) addEntries("dialogue", kind, state.dialogue[kind]);
   addEntries("forcedDialogue", "entries", state.forcedDialogue.entries);
+  addEntries("quests", "modules", state.quests.modules);
+  addEntries("skillTrades", "entries", state.skillTrades.entries);
   addEntries("notifications", "notifications", state.notifications.notifications);
   for (const kind of GIFT_KINDS.map((item) => item.key)) addEntries("gifts", kind, state.gifts[kind]);
   addEntries("pacification", "payments", state.pacification.payments);
@@ -4953,11 +5538,13 @@ function fileTreeEntryItems() {
 }
 
 function entryTreeTitle(entry, kind, index) {
-  return entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${index + 1}`;
+  return entry.metadata?.title || entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${index + 1}`;
 }
 
 function entryTreeDetail(entry, section, kind) {
   if (section === "dialogue" && (kind === "options" || kind === "lines")) return entry.request || "";
+  if (section === "quests") return entry.id || entry.entry_stage || "";
+  if (section === "skillTrades") return entry.request?.targetable ? "Special Order" : "Skill trade";
   return entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
 }
 
@@ -5046,6 +5633,12 @@ function activeEntryDirectoryData() {
   if (activeSection === "forcedDialogue") {
     return { section: "forcedDialogue", kind: "entries", label: "Forced Dialogue", collection: state.forcedDialogue.entries };
   }
+  if (activeSection === "quests" || activeSection === "skillTrades") {
+    return { section: "quests", kind: "modules", label: "Quest Modules", collection: state.quests.modules };
+  }
+  if (activeSection === "skillTrades") {
+    return { section: "skillTrades", kind: "entries", label: "Skill Trades", collection: state.skillTrades.entries };
+  }
   if (activeSection === "notifications") {
     return { section: "notifications", kind: "notifications", label: "Notifications", collection: state.notifications.notifications };
   }
@@ -5074,10 +5667,14 @@ function renderEntryDirectory() {
     editing,
     page: data ? entryListPages[entryListPageKey(data.section, data.kind)] || 0 : 0,
     entries: data ? collection.map((entry, index) => ({
-      title: entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(data.kind)} ${index + 1}`,
+      title: entry.metadata?.title || entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(data.kind)} ${index + 1}`,
       detail: data.section === "dialogue" && (data.kind === "options" || data.kind === "lines")
         ? entry.request || ""
-        : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "",
+        : data.section === "skillTrades"
+          ? (entry.request?.targetable ? "Special Order" : "Skill trade")
+        : data.section === "quests"
+          ? entry.id || entry.entry_stage || ""
+          : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "",
       severity: entryIssueSeverity(data.section, data.kind, entry),
       issue: entryIssueMessage(data.section, data.kind, entry)
     })) : []
@@ -5939,6 +6536,11 @@ function previewIssueEntries(path) {
       .filter((entry) => (entry.__sourcePath || forcedDialoguePath()) === path)
       .map((entry) => ({ section: "forcedDialogue", kind: "entries", entry }));
   }
+  if (/^data\/[^/]+\/quests\/.+\.json$/.test(path)) {
+    return state.quests.modules
+      .filter((entry, index) => entryPath("quests", entry, "modules", index) === path)
+      .map((entry) => ({ section: "quests", kind: "modules", entry }));
+  }
   if (path === notificationsPath()) {
     return state.notifications.notifications.map((entry) => ({ section: "notifications", kind: "notifications", entry }));
   }
@@ -6042,7 +6644,9 @@ function jsonKeysForFieldId(fieldId, section, kind) {
     "pacification-items": ["items", "item"],
     "pacification-tags": ["tags", "tag"],
     "story-structures": ["structures", "structure"],
-    "story-biomes": ["biomes", "biome"]
+    "story-biomes": ["biomes", "biome"],
+    "quest-json": ["schema", "id", "provider", "entry_stage", "stages", "objectives", "dialogue", "responses", "actions", "events"],
+    "quest-sourcePath": ["id"]
   };
   if (exact[fieldId]) return exact[fieldId];
   const prefix = `${fieldPrefixForSection(section, kind)}-`;
@@ -6056,6 +6660,8 @@ function fieldPrefixForSection(section, kind) {
   if (section === "stories") return "story";
   if (section === "gifts") return "gift";
   if (section === "dialogue") return "dialogue";
+  if (section === "quests") return "quest";
+  if (section === "skillTrades") return "skillTrade";
   return kind || section;
 }
 
@@ -6083,6 +6689,8 @@ function renderPanel() {
   if (activeSection === "overview") renderOverview();
   if (activeSection === "dialogue") renderDialogue();
   if (activeSection === "forcedDialogue") renderForcedDialogue();
+  if (activeSection === "quests") renderQuests();
+  if (activeSection === "skillTrades") renderSkillTrades();
   if (activeSection === "notifications") renderNotifications();
   if (activeSection === "gifts") renderGifts();
   if (activeSection === "pacification") renderPacification();
@@ -6482,6 +7090,7 @@ function entrySaveAction(section) {
   return {
     dialogue: "save-dialogue-entry",
     forcedDialogue: "save-forced-dialogue",
+    quests: "save-quest-module",
     notifications: "save-notification",
     gifts: "save-gift-entry",
     pacification: "save-pacification",
@@ -6501,10 +7110,14 @@ function renderEntryList(collection, kind, section) {
   const entries = visibleEntries
     .map((entry, index) => {
       const absoluteIndex = start + index;
-      const title = entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${absoluteIndex + 1}`;
+      const title = entry.metadata?.title || entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${absoluteIndex + 1}`;
       const detail = section === "dialogue" && (kind === "options" || kind === "lines")
         ? entry.request || ""
-        : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
+        : section === "skillTrades"
+          ? (entry.request?.targetable ? "Special Order" : "Skill trade")
+        : section === "quests"
+          ? entry.id || entry.entry_stage || ""
+          : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
       const active = editing && editing.section === section && editing.kind === kind && editing.index === absoluteIndex;
       const severity = entryIssueSeverity(section, kind, entry);
       const issueMessage = entryIssueMessage(section, kind, entry);
@@ -6730,6 +7343,7 @@ function renderForcedDialogue() {
         <form class="entry-form" data-form="forcedDialogue">
           <div class="form-grid">
             ${field({ id: "forced-id", label: "Entry id", value: entry.id })}
+            ${field({ id: "forced-message_prefix", label: "Message prefix", value: entry.message_prefix ?? entry.text_prefix ?? "", help: "Optional. Generates .line and option label/response message keys from this prefix." })}
             ${selectField({ id: "forced-trigger", label: "Trigger", value: forcedTriggerValue(entry), options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
             ${selectField({ id: "forced-output_mode", label: "Output mode", value: outputMode, options: CONSTANTS.forcedOutputModes, allowBlank: false })}
             ${field({ id: "forced-output_radius", label: "Output radius", value: outputRadius, type: "number", attrs: 'min="1" step="1"', className: chatOnlyClass })}
@@ -6742,6 +7356,10 @@ function renderForcedDialogue() {
             ${villagerEquipmentToggles("forced", entry, "witness")}
             ${listField({ id: "forced-player_items", label: "Player items or tags", value: entry.player_items ?? entry.player_item ?? entry.player_item_tags ?? entry.player_item_tag, help: "Required for player_item_proximity. Use minecraft:diamond_sword or #minecraft:swords." })}
             ${listField({ id: "forced-player_item_slots", label: "Player item slots", value: entry.player_item_slots ?? entry.player_item_slot, help: CONSTANTS.itemSlots.join(", ") })}
+            ${field({ id: "forced-draw_weapon_duration_seconds", label: "Draw weapon duration (seconds)", value: entry.draw_weapon_duration_seconds ?? "", type: "number", attrs: 'min="1" step="1"' })}
+            ${field({ id: "forced-required_aim_duration_seconds", label: "Required aim duration (seconds)", value: entry.required_aim_duration_seconds ?? "", type: "number", attrs: 'min="0" step="1"' })}
+            ${field({ id: "forced-min_trade_level", label: "Min trade level", value: entry.min_trade_level ?? entry.min_villager_trade_level ?? "", type: "number", attrs: 'min="1" max="5" step="1"' })}
+            ${field({ id: "forced-max_trade_level", label: "Max trade level", value: entry.max_trade_level ?? entry.max_villager_trade_level ?? "", type: "number", attrs: 'min="1" max="5" step="1"' })}
             ${playerItemDurabilityFields("forced", entry)}
             ${playerItemEnchantmentFields("forced", entry)}
             ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
@@ -6752,6 +7370,10 @@ function renderForcedDialogue() {
               <label>Event Behavior</label>
               <div class="toggle-grid">
                 ${toggle({ id: "forced-requires_line_of_sight", label: "Requires line of sight", checked: entry.requires_line_of_sight !== false })}
+                ${toggle({ id: "forced-draw_weapon", label: "Draw weapon", checked: entry.draw_weapon === true })}
+                ${toggle({ id: "forced-requires_held_trade_item", label: "Held trade item", checked: (entry.requires_held_trade_item ?? entry.requires_trade_item ?? entry.requires_matching_trade_item) === true })}
+                ${toggle({ id: "forced-requires_player_aiming_at_witness", label: "Player aiming at witness", checked: entry.requires_player_aiming_at_witness === true })}
+                ${toggle({ id: "forced-requires_same_party", label: "Same party", checked: entry.requires_same_party === true })}
               </div>
             </div>
             <div class="field full ${forcedOnlyClass}">
@@ -6782,6 +7404,220 @@ function updateForcedOutputModeFields(root = document) {
   for (const field of form.querySelectorAll(".forced-output-forced_dialogue")) {
     field.classList.toggle("is-hidden", mode !== "forced_dialogue");
   }
+}
+
+function renderQuests() {
+  const collection = state.quests.modules;
+  const entry = editing?.section === "quests" ? collection[editing.index] : questModuleExample();
+  const module = questModulePayload(entry);
+  const sourcePath = entry.__sourcePath || "";
+  const derivedPath = questModulePath(entry, editing?.section === "quests" ? editing.index : collection.length);
+  const issue = entryIssueMessage("quests", "modules", entry);
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("scroll-text", "section-icon")}
+          <div>
+            <h2>Quest Modules</h2>
+            <p class="path-label">data/${escapeHtml(state.meta.namespace)}/quests</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-quest-module-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid">
+        ${field({ id: "quest-sourcePath", label: "Quest file path", value: sourcePath, help: `Blank exports to ${derivedPath}.`, className: "span-6" })}
+        <div class="compat-alert info span-6" role="status">
+          ${icon("layout-list", "inline-icon")}
+          <div>
+            <strong>Structural dialogue</strong>
+            <span>Beta.13 keeps offer, reminder, turn-in, responses, and branches in quest.json.</span>
+          </div>
+        </div>
+        <div class="compat-alert ${questMetadataLoadStatus === "error" ? "warning" : "info"} full" role="status">
+          ${icon(questMetadataLoadStatus === "error" ? "triangle-alert" : "database", "inline-icon")}
+          <div>
+            <strong>Registry metadata</strong>
+            <span>${escapeHtml(questMetadataStatusText())}</span>
+          </div>
+        </div>
+        ${issue ? `
+          <div class="compat-alert ${entryIssueSeverity("quests", "modules", entry) === "error" ? "warning" : "info"} full" role="status">
+            ${icon(entryIssueSeverity("quests", "modules", entry) === "error" ? "triangle-alert" : "info", "inline-icon")}
+            <div>
+              <strong>Quest check</strong>
+              <span>${escapeHtml(issue)}</span>
+            </div>
+          </div>
+        ` : ""}
+      </div>
+      <div class="entry-layout">
+        <form class="entry-form" data-form="quests">
+          <div class="form-grid">
+            ${textareaField({
+              id: "quest-module-json",
+              label: "Quest module JSON",
+              value: JSON.stringify(module, null, 2),
+              help: `Objectives: ${questRegistrySummary("objectives", 6)}. Actions: ${questRegistrySummary("actions", 6)}. Triggers: ${questRegistrySummary("triggers", 6)}.`,
+              className: "full",
+              rows: 24
+            })}
+          </div>
+          ${formActions(editing?.section === "quests" ? "Update" : "Add", "save-quest-module", "clear-quest-form")}
+        </form>
+      </div>
+      ${renderQuestMigrationSuggestions()}
+    </div>
+  `;
+}
+
+function renderQuestMigrationSuggestions() {
+  if (!state.quests.v1Imports.length) return "";
+  return `
+    <div class="quest-migration-list">
+      ${state.quests.v1Imports.map((entry) => `
+        <div class="compat-alert info" role="status">
+          ${icon("git-branch-plus", "inline-icon")}
+          <div>
+            <strong>${escapeHtml(entry.title || entry.id || "Legacy quest")}</strong>
+            <span>${escapeHtml(entry.sourcePath)} - ${escapeHtml(entry.suggestion)}</span>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function questHasExternalScene(module) {
+  if (!module || typeof module !== "object" || Array.isArray(module)) return false;
+  if (Object.hasOwn(module, "external_scenes")) return true;
+  if (dialogueSlotsHaveExternalScene(module.dialogue)) return true;
+  if (sceneListHasExternalScene(module.lifecycle?.dialogue)) return true;
+  return (module.stages || []).some((stage) =>
+    dialogueSlotsHaveExternalScene(stage?.dialogue)
+      || sceneListHasExternalScene(stage?.scenes));
+}
+
+function dialogueSlotsHaveExternalScene(dialogue) {
+  if (!dialogue || typeof dialogue !== "object" || Array.isArray(dialogue)) return false;
+  return Object.values(dialogue).some(sceneHasExternalFields);
+}
+
+function sceneListHasExternalScene(scenes) {
+  return Array.isArray(scenes) && scenes.some(sceneHasExternalFields);
+}
+
+function sceneHasExternalFields(scene) {
+  return Boolean(scene && typeof scene === "object" && !Array.isArray(scene)
+    && ["external", "external_scene", "external_entry"].some((key) => Object.hasOwn(scene, key)));
+}
+function inlineQuestOfferSlot(module) {
+  return {
+    label: module.metadata?.title || "First Steps",
+    request: "question",
+    lines: ["Could you bring three loaves of bread?"],
+    responses: [
+      {
+        id: "accept",
+        label: "I can help.",
+        scene: "start_quest"
+      },
+      {
+        id: "decline",
+        label: "Not now.",
+        scene: "end"
+      }
+    ]
+  };
+}
+
+function questModuleExample() {
+  const namespace = namespaceify(state.meta.namespace || state.meta.slug, "my_pack");
+  const slug = normalizeFileName(state.meta.slug || namespace, "my_pack");
+  return {
+    schema: QUEST_MODULE_SCHEMA_ID,
+    id: `${namespace}:first_steps`,
+    localization_prefix: `${namespace}.quest.first_steps`,
+    metadata: {
+      title: "First Steps",
+      description: "Bring three loaves of bread to a villager.",
+      questline: slug,
+      tags: ["starter"]
+    },
+    provider: {
+      type: "villagerretaliation:villager",
+      filters: {
+        professions: ["minecraft:farmer"]
+      }
+    },
+    availability: {
+      repeatable: false,
+      max_completions: 1,
+      max_starts: 0,
+      locked_to_villager: true,
+      cross_villager_compatible: false,
+      abandonment: "allow_repickup",
+      consume_on_completion: true
+    },
+    entry_stage: "gather",
+    stages: [
+      {
+        id: "gather",
+        objectives: [
+          {
+            id: "bring_bread",
+            type: "item_check",
+            item: "minecraft:bread",
+            count: 3,
+            tracker: {
+              text: "Bring 3 bread to the quest giver.",
+              complete_text: "The bread is ready to deliver.",
+              show_progress: true,
+              progress: 0.75
+            }
+          }
+        ],
+        dialogue: {
+          offer: inlineQuestOfferSlot({
+            metadata: {
+              title: "First Steps"
+            }
+          }),
+          reminder: {
+            request: "question",
+            lines: ["Three loaves will be enough for today."],
+            responses: [
+              {
+                id: "back",
+                label: "I'm working on it.",
+                scene: "end"
+              }
+            ]
+          },
+          turn_in: {
+            request: "question",
+            lines: ["You found the bread. That helps more than you know."],
+            responses: [
+              {
+                id: "complete",
+                label: "Hand over the bread.",
+                complete: true
+              }
+            ]
+          }
+        }
+      }
+    ],
+    rewards: {
+      experience: 25,
+      reputation: 5
+    },
+    ui: {
+      tracker_text: "Bring 3 bread.",
+      icon: "minecraft:bread",
+      color: "#DCEBA6"
+    }
+  };
 }
 
 function renderNotifications() {
@@ -6833,6 +7669,72 @@ function renderNotifications() {
       </div>
       ${datalist("notification-triggers", CONSTANTS.notificationTriggers)}
       ${datalist("color-values", CONSTANTS.colors)}
+    </div>
+  `;
+}
+
+function skillTradePayload(entry) {
+  if (!entry || typeof entry !== "object") return {};
+  const payload = { ...entry };
+  delete payload.__sourcePath;
+  return payload;
+}
+
+function skillTradeExample() {
+  const namespace = state.meta.namespace || "my_pack";
+  return {
+    id: `${namespace}:farmer_harvest_bundle`,
+    professions: ["minecraft:farmer"],
+    skills: ["villagerretaliation:farming"],
+    min_rank: "skilled",
+    villager_level: 3,
+    chance: 0.75,
+    weight: 10,
+    cost: { item: "minecraft:emerald", count: 8 },
+    result: { item: "minecraft:golden_carrot", count: 8 },
+    max_uses: { base: 4 },
+    xp: 8,
+    price_multiplier: 0.05,
+    quality_scaling: true,
+    request: {
+      targetable: true,
+      display_priority: 20,
+      min_reputation: "respected",
+      wait_days: 2,
+      cooldown_days: 3,
+      extra_cost: { item: "minecraft:emerald", count: 2 }
+    }
+  };
+}
+
+function renderSkillTrades() {
+  const collection = state.skillTrades.entries;
+  const entry = editing?.section === "skillTrades" ? collection[editing.index] : skillTradeExample();
+  const issue = skillTradeIssueDetail(entry);
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("handshake", "section-icon")}
+          <div>
+            <h2>Skill Trades</h2>
+            <p class="path-label">data/${escapeHtml(state.meta.namespace)}/skill_trades</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-skill-trade-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid">
+        ${field({ id: "skillTrades-fileName", label: "Skill trade file", value: state.skillTrades.fileName, help: "Entries export together under the active pack namespace." })}
+      </div>
+      <div class="entry-layout">
+        <form class="entry-form" data-form="skillTrades">
+          ${issue ? `<div class="form-notice has-error">${escapeHtml(issue.message)}</div>` : ""}
+          <div class="form-grid">
+            ${textareaField({ id: "skillTrade-json", label: "Skill trade JSON", value: JSON.stringify(skillTradePayload(entry), null, 2), help: "Supports the complete runtime entry shape, including conditions, scaling, enchantments, and request metadata.", className: "full code-field", rows: 28 })}
+          </div>
+          ${formActions(editing?.section === "skillTrades" ? "Update" : "Add", "save-skill-trade", "clear-skill-trade-form")}
+        </form>
+      </div>
     </div>
   `;
 }
@@ -7113,6 +8015,10 @@ function readCurrentDraftEntry(options = {}) {
       const entry = readForcedDialogueEntry(options);
       return entry ? { section: "forcedDialogue", kind: "entries", entry: cleanObject(entry) } : null;
     }
+    if (form.dataset.form === "quests") {
+      const entry = readQuestModuleEntry(options);
+      return entry ? { section: "quests", kind: "modules", entry } : null;
+    }
     if (form.dataset.form === "notifications") {
       return { section: "notifications", kind: "notifications", entry: cleanObject(readNotificationEntry()) };
     }
@@ -7313,6 +8219,7 @@ function readForcedDialogueEntry(options = {}) {
   }
   const entry = {
     id: readValue("forced-id").trim(),
+    message_prefix: readValue("forced-message_prefix").trim(),
     trigger: readValue("forced-trigger"),
     priority: parseInteger(readValue("forced-priority")),
     chance: parseNumber(readValue("forced-chance")),
@@ -7323,6 +8230,14 @@ function readForcedDialogueEntry(options = {}) {
     ...readVillagerEquipment("forced", "witness"),
     player_items: readList("forced-player_items"),
     player_item_slots: readList("forced-player_item_slots"),
+    draw_weapon: readValue("forced-draw_weapon"),
+    draw_weapon_duration_seconds: parseInteger(readValue("forced-draw_weapon_duration_seconds")),
+    requires_held_trade_item: readValue("forced-requires_held_trade_item"),
+    requires_player_aiming_at_witness: readValue("forced-requires_player_aiming_at_witness"),
+    required_aim_duration_seconds: parseInteger(readValue("forced-required_aim_duration_seconds")),
+    requires_same_party: readValue("forced-requires_same_party"),
+    min_trade_level: parseInteger(readValue("forced-min_trade_level")),
+    max_trade_level: parseInteger(readValue("forced-max_trade_level")),
     ...readPlayerItemDurability("forced"),
     ...readPlayerItemEnchantments("forced"),
     loot_tables: readList("forced-loot_tables"),
@@ -7356,6 +8271,50 @@ function saveForcedDialogue(event) {
   const entry = readForcedDialogueEntry();
   if (!entry) return;
   upsertEntry("forcedDialogue", "entries", cleanObject(entry));
+}
+
+function readQuestModuleEntry(options = {}) {
+  const source = readValue("quest-module-json").trim();
+  let module;
+  try {
+    module = JSON.parse(stripTextBom(source || "{}"));
+  } catch {
+    if (!options.quiet) showToast("Quest module JSON must be a JSON object.");
+    return null;
+  }
+  if (!module || typeof module !== "object" || Array.isArray(module)) {
+    if (!options.quiet) showToast("Quest module JSON must be a JSON object.");
+    return null;
+  }
+  const sourcePath = readValue("quest-sourcePath").trim();
+  if (sourcePath) module.__sourcePath = sourcePath.replaceAll("\\", "/").replace(/^\/+/, "");
+  return module;
+}
+
+function saveQuestModule(event) {
+  event.preventDefault();
+  const entry = readQuestModuleEntry();
+  if (!entry) return;
+  upsertEntry("quests", "modules", entry);
+}
+
+function readSkillTradeEntry(options = {}) {
+  const source = readValue("skillTrade-json").trim();
+  try {
+    const entry = JSON.parse(stripTextBom(source || "{}"));
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) throw new Error("not an object");
+    return entry;
+  } catch {
+    if (!options.quiet) showToast("Skill trade JSON must be a JSON object.");
+    return null;
+  }
+}
+
+function saveSkillTrade(event) {
+  event.preventDefault();
+  const entry = readSkillTradeEntry();
+  if (!entry) return;
+  upsertEntry("skillTrades", "entries", entry);
 }
 
 function readNotificationEntry() {
@@ -7548,6 +8507,8 @@ function selectedPathAfterEntrySave(section, previousSelectedPath, sourcePath = 
 function inferSelectedPath(section) {
   if (section === "dialogue") return dialoguePath(activeDialogueKind, state.dialogue[activeDialogueKind]?.[0] || {}, 0);
   if (section === "forcedDialogue") return forcedDialoguePath();
+  if (section === "quests") return questModulePath(state.quests.modules[0] || {}, 0);
+  if (section === "skillTrades") return skillTradesPath();
   if (section === "notifications") return notificationsPath();
   if (section === "gifts") return giftsPath();
   if (section === "pacification") return pacificationPath();
@@ -7699,6 +8660,7 @@ function addForcedDialogueExample() {
   const slug = state.meta.slug || "my_pack";
   state.forcedDialogue.entries.push({
     id: `${slug}.container_theft.warning`,
+    message_prefix: `forced.${slug}.container_theft.warning`,
     trigger: "container_theft",
     output: {
       mode: "forced_dialogue"
@@ -7824,6 +8786,28 @@ function addForcedDialogueExample() {
   render();
 }
 
+function addQuestModuleExample() {
+  const entry = questModuleExample();
+  const index = state.quests.modules.length;
+  state.quests.modules.push(entry);
+  selectedPath = questModulePath(entry, index);
+  activeSection = "quests";
+  editing = { section: "quests", kind: "modules", index };
+  clearEntryFormDirty();
+  render();
+}
+
+function addSkillTradeExample() {
+  const entry = skillTradeExample();
+  const index = state.skillTrades.entries.length;
+  state.skillTrades.entries.push(entry);
+  selectedPath = skillTradesPath();
+  activeSection = "skillTrades";
+  editing = { section: "skillTrades", kind: "entries", index };
+  clearEntryFormDirty();
+  render();
+}
+
 function addNotificationExample() {
   const slug = state.meta.slug || "my_pack";
   state.notifications.notifications.push({
@@ -7907,7 +8891,7 @@ function dialogueFolderTemplateFiles() {
     "pack.mcmeta": safeJson({
       pack: {
         pack_format: packVersionInfo(CURRENT_PACK_VERSION).packFormat,
-        description: "Folderized Villager Retaliation beta.12 dialogue template"
+        description: "Folderized Villager Retaliation beta.13 quest-bundle template"
       },
       villagerretaliation: {
         pack_version: CURRENT_PACK_VERSION
@@ -7916,12 +8900,12 @@ function dialogueFolderTemplateFiles() {
     "README.md": [
       "# Villager Retaliation Dialogue Folder Template",
       "",
-      "This beta.12 template gives pack developers a folder-first starting point.",
+      "This beta.13 template gives pack developers a folder-first starting point.",
       "Every dialogue request has one custom option and one response line with the text `example`.",
       "Replace ids, labels, filters, and text as your pack grows.",
       "",
       "The template intentionally uses focused single-entry files so translators and pack authors can work in small, readable chunks.",
-      "It also includes compact examples for beta.12 text keys, nested metadata, compound conditions, mood and Social Attribute filters, forced-dialogue chat output, quest notifications, gifts, pacification payments, story discovery, profession loot, and preset names."
+      "It also includes compact examples for beta.12 text keys, nested metadata, compound conditions, mood and Social Attribute filters, one quest module v2 file, forced-dialogue chat output, quest notifications, gifts, pacification payments, story discovery, profession loot, and preset names."
     ].join("\n") + "\n"
   };
   const dialogueRoot = "data/example_template/dialogue/en_us/example_template";
@@ -8011,6 +8995,106 @@ function dialogueFolderTemplateFiles() {
     },
     weight: 10
   });
+  const templateQuest = {
+    schema: "villagerretaliation:quest/v2",
+    id: "example_template:first_steps",
+    metadata: {
+      title: "Example First Steps",
+      description: "Bring one paper to a villager.",
+      questline: "example_template",
+      tags: ["example", "group.example"]
+    },
+    provider: {
+      type: "villagerretaliation:villager"
+    },
+    availability: {
+      repeatable: false,
+      max_completions: 1,
+      locked_to_villager: true
+    },
+    entry_stage: "started",
+    stages: [
+      {
+        id: "started",
+        objectives: [
+          {
+            id: "bring_paper",
+            type: "item_check",
+            item: "minecraft:paper",
+            count: 1,
+            tracker: {
+              text: "Bring one paper.",
+              complete_text: "The paper is ready.",
+              show_progress: true,
+              progress: 0.75
+            }
+          }
+        ],
+        dialogue: {
+          offer: {
+            label: "Example First Steps",
+            request: "question",
+            lines: ["Bring one paper."],
+            responses: [
+              {
+                id: "accept",
+                label: "I can help.",
+                scene: "start_quest"
+              }
+            ]
+          },
+          turn_in: {
+            label: "Example First Steps",
+            request: "question",
+            lines: ["Thank you for the paper."],
+            responses: [
+              {
+                id: "complete",
+                label: "Hand over the paper.",
+                scene: "complete_quest"
+              }
+            ]
+          }
+        },
+        scenes: [
+          {
+            id: "start_quest",
+            actions: [
+              {
+                type: "quest",
+                action: "start",
+                lines: {
+                  started: ["Paper first, then ink."],
+                  unavailable: ["This example quest is not available right now."]
+                }
+              }
+            ]
+          },
+          {
+            id: "complete_quest",
+            actions: [
+              {
+                type: "quest",
+                action: "turn_in",
+                lines: {
+                  completed: ["Good. This is enough to write the first draft."],
+                  missing_objectives: ["Bring one paper before we close this."],
+                  unavailable: ["This example quest is not ready to close yet."]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    ui: {
+      tracker_text: "Bring one paper.",
+      icon: "minecraft:paper"
+    }
+  };
+  const templateQuestBundle = QuestBuilderModel.questBundleFiles(templateQuest);
+  files[templateQuestBundle.questPath] = safeJson(templateQuestBundle.quest);
+  files[templateQuestBundle.localePath] = safeJson(templateQuestBundle.locale);
   files[`${dialogueRoot}/professions/farmer/options/00_example.json`] = safeJson({
     id: "example_template.farmer.option.question",
     label: "Example Farmer Question",
@@ -8087,6 +9171,7 @@ function dialogueFolderTemplateFiles() {
     entries: [
       {
         id: "example_template.forced.container_theft",
+        message_prefix: "forced.example_template.container_theft",
         trigger: "container_theft",
         output: { mode: "forced_dialogue" },
         line: "example",
@@ -8109,6 +9194,7 @@ function dialogueFolderTemplateFiles() {
     entries: [
       {
         id: "example_template.forced.retaliation_chat",
+        message_prefix: "forced.example_template.retaliation_chat",
         trigger: "retaliation_started",
         output: {
           mode: "chat",
@@ -8274,6 +9360,7 @@ function loadStarterPack() {
   });
   state.forcedDialogue.entries.push({
     id: "village_rumors.container_theft.warning",
+    message_prefix: "forced.village_rumors.container_theft.warning",
     trigger: "container_theft",
     output: {
       mode: "forced_dialogue"
@@ -8316,6 +9403,7 @@ function loadStarterPack() {
     ]
   }, {
     id: "village_rumors.retaliation_started.callout",
+    message_prefix: "forced.village_rumors.retaliation_started.callout",
     trigger: "retaliation_started",
     output: {
       mode: "chat",
@@ -8460,7 +9548,7 @@ function updateOverviewFromInput(target) {
       state.meta.packFormat = nextDefault;
     }
   }
-  if (id === "meta-packFormat") state.meta.packFormat = parseInteger(target.value) || 34;
+  if (id === "meta-packFormat") state.meta.packFormat = parseInteger(target.value) || 48;
   if (id === "meta-namespace") {
     state.meta.namespace = namespaceify(target.value);
     state.stories.namespace = state.meta.namespace;
@@ -8486,6 +9574,7 @@ function updateSectionSettings(target) {
   if (target.id === "dialogue-fileName") state.dialogue.fileName = normalizeFileName(target.value, `${state.meta.slug}_dialogue`);
   if (target.id === "dialogue-locale") state.meta.locale = slugify(target.value, "en_us");
   if (target.id === "forcedDialogue-fileName") state.forcedDialogue.fileName = normalizeFileName(target.value, `${state.meta.slug}_forced_dialogue`);
+  if (target.id === "skillTrades-fileName") state.skillTrades.fileName = normalizeFileName(target.value, `${state.meta.slug}_skill_trades`);
   if (target.id === "notifications-fileName") state.notifications.fileName = normalizeFileName(target.value, `${state.meta.slug}_notifications`);
   if (target.id === "notifications-locale") state.meta.locale = slugify(target.value, "en_us");
   if (target.id === "gifts-fileName") state.gifts.fileName = normalizeFileName(target.value, `${state.meta.slug}_gifts`);
@@ -8690,7 +9779,12 @@ async function handleImport(files, replaceProject = false) {
     const path = (file.webkitRelativePath || file.name).replaceAll("\\", "/");
     if (/\.zip$/i.test(file.name)) {
       const zipFiles = await readZip(new Uint8Array(await file.arrayBuffer()));
-      Object.assign(imported, normalizeImportedPaths(zipFiles));
+      const normalizedZip = normalizeImportedPaths(zipFiles);
+      if (!Object.hasOwn(normalizedZip, "pack.mcmeta")
+          || !Object.keys(normalizedZip).some((entry) => entry.startsWith("data/"))) {
+        throw new Error("A datapack ZIP must contain root pack.mcmeta and data/ content.");
+      }
+      Object.assign(imported, normalizedZip);
     } else {
       const bytes = new Uint8Array(await file.arrayBuffer());
       imported[path] = isTextPath(path) ? decodeTextFile(bytes) : bytes;
@@ -9059,11 +10153,13 @@ els.panel.addEventListener("click", (event) => {
     deleteEntry(actionButton.dataset.section, actionButton.dataset.kind, Number(actionButton.dataset.index));
     return;
   }
-  if (action === "clear-dialogue-form" || action === "clear-forced-dialogue-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
+  if (action === "clear-dialogue-form" || action === "clear-forced-dialogue-form" || action === "clear-quest-form" || action === "clear-skill-trade-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
     clearEditing();
   }
   if (action === "add-dialogue-example" && canLeaveEntryForm()) addDialogueExample();
   if (action === "add-forced-dialogue-example" && canLeaveEntryForm()) addForcedDialogueExample();
+  if (action === "add-quest-module-example" && canLeaveEntryForm()) addQuestModuleExample();
+  if (action === "add-skill-trade-example" && canLeaveEntryForm()) addSkillTradeExample();
   if (action === "add-notification-example" && canLeaveEntryForm()) addNotificationExample();
   if (action === "add-gift-example" && canLeaveEntryForm()) addGiftExample();
   if (action === "add-pacification-example" && canLeaveEntryForm()) addPacificationExample();
@@ -9246,6 +10342,8 @@ els.panel.addEventListener("submit", (event) => {
   if (!form) return;
   if (form.dataset.form === "dialogue") saveDialogueEntry(event);
   if (form.dataset.form === "forcedDialogue") saveForcedDialogue(event);
+  if (form.dataset.form === "quests") saveQuestModule(event);
+  if (form.dataset.form === "skillTrades") saveSkillTrade(event);
   if (form.dataset.form === "notifications") saveNotification(event);
   if (form.dataset.form === "gifts") saveGiftEntry(event);
   if (form.dataset.form === "pacification") savePacification(event);
@@ -9863,3 +10961,4 @@ updateShortcutTooltips();
 applyStoredPanelSizes();
 initializePreviewEditor();
 render();
+loadQuestAuthoringMetadata();

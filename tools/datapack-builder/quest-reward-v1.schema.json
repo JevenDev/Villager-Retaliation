@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/quest-reward-v1.schema.json",
+  "title": "Villager Retaliation bundled quest reward v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "table"
+  ],
+  "properties": {
+    "schema": {
+      "const": "villagerretaliation:quest_reward/v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "table": {
+      "type": "object",
+      "required": [
+        "type",
+        "pools"
+      ],
+      "properties": {
+        "type": {
+          "const": "minecraft:generic"
+        },
+        "pools": {
+          "type": "array"
+        }
+      }
+    }
+  }
+}

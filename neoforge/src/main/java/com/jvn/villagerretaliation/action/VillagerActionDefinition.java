@@ -2,7 +2,10 @@ package com.jvn.villagerretaliation.action;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -19,19 +22,37 @@ public record VillagerActionDefinition(
         QuestAction questAction,
         int amount,
         ResourceLocation memoryTag,
+        VillageEventMemory.MemoryScope memoryScope,
         ResourceLocation lootTable,
         String notificationTrigger,
         String text,
         String forcedDialogue,
         boolean flashTracker,
-        Map<String, List<String>> linesByStatus) {
+        QuestFactScope factScope,
+        ResourceLocation factTag,
+        String factKey,
+        String factValue,
+        Map<String, List<String>> linesByStatus,
+        Map<String, List<String>> lineKeysByStatus,
+        CompiledQuestTransition questTransition,
+        ResourceLocation sceneId,
+        String sceneOperationId,
+        boolean waitForScene,
+        boolean required) {
     public VillagerActionDefinition {
         kind = kind == null ? Kind.NONE : kind;
         questAction = questAction == null ? QuestAction.NONE : questAction;
+        memoryScope = memoryScope == null ? VillageEventMemory.MemoryScope.BOTH : memoryScope;
         notificationTrigger = notificationTrigger == null ? "" : notificationTrigger;
         text = text == null ? "" : text;
         forcedDialogue = forcedDialogue == null ? "" : forcedDialogue;
+        factScope = factScope == null ? QuestFactScope.PLAYER : factScope;
+        factKey = factKey == null ? "" : factKey;
+        factValue = factValue == null ? "" : factValue;
         linesByStatus = linesByStatus == null ? Map.of() : copyLines(linesByStatus);
+        lineKeysByStatus = lineKeysByStatus == null ? Map.of() : copyLines(lineKeysByStatus);
+        questTransition = questTransition == null ? CompiledQuestTransition.EMPTY : questTransition;
+        sceneOperationId = sceneOperationId == null ? "" : sceneOperationId.trim();
     }
 
     public static List<VillagerActionDefinition> readList(ResourceLocation location, String context, JsonObject entry) {
@@ -89,12 +110,29 @@ public record VillagerActionDefinition(
                 || entry.has("quest")
                 || entry.has("quest_id")
                 || entry.has("action")
+                || entry.has("set_tag")
+                || entry.has("clear_tag")
+                || entry.has("fact_tag")
+                || entry.has("quest_tag")
+                || entry.has("variable")
+                || entry.has("stage")
+                || entry.has("counter")
+                || entry.has("increment_counter")
                 || entry.has("experience")
                 || entry.has("reputation")
                 || entry.has("gossip")
                 || entry.has("gossip_reputation")
+                || entry.has("profile_attribute")
+                || entry.has("social_attribute")
+                || entry.has("draw_weapon")
                 || entry.has("memory_event")
-                || entry.has("loot_table");
+                || entry.has("loot_table")
+                || entry.has("target_stage")
+                || entry.has("from_stage")
+                || entry.has("scene_path")
+                || entry.has("scene_id")
+                || entry.has("start_scene")
+                || entry.has("source_pointer");
     }
 
     private static java.util.Optional<VillagerActionDefinition> read(
@@ -110,13 +148,17 @@ public record VillagerActionDefinition(
 
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
-        if (questId == null && kind == Kind.QUEST && !hasExplicitQuestId) {
+        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.NOTIFICATION || kind == Kind.START_SCENE || kind.isQuestFact()) && !hasExplicitQuestId) {
             questId = defaultQuestId;
         }
         QuestAction questAction = QuestAction.bySerializedName(
                 DatapackJsonReader.readString(entry, "action"));
         int amount = readAmount(kind, entry);
         ResourceLocation memoryTag = readMemoryTag(location, context, entry);
+        VillageEventMemory.MemoryScope memoryScope = readMemoryScope(location, context, entry, kind);
+        if (kind == Kind.MEMORY && memoryScope == null) {
+            return java.util.Optional.empty();
+        }
         ResourceLocation lootTable = DatapackJsonReader.readResourceLocation(entry, "loot_table").orElse(null);
         String notificationTrigger = firstNonBlank(
                 DatapackJsonReader.readString(entry, "notification"),
@@ -124,8 +166,35 @@ public record VillagerActionDefinition(
         String text = DatapackJsonReader.readString(entry, "text");
         String forcedDialogue = DatapackJsonReader.readString(entry, "forced_dialogue");
         boolean flashTracker = DatapackJsonReader.readBoolean(entry, "flash_tracker", true);
+        QuestFactScope factScope = readFactScope(entry, kind, questId);
+        ResourceLocation factTag = readFactTag(location, context, entry, kind);
+        String factKey = readFactKey(entry, kind);
+        String factValue = readFactValue(entry, kind);
+        CompiledQuestTransition questTransition = kind == Kind.QUEST_TRANSITION
+                ? CompiledQuestTransition.read(location, entry, questId)
+                : CompiledQuestTransition.EMPTY;
+        ResourceLocation sceneId = kind == Kind.START_SCENE ? readSceneId(location, entry) : null;
+        String sceneOperationId = DatapackJsonReader.readString(entry, "operation_id", "scene_operation_id");
+        boolean waitForScene = DatapackJsonReader.readBoolean(entry, "wait_for_result", false);
+        boolean required = DatapackJsonReader.readBoolean(entry, "required", false);
 
-        if (!hasRequiredFields(location, context, kind, questId, questAction, memoryTag, lootTable, notificationTrigger, text, forcedDialogue)) {
+        if (!hasRequiredFields(
+                location,
+                context,
+                kind,
+                questId,
+                questAction,
+                memoryTag,
+                lootTable,
+                notificationTrigger,
+                text,
+                forcedDialogue,
+                factTag,
+                factKey,
+                factValue,
+                questTransition,
+                sceneId,
+                sceneOperationId)) {
             return java.util.Optional.empty();
         }
         return java.util.Optional.of(new VillagerActionDefinition(
@@ -134,18 +203,50 @@ public record VillagerActionDefinition(
                 questAction,
                 amount,
                 memoryTag,
+                memoryScope,
                 lootTable,
                 notificationTrigger,
                 text,
                 forcedDialogue,
                 flashTracker,
-                readLinesByStatus(entry)));
+                factScope,
+                factTag,
+                factKey,
+                factValue,
+                readLinesByStatus(entry),
+                readLineKeysByStatus(entry),
+                questTransition,
+                sceneId,
+                sceneOperationId,
+                waitForScene,
+                required));
     }
 
     private static Kind inferKind(JsonObject entry, ResourceLocation defaultQuestId) {
         Kind explicit = Kind.bySerializedName(DatapackJsonReader.readString(entry, "type"));
         if (explicit != Kind.NONE) {
             return explicit;
+        }
+        if (entry.has("set_tag") || entry.has("fact_tag") || entry.has("quest_tag")) {
+            return Kind.SET_TAG;
+        }
+        if (entry.has("clear_tag")) {
+            return Kind.CLEAR_TAG;
+        }
+        if (entry.has("variable") || (entry.has("key") && entry.has("value"))) {
+            return Kind.SET_VARIABLE;
+        }
+        if (entry.has("stage")) {
+            return Kind.SET_VARIABLE;
+        }
+        if (entry.has("target_stage") || entry.has("from_stage") || entry.has("scene_path") || entry.has("source_pointer")) {
+            return Kind.QUEST_TRANSITION;
+        }
+        if (entry.has("scene_id") || entry.has("start_scene")) {
+            return Kind.START_SCENE;
+        }
+        if (entry.has("counter") || entry.has("increment_counter")) {
+            return Kind.COUNTER;
         }
         if (hasQuestIdField(entry)) {
             return Kind.QUEST;
@@ -170,6 +271,12 @@ public record VillagerActionDefinition(
         }
         if (entry.has("gossip") || entry.has("gossip_reputation")) {
             return Kind.GOSSIP;
+        }
+        if (entry.has("profile_attribute") || entry.has("social_attribute")) {
+            return Kind.PROFILE_ATTRIBUTE;
+        }
+        if (entry.has("draw_weapon")) {
+            return Kind.DRAW_WEAPON;
         }
         if (entry.has("flash_tracker")) {
             return Kind.TRACKER;
@@ -196,6 +303,16 @@ public record VillagerActionDefinition(
                     entry,
                     "gossip",
                     DatapackJsonReader.readInt(entry, "gossip_reputation", 0));
+            case COUNTER -> {
+                Integer by = DatapackJsonReader.readNullableInt(entry, "by");
+                if (by == null) {
+                    by = DatapackJsonReader.readNullableInt(entry, "delta");
+                }
+                yield by == null ? 1 : by;
+            }
+            case DRAW_WEAPON -> (int) Math.min(
+                    Integer.MAX_VALUE,
+                    Math.max(1L, DatapackJsonReader.readDurationTicks(entry, "duration", 20L * 10L)));
             default -> 0;
         };
     }
@@ -220,20 +337,46 @@ public record VillagerActionDefinition(
             ResourceLocation lootTable,
             String notificationTrigger,
             String text,
-            String forcedDialogue) {
+            String forcedDialogue,
+            ResourceLocation factTag,
+            String factKey,
+            String factValue,
+            CompiledQuestTransition questTransition,
+            ResourceLocation sceneId,
+            String sceneOperationId) {
         boolean valid = switch (kind) {
             case QUEST -> questId != null && questAction != QuestAction.NONE;
+            case QUEST_TRANSITION -> questTransition != null && !questTransition.isEmpty();
             case MEMORY -> memoryTag != null;
             case LOOT -> lootTable != null;
             case FORCED_DIALOGUE -> !forcedDialogue.isBlank();
             case NOTIFICATION -> !notificationTrigger.isBlank() || !text.isBlank();
-            case TRACKER, EXPERIENCE, REPUTATION, GOSSIP -> true;
+            case SET_TAG, CLEAR_TAG -> factTag != null;
+            case SET_VARIABLE -> !factKey.isBlank() && !factValue.isBlank();
+            case COUNTER -> !factKey.isBlank();
+            case START_SCENE -> sceneId != null && !sceneOperationId.isBlank();
+            case PROFILE_ATTRIBUTE ->
+                    VillagerSocialAttribute.bySerializedName(factKey) != null;
+            case TRACKER, EXPERIENCE, REPUTATION, GOSSIP, DRAW_WEAPON -> true;
             case NONE -> false;
         };
         if (!valid) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "action is missing required fields for type \"" + kind.serializedName() + "\".");
         }
         return valid;
+    }
+
+    private static ResourceLocation readSceneId(ResourceLocation location, JsonObject entry) {
+        String value = firstNonBlank(DatapackJsonReader.readString(entry, "scene_id"),
+                firstNonBlank(DatapackJsonReader.readString(entry, "scene"),
+                        DatapackJsonReader.readString(entry, "start_scene")));
+        if (value.isBlank()) return null;
+        ResourceLocation parsed = value.contains(":") ? ResourceLocation.tryParse(value)
+                : ResourceLocation.fromNamespaceAndPath(location.getNamespace(), value);
+        if (parsed == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "scene action", "invalid scene id \"" + value + "\"");
+        }
+        return parsed;
     }
 
     private static ResourceLocation readMemoryTag(ResourceLocation location, String context, JsonObject entry) {
@@ -248,6 +391,93 @@ public record VillagerActionDefinition(
         return tagId;
     }
 
+    private static VillageEventMemory.MemoryScope readMemoryScope(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            Kind kind) {
+        if (kind != Kind.MEMORY || !entry.has("memory_scope")) {
+            return VillageEventMemory.MemoryScope.BOTH;
+        }
+        String value = DatapackJsonReader.readString(entry, "memory_scope");
+        VillageEventMemory.MemoryScope scope = VillageEventMemory.MemoryScope.parse(value).orElse(null);
+        if (scope == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location,
+                    context,
+                    "memory action uses invalid memory_scope \"" + value + "\"; expected villager, village, or both.");
+        }
+        return scope;
+    }
+
+    private static QuestFactScope readFactScope(JsonObject entry, Kind kind, ResourceLocation questId) {
+        QuestFactScope fallback = kind.isQuestFact() && questId != null ? QuestFactScope.QUEST : QuestFactScope.PLAYER;
+        return QuestFactScope.bySerializedName(DatapackJsonReader.readString(entry, "scope", "fact_scope"), fallback);
+    }
+
+    private static ResourceLocation readFactTag(ResourceLocation location, String context, JsonObject entry, Kind kind) {
+        String value = switch (kind) {
+            case SET_TAG -> firstNonBlank(
+                    DatapackJsonReader.readString(entry, "set_tag"),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(entry, "fact_tag"),
+                            firstNonBlank(
+                                    DatapackJsonReader.readString(entry, "quest_tag"),
+                                    DatapackJsonReader.readString(entry, "tag"))));
+            case CLEAR_TAG -> firstNonBlank(
+                    DatapackJsonReader.readString(entry, "clear_tag"),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(entry, "fact_tag"),
+                            firstNonBlank(
+                                    DatapackJsonReader.readString(entry, "quest_tag"),
+                                    DatapackJsonReader.readString(entry, "tag"))));
+            default -> "";
+        };
+        if (value.isBlank()) {
+            return null;
+        }
+        ResourceLocation tagId = ResourceLocation.tryParse(value);
+        if (tagId == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "quest fact tag \"" + value + "\" is not a valid resource location.");
+        }
+        return tagId;
+    }
+
+    private static String readFactKey(JsonObject entry, Kind kind) {
+        return switch (kind) {
+            case SET_VARIABLE -> {
+                String key = firstNonBlank(
+                        DatapackJsonReader.readString(entry, "variable"),
+                        firstNonBlank(
+                                DatapackJsonReader.readString(entry, "key"),
+                                DatapackJsonReader.readString(entry, "fact")));
+                yield key.isBlank() && entry.has("stage") ? "stage" : key;
+            }
+            case PROFILE_ATTRIBUTE -> firstNonBlank(
+                    DatapackJsonReader.readString(entry, "attribute"),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(entry, "profile_attribute"),
+                            firstNonBlank(DatapackJsonReader.readString(entry, "social_attribute"),
+                                    DatapackJsonReader.readString(entry, "stat"))));
+            case COUNTER -> firstNonBlank(
+                    DatapackJsonReader.readString(entry, "counter"),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(entry, "increment_counter"),
+                            firstNonBlank(
+                                    DatapackJsonReader.readString(entry, "key"),
+                                    DatapackJsonReader.readString(entry, "fact"))));
+            default -> "";
+        };
+    }
+
+    private static String readFactValue(JsonObject entry, Kind kind) {
+        return kind == Kind.SET_VARIABLE
+                ? firstNonBlank(
+                        DatapackJsonReader.readString(entry, "value"),
+                        DatapackJsonReader.readString(entry, "stage"))
+                : "";
+    }
+
     private static Map<String, List<String>> readLinesByStatus(JsonObject entry) {
         JsonObject lines = DatapackJsonReader.readObject(entry, "lines");
         if (lines == null) {
@@ -259,6 +489,31 @@ public record VillagerActionDefinition(
             List<String> variants = readTextVariants(child.getValue());
             if (!variants.isEmpty()) {
                 values.put(normalizeStatus(child.getKey()), variants);
+            }
+        }
+        return Map.copyOf(values);
+    }
+
+    private static Map<String, List<String>> readLineKeysByStatus(JsonObject entry) {
+        JsonObject lines = DatapackJsonReader.readObject(entry, "lines");
+        if (lines == null) {
+            return Map.of();
+        }
+        Map<String, List<String>> values = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> child : lines.entrySet()) {
+            String field = child.getKey();
+            if (field.endsWith("_key") || field.endsWith("_keys")) {
+                String suffix = field.endsWith("_keys") ? "_keys" : "_key";
+                List<String> keys = readTextVariants(child.getValue());
+                if (!keys.isEmpty()) {
+                    values.put(normalizeStatus(field.substring(0, field.length() - suffix.length())), keys);
+                }
+            } else if (child.getValue().isJsonObject()) {
+                List<String> keys = DatapackJsonReader.readStringList(
+                        child.getValue().getAsJsonObject(), "text_key", "text_keys");
+                if (!keys.isEmpty()) {
+                    values.put(normalizeStatus(field), keys);
+                }
             }
         }
         return Map.copyOf(values);
@@ -291,6 +546,10 @@ public record VillagerActionDefinition(
         return this.linesByStatus.getOrDefault(normalizeStatus(status), List.of());
     }
 
+    public List<String> lineKeysForStatus(String status) {
+        return this.lineKeysByStatus.getOrDefault(normalizeStatus(status), List.of());
+    }
+
     private static String normalizeStatus(String status) {
         return status == null ? "" : status.trim().toLowerCase(Locale.ROOT);
     }
@@ -313,11 +572,19 @@ public record VillagerActionDefinition(
         TRACKER("tracker"),
         FORCED_DIALOGUE("forced_dialogue"),
         QUEST("quest"),
+        QUEST_TRANSITION("quest_transition"),
         EXPERIENCE("experience"),
         REPUTATION("reputation"),
         GOSSIP("gossip"),
         MEMORY("memory"),
-        LOOT("loot");
+        LOOT("loot"),
+        SET_TAG("set_tag"),
+        PROFILE_ATTRIBUTE("profile_attribute"),
+        CLEAR_TAG("clear_tag"),
+        SET_VARIABLE("set_variable"),
+        COUNTER("counter"),
+        DRAW_WEAPON("draw_weapon"),
+        START_SCENE("start_scene");
 
         private final String serializedName;
 
@@ -330,19 +597,11 @@ public record VillagerActionDefinition(
         }
 
         public static Kind bySerializedName(String value) {
-            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-            return switch (normalized) {
-                case "notification", "notify", "hud", "message" -> NOTIFICATION;
-                case "tracker", "quest_tracker", "flash_tracker" -> TRACKER;
-                case "forced_dialogue", "force_dialogue", "dialogue" -> FORCED_DIALOGUE;
-                case "quest", "quest_action" -> QUEST;
-                case "experience", "xp" -> EXPERIENCE;
-                case "reputation", "rep" -> REPUTATION;
-                case "gossip", "gossip_reputation" -> GOSSIP;
-                case "memory", "memory_event" -> MEMORY;
-                case "loot", "loot_table" -> LOOT;
-                default -> NONE;
-            };
+            return VillagerActionRegistry.kindBySerializedName(value);
+        }
+
+        public boolean isQuestFact() {
+            return this == SET_TAG || this == CLEAR_TAG || this == SET_VARIABLE || this == COUNTER;
         }
     }
 
@@ -351,7 +610,9 @@ public record VillagerActionDefinition(
         START,
         REMIND,
         TURN_IN,
-        ABANDON;
+        FAIL,
+        ABANDON,
+        BLOCK;
 
         public static QuestAction bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
@@ -359,7 +620,9 @@ public record VillagerActionDefinition(
                 case "start", "accept", "begin" -> START;
                 case "remind", "reminder", "details" -> REMIND;
                 case "turn_in", "turnin", "complete", "claim" -> TURN_IN;
+                case "fail", "failed" -> FAIL;
                 case "abandon", "drop", "cancel", "remove" -> ABANDON;
+                case "block", "lock", "consume", "close", "close_branch", "branch_lock" -> BLOCK;
                 default -> NONE;
             };
         }

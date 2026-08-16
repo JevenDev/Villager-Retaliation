@@ -2,8 +2,8 @@ package com.jvn.villagerretaliation.mood;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
@@ -68,13 +68,6 @@ public final class VillagerMoodService {
         data.put(villager.getUUID(), updated);
     }
 
-    public static void clearMood(ServerLevel level, AbstractVillager villager) {
-        if (level == null || villager == null) {
-            return;
-        }
-        VillagerMoodSavedData.get(level).put(villager.getUUID(), VillagerMoodState.neutral(level.getGameTime()));
-    }
-
     public static void recordGift(
             ServerLevel level,
             Villager villager,
@@ -124,7 +117,7 @@ public final class VillagerMoodService {
         if (delta > 0) {
             mood = switch (requestType) {
                 case APOLOGY -> VillagerMood.HOPEFUL;
-                case COMBAT_SURVIVAL_REPORT, VILLAGE_DEFENSE_REPORT -> VillagerMood.PROUD;
+                case COMBAT_SURVIVAL_REPORT, VILLAGE_DEFENSE_REPORT, RAID_VICTORY_ACKNOWLEDGEMENT -> VillagerMood.PROUD;
                 default -> VillagerMood.CONTENT;
             };
             intensity = 24 + Math.min(24, delta * 3);

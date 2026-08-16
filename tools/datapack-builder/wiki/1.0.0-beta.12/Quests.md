@@ -1,36 +1,172 @@
 # Quests
 
-Quest JSON defines who can offer a quest, what the player must do, how the quest repeats, and what happens on completion.
+Quest module v2 is the preferred shape for new quest datapacks. A v2 module can define the provider, availability, lifecycle, stages, objectives, dialogue, responses, transitions, events, rewards, and tracker UI in one file.
+
+Legacy v1 quest files are still supported. Keep existing v1 packs working, but use v2 for new simple quests and for migrations where you want dialogue and quest state to live together.
 
 ## Paths
 
 ```text
 data/<namespace>/quests/<quest>.json
-data/<namespace>/quests/<questline>/<quest>.json
+data/<namespace>/quests/<module>/<quest>.json
 ```
 
-For new packs, prefer the questline folder layout.
+The folder path is for organization and overrides. It does not create a questline by itself.
 
-## Minimal Fetch Quest
+## One-File Quest
+
+This is a complete playable quest. It needs no external dialogue tree.
 
 ```json
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "my_pack:bread_delivery",
-  "display": {
+  "metadata": {
     "title": "Bread Delivery",
-    "description": "Bring 16 bread to the village stores."
+    "description": "Bring 16 bread to the village stores.",
+    "questline": "village_supply",
+    "tags": ["group.village_supply"]
   },
-  "questline": "village_supply",
-  "offer": {
-    "professions": ["minecraft:farmer"],
-    "min_villager_level": "novice"
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": ["minecraft:farmer"],
+      "min_villager_level": "novice"
+    }
   },
-  "objectives": [
+  "availability": {
+    "repeatable": true,
+    "completion_cooldown_days": 1,
+    "locked_to_villager": true,
+    "cross_villager_compatible": false,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true
+  },
+  "entry_stage": "gather",
+  "stages": [
     {
-      "id": "bring_bread",
-      "type": "item_check",
-      "item": "minecraft:bread",
-      "count": 16
+      "id": "gather",
+      "objectives": [
+        {
+          "id": "bring_bread",
+          "type": "item_check",
+          "item": "minecraft:bread",
+          "count": 16,
+          "tracker": {
+            "text": "Bring 16 bread back to the quest giver.",
+            "complete_text": "The bread is packed and ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "dialogue": {
+        "offer": {
+          "label": "Bread Delivery",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The bins are low. Sixteen bread would quiet a lot of worried stomachs."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can help stock the larder.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Another time.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Bread Delivery",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Bread Delivery is still open. The tracker has the count."
+          ],
+          "responses": [
+            {
+              "id": "leave",
+              "label": "I'll keep looking.",
+              "scene": "end"
+            }
+          ]
+        },
+        "turn_in": {
+          "label": "About Bread Delivery",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "If that pack smells like fresh bread, you may have saved me an argument."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Show what I brought.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "end"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Good. Bring the bread back when the count is ready."
+                ],
+                "unavailable": [
+                  "The larder is not asking you for bread right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Good. A full shelf makes brave talk sound less hollow."
+                ],
+                "missing_objectives": [
+                  "Bread Delivery is still short. The tracker has the exact count."
+                ],
+                "unavailable": [
+                  "This bread delivery is not ready to close yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "text": "Then I will keep counting crumbs and pretending it is planning."
+        },
+        {
+          "id": "end",
+          "text": "Keep the bread close until you are ready."
+        }
+      ]
     }
   ],
   "rewards": {
@@ -38,86 +174,459 @@ For new packs, prefer the questline folder layout.
     "reputation": 5,
     "gossip_reputation": 2
   },
-  "rules": {
-    "repeatable": true,
-    "completion_cooldown_days": 1
+  "ui": {
+    "tracker_text": "Bring 16 bread.",
+    "icon": "minecraft:bread",
+    "color": "#DCEBA6"
   }
 }
+```
+
+Validate standalone quest examples with:
+
+```text
+node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 ```
 
 ## Main Parts
 
 | Section | Purpose |
 | --- | --- |
-| `display` | Title and description shown to players |
-| `offer` | Which villagers can offer it |
+| `schema` | Must be `villagerretaliation:quest/v2` for v2 modules |
+| `id` | Stable quest resource id used by saves, commands, dialogue, and overrides |
+| `metadata` | Player-facing title, description, questline, tags, and parent |
+| `provider` | Who can offer or own the quest |
+| `availability` | Repeat limits, abandonment, cooldowns, locking, and active gates |
 | `target` | Optional world target such as a structure search |
-| `objectives` | What the player must actually complete |
-| `rewards` | XP, reputation, gossip, loot, memory events |
-| `rules` | Repeat limits, abandonment, cooldowns, locking |
-| `tracker` | Optional custom quest tracker text |
-| `triggers` | Event-based reactions while the quest exists |
+| `entry_stage` | First stage id |
+| `stages` | Objectives, stage-local dialogue, responses, scenes, events, and UI |
+| `events` | Quest-level triggers that run while the quest exists |
+| `rewards` | XP, reputation, gossip, loot, memory events, or reward actions |
+| `ui` | Tracker text, icon, progress, placeholders, color, and priority |
+| `external_scenes` | Optional external dialogue scene resources used by this module |
 
-## Example: Structure Quest
+Provider objects may set `death_protection` to `none` (default), `while_active`, or `after_start`. `while_active` protects only the exact bound provider UUID while a qualifying run remains active. `after_start` begins only after successful durable quest startup and remains on that villager after completion, failure, expiration, or abandonment; merely showing an offer does not apply it.
+
+## Dialogue And Scenes
+
+Stage `dialogue` slots normally use these names:
+
+| Slot | When it appears |
+| --- | --- |
+| `offer` | Quest can be started |
+| `reminder` | Quest is active but not ready |
+| `turn_in` | Objectives are complete |
+| `already_completed` | Player already completed a non-repeatable quest |
+| `unavailable` | Provider is known but availability gates fail |
+| `inactive` | Accepted quest is paused by active conditions |
+| `missing_target`, `missing_proof`, `locate_failed` | Target/proof helper states |
+
+Inline scenes stay inside the quest module. Use `external` or `external_scene` only when the scene is large, shared, localized separately, or deliberately owned by another datapack resource.
+
+## Transition Rules
+
+Keep each response to one transition source. Pick one of:
+
+- direct response fields such as `next`, `stage`, `scene`, `complete`, `abandon`, or `fail`
+- a `transition` object with `stage`, `scene`, `response`, `complete`, `abandon`, or `fail`
+- a transition action such as `quest_transition`
+
+Do not combine direct transition fields with a transition action on the same response. Put side effects, such as `set_variable`, `notification`, or `reputation`, in `actions`, then put the single stage or scene move in `transition`.
+
+## Branch Example
+
+This module records a route choice, moves to the chosen stage, and completes from either branch.
 
 ```json
 {
-  "id": "my_pack:echo_shard_run",
-  "display": {
-    "title": "Echo Shard Run",
-    "description": "Reach the Ancient City and return with an Echo Shard."
+  "schema": "villagerretaliation:quest/v2",
+  "id": "my_pack:choose_supply_route",
+  "metadata": {
+    "title": "Choose Supply Route",
+    "description": "Choose how the village will move supplies.",
+    "questline": "village_supply",
+    "tags": ["group.village_supply"]
   },
-  "target": {
-    "structure": "minecraft:ancient_city",
-    "dimension": "minecraft:overworld",
-    "proof_item": "minecraft:echo_shard"
-  },
-  "objectives": [
-    {
-      "id": "recover_shard",
-      "type": "item_check",
-      "item": "minecraft:echo_shard",
-      "count": 1
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": ["minecraft:cartographer"]
     }
-  ]
-}
-```
-
-## Example: Tracker Text
-
-```json
-{
-  "tracker": {
-    "title": "Bread Delivery",
-    "steps": {
-      "proof": {
-        "text": "Bring 16 bread back to the quest giver.",
-        "show_progress": true,
-        "progress": 0.7
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": true
+  },
+  "entry_stage": "choose_route",
+  "stages": [
+    {
+      "id": "choose_route",
+      "objectives": [
+        {
+          "id": "choose_route",
+          "type": "choice",
+          "choices": ["river", "ridge"],
+          "tracker": {
+            "text": "Choose a supply route.",
+            "complete_text": "Route chosen: {objective_choice_value}."
+          }
+        }
+      ],
+      "dialogue": {
+        "offer": {
+          "label": "Choose Supply Route",
+          "request": "question",
+          "lines": [
+            "The village needs a safer supply route. River or ridge?"
+          ],
+          "responses": [
+            {
+              "id": "river",
+              "label": "Use the river.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "river"
+                }
+              ],
+              "transition": {
+                "stage": "river_route"
+              }
+            },
+            {
+              "id": "ridge",
+              "label": "Use the ridge.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "ridge"
+                }
+              ],
+              "transition": {
+                "stage": "ridge_route"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "river_route",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "River Route",
+          "request": "question",
+          "lines": ["The river road will move quietly."],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Mark the river route.",
+              "complete": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ridge_route",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "Ridge Route",
+          "request": "question",
+          "lines": ["The ridge road will keep watch over the valley."],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Mark the ridge route.",
+              "complete": true
+            }
+          ]
+        }
       }
     }
+  ],
+  "ui": {
+    "tracker_text": "Choose a route.",
+    "icon": "minecraft:map"
   }
 }
 ```
 
-## Example: Triggered Quest Follow-Up
+## Structure Target Example
+
+Root `target` fields define a structure search, discovery radius, and proof item. Stages can combine a visit objective with a proof-item objective.
 
 ```json
 {
-  "triggers": [
+  "schema": "villagerretaliation:quest/v2",
+  "id": "my_pack:trail_marker",
+  "metadata": {
+    "title": "Trail Marker",
+    "description": "Find nearby Trail Ruins and return with a brush.",
+    "tags": ["group.old_roads"]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": ["minecraft:cartographer", "minecraft:mason"]
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": true
+  },
+  "target": {
+    "structure": "minecraft:trail_ruins",
+    "dimension": "minecraft:overworld",
+    "search_radius": 192,
+    "discovery_radius": 96,
+    "proof_item": "minecraft:brush"
+  },
+  "entry_stage": "survey",
+  "stages": [
     {
-      "id": "storm_warning",
-      "event": "proximity",
+      "id": "survey",
+      "objectives": [
+        {
+          "id": "visit_ruins",
+          "type": "structure_visit",
+          "structure": "minecraft:trail_ruins",
+          "tracker": {
+            "text": "Find the Trail Ruins near {target_x}, {target_z}.",
+            "complete_text": "You found the old road."
+          }
+        },
+        {
+          "id": "bring_brush",
+          "type": "item_check",
+          "item": "minecraft:brush",
+          "count": 1,
+          "tracker": {
+            "text": "Bring a brush back from the ruins.",
+            "complete_text": "The brush is ready."
+          }
+        }
+      ],
+      "complete_when": ["visit_ruins", "bring_brush"],
+      "dialogue": {
+        "offer": {
+          "label": "Trail Marker",
+          "request": "question",
+          "lines": ["The old road left a mark under the dust."],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "Mark the ruins.",
+              "scene": "start_quest"
+            }
+          ]
+        },
+        "turn_in": {
+          "label": "Trail Marker",
+          "request": "question",
+          "lines": ["You found the mark and brought a brush."],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the notes.",
+              "complete": true
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": ["The ruins should be near {target_x}, {target_z}."],
+                "locate_failed": ["The old road is hiding from the map today."]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "experience": 80,
+    "reputation": 6
+  },
+  "ui": {
+    "tracker_text": "Find the Trail Ruins.",
+    "icon": "minecraft:brush"
+  }
+}
+```
+
+## Forced Or External Scene Example
+
+Use external scenes when another file owns a long conversation. Use `forced_dialogue` actions when the quest needs an event-driven locked scene. These actions need live player and provider context; if the quest giver is unloaded, the runtime records diagnostics and waits until it can safely run the live action.
+
+```json
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "my_pack:storm_warning",
+  "metadata": {
+    "title": "Storm Warning",
+    "description": "Ask a cleric about a storm omen.",
+    "questline": "lost_civilization",
+    "tags": ["group.lost_civilization"]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": ["minecraft:cleric"]
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": true
+  },
+  "external_scenes": ["my_pack:quests/storm_warning"],
+  "entry_stage": "ask",
+  "stages": [
+    {
+      "id": "ask",
+      "objectives": [
+        {
+          "id": "hear_warning",
+          "type": "choice",
+          "choices": ["heard"],
+          "tracker": {
+            "text": "Hear the storm warning.",
+            "complete_text": "The warning is clear."
+          }
+        }
+      ],
+      "dialogue": {
+        "offer": {
+          "label": "Storm Warning",
+          "request": "question",
+          "external_scene": {
+            "tree": "my_pack:quests/storm_warning",
+            "entry": "offer"
+          }
+        },
+        "turn_in": {
+          "label": "Storm Warning",
+          "request": "question",
+          "lines": ["The storm warning is clear now."],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "I understand the omen.",
+              "complete": true
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "storm_reminder",
+      "event": "near_provider",
       "radius": 10,
       "cooldown_seconds": 120,
       "conditions": [
-        { "type": "quest", "state": "active" },
         { "type": "weather", "state": "thunder" }
       ],
       "actions": [
         {
           "type": "forced_dialogue",
-          "forced_dialogue": "my_pack.quest.road_ledger.storm_warning"
+          "forced_dialogue": "my_pack.quest.storm_warning.reminder"
+        }
+      ]
+    }
+  ],
+  "ui": {
+    "tracker_text": "Hear the storm warning.",
+    "icon": "minecraft:lightning_rod"
+  }
+}
+```
+
+The external scene above can live in `data/my_pack/dialogue_trees/en_us/quests/storm_warning.json`:
+
+```json
+{
+  "id": "my_pack:quests/storm_warning",
+  "metadata": {
+    "quest": "my_pack:storm_warning",
+    "questline": "lost_civilization"
+  },
+  "entries": [
+    {
+      "id": "offer",
+      "label": "Storm Warning",
+      "request": "question",
+      "start": "offer"
+    }
+  ],
+  "nodes": {
+    "offer": {
+      "lines": [
+        "Thunder is not the omen. The silence after it is."
+      ],
+      "responses": [
+        {
+          "id": "heard",
+          "label": "I will listen for it.",
+          "actions": [
+            {
+              "type": "set_variable",
+              "scope": "quest",
+              "key": "choice",
+              "value": "heard"
+            }
+          ],
+          "end": true
+        }
+      ]
+    }
+  }
+}
+```
+
+The forced quest scene above can live in `data/my_pack/forced_dialogue/quests/lost_civilization/storm_warning.json`:
+
+```json
+{
+  "metadata": {
+    "quest": "my_pack:storm_warning",
+    "questline": "lost_civilization"
+  },
+  "entries": [
+    {
+      "id": "my_pack.quest.storm_warning.reminder",
+      "trigger": "quest",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Storms make old warnings easier to hear. Stay close to shelter."
+      ],
+      "requires_line_of_sight": true,
+      "force_camera_towards_villager": true,
+      "options": [
+        {
+          "id": "my_pack.quest.storm_warning.ok",
+          "label": "I understand.",
+          "response": "Then keep the warning near your feet.",
+          "end_conversation": true
         }
       ]
     }
@@ -125,6 +634,81 @@ For new packs, prefer the questline folder layout.
 }
 ```
 
-## Best Practice
+## Localization
 
-Pair every quest with a [Dialogue Tree](Dialogue-Trees.md) for the offer, reminder, and turn-in scene. Keep the quest file focused on state and the tree focused on the conversation.
+Inline text is a fallback. Use `*_key` fields when you want datapack-localized text:
+
+```json
+{
+  "metadata": {
+    "title": "Bread Delivery",
+    "title_key": "quest.my_pack.bread_delivery.title",
+    "description": "Bring 16 bread.",
+    "description_key": "quest.my_pack.bread_delivery.description"
+  },
+  "ui": {
+    "tracker_text": "Bring 16 bread.",
+    "tracker_text_key": "quest.my_pack.bread_delivery.tracker"
+  }
+}
+```
+
+Dialogue slots and scenes also accept `text_key`, `label_key`, and keyed lines where the generated schema lists them. Put keyed text in normal dialogue message files under `data/<namespace>/dialogue/<locale>/.../messages/*.json`.
+
+## Capabilities And Live Context
+
+Conditions and actions come from the generated quest registries. The datapack builder reads `tools/datapack-builder/quest-registry-metadata.json`; the Node validator and Java schema generator use the same runtime metadata.
+
+Some registry entries need live entities:
+
+- provider-live conditions, such as villager equipment or live mood checks, need the quest giver loaded
+- player-live actions, such as notifications, forced dialogue, loot, XP, and reputation changes, need a player context
+- provider-live actions, such as forced dialogue and gossip, need the issuing villager loaded
+
+Prefer saved-state conditions for active quest gates that must continue while the villager is unloaded. Use live-context actions from events only when the event is expected to run near the player and provider.
+
+## Diagnostics And Trace Commands
+
+Useful commands while testing:
+
+```text
+/villagerretaliation datapack diagnostics
+/villagerretaliation quest debug providers [radius]
+/villagerretaliation quest debug why_available <quest_id> <provider_name>
+/villagerretaliation quest debug why_hidden <quest_id> [provider_name]
+/villagerretaliation quest debug inspect <quest_id>
+/villagerretaliation quest debug objectives <quest_id>
+/villagerretaliation quest debug trace on
+/villagerretaliation quest debug trace show [limit]
+/villagerretaliation quest debug trace capture <quest_id> <provider_name>
+/villagerretaliation quest debug fire_trigger <quest_id> <event>
+/villagerretaliation quest debug actions dry_run <quest_id> <trigger_id>
+```
+
+Use `inspect` for saved state, issuer context, target context, repeat rules, objective counters, current stage, and fact values. Use `trace` for indexed trigger dispatch, condition traces, action diagnostics, and bounded recent events.
+
+## Legacy V1 Compatibility
+
+V1 quest JSON remains supported when the file has no `schema: "villagerretaliation:quest/v2"`. V1 fields such as `display`, `offer`, top-level `objectives`, `rules`, `tracker`, `triggers`, and separate dialogue trees still load through the compatibility adapter.
+
+Legacy override rules still apply:
+
+- a higher-priority datapack can replace a built-in quest by writing the same quest id
+- a v2 module can replace a v1 quest with the same id
+- old dialogue tree resources under `data/<namespace>/dialogue_trees/<locale>/quests/...` still work
+- `remove` and `replace` on dialogue trees still remove or replace legacy/extracted scenes
+
+Do not delete v1 resources just because v2 exists. Migrate intentionally, validate the generated v2 file, and keep any external dialogue tree only when it is still needed.
+
+## Extraction Guidance
+
+Start with one v2 quest file. Extract only when the file becomes hard to maintain:
+
+```text
+data/<namespace>/quests/<module>/<quest>.json
+data/<namespace>/dialogue_trees/<locale>/quests/<module>/<quest>.json
+data/<namespace>/dialogue/<locale>/quests/<module>/<quest>/messages/*.json
+data/<namespace>/forced_dialogue/quests/<module>/<quest>.json
+```
+
+Use the quest module for quest state, stages, objective readiness, rewards, transitions, and short scenes. Use external dialogue trees for long authored branches or shared localization. Use forced dialogue only for event-driven locked scenes outside the normal Talk flow.

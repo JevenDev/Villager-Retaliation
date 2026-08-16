@@ -1,0 +1,38 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "example:protected_guide",
+  "metadata": {
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
+    },
+    "questline": "example",
+    "tags": [
+      "example",
+      "protected_provider"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "death_protection": "while_active",
+    "filters": {
+      "professions": [
+        "minecraft:cartographer"
+      ]
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "locked_to_villager": true
+  },
+  "entry_stage": "begin",
+  "stages": [
+    {
+      "id": "begin",
+      "objectives": []
+    }
+  ],
+  "localization_prefix": "example.quest.protected_guide"
+}

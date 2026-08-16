@@ -13,6 +13,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.npc.AbstractVillager;
 
 public final class VillagerPresetNameRegistry {
@@ -35,7 +37,14 @@ public final class VillagerPresetNameRegistry {
         cachedNamePool = CachedNamePool.empty();
     }
 
-    public static void ensurePresetNameAssigned(AbstractVillager villager) {
+    public static boolean isVillagerForm(Entity entity) {
+        return entity instanceof AbstractVillager || entity instanceof ZombieVillager;
+    }
+
+    public static void ensurePresetNameAssigned(Entity villager) {
+        if (!isVillagerForm(villager)) {
+            return;
+        }
         if (villager.hasCustomName() || !(villager.level() instanceof ServerLevel level)) {
             if (villager.hasCustomName() && villager.level() instanceof ServerLevel serverLevel) {
                 resolveStoredGender(villager, serverLevel.getServer());
@@ -46,7 +55,10 @@ public final class VillagerPresetNameRegistry {
         resolveStoredGender(villager, level.getServer());
     }
 
-    public static Component resolveDisplayName(AbstractVillager villager) {
+    public static Component resolveDisplayName(Entity villager) {
+        if (!isVillagerForm(villager)) {
+            return villager.getName();
+        }
         if (villager.hasCustomName() && villager.getCustomName() != null) {
             return villager.getCustomName();
         }
@@ -60,8 +72,8 @@ public final class VillagerPresetNameRegistry {
         return villager.getName();
     }
 
-    public static String resolvePresetName(AbstractVillager villager) {
-        if (villager.hasCustomName()) {
+    public static String resolvePresetName(Entity villager) {
+        if (!isVillagerForm(villager) || villager.hasCustomName()) {
             return "";
         }
         if (villager.level() instanceof ServerLevel level) {
@@ -70,21 +82,24 @@ public final class VillagerPresetNameRegistry {
         return resolveClientStoredName(villager);
     }
 
-    public static VillagerGender resolveGender(AbstractVillager villager) {
+    public static VillagerGender resolveGender(Entity villager) {
+        if (!isVillagerForm(villager)) {
+            return VillagerGender.FEMALE;
+        }
         if (villager.level() instanceof ServerLevel level) {
             return resolveStoredGender(villager, level.getServer());
         }
         return resolveClientStoredGender(villager);
     }
 
-    public static void setStoredGender(AbstractVillager villager, VillagerGender gender) {
-        if (villager == null || gender == null) {
+    public static void setStoredGender(Entity villager, VillagerGender gender) {
+        if (villager == null || gender == null || !isVillagerForm(villager)) {
             return;
         }
         villager.getPersistentData().putString(PERSISTENT_GENDER_KEY, gender.serializedName());
     }
 
-    private static String resolveStoredName(AbstractVillager villager, MinecraftServer server) {
+    private static String resolveStoredName(Entity villager, MinecraftServer server) {
         String storedName = villager.getPersistentData().getString(PERSISTENT_NAME_KEY).trim();
         if (!storedName.isBlank()) {
             if (!isLegacyNameKey(storedName)) {
@@ -115,12 +130,12 @@ public final class VillagerPresetNameRegistry {
         return selectedName;
     }
 
-    private static String resolveClientStoredName(AbstractVillager villager) {
+    private static String resolveClientStoredName(Entity villager) {
         String storedName = villager.getPersistentData().getString(PERSISTENT_NAME_KEY).trim();
         return isLegacyNameKey(storedName) ? "" : storedName;
     }
 
-    private static VillagerGender resolveStoredGender(AbstractVillager villager, MinecraftServer server) {
+    private static VillagerGender resolveStoredGender(Entity villager, MinecraftServer server) {
         String storedGender = villager.getPersistentData().getString(PERSISTENT_GENDER_KEY).trim();
         VillagerGender gender = VillagerGender.bySerializedName(storedGender);
         if (gender != null) {
@@ -137,12 +152,12 @@ public final class VillagerPresetNameRegistry {
         return gender;
     }
 
-    private static VillagerGender resolveClientStoredGender(AbstractVillager villager) {
+    private static VillagerGender resolveClientStoredGender(Entity villager) {
         VillagerGender storedGender = VillagerGender.bySerializedName(villager.getPersistentData().getString(PERSISTENT_GENDER_KEY));
         return storedGender == null ? deterministicGender(villager) : storedGender;
     }
 
-    private static VillagerGender deterministicGender(AbstractVillager villager) {
+    private static VillagerGender deterministicGender(Entity villager) {
         return switch (Math.floorMod(villager.getUUID().hashCode(), 10)) {
             case 0 -> VillagerGender.NON_BINARY;
             case 1, 2, 3, 4, 5 -> VillagerGender.MALE;

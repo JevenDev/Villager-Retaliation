@@ -1,0 +1,418 @@
+package com.jvn.villagerretaliation.dialogue.normal;
+
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.resources.DialogueTuningResources;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import net.minecraft.world.entity.npc.VillagerProfession;
+
+public final class DialogueReputationService {
+    private static final long DAY_TICKS = 24000L;
+    private static final int MAP_REPORT_REPUTATION_GAIN = 10;
+    private static final int COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN = 12;
+    private static final int APOLOGY_REPUTATION_GAIN = 4;
+    private static final int VILLAGE_DEFENSE_REPORT_REPUTATION_GAIN = 8;
+    private static final int RAID_VICTORY_ACKNOWLEDGEMENT_REPUTATION_GAIN = 15;
+
+    private DialogueReputationService() {
+    }
+
+    public static DialogueReputationEffect apply(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
+        if (!VillagerRetaliationConfig.ENABLE_DIALOGUE_REPUTATION_EFFECTS.get()
+                || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            return DialogueReputationEffect.none(requestType);
+        }
+        PlannedEffect plannedEffect = planEffect(context, requestType, interactionState);
+        plannedEffect = applySocialAttributeRecovery(context, requestType, plannedEffect);
+        if (plannedEffect.delta() == 0) {
+            return DialogueReputationEffect.none(requestType);
+        }
+
+        long day = context.level().getDayTime() / DAY_TICKS;
+        if (isBlockedByCooldown(interactionState, plannedEffect, day)) {
+            return new DialogueReputationEffect(
+                    requestType,
+                    0,
+                    plannedEffect.reason(),
+                    plannedEffect.cooldownCategory(),
+                    interactionState.firstConversation(),
+                    false,
+                    true,
+                    null
+            );
+        }
+
+        VillagerReputationManager.addDialogueReputation(context.level(), context.villager(), context.player(), plannedEffect.delta());
+        VillagerInteractionTracker.rememberDialogueReputation(
+                context.level(),
+                context.villager(),
+                context.player(),
+                requestType,
+                plannedEffect.delta(),
+                plannedEffect.badFirstImpression()
+        );
+        return new DialogueReputationEffect(
+                requestType,
+                plannedEffect.delta(),
+                plannedEffect.reason(),
+                plannedEffect.cooldownCategory(),
+                interactionState.firstConversation(),
+                true,
+                false,
+                plannedEffect.responseOverride()
+        );
+    }
+
+    private static PlannedEffect planEffect(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
+        if (context.villager().isBaby() && requestType == DialogueRequestType.INSULT) {
+            return new PlannedEffect(
+                    VillagerRetaliationConfig.INSULT_REPUTATION_LOSS.get(),
+                    "insult_child",
+                    DialogueReputationEffect.CooldownCategory.NEGATIVE,
+                    false,
+                    response(context, "reputation.insult_child")
+            );
+        }
+        if (isDialogueOptionExhausted(context, requestType, interactionState)) {
+            return new PlannedEffect(
+                    VillagerRetaliationConfig.REPEATED_QUESTION_REPUTATION_LOSS.get(),
+                    "repeated_" + requestType.name().toLowerCase(java.util.Locale.ROOT),
+                    DialogueReputationEffect.CooldownCategory.NEGATIVE,
+                    false,
+                    annoyedOptionResponse(context, requestType)
+            );
+        }
+        return switch (requestType) {
+            case GREETING -> planGreeting(context, interactionState.firstConversation());
+            case QUESTION -> planQuestion(context);
+            case GIFT_PREFERENCES -> PlannedEffect.none();
+            case GIFT_ADVICE_FOLLOWUP -> PlannedEffect.none();
+            case MAP_REPORT -> new PlannedEffect(
+                    MAP_REPORT_REPUTATION_GAIN,
+                    "map_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
+            case STORY_HINT_REPORT -> new PlannedEffect(
+                    MAP_REPORT_REPUTATION_GAIN,
+                    "story_hint_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
+            case SHARE_STORY -> new PlannedEffect(
+                    MAP_REPORT_REPUTATION_GAIN,
+                    "share_story",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
+            case COMBAT_SURVIVAL_REPORT -> new PlannedEffect(
+                    COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN,
+                    "combat_survival_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
+            case GEAR_REPORT -> PlannedEffect.none();
+            case RECRUITMENT_FOLLOWUP -> PlannedEffect.none();
+            case CURED_RECOGNITION -> PlannedEffect.none();
+            case VILLAGE_EVENT_REPORT -> PlannedEffect.none();
+            case APOLOGY -> context.hasUnapologizedRememberedHarm()
+                    ? new PlannedEffect(
+                    APOLOGY_REPUTATION_GAIN,
+                    "apology",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            )
+                    : PlannedEffect.none();
+            case VILLAGE_DEFENSE_REPORT -> context.hasUnreportedVillageDefense()
+                    ? new PlannedEffect(
+                    VILLAGE_DEFENSE_REPORT_REPUTATION_GAIN,
+                    "village_defense_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            )
+                    : PlannedEffect.none();
+            case RAID_VICTORY_ACKNOWLEDGEMENT -> new PlannedEffect(
+                    RAID_VICTORY_ACKNOWLEDGEMENT_REPUTATION_GAIN,
+                    "raid_victory_acknowledgement",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
+            case STORY -> planStory(context);
+            case JOKE -> planJoke(context);
+            case INSULT -> planInsult(context, interactionState.firstConversation());
+        };
+    }
+
+    private static PlannedEffect applySocialAttributeRecovery(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            PlannedEffect plannedEffect) {
+        if (plannedEffect.delta() == 0
+                || !VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS)) {
+            return plannedEffect;
+        }
+
+        int delta = plannedEffect.delta();
+        if (delta > 0) {
+            if (requestType == DialogueRequestType.APOLOGY) {
+                delta += VillagerSocialAttributeBehavior.positiveBonus(
+                        context.level(),
+                        context.villager(),
+                        VillagerSocialAttribute.KINDNESS,
+                        3,
+                        VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+                );
+                delta += VillagerSocialAttributeBehavior.positiveBonus(
+                        context.level(),
+                        context.villager(),
+                        VillagerSocialAttribute.CHARM,
+                        1,
+                        VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+                );
+            } else if (requestType == DialogueRequestType.GREETING
+                    || requestType == DialogueRequestType.QUESTION
+                    || requestType == DialogueRequestType.STORY
+                    || requestType == DialogueRequestType.JOKE) {
+                delta += VillagerSocialAttributeBehavior.positiveBonus(
+                        context.level(),
+                        context.villager(),
+                        VillagerSocialAttribute.CHARM,
+                        1,
+                        VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+                );
+            } else if (requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
+                    || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT
+                    || requestType == DialogueRequestType.RAID_VICTORY_ACKNOWLEDGEMENT) {
+                delta += VillagerSocialAttributeBehavior.positiveBonus(
+                        context.level(),
+                        context.villager(),
+                        VillagerSocialAttribute.KINDNESS,
+                        1,
+                        VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+                );
+            }
+        } else if (requestType != DialogueRequestType.INSULT
+                && (plannedEffect.reason().startsWith("repeated_") || requestType == DialogueRequestType.JOKE)) {
+            int softening = VillagerSocialAttributeBehavior.positiveBonus(
+                    context.level(),
+                    context.villager(),
+                    VillagerSocialAttribute.KINDNESS,
+                    1,
+                    VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+            );
+            delta = Math.min(-1, delta + softening);
+        }
+        return plannedEffect.withDelta(delta);
+    }
+
+    private static PlannedEffect planGreeting(DialogueContext context, boolean firstConversation) {
+        if (context.reputationLevel().trustRank() < VillagerReputationLevel.NEUTRAL.trustRank()) {
+            return PlannedEffect.none();
+        }
+        if (!firstConversation) {
+            return context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank()
+                    && DialogueTuningResources.passes(context, "reputation.repeat_greeting_chance", 0.15D)
+                    ? positive(VillagerRetaliationConfig.GREETING_REPUTATION_GAIN.get(), "greeting", occasionalPositiveResponse(context))
+                    : PlannedEffect.none();
+        }
+        return positive(VillagerRetaliationConfig.FIRST_GREETING_REPUTATION_GAIN.get(), "first_greeting", occasionalPositiveResponse(context));
+    }
+
+    private static PlannedEffect planQuestion(DialogueContext context) {
+        if (context.reputationLevel().trustRank() < VillagerReputationLevel.NEUTRAL.trustRank()) {
+            return PlannedEffect.none();
+        }
+        boolean trusted = context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank();
+        return DialogueTuningResources.passes(
+                context,
+                trusted ? "reputation.question.trusted_chance" : "reputation.question.neutral_chance",
+                trusted ? 0.55D : 0.30D)
+                ? positive(VillagerRetaliationConfig.QUESTION_REPUTATION_GAIN.get(), "question", occasionalPositiveResponse(context))
+                : PlannedEffect.none();
+    }
+
+    private static boolean isDialogueOptionExhausted(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
+        if (requestType == DialogueRequestType.INSULT
+                || requestType == DialogueRequestType.MAP_REPORT
+                || requestType == DialogueRequestType.STORY_HINT_REPORT
+                || requestType == DialogueRequestType.SHARE_STORY
+                || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
+                || requestType == DialogueRequestType.GEAR_REPORT
+                || requestType == DialogueRequestType.RECRUITMENT_FOLLOWUP
+                || requestType == DialogueRequestType.CURED_RECOGNITION
+                || requestType == DialogueRequestType.VILLAGE_EVENT_REPORT
+                || requestType == DialogueRequestType.GIFT_ADVICE_FOLLOWUP
+                || requestType == DialogueRequestType.APOLOGY
+                || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT
+                || requestType == DialogueRequestType.RAID_VICTORY_ACKNOWLEDGEMENT) {
+            return false;
+        }
+        int limit = repeatedDialogueLimit(context.reputationLevel());
+        return limit >= 0 && interactionState.requestUseCount(requestType) >= limit;
+    }
+
+    private static int repeatedDialogueLimit(VillagerReputationLevel reputationLevel) {
+        int limit = VillagerRetaliationConfig.REPEATED_QUESTION_POSITIVE_LIMIT.get();
+        if (limit < 0) {
+            return limit;
+        }
+        return limit + switch (reputationLevel) {
+            case ROYALTY -> VillagerRetaliationConfig.ROYALTY_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            case REVERED -> VillagerRetaliationConfig.REVERED_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            case RESPECTED -> VillagerRetaliationConfig.RESPECTED_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            case TRUSTED -> VillagerRetaliationConfig.TRUSTED_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            default -> 0;
+        };
+    }
+
+    private static PlannedEffect planStory(DialogueContext context) {
+        if (context.reputationLevel().trustRank() < VillagerReputationLevel.NEUTRAL.trustRank()) {
+            return PlannedEffect.none();
+        }
+        boolean trusted = context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank();
+        double chance = DialogueTuningResources.value(
+                context,
+                trusted ? "reputation.story.trusted_chance" : "reputation.story.neutral_chance",
+                trusted ? 0.65D : 0.40D);
+        if (context.profession() == VillagerProfession.LIBRARIAN
+                || context.profession() == VillagerProfession.CLERIC
+                || context.profession() == VillagerProfession.NITWIT) {
+            chance += DialogueTuningResources.value(context, "reputation.story.profession_bonus", 0.15D);
+        }
+        return DialogueTuningResources.passes(context, chance)
+                ? positive(VillagerRetaliationConfig.STORY_REPUTATION_GAIN.get(), "story", occasionalPositiveResponse(context))
+                : PlannedEffect.none();
+    }
+
+    private static PlannedEffect planJoke(DialogueContext context) {
+        String chanceTier = switch (context.reputationLevel()) {
+            case ROYALTY, REVERED -> "royalty";
+            case RESPECTED, TRUSTED -> "trusted";
+            case NEUTRAL -> "neutral";
+            case SUSPICIOUS -> "suspicious";
+            case HOSTILE -> "hostile";
+            case DESPISED, FEARED -> "despised";
+        };
+        double fallback = switch (chanceTier) {
+            case "royalty" -> 0.85D;
+            case "trusted" -> 0.70D;
+            case "neutral" -> 0.50D;
+            case "suspicious" -> 0.35D;
+            case "hostile" -> 0.25D;
+            default -> 0.15D;
+        };
+        double goodChance = DialogueTuningResources.value(
+                context, "reputation.joke." + chanceTier + "_chance", fallback);
+        if (context.profession() == VillagerProfession.NITWIT) {
+            goodChance += DialogueTuningResources.value(context, "reputation.joke.nitwit_bonus", 0.10D);
+        }
+
+        if (DialogueTuningResources.passes(context, goodChance)) {
+            return new PlannedEffect(
+                    VillagerRetaliationConfig.JOKE_REPUTATION_GAIN.get(),
+                    "joke_landed",
+                    DialogueReputationEffect.CooldownCategory.JOKE,
+                    false,
+                    occasionalPositiveResponse(context)
+            );
+        }
+        return new PlannedEffect(
+                VillagerRetaliationConfig.JOKE_REPUTATION_LOSS.get(),
+                "joke_missed",
+                DialogueReputationEffect.CooldownCategory.JOKE,
+                false,
+                DialogueTuningResources.passes(context, "reputation.joke.missed_response_chance", 1.0D / 3.0D)
+                        ? response(context, "reputation.joke_missed") : null
+        );
+    }
+
+    private static PlannedEffect planInsult(DialogueContext context, boolean firstConversation) {
+        int delta = firstConversation
+                ? VillagerRetaliationConfig.FIRST_INSULT_REPUTATION_LOSS.get()
+                : VillagerRetaliationConfig.INSULT_REPUTATION_LOSS.get();
+        if (!firstConversation && context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank()) {
+            delta *= 2;
+        } else if (!firstConversation && context.reputationLevel().trustRank() <= VillagerReputationLevel.SUSPICIOUS.trustRank()) {
+            delta += -1;
+        }
+        return new PlannedEffect(
+                delta,
+                firstConversation ? "first_insult" : "insult",
+                DialogueReputationEffect.CooldownCategory.NEGATIVE,
+                firstConversation,
+                angryResponse(context)
+        );
+    }
+
+    private static boolean isBlockedByCooldown(VillagerInteractionTracker.InteractionState interactionState, PlannedEffect plannedEffect, long day) {
+        if (plannedEffect.delta() < 0 || plannedEffect.cooldownCategory() == DialogueReputationEffect.CooldownCategory.NONE) {
+            return false;
+        }
+        return !hasDayCooldownElapsed(
+                day,
+                interactionState.lastPositiveDialogueReputationDay(),
+                VillagerRetaliationConfig.DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS.get()
+        );
+    }
+
+    private static boolean hasDayCooldownElapsed(long day, long lastDay, int cooldownDays) {
+        if (cooldownDays <= 0 || lastDay == Long.MIN_VALUE) {
+            return true;
+        }
+        return day >= lastDay + cooldownDays;
+    }
+
+    private static PlannedEffect positive(int delta, String reason, String responseOverride) {
+        return new PlannedEffect(delta, reason, DialogueReputationEffect.CooldownCategory.POSITIVE, false, responseOverride);
+    }
+
+    private static String occasionalPositiveResponse(DialogueContext context) {
+        if (!DialogueTuningResources.passes(context, "reputation.positive_response_chance", 0.25D)) {
+            return null;
+        }
+        return response(context, "reputation.positive");
+    }
+
+    private static String angryResponse(DialogueContext context) {
+        return response(context, "reputation.angry");
+    }
+
+    private static String annoyedOptionResponse(DialogueContext context, DialogueRequestType requestType) {
+        if (requestType == DialogueRequestType.QUESTION) {
+            return response(context, "reputation.repeated_question");
+        }
+        return response(context, "reputation.repeated_dialogue");
+    }
+
+    private static String response(DialogueContext context, String key) {
+        return VillagerDialogueResources.message(context, key).orElse("");
+    }
+
+    private record PlannedEffect(
+            int delta,
+            String reason,
+            DialogueReputationEffect.CooldownCategory cooldownCategory,
+            boolean badFirstImpression,
+            String responseOverride
+    ) {
+        static PlannedEffect none() {
+            return new PlannedEffect(0, "none", DialogueReputationEffect.CooldownCategory.NONE, false, null);
+        }
+
+        PlannedEffect withDelta(int delta) {
+            return new PlannedEffect(delta, this.reason, this.cooldownCategory, this.badFirstImpression, this.responseOverride);
+        }
+    }
+}

@@ -2,19 +2,25 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
-import com.jvn.villagerretaliation.inventory.VillagerTakenItemTracker;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.inventory.VillagerTakenItemTracker;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
+import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -26,6 +32,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 
@@ -33,7 +40,13 @@ public final class VillagerGiftRequestHandler {
     private VillagerGiftRequestHandler() {
     }
 
-    public static void handle(ServerPlayer player, int entityId, int inventorySlot) {
+    public static void handle(ServerPlayer player, int entityId, int inventorySlot, int amount) {
+        if (!ServerboundRequestLimiter.tryAcquire(
+                player,
+                VillagerGiftRequestPayload.TYPE.id(),
+                VillagerRetaliationConfig.GIFT_REQUEST_COOLDOWN_TICKS.get())) {
+            return;
+        }
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
             VillagerInteractionService.sendNotice(player, entityId, "interaction.gift_unavailable");
             return;
@@ -50,10 +63,6 @@ public final class VillagerGiftRequestHandler {
             InteractionRequestValidator.endConversationWithRefusal(target, "interaction.keep_distance");
             return;
         }
-        if (villager.isBaby()) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.child_refuse_gift");
-            return;
-        }
         if (inventorySlot < 0 || inventorySlot >= 36) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_invalid");
             return;
@@ -64,29 +73,56 @@ public final class VillagerGiftRequestHandler {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_empty_slot");
             return;
         }
-        if (!VillagerInventoryAccess.canAddItems(villager, List.of(selectedStack.copy()))) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_inventory_full");
+
+        int resolvedAmount = amount == 0 ? selectedStack.getCount() : amount;
+        if (resolvedAmount < 1 || resolvedAmount > selectedStack.getCount()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_invalid");
             return;
         }
 
         ServerLevel level = target.level();
+        String locale = VillagerLocale.locale(player);
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        ItemStack offeredStack = selectedStack.copyWithCount(resolvedAmount);
+        ResolvedGiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, offeredStack);
+        boolean rejected = rejectsGift(giftPreference.reaction());
+        if (!rejected && !VillagerInventoryAccess.canAddItems(villager, List.of(offeredStack))) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_inventory_full");
+            return;
+        }
+
         Optional<VillagerTakenItemTracker.TakenItemOwner> takenItemOwner =
                 VillagerTakenItemTracker.owner(selectedStack);
-        ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
+        ItemStack giftedStack = takeOfferedStack(
+                player.getInventory(),
+                inventorySlot,
+                resolvedAmount,
+                giftPreference.reaction());
         VillagerTakenItemTracker.clear(giftedStack);
-        player.getInventory().setChanged();
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, giftedStack);
+        if (rejected) {
+            player.inventoryMenu.broadcastFullState();
+        } else {
+            player.getInventory().setChanged();
+        }
         int reputationValue = adjustedGiftReputation(level, villager, giftPreference);
-        VillagerGiftKnowledgeService.rememberGiftResult(level, player, profession, giftedStack, giftPreference);
+        reputationValue = VillagerInteractionSavedData.get(level).limitPositiveGiftReputation(
+                villager.getUUID(),
+                player.getUUID(),
+                level.getDayTime() / 24000L,
+                itemId(giftedStack),
+                reputationValue,
+                VillagerRetaliationConfig.REPEATED_GIFT_REPUTATION_MULTIPLIER.get(),
+                VillagerRetaliationConfig.DAILY_GIFT_REPUTATION_CAP.get()
+        );
+        VillagerGiftKnowledgeService.discoverFromGift(level, player, profession, giftedStack, giftPreference);
         Boolean giftAdviceLikedResult = giftAdviceLikedResult(giftPreference.reaction());
         if (giftAdviceLikedResult != null) {
             VillagerInteractionTracker.markGiftAdviceResult(
                     level,
                     villager,
                     player,
-                    itemId(giftedStack),
-                    itemName(giftedStack),
+                    giftPreference.matched() ? giftPreference.categoryId().toString() : itemId(giftedStack),
+                    VillagerItemText.dialogueName(level.getServer(), locale, giftedStack),
                     VillagerGiftKnowledgeService.professionKey(profession),
                     VillagerInteractionTextUtil.professionName(profession, "villager").toLowerCase(java.util.Locale.ROOT),
                     VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
@@ -94,29 +130,64 @@ public final class VillagerGiftRequestHandler {
             );
         }
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
-        VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference);
-        rememberGearGift(level, villager, player, giftedStack);
+        if (giftPreference.matched()
+                && (giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.LIKED
+                || giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.LOVED)) {
+            VillagerReputationAdvancements.onPreferredGift(player);
+        }
+        if (!rejected) {
+            VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference, reputationValue);
+            rememberGearGift(level, villager, player, giftedStack);
+        }
         VillageEventMemory.rememberGift(
                 level,
                 villager.blockPosition(),
                 villager,
                 player,
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                itemName(giftedStack),
+                VillagerItemText.dialogueName(level.getServer(), locale, giftedStack),
+                itemId(giftedStack),
+                giftedStack.getCount(),
                 giftPreference.reaction(),
                 reputationValue
         );
+        VillagerQuestService.onGiftGiven(level, player, villager, giftedStack, giftPreference.reaction(), reputationValue);
         VillagerMoodService.recordGift(level, villager, player, giftPreference.reaction(), reputationValue);
         reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
-        sendGiftNotice(player, villager, giftedStack, reputationValue);
+        sendGiftNotice(player, villager, giftedStack, giftPreference.reaction());
         VillagerInteractionService.focusVillagerOnPlayer(villager, player);
-        VillagerInteractionService.playGiftFeedback(level, villager, reputationValue);
-        VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
+        int reactionValue = giftPreference.reaction().defaultPerItemReputation();
+        VillagerInteractionService.playGiftFeedback(level, villager, reactionValue);
+        VillagerAmbientIndicatorService.onGiftReceived(villager, reactionValue);
 
         DialogueContext giftContext = VillagerInteractionService.createDialogueContext(level, player, villager);
         String responseText = giftResponseText(giftContext, giftPreference, giftedStack, takenItemOwner, villager);
         VillagerInteractionService.sendDialogueReputation(player, villager, level);
-        VillagerInteractionService.broadcastVillagerChat(level, villager, responseText);
+        VillagerInteractionService.sendPersonalVillagerChat(player, villager, responseText);
+    }
+
+    static ItemStack takeOfferedStack(
+            Inventory inventory,
+            int inventorySlot,
+            int amount,
+            VillagerGiftPreferences.GiftReaction reaction) {
+        ItemStack selectedStack = inventory.getItem(inventorySlot);
+        if (rejectsGift(reaction)) {
+            return selectedStack.copyWithCount(amount);
+        }
+        return inventory.removeItem(inventorySlot, amount);
+    }
+
+    static ItemStack takeOfferedStack(
+            Inventory inventory,
+            int inventorySlot,
+            VillagerGiftPreferences.GiftReaction reaction) {
+        return takeOfferedStack(inventory, inventorySlot, inventory.getItem(inventorySlot).getCount(), reaction);
+    }
+
+    private static boolean rejectsGift(VillagerGiftPreferences.GiftReaction reaction) {
+        return reaction == VillagerGiftPreferences.GiftReaction.DISLIKED
+                || reaction == VillagerGiftPreferences.GiftReaction.HATED;
     }
 
     private static void reduceDialogueAnnoyanceFromGift(ServerLevel level, Villager villager, ServerPlayer player, int reputationValue) {
@@ -128,7 +199,7 @@ public final class VillagerGiftRequestHandler {
         VillagerInteractionTracker.reduceRepeatedDialogueUseCounts(level, villager, player, reduction);
     }
 
-    private static String giftResponseKey(VillagerGiftPreferences.GiftPreference giftPreference) {
+    private static String giftResponseKey(ResolvedGiftPreference giftPreference) {
         String scope = giftPreference.professionSpecific() ? "profession" : "global";
         String reaction = giftPreference.reaction().name().toLowerCase(java.util.Locale.ROOT);
         return "gift_response." + scope + "." + reaction;
@@ -136,13 +207,13 @@ public final class VillagerGiftRequestHandler {
 
     private static String giftResponseText(
             DialogueContext context,
-            VillagerGiftPreferences.GiftPreference giftPreference,
+            ResolvedGiftPreference giftPreference,
             ItemStack giftedStack,
             Optional<VillagerTakenItemTracker.TakenItemOwner> takenItemOwner,
             Villager villager) {
         Map<String, String> replacements = new java.util.HashMap<>(Map.of(
-                "gift_item", giftedStack.getHoverName().getString(),
-                "item", itemName(giftedStack),
+                "gift_item", VillagerItemText.dialogueName(context.level().getServer(), context.locale(), giftedStack),
+                "item", VillagerItemText.dialogueName(context.level().getServer(), context.locale(), giftedStack),
                 "gift_item_id", itemId(giftedStack),
                 "item_id", itemId(giftedStack)
         ));
@@ -178,7 +249,7 @@ public final class VillagerGiftRequestHandler {
     private static int adjustedGiftReputation(
             ServerLevel level,
             Villager villager,
-            VillagerGiftPreferences.GiftPreference giftPreference) {
+            ResolvedGiftPreference giftPreference) {
         int reputationValue = giftPreference.reputationValue();
         if (!VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS)) {
             return reputationValue;
@@ -229,26 +300,28 @@ public final class VillagerGiftRequestHandler {
         return equipable == null ? "" : "armor";
     }
 
-    private static void sendGiftNotice(ServerPlayer player, Villager villager, ItemStack giftedStack, int reputationValue) {
-        VillagerReputationNoticeKind kind = reputationValue < 0
+    private static void sendGiftNotice(
+            ServerPlayer player,
+            Villager villager,
+            ItemStack giftedStack,
+            VillagerGiftPreferences.GiftReaction giftReaction) {
+        int reactionValue = giftReaction.defaultPerItemReputation();
+        VillagerReputationNoticeKind kind = reactionValue < 0
                 ? VillagerReputationNoticeKind.GIFT_DISLIKED
-                : reputationValue > 0 ? VillagerReputationNoticeKind.GIFT_LIKED : VillagerReputationNoticeKind.GIFT_NEUTRAL;
-        String reaction = reputationValue < 0 ? "Disliked gift" : reputationValue > 0 ? "Liked gift" : "Accepted gift";
-        String trigger = reputationValue < 0 ? "gift.disliked" : reputationValue > 0 ? "gift.liked" : "gift.neutral";
+                : reactionValue > 0 ? VillagerReputationNoticeKind.GIFT_LIKED : VillagerReputationNoticeKind.GIFT_NEUTRAL;
+        String reaction = reactionValue < 0 ? "Disliked gift" : reactionValue > 0 ? "Liked gift" : "Accepted gift";
+        String trigger = reactionValue < 0 ? "gift.disliked" : reactionValue > 0 ? "gift.liked" : "gift.neutral";
         VillagerNotifications.sendHud(
                 player,
                 player.serverLevel(),
                 villager,
                 trigger,
-                VillagerNotifications.replacements("item", itemName(giftedStack), "villager", displayName(villager)),
-                reaction + ": " + itemName(giftedStack),
+                VillagerNotifications.replacements(
+                        "item", VillagerItemText.stackName(player.server, VillagerLocale.locale(player), giftedStack),
+                        "villager", displayName(villager)),
+                reaction + ": " + VillagerItemText.stackName(player.server, VillagerLocale.locale(player), giftedStack),
                 kind
         );
-    }
-
-    private static String itemName(ItemStack stack) {
-        String name = stack.getHoverName().getString();
-        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
     }
 
     private static String itemId(ItemStack stack) {

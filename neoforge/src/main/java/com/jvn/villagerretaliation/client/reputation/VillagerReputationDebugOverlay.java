@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.reputation;
 
+import com.jvn.villagerretaliation.client.villager.VillagerHungerClientCache;
+import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityAttachment;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderNameTagEvent;
 import org.joml.Matrix4f;
@@ -23,7 +26,8 @@ public final class VillagerReputationDebugOverlay {
     }
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
-        if (!VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
+        if (VillagerModelPreviewRenderContext.isRendering(event.getEntity())
+                || !VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
                 || !(event.getEntity() instanceof AbstractVillager villager)) {
             return;
         }
@@ -84,6 +88,13 @@ public final class VillagerReputationDebugOverlay {
         }
         if (VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR.get()) {
             lines.add(I18n.get("villagerretaliation.reputation.debug.armor", villager.getArmorValue()));
+        }
+        if (VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_HUNGER.get()
+                && villager instanceof Villager ordinaryVillager) {
+            lines.add(I18n.get(
+                    "villagerretaliation.reputation.debug.hunger",
+                    VillagerHungerClientCache.hunger(ordinaryVillager),
+                    20));
         }
 
         return lines;

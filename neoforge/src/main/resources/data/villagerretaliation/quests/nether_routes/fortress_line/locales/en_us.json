@@ -1,0 +1,113 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.nether_routes.fortress_line.description": "Secure the fortress branch against Wither Skeleton patrols.",
+    "quest.nether_routes.fortress_line.stage.return.dialogue.turn_in.label": "About Black Bridges",
+    "quest.nether_routes.fortress_line.stage.return.dialogue.turn_in.lines": [
+      "The fortress line is marked, stocked, and quieter than we found it.",
+      "A road through flame and black bone now leads back to the village.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.nether_routes.fortress_line.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.nether_routes.fortress_line.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.nether_routes.fortress_line.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "The fortress line is marked, stocked, and quieter than we found it.",
+      "A road through flame and black bone now leads back to the village."
+    ],
+    "quest.nether_routes.fortress_line.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "The full work is not ready to count yet."
+    ],
+    "quest.nether_routes.fortress_line.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.nether_routes.fortress_line.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.nether_routes.fortress_line.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Black Bridges is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.fortress_line.stage.return.scene.turn_in_wait.lines": [
+      "Five Wither Skeletons, thirty-two bricks, sixteen Nether Wart.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.nether_routes.fortress_line.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.nether_routes.fortress_line.stage.work.dialogue.offer.label": "Black Bridges",
+    "quest.nether_routes.fortress_line.stage.work.dialogue.offer.lines": [
+      "The fortress bearing is true, but Wither Skeletons have found the same bridges.",
+      "Clear the patrol and build markers from the fortress's own black brick.",
+      "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.nether_routes.fortress_line.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.nether_routes.fortress_line.stage.work.dialogue.reminder.label": "About Black Bridges",
+    "quest.nether_routes.fortress_line.stage.work.dialogue.reminder.lines": [
+      "Five Wither Skeletons, thirty-two bricks, sixteen Nether Wart.",
+      "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart.",
+      "Clear the patrol and build markers from the fortress's own black brick."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.nether_routes.fortress_line.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.nether_routes.fortress_line.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.nether_routes.fortress_line.stage.work.objective.bring_bricks.tracker.complete_text": "The route bricks are ready.",
+    "quest.nether_routes.fortress_line.stage.work.objective.bring_bricks.tracker.text": "Bring 32 Nether bricks for route markers.",
+    "quest.nether_routes.fortress_line.stage.work.objective.bring_wart.tracker.complete_text": "The Nether Wart is ready.",
+    "quest.nether_routes.fortress_line.stage.work.objective.bring_wart.tracker.text": "Bring 16 Nether Wart for the route chest.",
+    "quest.nether_routes.fortress_line.stage.work.objective.clear_wither_skeletons.tracker.complete_text": "The fortress patrol is cleared.",
+    "quest.nether_routes.fortress_line.stage.work.objective.clear_wither_skeletons.tracker.text": "Defeat 5 Wither Skeletons along the route.",
+    "quest.nether_routes.fortress_line.stage.work.scene.abandon_confirm.lines": [
+      "Put Black Bridges aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.nether_routes.fortress_line.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.nether_routes.fortress_line.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Black Bridges is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.decline.lines": [
+      "Then the black bridges keep their patrols a little longer."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.leave.lines": [
+      "Five Wither Skeletons, thirty-two bricks, sixteen Nether Wart.",
+      "Come back when the work is ready to count."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Five Wither Skeletons, thirty-two bricks, sixteen Nether Wart.",
+      "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart.",
+      "Clear the patrol and build markers from the fortress's own black brick."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Black Bridges is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Black Bridges is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.start_quest.action.start.lines.started": [
+      "Mark the safe turns low on the wall. Ghasts enjoy editing tall signs.",
+      "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Black Bridges is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.nether_routes.fortress_line.stage.work.ui.tracker_text": "Defeat 5 Wither Skeletons and bring 32 Nether bricks and 16 Nether Wart.",
+    "quest.nether_routes.fortress_line.title": "Black Bridges"
+  }
+}

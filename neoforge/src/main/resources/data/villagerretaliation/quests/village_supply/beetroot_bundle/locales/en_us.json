@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "quest.village_supply.beetroot_bundle.description": {
+      "lines": [
+        "Bring beetroot for stews, pickling jars, and simple sickroom meals."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.dialogue.already_completed": {
+      "lines": [
+        "No one needs this done twice. We already settled Beetroot Bundle.",
+        "The matter ended well enough. The pantry has the beetroot you brought.",
+        "Leave the old tally alone. I counted your 16 beetroot. We are square.",
+        "Nothing remains to be earned from this. The cooks already put that delivery to work.",
+        "I remember your first return. You solved the problem of an empty vegetable bin.",
+        "Leave the old tally alone. There is no reason to gather another load of beetroot.",
+        "That chapter is closed. Beetroot Bundle is crossed off the beetroot work list.",
+        "Nothing remains to be earned from this. Your part in helping us fill stew pots and pickling jars is finished.",
+        "That chapter is closed. The last beetroot batch is still serving the village.",
+        "I remember your first return. I remember who filled the beetroot order, and it was you.",
+        "No one needs this done twice. The reward was paid when the beetroot delivery came in.",
+        "I will not reopen a finished account. You did enough the first time. I will leave the old entry filed under Beetroot Bundle.",
+        "Leave the old tally alone. We can stretch the sickroom meals because you answered Beetroot Bundle.",
+        "No one needs this done twice. The full beetroot count reached the pantry. Nothing is missing.",
+        "Nothing remains to be earned from this. The cooks would object if I asked you twice.",
+        "The matter ended well enough. Your beetroot delivery passed inspection and went into use.",
+        "I will not reopen a finished account. That empty spot in the pantry belongs to yesterday.",
+        "What was owed has been paid. The record shows 16 beetroot received from you.",
+        "What was owed has been paid. You did the quiet beetroot work that keeps everyone going.",
+        "That chapter is closed. The first ending was good enough for Beetroot Bundle."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.dialogue.inactive": {
+      "lines": [
+        "There is no reason to begin yet. The pantry list is not being counted right now.",
+        "The village can wait on this one. There is no open order for beetroot today.",
+        "The time is wrong. The pantry is being counted before I ask for more.",
+        "There is no reason to begin yet. The cooks have not posted a fresh request.",
+        "We have no need of it yet. Hold off on the beetroot. We have nowhere useful to put them.",
+        "Not today. The need to fill stew pots and pickling jars will return, but not today.",
+        "Not today. I am waiting for the next tally before opening Beetroot Bundle.",
+        "We have no need of it yet. Bringing 16 beetroot now would crowd the stores.",
+        "We have no need of it yet. The last beetroot batch has not been used up yet.",
+        "Ask me after the stores change. Ask again after the cooks check what remains.",
+        "I am keeping this off the board. I will not invent an urgent need for beetroot.",
+        "The time is wrong. The pantry is quiet, so this can wait.",
+        "I am keeping this off the board. We are between work orders for beetroot.",
+        "We have no need of it yet. Nothing is wrong at the pantry. The timing is simply off.",
+        "The board can wait. Save your effort until we actually need beetroot.",
+        "There is no reason to begin yet. The board has no current mark beside Beetroot Bundle.",
+        "I am keeping this off the board. Today is not the day for another beetroot run.",
+        "Ask me after the stores change. Once an empty vegetable bin becomes a concern, I will reopen this.",
+        "We have no need of it yet. I would rather delay than waste good beetroot.",
+        "For now, let the matter rest. Wait for the stores to change before asking me about Beetroot Bundle."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.dialogue.locate_failed": {
+      "lines": [
+        "I cannot confirm the current beetroot order. Ask again after the village kitchen has been checked.",
+        "The village kitchen tally is missing, so I will not ask you to gather beetroot yet.",
+        "No one has confirmed how much beetroot the village kitchen needs today.",
+        "The work note is incomplete. Let me settle the beetroot count first.",
+        "I will not send you after beetroot until the village confirms the order.",
+        "The village kitchen has not posted a trustworthy beetroot count.",
+        "I checked the work slate twice; the beetroot request is not ready.",
+        "This order can wait until I have a current beetroot tally.",
+        "Someone needs to check the village kitchen before I hand you this order.",
+        "The village has not agreed on the beetroot count yet.",
+        "I have an old beetroot tally and no current one.",
+        "The village kitchen may need beetroot, but I will not turn a guess into work.",
+        "Come back after the village kitchen finishes its count.",
+        "The order is missing details. I need a confirmed amount and receiving place.",
+        "I cannot put this request on the board until the work note is complete.",
+        "The request is not ready. I am still waiting on the village kitchen tally.",
+        "Let me confirm who needs the beetroot before you start gathering.",
+        "No work yet. The village has not approved this beetroot request.",
+        "The stores need another count before I can offer this work.",
+        "Ask again when the beetroot order has a clear owner and count."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.dialogue.missing_proof": {
+      "lines": [
+        "A story cannot close the ledger. Bring the beetroot before I call the bundle complete.",
+        "The last requirement is still missing. I need the beetroot here before I sign this off.",
+        "You returned without the one thing I asked for. A promise does not fill the pantry. Bring the beetroot delivery.",
+        "I need something I can hold. You may have gathered them, but the cooks have not received them.",
+        "Bring back something the village can verify. Set the 16 beetroot down here and I can close the beetroot order.",
+        "What you carried home decides this. Handing over the beetroot is the proof on this supply job.",
+        "The last requirement is still missing. I cannot inspect firm roots without rot while your hands are empty.",
+        "I need something I can hold. Your report sounds fine. I still need the actual beetroot.",
+        "The evidence still matters. Nothing has reached the pantry yet.",
+        "The last requirement is still missing. Bring what you collected before we discuss the Beetroot Bundle reward.",
+        "Bring back something the village can verify. The pantry needs usable beetroot, not a story about them.",
+        "Bring back something the village can verify. I will count the beetroot as soon as you place them here.",
+        "I need something I can hold. Do not leave the beetroot delivery in another chest.",
+        "The last requirement is still missing. The cooks are waiting on the beetroot bundle itself.",
+        "I cannot sign off on an empty return. The last step is simple. Hand over the beetroot.",
+        "The last requirement is still missing. I cannot fill stew pots and pickling jars with an empty counter.",
+        "I believe you went, but that is not enough. Come back carrying the beetroot order, and we will be done.",
+        "Bring back something the village can verify. The beetroot work counts once the pantry receives it.",
+        "Bring back something the village can verify. You are one handoff away from finishing Beetroot Bundle.",
+        "Your word is not the missing piece. Let me see the beetroot before I call this complete."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.dialogue.missing_target": {
+      "lines": [
+        "The delivery is still short. Bring the rest of the beetroot.",
+        "I counted twice; the full order of 16 beetroots is not here yet.",
+        "This helps, but the village kitchen still needs the remaining beetroot.",
+        "The hand-in is incomplete. I cannot close the work note yet.",
+        "We agreed on 16 beetroots; the pile is still short.",
+        "Bring the missing beetroot, and then I can settle the order.",
+        "The village kitchen has room waiting for the rest of the delivery.",
+        "A partial delivery does not cover what the village needs.",
+        "You brought the right goods, but not the full amount.",
+        "Count it again. The village kitchen is still short.",
+        "I cannot lower the agreed count after the work has begun.",
+        "Keep gathering until you have all 16 beetroots.",
+        "The village can use this much, but it still needs the remainder.",
+        "The work is nearly done; the missing amount is all that remains.",
+        "The tally and the delivery do not match yet.",
+        "Bring one complete delivery instead of leaving the village kitchen short.",
+        "The order stays open until all 16 beetroots are here.",
+        "Nothing is wrong with what you brought except the amount.",
+        "The village kitchen is counting on the full order, not part of it.",
+        "Return with the remainder, and I will close the note."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.dialogue.reminder": {
+      "lines": [
+        "Stay with the work you accepted. Sixteen beetroot for soups and pickling jars. Not glamorous, but glamour has never fed anyone.",
+        "You are not finished yet. I am still waiting on 16 beetroot for the pantry.",
+        "Stay with the work you accepted. Look for firm roots without rot. Bad supplies only move the problem.",
+        "The job still has loose ends. The cooks need those beetroot to fill stew pots and pickling jars.",
+        "Keep the return trip in your plans. The count is 16 beetroot. Check it before returning.",
+        "The next step still matters. This beetroot delivery means we can stretch the sickroom meals.",
+        "Before you leave, hear this again. If you are choosing between loads, bring the beetroot first.",
+        "Stay with the work you accepted. Keep the beetroot order together so the beetroot tally stays easy.",
+        "Keep the return trip in your plans. The pantry has space waiting for the full bundle.",
+        "Before you leave, hear this again. Do not let a simple request turn into an empty vegetable bin.",
+        "Stay with the work you accepted. There is no hidden part to Beetroot Bundle. Bring the agreed beetroot count.",
+        "Keep the return trip in your plans. Handle them carefully. I want firm roots without rot.",
+        "Remember what the village is waiting for. Bring all the beetroot at once if you can manage it.",
+        "Keep the whole task in mind. The cooks are planning their next work around your return.",
+        "Remember what the village is waiting for. I wrote 16 beetroot on the beetroot slate so neither of us has to guess.",
+        "Keep the whole task in mind. The sooner these arrive, the sooner we can fill stew pots and pickling jars.",
+        "Do not let one finished step distract you. Nothing else is missing from the beetroot order.",
+        "Hold to the instructions I gave you. Return when the beetroot are ready to hand over.",
+        "Hold to the instructions I gave you. You know how many beetroot the pantry needs. The rest is gathering.",
+        "Before you leave, hear this again. A complete beetroot bundle saves everyone a second trip."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.dialogue.start": {
+      "lines": [
+        "The village has work for you. Bring 16 beetroot. The stew pot looks more hopeful when it sees color.",
+        "This needs a careful hand. The beetroot order needs 16 beetroot. Can you handle that?",
+        "Let us be clear about the job. The cooks are trying to fill stew pots and pickling jars, and supplies are thin.",
+        "I need you to see this through. Bring me 16 beetroot. I want firm roots without rot.",
+        "Before you agree, hear all of it. I have a plain job with a useful result. Find 16 beetroot.",
+        "Take the task only if you are ready. We can stretch the sickroom meals if you fill the beetroot order.",
+        "The village has work for you. An empty vegetable bin is a small problem until everyone needs the same thing.",
+        "Here is the work. The count on the beetroot slate is 16 beetroot.",
+        "Listen closely. Gather the beetroot and bring the whole delivery here.",
+        "Let us be clear about the job. Stocking the pantry is not glory, but it matters.",
+        "There is a reason I chose you. The cooks asked me to find someone reliable for this run.",
+        "I am trusting you with something important. I need a clean delivery for the pantry.",
+        "There is a reason I chose you. If you can spare the time, 16 beetroot would settle the beetroot shortage.",
+        "Take the task only if you are ready. The need is real, which makes the instructions for Beetroot Bundle simple.",
+        "Here is the work. Bring the beetroot when you have the complete count.",
+        "Here is the work. Good beetroot will let us fill stew pots and pickling jars.",
+        "Listen closely. The village should not reach an empty vegetable bin before we act.",
+        "Let us be clear about the job. Take care with the beetroot bundle. We need firm roots without rot.",
+        "Here is the work. I will pay when the pantry receives the full order.",
+        "This needs a careful hand. Find 16 beetroot, and we can stop worrying about this awhile."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.dialogue.turn_in": {
+      "lines": [
+        "I am glad to see you home. Good. A little red in the pot makes hard meals feel planned.",
+        "That is the result I needed. The count is right. I will get these to the pantry.",
+        "You saw it through. The cooks can fill stew pots and pickling jars now.",
+        "I am glad to see you home. These are firm roots without rot. You chose well.",
+        "You delivered exactly what was needed. That delivery keeps us from an empty vegetable bin.",
+        "This will make a real difference. Good work. All the beetroot arrived together.",
+        "Good, you made it back. I have your beetroot, and you earned the Beetroot Bundle reward.",
+        "This return was worth waiting for. The pantry looks less bare already.",
+        "The village can use this. This will help us stretch the sickroom meals.",
+        "That settles what I asked of you. You saved the cooks from making do with scraps.",
+        "Good, you made it back. Everything on the beetroot slate is here.",
+        "You saw it through. A useful beetroot job, done without fuss. Thank you.",
+        "The village can use this. I will put the beetroot away before someone borrows them.",
+        "This will make a real difference. The village is better stocked because you completed Beetroot Bundle.",
+        "This return was worth waiting for. You brought exactly the beetroot I asked for.",
+        "The village can use this. The beetroot delivery is sound from top to bottom.",
+        "This will make a real difference. The pantry has one less shortage waiting to surprise us.",
+        "That settles what I asked of you. The village may not cheer for beetroot, but it would notice their absence.",
+        "Good, you made it back. Take your payment. The beetroot count gives me no complaint.",
+        "The hard part is behind us. I can hand the beetroot order to the cooks with confidence."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.dialogue.unavailable": {
+      "lines": [
+        "You are not ready for this request. The beetroot request is closed for now.",
+        "Come back after you have earned more trust. I cannot hand you the work filed under Beetroot Bundle yet.",
+        "I will not place this burden on you. The beetroot order is for someone the pantry already knows.",
+        "This work is not yours today. The cooks need a delivery they can count on.",
+        "This work is not yours today. Show the village steadier work before taking Beetroot Bundle.",
+        "Some work must wait until trust catches up. The beetroot matter too much to gamble on a stranger.",
+        "I need proof of your judgment first. I am not opening the beetroot slate to you today.",
+        "Earn our confidence before asking again. Build some trust, then ask about Beetroot Bundle again.",
+        "You are not ready for this request. I need someone who will return with the whole 16 beetroot.",
+        "Some work must wait until trust catches up. Gathering beetroot is simple, but reliability is not optional.",
+        "The village needs a steadier hand. For now, the beetroot order stays with regular hands.",
+        "I will not place this burden on you. I cannot promise the pantry a delivery from you yet.",
+        "I will not place this burden on you. There will be other work before we trust you with the pantry.",
+        "Earn our confidence before asking again. The village has not cleared you for this beetroot run.",
+        "You are not ready for this request. I would rather wait than risk an empty vegetable bin.",
+        "This work is not yours today. This is not punishment. Show better judgment before I open Beetroot Bundle.",
+        "I will not place this burden on you. The cooks asked for a familiar runner this time.",
+        "I will not place this burden on you. Come back for the beetroot order after your name carries more weight.",
+        "Some work must wait until trust catches up. I am not taking new help for Beetroot Bundle.",
+        "I need proof of your judgment first. Earn some confidence here, and we can revisit Beetroot Bundle."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.objective.bring_beetroot.complete_text": {
+      "lines": [
+        "The beetroot bundle is tied and ready."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.objective.bring_beetroot.text": {
+      "lines": [
+        "Bring 16 beetroot for the pantry."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.stage.return.dialogue.turn_in.label": "About Beetroot Bundle",
+    "quest.village_supply.beetroot_bundle.stage.return.dialogue.turn_in.lines": [
+      "Good roots. The cook can fill bowls instead of making excuses.",
+      "The count is right, and none of it will sit idle for long.",
+      "Let me see the full work before I close the note."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.return.dialogue.turn_in.response.complete.label": "Hand over the work.",
+    "quest.village_supply.beetroot_bundle.stage.return.dialogue.turn_in.response.leave.label": "Not yet.",
+    "quest.village_supply.beetroot_bundle.stage.return.scene.complete_quest.action.turn_in.lines.completed": [
+      "Good roots. The cook can fill bowls instead of making excuses.",
+      "The count is right, and none of it will sit idle for long.",
+      "That settles it. The village will make good use of this."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.return.scene.complete_quest.action.turn_in.lines.missing_objectives": [
+      "Something is still missing. Check the journal before I close the note.",
+      "The full work is not ready to count yet."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.return.scene.complete_quest.action.turn_in.lines.missing_proof": [
+      "Bring the proof with you before we settle this.",
+      "I need the full hand-in here, not only the story."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.return.scene.complete_quest.action.turn_in.lines.missing_target": [
+      "The supplies need a true destination behind them.",
+      "Reach the marked place before we call this finished."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.return.scene.complete_quest.action.turn_in.lines.unavailable": [
+      "Beetroot Bundle is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.return.scene.turn_in_wait.lines": [
+      "Bring 16 beetroot for the village kitchen",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.return.ui.tracker_text": "Return to the quest giver.",
+    "quest.village_supply.beetroot_bundle.stage.work.dialogue.offer.label": "Beetroot Bundle",
+    "quest.village_supply.beetroot_bundle.stage.work.dialogue.offer.lines": [
+      "The stew pots are red only at the bottom, which is a poor sort of stew.",
+      "Bring 16 beetroot for the village kitchen, and the shelves will look less worried.",
+      "Bring 16 beetroot for the village kitchen. I will make the reward worth the trouble."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.dialogue.offer.response.accept.label": "I can do that.",
+    "quest.village_supply.beetroot_bundle.stage.work.dialogue.offer.response.decline.label": "Not right now.",
+    "quest.village_supply.beetroot_bundle.stage.work.dialogue.reminder.label": "About Beetroot Bundle",
+    "quest.village_supply.beetroot_bundle.stage.work.dialogue.reminder.lines": [
+      "Bring 16 beetroot for the village kitchen",
+      "Bring 16 beetroot for the village kitchen.",
+      "Bring 16 beetroot for the village kitchen, and the shelves will look less worried."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.dialogue.reminder.response.abandon.label": "Put this aside.",
+    "quest.village_supply.beetroot_bundle.stage.work.dialogue.reminder.response.details.label": "Repeat the work.",
+    "quest.village_supply.beetroot_bundle.stage.work.dialogue.reminder.response.leave.label": "I have it.",
+    "quest.village_supply.beetroot_bundle.stage.work.scene.abandon_confirm.lines": [
+      "Put Beetroot Bundle aside?",
+      "I can take your name off the work if you are sure."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.abandon_confirm.response.cancel.label": "Keep it open.",
+    "quest.village_supply.beetroot_bundle.stage.work.scene.abandon_confirm.response.confirm.label": "Put it aside.",
+    "quest.village_supply.beetroot_bundle.stage.work.scene.abandon_quest.action.abandon.lines.abandoned": [
+      "All right. I will clear your name from the work.",
+      "The note is put away. You can ask again later."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.abandon_quest.action.abandon.lines.abandoned_cooldown": [
+      "I will put the note away for a while before posting it again.",
+      "Let the work rest before you ask for it again."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.abandon_quest.action.abandon.lines.unavailable": [
+      "Beetroot Bundle is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.decline.lines": [
+      "All right. The empty shelf will keep asking in its own way.",
+      "Another pair of hands may take it, or you may ask again later."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.leave.lines": [
+      "Bring 16 beetroot for the village kitchen",
+      "Come back when the work is ready to count."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.reminder_details.action.remind.lines.reminder": [
+      "Bring 16 beetroot for the village kitchen",
+      "Bring 16 beetroot for the village kitchen.",
+      "Bring 16 beetroot for the village kitchen, and the shelves will look less worried."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.reminder_details.action.remind.lines.unavailable": [
+      "Beetroot Bundle is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.start_quest.action.start.lines.already_completed": [
+      "Beetroot Bundle is already settled for now.",
+      "That work has already been counted."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.start_quest.action.start.lines.locate_failed": [
+      "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+      "The map will not settle on a safe destination today."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.start_quest.action.start.lines.started": [
+      "Bring 16 beetroot for the village kitchen. Keep the full count together on the road back.",
+      "Bring 16 beetroot for the village kitchen.",
+      "Good. I will keep a place clear for what you bring back."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.scene.start_quest.action.start.lines.unavailable": [
+      "Beetroot Bundle is not open right now.",
+      "The village is not ready to put that work in your hands yet."
+    ],
+    "quest.village_supply.beetroot_bundle.stage.work.ui.tracker_text": "Bring 16 beetroot for the village kitchen.",
+    "quest.village_supply.beetroot_bundle.title": {
+      "lines": [
+        "Beetroot Bundle"
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.tracker.proof.text": {
+      "lines": [
+        "Bring 16 beetroot for the pantry."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.tracker.return.text": {
+      "lines": [
+        "Return to the quest giver with the beetroot."
+      ]
+    },
+    "quest.village_supply.beetroot_bundle.tracker.title": {
+      "lines": [
+        "Beetroot Bundle"
+      ]
+    }
+  }
+}

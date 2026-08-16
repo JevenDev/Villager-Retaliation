@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "villagerretaliation:item/construction_blueprint"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "villagerretaliation:plan": 1.0
+      },
+      "model": "villagerretaliation:item/construction_blueprint_plan"
+    }
+  ]
+}
