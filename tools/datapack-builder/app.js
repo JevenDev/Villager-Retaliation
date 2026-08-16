@@ -316,6 +316,11 @@ const WIKI_PAGE_FILES = [
   "Datapack-Generator.md",
   "Pack-Format-Changes.md",
   "JSON-Reference.md",
+  "First-Quest.md",
+  "Quests.md",
+  "Dialogue-And-Quests.md",
+  "Dialogue-Trees.md",
+  "Quest-Scenes.md",
   "Dialogue.md",
   "Forced-Dialogue.md",
   "Dialogue-Requests.md",
@@ -1756,12 +1761,12 @@ async function ensureWikiLoaded(version) {
   renderWiki();
   try {
     const snapshot = window.VR_WIKI_SNAPSHOT?.[version];
+    const availableFiles = snapshot
+      ? WIKI_PAGE_FILES.filter((file) => Object.hasOwn(snapshot, file))
+      : WIKI_PAGE_FILES;
     const docs = snapshot
-      ? WIKI_PAGE_FILES.map((file) => {
-        if (!Object.hasOwn(snapshot, file)) throw new Error(`Missing ${file}`);
-        return buildWikiDoc(file, snapshot[file]);
-      })
-      : await Promise.all(WIKI_PAGE_FILES.map(async (file) => {
+      ? availableFiles.map((file) => buildWikiDoc(file, snapshot[file]))
+      : await Promise.all(availableFiles.map(async (file) => {
         const response = await fetch(`./wiki/${encodeURIComponent(version)}/${file}`);
         if (!response.ok) throw new Error(`Missing ${file}`);
         const markdown = await response.text();
@@ -3489,6 +3494,14 @@ function questModuleIssueDetail(entry) {
   const topLevel = questTopLevelIssueDetail(entry);
   if (topLevel) return topLevel;
   const module = questModulePayload(entry);
+  if (questHasExternalScene(module)) {
+    return issueDetail(
+      "Quest structural dialogue",
+      "inline dialogue in quest.json",
+      "external dialogue reference",
+      "quest-json"
+    );
+  }
   const stages = module.stages || [];
   const stageIds = stages.map((stage) => String(stage?.id || "").trim()).filter(Boolean);
   const duplicateStage = firstDuplicate(stageIds);
@@ -7388,7 +7401,6 @@ function renderQuests() {
   const module = questModulePayload(entry);
   const sourcePath = entry.__sourcePath || "";
   const derivedPath = questModulePath(entry, editing?.section === "quests" ? editing.index : collection.length);
-  const sceneMode = questSceneMode(module);
   const issue = entryIssueMessage("quests", "modules", entry);
   els.panel.innerHTML = `
     <div class="builder-content">
@@ -7404,18 +7416,13 @@ function renderQuests() {
       </div>
       <div class="form-grid">
         ${field({ id: "quest-sourcePath", label: "Quest file path", value: sourcePath, help: `Blank exports to ${derivedPath}.`, className: "span-6" })}
-        ${selectField({
-          id: "quest-scene-mode",
-          label: "Scene mode",
-          value: sceneMode,
-          options: [
-            { value: "inline", label: "Inline scenes" },
-            { value: "external", label: "External scene reference" }
-          ],
-          allowBlank: false,
-          help: "Applies to the first offer slot in the JSON editor.",
-          className: "span-6"
-        })}
+        <div class="compat-alert info span-6" role="status">
+          ${icon("layout-list", "inline-icon")}
+          <div>
+            <strong>Structural dialogue</strong>
+            <span>Beta.13 keeps offer, reminder, turn-in, responses, and branches in quest.json.</span>
+          </div>
+        </div>
         <div class="compat-alert ${questMetadataLoadStatus === "error" ? "warning" : "info"} full" role="status">
           ${icon(questMetadataLoadStatus === "error" ? "triangle-alert" : "database", "inline-icon")}
           <div>
@@ -7470,50 +7477,29 @@ function renderQuestMigrationSuggestions() {
   `;
 }
 
-function questSceneMode(module) {
-  return questHasExternalScene(module) ? "external" : "inline";
+function questHasExternalScene(module) {
+  if (!module || typeof module !== "object" || Array.isArray(module)) return false;
+  if (Object.hasOwn(module, "external_scenes")) return true;
+  if (dialogueSlotsHaveExternalScene(module.dialogue)) return true;
+  if (sceneListHasExternalScene(module.lifecycle?.dialogue)) return true;
+  return (module.stages || []).some((stage) =>
+    dialogueSlotsHaveExternalScene(stage?.dialogue)
+      || sceneListHasExternalScene(stage?.scenes));
 }
 
-function questHasExternalScene(value) {
-  if (Array.isArray(value)) return value.some(questHasExternalScene);
-  if (!value || typeof value !== "object") return false;
-  if (value.external || value.external_scene || value.external_entry) return true;
-  return Object.values(value).some(questHasExternalScene);
+function dialogueSlotsHaveExternalScene(dialogue) {
+  if (!dialogue || typeof dialogue !== "object" || Array.isArray(dialogue)) return false;
+  return Object.values(dialogue).some(sceneHasExternalFields);
 }
 
-function questExternalSceneResource(module) {
-  const id = isValidResourceLocation(module.id, { requireNamespace: true }) ? module.id : `${state.meta.namespace}:first_steps`;
-  const [namespace, path] = id.split(":");
-  return `${namespace}:${path}/offer`;
+function sceneListHasExternalScene(scenes) {
+  return Array.isArray(scenes) && scenes.some(sceneHasExternalFields);
 }
 
-function applyQuestSceneMode(module, mode) {
-  if (!module || typeof module !== "object" || Array.isArray(module)) return module;
-  const stages = Array.isArray(module.stages) ? module.stages : [];
-  const stage = stages[0];
-  if (!stage || typeof stage !== "object") return module;
-  stage.dialogue = stage.dialogue && typeof stage.dialogue === "object" && !Array.isArray(stage.dialogue) ? stage.dialogue : {};
-  if (mode === "external") {
-    const externalScene = questExternalSceneResource(module);
-    stage.dialogue.offer = {
-      label: stage.dialogue.offer?.label || module.metadata?.title || "Quest Offer",
-      request: stage.dialogue.offer?.request || "question",
-      external_scene: stage.dialogue.offer?.external_scene || externalScene
-    };
-    module.external_scenes = unique([...(Array.isArray(module.external_scenes) ? module.external_scenes : []), externalScene]);
-    return module;
-  }
-  if (!stage.dialogue.offer || questHasExternalScene(stage.dialogue.offer)) {
-    stage.dialogue.offer = inlineQuestOfferSlot(module);
-  }
-  const generatedExternalScene = questExternalSceneResource(module);
-  if (Array.isArray(module.external_scenes)) {
-    module.external_scenes = module.external_scenes.filter((scene) => scene !== generatedExternalScene);
-    if (module.external_scenes.length === 0) delete module.external_scenes;
-  }
-  return module;
+function sceneHasExternalFields(scene) {
+  return Boolean(scene && typeof scene === "object" && !Array.isArray(scene)
+    && ["external", "external_scene", "external_entry"].some((key) => Object.hasOwn(scene, key)));
 }
-
 function inlineQuestOfferSlot(module) {
   return {
     label: module.metadata?.title || "First Steps",
@@ -8288,7 +8274,6 @@ function readQuestModuleEntry(options = {}) {
     if (!options.quiet) showToast("Quest module JSON must be a JSON object.");
     return null;
   }
-  module = applyQuestSceneMode(module, readValue("quest-scene-mode") || "inline");
   const sourcePath = readValue("quest-sourcePath").trim();
   if (sourcePath) module.__sourcePath = sourcePath.replaceAll("\\", "/").replace(/^\/+/, "");
   return module;
@@ -8318,22 +8303,6 @@ function saveSkillTrade(event) {
   const entry = readSkillTradeEntry();
   if (!entry) return;
   upsertEntry("skillTrades", "entries", entry);
-}
-
-function updateQuestSceneModeEditor(root = document) {
-  const form = root.querySelector?.('form[data-form="quests"]');
-  const textarea = form?.querySelector("#quest-module-json");
-  if (!form || !textarea) return;
-  try {
-    const module = JSON.parse(stripTextBom(textarea.value || "{}"));
-    if (!module || typeof module !== "object" || Array.isArray(module)) return;
-    textarea.value = JSON.stringify(applyQuestSceneMode(module, readValue("quest-scene-mode") || "inline"), null, 2);
-    resizeTextareas(form);
-    invalidateCurrentViewSnapshot();
-    scheduleOutputRender();
-  } catch {
-    // The save path shows the actionable JSON parse error.
-  }
 }
 
 function readNotificationEntry() {
@@ -10393,9 +10362,6 @@ els.panel.addEventListener("change", (event) => {
   if (event.target.id === "forced-output_mode") {
     updateForcedOutputModeFields(els.panel);
     resizeTextareas(event.target.closest(".entry-form"));
-  }
-  if (event.target.id === "quest-scene-mode") {
-    updateQuestSceneModeEditor(els.panel);
   }
   if (activeSection === "overview") updateOverviewFromInput(event.target);
   updateSectionSettings(event.target);

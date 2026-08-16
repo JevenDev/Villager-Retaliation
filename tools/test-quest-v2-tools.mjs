@@ -16,6 +16,7 @@ try {
   const validQuest = path.join(validRoot, "quest.json");
   const invalidQuest = path.join(invalidRoot, "quest.json");
   const v1Quest = path.join(workspace, "migration-source-v1.json");
+  const legacyDialogueTree = path.join(workspace, "migration-dialogue-tree.json");
   await mkdir(validRoot, { recursive: true });
   await mkdir(invalidRoot, { recursive: true });
 
@@ -80,6 +81,7 @@ try {
     localization_prefix: "villagerretaliation.quest.tool_invalid",
     schema: "villagerretaliation:quest/v2",
     id: "villagerretaliation:tool_invalid",
+    external_scenes: ["villagerretaliation:legacy_tree"],
     provider: {
       type: "villagerretaliation:villager"
     },
@@ -188,12 +190,29 @@ try {
     }
   });
 
+  await writeJson(legacyDialogueTree, {
+    id: "villagerretaliation:tool_migrate",
+    entries: [
+      {
+        id: "offer",
+        start: "offer"
+      }
+    ],
+    nodes: {
+      offer: {
+        lines: ["A legacy extracted offer."],
+        end: true
+      }
+    }
+  });
+
   run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
 
   const invalid = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", invalidQuest], { expectFailure: true });
   assert(invalid.stderr.includes("pointer=/entry_stage"), "Invalid v2 fixture did not report the entry_stage JSON pointer.");
   assert(invalid.stderr.includes("suggestion="), "Invalid v2 fixture did not include an actionable suggestion.");
   assert(invalid.stderr.includes("not_a_real_objective"), "Invalid v2 fixture did not report the bad objective type.");
+  assert(invalid.stderr.includes("external dialogue roots are unsupported in beta.13 quest bundles"), "Invalid v2 fixture did not reject an external structural dialogue tree.");
 
   const first = run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree"]);
   const second = run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree"]);
@@ -217,6 +236,21 @@ try {
   const check = JSON.parse(run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree", "--check"]).stdout);
   assert(check.ok === true, "Migration check mode reported unsupported conversions for the simple fixture.");
   assert(check.comparison.objective_ids_preserved === true, "Migration check did not preserve objective ids.");
+
+  const legacyConversion = run("node", [
+    "tools/migrate-quest-v1-to-v2.mjs", v1Quest,
+    "--dialogue-tree", legacyDialogueTree
+  ]);
+  const legacyCandidate = JSON.parse(legacyConversion.stdout);
+  assert(!JSON.stringify(legacyCandidate).includes('"external'), "Converter emitted a public external-dialogue field.");
+  assert(legacyConversion.stderr.includes("cannot be referenced by a beta.13 quest bundle"),
+    "Converter did not diagnose the legacy external dialogue tree.");
+  const legacyCheck = JSON.parse(run("node", [
+    "tools/migrate-quest-v1-to-v2.mjs", v1Quest,
+    "--dialogue-tree", legacyDialogueTree, "--check"
+  ]).stdout);
+  assert(legacyCheck.ok === false && legacyCheck.report.unsupported.length === 1,
+    "Migration check accepted a legacy external dialogue tree without inlining it.");
 
   console.log("Quest module v2 tooling smoke test passed.");
 } finally {

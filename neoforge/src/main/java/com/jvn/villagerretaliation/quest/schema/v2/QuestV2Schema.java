@@ -55,7 +55,6 @@ public final class QuestV2Schema {
         properties.add("events", arrayOf(ref("#/$defs/event")));
         properties.add("rewards", ref("#/$defs/rewards"));
         properties.add("ui", ref("#/$defs/ui"));
-        properties.add("external_scenes", arrayOf(resourceLocation()));
         root.add("properties", properties);
 
         JsonObject defs = object();
@@ -403,9 +402,6 @@ public final class QuestV2Schema {
         JsonObject properties = object();
         properties.add("scene", idString());
         properties.add("scene_ref", idString());
-        properties.add("external", externalSceneRef());
-        properties.add("external_scene", externalSceneRef());
-        properties.add("external_entry", idString());
         properties.add("label", localizedText());
         properties.add("request", string());
         properties.add("show_for_babies", booleanSchema());
@@ -442,9 +438,6 @@ public final class QuestV2Schema {
         properties.add("end", booleanSchema());
         properties.add("next", transitionStringOrObject());
         properties.add("transition", ref("#/$defs/transition"));
-        properties.add("external", externalSceneRef());
-        properties.add("external_scene", externalSceneRef());
-        properties.add("external_entry", idString());
         properties.add("scene_ref", resourceLocation());
         properties.add("metadata", openObject());
         schema.add("properties", properties);
@@ -679,26 +672,6 @@ public final class QuestV2Schema {
         properties.add("weight", positiveInteger());
         weighted.add("properties", properties);
         return oneOf(string(), weighted);
-    }
-
-    private static JsonObject externalSceneRef() {
-        JsonObject schema = object();
-        JsonArray options = array();
-        options.add(resourceLocation());
-
-        JsonObject external = typedObject();
-        JsonObject properties = object();
-        properties.add("tree", resourceLocation());
-        properties.add("tree_id", resourceLocation());
-        properties.add("dialogue_tree", resourceLocation());
-        properties.add("entry", idString());
-        properties.add("entry_id", idString());
-        properties.add("metadata", openObject());
-        external.add("properties", properties);
-        options.add(external);
-
-        schema.add("oneOf", options);
-        return schema;
     }
 
     private static JsonObject arrayOf(JsonObject itemSchema) {

@@ -21,6 +21,8 @@ public final class QuestBundleLocalization {
             return new Validation(Set.of(), List.of("quest.json is missing"));
         }
 
+        rejectExternalStructuralDialogue(quest, errors);
+
         JsonObject metadata = object(quest, "metadata");
         playerField(metadata, "title", "/metadata/title", prefix, references, errors);
         playerField(metadata, "description", "/metadata/description", prefix, references, errors);
@@ -67,6 +69,67 @@ public final class QuestBundleLocalization {
 
         collectExplicitReferences(quest, prefix, references, errors, "", false);
         return new Validation(Set.copyOf(references), List.copyOf(errors));
+    }
+
+    private static void rejectExternalStructuralDialogue(JsonObject quest, List<String> errors) {
+        if (quest.has("external_scenes")) {
+            externalDialogueError("/external_scenes", errors);
+        }
+        rejectDialogueSlots(quest.get("dialogue"), "/dialogue", errors);
+
+        JsonObject lifecycle = object(quest, "lifecycle");
+        if (lifecycle != null) {
+            rejectSceneCollection(lifecycle.get("dialogue"), "/lifecycle/dialogue", errors);
+        }
+
+        JsonArray stages = array(quest, "stages");
+        if (stages == null) {
+            return;
+        }
+        for (int stageIndex = 0; stageIndex < stages.size(); stageIndex++) {
+            JsonObject stage = object(stages.get(stageIndex));
+            if (stage == null) {
+                continue;
+            }
+            String stagePath = "/stages/" + stageIndex;
+            rejectDialogueSlots(stage.get("dialogue"), stagePath + "/dialogue", errors);
+            rejectSceneCollection(stage.get("scenes"), stagePath + "/scenes", errors);
+        }
+    }
+
+    private static void rejectDialogueSlots(JsonElement dialogue, String path, List<String> errors) {
+        JsonObject slots = object(dialogue);
+        if (slots == null) {
+            return;
+        }
+        for (Map.Entry<String, JsonElement> entry : slots.entrySet()) {
+            rejectExternalSceneFields(object(entry.getValue()), path + "/" + entry.getKey(), errors);
+        }
+    }
+
+    private static void rejectSceneCollection(JsonElement scenes, String path, List<String> errors) {
+        if (scenes == null || !scenes.isJsonArray()) {
+            return;
+        }
+        JsonArray values = scenes.getAsJsonArray();
+        for (int index = 0; index < values.size(); index++) {
+            rejectExternalSceneFields(object(values.get(index)), path + "/" + index, errors);
+        }
+    }
+
+    private static void rejectExternalSceneFields(JsonObject scene, String path, List<String> errors) {
+        if (scene == null) {
+            return;
+        }
+        for (String field : List.of("external", "external_scene", "external_entry")) {
+            if (scene.has(field)) {
+                externalDialogueError(path + "/" + field, errors);
+            }
+        }
+    }
+
+    private static void externalDialogueError(String path, List<String> errors) {
+        errors.add(path + " is unsupported in beta.13 quest bundles; structural dialogue must remain in quest.json");
     }
 
     public static Validation collectCompanion(JsonObject companion, String prefix) {

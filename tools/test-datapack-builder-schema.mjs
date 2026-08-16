@@ -158,6 +158,12 @@ function testQuestBundleSchemas() {
   assert(scene.$defs.localized_reference && encounter.$defs.localized_reference, "Companion schemas do not expose localized references.");
   assert(encounter.properties.location_message.$ref === "#/$defs/localized_reference",
     "Encounter schema accepts inline player-facing location messages.");
+  assert(!Object.hasOwn(quest.properties, "external_scenes"), "Quest schema exposes an external dialogue root.");
+  for (const definition of [quest.$defs.dialogue_slot, quest.$defs.scene]) {
+    for (const field of ["external", "external_scene", "external_entry"]) {
+      assert(!Object.hasOwn(definition.properties, field), "Quest schema exposes external dialogue field " + field + ".");
+    }
+  }
 }
 
 function assert(condition, message) {
@@ -167,6 +173,41 @@ function assert(condition, message) {
 function jsonFile(files, path) {
   assert(Object.hasOwn(files, path), `Missing generated file: ${path}`);
   return JSON.parse(files[path]);
+}
+
+function testBeta13WikiSnapshot() {
+  const context = { window: {} };
+  vm.runInNewContext(fs.readFileSync("tools/datapack-builder/wiki-snapshot.js", "utf8"), context);
+  const beta13 = context.window.VR_WIKI_SNAPSHOT?.["1.0.0-beta.13"];
+  assert(beta13 && beta13["Quests.md"], "Browser builder has no beta.13 quest wiki snapshot.");
+  assert(beta13["Quests.md"].includes("Structural Talk-menu dialogue"),
+    "Browser builder beta.13 wiki still advertises external quest dialogue ownership.");
+}
+
+function testStructuralDialogueOwnership(app) {
+  const quest = app.questModel.createLinearQuest("bundle_pack");
+  quest.external_scenes = ["bundle_pack:legacy_tree"];
+  quest.stages[0].dialogue.offer = { external_scene: "bundle_pack:legacy_tree" };
+  app.state.quests.modules = [quest];
+  const checks = app.validate();
+  assert(
+    checks.some((check) => check.type === "error"
+      && check.title === "Quest module"
+      && check.text.includes("inline dialogue in quest.json")),
+    "Beta.13 builder accepted external quest dialogue ownership."
+  );
+
+  const opaqueQuest = app.questModel.createLinearQuest("bundle_pack");
+  opaqueQuest.stages[0].dialogue.offer.actions = [
+    { type: "bundle_pack:custom", external: "opaque codec data" }
+  ];
+  app.state.quests.modules = [opaqueQuest];
+  const opaqueChecks = app.validate();
+  assert(
+    !opaqueChecks.some((check) => check.title === "Quest module"
+      && check.text.includes("inline dialogue in quest.json")),
+    "Beta.13 builder mistook opaque action data for structural dialogue."
+  );
 }
 
 function testTypedFolderOutput(app) {
@@ -586,6 +627,8 @@ function testCheckedInSkillTradeExample(app) {
 
 const app = createAppHarness();
 testQuestBundleSchemas();
+testBeta13WikiSnapshot();
+testStructuralDialogueOwnership(createAppHarness());
 testTypedFolderOutput(app);
 testTypedImportAndProfessionDefaults(app);
 testBundleImport(app);

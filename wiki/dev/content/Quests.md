@@ -225,7 +225,6 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 | `events` | Quest-level triggers that run while the quest exists |
 | `rewards` | XP, reputation, gossip, loot, memory events, or reward actions |
 | `ui` | Tracker text, icon, progress, placeholders, title and outline colors, and priority |
-| `external_scenes` | Optional external dialogue scene resources used by this module |
 
 ## Quest Tag Taxonomy
 
@@ -417,7 +416,7 @@ Stage `dialogue` slots normally use these names:
 | `inactive` | Accepted quest is paused by active conditions |
 | `missing_target`, `missing_proof`, `locate_failed` | Target/proof helper states |
 
-Inline scenes stay inside the quest module. Use `external` or `external_scene` only when the scene is large, shared, localized separately, or deliberately owned by another datapack resource.
+Structural Talk-menu dialogue and its branches always stay in `quest.json`. Stage-local `scenes` keep larger inline branches organized inside that structure. Persistent runtime scene companions live under the owning bundle's `scenes/` directory and are referenced only by explicit stable ID; they are not external dialogue trees.
 
 ## Objective Composition And Bonuses
 
@@ -825,71 +824,12 @@ An `item_check` objective can add `components`, `durability`, `custom_data`, or 
 }
 ```
 
-## Forced Or External Scene Example
+## Forced Dialogue Action
 
-Use external scenes when another file owns a long conversation. Use `forced_dialogue` actions when the quest needs an event-driven locked scene. These actions need live player and provider context. If the quest giver is unloaded, the runtime records diagnostics and waits until it can safely run the live action.
+Structural quest dialogue remains in `quest.json`. Use a `forced_dialogue` action only for a separate event-driven interruption that needs live player and provider context:
 
 ```json
 {
-  "schema": "villagerretaliation:quest/v2",
-  "id": "my_pack:storm_warning",
-  "metadata": {
-    "title": "Storm Warning",
-    "description": "Ask a cleric about a storm omen.",
-    "questline": "lost_civilization",
-    "tags": ["group.lost_civilization"]
-  },
-  "provider": {
-    "type": "villagerretaliation:villager",
-    "filters": {
-      "professions": ["minecraft:cleric"]
-    }
-  },
-  "availability": {
-    "repeatable": false,
-    "max_completions": 1,
-    "locked_to_villager": true
-  },
-  "external_scenes": ["my_pack:quests/storm_warning"],
-  "entry_stage": "ask",
-  "stages": [
-    {
-      "id": "ask",
-      "objectives": [
-        {
-          "id": "hear_warning",
-          "type": "choice",
-          "choices": ["heard"],
-          "tracker": {
-            "text": "Hear the storm warning.",
-            "complete_text": "The warning is clear."
-          }
-        }
-      ],
-      "dialogue": {
-        "offer": {
-          "label": "Storm Warning",
-          "request": "question",
-          "external_scene": {
-            "tree": "my_pack:quests/storm_warning",
-            "entry": "offer"
-          }
-        },
-        "turn_in": {
-          "label": "Storm Warning",
-          "request": "question",
-          "lines": ["The storm warning is clear now."],
-          "responses": [
-            {
-              "id": "complete",
-              "label": "I understand the omen.",
-              "complete": true
-            }
-          ]
-        }
-      }
-    }
-  ],
   "events": [
     {
       "id": "storm_reminder",
@@ -906,88 +846,11 @@ Use external scenes when another file owns a long conversation. Use `forced_dial
         }
       ]
     }
-  ],
-  "ui": {
-    "tracker_text": "Hear the storm warning.",
-    "icon": "minecraft:lightning_rod"
-  }
-}
-```
-
-The external scene above can live in `data/my_pack/dialogue_trees/en_us/quests/storm_warning.json`:
-
-```json
-{
-  "id": "my_pack:quests/storm_warning",
-  "metadata": {
-    "quest": "my_pack:storm_warning",
-    "questline": "lost_civilization"
-  },
-  "entries": [
-    {
-      "id": "offer",
-      "label": "Storm Warning",
-      "request": "question",
-      "start": "offer"
-    }
-  ],
-  "nodes": {
-    "offer": {
-      "lines": [
-        "Thunder is not the omen. The silence after it is."
-      ],
-      "responses": [
-        {
-          "id": "heard",
-          "label": "I will listen for it.",
-          "actions": [
-            {
-              "type": "set_variable",
-              "scope": "quest",
-              "key": "choice",
-              "value": "heard"
-            }
-          ],
-          "end": true
-        }
-      ]
-    }
-  }
-}
-```
-
-The forced quest scene above can live in `data/my_pack/forced_dialogue/quests/lost_civilization/storm_warning.json`:
-
-```json
-{
-  "metadata": {
-    "quest": "my_pack:storm_warning",
-    "questline": "lost_civilization"
-  },
-  "entries": [
-    {
-      "id": "my_pack.quest.storm_warning.reminder",
-      "trigger": "quest",
-      "output": {
-        "mode": "forced_dialogue"
-      },
-      "lines": [
-        "Storms make old warnings easier to hear. Stay close to shelter."
-      ],
-      "requires_line_of_sight": true,
-      "force_camera_towards_villager": true,
-      "options": [
-        {
-          "id": "my_pack.quest.storm_warning.ok",
-          "label": "I understand.",
-          "response": "Then keep the warning near your feet.",
-          "end_conversation": true
-        }
-      ]
-    }
   ]
 }
 ```
+
+The referenced definition is part of the separate global forced-dialogue system and keeps its own stable ID. It does not become a private bundle companion and cannot replace offer, reminder, turn-in, response, or branch structure. If the player or quest provider is unavailable, the runtime reports the live-entity failure instead of advancing unsafely.
 
 ## Quest Trigger Arbitration And Payloads
 
@@ -1033,24 +896,41 @@ Matching triggers are grouped by `priority`. `chance` gates each trigger, `weigh
 
 ## Localization
 
-Inline text is a fallback. Use `*_key` fields when you want datapack-localized text:
+Every schema-designated player-facing quest, scene, and encounter field uses a localized reference. Relative references expand from the quest's required immutable `localization_prefix`:
 
 ```json
 {
+  "localization_prefix": "my_pack.quest.bread_delivery",
   "metadata": {
-    "title": "Bread Delivery",
-    "title_key": "quest.my_pack.bread_delivery.title",
-    "description": "Bring 16 bread.",
-    "description_key": "quest.my_pack.bread_delivery.description"
+    "title": { "key": "#title" },
+    "description": { "key": "#description" }
   },
   "ui": {
-    "tracker_text": "Bring 16 bread.",
-    "tracker_text_key": "quest.my_pack.bread_delivery.tracker"
+    "tracker_text": { "key": "#ui.tracker_text" }
   }
 }
 ```
 
-Dialogue slots and scenes also accept `text_key`, `label_key`, and keyed lines where the generated schema lists them. Put keyed text in normal dialogue message files under `data/<namespace>/dialogue/<locale>/.../messages/*.json`.
+The introducing bundle layer includes exhaustive `locales/en_us.json` entries for its owned references:
+
+```json
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "my_pack.quest.bread_delivery.title": {
+      "lines": ["Bread Delivery"]
+    },
+    "my_pack.quest.bread_delivery.description": {
+      "lines": ["Bring 16 bread."]
+    },
+    "my_pack.quest.bread_delivery.ui.tracker_text": {
+      "lines": ["Bring 16 bread."]
+    }
+  }
+}
+```
+
+Absolute existing message IDs remain supported. Other locales may be partial and fall back per message ID to effective English at the per-player resolution boundary. Variant ordering, formatting, placeholders, weights, and conditions are preserved exactly. Shared absolute wording belongs in `_shared/locales/en_us.json`; private bundle wording cannot move between owners.
 
 ## Capabilities And Live Context
 
@@ -1093,7 +973,7 @@ Quest-to-quest prerequisites and follow-ups remain legal. Only private scene, en
 
 ## Extraction Guidance
 
-Start with one v2 quest file. Extract only when the file becomes hard to maintain:
+Start with one owner bundle and add private companions only when the behavior needs them:
 
 ```text
 data/<namespace>/quests/<questline>/<quest-slug>/quest.json
@@ -1103,4 +983,4 @@ data/<namespace>/quests/<questline>/<quest-slug>/encounters/<encounter>.json
 data/<namespace>/quests/<questline>/<quest-slug>/rewards/<reward>.json
 ```
 
-Use the quest module for quest state, stages, objective readiness, rewards, transitions, and short scenes. Use external dialogue trees for long authored branches or shared localization. Use forced dialogue only for event-driven locked scenes outside the normal Talk flow.
+Keep all structural quest dialogue and branches in `quest.json`, regardless of length. Put localized wording in `locales/`, persistent runtime scenes in `scenes/`, encounter templates in `encounters/`, and wrapped loot tables in `rewards/`. Reusable definitions belong in `_shared`. Use the separate forced-dialogue system only for event-driven locked scenes outside normal Talk flow.

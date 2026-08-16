@@ -1,44 +1,43 @@
 # Dialogue And Quests
 
-Quest module v2 makes one-file quests the default starting point. Keep the quest's stages, objectives, short offer/reminder/turn-in dialogue, responses, transitions, events, rewards, and tracker UI together in:
+Beta.13 quest content is owned by a bundle. Structural offer, reminder, turn-in, response, and branch dialogue stays in `quest.json`; player-facing wording lives in the bundle locale catalog.
+
+## Bundle Layout
 
 ```text
-data/<namespace>/quests/<module>/<quest>.json
+data/<namespace>/quests/
+  _shared/
+    locales/en_us.json
+    pools/*.json
+    scenes/*.json
+    encounters/*.json
+    rewards/*.json
+  <questline>/<quest-slug>/
+    quest.json
+    locales/en_us.json
+    locales/<locale>.json
+    scenes/*.json
+    encounters/*.json
+    rewards/*.json
 ```
 
-Extract extra files only when the module benefits from separate ownership, long authored scenes, shared localization, or event-driven forced dialogue.
+A bundle directory defines ownership only. Every quest, scene, encounter, reward, and pool still declares an explicit stable ID. The quest namespace must match `data/<namespace>`, `metadata.questline` must match `<questline>`, and the one-segment quest ID path must match `<quest-slug>`.
 
-## Recommended Module Layout
+The quest structure, private companions, bundled rewards, and effective English form one owner-bundle transaction. An invalid higher layer is rejected as a unit and the lower valid layer remains active. Each optional non-English locale overlay is validated independently.
 
-```text
-data/<namespace>/quests/<module>/<quest>.json
-data/<namespace>/dialogue_trees/<locale>/quests/<module>/<quest>.json
-data/<namespace>/dialogue/<locale>/quests/<module>/<quest>/messages/*.json
-data/<namespace>/forced_dialogue/quests/<module>/<quest>.json
-```
+## Structural Dialogue
 
-Only create the files the module actually needs. A simple playable v2 quest does not need a dialogue tree.
-
-## What Each File Does
-
-| File | Job |
-| --- | --- |
-| Quest module v2 | Provider, availability, lifecycle, stages, objectives, inline scenes, responses, transitions, events, rewards, and tracker UI |
-| Dialogue tree | Optional extracted branch scene referenced by `external` or `external_scene` |
-| Normal dialogue messages | Optional reusable localized text referenced by `text_key`, `label_key`, or metadata key fields |
-| Forced dialogue | Optional locked event scene triggered by a `forced_dialogue` action |
-
-## One-File Ownership
-
-For most small quests, keep the whole playable flow in the quest module:
+Keep dialogue shape and ordering in `quest.json`. Use localized references for every schema-designated player-facing field:
 
 ```json
 {
   "schema": "villagerretaliation:quest/v2",
   "id": "my_pack:road_ledger",
+  "localization_prefix": "my_pack.quest.road_ledger",
   "metadata": {
-    "title": "Road Ledger",
-    "tags": ["group.old_roads"]
+    "title": { "key": "#title" },
+    "description": { "key": "#description" },
+    "questline": "old_roads"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -53,13 +52,12 @@ For most small quests, keep the whole playable flow in the quest module:
       "objectives": [],
       "dialogue": {
         "offer": {
-          "label": "Road Ledger",
-          "request": "question",
-          "lines": ["Paper survives rain worse than stone does."],
+          "label": { "key": "#stage.start.dialogue.offer.label" },
+          "lines": { "key": "#stage.start.dialogue.offer.lines" },
           "responses": [
             {
               "id": "complete",
-              "label": "Mark that down.",
+              "label": { "key": "#stage.start.dialogue.offer.response.complete.label" },
               "complete": true
             }
           ]
@@ -70,64 +68,50 @@ For most small quests, keep the whole playable flow in the quest module:
 }
 ```
 
-## Extracted Scene Ownership
+`#title` expands relative to the required immutable `localization_prefix`. Existing absolute message IDs remain supported. A new third-party prefix must begin with its namespace and be globally unique.
 
-Use `external_scene` when a scene belongs in a dialogue tree:
+There is no public quest `dialogues` root and no `external`, `external_scene`, `external_entry`, or `external_scenes` escape hatch. Long structural branches still belong in `quest.json`; moving source files must not change persistent IDs or generated localization keys.
+
+## Locale Ownership
+
+The introducing layer supplies exhaustive English for its bundle-owned references:
 
 ```json
 {
-  "external_scenes": ["my_pack:quests/old_roads/road_ledger"],
-  "stages": [
-    {
-      "id": "start",
-      "objectives": [],
-      "dialogue": {
-        "offer": {
-          "label": "Road Ledger",
-          "request": "question",
-          "external_scene": {
-            "tree": "my_pack:quests/old_roads/road_ledger",
-            "entry": "offer"
-          }
-        }
-      }
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "my_pack.quest.road_ledger.title": {
+      "lines": ["Road Ledger"]
+    },
+    "my_pack.quest.road_ledger.description": {
+      "lines": ["Recover a ledger from the old road."]
+    },
+    "my_pack.quest.road_ledger.stage.start.dialogue.offer.label": {
+      "lines": ["Road Ledger"]
+    },
+    "my_pack.quest.road_ledger.stage.start.dialogue.offer.lines": {
+      "lines": ["Paper survives rain worse than stone does."]
+    },
+    "my_pack.quest.road_ledger.stage.start.dialogue.offer.response.complete.label": {
+      "lines": ["Mark that down."]
     }
-  ]
+  }
 }
 ```
 
-Then put the authored branch under:
+Other locales may be partial. Resolution falls back per message ID to effective `en_us` at the existing per-player boundary, so two players can see the same catalog snapshot in different locales. Rich variants preserve authored ordering, formatting, placeholders, weights, and conditions.
 
-```text
-data/my_pack/dialogue_trees/en_us/quests/old_roads/road_ledger.json
-```
+Each expanded message ID has one canonical owner bundle or `_shared`. A higher datapack may override the same owner, but duplicate ownership inside one pack or moving ownership between bundles is an error. Put reusable absolute messages in `_shared`; keep private wording with its quest.
 
-This is useful when the tree is long, when translators should work in a separate file, or when another datapack should be able to replace only the scene without replacing the quest's objective logic.
+## Scene, Encounter, And Reward Companions
 
-## Message Ownership
+Persistent runtime scenes, encounters, and bundled reward tables may live in their owning quest directory. Reference them by their explicit stable IDs. Private companions cannot be referenced by another quest; reusable definitions belong under `_shared`.
 
-Use normal dialogue message files for shared localized text:
+These companions are not extracted structural dialogue trees. A scene companion models persistent runtime steps and actors, while `quest.json` continues to own Talk-menu dialogue and branches.
 
-```json
-{
-  "id": "my_pack.message.road_ledger_hint",
-  "key": "quest.my_pack.road_ledger.hint",
-  "text": "Paper survives rain worse than stone does."
-}
-```
+## Forced Dialogue
 
-Reference that key from quest module fields such as `metadata.title_key`, `metadata.description_key`, `ui.tracker_text_key`, dialogue `text_key`, and response `label_key`.
-
-## Forced Dialogue Ownership
-
-Add forced dialogue only when the quest needs:
-
-- a locked event scene
-- an interruption during progress
-- a trigger-based confrontation
-- authored quest chatter outside the Talk menu
-
-Trigger it from a quest event:
+Forced dialogue is a separate global event system, not a quest-bundle companion. A quest action may reference a stable forced-dialogue ID when an event-driven interruption needs live player and provider context:
 
 ```json
 {
@@ -148,40 +132,8 @@ Trigger it from a quest event:
 }
 ```
 
-`forced_dialogue` is a live-context action. It needs the player and provider loaded. If the issuer is unloaded, the runtime records diagnostics instead of pretending the action succeeded.
-
-## Do Not Duplicate Gates
-
-Do not repeat quest offer requirements in several files.
-
-If the quest module already says the quest is only for farmers, keep the dialogue scene focused on scene ownership:
-
-```json
-{
-  "provider": {
-    "type": "villagerretaliation:villager",
-    "filters": {
-      "professions": ["minecraft:farmer"]
-    }
-  }
-}
-```
-
-In legacy dialogue trees, use the quest condition for state:
-
-```json
-{ "type": "quest", "state": "available" }
-```
-
-The quest system resolves provider filters, parent locks, cooldowns, branch locks, and completion limits.
+The global forced-dialogue definition keeps its own stable ID. It does not participate in the bundle transaction and must not be used to replace offer, reminder, turn-in, or response structure.
 
 ## Legacy Layout
 
-V1 quests still use a quest JSON file plus a dialogue tree:
-
-```text
-data/<namespace>/quests/<module>/<quest>.json
-data/<namespace>/dialogue_trees/<locale>/quests/<module>/<quest>.json
-```
-
-That layout remains supported. New v2 modules should start as one quest file and extract only when needed.
+Beta.13 diagnoses loose v1 or v2 quest JSON, `quest_messages`, `quest_scenes`, `quest_encounters`, `quest_pools`, old quest reward roots, and quest-owned dialogue trees as unsupported. The runtime never silently falls back to them. Convert legacy content offline or import it into the browser builder, then export a bundle containing `pack.mcmeta` and `data/`.

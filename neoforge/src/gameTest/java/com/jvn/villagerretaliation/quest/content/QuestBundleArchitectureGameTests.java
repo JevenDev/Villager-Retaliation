@@ -72,6 +72,10 @@ public final class QuestBundleArchitectureGameTests {
         codec.add("reward_codec_data", object("{\"table\":{\"name\":\"inline codec value\"}}"));
         helper.assertTrue(QuestBundleLocalization.validateQuest(codec, PREFIX).valid(),
                 "non-player codec value scanned as text");
+        JsonObject dialogueCodec = quest(NS, LINE, SLUG, PREFIX);
+        dialogueCodec.add("dialogue", object("{\"offer\":{\"actions\":[{\"type\":\"examplemod:custom\",\"external\":\"opaque\"}]}}"));
+        helper.assertTrue(QuestBundleLocalization.validateQuest(dialogueCodec, PREFIX).valid(),
+                "opaque action payload mistaken for external structural dialogue");
 
         QuestDeterministicLocaleKeys.Address address = new QuestDeterministicLocaleKeys.Address(
                 id("examplemod:alpha"), List.of("stage_one", "objective_one"), "tracker.text");
@@ -85,6 +89,20 @@ public final class QuestBundleArchitectureGameTests {
                 new QuestDeterministicLocaleKeys.Address(id("examplemod:alpha"), List.of("a.b"), "tracker.text")));
         helper.assertTrue(!collision.valid() && collision.collisions().size() == 1,
                 "deterministic collision not reported");
+
+        JsonObject externalRoot = quest(NS, LINE, SLUG, PREFIX);
+        externalRoot.add("external_scenes", element("[\"examplemod:legacy_tree\"]"));
+        assertRejected(helper, compile(introduce(
+                0, "base", NS, LINE, SLUG, externalRoot,
+                locale(PREFIX + ".title", "Alpha"))),
+                "structural dialogue must remain in quest.json", "external dialogue root");
+
+        JsonObject externalSlot = quest(NS, LINE, SLUG, PREFIX);
+        externalSlot.add("dialogue", object("{\"offer\":{\"external_scene\":\"examplemod:legacy_tree\"}}"));
+        assertRejected(helper, compile(introduce(
+                0, "base", NS, LINE, SLUG, externalSlot,
+                locale(PREFIX + ".title", "Alpha"))),
+                "structural dialogue must remain in quest.json", "external dialogue slot");
         helper.succeed();
     }
 
