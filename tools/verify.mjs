@@ -28,7 +28,8 @@ const validationScripts = [
   "tools/test-datapack-builder-schema.mjs",
   "tools/test-quest-builder-model.mjs",
   "tools/test-quest-builder-zip.mjs",
-  "tools/test-quest-builder-output.mjs"
+  "tools/test-quest-builder-output.mjs",
+  "tools/test-wiki-content.mjs"
 ];
 
 const generatedChecks = [
@@ -65,6 +66,7 @@ const requiredFiles = [
   "wiki/dev/app.js",
   "wiki/dev/site-data.js",
   "wiki/dev/content/Home.md",
+  "wiki/dev/content/Commands.md",
   "wiki/dev/content/Quest-Scene-Runtime.md",
   "wiki/dev/content/Tracked-Villages.md"
 ];

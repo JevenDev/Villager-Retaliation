@@ -10,6 +10,10 @@ These folders are working test packs, not just JSON fragments. Copy the smallest
 
 `example-packs/custom-duel-kits/` adds an enchanted `duel_examples:champion` kit with temporary equipment for the player and villager. See [Duel Kits](Duel-Kits.md) for every field.
 
+## Skill Trades And Special Orders
+
+`example-packs/skill-trades-special-orders/` adds profession-specialty and farming-order pools that demonstrate skill gates, reputation, trade-level ranges, persistent trade stock, and targetable Special Orders. See [Skill Trades](Skill-Trades.md) for the schema and refresh behavior.
+
 ## Persistent Cinematic Gate Ambush
 
 `example-packs/cinematic-gate-ambush/` is the complete beta.13 scene-orchestration example: two named villagers, player/party ownership, a recorded choice branch, movement, dialogue, a persisted wait, controlled encounter scaling and cleanup, quest completion/failure, and provider-unload recovery.
@@ -24,16 +28,16 @@ The repo already includes a full starter datapack you can copy from:
 example-packs/dialogue-folder-template/
 ```
 
-This is the best source of beta.12 dialogue-authoring examples. The beta.13 scene examples above cover the newer quest runtime surface.
+This is the best source of the current folderized dialogue format introduced in beta.12. Its quest is a beta.13 owner bundle, and the scene examples above cover the persistent quest runtime surface.
 
 ## What Is In The Template
 
 | Area | Example path |
 | --- | --- |
-| Dialogue option | `example-packs/dialogue-folder-template/data/villagerretaliation/dialogue/en_us/example_template/options/00_greeting.json` |
-| Dialogue line | `example-packs/dialogue-folder-template/data/villagerretaliation/dialogue/en_us/example_template/lines/00_greeting.json` |
-| Keyed message | `example-packs/dialogue-folder-template/data/villagerretaliation/dialogue/en_us/example_template/messages/00_example.json` |
-| Forced dialogue | `example-packs/dialogue-folder-template/data/villagerretaliation/forced_dialogue/example_template/00_container_theft.json` |
+| Dialogue option | `example-packs/dialogue-folder-template/data/example_template/dialogue/en_us/example_template/options/00_greeting.json` |
+| Dialogue line | `example-packs/dialogue-folder-template/data/example_template/dialogue/en_us/example_template/lines/00_greeting.json` |
+| Keyed message | `example-packs/dialogue-folder-template/data/example_template/dialogue/en_us/example_template/messages/00_example.json` |
+| Forced dialogue | `example-packs/dialogue-folder-template/data/example_template/forced_dialogue/example_template/00_container_theft.json` |
 | Notification | `example-packs/dialogue-folder-template/data/villagerretaliation/notifications/en_us/example_template/00_ambient.json` |
 | Gifts | `example-packs/dialogue-folder-template/data/villagerretaliation/gifts/example_template/00_gifts.json` |
 | Pacification | `example-packs/dialogue-folder-template/data/villagerretaliation/pacification/example_template/00_payments.json` |
@@ -79,7 +83,7 @@ Copy the whole `dialogue-folder-template` when you want:
 
 - one file per dialogue request
 - a translator-friendly folder layout
-- examples for beta.12 conditions and filters
+- current examples for conditions, filters, message keys, and a beta.13 quest bundle
 - a reference pack that covers almost every authoring surface
 
 ## Minimal `pack.mcmeta`
