@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.forced;
 
 import com.jvn.villagerretaliation.combat.VillagerWeaponDrawService;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueDefinition;
 import com.jvn.villagerretaliation.dialogue.forced.container.ForcedDialogueContainers;
 import com.jvn.villagerretaliation.party.PartyService;
@@ -33,12 +34,15 @@ final class PlayerItemProximityForcedDialogueService {
     private static final long AIM_SCAN_INTERVAL_TICKS = 5L;
     private static final long COOLDOWN_TICKS = 20L * 30L;
     private static final Map<CooldownKey, Long> NEXT_TRIGGER_TICK = new HashMap<>();
+    private static final Map<UUID, AimState> ACTIVE_AIMS = new HashMap<>();
+    private static final Map<UUID, Boolean> AIM_DELAY_PREFERENCES = new HashMap<>();
 
     private PlayerItemProximityForcedDialogueService() {
     }
 
     static void clearRuntimeState() {
         NEXT_TRIGGER_TICK.clear();
+        ACTIVE_AIMS.clear();
     }
 
     static void maybeTrigger(ServerLevel level, Villager villager, Delegate delegate) {
@@ -98,9 +102,13 @@ final class PlayerItemProximityForcedDialogueService {
     }
 
     static void maybeTriggerAiming(MinecraftServer server, Delegate delegate) {
+        AIM_DELAY_PREFERENCES.keySet().removeIf(
+                playerId -> server.getPlayerList().getPlayer(playerId) == null);
         if (!ForcedDialogueTriggerGates.playerItemProximityEnabled()) {
+            ACTIVE_AIMS.clear();
             return;
         }
+        ACTIVE_AIMS.keySet().removeIf(playerId -> server.getPlayerList().getPlayer(playerId) == null);
 
         List<ForcedDialogueDefinition> definitions = new ArrayList<>();
         for (ForcedDialogueDefinition definition : ForcedDialogueResources.playerItemProximityCandidates(server)) {
@@ -109,6 +117,7 @@ final class PlayerItemProximityForcedDialogueService {
             }
         }
         if (definitions.isEmpty()) {
+            ACTIVE_AIMS.clear();
             return;
         }
         List<ForcedDialogueDefinition> orderedDefinitions = chatFirst(
@@ -120,8 +129,11 @@ final class PlayerItemProximityForcedDialogueService {
             for (ServerPlayer player : level.players()) {
                 if (!player.isAlive()
                         || player.isSpectator()
-                        || delegate.hasForcedSession(player)
-                        || !TickThrottle.isSpreadTick(player.getUUID(), gameTime, AIM_SCAN_INTERVAL_TICKS)) {
+                        || delegate.hasForcedSession(player)) {
+                    clearAim(player.getUUID());
+                    continue;
+                }
+                if (!TickThrottle.isSpreadTick(player.getUUID(), gameTime, AIM_SCAN_INTERVAL_TICKS)) {
                     continue;
                 }
 
@@ -135,15 +147,18 @@ final class PlayerItemProximityForcedDialogueService {
                     maxRadius = Math.max(maxRadius, definition.witnessRadius());
                 }
                 if (maxRadius <= 0.0D) {
+                    clearAim(player.getUUID());
                     continue;
                 }
 
                 Optional<Villager> target = aimedAtVillager(player, maxRadius);
                 if (target.isEmpty()) {
+                    clearAim(player.getUUID());
                     continue;
                 }
                 Villager villager = target.get();
                 if (!villager.isAlive() || villager.isBaby() || villager.isTrading()) {
+                    clearAim(player.getUUID());
                     continue;
                 }
 
@@ -153,8 +168,21 @@ final class PlayerItemProximityForcedDialogueService {
                         targetDefinitions.add(definition);
                     }
                 }
+                if (targetDefinitions.isEmpty()) {
+                    clearAim(player.getUUID());
+                    continue;
+                }
+                long continuousAimTicks = continuousAimTicks(player.getUUID(), villager.getUUID(), gameTime);
                 if (tryDefinitions(
-                        level, villager, player, targetDefinitions, gameTime, true, delegate)) {
+                        level,
+                        villager,
+                        player,
+                        targetDefinitions,
+                        gameTime,
+                        true,
+                        continuousAimTicks,
+                        aimingDialogueDelayEnabled(player),
+                        delegate)) {
                     pruneCooldowns(gameTime);
                 }
             }
@@ -168,16 +196,18 @@ final class PlayerItemProximityForcedDialogueService {
             List<ForcedDialogueDefinition> definitions,
             long gameTime,
             Delegate delegate) {
-        return tryDefinitions(level, villager, player, definitions, gameTime, false, delegate);
+        return tryDefinitions(level, villager, player, definitions, gameTime, false, Long.MAX_VALUE, false, delegate);
     }
 
-    private static boolean tryDefinitions(
+    static boolean tryDefinitions(
             ServerLevel level,
             Villager villager,
             ServerPlayer player,
             List<ForcedDialogueDefinition> definitions,
             long gameTime,
             boolean aimingAlreadyConfirmed,
+            long continuousAimTicks,
+            boolean applyAimingDialogueDelay,
             Delegate delegate) {
         for (ForcedDialogueDefinition definition : definitions) {
             Optional<TradeItemMatch> tradeItemMatch = definition.requiresHeldTradeItem()
@@ -197,6 +227,11 @@ final class PlayerItemProximityForcedDialogueService {
             if (definition.drawWeaponTicks() > 0) {
                 VillagerWeaponDrawService.draw(villager, definition.drawWeaponTicks());
             }
+            if (definition.requiresPlayerAimingAtWitness()
+                    && applyAimingDialogueDelay
+                    && continuousAimTicks < definition.requiredAimDurationTicks()) {
+                continue;
+            }
             if (!cooldownReady(gameTime, villager.getUUID(), player.getUUID(), definition.id())) {
                 continue;
             }
@@ -207,6 +242,38 @@ final class PlayerItemProximityForcedDialogueService {
             }
         }
         return false;
+    }
+
+    static long continuousAimTicks(UUID playerId, UUID villagerId, long gameTime) {
+        AimState previous = ACTIVE_AIMS.get(playerId);
+        if (previous == null
+                || !previous.villagerId().equals(villagerId)
+                || gameTime < previous.lastObservedTick()
+                || gameTime - previous.lastObservedTick() > AIM_SCAN_INTERVAL_TICKS) {
+            ACTIVE_AIMS.put(playerId, new AimState(villagerId, gameTime, gameTime));
+            return 0L;
+        }
+
+        ACTIVE_AIMS.put(playerId, new AimState(villagerId, previous.startedTick(), gameTime));
+        return gameTime - previous.startedTick();
+    }
+
+    static void clearAim(UUID playerId) {
+        ACTIVE_AIMS.remove(playerId);
+    }
+
+    static void setAimingDialogueDelayEnabled(ServerPlayer player, boolean enabled) {
+        if (player == null) {
+            return;
+        }
+        AIM_DELAY_PREFERENCES.put(player.getUUID(), enabled);
+        clearAim(player.getUUID());
+    }
+
+    static boolean aimingDialogueDelayEnabled(ServerPlayer player) {
+        return AIM_DELAY_PREFERENCES.getOrDefault(
+                player.getUUID(),
+                VillagerRetaliationConfig.ENABLE_WEAPON_AIMING_DIALOGUE_DELAY.get());
     }
 
     static boolean isAimingAtWitness(ServerPlayer player, Villager witness, double maxDistance) {
@@ -417,5 +484,11 @@ final class PlayerItemProximityForcedDialogueService {
             UUID villagerId,
             UUID playerId,
             String definitionId) {
+    }
+
+    private record AimState(
+            UUID villagerId,
+            long startedTick,
+            long lastObservedTick) {
     }
 }

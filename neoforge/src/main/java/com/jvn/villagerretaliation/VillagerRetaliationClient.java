@@ -24,6 +24,8 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandKeyMappings::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::registerGuiLayer);
         com.jvn.villagerretaliation.client.item.VillagerFishingRodItemProperties.register();
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.config.WeaponAimingDialogueDelayClientPreference::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.config.WeaponAimingDialogueDelayClientPreference::onLoggingOut);
         modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintItemProperties::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::registerShaders);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);

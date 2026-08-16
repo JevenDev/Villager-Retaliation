@@ -68,6 +68,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_CONTAINER_OPEN_REACTION = bind("dialogue.enableContainerOpenReaction", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_RETALIATION_FORCED_DIALOGUE = bind("dialogue.enableRetaliationForcedDialogue", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_PLAYER_ITEM_PROXIMITY_FORCED_DIALOGUE = bind("dialogue.enablePlayerItemProximityForcedDialogue", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_WEAPON_AIMING_DIALOGUE_DELAY = bind("dialogue.enableWeaponAimingDialogueDelay", Boolean.class);
     public static final ConfigValue<Boolean> SEPARATE_VILLAGER_CHAT_MESSAGES = bind("dialogue.separateVillagerChatMessages", Boolean.class);
     public static final ConfigValue<Boolean> SEPARATE_VILLAGER_CHAT_SPEAKERS = bind("dialogue.separateVillagerChatSpeakers", Boolean.class);
     public static final ConfigValue<InteractionChatPosition> INTERACTION_CHAT_POSITION = bind("dialogue.interactionChatPosition", InteractionChatPosition.class);

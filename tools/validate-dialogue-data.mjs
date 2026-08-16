@@ -4827,6 +4827,9 @@ function checkForcedDialogueEntryText(file, entry, location, messagePrefix = "")
   checkOptionalInteger(file, entry, location, "max_recent_retaliations", { min: 0 });
   checkOptionalNumber(file, entry, location, "chance", { min: 0, max: 1 });
   checkOptionalNumber(file, entry, location, "witness_radius", { min: 1 });
+  checkOptionalInteger(file, entry, location, "required_aim_duration_ticks", { min: 0 });
+  checkOptionalInteger(file, entry, location, "required_aim_duration_seconds", { min: 0 });
+  checkOptionalInteger(file, entry, location, "required_aim_duration_days", { min: 0 });
   checkForcedDialogueOutput(file, entry.output, `${location}.output`);
   checkStringList(file, entry, location, ["line", "lines"], "forced dialogue line");
   checkStringList(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");

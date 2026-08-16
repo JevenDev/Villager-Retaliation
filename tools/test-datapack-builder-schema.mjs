@@ -378,7 +378,13 @@ function testAllSurfaceGeneration(app) {
 function testSurfaceImportsAndEdits(app) {
   app.state = app.createInitialState();
   const imports = [
-    ["data/examplepack/forced_dialogue/theft.json", { entries: [{ trigger: "theft", line: "Stop." }] }],
+    ["data/examplepack/forced_dialogue/aiming.json", { entries: [{
+      trigger: "player_item_proximity",
+      line: "Lower it.",
+      player_items: ["#minecraft:swords"],
+      requires_player_aiming_at_witness: true,
+      required_aim_duration_seconds: 2
+    }] }],
     ["data/villagerretaliation/quests/example/errand.json", { id: "villagerretaliation:errand", replace: true }],
     ["data/villagerretaliation/dialogue_trees/en_us/quests/example/errand.json", { id: "villagerretaliation:errand", remove: true }],
     ["data/villagerretaliation/notifications/en_us/events.json", { notifications: [{ trigger: "quest.expired", text: "Expired.", kind: "quest" }] }],
@@ -394,6 +400,8 @@ function testSurfaceImportsAndEdits(app) {
   }
 
   assert(app.state.forcedDialogue.entries.length === 1, "Forced dialogue import missed entries.");
+  assert(app.state.forcedDialogue.entries[0].required_aim_duration_seconds === 2,
+    "Forced dialogue import missed the data-driven aim duration.");
   assert(Object.hasOwn(app.state.extraFiles, "data/villagerretaliation/quests/example/errand.json"), "Quest import was not preserved.");
   assert(Object.hasOwn(app.state.extraFiles, "data/villagerretaliation/dialogue_trees/en_us/quests/example/errand.json"), "Dialogue tree import was not preserved.");
   assert(app.state.notifications.notifications[0].trigger === "quest.expired", "Notification import missed quest trigger.");
