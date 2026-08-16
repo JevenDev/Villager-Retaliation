@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
+import com.jvn.villagerretaliation.quest.VillagerQuestHiringRestrictionService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
@@ -406,6 +407,9 @@ public final class HiredVillagerContractService {
             int emeraldsPaid,
             HiredVillagerRole role) {
         if (level == null || villager == null || villager.isBaby() || player == null) {
+            return false;
+        }
+        if (VillagerQuestHiringRestrictionService.blocksHiring(level, villager, player)) {
             return false;
         }
         VillagerAssignmentSnapshot assignment = synchronizeAssignment(level, villager);

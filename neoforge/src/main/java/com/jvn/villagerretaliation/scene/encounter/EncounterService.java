@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.scene.encounter;
 
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
@@ -9,6 +10,7 @@ import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
 import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -503,6 +505,8 @@ public final class EncounterService {
                         level, level.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null);
             String error =
                     applyMobOptions(
+                            server,
+                            encounter,
                             entity,
                             new EncounterTemplate.Member(
                                     entityType, 1, ally.equipment(), ally.options(), ""));
@@ -578,10 +582,18 @@ public final class EncounterService {
             String receipt = wave.id() + "/" + hook.id();
             if (!encounter.markWaveHookFired(receipt)) continue;
             data.changed();
-            Component message = Component.literal(hook.text());
             for (UUID participant : encounter.participants()) {
                 var player = server.getPlayerList().getPlayer(participant);
-                if (player != null) player.sendSystemMessage(message);
+                if (player != null) {
+                    String text = localized(
+                            server,
+                            player.getRandom(),
+                            hook.textKey(),
+                            hook.text(),
+                            VillagerLocale.locale(player),
+                            Map.of());
+                    player.sendSystemMessage(Component.literal(text));
+                }
             }
         }
     }
@@ -1028,8 +1040,15 @@ public final class EncounterService {
         if (reward.item() != null) {
             ItemStack stack =
                     new ItemStack(BuiltInRegistries.ITEM.get(reward.item()), reward.count());
-            if (!reward.trophyName().isBlank())
-                stack.set(DataComponents.CUSTOM_NAME, Component.literal(reward.trophyName()));
+            String trophyName = localized(
+                    player.getServer(),
+                    player.getRandom(),
+                    reward.trophyNameKey(),
+                    reward.trophyName(),
+                    VillagerLocale.locale(player),
+                    Map.of());
+            if (!trophyName.isBlank())
+                stack.set(DataComponents.CUSTOM_NAME, Component.literal(trophyName));
             give(player, stack);
             return;
         }
@@ -1664,7 +1683,8 @@ public final class EncounterService {
             if (entity instanceof Mob mob)
                 mob.finalizeSpawn(
                         level, level.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null);
-            String optionError = applyMobOptions(entity, member);
+            String optionError =
+                    applyMobOptions(level.getServer(), encounter, entity, member);
             if (!optionError.isBlank()) {
                 entity.discard();
                 return new SpawnResult(null, optionError, false);
@@ -2200,10 +2220,18 @@ public final class EncounterService {
                 receipt.applied(gameTime, "participants=" + encounter.participants().size());
                 receipt.completed(gameTime, "reserved before participant delivery");
                 data.changed();
-                Component message = Component.literal(action.text());
                 for (UUID participant : encounter.participants()) {
                     var player = server.getPlayerList().getPlayer(participant);
-                    if (player != null) player.sendSystemMessage(message);
+                    if (player != null) {
+                        String text = localized(
+                                server,
+                                player.getRandom(),
+                                action.textKey(),
+                                action.text(),
+                                VillagerLocale.locale(player),
+                                Map.of());
+                        player.sendSystemMessage(Component.literal(text));
+                    }
                 }
             }
             case FACT -> {
@@ -2266,10 +2294,21 @@ public final class EncounterService {
         }
     }
 
-    private static String applyMobOptions(Entity entity, EncounterTemplate.Member member) {
+    private static String applyMobOptions(
+            MinecraftServer server,
+            EncounterInstance encounter,
+            Entity entity,
+            EncounterTemplate.Member member) {
         EncounterTemplate.MobOptions options = member.options();
-        if (!options.customName().isBlank())
-            entity.setCustomName(Component.literal(options.customName()));
+        String customName = localized(
+                server,
+                RandomSource.create(encounter.variantSeed() ^ entity.getUUID().hashCode()),
+                options.customNameKey(),
+                options.customName(),
+                presentationLocale(server, encounter),
+                Map.of());
+        if (!customName.isBlank())
+            entity.setCustomName(Component.literal(customName));
         entity.setCustomNameVisible(options.nameVisible());
         entity.setGlowingTag(options.glowing());
         if (options.persistent()) {
@@ -2391,19 +2430,27 @@ public final class EncounterService {
         if (template.guidance() != null
                 || encounter.locationNotified()
                 || template.spawnMode() != EncounterTemplate.SpawnMode.FIXED) return;
-        String message =
+        String fallback =
                 template.locationMessage().isBlank()
                         ? "Go to the encounter at {x}, {y}, {z}."
                         : template.locationMessage();
-        message =
-                message.replace("{x}", Integer.toString(encounter.anchor().getX()))
-                        .replace("{y}", Integer.toString(encounter.anchor().getY()))
-                        .replace("{z}", Integer.toString(encounter.anchor().getZ()))
-                        .replace("{dimension}", encounter.anchorDimension().toString());
-        Component component = Component.literal(message);
+        Map<String, String> replacements = Map.of(
+                "x", Integer.toString(encounter.anchor().getX()),
+                "y", Integer.toString(encounter.anchor().getY()),
+                "z", Integer.toString(encounter.anchor().getZ()),
+                "dimension", encounter.anchorDimension().toString());
         for (UUID participant : encounter.participants()) {
             var player = server.getPlayerList().getPlayer(participant);
-            if (player != null) player.sendSystemMessage(component);
+            if (player != null) {
+                String message = localized(
+                        server,
+                        player.getRandom(),
+                        template.locationMessageKey(),
+                        fallback,
+                        VillagerLocale.locale(player),
+                        replacements);
+                player.sendSystemMessage(Component.literal(message));
+            }
         }
         encounter.markLocationNotified();
         data.changed();
@@ -2638,10 +2685,17 @@ public final class EncounterService {
                                                 "villagerretaliation.encounter.raid"),
                                         BossEvent.BossBarColor.RED,
                                         BossEvent.BossBarOverlay.NOTCHED_10));
-        String title =
+        String fallback =
                 definition.bossBarTitle().isBlank()
                         ? "Raid - Wave " + (wave + 1) + "/" + template.waveCount()
                         : definition.bossBarTitle();
+        String title = localized(
+                server,
+                RandomSource.create(encounter.variantSeed() ^ wave),
+                definition.bossBarTitleKey(),
+                fallback,
+                presentationLocale(server, encounter),
+                Map.of());
         bar.setName(Component.literal(title));
         bar.setProgress(
                 Math.max(
@@ -2657,6 +2711,34 @@ public final class EncounterService {
             if (player != null) bar.addPlayer(player);
         }
         bar.setVisible(true);
+    }
+
+    private static String presentationLocale(
+            MinecraftServer server, EncounterInstance encounter) {
+        return encounter.participants().stream()
+                .sorted()
+                .map(server.getPlayerList()::getPlayer)
+                .filter(java.util.Objects::nonNull)
+                .map(VillagerLocale::locale)
+                .findFirst()
+                .orElse(VillagerLocale.DEFAULT_LOCALE);
+    }
+
+    private static String localized(
+            MinecraftServer server,
+            RandomSource random,
+            String key,
+            String fallback,
+            String locale,
+            Map<String, String> replacements) {
+        String safeFallback = fallback == null ? "" : fallback;
+        if (key == null || key.isBlank()) {
+            return VillagerDialogueResources.resolveTemplate(safeFallback, replacements);
+        }
+        return VillagerDialogueResources.globalMessage(
+                        server, random, key, locale, replacements)
+                .orElseGet(() ->
+                        VillagerDialogueResources.resolveTemplate(safeFallback, replacements));
     }
 
     public static void hideBossBar(UUID encounterId) {

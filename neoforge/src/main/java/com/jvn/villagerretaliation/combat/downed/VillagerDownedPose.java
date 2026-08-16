@@ -10,10 +10,9 @@ import net.minecraft.world.entity.EntityDimensions;
 public enum VillagerDownedPose {
     SITTING(VillagerRetaliation.id("sitting"), 1.25F, 0.77F),
     SIDE_LYING(VillagerRetaliation.id("side_lying"), 2.5F, 0.36F),
-    HANDS_AND_KNEES(VillagerRetaliation.id("hands_and_knees"), 1.75F, 0.56F),
     SECOND_WIND_CRAWL(ResourceLocation.fromNamespaceAndPath("secondwind", "crawl"), 1.75F, 0.42F);
 
-    private static final VillagerDownedPose[] ORIGINAL_VALUES = {SITTING, SIDE_LYING, HANDS_AND_KNEES};
+    private static final VillagerDownedPose[] ORIGINAL_VALUES = {SITTING, SIDE_LYING};
 
     private final ResourceLocation id;
     private final float widthScale;

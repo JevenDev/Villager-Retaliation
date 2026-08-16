@@ -409,6 +409,10 @@
           "custom_name": {
             "$ref": "#/$defs/localized_reference"
           },
+          "custom_name_key": {
+            "type": "string",
+            "minLength": 1
+          },
           "name_visible": {
             "type": "boolean"
           },
@@ -885,6 +889,10 @@
                 "custom_name": {
                   "$ref": "#/$defs/localized_reference"
                 },
+                "custom_name_key": {
+                  "type": "string",
+                  "minLength": 1
+                },
                 "name_visible": {
                   "type": "boolean"
                 },
@@ -1050,6 +1058,10 @@
           },
           "boss_bar_title": {
             "$ref": "#/$defs/localized_reference"
+          },
+          "boss_bar_title_key": {
+            "type": "string",
+            "minLength": 1
           },
           "equipment": {
             "type": "object",
@@ -1359,6 +1371,10 @@
                 },
                 "text": {
                   "$ref": "#/$defs/localized_reference"
+                },
+                "text_key": {
+                  "type": "string",
+                  "minLength": 1
                 }
               }
             },
@@ -1380,6 +1396,10 @@
               },
               "text": {
                 "$ref": "#/$defs/localized_reference"
+              },
+              "text_key": {
+                "type": "string",
+                "minLength": 1
               }
             }
           }
@@ -1901,6 +1921,10 @@
                 },
                 "text": {
                   "$ref": "#/$defs/localized_reference"
+                },
+                "text_key": {
+                  "type": "string",
+                  "minLength": 1
                 },
                 "scope": {
                   "type": "string",
@@ -2524,6 +2548,10 @@
           "custom_name": {
             "$ref": "#/$defs/localized_reference"
           },
+          "custom_name_key": {
+            "type": "string",
+            "minLength": 1
+          },
           "name_visible": {
             "type": "boolean"
           },
@@ -3086,6 +3114,10 @@
               },
               "trophy_name": {
                 "$ref": "#/$defs/localized_reference"
+              },
+              "trophy_name_key": {
+                "type": "string",
+                "minLength": 1
               }
             },
             "oneOf": [
@@ -3178,6 +3210,10 @@
               },
               "trophy_name": {
                 "$ref": "#/$defs/localized_reference"
+              },
+              "trophy_name_key": {
+                "type": "string",
+                "minLength": 1
               }
             },
             "oneOf": [
@@ -3264,6 +3300,10 @@
               },
               "trophy_name": {
                 "$ref": "#/$defs/localized_reference"
+              },
+              "trophy_name_key": {
+                "type": "string",
+                "minLength": 1
               }
             },
             "oneOf": [
@@ -3393,6 +3433,10 @@
     },
     "location_message": {
       "$ref": "#/$defs/localized_reference"
+    },
+    "location_message_key": {
+      "type": "string",
+      "minLength": 1
     },
     "area": {
       "type": "object",

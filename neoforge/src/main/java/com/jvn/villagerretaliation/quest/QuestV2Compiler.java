@@ -67,6 +67,7 @@ public final class QuestV2Compiler {
                 definition,
                 resource.provider().type(),
                 resource.provider().deathProtection(),
+                resource.provider().blocksHiring(),
                 source,
                 canonical));
     }
@@ -815,6 +816,7 @@ public final class QuestV2Compiler {
             QuestDefinition definition,
             ResourceLocation providerType,
             com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection deathProtection,
+            boolean blocksHiring,
             QuestSourcePointer source,
             CanonicalQuestJson canonical) {
         List<CompiledQuestObjective> objectives = compileObjectives(definition, canonical.objectiveSources(), source);
@@ -837,7 +839,7 @@ public final class QuestV2Compiler {
                         definition.tags(),
                         definition.parent(),
                         definition.metadata()),
-                new CompiledQuestProvider(providerType, definition.offer(), deathProtection),
+                new CompiledQuestProvider(providerType, definition.offer(), deathProtection, blocksHiring),
                 definition.target(),
                 definition.entryStage(),
                 definition.prerequisites(),

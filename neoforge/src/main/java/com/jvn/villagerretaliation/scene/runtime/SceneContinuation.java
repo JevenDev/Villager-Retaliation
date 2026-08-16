@@ -143,6 +143,13 @@ public final class SceneContinuation {
             lines.put(key, values);
         });
         tag.put("Lines", lines);
+        CompoundTag lineKeys = new CompoundTag();
+        action.lineKeysByStatus().forEach((key, list) -> {
+            ListTag values = new ListTag();
+            list.forEach(value -> values.add(StringTag.valueOf(value)));
+            lineKeys.put(key, values);
+        });
+        tag.put("LineKeys", lineKeys);
         CompiledQuestTransition transition = action.questTransition();
         if (transition != null && !transition.equals(CompiledQuestTransition.EMPTY)) {
             CompoundTag transitionTag = new CompoundTag();
@@ -170,18 +177,26 @@ public final class SceneContinuation {
                         rawTransition.getString("Response"), enumValue(CompiledQuestTransition.Target.class,
                         rawTransition.getString("Target"), CompiledQuestTransition.Target.NONE),
                         rawTransition.getString("TargetStage"), rawTransition.getString("Source"));
-        Map<String, List<String>> lines = new LinkedHashMap<>();
-        CompoundTag rawLines = tag.getCompound("Lines");
-        for (String key : rawLines.getAllKeys()) {
-            List<String> values = new ArrayList<>();
-            for (Tag raw : rawLines.getList(key, Tag.TAG_STRING)) values.add(raw.getAsString());
-            lines.put(key, List.copyOf(values));
-        }
+        Map<String, List<String>> lines = readLineMap(tag, "Lines");
+        Map<String, List<String>> lineKeys = readLineMap(tag, "LineKeys");
         return new VillagerActionDefinition(enumValue(VillagerActionDefinition.Kind.class,tag.getString("Kind"),VillagerActionDefinition.Kind.NONE),ResourceLocation.tryParse(tag.getString("Quest")),
                 enumValue(VillagerActionDefinition.QuestAction.class,tag.getString("QuestAction"),VillagerActionDefinition.QuestAction.NONE),tag.getInt("Amount"),ResourceLocation.tryParse(tag.getString("Memory")),
                 enumValue(com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.class,tag.getString("MemoryScope"),com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.BOTH),ResourceLocation.tryParse(tag.getString("Loot")),
                 tag.getString("Notification"),tag.getString("Text"),tag.getString("Forced"),tag.getBoolean("Flash"),enumValue(QuestFactScope.class,tag.getString("FactScope"),QuestFactScope.PLAYER),
-                ResourceLocation.tryParse(tag.getString("FactTag")),tag.getString("FactKey"),tag.getString("FactValue"),lines,transition,ResourceLocation.tryParse(tag.getString("Scene")),tag.getString("Operation"),tag.getBoolean("Wait"),tag.getBoolean("Required"));
+                ResourceLocation.tryParse(tag.getString("FactTag")),tag.getString("FactKey"),tag.getString("FactValue"),lines,lineKeys,transition,ResourceLocation.tryParse(tag.getString("Scene")),tag.getString("Operation"),tag.getBoolean("Wait"),tag.getBoolean("Required"));
+    }
+
+    private static Map<String, List<String>> readLineMap(CompoundTag tag, String field) {
+        Map<String, List<String>> lines = new LinkedHashMap<>();
+        CompoundTag rawLines = tag.getCompound(field);
+        for (String key : rawLines.getAllKeys()) {
+            List<String> values = new ArrayList<>();
+            for (Tag raw : rawLines.getList(key, Tag.TAG_STRING)) {
+                values.add(raw.getAsString());
+            }
+            lines.put(key, List.copyOf(values));
+        }
+        return Map.copyOf(lines);
     }
 
     private static void putResource(CompoundTag tag, String key, ResourceLocation value) {

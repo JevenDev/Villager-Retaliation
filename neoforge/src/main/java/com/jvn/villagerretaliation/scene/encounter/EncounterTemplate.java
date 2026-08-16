@@ -36,7 +36,8 @@ public record EncounterTemplate(
         List<Variant> variants,
         Environment environment,
         Guidance guidance,
-        RewardPolicy rewards) {
+        RewardPolicy rewards,
+        String locationMessageKey) {
     public EncounterTemplate {
         members = members == null ? List.of() : List.copyOf(members);
         waves = waves == null ? List.of() : List.copyOf(waves);
@@ -88,6 +89,7 @@ public record EncounterTemplate(
         waveIntervalTicks = Math.max(0, waveIntervalTicks);
         waveTrigger = waveTrigger == null ? WaveTrigger.ALL_DEFEATED : waveTrigger;
         locationMessage = locationMessage == null ? "" : locationMessage;
+        locationMessageKey = locationMessageKey == null ? "" : locationMessageKey;
         if (variants.isEmpty()) {
             long maximum = 0;
             if (waves.isEmpty()) {
@@ -906,6 +908,44 @@ public record EncounterTemplate(
                 null);
     }
 
+    /** Source-compatible constructor for encounter code written before runtime locale keys. */
+    public EncounterTemplate(
+            ResourceLocation id,
+            int version,
+            ResourceLocation controller,
+            List<Member> members,
+            int extraPerAdditionalPlayer,
+            int maxPartySize,
+            int placementAttempts,
+            int spawnRadius,
+            RespawnPolicy respawnPolicy,
+            CleanupPolicy cleanupPolicy,
+            CompletionCondition completionCondition,
+            SpawnMode spawnMode,
+            int waveCount,
+            int waveIntervalTicks,
+            WaveTrigger waveTrigger,
+            boolean bossBar,
+            String locationMessage,
+            Area area,
+            List<Wave> waves,
+            List<SpawnPoint> spawnPoints,
+            SpawnSelectionMode spawnSelection,
+            List<Phase> phases,
+            ObjectiveComposition objectives,
+            List<Ally> allies,
+            FailurePolicy failure,
+            List<Variant> variants,
+            Environment environment,
+            Guidance guidance,
+            RewardPolicy rewards) {
+        this(id, version, controller, members, extraPerAdditionalPlayer, maxPartySize,
+                placementAttempts, spawnRadius, respawnPolicy, cleanupPolicy, completionCondition,
+                spawnMode, waveCount, waveIntervalTicks, waveTrigger, bossBar, locationMessage,
+                area, waves, spawnPoints, spawnSelection, phases, objectives, allies, failure,
+                variants, environment, guidance, rewards, "");
+    }
+
     public boolean variantSelector() {
         return !variants.isEmpty();
     }
@@ -1000,7 +1040,8 @@ public record EncounterTemplate(
             int delayTicks,
             WaveTrigger trigger,
             String bossBarTitle,
-            List<WaveHook> hooks) {
+            List<WaveHook> hooks,
+            String bossBarTitleKey) {
         public Wave {
             if (id == null || !id.matches("[a-z][a-z0-9_.-]{0,63}"))
                 throw new IllegalArgumentException("wave id must be a stable lowercase identifier");
@@ -1014,6 +1055,7 @@ public record EncounterTemplate(
                         "wave " + id + " delay_ticks must be between 0 and 12000");
             trigger = trigger == null ? WaveTrigger.ALL_DEFEATED : trigger;
             bossBarTitle = bossBarTitle == null ? "" : bossBarTitle;
+            bossBarTitleKey = bossBarTitleKey == null ? "" : bossBarTitleKey;
             if (bossBarTitle.length() > 128)
                 throw new IllegalArgumentException(
                         "wave " + id + " boss_bar_title exceeds 128 characters");
@@ -1021,9 +1063,14 @@ public record EncounterTemplate(
             if (hooks.size() > 32)
                 throw new IllegalArgumentException("wave " + id + " exceeds 32 hooks");
         }
+
+        public Wave(String id, List<Member> members, int delayTicks, WaveTrigger trigger,
+                String bossBarTitle, List<WaveHook> hooks) {
+            this(id, members, delayTicks, trigger, bossBarTitle, hooks, "");
+        }
     }
 
-    public record WaveHook(String id, HookType type, String text) {
+    public record WaveHook(String id, HookType type, String text, String textKey) {
         public WaveHook {
             if (id == null || !id.matches("[a-z][a-z0-9_.-]{0,63}"))
                 throw new IllegalArgumentException(
@@ -1032,6 +1079,11 @@ public record EncounterTemplate(
             if (text == null || text.isBlank() || text.length() > 512)
                 throw new IllegalArgumentException(
                         "wave hook text must contain 1 to 512 characters");
+            textKey = textKey == null ? "" : textKey;
+        }
+
+        public WaveHook(String id, HookType type, String text) {
+            this(id, type, text, "");
         }
     }
 
@@ -1048,7 +1100,8 @@ public record EncounterTemplate(
             Map<ResourceLocation, Double> attributes,
             boolean boss,
             BossColor bossBarColor,
-            BossOverlay bossBarOverlay) {
+            BossOverlay bossBarOverlay,
+            String customNameKey) {
         public static final MobOptions DEFAULT =
                 new MobOptions(
                         "",
@@ -1058,15 +1111,24 @@ public record EncounterTemplate(
                         Map.of(),
                         false,
                         BossColor.RED,
-                        BossOverlay.PROGRESS);
+                        BossOverlay.PROGRESS,
+                        "");
 
         public MobOptions {
             customName = customName == null ? "" : customName;
+            customNameKey = customNameKey == null ? "" : customNameKey;
             if (customName.length() > 128)
                 throw new IllegalArgumentException("custom_name exceeds 128 characters");
             attributes = attributes == null ? Map.of() : Map.copyOf(attributes);
             bossBarColor = bossBarColor == null ? BossColor.RED : bossBarColor;
             bossBarOverlay = bossBarOverlay == null ? BossOverlay.PROGRESS : bossBarOverlay;
+        }
+
+        public MobOptions(String customName, boolean nameVisible, boolean glowing,
+                boolean persistent, Map<ResourceLocation, Double> attributes, boolean boss,
+                BossColor bossBarColor, BossOverlay bossBarOverlay) {
+            this(customName, nameVisible, glowing, persistent, attributes, boss,
+                    bossBarColor, bossBarOverlay, "");
         }
     }
 
@@ -1230,7 +1292,8 @@ public record EncounterTemplate(
             ResourceLocation tag,
             String key,
             String value,
-            String target) {
+            String target,
+            String textKey) {
         public PhaseAction {
             id = id == null ? "" : id;
             if (!id.matches("[a-z][a-z0-9_.-]{0,63}"))
@@ -1239,6 +1302,7 @@ public record EncounterTemplate(
             if (type == null)
                 throw new IllegalArgumentException("phase action " + id + " requires a type");
             text = text == null ? "" : text;
+            textKey = textKey == null ? "" : textKey;
             scope = scope == null ? FactScope.PLAYER : scope;
             key = key == null ? "" : key;
             value = value == null ? "" : value;
@@ -1264,6 +1328,11 @@ public record EncounterTemplate(
                                 "phase transition " + id + " requires a stable target step");
                 }
             }
+        }
+
+        public PhaseAction(String id, PhaseActionType type, String text, FactScope scope,
+                ResourceLocation tag, String key, String value, String target) {
+            this(id, type, text, scope, tag, key, value, target, "");
         }
     }
 
@@ -1633,11 +1702,13 @@ public record EncounterTemplate(
             ResourceLocation lootTable,
             ResourceLocation item,
             int count,
-            String trophyName) {
+            String trophyName,
+            String trophyNameKey) {
         public Reward {
             id = id == null ? "" : id;
             target = target == null ? "" : target;
             trophyName = trophyName == null ? "" : trophyName;
+            trophyNameKey = trophyNameKey == null ? "" : trophyNameKey;
             if (!id.matches("[a-z][a-z0-9_.-]{0,63}"))
                 throw new IllegalArgumentException("reward id must be stable");
             if ((lootTable == null) == (item == null))
@@ -1655,6 +1726,11 @@ public record EncounterTemplate(
             if (trophyName.length() > 128)
                 throw new IllegalArgumentException(
                         "reward " + id + " trophy_name must not exceed 128 characters");
+        }
+
+        public Reward(String id, String target, ResourceLocation lootTable,
+                ResourceLocation item, int count, String trophyName) {
+            this(id, target, lootTable, item, count, trophyName, "");
         }
     }
 

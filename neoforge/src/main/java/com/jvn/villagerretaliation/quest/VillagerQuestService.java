@@ -452,7 +452,7 @@ public final class VillagerQuestService {
             }
             DialogueTreeDefinition.Entry entry = tree.entry(binding.entryId()).orElse(null);
             if (entry != null && entry.matches(context, disposition)) {
-                options.add(entry.toOption(tree.id()));
+                options.add(entry.toOption(context, tree.id(), DialogueEntryMetadata.EMPTY));
             }
         }
         appendQuestOfferHintOptions(context, options);
@@ -5361,6 +5361,7 @@ public final class VillagerQuestService {
                 null,
                 "",
                 "",
+                Map.of(),
                 Map.of(),
                 CompiledQuestTransition.EMPTY,
                 null,

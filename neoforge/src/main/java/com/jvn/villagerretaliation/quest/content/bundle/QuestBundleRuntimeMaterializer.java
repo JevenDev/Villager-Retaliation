@@ -89,10 +89,49 @@ public final class QuestBundleRuntimeMaterializer {
                 boolean localized = localizedContext || isPlayerFacingField(entry.getKey());
                 result.add(entry.getKey(), materialize(entry.getValue(), entry.getKey(), prefix, locales,
                         path + "/" + entry.getKey(), localized, errors));
+                String runtimeKeyField = runtimeKeyField(entry.getKey(), localizedContext);
+                if (runtimeKeyField != null && !value.getAsJsonObject().has(runtimeKeyField)) {
+                    expandedReference(entry.getValue(), prefix, errors, path + "/" + entry.getKey())
+                            .ifPresent(messageId -> result.addProperty(runtimeKeyField, messageId));
+                }
             }
             return result;
         }
         return value.deepCopy();
+    }
+
+    private static java.util.Optional<String> expandedReference(
+            JsonElement value,
+            String prefix,
+            List<String> errors,
+            String path) {
+        LocalizedReference reference = LocalizedReference.read(value).orElse(null);
+        if (reference == null) {
+            return java.util.Optional.empty();
+        }
+        try {
+            return java.util.Optional.of(reference.expand(prefix));
+        } catch (IllegalArgumentException exception) {
+            errors.add(location(path) + " " + exception.getMessage());
+            return java.util.Optional.empty();
+        }
+    }
+
+    private static String runtimeKeyField(String field, boolean localizedContext) {
+        return switch (field) {
+            case "title" -> "title_key";
+            case "description" -> "description_key";
+            case "label" -> "label_key";
+            case "text", "lines" -> "text_key";
+            case "tracker_text" -> "tracker_text_key";
+            case "tracker_complete_text" -> "tracker_complete_text_key";
+            case "complete_text" -> "complete_text_key";
+            case "custom_name" -> "custom_name_key";
+            case "trophy_name" -> "trophy_name_key";
+            case "boss_bar_title" -> "boss_bar_title_key";
+            case "location_message" -> "location_message_key";
+            default -> localizedContext ? field + "_key" : null;
+        };
     }
 
     private static JsonElement legacyPayload(String field, JsonElement payload) {

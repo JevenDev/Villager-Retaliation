@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
+import com.jvn.villagerretaliation.quest.VillagerQuestHiringRestrictionService;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import net.minecraft.server.level.ServerLevel;
@@ -47,6 +48,10 @@ public final class HiredContractRequestHandler {
         }
         if (HiredVillagerContractService.isHired(level, villager)) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
+            return;
+        }
+        if (VillagerQuestHiringRestrictionService.blocksHiring(level, villager, player)) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.hire.quest_provider_locked");
             return;
         }
         if (villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {

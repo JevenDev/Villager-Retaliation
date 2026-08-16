@@ -134,6 +134,7 @@ public final class VillagerInteractionClientHandler {
                 payload.partyVillagerAuthorized(),
                 payload.partyVillagerPartyMember(),
                 payload.partyRecruitAvailable(),
+                payload.hireAvailable(),
                 payload.mountFeatureAvailable(),
                 payload.assignedMount(),
                 payload.mountedTravelEnabled(),

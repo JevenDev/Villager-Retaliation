@@ -20,7 +20,7 @@ public final class VillagerDownedClientCache {
     public static void accept(VillagerDownedStatePayload payload) {
         boolean recovered = false;
         if (payload.downed()) {
-            DOWNED_POSES.put(payload.entityId(), VillagerDownedPose.fromId(payload.pose()).orElse(VillagerDownedPose.HANDS_AND_KNEES));
+            DOWNED_POSES.put(payload.entityId(), VillagerDownedPose.fromId(payload.pose()).orElse(VillagerDownedPose.SITTING));
         } else {
             recovered = DOWNED_POSES.remove(payload.entityId()) != null;
         }
@@ -44,7 +44,7 @@ public final class VillagerDownedClientCache {
     }
 
     public static VillagerDownedPose pose(Entity entity) {
-        if (entity == null) return VillagerDownedPose.HANDS_AND_KNEES;
+        if (entity == null) return VillagerDownedPose.SITTING;
         return DOWNED_POSES.getOrDefault(entity.getId(), VillagerDownedPose.forVillager(entity.getUUID()));
     }
 

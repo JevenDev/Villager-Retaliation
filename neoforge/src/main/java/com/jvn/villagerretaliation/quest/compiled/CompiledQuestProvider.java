@@ -8,13 +8,21 @@ import net.minecraft.resources.ResourceLocation;
 public record CompiledQuestProvider(
         ResourceLocation providerType,
         QuestDefinition.Offer offer,
-        QuestProviderDeathProtection deathProtection) {
+        QuestProviderDeathProtection deathProtection,
+        boolean blocksHiring) {
     public CompiledQuestProvider(QuestDefinition.Offer offer) {
-        this(VillagerQuestProviderType.ID, offer, QuestProviderDeathProtection.NONE);
+        this(VillagerQuestProviderType.ID, offer, QuestProviderDeathProtection.NONE, false);
     }
 
     public CompiledQuestProvider(ResourceLocation providerType, QuestDefinition.Offer offer) {
-        this(providerType, offer, QuestProviderDeathProtection.NONE);
+        this(providerType, offer, QuestProviderDeathProtection.NONE, false);
+    }
+
+    public CompiledQuestProvider(
+            ResourceLocation providerType,
+            QuestDefinition.Offer offer,
+            QuestProviderDeathProtection deathProtection) {
+        this(providerType, offer, deathProtection, false);
     }
 
     public CompiledQuestProvider {

@@ -15,6 +15,8 @@ import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestDeterministicLocaleKeys;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestLocaleCatalog;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestLocalizationMigration;
+import com.jvn.villagerretaliation.scene.encounter.EncounterResources;
+import com.jvn.villagerretaliation.scene.encounter.EncounterTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,15 +91,37 @@ public final class QuestBundleArchitectureGameTests {
                 "inline companion location message accepted");
 
         JsonObject localizedEncounter = object(
-                "{\"id\":\"examplemod:localized_encounter\","
+                "{\"schema\":\"villagerretaliation:encounter/v1\","
+                        + "\"id\":\"examplemod:localized_encounter\","
+                        + "\"controller\":\"villagerretaliation:controlled\","
+                        + "\"spawn_mode\":\"raid_waves\","
+                        + "\"location_message\":{\"key\":\"#encounter.location\"},"
+                        + "\"waves\":[{\"id\":\"wave_one\","
+                        + "\"members\":[{\"entity\":\"minecraft:zombie\","
+                        + "\"custom_name\":{\"key\":\"#encounter.member\"},"
+                        + "\"name_visible\":true}],"
                         + "\"boss_bar_title\":{\"key\":\"#encounter.boss\"},"
-                        + "\"location_message\":{\"key\":\"#encounter.location\"}}");
+                        + "\"scene_actions\":[{\"id\":\"wave_notice\","
+                        + "\"type\":\"notification\","
+                        + "\"text\":{\"key\":\"#encounter.wave_notice\"}}]}],"
+                        + "\"phases\":[{\"id\":\"phase_one\","
+                        + "\"trigger\":{\"type\":\"wave_started\",\"wave\":\"wave_one\"},"
+                        + "\"actions\":[{\"id\":\"phase_notice\","
+                        + "\"type\":\"notification\","
+                        + "\"text\":{\"key\":\"#encounter.phase_notice\"}}]}],"
+                        + "\"rewards\":{\"completion\":[{\"id\":\"medal\","
+                        + "\"item\":\"minecraft:paper\","
+                        + "\"trophy_name\":{\"key\":\"#encounter.trophy\"}}]}}");
         List<QuestBundleTransactions.RawResource> localizedResources = new ArrayList<>(introduce(
                 0, "base", NS, LINE, SLUG, quest(NS, LINE, SLUG, PREFIX),
                 locale(Map.of(
                         PREFIX + ".title", element("\"Alpha\""),
                         PREFIX + ".encounter.boss", element("\"Localized boss\""),
-                        PREFIX + ".encounter.location", element("\"Localized location\"")))));
+                        PREFIX + ".encounter.location", element("\"Localized location\""),
+                        PREFIX + ".encounter.member", element("\"Localized member\""),
+                        PREFIX + ".encounter.wave_notice", element("\"Localized wave notice\""),
+                        PREFIX + ".encounter.phase_notice", element("\"Localized phase notice\""),
+                        PREFIX + ".encounter.trophy", element("\"Localized trophy\"")))));
         localizedResources.add(raw(
                 0, "base", NS, "quests/road/alpha/encounters/localized.json", localizedEncounter));
         QuestBundleTransactions.EffectiveBundle localizedBundle =
@@ -108,13 +132,73 @@ public final class QuestBundleArchitectureGameTests {
                         QuestBundlePath.Kind.ENCOUNTER,
                         id("examplemod:localized_encounter"));
         helper.assertTrue(materialized.errors().isEmpty(), "companion localization failed");
+        JsonObject materializedWave =
+                materialized.definition().getAsJsonArray("waves").get(0).getAsJsonObject();
         helper.assertValueEqual(
-                materialized.definition().get("boss_bar_title").getAsString(),
+                materializedWave.get("boss_bar_title").getAsString(),
                 "Localized boss", "boss-bar title was not materialized");
         helper.assertValueEqual(
                 materialized.definition().get("location_message").getAsString(),
                 "Localized location", "location message was not materialized");
+        helper.assertValueEqual(
+                materializedWave.get("boss_bar_title_key").getAsString(),
+                PREFIX + ".encounter.boss", "boss-bar locale key was not retained");
+        helper.assertValueEqual(
+                materialized.definition().get("location_message_key").getAsString(),
+                PREFIX + ".encounter.location", "location-message locale key was not retained");
+        List<String> encounterErrors = new ArrayList<>();
+        EncounterTemplate parsedEncounter = EncounterResources.parse(
+                id("examplemod:localized_encounter"), materialized.definition(), encounterErrors);
+        helper.assertTrue(
+                parsedEncounter != null
+                        && encounterErrors.isEmpty()
+                        && !parsedEncounter.locationMessageKey().isBlank()
+                        && !parsedEncounter.waves().getFirst().bossBarTitleKey().isBlank()
+                        && !parsedEncounter.waves().getFirst().members().getFirst()
+                                .options().customNameKey().isBlank()
+                        && !parsedEncounter.waves().getFirst().hooks().getFirst().textKey().isBlank()
+                        && !parsedEncounter.phases().getFirst().actions().getFirst()
+                                .textKey().isBlank()
+                        && !parsedEncounter.rewards().completion().getFirst()
+                                .trophyNameKey().isBlank(),
+                "encounter parser lost runtime locale keys: " + encounterErrors);
 
+        QuestBundleRuntimeMaterializer.Result materializedQuest =
+                QuestBundleRuntimeMaterializer.materialize(localizedBundle);
+        helper.assertValueEqual(
+                materializedQuest.quest().getAsJsonObject("metadata").get("title_key").getAsString(),
+                PREFIX + ".title",
+                "quest title reference was not retained as a runtime key");
+
+        JsonObject actionRoot = object(
+                "{\"actions\":[{\"type\":\"quest\",\"quest\":\"examplemod:alpha\","
+                        + "\"action\":\"start\",\"lines\":{\"started\":\"English\","
+                        + "\"started_key\":\"examplemod.quest.alpha.dialogue.started\"}}]}");
+        com.jvn.villagerretaliation.action.VillagerActionDefinition keyedAction =
+                com.jvn.villagerretaliation.action.VillagerActionDefinition.readList(
+                                id("examplemod:keyed_action"), "keyed action", actionRoot)
+                        .getFirst();
+        helper.assertValueEqual(
+                keyedAction.lineKeysForStatus("started").getFirst(),
+                "examplemod.quest.alpha.dialogue.started",
+                "quest action outcome key was not retained");
+
+        QuestContentCatalog builtIns = QuestContentCatalogs.current(helper.getLevel().getServer());
+        com.jvn.villagerretaliation.quest.QuestDefinition torch =
+                builtIns.quests().get(id("villagerretaliation:torch_bundle"));
+        helper.assertTrue(
+                torch != null && "quest.village_supply.torch_bundle.title".equals(torch.titleKey()),
+                "built-in quest title did not compile to a runtime locale key");
+        var dialogueTree = builtIns.dialogueCatalog()
+                .tree(com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCompiler.treeId(torch.id()))
+                .orElse(null);
+        helper.assertTrue(
+                dialogueTree != null
+                        && dialogueTree.entries().stream().anyMatch(entry -> !entry.labelKey().isBlank())
+                        && dialogueTree.nodes().values().stream()
+                                .flatMap(node -> node.textVariants().stream())
+                                .anyMatch(variant -> !variant.textKey().isBlank()),
+                "generated quest dialogue did not retain label and text locale keys");
         QuestDeterministicLocaleKeys.Address address = new QuestDeterministicLocaleKeys.Address(
                 id("examplemod:alpha"), List.of("stage_one", "objective_one"), "tracker.text");
         helper.assertValueEqual(
@@ -223,6 +307,21 @@ public final class QuestBundleArchitectureGameTests {
         helper.assertValueEqual(
                 bundle(fallback, LINE, SLUG).locales().plainText("en_us", PREFIX + ".title").orElse(""),
                 "Lower", "invalid structural/English transaction did not retain lower bundle");
+
+        List<QuestBundleTransactions.RawResource> semanticLayer = new ArrayList<>();
+        semanticLayer.add(raw(1, "high", NS, questPath(LINE, SLUG), quest(NS, LINE, SLUG, PREFIX)));
+        semanticLayer.add(raw(1, "high", NS, localePath(LINE, SLUG, "en_us"),
+                locale(PREFIX + ".title", "High")));
+        semanticLayer.add(raw(1, "high", NS, localePath(LINE, SLUG, "fr_fr"),
+                locale(PREFIX + ".title", "Titre")));
+        helper.assertTrue(
+                QuestContentCatalogs.removeRejectedStructuralLayer(
+                        semanticLayer, owner(LINE, SLUG), 1, "high"),
+                "semantic layer removal did not remove structural resources");
+        helper.assertTrue(
+                semanticLayer.size() == 1
+                        && semanticLayer.getFirst().location().getPath().endsWith("/locales/fr_fr.json"),
+                "semantic fallback removed the independent optional locale");
 
         List<QuestBundleTransactions.RawResource> malformed = new ArrayList<>(introduce(
                 0, "base", NS, LINE, SLUG, quest(NS, LINE, SLUG, PREFIX),

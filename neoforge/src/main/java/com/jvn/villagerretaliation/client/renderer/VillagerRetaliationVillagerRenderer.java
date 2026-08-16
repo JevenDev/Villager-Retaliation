@@ -40,7 +40,7 @@ public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetalia
         if (VillagerDownedClientCache.isDowned(villager)) {
             radius *= switch (VillagerDownedClientCache.pose(villager)) {
                 case SIDE_LYING -> 1.55F;
-                case SECOND_WIND_CRAWL, HANDS_AND_KNEES -> 1.3F;
+                case SECOND_WIND_CRAWL -> 1.3F;
                 case SITTING -> 1.05F;
             };
         }

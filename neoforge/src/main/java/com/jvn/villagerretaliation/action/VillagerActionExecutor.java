@@ -209,11 +209,19 @@ public final class VillagerActionExecutor {
                     Map<String, String> replacements = new LinkedHashMap<>(inheritedReplacements);
                     replacements.putAll(outcome.replacements());
                     List<String> overrideLines = action.linesForStatus(outcome.status());
-                    String text = overrideLines.isEmpty()
+                    List<String> overrideKeys = action.lineKeysForStatus(outcome.status());
+                    String fallback = overrideLines.isEmpty()
                             ? outcome.text()
                             : VillagerDialogueResources.resolveTemplate(
                                     overrideLines.get(context.random().nextInt(overrideLines.size())),
                                     replacements);
+                    String text = overrideKeys.isEmpty()
+                            ? fallback
+                            : VillagerDialogueResources.message(
+                                            context,
+                                            overrideKeys.get(context.random().nextInt(overrideKeys.size())),
+                                            replacements)
+                                    .orElse(fallback);
                     return new VillagerActionResult(
                             true,
                             outcome.lineId(),

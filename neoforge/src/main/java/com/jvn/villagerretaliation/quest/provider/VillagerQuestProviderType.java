@@ -82,6 +82,13 @@ public final class VillagerQuestProviderType implements QuestProviderType {
                 true);
     }
 
+    /** Matches the provider's villager filters without evaluating player-specific offer availability. */
+    public boolean matchesProviderFilters(DialogueContext context, QuestDefinition definition) {
+        return context != null
+                && definition != null
+                && matchesProviderRequirements(bindingFromDialogueContext(context), definition.offer());
+    }
+
     public Optional<QuestProviderBinding> bindingFromProgress(
             ServerLevel level,
             VillagerQuestSavedData.QuestProgress progress) {
