@@ -3702,12 +3702,12 @@ window.VR_DEVELOPER_WIKI_DATA = {
       "title": "Cinematic Gate Ambush",
       "description": "Cinematic Gate Ambush This beta.13 example starts a persistent party owned scene from a quest response. Captain Mara is the fixed quest provider. Scout Tovin is an optional, operator rebindable second villager: bind that alias through the public actor binding API or /villagerreta",
       "files": [
+        "README.md",
         "data/gate_story/quests/gate_watch/gate_ambush/encounters/gate_ambush.json",
         "data/gate_story/quests/gate_watch/gate_ambush/locales/en_us.json",
         "data/gate_story/quests/gate_watch/gate_ambush/quest.json",
         "data/gate_story/quests/gate_watch/gate_ambush/scenes/gate_ambush.json",
-        "pack.mcmeta",
-        "README.md"
+        "pack.mcmeta"
       ]
     },
     {
@@ -3715,9 +3715,9 @@ window.VR_DEVELOPER_WIKI_DATA = {
       "title": "Custom Duel Kits",
       "description": "Custom Duel Kits Place this folder in a world's datapacks directory and run /reload. The duel examples:champion kit is then added to the duel loadout option list. A kit lives at data/ /duel kits/ .json. That path becomes its stable ID. Higher priority datapacks can replace a kit ",
       "files": [
+        "README.md",
         "data/duel_examples/duel_kits/champion.json",
-        "pack.mcmeta",
-        "README.md"
+        "pack.mcmeta"
       ]
     },
     {
@@ -3725,6 +3725,7 @@ window.VR_DEVELOPER_WIKI_DATA = {
       "title": "Villager Retaliation Dialogue Folder Template",
       "description": "Villager Retaliation Dialogue Folder Template This beta.13 template gives pack developers a folder first starting point. Every dialogue request has one custom option and one response line with the text example. Replace ids, labels, filters, and text as your pack grows. The templa",
       "files": [
+        "README.md",
         "data/example_template/dialogue/en_us/example_template/closings/00_example.json",
         "data/example_template/dialogue/en_us/example_template/groups/example_group/lines/00_example.json",
         "data/example_template/dialogue/en_us/example_template/groups/example_group/lines/01_beta12_filters.json",
@@ -3789,8 +3790,7 @@ window.VR_DEVELOPER_WIKI_DATA = {
         "data/villagerretaliation/pacification/example_template/00_payments.json",
         "data/villagerretaliation/profession_loot/example_template/00_loot.json",
         "data/villagerretaliation/villager_names/example_template_names.json",
-        "pack.mcmeta",
-        "README.md"
+        "pack.mcmeta"
       ]
     },
     {
@@ -3798,11 +3798,11 @@ window.VR_DEVELOPER_WIKI_DATA = {
       "title": "Repeatable Scene Run ID",
       "description": "Repeatable Scene Run ID This small fixture proves that the stable operation id is reused inside one run and produces a new QUEST INSTANCE scene after a legitimate repeat. Two unrelated players starting their first run also receive different scenes. The localized quest and private",
       "files": [
+        "README.md",
         "data/run_identity/quests/runtime_regressions/bell_again/locales/en_us.json",
         "data/run_identity/quests/runtime_regressions/bell_again/quest.json",
         "data/run_identity/quests/runtime_regressions/bell_again/scenes/bell_scene.json",
-        "pack.mcmeta",
-        "README.md"
+        "pack.mcmeta"
       ]
     },
     {
@@ -3810,6 +3810,7 @@ window.VR_DEVELOPER_WIKI_DATA = {
       "title": "Sell Price Examples",
       "description": "Sell Price Examples This pack puts the old beta.13 format and the new rates format side by side. It also shows item tags, discrete prices, component predicates, remaining durability, a built in override, and a disabled definition. The minecraft:logs example works with vanilla dat",
       "files": [
+        "README.md",
         "data/example/sell_prices/charcoal.json",
         "data/example/sell_prices/cocktails.json",
         "data/example/sell_prices/logs.json",
@@ -3817,8 +3818,7 @@ window.VR_DEVELOPER_WIKI_DATA = {
         "data/example/sell_prices/valuable_pickaxes.json",
         "data/villagerretaliation/sell_prices/coal.json",
         "data/villagerretaliation/sell_prices/rotten_flesh.json",
-        "pack.mcmeta",
-        "README.md"
+        "pack.mcmeta"
       ]
     },
     {
@@ -3826,10 +3826,10 @@ window.VR_DEVELOPER_WIKI_DATA = {
       "title": "Skill Trades and Special Orders",
       "description": "Skill Trades and Special Orders This example adds four custom skill trades under the trade examples namespace. It demonstrates: a normal farmer trade with skill based quality scaling a targetable, prepaid farmer Special Order a targetable cartographer order with multiple possible",
       "files": [
+        "README.md",
         "data/trade_examples/skill_trades/farming_orders.json",
         "data/trade_examples/skill_trades/profession_specialties.json",
-        "pack.mcmeta",
-        "README.md"
+        "pack.mcmeta"
       ]
     }
   ]

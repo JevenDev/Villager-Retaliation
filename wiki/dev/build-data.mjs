@@ -188,15 +188,20 @@ for (const page of pages) page.related = related[page.slug] || [];
 
 const examples = pages.filter((page) => page.sourceKind === "wiki").flatMap(examplesFrom);
 
+function compareDirectoryEntries(left, right) {
+  return left.name < right.name ? -1 : left.name > right.name ? 1 : 0;
+}
+
 const packDirectories = fs.readdirSync(path.join(repoRoot, "example-packs"), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
+  .sort(compareDirectoryEntries)
   .map((entry) => {
     const packRoot = path.join(repoRoot, "example-packs", entry.name);
     const readmePath = path.join(packRoot, "README.md");
     const readme = fs.existsSync(readmePath) ? fs.readFileSync(readmePath, "utf8").replace(/\r\n/g, "\n") : "";
     const files = [];
     const visit = (directory) => {
-      for (const child of fs.readdirSync(directory, { withFileTypes: true })) {
+      for (const child of fs.readdirSync(directory, { withFileTypes: true }).sort(compareDirectoryEntries)) {
         const absolute = path.join(directory, child.name);
         if (child.isDirectory()) visit(absolute);
         else files.push(path.relative(packRoot, absolute).replaceAll("\\", "/"));
