@@ -78,6 +78,15 @@ function testActionableValidation() {
   assert(issues.every((issue, index) => index === 0 || ({ error: 0, warning: 1, info: 2 }[issues[index - 1].severity] <= { error: 0, warning: 1, info: 2 }[issue.severity])));
 }
 
+function testStructuralDialogueStaysInBundle() {
+  const quest = model.createLinearQuest("bundle_pack");
+  quest.external_scenes = ["bundle_pack:legacy_tree"];
+  quest.stages[0].dialogue.offer = { external_scene: "bundle_pack:legacy_tree" };
+  const issueCodes = codes(model.validateQuest(quest, registryMetadata));
+  assert(issueCodes.includes("quest.field.unsupported"));
+  assert(issueCodes.includes("dialogue.slot.field.unsupported"));
+}
+
 function testProjectRecovery() {
   const project = model.normalizeProject({ name: "Recovered", quests: [] });
   assert.equal(project.name, "Recovered");
@@ -133,6 +142,7 @@ testBranchingTemplate();
 testRenameReferences();
 testRemoveReferences();
 testActionableValidation();
+testStructuralDialogueStaysInBundle();
 testProjectRecovery();
 testDuplicateProjectPaths();
 testFailureAndPrerequisiteContracts();

@@ -84,7 +84,7 @@ If you want one simple quest:
 1. Open the Quests tab.
 2. Click `Add Example`.
 3. Edit the quest id, provider filters, objective, dialogue, rewards, and tracker text in the JSON editor.
-4. Keep `Scene mode` on `Inline scenes` unless the scene should live in a separate dialogue tree.
+4. Keep offer, reminder, turn-in, responses, and branches in the quest JSON; the builder localizes player-facing wording during export.
 5. Export.
 
 You should end up with output similar to:

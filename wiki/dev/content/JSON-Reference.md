@@ -403,49 +403,56 @@ Branch locks close unchosen paths:
 
 ## Quest Module V2
 
-New quests should use `schema: "villagerretaliation:quest/v2"` under `data/<namespace>/quests/`. A simple playable quest can keep provider filters, availability, stages, objectives, dialogue slots, responses, scenes, rewards, events, and tracker UI in one file.
+Beta.13 quests use exact owner-bundle paths:
+
+```text
+data/<namespace>/quests/<questline>/<quest-slug>/quest.json
+data/<namespace>/quests/<questline>/<quest-slug>/locales/en_us.json
+```
+
+The quest ID namespace must match `data/<namespace>`, `metadata.questline` must match `<questline>`, and a new quest's one-segment ID path must match `<quest-slug>`. Loose quest JSON elsewhere under `quests/` is unsupported.
 
 Required top-level fields:
 
 | Field | Meaning |
 | --- | --- |
 | `schema` | Must be `villagerretaliation:quest/v2` |
-| `id` | Full quest id, such as `my_pack:bread_delivery` |
+| `id` | Full stable quest ID, such as `my_pack:bread_delivery` |
+| `localization_prefix` | Immutable prefix for relative localized references |
 | `provider` | Provider type and filters, usually `villagerretaliation:villager` |
-| `entry_stage` | First stage id |
-| `stages` | Array of stage objects |
+| `entry_stage` | First stable stage ID |
+| `stages` | Ordered array of stage objects |
 
 Common optional fields:
 
 | Field | Meaning |
 | --- | --- |
-| `metadata` | `title`, `description`, `title_key`, `description_key`, `questline`, `tags`, `parent`, `show_locked_adventure_hint` |
+| `metadata` | Localized title and description, `questline`, tags, parent, revision, and migration policy |
 | `availability` | Selection weight, repeat and cooldown rules, active quest caps, abandonment, locking, completion scope, and active gates |
-| `lifecycle` | Actions, transitions, and optional dialogue attached to quest or stage lifecycle events |
-| `dialogue` | Root-level inline or extracted dialogue slots |
+| `lifecycle` | Actions, transitions, and structural dialogue attached to quest or stage lifecycle events |
+| `dialogue` | Root-level structural dialogue slots |
 | `target` | Structure target, dimension, search radius, discovery radius, and proof item |
 | `events` | Quest-level triggers with conditions, payload matching, priority, chance, weight, cooldown, and exclusivity |
 | `rewards` | XP, reputation, gossip, loot, memory event, or reward actions |
-| `ui` | Tracker text, icon, `color`, `outline_color`, progress, placeholders, priority, and hidden flag |
-| `external_scenes` | Resource ids for extracted dialogue tree scenes |
+| `ui` | Localized tracker text, icon, colors, progress, placeholders, priority, and hidden flag |
 
 Set `metadata.show_locked_adventure_hint` to `false` when a quest should not appear as a locked preview in the villager `Adventures` menu before its offer requirements are met.
 
 Each stage requires `id` and `objectives`. Stages can also define `complete_when`, `next`, `dialogue`, `responses`, `scenes`, `events`, `entry_actions`, `exit_actions`, `rewards`, `ui`, and `metadata`.
 
-Dialogue slots such as `offer`, `reminder`, and `turn_in` can be inline:
+Structural offer, reminder, turn-in, response, and branch dialogue remains in `quest.json`. Player-facing wording uses localized references:
 
 ```json
 {
+  "localization_prefix": "my_pack.quest.bread_delivery",
   "dialogue": {
     "offer": {
-      "label": "Bread Delivery",
-      "request": "question",
-      "lines": ["The bins are low."],
+      "label": { "key": "#dialogue.offer.label" },
+      "lines": { "key": "#dialogue.offer.lines" },
       "responses": [
         {
           "id": "accept",
-          "label": "I can help.",
+          "label": { "key": "#dialogue.offer.response.accept.label" },
           "scene": "start_quest"
         }
       ]
@@ -454,30 +461,16 @@ Dialogue slots such as `offer`, `reminder`, and `turn_in` can be inline:
 }
 ```
 
-Or extracted:
+There is no public quest `dialogues` root, and `external_scenes`, `external`, `external_scene`, and `external_entry` are invalid. Persistent runtime scenes are explicit-ID companion definitions under the owner bundle's `scenes/` directory, not extracted dialogue trees.
 
-```json
-{
-  "external_scenes": ["my_pack:quests/village_supply/bread_delivery"],
-  "dialogue": {
-    "offer": {
-      "label": "Bread Delivery",
-      "request": "question",
-      "external_scene": {
-        "tree": "my_pack:quests/village_supply/bread_delivery",
-        "entry": "offer"
-      }
-    }
-  }
-}
-```
+The introducing layer must provide exhaustive English in `locales/en_us.json`. Other locales may be partial and fall back per message ID. Private scene, encounter, and reward companions may only be referenced by their owning quest; reusable definitions belong under `_shared`.
 
 For responses, use one transition source: direct response fields, a `transition` object, or a transition action. Do not mix direct `next`/`stage`/`scene`/`complete` fields with a transition action on the same response.
 
-Validate standalone quest modules with:
+Validate a standalone bundle quest with:
 
 ```text
-node tools/validate-dialogue-data.mjs --quest path/to/quest.json
+node tools/validate-dialogue-data.mjs --quest path/to/data/my_pack/quests/village_supply/bread_delivery/quest.json
 ```
 
 Regenerate the generated authoring schema and registry metadata with:

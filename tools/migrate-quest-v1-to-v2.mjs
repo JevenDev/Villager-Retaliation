@@ -82,7 +82,7 @@ function printHelp() {
     "Usage: node tools/migrate-quest-v1-to-v2.mjs <quest.json> [options]",
     "",
     "Options:",
-    "  --dialogue-tree <file>  Use a specific matching external dialogue tree.",
+    "  --dialogue-tree <file>  Inspect a legacy tree and report the structural dialogue that must be inlined.",
     "  --no-dialogue-tree      Do not infer or load an external dialogue tree.",
     "  --out-dir <dir>         Write candidate/report under run/quest-migrations.",
     "  --check                 Print deterministic semantic comparison/report JSON."
@@ -164,11 +164,6 @@ function migrateQuest(questFile, quest, dialogueTreeFile, dialogueTree) {
   if (Object.keys(ui).length > 0) {
     candidate.ui = ui;
   }
-  const externalScenes = externalSceneIds(candidate);
-  if (externalScenes.length > 0) {
-    candidate.external_scenes = externalScenes;
-  }
-
   stripEmptyObjects(candidate);
   return { candidate, report };
 }
@@ -402,23 +397,11 @@ function branchResponses(branches, report) {
 
 function buildStageDialogue(quest, dialogueTree, report) {
   if (dialogueTree && typeof dialogueTree === "object" && !Array.isArray(dialogueTree)) {
-    const treeId = stringValue(dialogueTree.id) || stringValue(quest.id);
-    const entries = new Set(Array.isArray(dialogueTree.entries)
-      ? dialogueTree.entries.map((entry) => stringValue(entry?.id)).filter(Boolean)
-      : []);
-    const dialogue = {};
-    for (const slot of ["offer", "reminder", "turn_in"]) {
-      if (entries.has(slot)) {
-        dialogue[slot] = {
-          external_scene: {
-            tree: treeId,
-            entry: slot
-          }
-        };
-        report.external_refs.push(issue(`dialogue.${slot}`, `Kept external dialogue tree entry "${slot}".`, "External tree can continue to own complex or localized dialogue."));
-      }
-    }
-    return dialogue;
+    report.unsupported.push(issue(
+      "dialogue_tree",
+      "Legacy external dialogue trees cannot be referenced by a beta.13 quest bundle.",
+      "Inline the tree entries and nodes into quest.json structural dialogue before publishing the converted bundle."
+    ));
   }
   const source = quest.dialogue && typeof quest.dialogue === "object" && !Array.isArray(quest.dialogue)
     ? quest.dialogue
@@ -561,19 +544,6 @@ async function writeMigrationOutput(outDir, migration) {
     pack: relative(packMetaPath),
     report: relative(reportPath)
   };
-}
-
-function externalSceneIds(candidate) {
-  const ids = new Set();
-  for (const stage of candidate.stages || []) {
-    for (const slot of Object.values(stage.dialogue || {})) {
-      const tree = slot?.external_scene?.tree;
-      if (typeof tree === "string" && tree.trim()) {
-        ids.add(tree.trim());
-      }
-    }
-  }
-  return [...ids].sort();
 }
 
 function sameOrderedValues(left, right) {

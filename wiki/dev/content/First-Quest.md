@@ -238,25 +238,19 @@ The debug inspector reports saved state, availability, active conditions, issuer
 
 ## When To Add More Files
 
-Start with the one quest module file above.
+The exported owner bundle always includes `quest.json` and exhaustive `locales/en_us.json`. Add `locales/<locale>.json` when you have translated messages; it may be partial and falls back per key to effective English.
 
-Add a normal dialogue message file when you want reusable localized text:
-
-```text
-data/my_pack/dialogue/en_us/quests/village_supply/bread_delivery/messages/00_text.json
-```
-
-Add an external dialogue tree only when the quest scene is too large for the quest file or another pack should own that scene:
+Add a private persistent scene, encounter, or wrapped reward only when the quest behavior needs one:
 
 ```text
-data/my_pack/dialogue_trees/en_us/quests/village_supply/bread_delivery.json
+data/my_pack/quests/village_supply/bread_delivery/scenes/<scene>.json
+data/my_pack/quests/village_supply/bread_delivery/encounters/<encounter>.json
+data/my_pack/quests/village_supply/bread_delivery/rewards/<reward>.json
 ```
 
-Add forced dialogue only when the quest needs an event-driven interruption, warning, confrontation, or scene outside the Talk menu:
+Keep offer, reminder, turn-in, response, and branch structure in `quest.json`. Put reusable companion definitions or absolute shared messages under `quests/_shared/` instead of referencing another quest's private files.
 
-```text
-data/my_pack/forced_dialogue/quests/village_supply/bread_delivery.json
-```
+Forced dialogue is a separate global system for event-driven interruptions, warnings, or confrontations outside the Talk menu. A quest may call a stable forced-dialogue ID, but that definition is not part of the owner bundle and cannot replace structural quest dialogue.
 
 ## Legacy Layout Note
 
@@ -264,7 +258,7 @@ Beta.13 diagnoses loose v1 and v2 quest files and old companion roots as unsuppo
 
 ## Next Steps
 
-- [Quests](Quests.md) covers stages, transitions, branches, targets, forced/external scenes, diagnostics, and v1 compatibility.
-- [Dialogue Trees](Dialogue-Trees.md) covers extracted authored scenes.
-- [Dialogue And Quests](Dialogue-And-Quests.md) covers file ownership and extraction paths.
-- [Localization](Localization.md) covers replacing inline English with message keys.
+- [Quests](Quests.md) covers stages, transitions, branches, targets, bundle companions, forced-dialogue actions, and diagnostics.
+- [Dialogue Trees](Dialogue-Trees.md) covers standalone branching conversations and the quest ownership boundary.
+- [Dialogue And Quests](Dialogue-And-Quests.md) covers bundle transactions, structural dialogue, and locale ownership.
+- [Localization](Localization.md) covers locale catalogs and message-key resolution.

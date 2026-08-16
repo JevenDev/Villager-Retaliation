@@ -46,6 +46,8 @@ Use a datapack for behavior and authored text:
       loot_table/
 ```
 
+The global `dialogue_trees/` and `forced_dialogue/` systems are separate from quest bundles. Beta.13 structural quest dialogue stays in each bundle's `quest.json`; persistent scene companions belong under that bundle's `scenes/` directory.
+
 Every datapack also needs a `pack.mcmeta` at its root. For Minecraft 1.21.1 datapacks:
 
 ```json

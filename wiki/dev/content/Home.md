@@ -98,4 +98,4 @@ Datapack changes take effect after `/reload`.
 
 ## Version Note
 
-The builder ships frozen, versioned wiki snapshots under `tools/datapack-builder/wiki/`. Its beta.11 and beta.12 snapshots document those authoring targets and are intentionally not mirrors of this live beta.13 wiki. Update a versioned snapshot only when correcting documentation for that specific target.
+The builder keeps frozen beta.11 and beta.12 source snapshots under `tools/datapack-builder/wiki/`; those targets are intentionally not mirrors of this live wiki. Its generated `wiki-snapshot.js` also embeds the current beta.13 developer pages for offline use. Update a frozen source snapshot only when correcting that specific historical target.
