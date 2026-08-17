@@ -31,6 +31,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     private static final int STUDY_GLANCE_EARLIEST_TICK = 80;
     private static final int STUDY_GLANCE_START_VARIANCE = 70;
     private static final float STUDY_BOOK_HEAD_PITCH = 0.55F;
+    private static final float STUDY_EMF_MARKER_X = 0.01F;
 
     private final ModelPart root;
     private final ModelPart body;
@@ -124,6 +125,9 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
 
         if (villager instanceof net.minecraft.world.entity.npc.Villager studyingVillager
                 && VillagerStudyClientCache.isActive(studyingVillager)) {
+            // EMF exposes root transforms to pack expressions, as used by the downed poses.
+            // A sub-pixel offset lets the compatibility pack preserve this pose without visible movement.
+            this.root.x = STUDY_EMF_MARKER_X;
             float bookLookAmount = studyBookLookAmount(studyingVillager, ageInTicks);
             this.head.xRot = Mth.lerp(bookLookAmount, this.head.xRot, STUDY_BOOK_HEAD_PITCH);
             this.head.yRot = Mth.lerp(bookLookAmount, this.head.yRot, 0.0F);

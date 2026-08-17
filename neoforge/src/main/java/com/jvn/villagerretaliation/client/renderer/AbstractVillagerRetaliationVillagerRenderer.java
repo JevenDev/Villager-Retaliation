@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.config.VillagerRenderMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache;
 import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
+import com.jvn.villagerretaliation.client.villager.VillagerStudyClientCache;
 import com.jvn.villagerretaliation.client.renderer.layer.CombatItemInHandLayer;
 import com.jvn.villagerretaliation.client.renderer.layer.VillagerCrossedArmsItemLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -22,6 +23,7 @@ import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.layers.CustomHeadLayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
 
 public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends AbstractVillager> extends MobRenderer<T, BaseVillagerModel<T>> {
     private final EntityRendererProvider.Context context;
@@ -133,6 +135,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
 
     private boolean shouldUseCombatTextureAndModel(T villager, float attackTime) {
         boolean needsSideArmModel = VillagerDownedClientCache.isDowned(villager)
+                || this.isStudying(villager)
                 || this.poseProvider.shouldUseCombatModel(villager)
                 || attackTime > 0.0F
                 || VillagerRenderEquipmentState.hasArmorEquipped(villager)
@@ -144,6 +147,11 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
         }
 
         return this.useCombatModelForAllPoses && !this.shouldPreferVanillaCemDefaultPose();
+    }
+
+    private boolean isStudying(T villager) {
+        return villager instanceof Villager studyingVillager
+                && VillagerStudyClientCache.isActive(studyingVillager);
     }
 
     private VillagerRenderMode currentRenderMode() {
