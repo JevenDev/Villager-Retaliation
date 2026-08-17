@@ -79,7 +79,14 @@ requireCommandCoverage(
 );
 
 for (const [file, required] of [
-  ["wiki/player/content/guides.js", ["Quest-provider reservation", "beta13RenderCommands"]],
+  ["wiki/player/content/guides.js", [
+    "Quest-provider reservation",
+    "renderCommandsGuide",
+    "renderStudyGuide",
+    "renderFiltersAndChecklistsGuide",
+    "renderWalletsGuide",
+    "renderGiftsGuide"
+  ]],
   ["wiki/dev/content/Quests.md", ["blocks_hiring", "death_protection"]],
   ["wiki/dev/content/Quest-Scenes.md", ["custom_name_key", "boss_bar_title_key", "location_message_key", "trophy_name_key"]]
 ]) {

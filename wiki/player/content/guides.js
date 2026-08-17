@@ -1,21 +1,22 @@
 (() => {
   "use strict";
 
-  const beta13ExistingPages = new Map(PAGES.map((page) => [page.id, page]));
-  const beta13OriginalQuestRender = beta13ExistingPages.get("quests")?.render || renderQuests;
+  const existingPagesById = new Map(PAGES.map((page) => [page.id, page]));
+  const originalQuestRender = existingPagesById.get("quests")?.render || renderQuests;
+  const originalGiftsRender = existingPagesById.get("gifts")?.render || renderGifts;
 
 
-  function beta13ExistingPage(id, patch = {}) {
-    const page = beta13ExistingPages.get(id);
+  function patchExistingPage(id, patch = {}) {
+    const page = existingPagesById.get(id);
     if (!page) throw new Error(`Missing existing wiki page: ${id}`);
     return Object.assign(page, patch);
   }
 
-  function beta13NewPage(id, title, group, iconName, description, renderPage) {
+  function createGuidePage(id, title, group, iconName, description, renderPage) {
     return { id, title, group, icon: iconName, description, render: renderPage };
   }
 
-  function beta13Table(headers, rows, className = "") {
+  function guideTable(headers, rows, className = "") {
     return `
       <div class="table-wrap">
         <table${className ? ` class="${escapeHtml(className)}"` : ""}>
@@ -26,7 +27,7 @@
     `;
   }
 
-  function beta13FeatureCards(cards) {
+  function guideFeatureCards(cards) {
     return `<div class="card-grid two">${cards.map((card) => `
       <div class="feature-card">
         ${icon(card.icon || "circle-check")}
@@ -38,13 +39,13 @@
     `).join("")}</div>`;
   }
 
-  function beta13FactList(rows) {
+  function guideFactList(rows) {
     return `<dl class="fact-list">${rows.map(([term, detail]) => `
       <div><dt>${escapeHtml(term)}</dt><dd>${escapeHtml(detail)}</dd></div>
     `).join("")}</dl>`;
   }
 
-  function beta13RenderHome() {
+  function renderGuideHome() {
     const questlines = new Set(DATA.quests.map((quest) => quest.questline).filter(Boolean)).size;
     const reputationTiers = Array.isArray(DATA.reputation) ? DATA.reputation.length : 0;
     const skillTradeCount = DATA.skillTrades.reduce((sum, group) => sum + group.count, 0);
@@ -75,11 +76,11 @@
         ])}
       `)}
       ${section("Talk, Trade, And Take On Quests", `
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "message-square-text", title: "Conversation", text: "Use the interaction screen for greetings, questions, stories, relationships, family, local events, and responses shaped by the villager's current view of you." },
           { icon: "gift", title: "Gifts and keepsakes", text: "Learn profession preferences, give items that matter, and receive keepsakes or high-trust rewards from villagers who know you well." },
           { icon: "scroll-text", title: "Quests", text: "Discover profession- and skill-gated stories with choices, tracked objectives, authored scenes, turn-ins, rewards, and lasting outcomes." },
-          { icon: "badge-percent", title: "Skills and trade growth", text: "Villager skills influence special trades, quest eligibility, work aptitude, and the ways each villager develops over time." }
+          { icon: "graduation-cap", title: "Skills, study, and growth", text: "Villager skills influence trades, quests, and work. Ask an eligible adult to study one skill, or let practice develop role skills over time." }
         ])}
       `)}
       ${section("Conflict Has Consequences", `
@@ -92,7 +93,7 @@
         ])}
       `)}
       ${section("Work, Parties, And Village Life", `
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "hand-coins", title: "Hire villagers", text: "Offer adults paid contracts for farming, mining, logging, fishing, brewing, building, transport, combat, and other practical work." },
           { icon: "users", title: "Travel as a party", text: "Recruit villagers, share supplies, issue movement and combat orders, form alliances, and assign mounts for longer journeys." },
           { icon: "landmark", title: "Belong to a village", text: "Villagers remember their home community, defend fellow residents, settle as Wanderers, and can help trusted players shape village identity." },
@@ -109,7 +110,7 @@
         </ol>
       `)}
       ${section("How The Systems Connect", `
-        ${beta13FactList([
+        ${guideFactList([
           ["Reputation", "Changes dialogue, trade pressure, gifts, services, quest access, pacification, fleeing, and aggression"],
           ["Skills and profession", "Shape special trades, quest gates, job aptitude, work speed, and transfer capacity"],
           ["Memories, gossip, and mood", "Connect personal history, witnessed events, short-term emotion, dialogue, and work efficiency"],
@@ -132,11 +133,11 @@
       `)}
     `;
   }
-  function beta13RenderHiring() {
+  function renderHiringGuide() {
     return `
       ${section("Who Can Be Hired", `
         <p>Hiring is available through an adult villager's interaction screen. A villager cannot be hired while recruited into a party, and starting a hired contract ends ordinary recruitment or follow behavior.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "badge-check", title: "Ordinary roles", text: "Every adult villager can perform any ordinary job, regardless of profession or starting skills." },
           { icon: "brain-circuit", title: "Aptitude", text: "Each role's two relevant skills determine its speed or capacity. Job Stats shows the exact effect before you hire." },
           { icon: "route", title: "Special roles", text: "Nitwit work is available only to nitwits. Builder is available to adults through a separate construction order." },
@@ -146,7 +147,7 @@
       `)}
       ${section("Price And Duration", `
         <p>Ordinary work is prepaid for 1 to 30 Minecraft days. Extensions cannot push the remaining time above 30 days. The daily wage is based on the server's base price, the villager's relevant skill, and your reputation with that villager, then clamped to the configured minimum and maximum.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["Default base wage", "12 currency items per day before skill and reputation adjustments (emeralds in the built-in setup)"],
           ["Default allowed range", "4 to 128 currency items per day"],
           ["Payment timing", "The full selected duration is charged before work begins"],
@@ -166,7 +167,7 @@
         <p>Payment boxes are for ordinary hired contracts. Party villager contracts do not use Payment Box renewal.</p>
       `)}
       ${section("Ending A Contract", `
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "coins", title: "Early cancellation", text: "Unused prepaid value is refunded at the server's configured rate. The default is 50 percent." },
           { icon: "package-check", title: "Supplies and output", text: "Removable job items are returned to assigned storage when possible. Villager-owned or protected property stays with the villager." },
           { icon: "clock", title: "Overflow claim", text: "If items cannot be returned cleanly, the former controller has a three-Minecraft-day claim window." },
@@ -185,7 +186,7 @@
     `;
   }
 
-  const beta13JobRows = [
+  const jobRows = [
     ["Combat", "Guarding + Archery", "Work area or route, usable weapon, and ammunition for ranged weapons", "Guard protects against attacks. Roaming searches natural hostiles. It does not independently hunt players, villagers, golems, or tame animals."],
     ["Hunting", "Archery + Survival", "Work area or route, bow, crossbow, axe, or sword, plus ranged ammunition", "Can target selected animals, hostiles, or players and collect drops. Enabling player targets creates a real PvP risk."],
     ["Mining", "Mining + Masonry", "Work area and pickaxe", "Exposed Ore, Horizontal Excavation, or Vertical Excavation. Excavation can need ladders or floor-patching blocks."],
@@ -201,20 +202,20 @@
     ["Nitwit", "Diplomacy + Survival; nitwits only", "No work area", "Produces occasional novelty work reports rather than practical resources."]
   ];
 
-  function beta13RenderJobs() {
+  function renderJobsGuide() {
     return `
       ${section("Availability And Aptitude", `
         <p>Every adult can perform any ordinary role. Each role's aptitude weights its primary skill at 70 percent and support skill at 30 percent; aptitude affects performance, not access. Nitwit work remains nitwit-only, and Builder is a separate project service.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "gauge", title: "Role-specific output", text: "Aptitude 60 is standard. Depending on the role, skill changes cadence, capacity, block speed, tracking, or combat technique." },
           { icon: "package", title: "Transfer capacity", text: "Craftsman, Cook, Smelter, and Brewer collection trips scale from 50 to 150 percent. Courier pickup capacity steps from 1 item at aptitude 0 to 64 at 60 and 128 at 100." },
           { icon: "timer", title: "Shared station timers", text: "Skill does not speed the built-in processing timer of furnaces, smokers, blast furnaces, or brewing stands." },
           { icon: "graduation-cap", title: "Practice", text: "Successful measurable work can train the role's two skills at the same 70/30 split when growth is enabled." }
         ])}
       `)}
-      ${section("Roles", beta13Table(
+      ${section("Roles", guideTable(
         ["Role", "Relevant skills", "Required setup", "What it does and important rules"],
-        beta13JobRows
+        jobRows
       ))}
       ${section("Choosing The Right Role", `
         ${simpleList([
@@ -228,7 +229,7 @@
     `;
   }
 
-  function beta13RenderMarket() {
+  function renderMarketGuide() {
     const prices = Array.isArray(DATA.sellPrices) ? DATA.sellPrices : [];
     const rows = prices.map((price) => {
       const searchValue = `${price.item} ${price.itemId} ${price.marketGroup}`.toLowerCase();
@@ -253,7 +254,7 @@
         </ol>
       `)}
       ${section("How Daily Prices Work", `
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "sun", title: "One local rate per day", text: "Each village receives deterministic daily rates based on the world, village identity, day, and price definition." },
           { icon: "map-pin", title: "Village-local market", text: "Sell Boxes in one village share demand and supply pressure. Other villages maintain independent rates and pressure." },
           { icon: "scale", title: "Exact fractional balances", text: "Rates such as one currency for several items retain their fractional value instead of rounding each sale down." },
@@ -287,11 +288,11 @@
     `;
   }
 
-  function beta13RenderContainers() {
+  function renderContainersGuide() {
     return `
       ${section("What Counts As Village Property", `
         <p>By default, watched-container reactions target generated loot containers registered by Villager Retaliation's data. Servers can broaden this to all blocks in the watched-container tag, including tagged containers without a generated loot table.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "package-open", title: "Opening", text: "The default setup can interrupt you as soon as a watched container is opened, before anything is taken." },
           { icon: "hand", title: "Taking items", text: "Removed items can trigger a theft confrontation, reputation loss, memories, and later gossip." },
           { icon: "hammer", title: "Breaking", text: "Breaking watched property carries a base penalty and generated containers add a penalty for every item count released." },
@@ -299,7 +300,7 @@
         ])}
       `)}
       ${section("Default Behavior", `
-        ${beta13FactList([
+        ${guideFactList([
           ["Watch mode", "Generated loot containers only"],
           ["Reaction timing", "On opening, with theft and breaking reactions still active"],
           ["Base break reputation", "-30 with a witnessing villager"],
@@ -322,7 +323,7 @@
     `;
   }
 
-  const beta13StateRows = [
+  const workStateRows = [
     ["Working / Moving", "The villager is selecting, approaching, validating, or acting on a target."],
     ["Collecting / Depositing", "Output is being moved through the job inventory or into assigned storage."],
     ["Waiting for materials", "A required input, fuel, crop, animal, recipe item, or valid target is not currently available."],
@@ -335,11 +336,11 @@
     ["Idle / Awaiting instruction", "Work is disabled, setup is incomplete, the role has nothing valid to do, or a higher-priority villager behavior has control."]
   ];
 
-  function beta13RenderWorkManagement() {
+  function renderWorkManagementGuide() {
     return `
       ${section("When Work Runs", `
         <p>Hired work yields to the villager's safety and ordinary control state. A valid contract alone is not enough: Work Enabled must be on, the hirer must be online, and the villager must be able to reach a valid target.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "moon", title: "Rest and sleep", text: "Workers stop ordinary job navigation while resting or sleeping." },
           { icon: "shield-alert", title: "Threats and combat", text: "Threat memories, active combat, recovery behavior, and the downed state take priority over ordinary work." },
           { icon: "user-round", title: "Follow and party orders", text: "Accepted Follow Me, Stay Here, regroup, movement, gathering, and similar party orders suspend hired work until released." },
@@ -348,7 +349,7 @@
       `)}
       ${section("Work Areas And Routes", `
         <p>Most roles use a three-dimensional work area. Combat, Hunting, and Courier can use routes. Builder uses its blueprint site, and Nitwit needs no area. Farming can use a claimed farmer job site when no explicit area is set.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["Minimum horizontal radius", "4 blocks"],
           ["Normal maximum", "Up to 32 blocks, with the usable size affected by the role and worker"],
           ["Hunting", "Uses a larger 64-block search range"],
@@ -359,7 +360,7 @@
       `)}
       ${section("Efficiency", `
         <p>The displayed efficiency is operational cadence: it starts from the configured base, applies a role cadence modifier where relevant, then applies current mood and missing-tool penalties. It is clamped to the server's configured minimum and maximum. Capacity, block work, fishing, and combat expose their skill effects separately.</p>
-        ${beta13Table(
+        ${guideTable(
           ["Condition", "Default effect on displayed efficiency"],
           [
             ["Content, Grateful, Proud, or Hopeful", "+8 percentage points"],
@@ -371,7 +372,7 @@
         )}
         <p>Skill effects depend on the job: cadence for Farming, Animal Handling, and Nitwit work; fishing timing; modest tool-assisted block speed for Mining and Logging; tracking response for Hunting; construction cadence for Builder; material capacity for processing roles; Courier pickup capacity; and learned melee or ranged technique in combat. Skills do not shorten vanilla furnace or brewing-stand processing time.</p>
       `)}
-      ${section("Job States And Warnings", beta13Table(["Status", "What it means"], beta13StateRows))}
+      ${section("Job States And Warnings", guideTable(["Status", "What it means"], workStateRows))}
       ${section("Troubleshooting Order", `
         <ol class="step-list icon-step-list">
           <li>${icon("toggle-right")}<strong>Check Work Enabled and payment.</strong><span>An unpaid or manually paused worker will not start a target.</span></li>
@@ -384,14 +385,14 @@
     `;
   }
 
-  function beta13RenderWorkforce() {
+  function renderWorkforceGuide() {
     return `
       ${section("Opening The Workforce Screen", `
         <p>Use a Clipboard in the air to open the workforce screen. It summarizes hired villagers, current jobs, work states, warnings, daily wages, days remaining, assigned storage and payment counts, recurring-payment status, work areas, routes, targets, and recent diagnostics.</p>
         <p>Shift-use in the air clears the current Clipboard selection.</p>
       `)}
       ${section("Clipboard Modes", `
-        ${beta13Table(
+        ${guideTable(
           ["Mode", "Use"],
           [
             ["Assign Storage", "Select ordinary containers, then use the Clipboard on the hired villager."],
@@ -407,7 +408,7 @@
         <p>Ctrl+mouse-wheel cycles storage-purpose modes. A Clipboard can hold up to eight selected container positions at once.</p>
       `)}
       ${section("Work Area Controls", `
-        ${beta13Table(
+        ${guideTable(
           ["Input", "Action while editing"],
           [
             ["Right-click a block", "Place or recenter the area draft."],
@@ -431,7 +432,7 @@
       `)}
       ${section("Reading Warnings", `
         <p>Warnings are grouped by the action needed. Common groups include no work area, no targets, missing tools, missing materials, no storage, storage full, inventory full, unpaid, too far away, unreachable storage, and unreachable building sites.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "map-pin-off", title: "No work area", text: "Commit an area or a route supported by the selected role." },
           { icon: "package-x", title: "No storage", text: "Assign the required purpose and ensure the worker can stand close enough to interact with it." },
           { icon: "wrench", title: "Missing tools or materials", text: "Supply the role's tool, ammunition, fuel, ingredient, ladder, seed, breeding item, or build block." },
@@ -441,10 +442,10 @@
     `;
   }
 
-  function beta13RenderStorageInventory() {
+  function renderStorageInventoryGuide() {
     return `
       ${section("Storage Purposes", `
-        ${beta13Table(
+        ${guideTable(
           ["Purpose", "How it works"],
           [
             ["General", "Fallback supplies and returned contract items where a more specific purpose is not required."],
@@ -454,7 +455,7 @@
           ]
         )}
         <p>Assignments are dimension-specific. Workers navigate to containers and may remember a full or failed destination before trying another. Assigning a chest does not make it reachable through walls or unloaded terrain.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["Use assigned storage for supplies", "On by default. Lets the worker pull tools, fuel, ingredients, and role supplies from assigned purposes"],
           ["Auto-deposit outputs", "On by default. Sends completed output to an available assigned destination"],
           ["When either toggle is off", "The worker relies more heavily on carried job inventory and can stop sooner when inputs or space run out"]
@@ -462,7 +463,7 @@
       `)}
       ${section("Worker Inventories", `
         <p>Adult villagers can expose separate Personal, Job, and Party inventory views when the relevant relationship allows access. The job inventory includes armor, main hand, off hand, a 27-slot main grid, a 9-slot hotbar, and an Item Filter slot.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "shield", title: "Live equipment", text: "Assigned armor and held items synchronize with what the villager actually wears and uses." },
           { icon: "backpack", title: "Job supplies", text: "Contract tools, ammunition, fuel, ingredients, and outputs are tracked separately from ordinary villager property." },
           { icon: "lock-keyhole", title: "Protected items", text: "Keepsakes, villager-owned property, and other protected stacks cannot be removed merely because you hired the villager." },
@@ -478,13 +479,8 @@
           "Full inventories can prevent pickup, output creation, or safe equipment replacement and produce a warning."
         ])}
       `)}
-      ${section("Item Filters", `
-        <p>Place an Item Filter in the filter slot and choose one of two modes through the villager interaction.</p>
-        ${beta13FeatureCards([
-          { icon: "list-checks", title: "Allowlist", text: "Only listed items are withdrawn. Cooks prepare only listed supported foods." },
-          { icon: "list-x", title: "Denylist", text: "Listed items are skipped. Cooks choose other supported foods." }
-        ])}
-        <p>A filter narrows what a job handles. It does not add new recipes, potion combinations, targets, or storage behavior.</p>
+      ${section("Worker Filter Slot", `
+        <p>The job inventory's filter slot accepts Item, Attribute, and Recipe Filters. Assign a held filter through the villager interaction and choose <strong>Allow Matching</strong> or <strong>Deny Matching</strong>. See <a href="${pageUrl("filters-checklists")}">Filters And Materials Checklists</a> for configuration, nesting, recipe selection, transfer directions, stock targets, and item-frame container rules.</p>
       `)}
       ${section("Contract End And Death", `
         ${simpleList([
@@ -498,11 +494,139 @@
     `;
   }
 
-  function beta13RenderNeeds() {
+  function renderFiltersAndChecklistsGuide() {
+    return `
+      ${section("The Three Filter Tools", `
+        ${guideTable(
+          ["Tool", "What it matches", "Best use"],
+          [
+            ["Item Filter", "Up to nine exact item entries or nested configured filters, with optional per-entry amounts", "Control specific supplies, outputs, cooking choices, or container transfers."],
+            ["Attribute Filter", "One or more properties of a reference item, combined with Match Any or Match All", "Match broad categories such as fuel, damaged gear, enchanted items, a tag, a mod, a color, or contained fluid."],
+            ["Recipe Filter", "One supported crafting, smelting, smoking, or blasting recipe, optionally narrowed to exact ingredient choices", "Tell compatible processing workers which recipe to allow or deny."]
+          ]
+        )}
+        <p>Right-click a held filter to configure it. Shift-right-click clears it immediately. A configured filter plus an empty filter of the same type crafts two copies; crafting one filter by itself resets it.</p>
+      `)}
+      ${section("Policies Shared By Filters", `
+        ${guideFeatureCards([
+          { icon: "list-checks", title: "Allow or deny", text: "Allow Matching accepts only matches. Deny Matching rejects matches and permits everything else." },
+          { icon: "arrow-left-right", title: "Transfer direction", text: "Receive applies while items enter a container, Provide while they leave, and Both in either direction." },
+          { icon: "list-filter", title: "Match Any or Match All", text: "Any needs one configured entry or property to match. All requires every applicable one." },
+          { icon: "package-check", title: "Stock target", text: "Quantity-aware allow rules can Fill To, Keep, or Maintain 1-1000 items; Unlimited removes the target." }
+        ])}
+        <p>Deny Matching is a yes-or-no rule, so its quantities are inactive. Directions and stock targets matter when a filter is used as a container policy; a worker-slot filter primarily narrows that worker's item or recipe choices.</p>
+      `)}
+      ${section("Item And Attribute Filters", `
+        ${simpleList([
+          "An Item Filter has nine ghost slots. Scroll an entry to set an amount; Shift changes by 5, Ctrl by 10, and Ctrl+Shift by 100.",
+          "Potion entries retain their potion contents, so two potion stacks are not treated as identical merely because they share the same base item.",
+          "Configured filters can be placed inside Item Filter entries to compose rules. Nested matching is limited to eight levels.",
+          "An Attribute Filter starts from a reference item, then lets you select up to 32 detected properties.",
+          "Available properties include placeable, consumable, fluid container, enchanted or max-enchanted, renamed, damaged or badly damaged, non-stackable, wearable, fuel, processing support, compostable, tags, item groups, source mod, enchantments, color, fluid, exact name, book details, and shulker fill."
+        ])}
+      `)}
+      ${section("Recipe Filters And Worker Assignment", `
+        <p>A Recipe Filter browses the exact supported worker recipe catalog. Use its previous and next controls to choose a recipe, then narrow ingredient slots when a recipe accepts alternatives. It affects compatible processing decisions; it does not teach a worker an unsupported recipe.</p>
+        <ol class="step-list icon-step-list">
+          <li>${icon("sliders-horizontal")}<strong>Configure the held filter.</strong><span>Choose its entries, attributes, or recipe and the applicable policy.</span></li>
+          <li>${icon("message-square-text")}<strong>Use it on your hired adult villager.</strong><span>The assignment prompt offers Allow Matching or Deny Matching.</span></li>
+          <li>${icon("package-open")}<strong>Review the job filter slot.</strong><span>Replacing an existing filter returns or drops the old one instead of silently deleting it.</span></li>
+        </ol>
+      `)}
+      ${section("Filtering Assigned Containers", `
+        <p>An item frame attached to an assigned logical container acts as a transfer rule. A normal framed item is an exact-item allow rule; a configured filter supplies its full policy. Double chests are treated as one logical container.</p>
+        ${simpleList([
+          "Any applicable matching deny rule wins.",
+          "When applicable allow rules exist, at least one must match before the transfer is accepted.",
+          "When several matching stock targets apply, the lowest allowance is used.",
+          "A framed policy controls transfers for that container; it does not replace the hired villager's job filter slot."
+        ])}
+      `)}
+      ${section("Materials Checklists", `
+        <p>Craft a <strong>Materials Checklist</strong> shapelessly from one Construction Blueprint and one book. The blueprint remains in the crafting grid, and the checklist records the same exact material requirements used by the Builder.</p>
+        ${guideFeatureCards([
+          { icon: "mouse-pointer-click", title: "Open and review", text: "Right-click to see every required material, observed count, checked state, and overall progress." },
+          { icon: "backpack", title: "Count your inventory", text: "While carried, the checklist refreshes against your inventory about once per second and checks entries when you have enough." },
+          { icon: "package-search", title: "Count a container", text: "Shift-right-click a container to compare its contents; connected double-container contents count together." },
+          { icon: "list-checks", title: "Track manually", text: "Entries can be checked or unchecked by hand. Completed checks are sticky, so later removing materials does not automatically erase progress." }
+        ])}
+      `)}
+    `;
+  }
+
+  function renderWalletsGuide() {
+    return `
+      ${section("Reading A Villager Wallet", `
+        <p>Every adult villager has a persistent wallet for the server's configured currency, emeralds in the built-in setup. The interaction screen shows the current balance beside its capacity; hover the wallet display for its explanation and lifetime figures.</p>
+        ${guideFactList([
+          ["Current balance", "Currency the villager can spend now"],
+          ["Capacity", "The normal balance supported by profession, trade level, primary skill, and natural growth"],
+          ["Starting balance", "Varies by employment and trade level; experienced employed villagers generally start with more"],
+          ["Persistence", "Balance, capacity growth, earnings, spending, deposits, and daily timing survive saves"]
+        ])}
+      `)}
+      ${section("Daily Income And Capacity", `
+        <p>A living adult receives at most one natural income roll per Minecraft day while loaded and ticking. Profession, trade level, primary profession skill, and a small random variation determine the amount. Lower-level villagers earn at most 5 currency per day; level 4 and 5 villagers can earn up to 8.</p>
+        ${simpleList([
+          "Natural income is added only while the balance is at or below capacity.",
+          "Every naturally earned currency permanently grows that villager's capacity by the same amount.",
+          "Profession and skill changes can recalculate the base capacity, with a minimum normal capacity of 400.",
+          "Player payments can push the balance above capacity; the excess is retained until spent or deposited, but natural income pauses while over capacity."
+        ])}
+      `)}
+      ${section("Payments, Spending, And Trade Stock", `
+        <p>Currency paid through contracts, party recruitment, completed Builder payments, trades, and other supported services enters the wallet. Currency the villager pays out is removed from it.</p>
+        ${guideFeatureCards([
+          { icon: "shopping-basket", title: "Buying from a villager", text: "When your side of a trade pays the configured currency, that payment increases the villager's balance." },
+          { icon: "hand-coins", title: "Villager payouts", text: "When a trade result is currency, the villager must be able to cover the payout from the wallet." },
+          { icon: "package-x", title: "Temporary out of stock", text: "An unaffordable currency-paying offer is marked out of stock and is restored when the wallet can cover it again." },
+          { icon: "swords", title: "Other spending", text: "Villager duel stakes and other wallet-backed costs also require an affordable balance." }
+        ])}
+      `)}
+      ${section("Depositing Excess Earnings", `
+        <p>Only the amount above capacity is depositable. Once per Minecraft day, a villager with excess earnings tries to move that currency into assigned storage. If no assigned container has room, the remainder stays safely in the wallet.</p>
+        ${simpleList([
+          "Use Deposit Earnings in the interaction screen to attempt the transfer immediately.",
+          "For a hired villager, only the hirer can manage assigned storage and trigger the action.",
+          "For an unhired villager, the normal personal-inventory access requirement applies.",
+          "Deposited currency is marked as protected villager property; assigned storage is not a free wallet-withdrawal shortcut."
+        ])}
+      `)}
+      ${section("Server Control", `
+        <p>The Trade setting <code>disableVillagerWalletLimit</code> gives villagers unlimited spending for wallet-limited systems. When enabled, currency payout trades are not restricted by balance and excess-wallet deposits are disabled.</p>
+      `)}
+    `;
+  }
+
+  function renderGiftsGuide() {
+    return `
+      ${originalGiftsRender()}
+      ${section("Gift Keepsakes", `
+        <p>With keepsakes enabled, an adult villager at Trusted reputation or higher may equip a Liked or Loved gift instead of only storing it. The chance rises with reputation: 25 percent at Trusted, 40 at Respected, 55 at Revered, and 70 at Royalty; a Loved gift adds 15 percentage points.</p>
+        ${simpleList([
+          "Wearable gifts use their natural empty equipment slot.",
+          "Other keepsakes use an empty main hand when that hand is not player-managed.",
+          "A keepsake never replaces occupied equipment. If it cannot be equipped, the gift goes into personal inventory instead.",
+          "If personal inventory is full, the unstored remainder drops beside the villager without return tracking."
+        ])}
+      `)}
+      ${section("Protection And Taking Gifts Back", `
+        <p>Stored gifts and equipped keepsakes are tracked as villager property. Hiring the villager does not make those protected items ordinary removable job supplies.</p>
+        ${guideFeatureCards([
+          { icon: "undo-2", title: "Your own gift", text: "Taking back a tracked gift removes its recorded awarded reputation and applies an additional 10-point penalty." },
+          { icon: "user-x", title: "Someone else's gift", text: "The taker loses the recorded reputation amount plus an additional 25 points." },
+          { icon: "badge-alert", title: "Changed My Mind", text: "Taking a tracked stored gift into a player inventory triggers the corresponding advancement." },
+          { icon: "shield-check", title: "No false blame", text: "A gift consumed or otherwise removed by villager behavior is pruned from tracking without treating a player as the thief." }
+        ])}
+      `)}
+    `;
+  }
+
+  function renderNeedsGuide() {
     return `
       ${section("Food And Natural Regeneration", `
         <p>Villagers track food from 0 to 20 plus saturation. Injured villagers can consume accessible food, and low-health villagers may use golden apples or healing and regeneration potions when available.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "heart-pulse", title: "Regeneration requires food", text: "With the naturalRegeneration gamerule enabled, food allows gradual health recovery. Saturated villagers recover faster than unsaturated villagers." },
           { icon: "utensils", title: "Food is consumed", text: "Healing creates exhaustion, which drains saturation and then food. A hungry injured villager may warn nearby players." },
           { icon: "swords", title: "Combat changes priorities", text: "Villagers avoid ordinary eating during active combat. They can still use urgent healing items when survival requires them." },
@@ -516,7 +640,7 @@
       `)}
       ${section("Mood", `
         <p>Mood reacts to gifts, conversation, attacks, witnessed deaths, raids, danger, weather, fire, successful defense, fleeing, and survival. It gradually settles toward neutral, while persistent social attributes can change the strength or duration of reactions.</p>
-        ${beta13Table(
+        ${guideTable(
           ["Mood group", "Hired-work effect"],
           [
             ["Content, Grateful, Proud, Hopeful", "Small efficiency bonus"],
@@ -538,11 +662,11 @@
     `;
   }
 
-  function beta13RenderSkills() {
+  function renderSkillsGuide() {
     return `
       ${section("Reading A Villager", `
         <p>Open an adult villager's interaction screen and use the page switcher to cycle through Skills, Profile, and Job Stats. Hover a Profile point or Job Stats role for a quick readout, then select the role for its full capability details.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["Skills", "Learned capability that affects trades, quest gates, job aptitude, and hired-work performance"],
           ["Profile", "Persistent personality attributes that describe how a villager tends to think and react"],
           ["Job Stats", "The hiring view for role availability, skill pairings, aptitude, speed, and transfer capacity"]
@@ -550,7 +674,7 @@
       `)}
       ${section("Profile", `
         <p>Each villager has five persistent Social Attributes from 1 to 100. They appear as a five-point profile chart: the farther a point reaches, the stronger that trait is. The values describe personality rather than a job level or a player-controlled build.</p>
-        ${beta13Table(
+        ${guideTable(
           ["Attribute", "What it describes", "Examples of behavior it can shape"],
           [
             ["Knowledge", "Understanding, memory, and social awareness", "Suspicion, dialogue, and social awareness"],
@@ -560,7 +684,7 @@
             ["Charm", "Warmth, persuasion, and social grace", "Dialogue and grateful social moments"]
           ]
         )}
-        ${beta13FactList([
+        ${guideFactList([
           ["Poor", "1 to 19"],
           ["Modest", "20 to 39"],
           ["Average", "40 to 59"],
@@ -575,7 +699,7 @@
           "Farming", "Fishing", "Smithing", "Crafting", "Trading", "Medicine", "Archery", "Guarding", "Cooking",
           "Animal Handling", "Cartography", "Scholarship", "Gathering", "Masonry", "Mining", "Leatherworking", "Diplomacy", "Survival"
         ])}
-        ${beta13FactList([
+        ${guideFactList([
           ["Novice", "1 to 19"],
           ["Apprentice", "20 to 39"],
           ["Skilled", "40 to 59"],
@@ -585,7 +709,7 @@
       `)}
       ${section("Job Stats", `
         <p>Job Stats is the practical hiring view. Each role shows whether it is available and a 0–100 aptitude bar based on its two relevant skills. Select a role to see its exact performance.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["Ordinary availability", "Every adult villager can perform any ordinary role, regardless of profession or aptitude"],
           ["Special restrictions", "Nitwit work is nitwit-only; Builder is purchased as a separate one-off project"],
           ["Aptitude", "Rounded 70 percent primary skill + 30 percent support skill"],
@@ -596,7 +720,7 @@
           ["Combat technique", "Guarding slightly improves melee speed and damage and unlocks axe shield-breaking at 60; Archery improves ranged speed and accuracy"]
         ])}
       `)}
-      ${section("Role Skill Pairs", beta13Table(
+      ${section("Role Skill Pairs", guideTable(
         ["Role", "Primary skill", "Support skill"],
         [
           ["Combat", "Guarding", "Archery"],
@@ -620,6 +744,7 @@
           "Successful hired actions can train the role's primary and support skills at a 70/30 split when hired-work growth is enabled.",
           "Larger measurable jobs train more than trivial actions, while repeated equivalent work has diminishing returns.",
           "Trading and villager trade-level progression can also grow relevant skills when the server enables those options.",
+          "A neutral-or-better player can ask an eligible adult to Study one chosen skill for a direct increase.",
           "Skill affects role-specific throughput and skill-generated trades, and some quests use hidden skill minimums.",
           "Station processing timers remain unchanged even when the worker's transfer and action cadence improve."
         ])}
@@ -627,7 +752,51 @@
     `;
   }
 
-  function beta13RenderBuilding() {
+  function renderStudyGuide() {
+    return `
+      ${section("Starting A Study Session", `
+        <p>Open an adult villager's interaction screen, choose <strong>Study</strong>, then select one of the villager's skills. The skill list shows every current score; skills already at 100 are marked Maxed and cannot be selected.</p>
+        <ol class="step-list icon-step-list">
+          <li>${icon("handshake")}<strong>Reach Neutral reputation.</strong><span>The villager will not accept a study request from a Suspicious, Despised, or Feared player.</span></li>
+          <li>${icon("user-round-check")}<strong>Free the villager from other commitments.</strong><span>Babies, hired villagers, pending hires, and recruited party villagers cannot begin studying.</span></li>
+          <li>${icon("graduation-cap")}<strong>Choose one skill below 100.</strong><span>Study always trains the skill you select; it does not depend on the villager's profession or job aptitude.</span></li>
+          <li>${icon("timer")}<strong>Let the active timer finish.</strong><span>The interaction button reports the chosen skill, elapsed active time, total duration, and whether progress is paused.</span></li>
+        </ol>
+      `)}
+      ${section("Default Timing And Reward", `
+        ${guideFactList([
+          ["Study duration", "4,800 active ticks, or 4 minutes at 20 ticks per second"],
+          ["Skill reward", "A random 1 to 3 points in the selected skill"],
+          ["Maximum skill", "100; a reward is reduced when needed so it never exceeds the cap"],
+          ["Cooldown after completion", "9,600 ticks, or 8 minutes"],
+          ["Who owns the cooldown", "The villager; after finishing, that villager cannot begin another study session until it expires"]
+        ])}
+        <p>These are built-in defaults. A server can disable studying or change its duration, cooldown, and reward range. The values and availability shown in game are authoritative.</p>
+      `)}
+      ${section("Pauses And Priorities", `
+        <p>Study measures active time, so an interruption does not consume the remaining session. Progress is saved, and the villager resumes from the same point after the blocker ends.</p>
+        ${guideFeatureCards([
+          { icon: "message-square-text", title: "Conversation or trade", text: "Opening the interaction screen gives a study-aware greeting and pauses progress. Closing the conversation lets it resume." },
+          { icon: "moon", title: "Sleep", text: "A villager follows their need to sleep before continuing the study timer." },
+          { icon: "shield-alert", title: "Danger or combat", text: "Fire, panic, hiding, raids, recovery, live threats, combat, and urgent party actions take priority." },
+          { icon: "heart-pulse", title: "Downed or unavailable", text: "Downed state and other unavailable life states pause the session instead of awarding progress." },
+          { icon: "briefcase-business", title: "Hire or party commitment", text: "If the villager becomes hired or recruited after starting, study remains paused until that commitment ends." },
+          { icon: "server-off", title: "Feature disabled", text: "Turning the server feature off pauses an existing session and prevents new requests." }
+        ])}
+      `)}
+      ${section("Persistence And Practical Use", `
+        ${simpleList([
+          "An actively studying villager stops ordinary navigation and idle activity while the study timer advances.",
+          "Only loaded active ticks advance study progress. Unloading the villager does not finish the session in the background.",
+          "The selected skill and accumulated active time survive save and reload.",
+          "The cooldown uses shared overworld game time, persists across saves, and can expire while the villager is unloaded.",
+          "Study is useful for raising a specific quest, trade, or job skill; hired-work practice remains better for training the two skills tied to productive work."
+        ])}
+      `)}
+    `;
+  }
+
+  function renderBuildingGuide() {
     return `
       ${section("Builder Is Not A Daily Job", `
         <p>Builder appears with the worker roles because it uses Masonry and Crafting, but it is purchased as a single construction project. Any adult villager can accept an order; the structure must be available in the build catalog, and the proposed site must pass the server's checks.</p>
@@ -636,13 +805,13 @@
         <ol class="step-list icon-step-list">
           <li>${icon("landmark")}<strong>Choose a supported structure.</strong><span>The interaction screen creates a pending Construction Blueprint with a size, material summary, and quoted currency cost.</span></li>
           <li>${icon("move-3d")}<strong>Place and rotate the preview.</strong><span>Move the blueprint to a valid nearby site. The optional Placement Lock key starts unbound.</span></li>
-          <li>${icon("package-search")}<strong>Supply every required block.</strong><span>The builder uses carried or assigned materials and reports exactly what is missing.</span></li>
+          <li>${icon("package-search")}<strong>Supply every required block.</strong><span>The builder uses carried or assigned materials and reports exactly what is missing. Craft a <a href="${pageUrl("filters-checklists")}">Materials Checklist</a> from the blueprint and a book to count supplies first.</span></li>
           <li>${icon("hammer")}<strong>Let the builder travel and place.</strong><span>The villager validates each target and respects world borders, obstacles, protection rules, and reachable paths.</span></li>
           <li>${icon("badge-check")}<strong>Finish the project.</strong><span>The order ends when the planned blocks are complete or when the player cancels under the applicable refund rules.</span></li>
         </ol>
       `)}
       ${section("Default Limits And Price", `
-        ${beta13FactList([
+        ${guideFactList([
           ["Maximum structure size", "4096 planned blocks"],
           ["Maximum site distance", "28 blocks from the builder"],
           ["Material-storage search", "32 blocks"],
@@ -667,11 +836,11 @@
     `;
   }
 
-  function beta13RenderParties() {
+  function renderPartiesGuide() {
     return `
       ${section("Recruitment Contracts", `
         <p>A recruited villager belongs to a party rather than to the hired-work system. A villager cannot be recruited and hired at the same time.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["Party player limit", "4 players"],
           ["Recruited villager limit", "4 villagers"],
           ["Villager contract", "32 currency items for one Minecraft day (emeralds in the built-in setup)"],
@@ -690,7 +859,7 @@
         <p><strong>Unequip Weapons</strong> deliberately stows each selected villager's weapons; combat loadouts and guard behavior respect that saved choice. <strong>Re-equip Weapons</strong> lets them choose usable carried weapons again.</p>
       `)}
       ${section("Combat Policies", `
-        ${beta13Table(
+        ${guideTable(
           ["Setting", "Choices"],
           [
             ["Combat behavior", "Kill On Sight, Attack With Party, or Self Defense"],
@@ -723,11 +892,11 @@
     `;
   }
 
-  function beta13RenderMounts() {
+  function renderMountsGuide() {
     return `
       ${section("Assigning A Mount", `
         <p>An active hirer or party leader can assign an eligible adult horse, donkey, mule, llama, or camel to an adult controlled villager. Start Assign Mount from the villager screen, then select the mount within 30 seconds. An eligible leashed mount can also be assigned directly, returning the lead.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "badge-check", title: "Authority", text: "The active hirer manages a worker's mount. The party leader manages a recruited villager's mount." },
           { icon: "link", title: "Persistent pairing", text: "A villager keeps one durable mount assignment until it is cleared or either entity is permanently removed." },
           { icon: "users", title: "Seat availability", text: "The mount must have room and cannot contain unrelated passengers when it is assigned." },
@@ -745,7 +914,7 @@
       `)}
       ${section("Shared Passenger Seats", `
         <p>ToucanLib owns the ordered-passenger mechanics used by Villager Retaliation and Ride On. Villager Retaliation's complete assigned-mount flow works without Ride On.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["ToucanLib provides", "Ordered seats, synchronized seat offsets, safe dismounts, and atomic driver-seat transitions"],
           ["Villager Retaliation provides", "Two assigned villagers on a horse, or an authorized player driving with a villager behind them"],
           ["Ride On compatibility", "Ride On is optional and applies its own riding features through the same ToucanLib passenger layer"],
@@ -764,11 +933,11 @@
     `;
   }
 
-  function beta13RenderVillages() {
+  function renderVillagesGuide() {
     return `
       ${section("Tracked Villages", `
         <p>Villages have durable identities, generated names, resident rosters, and footprints built from village points of interest, structure pieces, and connected village terrain. A villager's home is not simply whichever village is closest at this instant.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "house", title: "Residents", text: "Villagers born or created inside a tracked footprint join that village." },
           { icon: "map-pin", title: "Wanderers", text: "Villagers created outside a tracked village begin without a home." },
           { icon: "clock", title: "Settlement", text: "A Wanderer who remains continuously in a village for one Minecraft day settles there. Active party villagers do not settle automatically." },
@@ -799,11 +968,11 @@
     `;
   }
 
-  function beta13RenderDowned() {
+  function renderDownedGuide() {
     return `
       ${section("Who Can Be Downed", `
         <p>The downed state is a special death-protection rule, not a universal villager rule. A villager is protected only when at least one active rule applies.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "users", title: "Active party villagers", text: "Recruited villagers can use the downed state when the server's party protection setting is enabled." },
           { icon: "scroll-text", title: "Quest or scene protection", text: "A current quest giver or protected scripted-scene villager can receive non-lethal handling from that content." },
           { icon: "shield-check", title: "Essential villagers", text: "Villagers intentionally marked essential are protected." },
@@ -812,7 +981,7 @@
       `)}
       ${section("What Happens", `
         <p>Ordinary lethal damage leaves a protected villager at 1 health and incapacitates them. They dismount, stop AI, navigation, loot pickup, work, combat, and normal interaction, and use a downed pose until recovery.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["Default minimum downed time", "160 ticks, or 8 seconds"],
           ["Default threat radius", "16 blocks"],
           ["Default quiet period", "60 ticks, or 3 seconds without a qualifying nearby threat"],
@@ -825,7 +994,7 @@
       `)}
       ${section("Second Wind Compatibility", `
         <p>Second Wind is optional. Villager Retaliation provides the protected downed state and automatic recovery without it.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["Without Second Wind", "Protected villagers remain downed until Villager Retaliation's recovery timer and safety conditions are satisfied"],
           ["With Second Wind", "A player can channel an early revive, and downed villagers can use Second Wind's crawl presentation"],
           ["Second Wind is required for", "Player-channeled early revival and the crawl presentation"],
@@ -845,20 +1014,20 @@
     `;
   }
 
-  function beta13RenderReputation() {
+  function renderReputationGuide() {
     return `
       ${section("Reputation Is Personal", `
         <p>Reputation is stored for each player-villager relationship. Two villagers in the same village can feel very differently about you. Direct events, witnesses, gossip, persistent history, and configurable decay all contribute, but a village does not replace every personal score with one shared number.</p>
       `)}
       ${section("Default Reputation Tiers", `
         <p>Servers can change these thresholds. The values below are the defaults.</p>
-        ${beta13Table(
+        ${guideTable(
           ["Tier", "Default threshold", "Effect"],
           DATA.reputation.map((tier) => [tier.level, String(tier.threshold), tier.effect])
         )}
       `)}
       ${section("Memories, Gossip, And Mood", `
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "history", title: "Personal history", text: "Trades, gifts, attacks, healing, quests, dialogue, theft, and village events can affect the relationship that experienced them." },
           { icon: "messages-square", title: "Witnesses and gossip", text: "Nearby villagers can learn about public harm or help, with line of sight and spread controlled separately by server settings." },
           { icon: "cloud-sun", title: "Mood", text: "Mood is a shorter-term emotional state. It can change dialogue and work efficiency without replacing persistent reputation." },
@@ -888,16 +1057,17 @@
     `;
   }
 
-  function beta13RenderDialogue() {
+  function renderDialogueGuide() {
     return `
       ${section("Opening The Interaction Screen", `
         <p>Use an empty main hand on a nearby villager. By default, shift-right-click bypasses the custom screen for a normal vanilla interaction. The server can disable the screen, change its range, or change the bypass behavior.</p>
       `)}
       ${section("What The Menu Can Contain", `
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "message-square-text", title: "Conversation", text: "Greetings, questions, jokes, stories, relationships, family, local events, home, and reputation-aware responses." },
           { icon: "gift", title: "Gifts and trade", text: "Give evaluated gifts, request eligible Special Orders, or open trading when the villager's current state allows it." },
           { icon: "scroll-text", title: "Quests", text: "Offers, reminders, choices, turn-ins, and story scenes appear when they are relevant to your current quest." },
+          { icon: "graduation-cap", title: "Study", text: "Eligible adults at Neutral reputation or better can train one selected skill when they are free from work and party commitments." },
           { icon: "briefcase-business", title: "Work and party actions", text: "Hiring, job management, inventories, construction, recruitment, party settings, mounts, and home choices appear when you lead or employ the villager." }
         ])}
       `)}
@@ -928,11 +1098,11 @@
     `;
   }
 
-  function beta13RenderQuests() {
+  function renderQuestsGuide() {
     return `
       ${section("Finding A Quest Giver", `
         <p>Each quest has its own giver requirements. A quest may need a particular profession, trade level, villager skill, reputation level, completed quest, earlier choice, or cooldown. If an offer is missing, compare the villager with the requirements on that quest's page.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "user-round-check", title: "Match the giver", text: "Check the required profession, trade level, and skill. A villager in combat, asleep, or recovering may not offer quests." },
           { icon: "list-checks", title: "Check your progress", text: "Some quests require enough reputation, an earlier quest, a specific story choice, or time for a cooldown to end." },
           { icon: "map-pin", title: "Track the objectives", text: "Press J for the Journal and K for the Tracker. Live progress appears after you accept the quest." },
@@ -950,11 +1120,11 @@
       ${section("Daily Quest Board Rotation", `
         <p>Built-in quest-board requests rotate separately for each tracked village once per Minecraft day. A village shows at most three currently eligible board quests, avoids its previous two rotations when enough alternatives exist, and limits how many combat, distant, expedition, hard, or extreme requests appear together. Another village can have a different board, and story quests outside the board keep their normal availability.</p>
       `)}
-      ${beta13OriginalQuestRender()}
+      ${originalQuestRender()}
     `;
   }
 
-  function beta13RenderCombat() {
+  function renderCombatGuide() {
     return `
       ${section("Natural Retaliation", `
         <p>Hitting a villager can anger the victim. Killing an adult villager in public can also rally nearby adult witnesses when the configured visibility rules are met. The short combat anger timer can expire while the longer personal reputation damage remains.</p>
@@ -977,7 +1147,7 @@
         ])}
       `)}
       ${section("Hired Combat And Hunting", `
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "shield", title: "Combat: Guard", text: "Protects the work area or route and answers attacks. It does not turn the villager into an unrestricted player hunter." },
           { icon: "route", title: "Combat: Roaming", text: "Patrols and scans for natural hostile targets within the assigned setup." },
           { icon: "crosshair", title: "Hunting", text: "Can seek enabled animals, hostiles, or players, then collect drops and deposit output." },
@@ -993,7 +1163,7 @@
     `;
   }
 
-  function beta13RenderDuels() {
+  function renderDuelsGuide() {
     return `
       ${section("Who Can Duel", `
         <p>The Duel option appears only when a duel can start now. The villager must be an adult whose Guts meets the server threshold, 60 by default, and every other current eligibility check must pass. When it appears, choose Duel, review the available terms, and confirm the challenge.</p>
@@ -1006,7 +1176,7 @@
         ])}
       `)}
       ${section("Choose The Terms", `
-        ${beta13Table(
+        ${guideTable(
           ["Loadout", "Equipment during the duel"],
           [
             ["Bare Handed", "Fists only"],
@@ -1019,7 +1189,7 @@
         <p>Wager options are no stake, 8, 16, 32, or 64 currency, plus the maximum both sides can cover. The maximum is limited by the currency in your inventory and the villager's wallet. Both stakes are removed when the duel starts.</p>
       `)}
       ${section("Arena Rules", `
-        ${beta13FactList([
+        ${guideFactList([
           ["Countdown", "3 seconds"],
           ["Arena radius", "16 blocks from the midpoint between both duelists"],
           ["Boundary grace", "10 seconds outside the arena before forfeiting"],
@@ -1045,7 +1215,7 @@
     `;
   }
 
-  function beta13RenderPlayerRaids() {
+  function renderPlayerRaidsGuide() {
     return `
       ${section("Declaring A Player Raid", `
         <p>Wear an ominous banner on your helmet inside a tracked village and begin using a goat horn. The initiating player and their current party are snapshotted as the raiders. A Player Raid cannot overlap a vanilla raid, another conflicting Player Raid, or the village's active cooldown.</p>
@@ -1084,7 +1254,7 @@
     `;
   }
 
-  function beta13RenderSettings() {
+  function renderSettingsGuide() {
     return `
       ${section("Default Player Controls", `
         <div class="table-wrap"><table><thead><tr><th>Action</th><th>Default</th><th>Notes</th></tr></thead><tbody>
@@ -1098,7 +1268,7 @@
       `)}
       ${section("Config Access", `
         <p>Open Minecraft's <strong>Mods</strong> menu, select Villager Retaliation, and choose its configuration screen. In multiplayer, the server controls gameplay rules while client display and keybind preferences remain local.</p>
-        ${beta13FeatureCards([
+        ${guideFeatureCards([
           { icon: "server", title: "Server-controlled gameplay", text: "Contracts, wages, work limits, reputation thresholds, combat, raids, downed recovery, gifts, quests, and social rules follow the server in multiplayer." },
           { icon: "monitor", title: "Client display and controls", text: "Keybinds, name tags, HUD placement, text effects, camera presentation, and similar visual preferences are local controls where supported." },
           { icon: "sliders-horizontal", title: "Defaults can differ", text: "A server can change costs, durations, radii, efficiency bounds, thresholds, recovery timing, and feature toggles. In-game values are authoritative." },
@@ -1107,7 +1277,7 @@
       `)}
       ${section("Optional Mod Compatibility", `
         <p>Second Wind and Ride On are optional companion mods. Ride On is not required for any Villager Retaliation mount feature because both mods use ToucanLib's shared passenger layer. In multiplayer, use the same companion-mod setup on the server and participating clients.</p>
-        ${beta13Table(
+        ${guideTable(
           ["Companion mod", "Available without it", "Features that require it"],
           [
             ["Second Wind", "Protected downed villagers and automatic recovery", "Player-channeled early revival and the crawl downed presentation"],
@@ -1120,14 +1290,14 @@
       `)}
       ${section("Settings Categories", `
         ${pillList([
-          "General", "Dialogue", "Notifications", "Gifts", "Social", "Balance", "Retaliation", "Reputation",
+          "General", "Dialogue", "Notifications", "Gifts", "Social", "Study", "Balance", "Retaliation", "Reputation",
           "Player Raids", "Duels", "Trade", "Combat", "Hired Work", "Wandering Trader", "Quest"
         ])}
       `)}
     `;
   }
 
-  function beta13RenderCommands() {
+  function renderCommandsGuide() {
     const partyCommands = [
       ["/vr party create", "Create a player party."],
       ["/vr party invite <player>", "Invite an online player."],
@@ -1161,18 +1331,18 @@
     return `
       ${section("Command Basics", `
         <p>Every command uses the <code>/vr</code> root. Run <code>/vr</code>, <code>/vr party</code>, or <code>/vr duel</code> for in-game help, and press Tab for available players, kits, IDs, selectors, and other values.</p>
-        ${beta13FactList([
+        ${guideFactList([
           ["Required argument", "Shown as <value>"],
           ["Optional argument", "Shown as [value]"],
           ["Operator tools", "/vr admin requires permission level 2"],
           ["Capitalization", "Command literals are case-sensitive; keep names such as forceStart and inspectHere exactly as shown"]
         ])}
       `)}
-      ${section("Party Commands", beta13Table(["Command", "Use"], partyCommands))}
-      ${section("Player Duel Commands", beta13Table(["Command", "Use"], duelCommands))}
+      ${section("Party Commands", guideTable(["Command", "Use"], partyCommands))}
+      ${section("Player Duel Commands", guideTable(["Command", "Use"], duelCommands))}
       ${section("Operator Command Tree", `
         <p>Each entry below follows <code>/vr admin</code>. These are testing, diagnostics, and repair tools; back up a world before mutating live quests, scenes, village identities, or ownership.</p>
-        ${beta13Table(["Group", "Subcommands after /vr admin"], operatorGroups)}
+        ${guideTable(["Group", "Subcommands after /vr admin"], operatorGroups)}
       `)}
       ${section("Useful Diagnostic Order", `
         <ol class="step-list icon-step-list">
@@ -1203,187 +1373,215 @@
     }
   });
 
-  const beta13Pages = [
-    beta13ExistingPage("home", {
+  const guidePages = [
+    patchExistingPage("home", {
       title: "Overview",
       group: "Start Here",
       description: "How relationships, dialogue, quests, gifts, village life, retaliation, skills, work, parties, and recovery fit together.",
-      render: beta13RenderHome
+      render: renderGuideHome
     }),
-    beta13NewPage(
+    createGuidePage(
       "hiring",
       "Hiring And Contracts",
       "Work And Economy",
       "hand-coins",
       "Hire villagers, understand daily wages and 1-30 day contracts, use Payment Boxes, renew work, cancel, and recover items.",
-      beta13RenderHiring
+      renderHiringGuide
     ),
-    beta13NewPage(
+    createGuidePage(
       "workforce",
       "Clipboard And Workforce",
       "Work And Economy",
       "clipboard-list",
       "Use the Clipboard dashboard, assign storage purposes, edit work areas and routes, and resolve worker warnings.",
-      beta13RenderWorkforce
+      renderWorkforceGuide
     ),
-    beta13ExistingPage("quests", {
+    patchExistingPage("quests", {
       title: "Quest Walkthroughs",
       group: "Start Here",
       description: "Find eligible quest givers, follow objectives and story choices, prepare turn-ins, and understand what each route unlocks.",
-      render: beta13RenderQuests
+      render: renderQuestsGuide
     }),
-    beta13NewPage(
+    createGuidePage(
       "jobs",
       "Jobs And Professions",
       "Work And Economy",
       "briefcase-business",
       "All thirteen worker roles, availability and aptitude rules, required tools and stations, outputs, modes, and important rules.",
-      beta13RenderJobs
+      renderJobsGuide
     ),
-    beta13NewPage(
+    createGuidePage(
       "work-management",
       "Schedules, States, And Efficiency",
       "Work And Economy",
       "gauge",
       "When work runs or pauses, work areas and routes, job states, idle and blocked warnings, mood, skills, and efficiency.",
-      beta13RenderWorkManagement
+      renderWorkManagementGuide
     ),
-    beta13NewPage(
+    createGuidePage(
       "storage-inventory",
       "Storage, Inventory, And Equipment",
       "Work And Economy",
       "package-open",
       "Assigned Supplies, Output, General, and Payment storage, plus job inventories, protected items, filters, supplies, and equipment.",
-      beta13RenderStorageInventory
+      renderStorageInventoryGuide
     ),
-    beta13NewPage(
+    createGuidePage(
+      "filters-checklists",
+      "Filters And Materials Checklists",
+      "Work And Economy",
+      "list-filter",
+      "Configure Item, Attribute, and Recipe Filters; control container transfers and stock; and track Builder materials.",
+      renderFiltersAndChecklistsGuide
+    ),
+    createGuidePage(
+      "villager-wallets",
+      "Villager Wallets And Earnings",
+      "Work And Economy",
+      "wallet-cards",
+      "Understand wallet balances, daily income, capacity growth, payments, wallet-limited trade stock, and excess deposits.",
+      renderWalletsGuide
+    ),
+    createGuidePage(
       "market",
       "Sell Box And Daily Market",
       "Work And Economy",
       "store",
       "Craft and use the Sell Box, understand exact daily prices, withdraw proceeds, automate sales, and browse all built-in market rates.",
-      beta13RenderMarket
+      renderMarketGuide
     ),
-    beta13NewPage(
+    createGuidePage(
       "villager-needs",
       "Food, Mood, And Recovery",
       "Villager Life",
       "heart-pulse",
       "Villager food, natural regeneration, sleep healing, urgent recovery, mood effects, and care during work and combat.",
-      beta13RenderNeeds
+      renderNeedsGuide
     ),
-    beta13NewPage(
+    createGuidePage(
       "villager-skills",
       "Skills, Attributes, And Job Stats",
       "Villager Life",
       "brain-circuit",
       "All 18 skills, five social attributes, role aptitude, work speed, transfer capacity, trades, quests, and growth.",
-      beta13RenderSkills
+      renderSkillsGuide
     ),
-    beta13NewPage(
+    createGuidePage(
+      "study",
+      "Villager Study",
+      "Villager Life",
+      "graduation-cap",
+      "Choose a skill for an eligible villager to study, understand active-time progress, pauses, rewards, cooldowns, and server settings.",
+      renderStudyGuide
+    ),
+    createGuidePage(
       "building",
       "Builder And Blueprints",
       "Work And Economy",
       "hammer",
       "Order one-off construction, place a blueprint, supply materials, understand escrow, defaults, site checks, and project rules.",
-      beta13RenderBuilding
+      renderBuildingGuide
     ),
-    beta13NewPage(
+    createGuidePage(
       "parties",
       "Parties And Recruits",
       "Parties And Travel",
       "users",
       "Recruit paid party villagers, use follow and quick commands, configure combat and drop collection, share inventory, and form alliances.",
-      beta13RenderParties
+      renderPartiesGuide
     ),
-    beta13NewPage(
+    createGuidePage(
       "mounts",
       "Assigned Mounts",
       "Parties And Travel",
       "route",
       "Assign mounts, control mounted travel, parking, retries, and ToucanLib-backed dual-seat behavior.",
-      beta13RenderMounts
+      renderMountsGuide
     ),
-    beta13NewPage(
+    createGuidePage(
       "villages",
       "Villages And Allegiance",
       "Villager Life",
       "landmark",
       "Tracked village identity, residents, Wanderers, home reassignment, banner-and-bell naming, and allegiance combat consequences.",
-      beta13RenderVillages
+      renderVillagesGuide
     ),
-    beta13ExistingPage("combat", {
+    patchExistingPage("combat", {
       title: "Retaliation And Combat",
       group: "Conflict And Safety",
       description: "Natural retaliation, profession equipment, hostile-mob defense, hired guards and hunters, party targeting, recovery, and lethal limits.",
-      render: beta13RenderCombat
+      render: renderCombatGuide
     }),
-    beta13NewPage(
+    createGuidePage(
       "downed",
       "Downed Villagers",
       "Conflict And Safety",
       "shield-check",
       "Protected downed villagers, automatic recovery, lethal bypasses, and the early-revive features that require Second Wind.",
-      beta13RenderDowned
+      renderDownedGuide
     ),
-    beta13NewPage(
+    createGuidePage(
       "duels",
       "Villager Duels",
       "Conflict And Safety",
       "swords",
       "Challenge eligible villagers, choose a loadout and wager, follow arena rules, protect inventories, and understand outcomes.",
-      beta13RenderDuels
+      renderDuelsGuide
     ),
-    beta13ExistingPage("player-raids", {
+    patchExistingPage("player-raids", {
       title: "Player Raids",
       group: "Conflict And Safety",
       description: "Declare a village raid, understand the party snapshot, defenders, horn reveal, mercy stage, outcomes, and cooldown.",
-      render: beta13RenderPlayerRaids
+      render: renderPlayerRaidsGuide
     }),
-    beta13ExistingPage("reputation", {
+    patchExistingPage("reputation", {
       title: "Reputation",
       group: "Start Here",
       description: "Trust thresholds, personal standing, memories, gossip, mood, pacification, decay, and consequences.",
-      render: beta13RenderReputation
+      render: renderReputationGuide
     }),
-    beta13ExistingPage("dialogue", {
+    patchExistingPage("dialogue", {
       title: "Dialogue And Interaction",
       group: "Start Here",
       description: "Open and bypass the interaction screen, understand when menu options appear, quests, hiring, parties, memories, and refusal conditions.",
-      render: beta13RenderDialogue
+      render: renderDialogueGuide
     }),
-    beta13ExistingPage("gifts", { group: "Relationships And Trade" }),
-    beta13ExistingPage("skill-trades", { group: "Relationships And Trade" }),
-    beta13ExistingPage("watched-containers", {
+    patchExistingPage("gifts", {
+      group: "Relationships And Trade",
+      description: "Choose gifts, understand preferences and reputation, receive high-trust rewards, and learn keepsake and gift-return behavior.",
+      render: renderGiftsGuide
+    }),
+    patchExistingPage("skill-trades", { group: "Relationships And Trade" }),
+    patchExistingPage("watched-containers", {
       group: "Conflict And Safety",
       description: "Generated village property, opening and theft confrontations, breaking penalties, witnesses, item returns, and server overrides.",
-      render: beta13RenderContainers
+      render: renderContainersGuide
     }),
-    beta13ExistingPage("advancements", { group: "Reference" }),
-    beta13ExistingPage("settings", {
+    patchExistingPage("advancements", { group: "Reference" }),
+    patchExistingPage("settings", {
       title: "Controls And Configuration",
       group: "Reference",
       description: "Player controls, Mod Menu settings, gamerules, datapack differences, and optional Second Wind and Ride On compatibility.",
-      render: beta13RenderSettings
+      render: renderSettingsGuide
     }),
-    beta13NewPage(
+    createGuidePage(
       "commands",
       "Commands",
       "Reference",
       "terminal",
       "Complete player party and duel commands plus the permission-level-2 operator command tree for diagnostics, quests, scenes, villagers, villages, and debug tools.",
-      beta13RenderCommands
+      renderCommandsGuide
     )
   ];
 
-  const beta13DuplicateIds = beta13Pages
+  const duplicatePageIds = guidePages
     .map((page) => page.id)
     .filter((id, index, ids) => ids.indexOf(id) !== index);
-  if (beta13DuplicateIds.length) {
-    throw new Error(`Duplicate wiki page ids: ${beta13DuplicateIds.join(", ")}`);
+  if (duplicatePageIds.length) {
+    throw new Error(`Duplicate wiki page ids: ${duplicatePageIds.join(", ")}`);
   }
 
-  PAGES.splice(0, PAGES.length, ...beta13Pages);
+  PAGES.splice(0, PAGES.length, ...guidePages);
   renderNav();
   render();
 })();
