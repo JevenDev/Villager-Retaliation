@@ -60,45 +60,87 @@ public final class QuestPoolResources {
     }
 
     public static boolean allows(DialogueContext context, QuestDefinition quest) {
-        if (context == null || quest == null) {
-            return true;
+        return evaluate(context).allows(quest);
+    }
+
+    /**
+     * Resolves the eligible quest catalog and pool selections once for a dialogue
+     * context. Nearby quest tracking checks every quest for every villager, so
+     * rebuilding these selections in each individual availability check turns
+     * that scan into multiplicative work.
+     */
+    public static Evaluation evaluate(DialogueContext context) {
+        if (context == null) {
+            return Evaluation.ALLOW_ALL;
         }
-        List<QuestPoolDefinition> claiming = pools(context.level().getServer()).stream()
+        List<QuestPoolDefinition> matchingPools = pools(context.level().getServer()).stream()
                 .filter(pool -> pool.matchesContext(context))
-                .filter(pool -> pool.claims(quest))
                 .sorted(java.util.Comparator.comparingInt(QuestPoolDefinition::priority).reversed())
                 .toList();
-        if (claiming.isEmpty()) {
-            return true;
+        if (matchingPools.isEmpty()) {
+            return Evaluation.ALLOW_ALL;
         }
         List<QuestDefinition> catalog = VillagerQuestResources.quests(context.level().getServer()).stream()
                 .filter(candidate -> VillagerQuestService.canStartIgnoringPools(context, candidate))
                 .toList();
-        int highestExclusivePriority = claiming.stream().filter(QuestPoolDefinition::exclusive)
-                .mapToInt(QuestPoolDefinition::priority).max().orElse(Integer.MIN_VALUE);
-        for (QuestPoolDefinition pool : claiming) {
-            if (highestExclusivePriority != Integer.MIN_VALUE
-                    && (!pool.exclusive() || pool.priority() < highestExclusivePriority)) continue;
-            String scopeKey = scopeKey(pool, context);
-            long epoch = context.level().getGameTime() / pool.refreshTicks();
-            List<WeightedQuestId> effectiveWeights = catalog.stream()
-                    .filter(pool::claims)
-                    .map(candidate -> new WeightedQuestId(candidate.id(), pool.weight(candidate, context)))
-                    .filter(candidate -> candidate.weight() > 0)
-                    .sorted(java.util.Comparator.comparing(candidate -> candidate.id().toString()))
-                    .toList();
-            SelectionKey key = new SelectionKey(pool.id(), scopeKey, epoch, effectiveWeights);
-            if (SELECTION_CACHE.size() > 4_096) {
-                SELECTION_CACHE.clear();
-            }
-            Set<ResourceLocation> selected = SELECTION_CACHE.computeIfAbsent(
-                    key,
-                    ignored -> QuestPoolSelector.select(pool, catalog, context, scopeKey, epoch));
-            if (selected.contains(quest.id())) {
+        List<PoolSelection> selections = matchingPools.stream()
+                .map(pool -> new PoolSelection(pool, selectedFor(pool, catalog, context)))
+                .toList();
+        return new Evaluation(selections);
+    }
+
+    private static Set<ResourceLocation> selectedFor(
+            QuestPoolDefinition pool,
+            List<QuestDefinition> catalog,
+            DialogueContext context) {
+        String scopeKey = scopeKey(pool, context);
+        long epoch = context.level().getGameTime() / pool.refreshTicks();
+        List<WeightedQuestId> effectiveWeights = catalog.stream()
+                .filter(pool::claims)
+                .map(candidate -> new WeightedQuestId(candidate.id(), pool.weight(candidate, context)))
+                .filter(candidate -> candidate.weight() > 0)
+                .sorted(java.util.Comparator.comparing(candidate -> candidate.id().toString()))
+                .toList();
+        SelectionKey key = new SelectionKey(pool.id(), scopeKey, epoch, effectiveWeights);
+        if (SELECTION_CACHE.size() > 4_096) {
+            SELECTION_CACHE.clear();
+        }
+        return SELECTION_CACHE.computeIfAbsent(
+                key,
+                ignored -> QuestPoolSelector.select(pool, catalog, context, scopeKey, epoch));
+    }
+
+    public static final class Evaluation {
+        private static final Evaluation ALLOW_ALL = new Evaluation(List.of());
+        private final List<PoolSelection> selections;
+
+        private Evaluation(List<PoolSelection> selections) {
+            this.selections = List.copyOf(selections);
+        }
+
+        public boolean allows(QuestDefinition quest) {
+            if (quest == null) {
                 return true;
             }
+            List<PoolSelection> claiming = this.selections.stream()
+                    .filter(selection -> selection.pool().claims(quest))
+                    .toList();
+            if (claiming.isEmpty()) {
+                return true;
+            }
+            int highestExclusivePriority = claiming.stream()
+                    .map(PoolSelection::pool)
+                    .filter(QuestPoolDefinition::exclusive)
+                    .mapToInt(QuestPoolDefinition::priority)
+                    .max()
+                    .orElse(Integer.MIN_VALUE);
+            return claiming.stream().anyMatch(selection -> {
+                QuestPoolDefinition pool = selection.pool();
+                return (highestExclusivePriority == Integer.MIN_VALUE
+                        || (pool.exclusive() && pool.priority() >= highestExclusivePriority))
+                        && selection.selected().contains(quest.id());
+            });
         }
-        return false;
     }
 
     private static String scopeKey(QuestPoolDefinition pool, DialogueContext context) {
@@ -279,6 +321,9 @@ public final class QuestPoolResources {
 
 
     private record WeightedQuestId(ResourceLocation id, int weight) {
+    }
+
+    private record PoolSelection(QuestPoolDefinition pool, Set<ResourceLocation> selected) {
     }
 
     private record SelectionKey(ResourceLocation pool, String scope, long epoch, List<WeightedQuestId> effectiveWeights) {

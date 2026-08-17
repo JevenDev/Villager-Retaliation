@@ -30,6 +30,7 @@ import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalog;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
@@ -181,6 +182,7 @@ public final class VillagerDialogueResources {
     private static final String PLANNED_BETA13_DEPRECATION_VERSION = "1.0.0-beta.13";
     private static final String PLANNED_BETA13_DEPRECATION_REPLACEMENT = "Use beta.12 conditions blocks instead.";
     private static volatile CachedDialoguePools cachedDialoguePools = CachedDialoguePools.empty();
+    private static volatile CachedBundleMessages cachedBundleMessages = CachedBundleMessages.empty();
 
     private enum DialogueFileSection {
         OPTIONS("options"),
@@ -226,6 +228,7 @@ public final class VillagerDialogueResources {
 
     public static void clearCache() {
         cachedDialoguePools = CachedDialoguePools.empty();
+        cachedBundleMessages = CachedBundleMessages.empty();
     }
 
     public static Optional<String> openingLine(DialogueContext context, DialogueDisposition disposition) {
@@ -358,9 +361,35 @@ public final class VillagerDialogueResources {
         if (server == null || key == null || key.isBlank()) {
             return List.of();
         }
-        JsonElement payload = QuestContentCatalogs.current(server)
-                .localization()
-                .payload(locale, key)
+        QuestContentCatalog catalog = QuestContentCatalogs.current(server);
+        BundleMessageKey cacheKey = new BundleMessageKey(VillagerLocale.normalize(locale), key);
+        CachedBundleMessages current = cachedBundleMessages;
+        if (current.server() == server && current.catalog() == catalog
+                && current.messages().containsKey(cacheKey)) {
+            return current.messages().get(cacheKey);
+        }
+
+        synchronized (VillagerDialogueResources.class) {
+            current = cachedBundleMessages;
+            Map<BundleMessageKey, List<KeyedMessageLine>> messages =
+                    current.server() == server && current.catalog() == catalog
+                            ? new HashMap<>(current.messages())
+                            : new HashMap<>();
+            if (messages.containsKey(cacheKey)) {
+                return messages.get(cacheKey);
+            }
+            List<KeyedMessageLine> parsed = readBundleMessageLines(catalog, cacheKey);
+            messages.put(cacheKey, parsed);
+            cachedBundleMessages = new CachedBundleMessages(server, catalog, Map.copyOf(messages));
+            return parsed;
+        }
+    }
+
+    private static List<KeyedMessageLine> readBundleMessageLines(
+            QuestContentCatalog catalog,
+            BundleMessageKey cacheKey) {
+        JsonElement payload = catalog.localization()
+                .payload(cacheKey.locale(), cacheKey.key())
                 .orElse(null);
         if (payload == null) {
             return List.of();
@@ -379,8 +408,8 @@ public final class VillagerDialogueResources {
         } else {
             return List.of();
         }
-        entry.addProperty("id", key);
-        entry.addProperty("key", key);
+        entry.addProperty("id", cacheKey.key());
+        entry.addProperty("key", cacheKey.key());
         JsonArray entries = new JsonArray();
         entries.add(entry);
         JsonObject root = new JsonObject();
@@ -388,7 +417,7 @@ public final class VillagerDialogueResources {
         Map<String, KeyedMessageLine> messages = new LinkedHashMap<>();
         readKeyedMessages(
                 ResourceLocation.fromNamespaceAndPath(
-                        "villagerretaliation", "quests/_catalog/locales/" + VillagerLocale.normalize(locale) + ".json"),
+                        "villagerretaliation", "quests/_catalog/locales/" + cacheKey.locale() + ".json"),
                 root,
                 DialogueEntryMetadata.EMPTY,
                 Set.of(),
@@ -1879,6 +1908,18 @@ public final class VillagerDialogueResources {
     private record CachedDialoguePools(MinecraftServer server, Map<String, DialoguePool> poolsByLocale) {
         private static CachedDialoguePools empty() {
             return new CachedDialoguePools(null, Map.of());
+        }
+    }
+
+    private record BundleMessageKey(String locale, String key) {
+    }
+
+    private record CachedBundleMessages(
+            MinecraftServer server,
+            QuestContentCatalog catalog,
+            Map<BundleMessageKey, List<KeyedMessageLine>> messages) {
+        private static CachedBundleMessages empty() {
+            return new CachedBundleMessages(null, null, Map.of());
         }
     }
 
