@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-beta.13-hotfix.1 - 2026-08-17
+
+### Changed
+
+- Improved quest tracker performance by reusing quest-pool evaluations during nearby-villager scans and caching parsed quest-bundle dialogue messages.
+- Normalized quest-pool tag matching across pool claims, exclusions, and weight rules.
+
 ## 1.0.0-beta.13 - 2026-08-16
 
 ### Added
