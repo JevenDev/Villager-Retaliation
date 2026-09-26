@@ -27,6 +27,12 @@ public final class SettlementViewClient {
     private SettlementViewClient() {
     }
 
+    public static void acceptResult(com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload payload) {
+        if (active != null) {
+            active.acceptResult(payload);
+        }
+    }
+
     public static void acceptState(SettlementViewStatePayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         if (!payload.active()) {

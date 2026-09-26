@@ -55,9 +55,7 @@ public final class SettlementManagementClient {
     }
 
     public static void acceptResult(SettlementManagementActionResultPayload payload) {
-        if (Minecraft.getInstance().screen instanceof SettlementViewScreen view) {
-            view.acceptResult(payload);
-        }
+        SettlementViewClient.acceptResult(payload);
         var current = current();
         if (current == null) {
             return;
@@ -66,6 +64,8 @@ public final class SettlementManagementClient {
         if (Minecraft.getInstance().screen instanceof SettlementEditScreen form) {
             form.result(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementWorkerScreen form) {
+            form.result(payload);
+        } else if (Minecraft.getInstance().screen instanceof SettlementBlueprintScreen form) {
             form.result(payload);
         }
     }
@@ -77,6 +77,7 @@ public final class SettlementManagementClient {
             case SettlementEditScreen form -> form.parent();
             case SettlementWorkerScreen form -> form.parent();
             case SettlementConfirmScreen confirmation -> confirmation.parent();
+            case SettlementBlueprintScreen blueprints -> blueprints.parent();
             case SettlementItemPickerScreen picker -> picker.parent().parent();
             case null, default -> null;
         };

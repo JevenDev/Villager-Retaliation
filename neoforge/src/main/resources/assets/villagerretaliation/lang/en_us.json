@@ -2644,5 +2644,22 @@
   "villagerretaliation.gui.settlement.project_blocker.site_too_far": "The site is too far away.",
   "villagerretaliation.gui.settlement.project_blocker.site_unloaded": "View or visit the construction site to load it.",
   "villagerretaliation.gui.settlement.project_blocker.too_large": "The blueprint exceeds the construction limit.",
-  "villagerretaliation.gui.settlement.project_blocker.placement_failed": "The next block could not be placed."
+  "villagerretaliation.gui.settlement.project_blocker.placement_failed": "The next block could not be placed.",
+  "villagerretaliation.gui.settlement.draft_blueprint": "Draft blueprint",
+  "villagerretaliation.gui.settlement.draft_blueprint_hint": "Choose an existing design and use one paper to create its blueprint.",
+  "villagerretaliation.gui.settlement.blueprint_catalog": "Construction blueprints",
+  "villagerretaliation.gui.settlement.draft_blueprint_cost": "Draft (1 Paper)",
+  "villagerretaliation.gui.settlement.blueprint_draft_hint": "Drafting uses one paper from your inventory. Hold the blueprint and open World View to position it before commissioning.",
+  "villagerretaliation.gui.settlement.blueprint_ready": "Blueprint created. Hold it and open World View to position it. If your inventory is full, it is dropped at your feet.",
+  "villagerretaliation.gui.settlement.blueprint_failed": "The blueprint could not be drafted. Check your paper, construction access, and settlement stage.",
+  "villagerretaliation.gui.settlement_view.projects": "Projects",
+  "villagerretaliation.gui.settlement_view.place_blueprint": "Position blueprint",
+  "villagerretaliation.gui.settlement_view.cancel_blueprint_placement": "Stop positioning",
+  "villagerretaliation.gui.settlement_view.rotate_blueprint": "Rotate blueprint",
+  "villagerretaliation.gui.settlement_view.raise_blueprint": "Raise blueprint",
+  "villagerretaliation.gui.settlement_view.lower_blueprint": "Lower blueprint",
+  "villagerretaliation.gui.settlement_view.blueprint_place_hint": "Click the ground to position the held blueprint. Rotate or change its height with the buttons. Right click or Esc stops positioning.",
+  "villagerretaliation.gui.settlement_view.blueprint_applied": "Blueprint positioned. Open Projects to choose a builder and commission construction.",
+  "villagerretaliation.gui.settlement_view.blueprint_denied": "The blueprint could not be positioned. Check your construction access, blueprint lock, and settlement boundary.",
+  "villagerretaliation.gui.settlement_view.blueprint_sending": "Positioning blueprint..."
 }

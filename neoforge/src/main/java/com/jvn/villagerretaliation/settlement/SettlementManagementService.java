@@ -70,6 +70,8 @@ public final class SettlementManagementService {
         return switch (payload.command()) {
             case SettlementManagementActionPayload.Advance ignored -> SettlementProgressionService.advance(player, id);
             case SettlementManagementActionPayload.View ignored -> SettlementViewService.open(player, id);
+            case SettlementManagementActionPayload.DraftBlueprint draft -> SettlementBlueprintService.draft(player, town, draft.structure());
+            case SettlementManagementActionPayload.PlaceBlueprint place -> SettlementBlueprintService.place(player, town, place.blueprint(), place.anchor(), place.rotation());
             case SettlementManagementActionPayload.StartProject start -> SettlementConstructionService.start(player, town, start.resident(), start.blueprint());
             case SettlementManagementActionPayload.CancelProject cancel -> SettlementConstructionService.cancel(player, town, cancel.project());
             case SettlementManagementActionPayload.SaveWorker save -> SettlementWorkerConfigurationService.configure(

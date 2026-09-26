@@ -199,7 +199,7 @@ public final class SettlementManagementScreen extends Screen {
         addRenderableWidget(Button.builder(text("refresh"), ignored -> {
             this.refreshAt = Util.getMillis();
         }).bounds(this.contentLeft + this.contentWidth - 64, bottom - 46, 64, 20).build());
-        int actionCount = this.desiredPage == Page.RESIDENTS ? 4 : 3;
+        int actionCount = this.desiredPage == Page.RESIDENTS || this.desiredPage == Page.PROJECTS ? 4 : 3;
         int actionWidth = (this.contentWidth - (actionCount - 1) * 4) / actionCount;
         for (int index = 0; index < this.actions.length; index++) {
             int action = index;
@@ -299,6 +299,8 @@ public final class SettlementManagementScreen extends Screen {
                 action(1, "cancel_project", permits(SettlementPermission.BUILD)
                         && selected instanceof SettlementManagementPayload.Project project && project.status() == SettlementProject.Status.ACTIVE);
                 action(2, "project_builder", selected != null);
+                action(3, "draft_blueprint", permits(SettlementPermission.BUILD)
+                        && this.snapshot.header() != null && this.snapshot.header().stage().projects() > 0);
             }
             case TOWNS -> action(0, "open", selected != null);
             case SUMMARY -> {
@@ -372,7 +374,9 @@ public final class SettlementManagementScreen extends Screen {
         }
         switch (this.desiredPage) {
             case PROJECTS -> {
-                if (action == 0) {
+                if (action == 3) {
+                    this.minecraft.setScreen(new SettlementBlueprintScreen(this));
+                } else if (action == 0) {
                     var blueprint = heldBlueprint();
                     if (blueprint != null) {
                         this.minecraft.setScreen(new SettlementManagementScreen(this.snapshot, this, null, blueprint));

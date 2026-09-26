@@ -33,6 +33,16 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         switch (payload.command()) {
             case Advance ignored -> buffer.writeEnum(Kind.ADVANCE);
             case View ignored -> buffer.writeEnum(Kind.VIEW);
+            case DraftBlueprint draft -> {
+                buffer.writeEnum(Kind.DRAFT_BLUEPRINT);
+                buffer.writeResourceLocation(draft.structure());
+            }
+            case PlaceBlueprint place -> {
+                buffer.writeEnum(Kind.PLACE_BLUEPRINT);
+                buffer.writeUUID(place.blueprint());
+                buffer.writeBlockPos(place.anchor());
+                buffer.writeEnum(place.rotation());
+            }
             case StartProject start -> {
                 buffer.writeEnum(Kind.START_PROJECT);
                 buffer.writeUUID(start.resident());
@@ -145,6 +155,8 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case VIEW -> new View();
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
             case SAVE_WORKER -> new SaveWorker(buffer.readUUID(), buffer.readUUID(), readWorkerSettings(buffer));
+            case DRAFT_BLUEPRINT -> new DraftBlueprint(buffer.readResourceLocation());
+            case PLACE_BLUEPRINT -> new PlaceBlueprint(buffer.readUUID(), buffer.readBlockPos(), buffer.readEnum(net.minecraft.world.level.block.Rotation.class));
             case START_PROJECT -> new StartProject(buffer.readUUID(), buffer.readUUID());
             case CANCEL_PROJECT -> new CancelProject(buffer.readUUID());
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
@@ -242,17 +254,32 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint {
     }
 
     public record Advance() implements Command {
     }
 
     public record View() implements Command {
+    }
+
+    public record DraftBlueprint(net.minecraft.resources.ResourceLocation structure) implements Command {
+        public DraftBlueprint {
+            Objects.requireNonNull(structure);
+        }
+    }
+
+    public record PlaceBlueprint(UUID blueprint, net.minecraft.core.BlockPos anchor, net.minecraft.world.level.block.Rotation rotation) implements Command {
+        public PlaceBlueprint {
+            Objects.requireNonNull(blueprint);
+            Objects.requireNonNull(anchor);
+            Objects.requireNonNull(rotation);
+            anchor = anchor.immutable();
+        }
     }
 
     public record StartProject(UUID resident, UUID blueprint) implements Command {

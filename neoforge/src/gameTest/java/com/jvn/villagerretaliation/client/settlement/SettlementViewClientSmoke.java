@@ -239,7 +239,69 @@ public final class SettlementViewClientSmoke {
             phase = 16;
         } else if (phase == 16 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS) {
-            require(button(screen, "villagerretaliation.gui.settlement.new_project").active, "a held blueprint enables commissioning");
+            require(button(screen, "villagerretaliation.gui.settlement.draft_blueprint").active, "Hamlet unlocks blueprint drafting");
+            button(screen, "villagerretaliation.gui.settlement.draft_blueprint").onPress();
+            phase = 24;
+        } else if (phase == 24 && minecraft.screen instanceof SettlementBlueprintScreen screen) {
+            screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow()
+                    .setValue("minecraft:village/plains/houses/plains_small_house_1");
+            var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                    .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+            require(rows.children().size() == 1, "the blueprint catalog filters to the exact house");
+            rows.children().getFirst().mouseClicked(0, 0, 0);
+            require(button(screen, "villagerretaliation.gui.settlement.draft_blueprint_cost").active, "one real paper enables drafting");
+            ticks = 0;
+            phase = 33;
+        } else if (phase == 33 && minecraft.screen instanceof SettlementBlueprintScreen screen && ++ticks >= 5) {
+            capture("blueprint-catalog");
+            button(screen, "villagerretaliation.gui.settlement.draft_blueprint_cost").onPress();
+            ticks = 0;
+            phase = 25;
+        } else if (phase == 25 && minecraft.screen instanceof SettlementBlueprintScreen screen && ++ticks >= 5
+                && !screen.parent().submitting() && heldBlueprint(minecraft) != null) {
+            projectFixture = new ProjectFixture(projectFixture.builder(), heldBlueprint(minecraft).jobId());
+            require(minecraft.player.getInventory().countItem(net.minecraft.world.item.Items.PAPER) == 0, "the client inventory consumed one paper");
+            capture("blueprint-drafted");
+            screen.onClose();
+            phase = 26;
+        } else if (phase == 26 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            ticks = 0;
+            phase = 27;
+        } else if (phase == 27 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            require(button(screen, "villagerretaliation.gui.settlement_view.place_blueprint").active, "the held blueprint enables world placement");
+            button(screen, "villagerretaliation.gui.settlement_view.place_blueprint").onPress();
+            clickWorld(screen, Vec3.atBottomCenterOf(fixture.center().offset(18, 0, 4)));
+            ticks = 0;
+            phase = 28;
+        } else if (phase == 28 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
+                && heldBlueprint(minecraft).worldCenter().getX() == fixture.center().getX() + 18
+                && heldBlueprint(minecraft).worldCenter().getZ() == fixture.center().getZ() + 4) {
+            button(screen, "villagerretaliation.gui.settlement_view.rotate_blueprint").onPress();
+            ticks = 0;
+            phase = 29;
+        } else if (phase == 29 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
+                && heldBlueprint(minecraft).rotation() == net.minecraft.world.level.block.Rotation.CLOCKWISE_90) {
+            capture("blueprint-positioned");
+            button(screen, "villagerretaliation.gui.settlement_view.raise_blueprint").onPress();
+            ticks = 0;
+            phase = 30;
+        } else if (phase == 30 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
+                && heldBlueprint(minecraft).worldMin().getY() == fixture.center().getY() + 1
+                && button(screen, "villagerretaliation.gui.settlement_view.lower_blueprint").active) {
+            button(screen, "villagerretaliation.gui.settlement_view.lower_blueprint").onPress();
+            ticks = 0;
+            phase = 31;
+        } else if (phase == 31 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
+                && heldBlueprint(minecraft).worldMin().getY() == fixture.center().getY()) {
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(minecraft.screen == screen, "Escape stops positioning without leaving the town view");
+            button(screen, "villagerretaliation.gui.settlement_view.projects").onPress();
+            phase = 32;
+        } else if (phase == 32 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS) {
+            require(button(screen, "villagerretaliation.gui.settlement.new_project").active, "the drafted and positioned blueprint can be commissioned");
             button(screen, "villagerretaliation.gui.settlement.new_project").onPress();
             phase = 17;
         } else if (phase == 17 && minecraft.screen instanceof SettlementManagementScreen screen) {
@@ -303,6 +365,10 @@ public final class SettlementViewClientSmoke {
         }
     }
 
+    private static com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewData heldBlueprint(Minecraft minecraft) {
+        return com.jvn.villagerretaliation.item.ConstructionBlueprintItem.previewData(minecraft.player.getMainHandItem()).orElse(null);
+    }
+
     private static void selectFirstRow(SettlementManagementScreen screen) {
         var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
                 .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
@@ -336,15 +402,9 @@ public final class SettlementViewClientSmoke {
         require(level.addFreshEntity(builder), "the civic builder is loaded");
         require(SettlementWorkforceService.assign(level, player, fixture.town(), builder, area.id()), "the builder is assigned to construction");
         SettlementCareService.onUnloaded(builder);
-        var entry = com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog.byId(level.getServer(),
-                net.minecraft.resources.ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1")).orElseThrow();
-        var plan = com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner.scan(level, entry,
-                net.minecraft.world.level.block.Rotation.NONE).orElseThrow();
-        UUID project = UUID.randomUUID();
-        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
-                com.jvn.villagerretaliation.item.ConstructionBlueprintItem.create(level, null, plan, origin, project, 0, plan.price(), "", 0L));
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.PAPER));
         player.containerMenu.broadcastChanges();
-        return new ProjectFixture(builder.getUUID(), project);
+        return new ProjectFixture(builder.getUUID(), null);
     }
 
     private static Fixture prepare(ServerPlayer player) {
