@@ -17,6 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class SettlementRecord {
     public static final int MAX_AREAS = 256;
+    public static final int MAX_APPLICANTS = 8;
     private final VillageAllegianceId id;
     private final ResourceLocation dimension;
     private final BlockPos center;
@@ -27,6 +28,8 @@ public final class SettlementRecord {
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
     private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
+    private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
+    private long nextApplicantAt;
     private SettlementSupportState support = new SettlementSupportState();
     private UUID leader;
     private SettlementStage stage = SettlementStage.CAMP;
@@ -40,6 +43,7 @@ public final class SettlementRecord {
         this.leader = Objects.requireNonNull(leader, "leader");
         this.foundedAt = Math.max(0L, foundedAt);
         this.dirty = Objects.requireNonNull(dirty, "dirty");
+        this.nextApplicantAt = this.foundedAt + 600L;
     }
 
     public VillageAllegianceId id() {
@@ -68,6 +72,36 @@ public final class SettlementRecord {
 
     public SettlementStage stage() {
         return this.stage;
+    }
+
+    public Map<UUID, SettlementApplicant> applicants() {
+        return Collections.unmodifiableMap(this.applicants);
+    }
+
+    public long nextApplicantAt() {
+        return this.nextApplicantAt;
+    }
+
+    void scheduleApplicant(long gameTime) {
+        this.nextApplicantAt = Math.max(0L, gameTime);
+        changed();
+    }
+
+    boolean putApplicant(SettlementApplicant applicant) {
+        if (!this.applicants.containsKey(applicant.id()) && this.applicants.size() >= MAX_APPLICANTS) {
+            return false;
+        }
+        this.applicants.put(applicant.id(), applicant);
+        changed();
+        return true;
+    }
+
+    boolean removeApplicant(UUID id) {
+        if (this.applicants.remove(id) == null) {
+            return false;
+        }
+        changed();
+        return true;
     }
 
     public Map<UUID, Set<SettlementPermission>> delegates() {
@@ -289,6 +323,10 @@ public final class SettlementRecord {
         });
         tag.put("Surveys", surveyTags);
         tag.put("Support", this.support.save());
+        tag.putLong("NextApplicantAt", this.nextApplicantAt);
+        ListTag applicantTags = new ListTag();
+        this.applicants.values().forEach(applicant -> applicantTags.add(applicant.save()));
+        tag.put("Applicants", applicantTags);
         return tag;
     }
 
@@ -304,6 +342,15 @@ public final class SettlementRecord {
         record.revision = Math.max(0L, tag.getLong("Revision"));
         record.stage = SettlementStage.valueOf(tag.getString("Stage"));
         record.support = SettlementSupportState.load(tag.getCompound("Support"));
+        if (tag.contains("NextApplicantAt")) {
+            record.nextApplicantAt = Math.max(0L, tag.getLong("NextApplicantAt"));
+        }
+        for (Tag raw : tag.getList("Applicants", Tag.TAG_COMPOUND)) {
+            SettlementApplicant applicant = SettlementApplicant.load((CompoundTag) raw);
+            if (record.applicants.size() >= MAX_APPLICANTS || record.applicants.putIfAbsent(applicant.id(), applicant) != null) {
+                throw new IllegalArgumentException("Settlement applicants exceed their limit or duplicate an identity");
+            }
+        }
         for (Tag raw : tag.getList("Delegates", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) raw;
             if (!entry.hasUUID("Player") || entry.getUUID("Player").equals(record.leader)) {

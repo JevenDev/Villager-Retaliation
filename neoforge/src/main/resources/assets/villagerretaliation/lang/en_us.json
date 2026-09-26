@@ -1,4 +1,5 @@
 {
+  "villagerretaliation.breeding.blocked.settlement_needs": "The town needs spare housing and food before another child can be supported.",
   "settlement.villagerretaliation.leadership_accepted": "The village has accepted your leadership.",
   "settlement.villagerretaliation.leadership_requirements": "Leadership: %s/%s adults at Revered, %s beds for %s residents, %s%% sustained housing and food. Sneak-use the table with an empty hand to accept when ready.",
   "text.config.villagerretaliation.category.settlements": "Settlements",

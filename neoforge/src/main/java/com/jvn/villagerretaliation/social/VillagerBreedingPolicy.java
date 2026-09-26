@@ -27,6 +27,7 @@ public final class VillagerBreedingPolicy {
             VillagerBreedingPolicy::evaluateWorkState,
             VillagerBreedingPolicy::evaluateCombatState,
             VillagerBreedingPolicy::evaluateSceneState,
+            VillagerBreedingPolicy::evaluateSettlementNeeds,
             VillagerBreedingPolicy::evaluateVanillaBreedingSetting);
 
     private VillagerBreedingPolicy() {
@@ -158,6 +159,12 @@ public final class VillagerBreedingPolicy {
     private static BreedingBlockReason evaluateSceneState(ServerLevel level, Villager villager) {
         return SceneSavedData.get(level).hasActiveActor(villager.getUUID())
                 ? BreedingBlockReason.SCENE_CONTROLLED : BreedingBlockReason.NONE;
+    }
+
+    private static BreedingBlockReason evaluateSettlementNeeds(ServerLevel level, Villager villager) {
+        var town = com.jvn.villagerretaliation.settlement.SettlementWorkforceService.home(level, villager).orElse(null);
+        return town != null && !com.jvn.villagerretaliation.settlement.SettlementPopulationService.canGrow(level, town)
+                ? BreedingBlockReason.SETTLEMENT_NEEDS : BreedingBlockReason.NONE;
     }
 
     private static BreedingBlockReason evaluateVanillaBreedingSetting(ServerLevel level, Villager villager) {

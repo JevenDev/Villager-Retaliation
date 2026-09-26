@@ -270,6 +270,7 @@ public final class VillagerRetaliationEvents {
         com.jvn.villagerretaliation.settlement.SettlementBuildingService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementProgressionService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementLeadershipService.tick(event.getServer());
+        com.jvn.villagerretaliation.settlement.SettlementPopulationService.tick(event.getServer());
         if (!BUILDER_CATALOG_SYNC_DIRTY.compareAndSet(true, false)) {
             return;
         }
