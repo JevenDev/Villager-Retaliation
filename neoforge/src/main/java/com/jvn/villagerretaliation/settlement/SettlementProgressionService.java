@@ -110,7 +110,8 @@ public final class SettlementProgressionService {
         boolean equipped = !SettlementBuildingSurvey.requiresFixture(area.type())
                 || survey != null && survey.fullyLoaded() && !survey.workstations().isEmpty();
         return area.enabled() && equipped && town.duties().entrySet().stream()
-                .anyMatch(duty -> duty.getValue().equals(area.id()) && adults.contains(duty.getKey()));
+                .anyMatch(duty -> duty.getValue().equals(area.id()) && adults.contains(duty.getKey())
+                        && (!town.workerSettings().containsKey(duty.getKey()) || town.workerSettings().get(duty.getKey()).enabled()));
     }
 
     public static long requiredTicks() {

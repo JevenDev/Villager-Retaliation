@@ -295,6 +295,35 @@ public final class SettlementBackgroundCraftingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void remoteWorkerSettingsPauseProductionAndControlDepotUse(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
+            var leader = net.neoforged.neoforge.common.util.FakePlayerFactory.get(helper.getLevel(),
+                    new com.mojang.authlib.GameProfile(fixture.town().leader(), "RemoteStaff"));
+            var settings = SettlementWorkerConfigurationService.snapshot(helper.getLevel(), fixture.town(), fixture.worker().id());
+            fixture.supply().setItem(0, new ItemStack(Items.OAK_PLANKS, 8));
+            helper.assertTrue(SettlementWorkerConfigurationService.configure(leader, fixture.town(), fixture.worker().id(), fixture.area().id(),
+                    settings.with(SettlementWorkerSetting.ENABLED, 0)), "staff can pause the absent craftsman");
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 200L);
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 8, "paused production consumes no stock");
+            settings = settings.with(SettlementWorkerSetting.USE_DEPOTS, 0);
+            SettlementWorkerConfigurationService.configure(leader, fixture.town(), fixture.worker().id(), fixture.area().id(), settings);
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 400L);
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 8, "disabled depot supplies are not consumed");
+            settings = settings.with(SettlementWorkerSetting.USE_DEPOTS, 1).with(SettlementWorkerSetting.AUTO_DEPOSIT, 0);
+            SettlementWorkerConfigurationService.configure(leader, fixture.town(), fixture.worker().id(), fixture.area().id(), settings);
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 600L);
+            helper.assertTrue(fixture.supply().isEmpty(), "resuming production consumes the real planks");
+            helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 1, "the craftsman retains the finished chest");
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 800L);
+            helper.assertTrue(fixture.output().isEmpty(), "disabled auto-deposit keeps finished stock with the resident");
+            SettlementWorkerConfigurationService.configure(leader, fixture.town(), fixture.worker().id(), fixture.area().id(),
+                    settings.with(SettlementWorkerSetting.AUTO_DEPOSIT, 1));
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 1_000L);
+            helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.CHEST)), 1, "enabling auto-deposit delivers the same chest once");
+        });
+    }
+
     private static int carried(GameTestHelper helper, Fixture fixture, Item item) {
         return fixture.worker().items(helper.getLevel().registryAccess()).stream()
                 .filter(stack -> stack.is(item)).mapToInt(ItemStack::getCount).sum();

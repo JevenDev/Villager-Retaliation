@@ -70,6 +70,8 @@ public final class SettlementManagementService {
         return switch (payload.command()) {
             case SettlementManagementActionPayload.Advance ignored -> SettlementProgressionService.advance(player, id);
             case SettlementManagementActionPayload.View ignored -> SettlementViewService.open(player, id);
+            case SettlementManagementActionPayload.SaveWorker save -> SettlementWorkerConfigurationService.configure(
+                    player, town, save.resident(), save.area(), save.settings());
             case SettlementManagementActionPayload.Guard guard -> SettlementGuardService.command(player, town, guard.resident(), guard.order());
             case SettlementManagementActionPayload.Assign assign -> level.getEntity(assign.resident()) instanceof Villager villager
                     && SettlementWorkforceService.assign(level, player, id, villager, assign.area());
@@ -191,9 +193,11 @@ public final class SettlementManagementService {
                     profession, villager == null ? !member.adult() : villager.isBaby(), presence, position, town.duties().get(member.id()),
                     villager != null ? VillagerRecoveryService.captureRecoveryState(villager).food() : care == null ? -1 : care.food(),
                     villager != null ? villager.getHealth() : care == null ? -1.0F : care.health(),
-                    !town.duties().containsKey(member.id()) ? "unassigned" : worker == null ? "active" : worker.status(),
+                    !town.duties().containsKey(member.id()) ? "unassigned"
+                            : town.workerSettings().containsKey(member.id()) && !town.workerSettings().get(member.id()).enabled() ? "paused"
+                            : worker == null ? "active" : worker.status(),
                     villager == null || villager.isBaby() ? List.of() : HiredVillagerRoles.availableRoles(level, villager),
-                    town.guardOrders().get(member.id())));
+                    town.guardOrders().get(member.id()), SettlementWorkerConfigurationService.snapshot(level, town, member.id())));
         }
     }
 

@@ -43,7 +43,7 @@ public final class SettlementManagementScreen extends Screen {
     private Button next;
     private Rows rows;
     private EditBox search;
-    private final Button[] actions = new Button[3];
+    private final Button[] actions = new Button[4];
     private final SettlementManagementScreen parent;
     private final SettlementManagementPayload.Resident assigning;
     private int left;
@@ -189,7 +189,8 @@ public final class SettlementManagementScreen extends Screen {
         addRenderableWidget(Button.builder(text("refresh"), ignored -> {
             this.refreshAt = Util.getMillis();
         }).bounds(this.contentLeft + this.contentWidth - 64, bottom - 46, 64, 20).build());
-        int actionWidth = (this.contentWidth - 8) / 3;
+        int actionCount = this.desiredPage == Page.RESIDENTS ? 4 : 3;
+        int actionWidth = (this.contentWidth - (actionCount - 1) * 4) / actionCount;
         for (int index = 0; index < this.actions.length; index++) {
             int action = index;
             this.actions[index] = addRenderableWidget(Button.builder(Component.empty(), ignored -> perform(action))
@@ -285,6 +286,8 @@ public final class SettlementManagementScreen extends Screen {
                 action(0, "assign", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
                         && !resident.baby() && !resident.roles().isEmpty());
                 action(1, "release", leader() && selected instanceof SettlementManagementPayload.Resident resident && resident.area() != null);
+                action(3, "worker_settings", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
+                        && resident.area() != null && resident.settings() != null);
                 action(2, "inventory", permits(SettlementPermission.LOGISTICS) && selected instanceof SettlementManagementPayload.Resident resident
                         && resident.area() != null && resident.presence() != com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.UNLOADED);
             }
@@ -348,8 +351,10 @@ public final class SettlementManagementScreen extends Screen {
                         this.minecraft.setScreen(new SettlementManagementScreen(this.snapshot, this, resident));
                     } else if (action == 1) {
                         submit(new SettlementManagementActionPayload.Release(resident.id()));
-                    } else {
+                    } else if (action == 2) {
                         submit(new SettlementManagementActionPayload.Inventory(resident.id()));
+                    } else {
+                        this.minecraft.setScreen(new SettlementWorkerScreen(this, resident));
                     }
                 }
             }

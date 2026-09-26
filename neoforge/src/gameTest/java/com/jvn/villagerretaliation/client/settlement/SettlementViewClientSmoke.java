@@ -158,7 +158,7 @@ public final class SettlementViewClientSmoke {
             require(minecraft.options.getCameraType() == CameraType.THIRD_PERSON_BACK, "damage restores the previous perspective");
             require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) == null,
                     "leaving releases the remote client chunks");
-            if (++ticks >= 10) {
+            if (++ticks >= 20) {
                 UUID player = minecraft.player.getUUID();
                 minecraft.getSingleplayerServer().submit(() -> {
                     ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
@@ -166,15 +166,50 @@ public final class SettlementViewClientSmoke {
                             .shouldForceTicks(new ChunkPos(fixture.center()).toLong()), "leaving releases the remote server tickets");
                 }).join();
                 capture("after-damage");
-                try {
-                    Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
-                } catch (IOException exception) {
-                    throw new UncheckedIOException(exception);
-                }
-                LogUtils.getLogger().info("Settlement client smoke checks passed");
-                phase = 6;
-                minecraft.stop();
+                minecraft.getSingleplayerServer().submit(() -> SettlementManagementService.open(
+                        minecraft.getSingleplayerServer().getPlayerList().getPlayer(player), fixture.town())).join();
+                phase = 8;
             }
+        } else if (phase == 8 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS, fixture.resident().toString());
+            phase = 9;
+        } else if (phase == 9 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS
+                && screen.snapshot().entries().size() == 1) {
+            var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                    .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+            rows.children().getFirst().mouseClicked(0, 0, 0);
+            require(button(screen, "villagerretaliation.gui.settlement.worker_settings").active, "resident selection enables civic settings");
+            button(screen, "villagerretaliation.gui.settlement.worker_settings").onPress();
+            ticks = 0;
+            phase = 10;
+        } else if (phase == 10 && minecraft.screen instanceof SettlementWorkerScreen screen && ++ticks >= 5) {
+            require(screen.getTitle().getString().contains("Tamsin"), "the unloaded resident keeps their name in worker settings");
+            capture("worker-settings");
+            String enabled = Component.translatable("villagerretaliation.gui.settlement.worker.enabled").getString();
+            screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(button -> button.getMessage().getString().startsWith(enabled + ":")).findFirst().orElseThrow().onPress();
+            require(button(screen, "villagerretaliation.gui.settlement.save").active, "changing work settings enables Save");
+            button(screen, "villagerretaliation.gui.settlement.save").onPress();
+            ticks = 0;
+            phase = 11;
+        } else if (phase == 11 && minecraft.screen instanceof SettlementManagementScreen && ++ticks >= 10) {
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
+                require(town.workerSettings().containsKey(fixture.resident()) && !town.workerSettings().get(fixture.resident()).enabled(),
+                        "saving the native settings form pauses the authoritative civic worker");
+            }).join();
+            capture("worker-settings-saved");
+            try {
+                Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
+            }
+            LogUtils.getLogger().info("Settlement client smoke checks passed");
+            phase = 6;
+            minecraft.stop();
         }
     }
 

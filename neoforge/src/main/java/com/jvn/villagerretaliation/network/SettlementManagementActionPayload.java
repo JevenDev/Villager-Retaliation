@@ -7,6 +7,9 @@ import com.jvn.villagerretaliation.settlement.SettlementDepotPurpose;
 import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import com.jvn.villagerretaliation.settlement.SettlementTradeOrder;
+import com.jvn.villagerretaliation.settlement.SettlementWorkerSetting;
+import com.jvn.villagerretaliation.settlement.SettlementWorkerSettings;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
@@ -30,6 +33,12 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         switch (payload.command()) {
             case Advance ignored -> buffer.writeEnum(Kind.ADVANCE);
             case View ignored -> buffer.writeEnum(Kind.VIEW);
+            case SaveWorker save -> {
+                buffer.writeEnum(Kind.SAVE_WORKER);
+                buffer.writeUUID(save.resident());
+                buffer.writeUUID(save.area());
+                writeWorkerSettings(buffer, save.settings());
+            }
             case Guard guard -> {
                 buffer.writeEnum(Kind.GUARD);
                 buffer.writeUUID(guard.resident());
@@ -126,6 +135,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case ADVANCE -> new Advance();
             case VIEW -> new View();
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
+            case SAVE_WORKER -> new SaveWorker(buffer.readUUID(), buffer.readUUID(), readWorkerSettings(buffer));
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
             case RELEASE -> new Release(buffer.readUUID());
             case APPLICANT -> new Applicant(buffer.readUUID(), buffer.readBoolean());
@@ -157,6 +167,41 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         return new SettlementManagementActionPayload(town, command);
     }
 
+    static void writeWorkerSettings(RegistryFriendlyByteBuf buffer, SettlementWorkerSettings settings) {
+        buffer.writeEnum(settings.role());
+        for (var setting : SettlementWorkerSetting.values()) {
+            if (setting.supports(settings.role())) {
+                buffer.writeVarInt(settings.options().get(setting));
+            }
+        }
+        buffer.writeVarInt(settings.logs().size());
+        settings.logs().stream().sorted().forEach(buffer::writeResourceLocation);
+        buffer.writeVarInt(settings.animals().size());
+        settings.animals().stream().sorted().forEach(buffer::writeResourceLocation);
+    }
+
+    static SettlementWorkerSettings readWorkerSettings(RegistryFriendlyByteBuf buffer) {
+        var role = buffer.readEnum(HiredVillagerRole.class);
+        var options = new java.util.EnumMap<SettlementWorkerSetting, Integer>(SettlementWorkerSetting.class);
+        for (var setting : SettlementWorkerSetting.values()) {
+            if (setting.supports(role)) {
+                options.put(setting, buffer.readVarInt());
+            }
+        }
+        return new SettlementWorkerSettings(role, options, readWorkerFilters(buffer), readWorkerFilters(buffer));
+    }
+
+    private static Set<net.minecraft.resources.ResourceLocation> readWorkerFilters(RegistryFriendlyByteBuf buffer) {
+        int count = VillagerPayloads.readCollectionSize(buffer, SettlementWorkerSettings.MAX_FILTERS, "settlement worker filters");
+        var filters = new java.util.HashSet<net.minecraft.resources.ResourceLocation>();
+        for (int index = 0; index < count; index++) {
+            if (!filters.add(buffer.readResourceLocation())) {
+                throw new IllegalArgumentException("Duplicate worker filter");
+            }
+        }
+        return filters;
+    }
+
     static void writeGuardOrder(RegistryFriendlyByteBuf buffer, SettlementGuardOrder order) {
         buffer.writeBoolean(order != null);
         if (order != null) {
@@ -186,17 +231,25 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker {
     }
 
     public record Advance() implements Command {
     }
 
     public record View() implements Command {
+    }
+
+    public record SaveWorker(UUID resident, UUID area, SettlementWorkerSettings settings) implements Command {
+        public SaveWorker {
+            Objects.requireNonNull(resident);
+            Objects.requireNonNull(area);
+            Objects.requireNonNull(settings);
+        }
     }
 
     public record Guard(UUID resident, SettlementGuardOrder order) implements Command {

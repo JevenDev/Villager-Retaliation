@@ -1,10 +1,13 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -14,6 +17,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Animal;
 
 public final class HiredAnimalBreedingTargets {
+    public static final TagKey<EntityType<?>> HANDLING_TARGETS = TagKey.create(Registries.ENTITY_TYPE, VillagerRetaliation.id("animal_handling_targets"));
     private static final String TARGETS_TAG = "AnimalBreedingTargets";
     private static final String ALL_TARGETS = "all";
 
@@ -29,7 +33,7 @@ public final class HiredAnimalBreedingTargets {
                     EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(id);
                     return type != null
                             && type.canSummon()
-                            && Animal.class.isAssignableFrom(type.getBaseClass());
+                            && (type.is(HANDLING_TARGETS) || Animal.class.isAssignableFrom(type.getBaseClass()));
                 })
                 .distinct()
                 .sorted(Comparator

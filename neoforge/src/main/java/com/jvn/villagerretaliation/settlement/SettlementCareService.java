@@ -92,6 +92,7 @@ public final class SettlementCareService {
             town.removeDuty(villager.getUUID());
             return;
         }
+        com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData.get(level).ensureProfile(level, villager);
         SettlementResidentState state = town.residents().get(villager.getUUID());
         if (state == null) {
             town.recordResident(SettlementResidentState.capture(villager, town, level.getGameTime()));

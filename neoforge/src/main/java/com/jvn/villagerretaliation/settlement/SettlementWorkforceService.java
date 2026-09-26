@@ -105,6 +105,7 @@ public final class SettlementWorkforceService {
 
     public static boolean onDuty(ServerLevel level, Villager villager) {
         return duty(villager).map(duty -> duty.area().enabled()
+                && (!duty.town().workerSettings().containsKey(villager.getUUID()) || duty.town().workerSettings().get(villager.getUUID()).enabled())
                 && workingHours(level.getDayTime(), villager.getUUID(), duty.area().type().role())).orElse(false);
     }
 
@@ -186,15 +187,14 @@ public final class SettlementWorkforceService {
             HiredWorkArea.fromBounds(area.min(), area.max(), true).save(state);
             state.putBoolean("Enabled", area.enabled());
             HiredWorkSession.invalidate(villager);
-        } else if (state.getBoolean("Enabled") != area.enabled()) {
-            state.putBoolean("Enabled", area.enabled());
         }
+        SettlementWorkerConfigurationService.apply(villager, town, area);
         if (assignmentChanged || Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), 200L) == 0L) {
             SettlementDepotService.synchronizeStorage(level, villager, town);
         }
     }
 
-    private static boolean hasPersonalCommitment(Villager villager) {
+    static boolean hasPersonalCommitment(Villager villager) {
         return HiredVillagerContractService.hasActiveOrPendingContract(villager)
                 || VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.HIRED
                 || PartyVillagerContractService.hasPartyEntityReference(villager)

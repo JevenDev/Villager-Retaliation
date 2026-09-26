@@ -46,6 +46,10 @@ public final class SettlementBackgroundService {
             }
             var area = town.areas().get(assignment.getValue());
             var care = town.residents().get(worker.id());
+            var settings = town.workerSettings().get(worker.id());
+            if (area != null && settings != null) {
+                settings.apply(worker.settings(), area.enabled());
+            }
             if (area == null || !area.enabled() || !area.id().equals(worker.area()) || area.type().role() != worker.role()
                     || care == null || !care.availableForWork()
                     || worker.settings().contains("Enabled") && !worker.settings().getBoolean("Enabled")
@@ -77,6 +81,8 @@ public final class SettlementBackgroundService {
             if (worker != null && worker.restore(villager)) {
                 SettlementLogisticsService.clear(villager);
             }
+            SettlementWorkforceService.duty(villager).ifPresent(duty ->
+                    SettlementWorkerConfigurationService.apply(villager, town, duty.area()));
         });
     }
 

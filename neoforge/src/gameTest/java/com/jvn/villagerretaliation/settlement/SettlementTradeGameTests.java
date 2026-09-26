@@ -283,6 +283,11 @@ public final class SettlementTradeGameTests {
             helper.assertValueEqual(depot.count(order::matches), 8, "background purchases use the authoritative depot inventory");
             helper.assertFalse(level.hasChunkAt(center), "background trading does not load the town");
             helper.assertTrue(SettlementTradeService.process(level, town, 1_000L).isEmpty(), "a second path cannot repeat the background cycle");
+            UUID clerkId = town.duties().keySet().iterator().next();
+            var settings = SettlementWorkerConfigurationService.snapshot(level, town, clerkId).with(SettlementWorkerSetting.ENABLED, 0);
+            town.setWorkerSettings(town.leader(), clerkId, settings);
+            helper.assertValueEqual(SettlementTradeService.process(level, town, 1_200L).get(order.id()).status(),
+                    SettlementTradeService.Status.NO_STAFF, "an unloaded paused clerk cannot keep trading");
         } finally {
             level.setDayTime(previousTime);
         }
@@ -308,6 +313,26 @@ public final class SettlementTradeGameTests {
             VillagerRecoveryService.restoreRecoveryState(fixture.clerk(), new VillagerRecoveryService.RecoverySnapshot(20, 5, 0, 0));
             helper.assertValueEqual(SettlementTradeService.process(helper.getLevel(), town, 1_200L).get(rule.id()).count(), 8,
                     "restored needs return the clerk to normal capacity");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_trade")
+    public static void pausedClerksCannotSpendSettlementMoney(GameTestHelper helper) {
+        withFixture(helper, fixture -> {
+            var town = fixture.town();
+            var rule = order(Items.BREAD, SettlementTradeOrder.Direction.BUY, 64, true);
+            SettlementTradeService.putOrder(fixture.leader(), town.id(), rule);
+            town.economy().credit(money(100));
+            SettlementTradeService.configureBudget(fixture.leader(), town.id(), CurrencyAmount.ZERO, money(100));
+            var settings = SettlementWorkerConfigurationService.snapshot(helper.getLevel(), town, fixture.clerk().getUUID());
+            helper.assertTrue(SettlementWorkerConfigurationService.configure(fixture.leader(), town, fixture.clerk().getUUID(),
+                    fixture.area().id(), settings.with(SettlementWorkerSetting.ENABLED, 0)), "the clerk can be paused");
+            helper.assertValueEqual(SettlementTradeService.process(helper.getLevel(), town, 1_000L).get(rule.id()).status(),
+                    SettlementTradeService.Status.NO_STAFF, "paused clerks do not process standing orders");
+            helper.assertValueEqual(town.economy().balance(), money(100), "pausing the clerk preserves treasury funds");
+            SettlementWorkerConfigurationService.configure(fixture.leader(), town, fixture.clerk().getUUID(), fixture.area().id(), settings);
+            helper.assertTrue(SettlementTradeService.process(helper.getLevel(), town, 1_200L).get(rule.id()).count() > 0,
+                    "resuming the clerk allows real trade");
         });
     }
 

@@ -28,6 +28,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementArea> areas = new LinkedHashMap<>();
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
     private final Map<UUID, SettlementGuardOrder> guardOrders = new LinkedHashMap<>();
+    private final Map<UUID, SettlementWorkerSettings> workerSettings = new LinkedHashMap<>();
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
     private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
@@ -214,6 +215,21 @@ public final class SettlementRecord {
         return true;
     }
 
+    public Map<UUID, SettlementWorkerSettings> workerSettings() {
+        return Collections.unmodifiableMap(this.workerSettings);
+    }
+
+    boolean setWorkerSettings(UUID actor, UUID resident, SettlementWorkerSettings settings) {
+        var area = this.areas.get(this.duties.get(resident));
+        if (!permits(actor, SettlementPermission.STAFF) || area == null || settings == null || area.type().role() != settings.role()) {
+            return false;
+        }
+        if (!settings.equals(this.workerSettings.put(resident, settings))) {
+            changed();
+        }
+        return true;
+    }
+
     boolean assignDuty(UUID resident, UUID area) {
         SettlementArea target = this.areas.get(area);
         if (resident == null || target == null || target.type().role() == null) {
@@ -221,6 +237,7 @@ public final class SettlementRecord {
         }
         if (!area.equals(this.duties.put(resident, area))) {
             this.guardOrders.remove(resident);
+            this.workerSettings.remove(resident);
             changed();
         }
         return true;
@@ -231,6 +248,7 @@ public final class SettlementRecord {
             return false;
         }
         this.guardOrders.remove(resident);
+        this.workerSettings.remove(resident);
         changed();
         return true;
     }
@@ -371,6 +389,7 @@ public final class SettlementRecord {
         }
         this.duties.values().removeIf(area::equals);
         this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
+        this.workerSettings.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.surveys.remove(area);
         changed();
         return true;
@@ -425,6 +444,13 @@ public final class SettlementRecord {
             guardTags.add(entry);
         });
         tag.put("GuardOrders", guardTags);
+        ListTag settingsTags = new ListTag();
+        this.workerSettings.forEach((resident, settings) -> {
+            CompoundTag entry = settings.save();
+            entry.putUUID("Resident", resident);
+            settingsTags.add(entry);
+        });
+        tag.put("WorkerSettings", settingsTags);
         ListTag depotTags = new ListTag();
         this.depots.values().forEach(depot -> depotTags.add(depot.save(provider)));
         tag.put("Depots", depotTags);
@@ -550,6 +576,19 @@ public final class SettlementRecord {
             if (area == null || area.type() != SettlementAreaType.GUARD_POST || !order.within(record)
                     || record.guardOrders.putIfAbsent(resident, order) != null) {
                 throw new IllegalArgumentException("Guard order is duplicated or outside its settlement");
+            }
+        }
+        for (Tag raw : tag.getList("WorkerSettings", Tag.TAG_COMPOUND)) {
+            CompoundTag entry = (CompoundTag) raw;
+            if (!entry.hasUUID("Resident")) {
+                throw new IllegalArgumentException("Worker settings are missing their resident");
+            }
+            UUID resident = entry.getUUID("Resident");
+            var area = record.areas.get(record.duties.get(resident));
+            var settings = SettlementWorkerSettings.load(entry);
+            if (area == null || area.type().role() != settings.role()
+                    || record.workerSettings.putIfAbsent(resident, settings) != null) {
+                throw new IllegalArgumentException("Worker settings are duplicated or have no matching duty");
             }
         }
         for (Tag raw : tag.getList("Depots", Tag.TAG_COMPOUND)) {

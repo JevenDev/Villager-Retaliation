@@ -65,6 +65,8 @@ public final class SettlementManagementClient {
         current.result(payload);
         if (Minecraft.getInstance().screen instanceof SettlementEditScreen form) {
             form.result(payload);
+        } else if (Minecraft.getInstance().screen instanceof SettlementWorkerScreen form) {
+            form.result(payload);
         }
     }
 
@@ -73,6 +75,7 @@ public final class SettlementManagementClient {
             case SettlementManagementScreen screen -> screen;
             case SettlementViewScreen view -> view.parent();
             case SettlementEditScreen form -> form.parent();
+            case SettlementWorkerScreen form -> form.parent();
             case SettlementItemPickerScreen picker -> picker.parent().parent();
             case null, default -> null;
         };
