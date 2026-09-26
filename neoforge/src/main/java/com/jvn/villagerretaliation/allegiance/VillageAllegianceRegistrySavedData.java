@@ -825,9 +825,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     private static int sectionDistance(long first, long second) {
         SectionPos left = SectionPos.of(first);
         SectionPos right = SectionPos.of(second);
-        return Math.abs(left.x() - right.x())
-                + Math.abs(left.y() - right.y())
-                + Math.abs(left.z() - right.z());
+        return Math.max(Math.abs(left.x() - right.x()),
+                Math.max(Math.abs(left.y() - right.y()), Math.abs(left.z() - right.z())));
     }
 
     private static boolean intersects(Set<Long> first, Set<Long> second) {
