@@ -68,7 +68,7 @@ final class VillageNameGenerator {
 
     private static boolean isSafeName(String name) {
         return !name.isBlank()
-                && name.codePointCount(0, name.length()) <= 32
+                && name.length() <= 32
                 && name.codePoints().noneMatch(codePoint -> Character.isISOControl(codePoint) || codePoint == '\u00a7');
     }
 

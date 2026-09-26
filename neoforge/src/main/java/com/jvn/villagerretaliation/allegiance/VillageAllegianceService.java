@@ -351,7 +351,7 @@ public final class VillageAllegianceService {
         VillageAllegianceReassignmentService.Residency residency =
                 VillageAllegianceReassignmentService.readResidency(villager).orElse(null);
         Optional<VillageAllegianceId> current = residencyVillageAtCurrentPosition(
-                registry, villager.blockPosition(), residency).or(() -> activeVillageAt(level, villager.blockPosition()));
+                registry, level, villager.blockPosition(), residency).or(() -> activeVillageAt(level, villager.blockPosition()));
         if (current.isEmpty()) {
             VillageAllegianceReassignmentService.resetResidency(villager);
             return false;
@@ -508,12 +508,14 @@ public final class VillageAllegianceService {
 
     private static Optional<VillageAllegianceId> residencyVillageAtCurrentPosition(
             VillageAllegianceRegistrySavedData registry,
+            ServerLevel level,
             BlockPos position,
             VillageAllegianceReassignmentService.Residency residency) {
         if (residency == null) {
             return Optional.empty();
         }
         return registry.canonicalRecord(residency.village())
+                .filter(record -> level.dimension().location().equals(record.originDimension()))
                 .filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE)
                 .filter(record -> record.footprintSections().contains(net.minecraft.core.SectionPos.asLong(position)))
                 .map(VillageAllegianceRegistrySavedData.AllegianceRecord::id);

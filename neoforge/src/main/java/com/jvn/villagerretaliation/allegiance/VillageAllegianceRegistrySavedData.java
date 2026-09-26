@@ -74,7 +74,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             Set<Long> sourceSections = longSet(recordTag.getLongArray("SourceSections"));
             Set<Long> footprintSections = longSet(recordTag.getLongArray("FootprintSections"));
             Set<Long> historicalFootprintSections = longSet(recordTag.getLongArray("HistoricalFootprintSections"));
-            if (footprintSections.isEmpty() && dimension != null && !state.equals(VillageLifecycleState.ARCHIVED)) {
+            if (formatVersion < FORMAT_VERSION && footprintSections.isEmpty()
+                    && dimension != null && !state.equals(VillageLifecycleState.ARCHIVED)) {
                 sourceSections = Set.of(SectionPos.asLong(origin));
                 footprintSections = expandedFootprint(sourceSections);
             }
@@ -174,7 +175,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         do {
             id = VillageAllegianceId.random();
         } while (this.records.containsKey(id));
-        String safeName = displayName == null ? "" : displayName.trim();
+        String safeName = validateVillageName(displayName).orElse("");
         boolean customName = !safeName.isBlank();
         if (!customName) {
             safeName = VillageNameGenerator.generate(id.value(), unavailableNames());
@@ -597,7 +598,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             VillageAllegianceId target) {
         AllegianceRecord sourceRecord = this.records.get(source);
         AllegianceRecord targetRecord = this.records.get(target);
-        if (sourceRecord == null || targetRecord == null || source.equals(target)) {
+        if (sourceRecord == null || targetRecord == null || source.equals(target)
+                || !java.util.Objects.equals(sourceRecord.originDimension(), targetRecord.originDimension())) {
             return false;
         }
         List<AllegianceRecord> sourceLineage = level == null
@@ -807,7 +809,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         Set<String> unavailable = unavailableNames();
         boolean changed = false;
         for (Map.Entry<VillageAllegianceId, AllegianceRecord> entry : List.copyOf(this.records.entrySet())) {
-            if (entry.getValue().displayName().isBlank()) {
+            if (validateVillageName(entry.getValue().displayName()).isEmpty()) {
                 String name = VillageNameGenerator.generate(entry.getKey().value(), unavailable);
                 unavailable.add(VillageNameGenerator.normalize(name));
                 this.records.put(entry.getKey(), entry.getValue().withName(name, false));
