@@ -35,6 +35,7 @@ public final class SettlementBackgroundService {
         SettlementForestService.update(level, town, now);
         SettlementMineService.update(level, town, now);
         SettlementLivestockService.update(level, town, now);
+        SettlementConstructionSiteService.update(level, town);
         for (SettlementDepot depot : town.depots().values()) {
             SettlementDepotService.observeRules(level, depot);
         }
@@ -78,6 +79,8 @@ public final class SettlementBackgroundService {
                 SettlementBackgroundFishing.tick(level, town, worker, elapsed, multiplier, now);
             } else if (worker.role() == HiredVillagerRole.ANIMAL_HANDLING) {
                 SettlementBackgroundAnimalHandling.tick(level, town, worker, elapsed, multiplier);
+            } else if (worker.role() == HiredVillagerRole.BUILDER) {
+                SettlementBackgroundConstruction.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.LOGGING) {
                 SettlementBackgroundLogging.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.MINING) {
@@ -132,6 +135,7 @@ public final class SettlementBackgroundService {
         if (duty == null) {
             return;
         }
+        SettlementConstructionService.reconcile(villager);
         SettlementConstructionService.observe(villager, com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager));
         var worker = duty.town().workers().get(villager.getUUID());
         if (worker == null) {

@@ -662,7 +662,7 @@ public final class SettlementManagementScreen extends Screen {
                 } else if (this.entry instanceof SettlementManagementPayload.Project project) {
                     lines.add(text("project_site", project.origin().toShortString()));
                     lines.add(text("project_materials", project.materials()));
-                    if (project.status() == SettlementProject.Status.ACTIVE) {
+                    if (project.status() == SettlementProject.Status.ACTIVE || !project.blocker().isBlank()) {
                         if (!project.missingMaterials().isBlank()) {
                             lines.add(text("project_missing", project.missingMaterials()));
                         }

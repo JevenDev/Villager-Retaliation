@@ -33,6 +33,7 @@ public final class SettlementConstructionService {
             return false;
         }
         var level = player.serverLevel();
+        SettlementConstructionSiteService.update(level, town);
         ItemStack blueprint = heldBlueprint(player, blueprintId);
         var preview = ConstructionBlueprintItem.previewData(blueprint).orElse(null);
         if (preview == null || preview.started() || preview.expired() || preview.completed()
@@ -59,6 +60,7 @@ public final class SettlementConstructionService {
         }
         HiredWorkStateStore.pauseWork(level, builder, HiredVillagerRole.BUILDER, "interaction.work.builder.started", Map.of());
         project.restore(state);
+        SettlementConstructionSiteService.observeArea(level, town, duty.area(), null);
         state.remove("NextWorkGameTime");
         state.remove("ProgressTicks");
         ConstructionBlueprintItem.updatePlacement(blueprint, level, plan, preview.origin(), preview.rotation());
@@ -83,6 +85,14 @@ public final class SettlementConstructionService {
         }
         ConstructionBlueprintItem.expireMatchingBlueprints(player.serverLevel(), projectId);
         return true;
+    }
+
+    public static boolean prepare(Villager builder, CompoundTag state) {
+        var project = project(builder, state);
+        if (project == null || project.site() == null || !project.site().pending()) return true;
+        SettlementConstructionSiteService.refresh((ServerLevel) builder.level(), project.site());
+        town(builder, state).changed();
+        return !project.site().pending();
     }
 
     public static boolean allows(Villager builder, CompoundTag state, BuilderStructureScanner.StructurePlan plan) {
@@ -130,10 +140,12 @@ public final class SettlementConstructionService {
             BuilderTaskState.clearTask(state);
             HiredWorkSession.invalidate(builder);
         }
-        if (!BuilderTaskState.hasTask(state) && !SettlementWorkforceService.hasPersonalCommitment(builder)) {
+        if (!SettlementWorkforceService.hasPersonalCommitment(builder)) {
             SettlementWorkforceService.duty(builder).filter(duty -> duty.area().type() == SettlementAreaType.CONSTRUCTION).ifPresent(duty -> {
                 var active = duty.town().activeProject(builder.getUUID());
-                if (active != null && active.area().equals(duty.area().id())) {
+                if (active != null && active.area().equals(duty.area().id())
+                        && (!BuilderTaskState.hasTask(state) || active.id().equals(BuilderTaskState.jobId(state).orElse(null)))
+                        && !state.getCompound(BuilderTaskState.TASK_TAG).equals(active.state().getCompound(BuilderTaskState.TASK_TAG))) {
                     active.restore(state);
                     HiredWorkSession.invalidate(builder);
                 }

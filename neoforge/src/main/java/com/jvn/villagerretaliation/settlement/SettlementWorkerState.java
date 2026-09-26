@@ -115,8 +115,9 @@ public final class SettlementWorkerState {
         this.inventory = HiredJobInventory.getJobInventory(villager).captureSnapshot();
         HiredWorkSkillGrowthService.onPractice(level, villager, null, this.role, HiredWorkStateStore.state(villager), List.of());
         this.settings = HiredWorkStateStore.state(villager).copy();
+        if (this.role == HiredVillagerRole.BUILDER) this.settings.remove("SettlementConstructionPosition");
         if (this.role == HiredVillagerRole.FISHING || this.role == HiredVillagerRole.LOGGING
-                || this.role == HiredVillagerRole.MINING || this.role == HiredVillagerRole.ANIMAL_HANDLING) {
+                || this.role == HiredVillagerRole.MINING || this.role == HiredVillagerRole.ANIMAL_HANDLING || this.role == HiredVillagerRole.BUILDER) {
             this.entityContext = villager.saveWithoutId(new CompoundTag());
         }
         if (this.role == HiredVillagerRole.FISHING) {

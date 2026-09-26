@@ -361,7 +361,7 @@ public final class SettlementRecord {
                 || this.projects.containsKey(project.id()) || !project.within(this.areas.get(project.area()))
                 || !project.area().equals(this.duties.get(project.builder())) || activeProject(project.builder()) != null
                 || this.projects.values().stream().filter(SettlementProject::active).count() >= this.stage.projects()
-                || this.projects.values().stream().anyMatch(existing -> existing.active() && existing.overlaps(project))) {
+                || this.projects.values().stream().anyMatch(existing -> (existing.active() || existing.site() != null && existing.site().pending()) && existing.overlaps(project))) {
             return false;
         }
         this.projects.put(project.id(), project);

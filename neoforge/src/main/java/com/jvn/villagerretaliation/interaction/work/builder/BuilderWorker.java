@@ -105,6 +105,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.builder.structure_unavailable", BuilderTaskState.replacements(context.state()));
         }
 
+        if (!SettlementConstructionService.prepare(villager, context.state())) {
+            BuilderTaskState.setBlocked(context.state(), "pending_world");
+            return WorkResult.idle("interaction.work.builder.pending_world");
+        }
         if (!SettlementConstructionService.allows(villager, context.state(), plan.get())) {
             BuilderTaskState.setBlocked(context.state(), "interaction.work.builder.site_outside_area");
             return WorkResult.idle("interaction.work.builder.site_outside_area");
@@ -533,8 +537,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
         return batch;
     }
 
-    private MaterialBatch nextMaterialBatch(
-            ServerLevel level,
+    public static MaterialBatch nextMaterialBatch(
+            net.minecraft.world.level.BlockGetter level,
             HiredJobInventory inventory,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin,
@@ -815,7 +819,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         return WorkResult.idle("interaction.work.builder.material_inventory_full", BuilderTaskState.replacements(context.state()));
     }
 
-    private static Predicate<BlockPos> builderMaterialStorageFilter(
+    public static Predicate<BlockPos> builderMaterialStorageFilter(
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
         if (plan == null || origin == null) {
@@ -1261,7 +1265,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
     }
 
     private static boolean blockNeedsMaterial(
-            ServerLevel level,
+            net.minecraft.world.level.BlockGetter level,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin,
             BuilderStructureScanner.BuildBlock block) {
@@ -1276,7 +1280,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 && !BuilderStructureScanner.canTransformExisting(current, block.state());
     }
 
-    private static int countCarriedMaterial(HiredJobInventory inventory, ItemStack required) {
+    public static int countCarriedMaterial(HiredJobInventory inventory, ItemStack required) {
         if (required.isEmpty()) {
             return Integer.MAX_VALUE;
         }
@@ -2095,7 +2099,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         return Math.max(1, (int) Math.ceil(hardness * 30.0F / speed));
     }
 
-    private PlacementGroup placementGroup(
+    public static PlacementGroup placementGroup(
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin,
             BuilderStructureScanner.BuildBlock block) {
@@ -2109,7 +2113,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         return new PlacementGroup(primary, parts);
     }
 
-    private BuilderStructureScanner.BuildBlock primaryBlock(
+    private static BuilderStructureScanner.BuildBlock primaryBlock(
             BuilderStructureScanner.StructurePlan plan,
             BuilderStructureScanner.BuildBlock block) {
         if (block.state().getBlock() instanceof DoorBlock
@@ -2126,7 +2130,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         return block;
     }
 
-    private BuilderStructureScanner.BuildBlock linkedBlock(
+    private static BuilderStructureScanner.BuildBlock linkedBlock(
             BuilderStructureScanner.StructurePlan plan,
             BuilderStructureScanner.BuildBlock primary) {
         if (primary.state().getBlock() instanceof DoorBlock
@@ -2141,7 +2145,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         return null;
     }
 
-    private BuilderStructureScanner.BuildBlock blockAt(
+    private static BuilderStructureScanner.BuildBlock blockAt(
             BuilderStructureScanner.StructurePlan plan,
             BlockPos localPos) {
         for (BuilderStructureScanner.BuildBlock candidate : plan.blocks()) {
@@ -2159,7 +2163,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 && !BuilderStructureScanner.canTransformExisting(current, group.materialBlock().state());
     }
 
-    private boolean canBuildFromCurrentPosition(
+    public static boolean canBuildFromCurrentPosition(
             Villager villager,
             BlockPos worldPos,
             BuilderStructureScanner.StructurePlan plan,
@@ -2680,11 +2684,11 @@ public final class BuilderWorker extends AbstractBlockWorker {
         BLOCKED
     }
 
-    private record PlacementPart(BuilderStructureScanner.BuildBlock block, BlockPos worldPos) {
+    public record PlacementPart(BuilderStructureScanner.BuildBlock block, BlockPos worldPos) {
     }
 
-    private record PlacementGroup(BuilderStructureScanner.BuildBlock materialBlock, List<PlacementPart> parts) {
-        private PlacementPart materialPart() {
+    public record PlacementGroup(BuilderStructureScanner.BuildBlock materialBlock, List<PlacementPart> parts) {
+        public PlacementPart materialPart() {
             return this.parts.getFirst();
         }
     }
@@ -2701,7 +2705,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
     private record BuildSiteIntermediate(BlockPos pos, double score) {
     }
 
-    private record MaterialBatch(int endIndex, List<BuilderStructureScanner.MaterialRequirement> materials) {
+    public record MaterialBatch(int endIndex, List<BuilderStructureScanner.MaterialRequirement> materials) {
     }
 
     public record MissingMaterials(List<String> missing) {

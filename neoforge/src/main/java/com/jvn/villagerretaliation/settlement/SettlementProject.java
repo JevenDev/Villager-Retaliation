@@ -18,6 +18,7 @@ public final class SettlementProject {
     private final BlockPos max;
     private CompoundTag task;
     private Status status;
+    private SettlementConstructionSite site;
 
     private SettlementProject(UUID id, UUID area, UUID builder, BlockPos min, BlockPos max, CompoundTag task, Status status) {
         this.id = Objects.requireNonNull(id);
@@ -45,6 +46,18 @@ public final class SettlementProject {
         BuilderTaskState.task(state).putUUID("SettlementTown", town.id().value());
         return new SettlementProject(id, area, builder, origin.offset(plan.localMin()), origin.offset(plan.localMax()),
                 BuilderTaskState.task(state), Status.ACTIVE);
+    }
+
+    SettlementConstructionSite site() {
+        return this.site;
+    }
+
+    void observeSite(SettlementArea area) {
+        if (this.site == null || !this.site.matches(area) && !this.site.pending()) this.site = new SettlementConstructionSite(this.id, area);
+    }
+
+    void clearSite() {
+        if (this.site != null && !this.site.pending()) this.site = null;
     }
 
     public UUID id() {
@@ -100,6 +113,8 @@ public final class SettlementProject {
     }
 
     public String blocker() {
+        if (this.site != null && this.site.conflict()) return "world_conflict";
+        if (!active() && this.site != null && this.site.pending()) return "pending_world";
         return this.task.getString("BlockedReason");
     }
 
@@ -169,6 +184,7 @@ public final class SettlementProject {
         tag.putLong("Min", this.min.asLong());
         tag.putLong("Max", this.max.asLong());
         tag.put("Task", this.task.copy());
+        if (this.site != null) tag.put("Site", this.site.save());
         tag.putString("Status", this.status.name());
         return tag;
     }
@@ -177,9 +193,14 @@ public final class SettlementProject {
         if (!tag.contains("Min", Tag.TAG_LONG) || !tag.contains("Max", Tag.TAG_LONG)) {
             throw new IllegalArgumentException("Construction project is missing its bounds");
         }
-        return new SettlementProject(tag.getUUID("Id"), tag.getUUID("Area"), tag.getUUID("Builder"),
+        var project = new SettlementProject(tag.getUUID("Id"), tag.getUUID("Area"), tag.getUUID("Builder"),
                 BlockPos.of(tag.getLong("Min")), BlockPos.of(tag.getLong("Max")), tag.getCompound("Task"),
                 Status.valueOf(tag.getString("Status")));
+        if (tag.contains("Site", Tag.TAG_COMPOUND)) {
+            project.site = SettlementConstructionSite.load(project.id, tag.getCompound("Site"));
+            if (!project.site.area().id().equals(project.area)) throw new IllegalArgumentException("Construction observations belong to a different area");
+        }
+        return project;
     }
 
     public enum Status {

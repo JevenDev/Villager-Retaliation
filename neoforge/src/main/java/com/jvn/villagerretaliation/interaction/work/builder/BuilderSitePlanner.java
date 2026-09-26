@@ -157,7 +157,7 @@ public final class BuilderSitePlanner {
         return dx * dx + dz * dz;
     }
 
-    private static boolean safeReplaceable(LevelReader level, BlockPos pos, BlockState current) {
+    public static boolean safeReplaceable(LevelReader level, BlockPos pos, BlockState current) {
         if (current.isAir()) {
             return true;
         }
