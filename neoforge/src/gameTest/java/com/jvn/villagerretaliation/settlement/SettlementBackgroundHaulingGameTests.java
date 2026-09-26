@@ -154,6 +154,78 @@ public final class SettlementBackgroundHaulingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_hauling")
+    public static void combatAtUnloadPausesSavedWorkUntilTheWorkerIsObservedSafe(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            fixture.source().setItem(0, new ItemStack(Items.IRON_INGOT, 20));
+            fixture.town().setDepotStockTarget(fixture.town().leader(), fixture.destination().id(), new ItemStack(Items.IRON_INGOT), 7);
+            var attacker = EntityType.ZOMBIE.create(level);
+            fixture.courier().setTarget(attacker);
+            SettlementBackgroundService.onUnloaded(fixture.courier());
+            var saved = SettlementWorkerState.load(fixture.worker().save());
+            fixture.town().recordWorker(saved);
+            long now = level.getGameTime();
+            SettlementBackgroundService.update(level, fixture.town(), now + 200L);
+            helper.assertTrue(fixture.destination().isEmpty(), "a fighting courier cannot deliver after unloading");
+            helper.assertValueEqual(saved.status(), "unsafe", "the saved worker reports its last observed danger");
+            helper.assertValueEqual(saved.progress(), 0.0D, "danger cannot accumulate background work credit");
+            fixture.courier().setTarget(null);
+            SettlementBackgroundService.update(level, fixture.town(), now + 1_000_000L);
+            helper.assertTrue(fixture.destination().isEmpty(), "elapsed time alone cannot declare an unobserved worker safe");
+            saved.observe(level, fixture.courier(), SettlementWorkforceService.duty(fixture.courier()).orElseThrow(), now + 1_000_000L);
+            SettlementBackgroundService.update(level, fixture.town(), now + 1_000_200L);
+            int delivered = Math.min(7, com.jvn.villagerretaliation.interaction.HiredVillagerRoles.courierTransferLimit(saved.aptitude()));
+            helper.assertValueEqual(fixture.destination().getItem(0).getCount(), delivered, "a new safe observation permits real work again");
+            helper.assertValueEqual(fixture.source().getItem(0).getCount(), 20 - delivered, "resuming transfers exactly one finite batch");
+            helper.assertFalse(level.hasChunkAt(fixture.town().center()), "safety checks do not load the absent town");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_hauling")
+    public static void fleeingHurtAndBurningWorkersCannotAdvanceBackgroundHauling(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            fixture.source().setItem(0, new ItemStack(Items.IRON_INGOT, 20));
+            fixture.town().setDepotStockTarget(fixture.town().leader(), fixture.destination().id(), new ItemStack(Items.IRON_INGOT), 7);
+            var hostile = EntityType.ZOMBIE.create(level);
+            var duty = SettlementWorkforceService.duty(fixture.courier()).orElseThrow();
+            fixture.courier().getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.NEAREST_HOSTILE, hostile);
+            fixture.worker().observe(level, fixture.courier(), duty, 0L);
+            SettlementBackgroundService.update(level, fixture.town(), 200L);
+            helper.assertTrue(fixture.destination().isEmpty(), "fleeing without an attack target still pauses work");
+            fixture.courier().getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.NEAREST_HOSTILE);
+            fixture.courier().setLastHurtByMob(hostile);
+            fixture.worker().observe(level, fixture.courier(), duty, 200L);
+            SettlementBackgroundService.update(level, fixture.town(), 400L);
+            helper.assertTrue(fixture.destination().isEmpty(), "recent attackers remain unsafe even without a threat memory");
+            fixture.courier().setLastHurtByMob(null);
+            fixture.courier().setRemainingFireTicks(200);
+            fixture.worker().observe(level, fixture.courier(), duty, 400L);
+            SettlementBackgroundService.update(level, fixture.town(), 600L);
+            helper.assertTrue(fixture.destination().isEmpty(), "a burning worker cannot become productive by unloading");
+            helper.assertValueEqual(fixture.source().getItem(0).getCount(), 20, "all unsafe observations preserve shared supplies");
+            fixture.courier().clearFire();
+            fixture.worker().observe(level, fixture.courier(), duty, 600L);
+            SettlementBackgroundService.update(level, fixture.town(), 800L);
+            int delivered = Math.min(7, com.jvn.villagerretaliation.interaction.HiredVillagerRoles.courierTransferLimit(fixture.worker().aptitude()));
+            helper.assertValueEqual(fixture.destination().getItem(0).getCount(), delivered, "cleared hazards allow the worker to resume");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_hauling")
+    public static void olderWorkerSnapshotsPreserveTheirExistingWorkEligibility(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            fixture.source().setItem(0, new ItemStack(Items.IRON_INGOT, 20));
+            fixture.town().setDepotStockTarget(fixture.town().leader(), fixture.destination().id(), new ItemStack(Items.IRON_INGOT), 7);
+            var old = fixture.worker().save();
+            old.remove("Unsafe");
+            fixture.town().recordWorker(SettlementWorkerState.load(old));
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 200L);
+            helper.assertValueEqual(fixture.destination().getItem(0).getCount(), 7, "an older snapshot retains its prior eligibility until a new observation");
+        });
+    }
+
     private static SettlementDepot depot(Fixture fixture, BlockPos pos, SettlementDepotPurpose purpose, int priority) {
         var depot = fixture.town().registerDepot(fixture.town().leader(), fixture.area().id(), pos, purpose);
         fixture.town().configureDepot(fixture.town().leader(), depot.id(), purpose, priority);

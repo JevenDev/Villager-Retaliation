@@ -32,6 +32,7 @@ public final class SettlementWorkerState {
     private long brewingVersion;
     private double progress;
     private int aptitude;
+    private boolean unsafe;
     private String status = "idle";
 
     private SettlementWorkerState(UUID id) {
@@ -60,6 +61,10 @@ public final class SettlementWorkerState {
 
     public String status() {
         return this.status;
+    }
+
+    boolean unsafe() {
+        return this.unsafe;
     }
 
     public long version() {
@@ -107,7 +112,10 @@ public final class SettlementWorkerState {
         this.brewingVersion = Math.max(this.brewingVersion, SettlementBrewingService.version(villager));
         this.checkedAt = now;
         this.progress = 0.0D;
-        this.status = "active";
+        this.unsafe = villager.getTarget() != null || villager.getLastHurtByMob() != null
+                || villager.isOnFire() || villager.isInLava()
+                || com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil.hasVanillaFleeState(level, villager.getBrain());
+        this.status = this.unsafe ? "unsafe" : "active";
     }
 
     boolean restore(Villager villager) {
@@ -201,6 +209,7 @@ public final class SettlementWorkerState {
         tag.putLong("BrewingVersion", this.brewingVersion);
         tag.putDouble("Progress", this.progress);
         tag.putInt("Aptitude", this.aptitude);
+        tag.putBoolean("Unsafe", this.unsafe);
         tag.putString("Status", this.status);
         return tag;
     }
@@ -220,6 +229,7 @@ public final class SettlementWorkerState {
         state.brewingVersion = Math.max(0L, tag.getLong("BrewingVersion"));
         state.progress = Math.clamp(tag.getDouble("Progress"), 0.0D, 24_000.0D);
         state.aptitude = Math.clamp(tag.getInt("Aptitude"), 0, 100);
+        state.unsafe = tag.getBoolean("Unsafe");
         state.status = tag.getString("Status");
         return state;
     }

@@ -58,6 +58,10 @@ public final class SettlementBackgroundService {
                 worker.status("resting");
                 continue;
             }
+            if (worker.unsafe()) {
+                worker.status("unsafe");
+                continue;
+            }
             double multiplier = care.workMultiplier() * (town.housingCapacity() < town.residents().size() ? 0.75D : 1.0D);
             if (worker.role() == HiredVillagerRole.COURIER) {
                 SettlementBackgroundHauling.tick(level, town, worker, elapsed, multiplier);

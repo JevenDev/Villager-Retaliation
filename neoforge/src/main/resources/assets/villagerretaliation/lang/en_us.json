@@ -2508,6 +2508,7 @@
   "villagerretaliation.gui.settlement.work.supplying_furnace": "Supplying furnace",
   "villagerretaliation.gui.settlement.work.supplied_furnace": "Furnace supplied",
   "villagerretaliation.gui.settlement.work.no_furnace": "No furnace",
+  "villagerretaliation.gui.settlement.work.unsafe": "Paused until observed safe",
   "villagerretaliation.gui.settlement.work.choose_brewing_order": "Choose a brewing order",
   "villagerretaliation.gui.settlement.work.brewed": "Potions collected",
   "villagerretaliation.gui.settlement.work.supplying_brewing_stand": "Supplying brewing stand",

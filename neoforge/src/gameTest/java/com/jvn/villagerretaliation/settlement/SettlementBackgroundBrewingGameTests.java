@@ -364,6 +364,28 @@ public final class SettlementBackgroundBrewingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_brewing")
+    public static void unsafeBrewersPauseWhileAnAlreadySuppliedStandKeepsBrewing(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            fixture.villager().setTarget(EntityType.ZOMBIE.create(level));
+            fixture.worker().observe(level, fixture.villager(), SettlementWorkforceService.duty(fixture.villager()).orElseThrow(), 0L);
+            fixture.worker().brewingOrder(order("potion", 3, false));
+            supply(fixture, 3, 1);
+            var items = fixture.machine().items(level.registryAccess());
+            items.set(0, PotionContents.createItemStack(Items.POTION, Potions.WATER));
+            items.set(3, new ItemStack(Items.NETHER_WART));
+            items.set(4, new ItemStack(Items.BLAZE_POWDER));
+            fixture.machine().updateItems(level, items);
+            run(helper, fixture, 200, 1_000);
+            helper.assertTrue(ItemStack.isSameItemSameComponents(fixture.machine().items(level.registryAccess()).get(0),
+                    PotionContents.createItemStack(Items.POTION, Potions.AWKWARD)), "an already supplied machine continues its own brew clock");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 3, "unsafe workers cannot fetch new bottles");
+            helper.assertValueEqual(fixture.supply().getItem(2).getCount(), 1, "unsafe workers cannot supply the next ingredient");
+            helper.assertValueEqual(fixture.worker().status(), "unsafe", "the resident retains the safety pause");
+        });
+    }
+
     private static void compare(GameTestHelper helper, ItemStack bottle, ItemStack ingredient, ItemStack fuel, int ticks) {
         var stand = place(helper, bottle, ingredient, fuel);
         var state = SettlementBrewingStandState.capture(helper.getLevel(), UUID.randomUUID(), stand, 0L);
