@@ -31,7 +31,6 @@ import net.minecraft.world.level.saveddata.SavedData;
 public final class VillageAllegianceRegistrySavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_village_allegiances";
     private static final int FORMAT_VERSION = 3;
-    private static final int MAX_ALIAS_DEPTH = 32;
     private static final int DISCOVERY_RADIUS_BLOCKS = 128;
     private static final long RESIDENT_LAST_SEEN_REFRESH_TICKS = 1_200L;
     private static final long AUTO_MERGE_OBSERVATION_SPACING_TICKS = 100L;
@@ -460,10 +459,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         Set<VillageAllegianceId> seen = new HashSet<>();
         List<VillageAllegianceId> path = new ArrayList<>();
         VillageAllegianceId current = raw;
-        for (int depth = 0; depth <= MAX_ALIAS_DEPTH; depth++) {
-            if (!seen.add(current)) {
-                return cachePath(path, Optional.empty());
-            }
+        while (seen.add(current)) {
             path.add(current);
             VillageAllegianceId next = this.aliases.get(current);
             if (next == null) {

@@ -119,4 +119,33 @@ public final class VillageSettlementGameTests {
         }
         helper.succeed();
     }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void longMergeLineageSurvivesReloadAndUndo(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var registry = new VillageAllegianceRegistrySavedData();
+        var first = registry.create(1L, level.dimension().location(), BlockPos.ZERO, "First Village");
+        var resident = java.util.UUID.randomUUID();
+        registry.addOrUpdateResident(first, resident, true, 1L);
+        var current = first;
+        var previous = first;
+        for (int index = 1; index <= 40; index++) {
+            var next = registry.create(index + 1L, level.dimension().location(), new BlockPos(index * 32, 0, 0), "");
+            helper.assertTrue(registry.merge(current, next), "successive village merges remain valid");
+            previous = current;
+            current = next;
+        }
+        helper.assertValueEqual(registry.canonical(first).orElse(null), current,
+                "an older home still resolves after more than 32 merges");
+        var restored = VillageAllegianceRegistrySavedData.load(
+                registry.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
+        helper.assertValueEqual(restored.canonical(first).orElse(null), current,
+                "long village lineages survive a world reload");
+        helper.assertTrue(restored.canonicalRecord(first).orElseThrow().residents().containsKey(resident),
+                "residents remain reachable through their original home identity");
+        helper.assertTrue(restored.undoMerge(previous), "the most recent merge can still be undone");
+        helper.assertValueEqual(restored.canonical(first).orElse(null), previous,
+                "undo invalidates cached aliases throughout the lineage");
+        helper.succeed();
+    }
 }
