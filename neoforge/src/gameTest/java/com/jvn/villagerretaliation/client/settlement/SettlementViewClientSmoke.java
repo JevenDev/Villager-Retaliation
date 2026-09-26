@@ -11,6 +11,8 @@ import com.jvn.villagerretaliation.settlement.SettlementBuildingService;
 import com.jvn.villagerretaliation.settlement.SettlementCareService;
 import com.jvn.villagerretaliation.settlement.SettlementManagementService;
 import com.jvn.villagerretaliation.settlement.SettlementSavedData;
+import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
+import com.jvn.villagerretaliation.settlement.SettlementWorkforceService;
 import com.mojang.logging.LogUtils;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -121,30 +123,35 @@ public final class SettlementViewClientSmoke {
             if (ticks == 20) {
                 Entity resident = visibleResident(minecraft);
                 require(resident != null, "the resident remains visible after panning");
-                var camera = minecraft.gameRenderer.getMainCamera();
-                Vec3 relative = resident.getBoundingBox().getCenter().subtract(camera.getPosition());
-                double distance = relative.dot(new Vec3(camera.getLookVector()));
-                double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
-                double x = screen.width / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * screen.height / (2.0D * distance * tangent);
-                double y = screen.height / 2.0D - relative.dot(new Vec3(camera.getUpVector())) * screen.height / (2.0D * distance * tangent);
-                screen.mouseClicked(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
-                screen.mouseReleased(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                clickWorld(screen, resident.getBoundingBox().getCenter());
             }
             if (ticks >= 40 && screen.getNarrationMessage().getString().contains("Tamsin")) {
                 require(button(screen, "villagerretaliation.gui.settlement_view.manage_selection").active,
                         "selecting the resident enables its management action");
                 capture("selected-resident");
-                UUID player = minecraft.player.getUUID();
-                serverCheck = minecraft.getSingleplayerServer().submit(() -> {
-                    ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
-                    require(serverPlayer.serverLevel().getChunkSource().chunkMap.getDistanceManager()
-                            .shouldForceTicks(new ChunkPos(fixture.center()).toLong()), "the viewed settlement is actively ticking");
-                    require(serverPlayer.getCamera() == serverPlayer && !serverPlayer.isSpectator(), "the server retains the vulnerable body");
-                    serverPlayer.hurt(serverPlayer.damageSources().generic(), 1.0F);
-                });
+                button(screen, "villagerretaliation.gui.settlement_view.guard_move").onPress();
+                clickWorld(screen, Vec3.atBottomCenterOf(fixture.center().offset(4, 0, 3)));
                 ticks = 0;
-                phase = 5;
+                phase = 7;
             }
+        } else if (phase == 7 && minecraft.screen instanceof SettlementViewScreen screen
+                && screen.getNarrationMessage().getString().contains("\nMove")) {
+            capture("guard-order");
+            UUID player = minecraft.player.getUUID();
+            serverCheck = minecraft.getSingleplayerServer().submit(() -> {
+                ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                require(serverPlayer.serverLevel().getChunkSource().chunkMap.getDistanceManager()
+                        .shouldForceTicks(new ChunkPos(fixture.center()).toLong()), "the viewed settlement is actively ticking");
+                require(serverPlayer.getCamera() == serverPlayer && !serverPlayer.isSpectator(), "the server retains the vulnerable body");
+                var order = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow()
+                        .guardOrders().get(fixture.resident());
+                require(order != null && order.mode() == SettlementGuardOrder.Mode.MOVE
+                        && order.points().equals(java.util.List.of(fixture.center().offset(4, 0, 3))),
+                        "the world-view click applies the exact guard destination");
+                serverPlayer.hurt(serverPlayer.damageSources().generic(), 1.0F);
+            });
+            ticks = 0;
+            phase = 5;
         } else if (phase == 5 && !(minecraft.screen instanceof SettlementViewScreen)) {
             serverCheck.join();
             require(minecraft.getCameraEntity() == minecraft.player, "damage restores the player's camera");
@@ -208,12 +215,27 @@ public final class SettlementViewClientSmoke {
         resident.setPos(center.offset(2, 0, 1).getCenter().subtract(0, 0.5D, 0));
         resident.setNoAi(true);
         resident.setCustomName(Component.literal("Tamsin"));
-        resident.setVillagerData(resident.getVillagerData().setProfession(VillagerProfession.FARMER));
+        resident.setVillagerData(resident.getVillagerData().setProfession(VillagerProfession.WEAPONSMITH));
         VillageAllegianceApi.assignKnown(level, resident, id, AllegianceAssignmentSource.EXPLICIT_API);
         level.addFreshEntity(resident);
+        var post = new SettlementArea(UUID.randomUUID(), SettlementAreaType.GUARD_POST, "Guard post",
+                center.offset(0, -1, -2), center.offset(5, 3, 4), 5, true);
+        require(SettlementBuildingService.register(player, id, post), "the guard post is registered");
+        require(SettlementWorkforceService.assign(level, player, id, resident, post.id()), "the resident is a civic guard");
         SettlementCareService.onUnloaded(resident);
         SettlementManagementService.open(player, id);
         return new Fixture(id, resident.getUUID(), center);
+    }
+
+    private static void clickWorld(SettlementViewScreen screen, Vec3 position) {
+        var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vec3 relative = position.subtract(camera.getPosition());
+        double distance = relative.dot(new Vec3(camera.getLookVector()));
+        double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
+        double x = screen.width / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * screen.height / (2.0D * distance * tangent);
+        double y = screen.height / 2.0D - relative.dot(new Vec3(camera.getUpVector())) * screen.height / (2.0D * distance * tangent);
+        screen.mouseClicked(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        screen.mouseReleased(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
     }
 
     private static Entity visibleResident(Minecraft minecraft) {

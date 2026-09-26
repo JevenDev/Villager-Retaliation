@@ -43,7 +43,7 @@ public record HiredWorkSession(
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         CachedMetadata metadata = metadata(level, villager, safeRole, state, inventory);
         HiredWorkArea area = metadata.jobSite.workArea();
-        HiredRoute route = HiredRoute.fromState(state);
+        HiredRoute route = com.jvn.villagerretaliation.settlement.SettlementGuardService.route(villager, HiredRoute.fromState(state));
         int skillWorkSpeedPercent = HiredVillagerRoles.roleActionSpeedPercent(safeRole, metadata.roleScore);
         int transferCapacityPercent = HiredVillagerRoles.roleTransferCapacityPercent(safeRole, metadata.roleScore);
         HiredWorkContext context = new HiredWorkContext(

@@ -2547,5 +2547,15 @@
   "villagerretaliation.gui.settlement_view.position": "%s, %s, %s",
   "villagerretaliation.gui.settlement_view.controls": "WASD or middle drag to pan. Scroll to zoom. Click to select. Your body remains vulnerable. Damage exits this view.",
   "villagerretaliation.gui.settlement_view.draw_hint": "Drag across a build to select its area. Release to choose its function, height and name.",
-  "villagerretaliation.gui.settlement_view.loading": "Loading terrain…"
+  "villagerretaliation.gui.settlement_view.loading": "Loading terrain…",
+  "villagerretaliation.gui.settlement_view.guard_move": "Move",
+  "villagerretaliation.gui.settlement_view.guard_patrol": "Patrol",
+  "villagerretaliation.gui.settlement_view.guard_defend": "Defend",
+  "villagerretaliation.gui.settlement_view.guard_post": "Return to guard post",
+  "villagerretaliation.gui.settlement_view.guard_finish_patrol": "Finish patrol",
+  "villagerretaliation.gui.settlement_view.guard_patrol_hint": "Click patrol points (%s/%s), then Finish patrol. Right click or Esc cancels.",
+  "villagerretaliation.gui.settlement_view.guard_destination_hint": "Click the guard's destination. Right click or Esc cancels.",
+  "villagerretaliation.gui.settlement_view.guard_applied": "Guard order accepted. The guard follows it during their work shift.",
+  "villagerretaliation.gui.settlement_view.guard_denied": "The guard order could not be applied. Check your staff access and the settlement boundary.",
+  "villagerretaliation.gui.settlement_view.guard_sending": "Sending guard order…"
 }

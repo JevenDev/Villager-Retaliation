@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Pa
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementDepotPurpose;
+import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import com.jvn.villagerretaliation.settlement.SettlementProgressionService;
 import com.jvn.villagerretaliation.settlement.SettlementStage;
@@ -83,6 +84,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.writeUtf(resident.status(), 64);
                     buffer.writeVarInt(resident.roles().size());
                     resident.roles().forEach(buffer::writeEnum);
+                    SettlementManagementActionPayload.writeGuardOrder(buffer, resident.guardOrder());
                 }
                 case Area area -> {
                     buffer.writeEnum(area.kind());
@@ -155,7 +157,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     for (int role = 0; role < roles; role++) {
                         available.add(buffer.readEnum(HiredVillagerRole.class));
                     }
-                    yield new Resident(id, name, profession, baby, presence, position, area, food, health, status, available);
+                    yield new Resident(id, name, profession, baby, presence, position, area, food, health, status, available,
+                            SettlementManagementActionPayload.readGuardOrder(buffer));
                 }
                 case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
                         buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
@@ -284,7 +287,13 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     }
 
     public record Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
-                           BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles) implements Entry {
+                           BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
+                           SettlementGuardOrder guardOrder) implements Entry {
+        public Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
+                        BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles) {
+            this(id, name, profession, baby, presence, position, area, food, health, status, roles, null);
+        }
+
         public Resident {
             roles = List.copyOf(roles);
         }

@@ -27,6 +27,7 @@ public final class SettlementRecord {
     private final Map<UUID, Set<SettlementPermission>> delegates = new LinkedHashMap<>();
     private final Map<UUID, SettlementArea> areas = new LinkedHashMap<>();
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
+    private final Map<UUID, SettlementGuardOrder> guardOrders = new LinkedHashMap<>();
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
     private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
@@ -196,12 +197,30 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.duties);
     }
 
+    public Map<UUID, SettlementGuardOrder> guardOrders() {
+        return Collections.unmodifiableMap(this.guardOrders);
+    }
+
+    boolean setGuardOrder(UUID actor, UUID resident, SettlementGuardOrder order) {
+        var area = this.areas.get(this.duties.get(resident));
+        if (!permits(actor, SettlementPermission.STAFF) || area == null || area.type() != SettlementAreaType.GUARD_POST
+                || order != null && !order.within(this)) {
+            return false;
+        }
+        var previous = order == null ? this.guardOrders.remove(resident) : this.guardOrders.put(resident, order);
+        if (!Objects.equals(previous, order)) {
+            changed();
+        }
+        return true;
+    }
+
     boolean assignDuty(UUID resident, UUID area) {
         SettlementArea target = this.areas.get(area);
         if (resident == null || target == null || target.type().role() == null) {
             return false;
         }
         if (!area.equals(this.duties.put(resident, area))) {
+            this.guardOrders.remove(resident);
             changed();
         }
         return true;
@@ -211,6 +230,7 @@ public final class SettlementRecord {
         if (this.duties.remove(resident) == null) {
             return false;
         }
+        this.guardOrders.remove(resident);
         changed();
         return true;
     }
@@ -350,6 +370,7 @@ public final class SettlementRecord {
             return false;
         }
         this.duties.values().removeIf(area::equals);
+        this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.surveys.remove(area);
         changed();
         return true;
@@ -397,6 +418,13 @@ public final class SettlementRecord {
             dutyTags.add(entry);
         });
         tag.put("Duties", dutyTags);
+        ListTag guardTags = new ListTag();
+        this.guardOrders.forEach((resident, order) -> {
+            CompoundTag entry = order.save();
+            entry.putUUID("Resident", resident);
+            guardTags.add(entry);
+        });
+        tag.put("GuardOrders", guardTags);
         ListTag depotTags = new ListTag();
         this.depots.values().forEach(depot -> depotTags.add(depot.save(provider)));
         tag.put("Depots", depotTags);
@@ -509,6 +537,19 @@ public final class SettlementRecord {
             if (area == null || area.type().role() == null
                     || record.duties.putIfAbsent(entry.getUUID("Resident"), area.id()) != null) {
                 throw new IllegalArgumentException("Settlement duty is duplicated or has no workplace");
+            }
+        }
+        for (Tag raw : tag.getList("GuardOrders", Tag.TAG_COMPOUND)) {
+            CompoundTag entry = (CompoundTag) raw;
+            if (!entry.hasUUID("Resident")) {
+                throw new IllegalArgumentException("Guard order is missing its resident");
+            }
+            UUID resident = entry.getUUID("Resident");
+            var area = record.areas.get(record.duties.get(resident));
+            var order = SettlementGuardOrder.load(entry);
+            if (area == null || area.type() != SettlementAreaType.GUARD_POST || !order.within(record)
+                    || record.guardOrders.putIfAbsent(resident, order) != null) {
+                throw new IllegalArgumentException("Guard order is duplicated or outside its settlement");
             }
         }
         for (Tag raw : tag.getList("Depots", Tag.TAG_COMPOUND)) {

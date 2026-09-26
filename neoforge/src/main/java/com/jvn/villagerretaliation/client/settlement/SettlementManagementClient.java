@@ -55,6 +55,9 @@ public final class SettlementManagementClient {
     }
 
     public static void acceptResult(SettlementManagementActionResultPayload payload) {
+        if (Minecraft.getInstance().screen instanceof SettlementViewScreen view) {
+            view.acceptResult(payload);
+        }
         var current = current();
         if (current == null) {
             return;

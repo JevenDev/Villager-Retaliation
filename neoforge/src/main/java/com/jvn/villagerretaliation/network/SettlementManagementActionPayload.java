@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.settlement.SettlementArea;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementDepotPurpose;
+import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import com.jvn.villagerretaliation.settlement.SettlementTradeOrder;
 import java.util.EnumSet;
@@ -29,6 +30,11 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         switch (payload.command()) {
             case Advance ignored -> buffer.writeEnum(Kind.ADVANCE);
             case View ignored -> buffer.writeEnum(Kind.VIEW);
+            case Guard guard -> {
+                buffer.writeEnum(Kind.GUARD);
+                buffer.writeUUID(guard.resident());
+                writeGuardOrder(buffer, guard.order());
+            }
             case Assign assign -> {
                 buffer.writeEnum(Kind.ASSIGN);
                 buffer.writeUUID(assign.resident());
@@ -119,6 +125,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         Command command = switch (buffer.readEnum(Kind.class)) {
             case ADVANCE -> new Advance();
             case VIEW -> new View();
+            case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
             case RELEASE -> new Release(buffer.readUUID());
             case APPLICANT -> new Applicant(buffer.readUUID(), buffer.readBoolean());
@@ -150,6 +157,28 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         return new SettlementManagementActionPayload(town, command);
     }
 
+    static void writeGuardOrder(RegistryFriendlyByteBuf buffer, SettlementGuardOrder order) {
+        buffer.writeBoolean(order != null);
+        if (order != null) {
+            buffer.writeEnum(order.mode());
+            buffer.writeVarInt(order.points().size());
+            order.points().forEach(buffer::writeBlockPos);
+        }
+    }
+
+    static SettlementGuardOrder readGuardOrder(RegistryFriendlyByteBuf buffer) {
+        if (!buffer.readBoolean()) {
+            return null;
+        }
+        var mode = buffer.readEnum(SettlementGuardOrder.Mode.class);
+        int count = VillagerPayloads.readCollectionSize(buffer, SettlementGuardOrder.MAX_POINTS, "settlement guard points");
+        var points = new java.util.ArrayList<net.minecraft.core.BlockPos>(count);
+        for (int index = 0; index < count; index++) {
+            points.add(buffer.readBlockPos());
+        }
+        return new SettlementGuardOrder(mode, points);
+    }
+
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
@@ -157,17 +186,20 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard {
     }
 
     public record Advance() implements Command {
     }
 
     public record View() implements Command {
+    }
+
+    public record Guard(UUID resident, SettlementGuardOrder order) implements Command {
     }
 
     public record Assign(UUID resident, UUID area) implements Command {
