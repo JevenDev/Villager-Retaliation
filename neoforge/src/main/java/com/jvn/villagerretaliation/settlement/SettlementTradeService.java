@@ -152,7 +152,7 @@ public final class SettlementTradeService {
                 continue;
             }
             var entity = level.getEntity(resident.id());
-            if (entity != null) {
+            if (entity != null && level.isPositionEntityTicking(entity.blockPosition())) {
                 if (!(entity instanceof Villager villager) || !villager.isAlive() || villager.isSleeping()
                         || villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null
                         || VillagerDownedService.isDowned(villager) || VillagerRecoveryService.isForcingRecovery(villager)
@@ -163,6 +163,8 @@ public final class SettlementTradeService {
                                 .noneMatch(pos -> villager.distanceToSqr(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D) <= 16.0D)) {
                     continue;
                 }
+            } else if (town.residents().containsKey(resident.id()) && !town.residents().get(resident.id()).availableForWork()) {
+                continue;
             }
             clerks.add(resident.id());
         }
@@ -178,8 +180,11 @@ public final class SettlementTradeService {
         }
         double capacity = 0.0D;
         for (UUID worker : workers) {
-            capacity += 8.0D * (level.getEntity(worker) instanceof Villager villager
-                    ? SettlementFoodService.workMultiplier(level, villager) : backgroundMultiplier);
+            var resident = town.residents().get(worker);
+            double multiplier = resident == null ? backgroundMultiplier
+                    : resident.workMultiplier() * (population > town.housingCapacity() ? 0.75D : 1.0D);
+            capacity += 8.0D * (level.getEntity(worker) instanceof Villager villager && level.isPositionEntityTicking(villager.blockPosition())
+                    ? SettlementFoodService.workMultiplier(level, villager) : multiplier);
         }
         return workers.isEmpty() ? 0 : Math.clamp((int) capacity, 1, 32);
     }

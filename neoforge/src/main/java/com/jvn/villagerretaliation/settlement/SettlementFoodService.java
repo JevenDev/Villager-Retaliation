@@ -58,6 +58,10 @@ public final class SettlementFoodService {
         return Math.clamp(VillagerRetaliationConfig.SETTLEMENT_DAILY_NUTRITION.get(), 1, 100);
     }
 
+    public static void resetMetabolism(Villager villager) {
+        villager.getPersistentData().putLong(METABOLISM_TIME, villager.level().getGameTime());
+    }
+
     public static float metabolism(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return 0.0F;

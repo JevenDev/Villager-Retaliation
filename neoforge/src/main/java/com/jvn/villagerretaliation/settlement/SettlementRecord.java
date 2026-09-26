@@ -30,6 +30,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
     private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
+    private final Map<UUID, SettlementResidentState> residents = new LinkedHashMap<>();
     private long nextApplicantAt;
     private SettlementSupportState support = new SettlementSupportState();
     private SettlementEconomy economy = new SettlementEconomy(this::changed);
@@ -78,6 +79,21 @@ public final class SettlementRecord {
 
     public SettlementEconomy economy() {
         return this.economy;
+    }
+
+    public Map<UUID, SettlementResidentState> residents() {
+        return Collections.unmodifiableMap(this.residents);
+    }
+
+    void recordResident(SettlementResidentState resident) {
+        this.residents.put(resident.id(), resident);
+        changed();
+    }
+
+    void removeResident(UUID resident) {
+        if (this.residents.remove(resident) != null) {
+            changed();
+        }
     }
 
     public Map<UUID, SettlementApplicant> applicants() {
@@ -335,6 +351,9 @@ public final class SettlementRecord {
         tag.put("Surveys", surveyTags);
         tag.put("Support", this.support.save());
         tag.put("Economy", this.economy.save());
+        ListTag residentTags = new ListTag();
+        this.residents.values().forEach(resident -> residentTags.add(resident.save()));
+        tag.put("ResidentCare", residentTags);
         tag.putLong("NextApplicantAt", this.nextApplicantAt);
         ListTag applicantTags = new ListTag();
         this.applicants.values().forEach(applicant -> applicantTags.add(applicant.save()));
@@ -355,6 +374,12 @@ public final class SettlementRecord {
         record.stage = SettlementStage.valueOf(tag.getString("Stage"));
         record.support = SettlementSupportState.load(tag.getCompound("Support"));
         record.economy = SettlementEconomy.load(tag.getCompound("Economy"), record::changed);
+        for (Tag raw : tag.getList("ResidentCare", Tag.TAG_COMPOUND)) {
+            var resident = SettlementResidentState.load((CompoundTag) raw);
+            if (record.residents.putIfAbsent(resident.id(), resident) != null) {
+                throw new IllegalArgumentException("Resident care duplicates an identity");
+            }
+        }
         if (tag.contains("NextApplicantAt")) {
             record.nextApplicantAt = Math.max(0L, tag.getLong("NextApplicantAt"));
         }
