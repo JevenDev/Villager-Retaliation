@@ -12,6 +12,7 @@ import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 
@@ -43,13 +44,60 @@ public final class SettlementBuildingSurvey {
                                         && area.contains(pos.relative(level.getBlockState(pos).getValue(BedBlock.FACING).getOpposite()))) {
                                     beds.add(pos.immutable());
                                 }
-                            } else {
+                            } else if (!requiresFixture(area.type())) {
                                 workstations.add(pos.immutable());
                             }
                         });
+                if (requiresFixture(area.type())) {
+                    collectFixtures(level, area, x, z, workstations);
+                }
             }
         }
         return new Survey(level.getGameTime(), beds, workstations, fullyLoaded);
+    }
+
+    public static boolean requiresFixture(SettlementAreaType type) {
+        return switch (type) {
+            case KITCHEN, WORKSHOP, SMELTERY, BREWERY, TRADING_POST -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean fixture(SettlementAreaType type, BlockState state) {
+        return switch (type) {
+            case KITCHEN -> state.is(Blocks.SMOKER) || state.is(Blocks.FURNACE) || state.is(Blocks.CRAFTING_TABLE);
+            case WORKSHOP -> state.is(Blocks.CRAFTING_TABLE);
+            case SMELTERY -> state.is(Blocks.FURNACE) || state.is(Blocks.BLAST_FURNACE);
+            case BREWERY -> state.is(Blocks.BREWING_STAND);
+            case TRADING_POST -> state.is(Blocks.LECTERN);
+            default -> false;
+        };
+    }
+
+    private static void collectFixtures(ServerLevel level, SettlementArea area, int chunkX, int chunkZ,
+                                        List<BlockPos> fixtures) {
+        var chunk = level.getChunk(chunkX, chunkZ);
+        int minX = Math.max(area.min().getX(), chunkX * 16);
+        int maxX = Math.min(area.max().getX(), chunkX * 16 + 15);
+        int minZ = Math.max(area.min().getZ(), chunkZ * 16);
+        int maxZ = Math.min(area.max().getZ(), chunkZ * 16 + 15);
+        int minY = Math.max(area.min().getY(), level.getMinBuildHeight());
+        int maxY = Math.min(area.max().getY(), level.getMaxBuildHeight() - 1);
+        for (int sectionY = Math.floorDiv(minY, 16); sectionY <= Math.floorDiv(maxY, 16); sectionY++) {
+            var section = chunk.getSection(level.getSectionIndexFromSectionY(sectionY));
+            if (!section.maybeHas(state -> fixture(area.type(), state))) {
+                continue;
+            }
+            for (int y = Math.max(minY, sectionY * 16); y <= Math.min(maxY, sectionY * 16 + 15); y++) {
+                for (int x = minX; x <= maxX; x++) {
+                    for (int z = minZ; z <= maxZ; z++) {
+                        if (fixture(area.type(), section.getBlockState(x & 15, y & 15, z & 15))) {
+                            fixtures.add(new BlockPos(x, y, z));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public static boolean usableBed(ServerLevel level, BlockPos head) {

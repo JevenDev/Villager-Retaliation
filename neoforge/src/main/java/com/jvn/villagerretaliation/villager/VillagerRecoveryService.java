@@ -113,6 +113,11 @@ public final class VillagerRecoveryService {
 
         RecoveryState recovery = state(villager);
         recovery = applyHungerEffect(villager, recovery);
+        float metabolism = com.jvn.villagerretaliation.settlement.SettlementFoodService.metabolism(villager);
+        if (metabolism > 0.0F) {
+            recovery = new RecoveryState(recovery.food(), recovery.saturation(),
+                    recovery.exhaustion() + metabolism, recovery.healTimer());
+        }
         recovery = consumeExhaustion(recovery);
         recovery = tickNaturalRegeneration(level, villager, recovery);
         save(villager, recovery);
@@ -212,11 +217,11 @@ public final class VillagerRecoveryService {
             }
             ItemStack potion = take(villager, VillagerRecoveryService::isRecoveryPotion);
             if (!potion.isEmpty()) return potion;
-            return canEat ? take(villager, VillagerRecoveryService::isOrdinaryFood) : ItemStack.EMPTY;
+            return canEat ? takeOrdinaryFood(villager) : ItemStack.EMPTY;
         }
 
         if (canEat) {
-            ItemStack food = take(villager, VillagerRecoveryService::isOrdinaryFood);
+            ItemStack food = takeOrdinaryFood(villager);
             if (!food.isEmpty()) return food;
         }
         return healthRatio < 1.0F
@@ -234,6 +239,12 @@ public final class VillagerRecoveryService {
                         && (isOrdinaryFood(stack)
                         || healthRatio < 0.5F && stack.is(Items.GOLDEN_APPLE)
                         || healthRatio < 0.25F && stack.is(Items.ENCHANTED_GOLDEN_APPLE)));
+    }
+
+    private static ItemStack takeOrdinaryFood(Villager villager) {
+        ItemStack carried = take(villager, VillagerRecoveryService::isOrdinaryFood);
+        return carried.isEmpty()
+                ? com.jvn.villagerretaliation.settlement.SettlementFoodService.takeMeal(villager) : carried;
     }
 
     private static ItemStack take(Villager villager, Predicate<ItemStack> predicate) {
@@ -371,7 +382,12 @@ public final class VillagerRecoveryService {
                 if (villager.getHealth() > 10.0F
                         || difficulty == Difficulty.HARD
                         || villager.getHealth() > 1.0F && difficulty == Difficulty.NORMAL) {
-                    villager.hurt(level.damageSources().starve(), 1.0F);
+                    float damage = com.jvn.villagerretaliation.settlement.SettlementFoodService
+                            .protectsFromFatalStarvation(villager)
+                            ? Math.min(1.0F, Math.max(0.0F, villager.getHealth() - 1.0F)) : 1.0F;
+                    if (damage > 0.0F) {
+                        villager.hurt(level.damageSources().starve(), damage);
+                    }
                 }
                 timer = 0;
             }

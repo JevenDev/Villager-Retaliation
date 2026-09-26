@@ -19,6 +19,16 @@ public final class VillagerRetaliationConfig {
 
     public static final ConfigWrapper<?> CONFIG = loadConfig();
 
+    public static final ConfigValue<Integer> SETTLEMENT_DAILY_NUTRITION = bind("settlements.dailyNutrition", Integer.class);
+    public static final ConfigValue<Integer> SETTLEMENT_ADVANCEMENT_DAYS = bind("settlements.advancementDays", Integer.class);
+    public static final ConfigValue<Integer> SETTLEMENT_FOOD_RESERVE_DAYS = bind("settlements.foodReserveDays", Integer.class);
+    public static final ConfigValue<Integer> SETTLEMENT_DEPARTURE_GRACE_DAYS = bind("settlements.departureGraceDays", Integer.class);
+    public static final ConfigValue<Integer> SETTLEMENT_POPULATION_TARGET = bind("settlements.populationTarget", Integer.class);
+    public static final ConfigValue<Integer> SETTLEMENT_HAMLET_POPULATION = bind("settlements.hamletPopulation", Integer.class);
+    public static final ConfigValue<Integer> SETTLEMENT_VILLAGE_POPULATION = bind("settlements.villagePopulation", Integer.class);
+    public static final ConfigValue<Integer> SETTLEMENT_TOWN_POPULATION = bind("settlements.townPopulation", Integer.class);
+    public static final ConfigValue<Integer> SETTLEMENT_CITY_POPULATION = bind("settlements.cityPopulation", Integer.class);
+
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_DROPS = bind("general.enableVillagerDrops", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_DUELS = bind("duels.enabled", Boolean.class);
     public static final ConfigValue<Boolean> ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT = bind("duels.allowBringYourOwnLoadout", Boolean.class);

@@ -1982,7 +1982,9 @@ public final class HiredVillagerWorkService {
                 || role == HiredVillagerRole.LOGGING
                 || role == HiredVillagerRole.FARMING
                 || role == HiredVillagerRole.FISHING) && tool.isEmpty();
-        return calculateEfficiencyPercent(base, skillWorkSpeed, moodModifier, missingRequiredTool, min, max);
+        int efficiency = calculateEfficiencyPercent(base, skillWorkSpeed, moodModifier, missingRequiredTool, min, max);
+        return Math.max(1, (int) Math.round(efficiency
+                * com.jvn.villagerretaliation.settlement.SettlementFoodService.workMultiplier(level, villager)));
     }
 
     public static int calculateEfficiencyPercent(

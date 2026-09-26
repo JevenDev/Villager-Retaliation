@@ -27,6 +27,7 @@ public final class SettlementRecord {
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
     private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
+    private SettlementSupportState support = new SettlementSupportState();
     private UUID leader;
     private SettlementStage stage = SettlementStage.CAMP;
     private long revision;
@@ -133,6 +134,10 @@ public final class SettlementRecord {
 
     public Map<UUID, SettlementBuildingSurvey.Survey> surveys() {
         return Collections.unmodifiableMap(this.surveys);
+    }
+
+    public SettlementSupportState support() {
+        return this.support;
     }
 
     public int housingCapacity() {
@@ -283,6 +288,7 @@ public final class SettlementRecord {
             surveyTags.add(entry);
         });
         tag.put("Surveys", surveyTags);
+        tag.put("Support", this.support.save());
         return tag;
     }
 
@@ -297,6 +303,7 @@ public final class SettlementRecord {
                 tag.getLong("FoundedAt"), dirty);
         record.revision = Math.max(0L, tag.getLong("Revision"));
         record.stage = SettlementStage.valueOf(tag.getString("Stage"));
+        record.support = SettlementSupportState.load(tag.getCompound("Support"));
         for (Tag raw : tag.getList("Delegates", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) raw;
             if (!entry.hasUUID("Player") || entry.getUUID("Player").equals(record.leader)) {

@@ -61,11 +61,43 @@ public final class VillagerRetaliationConfigModel {
     public Balance balance = new Balance();
 
     @Nest
+    public Settlements settlements = new Settlements();
+
+    @Nest
     public Wanderer wanderer = new Wanderer();
 
     @Nest
     @SectionHeader("advanced")
     public DebugOverlay debugOverlay = new DebugOverlay();
+
+    public static final class Settlements {
+        @RangeConstraint(min = 1, max = 100)
+        public int dailyNutrition = 12;
+
+        @RangeConstraint(min = 1, max = 30)
+        public int advancementDays = 2;
+
+        @RangeConstraint(min = 1, max = 30)
+        public int foodReserveDays = 1;
+
+        @RangeConstraint(min = 1, max = 30)
+        public int departureGraceDays = 3;
+
+        @RangeConstraint(min = 1, max = 1000)
+        public int populationTarget = 100;
+
+        @RangeConstraint(min = 1, max = 1000)
+        public int hamletPopulation = 5;
+
+        @RangeConstraint(min = 1, max = 1000)
+        public int villagePopulation = 15;
+
+        @RangeConstraint(min = 1, max = 1000)
+        public int townPopulation = 35;
+
+        @RangeConstraint(min = 1, max = 1000)
+        public int cityPopulation = 75;
+    }
 
     public static final class General {
         public boolean enableVillagerRetaliation = true;
