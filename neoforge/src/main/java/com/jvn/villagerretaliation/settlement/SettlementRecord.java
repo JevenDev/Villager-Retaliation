@@ -31,6 +31,8 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
     private final Map<UUID, SettlementResidentState> residents = new LinkedHashMap<>();
+    private final Map<UUID, SettlementDeparture> departures = new LinkedHashMap<>();
+    private long nextDepartureAt;
     private long nextApplicantAt;
     private SettlementSupportState support = new SettlementSupportState();
     private SettlementEconomy economy = new SettlementEconomy(this::changed);
@@ -79,6 +81,30 @@ public final class SettlementRecord {
 
     public SettlementEconomy economy() {
         return this.economy;
+    }
+
+    public Map<UUID, SettlementDeparture> departures() {
+        return Collections.unmodifiableMap(this.departures);
+    }
+
+    public long nextDepartureAt() {
+        return this.nextDepartureAt;
+    }
+
+    void scheduleDeparture(long gameTime) {
+        this.nextDepartureAt = Math.max(0L, gameTime);
+        changed();
+    }
+
+    void recordDeparture(SettlementDeparture departure) {
+        this.departures.put(departure.id(), departure);
+        changed();
+    }
+
+    void removeDeparture(UUID resident) {
+        if (this.departures.remove(resident) != null) {
+            changed();
+        }
     }
 
     public Map<UUID, SettlementResidentState> residents() {
@@ -354,6 +380,10 @@ public final class SettlementRecord {
         ListTag residentTags = new ListTag();
         this.residents.values().forEach(resident -> residentTags.add(resident.save()));
         tag.put("ResidentCare", residentTags);
+        ListTag departureTags = new ListTag();
+        this.departures.values().forEach(departure -> departureTags.add(departure.save()));
+        tag.put("Departures", departureTags);
+        tag.putLong("NextDepartureAt", this.nextDepartureAt);
         tag.putLong("NextApplicantAt", this.nextApplicantAt);
         ListTag applicantTags = new ListTag();
         this.applicants.values().forEach(applicant -> applicantTags.add(applicant.save()));
@@ -378,6 +408,13 @@ public final class SettlementRecord {
             var resident = SettlementResidentState.load((CompoundTag) raw);
             if (record.residents.putIfAbsent(resident.id(), resident) != null) {
                 throw new IllegalArgumentException("Resident care duplicates an identity");
+            }
+        }
+        record.nextDepartureAt = Math.max(0L, tag.getLong("NextDepartureAt"));
+        for (Tag raw : tag.getList("Departures", Tag.TAG_COMPOUND)) {
+            var departure = SettlementDeparture.load((CompoundTag) raw);
+            if (record.departures.putIfAbsent(departure.id(), departure) != null) {
+                throw new IllegalArgumentException("Departure duplicates a resident identity");
             }
         }
         if (tag.contains("NextApplicantAt")) {

@@ -79,7 +79,11 @@ public final class SettlementResidentState {
     }
 
     public boolean availableForWork() {
-        return this.present && !this.downed && !this.personalCommitment && this.age >= 0;
+        return canDepart() && this.age >= 0;
+    }
+
+    public boolean canDepart() {
+        return this.present && !this.downed && !this.personalCommitment;
     }
 
     public double workMultiplier() {

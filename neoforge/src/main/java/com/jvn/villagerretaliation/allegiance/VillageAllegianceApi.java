@@ -37,6 +37,7 @@ public final class VillageAllegianceApi {
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         VillageAllegianceService.onExplicitAssignment(level, entity, data);
+        com.jvn.villagerretaliation.settlement.SettlementDepartureService.onAssignment(level, entity, data);
         if (!data.isKnown()) {
             registry.removeResidentEverywhere(entity.getUUID());
             return;
