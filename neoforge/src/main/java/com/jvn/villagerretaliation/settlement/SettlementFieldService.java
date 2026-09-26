@@ -42,7 +42,7 @@ public final class SettlementFieldService {
     }
 
     static void observeArea(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
-        if (area.type() != SettlementAreaType.FARM) {
+        if (area.type() != SettlementAreaType.FARM && area.type() != SettlementAreaType.ANIMAL_PEN) {
             return;
         }
         for (int chunkX = Math.floorDiv(area.min().getX(), 16); chunkX <= Math.floorDiv(area.max().getX(), 16); chunkX++) {
@@ -58,9 +58,11 @@ public final class SettlementFieldService {
                     var section = chunk.getSection(level.getSectionIndexFromSectionY(sectionY));
                     int aboveSection = chunk.getSectionIndexFromSectionY(sectionY + 1);
                     boolean cropsAbove = aboveSection < chunk.getSections().length
-                            && chunk.getSection(aboveSection).maybeHas(SettlementFieldPlot::supportedCrop);
+                            && chunk.getSection(aboveSection).maybeHas(state -> SettlementFieldPlot.supportedCrop(state)
+                            || state.is(net.minecraft.world.level.block.Blocks.SHORT_GRASS));
                     if (!section.maybeHas(state -> SettlementFieldPlot.supportedSoil(state)
-                            || SettlementFieldPlot.supportedCrop(state) || state.is(net.minecraft.tags.BlockTags.DIRT)) && !cropsAbove) {
+                            || SettlementFieldPlot.supportedCrop(state) || state.is(net.minecraft.tags.BlockTags.DIRT)
+                            || state.is(net.minecraft.world.level.block.Blocks.SHORT_GRASS)) && !cropsAbove) {
                         continue;
                     }
                     for (int y = Math.max(minY, sectionY * 16); y <= Math.min(maxY, sectionY * 16 + 15); y++) {
@@ -69,7 +71,8 @@ public final class SettlementFieldService {
                                 BlockPos position = new BlockPos(x, y, z);
                                 var soil = chunk.getBlockState(position);
                                 var crop = chunk.getBlockState(position.above());
-                                if (!SettlementFieldPlot.supportedSite(soil, crop)) {
+                                if (!(area.type() == SettlementAreaType.ANIMAL_PEN
+                                        ? SettlementFieldPlot.supportedPasture(soil, crop) : SettlementFieldPlot.supportedSite(soil, crop))) {
                                     continue;
                                 }
                                 var plot = town.fields().get(position);
@@ -106,9 +109,10 @@ public final class SettlementFieldService {
             if (chunk != null) {
                 plot.refresh(chunk);
             }
-            if (!plot.pending() && !SettlementFieldPlot.supportedSite(plot.soil(), plot.crop())) {
+            if (!plot.pending() && !(area != null && area.type() == SettlementAreaType.ANIMAL_PEN
+                    ? SettlementFieldPlot.supportedPasture(plot.soil(), plot.crop()) : SettlementFieldPlot.supportedSite(plot.soil(), plot.crop()))) {
                 town.removeField(plot.position());
-            } else if (area == null || area.type() != SettlementAreaType.FARM
+            } else if (area == null || area.type() != SettlementAreaType.FARM && area.type() != SettlementAreaType.ANIMAL_PEN
                     || !area.contains(plot.position()) && !area.contains(plot.position().above())) {
                 if (!plot.pending()) {
                     town.removeField(plot.position());
@@ -143,7 +147,7 @@ public final class SettlementFieldService {
         }
         plot.refresh(chunk);
         plot.observeEnvironment(level, chunk);
-        return SettlementFieldPlot.supportedSite(plot.soil(), plot.crop());
+        return SettlementFieldPlot.supportedSite(plot.soil(), plot.crop()) || SettlementFieldPlot.supportedPasture(plot.soil(), plot.crop());
     }
 
     static void applyLoaded(ServerLevel level, SettlementFieldPlot plot) {

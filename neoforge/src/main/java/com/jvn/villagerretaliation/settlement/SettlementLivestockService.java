@@ -117,8 +117,11 @@ public final class SettlementLivestockService {
                 boolean active = level.isPositionEntityTicking(animal.blockPosition());
                 state.observe(animal, active ? now : state.checkedAt());
                 if (!active) {
-                    state.advance(now);
+                    int elapsed = state.advance(now);
+                    SettlementPasture.graze(level, town, state, elapsed);
                     state.restore(animal);
+                } else {
+                    state.resetGrazing();
                 }
                 if (area == null || area.type() != SettlementAreaType.ANIMAL_PEN || !area.contains(animal.blockPosition())) {
                     town.removeLivestock(state.id());
@@ -127,7 +130,8 @@ public final class SettlementLivestockService {
             } else if (level.areEntitiesLoaded(ChunkPos.asLong(state.position()))) {
                 town.removeLivestock(state.id());
             } else if (area != null && area.type() == SettlementAreaType.ANIMAL_PEN && area.contains(state.position())) {
-                state.advance(now);
+                int elapsed = state.advance(now);
+                SettlementPasture.graze(level, town, state, elapsed);
             } else if (!state.pending()) {
                 town.removeLivestock(state.id());
             }
@@ -140,7 +144,10 @@ public final class SettlementLivestockService {
         var town = owner(level, animal);
         if (town == null) return;
         var state = town.livestock().get(animal.getUUID());
-        if (state != null && state.restore(animal)) town.changed();
+        if (state != null) {
+            boolean restored = state.restore(animal);
+            if (state.resetGrazing() || restored) town.changed();
+        }
     }
 
     public static void onUnloaded(Animal animal) {

@@ -25,6 +25,7 @@ public final class SettlementLivestock {
     private long version;
     private boolean pending;
     private boolean unsafe;
+    private double grazing;
 
     private SettlementLivestock(UUID id, UUID area, ResourceLocation type) {
         this.id = id;
@@ -67,7 +68,10 @@ public final class SettlementLivestock {
     }
 
     void observe(Animal animal, long now) {
-        if (!animal.blockPosition().equals(this.position)) this.access.clear();
+        if (!animal.blockPosition().equals(this.position)) {
+            this.access.clear();
+            this.grazing = 0.0D;
+        }
         this.position = animal.blockPosition().immutable();
         this.entity = animal.saveWithoutId(new CompoundTag());
         this.version = Math.max(this.version, animal.getPersistentData().getLong(VERSION_TAG));
@@ -120,6 +124,29 @@ public final class SettlementLivestock {
         return elapsed;
     }
 
+    int grazingTicks(int elapsed, boolean baby) {
+        // goal checks run every two ticks, followed by a forty-tick eating action
+        this.grazing += Math.clamp(elapsed, 0, 200) / (baby ? 140.0D : 2040.0D);
+        int ticks = (int) this.grazing;
+        this.grazing -= ticks;
+        return ticks;
+    }
+
+    boolean resetGrazing() {
+        boolean changed = this.grazing != 0.0D;
+        this.grazing = 0.0D;
+        return changed;
+    }
+
+    void ate(Sheep sheep) {
+        int age = this.entity.getInt("Age");
+        boolean sheared = this.entity.getBoolean("Sheared");
+        sheep.ate();
+        this.entity.putInt("Age", sheep.getAge());
+        this.entity.putBoolean("Sheared", sheep.isSheared());
+        if (age != sheep.getAge() || sheared != sheep.isSheared()) changed();
+    }
+
     void shear() {
         this.entity.putBoolean("Sheared", true);
         changed();
@@ -151,6 +178,7 @@ public final class SettlementLivestock {
         tag.putLong("Version", this.version);
         tag.putBoolean("Pending", this.pending);
         tag.putBoolean("Unsafe", this.unsafe);
+        tag.putDouble("Grazing", this.grazing);
         ListTag routes = new ListTag();
         this.access.forEach((worker, route) -> {
             CompoundTag entry = new CompoundTag();
@@ -178,6 +206,10 @@ public final class SettlementLivestock {
         state.version = Math.max(0L, tag.getLong("Version"));
         state.pending = tag.getBoolean("Pending");
         state.unsafe = tag.getBoolean("Unsafe");
+        state.grazing = tag.getDouble("Grazing");
+        if (!Double.isFinite(state.grazing) || state.grazing < 0.0D || state.grazing >= 1.0D) {
+            throw new IllegalArgumentException("Livestock grazing progress is invalid");
+        }
         for (Tag raw : tag.getList("Access", Tag.TAG_COMPOUND)) {
             var entry = (CompoundTag) raw;
             if (!entry.hasUUID("Worker") || !entry.contains("Start", Tag.TAG_LONG)

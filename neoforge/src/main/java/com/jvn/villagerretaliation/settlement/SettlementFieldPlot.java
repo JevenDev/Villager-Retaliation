@@ -92,6 +92,25 @@ public final class SettlementFieldPlot {
         return supportedCrop(crop) || crop.isAir() && (supportedSoil(soil) || soil.is(BlockTags.DIRT));
     }
 
+    static boolean supportedPasture(BlockState soil, BlockState crop) {
+        return soil.is(Blocks.GRASS_BLOCK) || soil.is(Blocks.DIRT) || crop.is(Blocks.SHORT_GRASS);
+    }
+
+    int brightness(int skyDarken) {
+        return Math.max(this.blockLight, this.skyLight - skyDarken);
+    }
+
+    int grassTicks(double elapsed) {
+        if (!this.soil.is(Blocks.GRASS_BLOCK)) {
+            this.growth = 0.0D;
+            return 0;
+        }
+        this.growth = Math.min(4.0D, this.growth + elapsed);
+        int ticks = (int) this.growth;
+        this.growth -= ticks;
+        return ticks;
+    }
+
     BlockState top() {
         return this.top;
     }
@@ -218,6 +237,11 @@ public final class SettlementFieldPlot {
         if (randomTicks <= 0.0D) {
             return;
         }
+        var area = town.areas().get(this.area);
+        if (area != null && area.type() == SettlementAreaType.ANIMAL_PEN) {
+            SettlementPasture.advance(level, town, this, randomTicks, level.random);
+            return;
+        }
         BlockState updatedSoil = this.soil;
         BlockState updatedCrop = this.crop;
         this.drying += this.soil.is(Blocks.FARMLAND) ? randomTicks : 0.0D;
@@ -335,6 +359,7 @@ public final class SettlementFieldPlot {
 
     private void change(BlockState soil, BlockState crop, BlockState top) {
         if (this.soil != soil || this.crop != crop || this.top != top) {
+            if (this.soil.is(Blocks.GRASS_BLOCK) != soil.is(Blocks.GRASS_BLOCK)) this.growth = 0.0D;
             if (this.crop != crop && (!supportedCrop(crop) || !crop.is(this.crop.getBlock())
                     || SettlementFarmPlants.age(crop) < SettlementFarmPlants.age(this.crop))) {
                 this.growth = 0.0D;
