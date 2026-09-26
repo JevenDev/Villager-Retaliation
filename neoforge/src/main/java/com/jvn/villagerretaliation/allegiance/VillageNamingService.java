@@ -1,12 +1,14 @@
 package com.jvn.villagerretaliation.allegiance;
 
 import com.jvn.villagerretaliation.network.OpenVillageNamingPayload;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.network.VillageRenameRequestPayload;
+import com.jvn.villagerretaliation.network.VillageRenameResultPayload;
+import com.jvn.villagerretaliation.network.VillageRenameResultPayload.Result;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -51,46 +53,61 @@ public final class VillageNamingService {
     }
 
     public static void handleRename(ServerPlayer player, VillageRenameRequestPayload payload) {
-        if (player == null || payload == null || player.distanceToSqr(
-                payload.bellPosition().getX() + 0.5D,
-                payload.bellPosition().getY() + 0.5D,
-                payload.bellPosition().getZ() + 0.5D) > MAX_DISTANCE_SQR) {
+        if (player == null || payload == null) {
             return;
         }
+        VillageRenameResultPayload result = rename(player, payload);
+        PacketDistributor.sendToPlayer(player, result);
+        if (result.result() == Result.SUCCESS) {
+            player.sendSystemMessage(result.message());
+        }
+    }
+
+    static VillageRenameResultPayload rename(ServerPlayer player, VillageRenameRequestPayload payload) {
         ServerLevel level = player.serverLevel();
         BlockPos bell = payload.bellPosition();
-        if (!(level.getBlockState(bell).getBlock() instanceof BellBlock)
-                || !isHoldingBanner(player)) {
-            return;
+        if (!player.isAlive() || player.distanceToSqr(bell.getCenter()) > MAX_DISTANCE_SQR
+                || !level.hasChunkAt(bell)) {
+            return failure(payload, Result.TOO_FAR, 0);
+        }
+        if (!ServerboundRequestLimiter.tryAcquire(player, VillageRenameRequestPayload.TYPE.id(), 20L)) {
+            return failure(payload, Result.TRY_AGAIN, 0);
+        }
+        if (!(level.getBlockState(bell).getBlock() instanceof BellBlock)) {
+            return failure(payload, Result.VILLAGE_CHANGED, 0);
+        }
+        if (!isHoldingBanner(player)) {
+            return failure(payload, Result.BANNER_REQUIRED, 0);
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         Optional<VillageAllegianceId> current = registry.peekAt(level, bell);
         Optional<VillageAllegianceId> requested = registry.canonical(payload.villageId());
         if (current.isEmpty() || requested.isEmpty() || !current.get().equals(requested.get())) {
-            player.sendSystemMessage(Component.translatable("villagerretaliation.village_naming.error.village_changed"));
-            return;
+            return failure(payload, Result.VILLAGE_CHANGED, 0);
         }
         VillageAllegianceRegistrySavedData.AllegianceRecord village = registry
                 .canonicalRecord(current.get()).orElse(null);
         if (village == null || village.lifecycleState() != VillageLifecycleState.ACTIVE) {
-            return;
+            return failure(payload, Result.VILLAGE_CHANGED, 0);
         }
         TrustGate gate = trustGate(level, player, village);
         if (!gate.allowed()) {
-            player.sendSystemMessage(Component.translatable(
-                    "villagerretaliation.village_naming.error.insufficient_standing", gate.requiredResidents()));
-            return;
+            return failure(payload, Result.INSUFFICIENT_STANDING, gate.requiredResidents());
         }
         Optional<String> validName = VillageAllegianceRegistrySavedData.validateVillageName(payload.name());
         if (validName.isEmpty()) {
-            player.sendSystemMessage(Component.translatable("villagerretaliation.village_naming.error.invalid_name"));
-            return;
+            return failure(payload, Result.INVALID_NAME, 0);
         }
         if (!registry.rename(village.id(), validName.get())) {
-            player.sendSystemMessage(Component.translatable("villagerretaliation.village_naming.error.name_in_use"));
-            return;
+            return failure(payload, Result.NAME_IN_USE, 0);
         }
-        player.sendSystemMessage(Component.translatable("villagerretaliation.village_naming.renamed", validName.get()));
+        return new VillageRenameResultPayload(payload.requestId(), Result.SUCCESS, validName.get(),
+                gate.requiredResidents());
+    }
+
+    private static VillageRenameResultPayload failure(VillageRenameRequestPayload payload, Result result,
+                                                      int requiredResidents) {
+        return new VillageRenameResultPayload(payload.requestId(), result, "", requiredResidents);
     }
 
     public static TrustGate trustGate(

@@ -1,12 +1,14 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record VillageRenameRequestPayload(
+        UUID requestId,
         BlockPos bellPosition,
         VillageAllegianceId villageId,
         String name) implements CustomPacketPayload {
@@ -16,6 +18,7 @@ public record VillageRenameRequestPayload(
             VillagerPayloads.codec(VillageRenameRequestPayload::encode, VillageRenameRequestPayload::decode);
 
     private static void encode(RegistryFriendlyByteBuf buffer, VillageRenameRequestPayload payload) {
+        buffer.writeUUID(payload.requestId());
         buffer.writeBlockPos(payload.bellPosition());
         buffer.writeUUID(payload.villageId().value());
         buffer.writeUtf(payload.name(), NAME_LIMIT);
@@ -23,6 +26,7 @@ public record VillageRenameRequestPayload(
 
     private static VillageRenameRequestPayload decode(RegistryFriendlyByteBuf buffer) {
         return new VillageRenameRequestPayload(
+                buffer.readUUID(),
                 buffer.readBlockPos(),
                 new VillageAllegianceId(buffer.readUUID()),
                 buffer.readUtf(NAME_LIMIT));

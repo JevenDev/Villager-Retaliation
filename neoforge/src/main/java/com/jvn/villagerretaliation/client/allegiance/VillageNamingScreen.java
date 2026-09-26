@@ -1,12 +1,17 @@
 package com.jvn.villagerretaliation.client.allegiance;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.network.OpenVillageNamingPayload;
 import com.jvn.villagerretaliation.network.VillageRenameRequestPayload;
+import com.jvn.villagerretaliation.network.VillageRenameResultPayload;
+import java.util.UUID;
+import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
@@ -14,38 +19,53 @@ public final class VillageNamingScreen extends Screen {
     private final OpenVillageNamingPayload payload;
     private EditBox nameField;
     private Button saveButton;
+    private String draft;
+    private UUID pendingRequest;
+    private long responseDeadline;
+    private Component error;
+    private int left;
+    private int top;
+    private int formWidth;
 
     public VillageNamingScreen(OpenVillageNamingPayload payload) {
-        super(Component.translatable("villagerretaliation.gui.village_naming.title"));
+        super(text("title"));
         this.payload = payload;
+        this.draft = payload.currentName();
     }
 
     @Override
     protected void init() {
-        int left = this.width / 2 - 100;
-        int top = this.height / 2 - 20;
-        this.nameField = new EditBox(this.font, left, top, 200, 20,
-                Component.translatable("villagerretaliation.gui.village_naming.name"));
+        this.formWidth = Math.min(320, this.width - 40);
+        this.left = (this.width - this.formWidth) / 2;
+        this.top = this.height / 2 - 76;
+        this.nameField = new EditBox(this.font, this.left, this.top + 48, this.formWidth, 20, text("name"));
         this.nameField.setMaxLength(32);
-        this.nameField.setValue(this.payload.currentName());
-        this.nameField.setEditable(this.payload.canRename());
-        this.nameField.setResponder(ignored -> updateSaveState());
+        this.nameField.setValue(this.draft);
+        this.nameField.setResponder(value -> {
+            this.draft = value;
+            this.error = null;
+            updateSaveState();
+        });
         addRenderableWidget(this.nameField);
-        this.saveButton = addRenderableWidget(Button.builder(
-                        Component.translatable("villagerretaliation.gui.village_naming.save"), ignored -> submit())
-                .bounds(left, top + 30, 96, 20)
-                .build());
+        int buttonWidth = (this.formWidth - 8) / 2;
+        this.saveButton = addRenderableWidget(Button.builder(text("save"), ignored -> submit())
+                .bounds(this.left, this.top + 132, buttonWidth, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), ignored -> onClose())
-                .bounds(left + 104, top + 30, 96, 20)
-                .build());
+                .bounds(this.left + buttonWidth + 8, this.top + 132, buttonWidth, 20).build());
         setInitialFocus(this.nameField);
         updateSaveState();
     }
 
+    private boolean validName() {
+        return VillageAllegianceRegistrySavedData.validateVillageName(this.draft).isPresent();
+    }
+
     private void updateSaveState() {
         if (this.saveButton != null) {
-            String value = this.nameField == null ? "" : this.nameField.getValue().trim();
-            this.saveButton.active = this.payload.canRename() && !value.isBlank() && value.length() <= 32;
+            boolean editable = this.payload.canRename() && this.pendingRequest == null;
+            this.nameField.setEditable(editable);
+            this.saveButton.active = editable && validName();
+            this.saveButton.setMessage(text(this.pendingRequest == null ? "save" : "saving"));
         }
     }
 
@@ -53,9 +73,35 @@ public final class VillageNamingScreen extends Screen {
         if (this.saveButton == null || !this.saveButton.active) {
             return;
         }
-        PacketDistributor.sendToServer(new VillageRenameRequestPayload(
-                this.payload.bellPosition(), this.payload.villageId(), this.nameField.getValue()));
-        onClose();
+        this.pendingRequest = UUID.randomUUID();
+        this.responseDeadline = Util.getMillis() + 10_000L;
+        this.error = null;
+        updateSaveState();
+        PacketDistributor.sendToServer(new VillageRenameRequestPayload(this.pendingRequest,
+                this.payload.bellPosition(), this.payload.villageId(), this.draft));
+    }
+
+    public void accept(VillageRenameResultPayload result) {
+        if (!result.requestId().equals(this.pendingRequest)) {
+            return;
+        }
+        this.pendingRequest = null;
+        if (result.result() == VillageRenameResultPayload.Result.SUCCESS) {
+            onClose();
+            return;
+        }
+        this.error = result.message();
+        updateSaveState();
+        this.minecraft.getNarrator().sayNow(this.error);
+    }
+
+    @Override
+    public void tick() {
+        if (this.pendingRequest != null && Util.getMillis() >= this.responseDeadline) {
+            this.pendingRequest = null;
+            this.error = text("timed_out");
+            updateSaveState();
+        }
     }
 
     @Override
@@ -67,22 +113,49 @@ public final class VillageNamingScreen extends Screen {
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
+    private Component status() {
+        return this.payload.canRename() ? text("trust_met")
+                : text("trust_required", this.payload.trustedResidents(), this.payload.requiredResidents());
+    }
+
+    private Component feedback() {
+        if (this.error != null) {
+            return this.error;
+        }
+        if (this.payload.canRename() && !validName()) {
+            return Component.translatable("villagerretaliation.village_naming.error.invalid_name");
+        }
+        return text("hint");
+    }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 48, 0xFFFFFF);
-        Component status = this.payload.canRename()
-                ? Component.translatable("villagerretaliation.gui.village_naming.trust_met")
-                : Component.translatable(
-                        "villagerretaliation.gui.village_naming.trust_required",
-                        this.payload.trustedResidents(),
-                        this.payload.requiredResidents());
-        graphics.drawCenteredString(this.font, status, this.width / 2, this.height / 2 - 34,
-                this.payload.canRename() ? 0xE9C46A : 0xD0D0D0);
+        graphics.drawCenteredString(this.font, this.title, this.width / 2, this.top, 0xFFFFFF);
+        int y = this.top + 16;
+        for (FormattedCharSequence line : this.font.split(status(), this.formWidth)) {
+            graphics.drawString(this.font, line, this.left, y, 0xD0D0D0);
+            y += 10;
+        }
+        graphics.drawString(this.font, text("name"), this.left, this.top + 36, 0xFFFFFF);
+        Component count = text("length", this.draft.length());
+        graphics.drawString(this.font, count, this.left + this.formWidth - this.font.width(count),
+                this.top + 72, 0xD0D0D0);
+        graphics.drawWordWrap(this.font, feedback(), this.left, this.top + 90, this.formWidth,
+                this.error != null || this.payload.canRename() && !validName() ? 0xFF8C8C : 0xD0D0D0);
+    }
+
+    @Override
+    public Component getNarrationMessage() {
+        return this.title.copy().append(". ").append(status()).append(". ").append(feedback());
     }
 
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    private static Component text(String key, Object... args) {
+        return Component.translatable("villagerretaliation.gui.village_naming." + key, args);
     }
 }
