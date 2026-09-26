@@ -240,7 +240,7 @@ public final class HiredPathMemory {
 
     public static int adjustedCandidateLimit(ServerLevel level, Villager villager, int requestedLimit) {
         int failureAdjustedLimit = adjustedCandidateLimit(villager, requestedLimit);
-        if (!HiredVillagerContractService.isHired(level, villager)) {
+        if (!com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.hasWork(villager)) {
             return failureAdjustedLimit;
         }
         return adjustedCandidateLimitForDistance(

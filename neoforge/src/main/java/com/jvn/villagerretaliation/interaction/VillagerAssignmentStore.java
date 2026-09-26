@@ -15,6 +15,8 @@ public final class VillagerAssignmentStore {
     private static final String ASSIGNMENT_TAG = "VillagerRetaliationAssignment";
     private static final String STATE_TAG = "State";
     private static final String OWNER_TAG = "Owner";
+    private static final String SETTLEMENT_TAG = "Settlement";
+    private static final String AREA_TAG = "SettlementArea";
     private static final String COMMAND_TAG = "Command";
     private static final String ROLE_TAG = "Role";
     private static final String HIRED_AT_TAG = "HiredAt";
@@ -71,7 +73,7 @@ public final class VillagerAssignmentStore {
         Optional<UUID> owner = state == VillagerAssignmentState.HIRED && tag.hasUUID(OWNER_TAG)
                 ? Optional.of(tag.getUUID(OWNER_TAG))
                 : Optional.empty();
-        if (owner.isEmpty()) {
+        if (owner.isEmpty() && state != VillagerAssignmentState.CIVIC) {
             state = VillagerAssignmentState.UNASSIGNED;
         }
         VillagerAssignmentCommand command = readEnum(
@@ -104,7 +106,8 @@ public final class VillagerAssignmentStore {
             Villager villager, UUID owner, HiredVillagerRole role, long hiredAt, BlockPos homeAnchor) {
         if (villager == null || owner == null || role == null) return snapshot(villager);
         VillagerAssignmentSnapshot before = snapshot(villager);
-        if (before.state() == VillagerAssignmentState.HIRED && !before.ownedBy(owner)) return before;
+        if (before.state() == VillagerAssignmentState.CIVIC
+                || before.state() == VillagerAssignmentState.HIRED && !before.ownedBy(owner)) return before;
         CompoundTag tag = new CompoundTag();
         tag.putString(STATE_TAG, VillagerAssignmentState.HIRED.name());
         tag.putUUID(OWNER_TAG, owner);
@@ -117,6 +120,45 @@ public final class VillagerAssignmentStore {
         villager.getPersistentData().put(ASSIGNMENT_TAG, tag);
         villager.setPersistenceRequired();
         return snapshot(villager);
+    }
+
+    public static VillagerAssignmentSnapshot assignCivic(
+            Villager villager, UUID settlement, UUID area, HiredVillagerRole role, long assignedAt) {
+        VillagerAssignmentSnapshot before = snapshot(villager);
+        if (villager == null || settlement == null || area == null || role == null
+                || before.state() == VillagerAssignmentState.HIRED) {
+            return before;
+        }
+        CompoundTag tag = new CompoundTag();
+        tag.putString(STATE_TAG, VillagerAssignmentState.CIVIC.name());
+        tag.putUUID(SETTLEMENT_TAG, settlement);
+        tag.putUUID(AREA_TAG, area);
+        tag.putString(COMMAND_TAG, defaultCommand(role).name());
+        tag.putString(ROLE_TAG, role.serializedName());
+        tag.putLong(HIRED_AT_TAG, Math.max(0L, assignedAt));
+        tag.putLong(REVISION_TAG, before.revision() + 1L);
+        tag.putInt(SCHEMA_VERSION_TAG, VillagerAssignmentSnapshot.CURRENT_SCHEMA_VERSION);
+        villager.getPersistentData().put(ASSIGNMENT_TAG, tag);
+        removeLegacyRecruitmentKeys(villager.getPersistentData());
+        villager.setPersistenceRequired();
+        return snapshot(villager);
+    }
+
+    public static Optional<UUID> civicSettlement(Villager villager) {
+        return civicReference(villager, SETTLEMENT_TAG);
+    }
+
+    public static Optional<UUID> civicArea(Villager villager) {
+        return civicReference(villager, AREA_TAG);
+    }
+
+    private static Optional<UUID> civicReference(Villager villager, String key) {
+        if (villager == null || !villager.getPersistentData().contains(ASSIGNMENT_TAG, Tag.TAG_COMPOUND)) {
+            return Optional.empty();
+        }
+        CompoundTag tag = villager.getPersistentData().getCompound(ASSIGNMENT_TAG);
+        return VillagerAssignmentState.CIVIC.name().equals(tag.getString(STATE_TAG)) && tag.hasUUID(key)
+                ? Optional.of(tag.getUUID(key)) : Optional.empty();
     }
 
     public static VillagerAssignmentSnapshot setCommand(
@@ -211,7 +253,8 @@ public final class VillagerAssignmentStore {
 
     public static void beginFollowing(
             Villager villager, UUID owner, BlockPos start, String startBiome, boolean startedInOcean) {
-        if (villager == null || owner == null || start == null) return;
+        if (villager == null || owner == null || start == null
+                || snapshot(villager).state() == VillagerAssignmentState.CIVIC) return;
         if (snapshot(villager).ownedBy(owner)) {
             setCommand(villager, owner, VillagerAssignmentCommand.FOLLOW, null);
             CompoundTag journey = new CompoundTag();
@@ -245,7 +288,8 @@ public final class VillagerAssignmentStore {
     }
 
     public static void beginStaying(Villager villager, UUID owner, BlockPos anchor) {
-        if (villager == null || owner == null || anchor == null) return;
+        if (villager == null || owner == null || anchor == null
+                || snapshot(villager).state() == VillagerAssignmentState.CIVIC) return;
         if (snapshot(villager).ownedBy(owner)) {
             setCommand(villager, owner, VillagerAssignmentCommand.STAY, anchor);
         } else {
@@ -391,11 +435,19 @@ public final class VillagerAssignmentStore {
 
         if (schemaVersion < 2) migrateLegacyRecruitmentKeys(villager, tag, state);
 
-        if (state != VillagerAssignmentState.HIRED || !tag.hasUUID(OWNER_TAG)) {
+        if (state == VillagerAssignmentState.CIVIC && tag.hasUUID(SETTLEMENT_TAG) && tag.hasUUID(AREA_TAG)
+                && HiredVillagerRole.bySerializedName(tag.getString(ROLE_TAG)) != null) {
+            tag.remove(OWNER_TAG);
+            tag.remove(JOURNEY_TAG);
+            tag.putString(COMMAND_TAG, defaultCommand(
+                    HiredVillagerRole.bySerializedName(tag.getString(ROLE_TAG))).name());
+        } else if (state != VillagerAssignmentState.HIRED || !tag.hasUUID(OWNER_TAG)) {
             tag.putString(STATE_TAG, VillagerAssignmentState.UNASSIGNED.name());
             tag.putString(COMMAND_TAG, VillagerAssignmentCommand.RETURN_HOME.name());
             tag.remove(OWNER_TAG);
             tag.remove(ROLE_TAG);
+            tag.remove(SETTLEMENT_TAG);
+            tag.remove(AREA_TAG);
             tag.remove(WORK_ANCHOR_TAG);
             tag.remove(JOURNEY_TAG);
         } else {

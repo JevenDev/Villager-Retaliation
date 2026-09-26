@@ -355,6 +355,12 @@ public final class HuntingWorker extends AbstractBlockWorker {
         if (!(villager.level() instanceof ServerLevel level)) {
             return false;
         }
+        var town = com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager)
+                .map(com.jvn.villagerretaliation.settlement.SettlementWorkforceService.Duty::town).orElse(null);
+        if (town != null && town.permits(target.getUUID(),
+                com.jvn.villagerretaliation.settlement.SettlementPermission.VIEW)) {
+            return false;
+        }
         UUID hirer = HiredVillagerContractService.getHirer(level, villager).orElse(null);
         return hirer == null || !hirer.equals(target.getUUID());
     }

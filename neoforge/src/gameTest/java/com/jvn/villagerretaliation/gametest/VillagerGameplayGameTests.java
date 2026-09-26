@@ -1182,7 +1182,8 @@ public final class VillagerGameplayGameTests {
 
         var migrated = VillagerAssignmentStore.snapshot(villager);
         var journey = VillagerAssignmentStore.journey(villager);
-        helper.assertValueEqual(migrated.schemaVersion(), 2, "legacy assignment should migrate to schema v2");
+        helper.assertValueEqual(migrated.schemaVersion(), com.jvn.villagerretaliation.interaction.VillagerAssignmentSnapshot.CURRENT_SCHEMA_VERSION,
+                "legacy assignment should migrate to the current schema");
         helper.assertValueEqual(migrated.command(), VillagerAssignmentCommand.FOLLOW, "legacy follow command");
         helper.assertValueEqual(journey.startBiome(), "plains", "legacy journey biome");
         helper.assertValueEqual(journey.distanceBlocks(), 17, "legacy journey distance");

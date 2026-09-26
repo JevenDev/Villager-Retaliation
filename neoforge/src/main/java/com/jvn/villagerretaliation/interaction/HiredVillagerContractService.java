@@ -409,7 +409,8 @@ public final class HiredVillagerContractService {
         if (level == null || villager == null || villager.isBaby() || player == null) {
             return false;
         }
-        if (VillagerQuestHiringRestrictionService.blocksHiring(level, villager, player)) {
+        if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager)
+                || VillagerQuestHiringRestrictionService.blocksHiring(level, villager, player)) {
             return false;
         }
         VillagerAssignmentSnapshot assignment = synchronizeAssignment(level, villager);
@@ -433,7 +434,8 @@ public final class HiredVillagerContractService {
 
     public static void startOneOffBuilderJob(ServerLevel level, Villager villager, ServerPlayer player) {
         if (level == null || villager == null || villager.isBaby() || player == null
-                || !HiredVillagerRoles.canOfferBuilderService(level, villager)) {
+                || !HiredVillagerRoles.canOfferBuilderService(level, villager)
+                || com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager)) {
             return;
         }
         VillagerAssignmentSnapshot assignment = synchronizeAssignment(level, villager);
@@ -534,11 +536,7 @@ public final class HiredVillagerContractService {
 
     public static HiredVillagerRole activeRole(ServerLevel level, Villager villager) {
         expireHireContractIfNeeded(level, villager);
-        HiredVillagerRole role = HireContractStore.load(villager)
-                .filter(HireContract::isActiveOrAwaitingAutoPayment)
-                .map(HireContract::role)
-                .orElse(null);
-        return role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
+        return activeRoleWithoutMaintenance(level, villager);
     }
 
     /** Non-mutating role lookup for AI policy evaluation. */
@@ -547,6 +545,9 @@ public final class HiredVillagerContractService {
                 .filter(HireContract::isActiveOrAwaitingAutoPayment)
                 .map(HireContract::role)
                 .orElse(null);
+        if (role == null) {
+            role = com.jvn.villagerretaliation.settlement.SettlementWorkforceService.role(villager);
+        }
         return role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
     }
 

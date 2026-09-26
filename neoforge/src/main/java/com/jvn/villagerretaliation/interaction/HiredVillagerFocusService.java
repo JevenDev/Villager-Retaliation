@@ -89,6 +89,9 @@ public final class HiredVillagerFocusService {
     }
 
     public static boolean shouldUseVanillaRest(ServerLevel level, Villager villager) {
+        if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isPresent()) {
+            return !com.jvn.villagerretaliation.settlement.SettlementWorkforceService.onDuty(level, villager);
+        }
         if (HiredStressGridService.isStressWorker(villager) || isOnDutyGuard(level, villager)) {
             return false;
         }
@@ -103,7 +106,9 @@ public final class HiredVillagerFocusService {
                 || villager == null
                 || villager.isBaby()
                 || !villager.isAlive()
-                || !HiredVillagerContractService.hasActiveOrPendingContract(villager)
+                || !VillagerWorkAuthority.hasWork(villager)
+                || com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isPresent()
+                        && !com.jvn.villagerretaliation.settlement.SettlementWorkforceService.onDuty(level, villager)
                 || HiredVillagerContractService.isAwaitingAutoPayment(level, villager)
                 || HiredVillagerContractService.activeRoleWithoutMaintenance(level, villager)
                         != HiredVillagerRole.COMBAT) {
@@ -127,7 +132,7 @@ public final class HiredVillagerFocusService {
                 || VillagerConversationService.isConversing(villager)
                 || (!stressWorker && villager.getTarget() != null)
                 || villager.getLastHurtByMob() != null
-                || !HiredVillagerContractService.hasActiveOrPendingContract(villager);
+                || !VillagerWorkAuthority.hasWork(villager);
     }
 
     public static void suppressNonWorkAi(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -310,12 +315,8 @@ public final class HiredVillagerFocusService {
                 || VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
             return null;
         }
-        HireContractSnapshot contract = HiredVillagerContractService.snapshot(level, villager);
-        UUID hirerId = contract.hirer().orElse(null);
-        if (!contract.hired()
-                || contract.awaitingAutoPayment()
-                || hirerId == null
-                || level.getServer().getPlayerList().getPlayer(hirerId) == null) {
+        VillagerWorkAuthority contract = VillagerWorkAuthority.resolve(level, villager);
+        if (!contract.canWork(level, villager)) {
             return null;
         }
         HiredVillagerRole role = contract.role();

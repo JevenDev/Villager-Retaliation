@@ -23,6 +23,7 @@ public final class SettlementRecord {
     private final Runnable dirty;
     private final Map<UUID, Set<SettlementPermission>> delegates = new LinkedHashMap<>();
     private final Map<UUID, SettlementArea> areas = new LinkedHashMap<>();
+    private final Map<UUID, UUID> duties = new LinkedHashMap<>();
     private UUID leader;
     private SettlementStage stage = SettlementStage.CAMP;
     private long revision;
@@ -73,6 +74,29 @@ public final class SettlementRecord {
         return Collections.unmodifiableMap(this.areas);
     }
 
+    public Map<UUID, UUID> duties() {
+        return Collections.unmodifiableMap(this.duties);
+    }
+
+    boolean assignDuty(UUID resident, UUID area) {
+        SettlementArea target = this.areas.get(area);
+        if (resident == null || target == null || target.type().role() == null) {
+            return false;
+        }
+        if (!area.equals(this.duties.put(resident, area))) {
+            changed();
+        }
+        return true;
+    }
+
+    boolean removeDuty(UUID resident) {
+        if (this.duties.remove(resident) == null) {
+            return false;
+        }
+        changed();
+        return true;
+    }
+
     public boolean permits(UUID player, SettlementPermission permission) {
         if (player == null || permission == null) {
             return false;
@@ -115,6 +139,8 @@ public final class SettlementRecord {
         if (!permits(actor, SettlementPermission.BUILD) || area == null
                 || !area.within(this.center, this.stage.radius())
                 || !this.areas.containsKey(area.id()) && this.areas.size() >= MAX_AREAS
+                || this.areas.containsKey(area.id()) && this.areas.get(area.id()).type() != area.type()
+                        && this.duties.containsValue(area.id())
                 || this.areas.values().stream().anyMatch(existing ->
                         !existing.id().equals(area.id()) && existing.intersects(area))) {
             return false;
@@ -129,6 +155,7 @@ public final class SettlementRecord {
         if (!permits(actor, SettlementPermission.BUILD) || this.areas.remove(area) == null) {
             return false;
         }
+        this.duties.values().removeIf(area::equals);
         changed();
         return true;
     }
@@ -167,6 +194,14 @@ public final class SettlementRecord {
         ListTag areaTags = new ListTag();
         this.areas.values().forEach(area -> areaTags.add(area.save()));
         tag.put("Areas", areaTags);
+        ListTag dutyTags = new ListTag();
+        this.duties.forEach((resident, area) -> {
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("Resident", resident);
+            entry.putUUID("Area", area);
+            dutyTags.add(entry);
+        });
+        tag.put("Duties", dutyTags);
         return tag;
     }
 
@@ -199,10 +234,22 @@ public final class SettlementRecord {
         for (Tag raw : tag.getList("Areas", Tag.TAG_COMPOUND)) {
             SettlementArea area = SettlementArea.load((CompoundTag) raw);
             if (!area.within(record.center, record.stage.radius()) || record.areas.size() >= MAX_AREAS
+                    || record.areas.containsKey(area.id())
                     || record.areas.values().stream().anyMatch(existing -> existing.intersects(area))) {
                 throw new IllegalArgumentException("Settlement areas exceed their bounds or overlap");
             }
             record.areas.put(area.id(), area);
+        }
+        for (Tag raw : tag.getList("Duties", Tag.TAG_COMPOUND)) {
+            CompoundTag entry = (CompoundTag) raw;
+            if (!entry.hasUUID("Resident") || !entry.hasUUID("Area")) {
+                throw new IllegalArgumentException("Settlement duty is missing its resident or area");
+            }
+            SettlementArea area = record.areas.get(entry.getUUID("Area"));
+            if (area == null || area.type().role() == null
+                    || record.duties.putIfAbsent(entry.getUUID("Resident"), area.id()) != null) {
+                throw new IllegalArgumentException("Settlement duty is duplicated or has no workplace");
+            }
         }
         return record;
     }

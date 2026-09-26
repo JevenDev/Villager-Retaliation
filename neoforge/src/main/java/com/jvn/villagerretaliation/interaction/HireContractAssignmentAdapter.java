@@ -21,7 +21,11 @@ public final class HireContractAssignmentAdapter {
         HiredVillagerRole role = contract.role();
         if (role == null) role = HiredVillagerRoles.defaultRole(level, villager);
         if (!assignment.ownedBy(contract.owner().get())) {
-            if (assignment.state() == VillagerAssignmentState.HIRED) VillagerAssignmentStore.unassign(villager);
+            if (assignment.state() == VillagerAssignmentState.CIVIC) {
+                com.jvn.villagerretaliation.settlement.SettlementWorkforceService.reconcile(level, villager);
+            } else if (assignment.state() == VillagerAssignmentState.HIRED) {
+                VillagerAssignmentStore.unassign(villager);
+            }
             return VillagerAssignmentStore.hire(
                     villager, contract.owner().get(), role, contract.startGameTime(), villager.blockPosition());
         }
@@ -34,6 +38,8 @@ public final class HireContractAssignmentAdapter {
     }
 
     public static void contractEnded(Villager villager) {
-        VillagerAssignmentStore.unassign(villager);
+        if (VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.HIRED) {
+            VillagerAssignmentStore.unassign(villager);
+        }
     }
 }

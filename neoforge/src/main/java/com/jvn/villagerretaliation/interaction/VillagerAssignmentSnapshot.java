@@ -15,7 +15,7 @@ public record VillagerAssignmentSnapshot(
         long hiredAt,
         long revision,
         int schemaVersion) {
-    public static final int CURRENT_SCHEMA_VERSION = 2;
+    public static final int CURRENT_SCHEMA_VERSION = 3;
 
     public static VillagerAssignmentSnapshot unassigned(long revision) {
         return new VillagerAssignmentSnapshot(

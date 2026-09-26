@@ -42,6 +42,9 @@ public final class VillagerBehaviorSuppressionPolicy {
         if (HiredVillagerContractService.hasActiveOrPendingContract(villager)) {
             return ControlState.HIRED;
         }
+        if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isPresent()) {
+            return ControlState.CIVIC;
+        }
         if (villager.level() instanceof ServerLevel level
                 && VillagerStudyService.isActivelyStudying(level, villager)) {
             return ControlState.STUDYING;
@@ -67,7 +70,7 @@ public final class VillagerBehaviorSuppressionPolicy {
         if (state == ControlState.DOWNED || state == ControlState.PARTIED) {
             return true;
         }
-        if (state != ControlState.HIRED) {
+        if (state != ControlState.HIRED && state != ControlState.CIVIC) {
             return false;
         }
         if (villager.isTrading() || VillagerConversationService.isConversing(villager)) {
@@ -143,6 +146,9 @@ public final class VillagerBehaviorSuppressionPolicy {
                 Behavior.WANDERING,
                 Behavior.JOB_SITE_CLAIMING,
                 Behavior.VILLAGE_MIGRATION));
+        rules.put(ControlState.CIVIC, EnumSet.of(
+                Behavior.JOB_SITE_CLAIMING,
+                Behavior.VILLAGE_MIGRATION));
         rules.put(ControlState.PARTIED, EnumSet.of(
                 Behavior.TRADING,
                 Behavior.BREEDING,
@@ -167,6 +173,7 @@ public final class VillagerBehaviorSuppressionPolicy {
         NORMAL,
         DOWNED,
         HIRED,
+        CIVIC,
         PARTIED,
         STUDYING
     }

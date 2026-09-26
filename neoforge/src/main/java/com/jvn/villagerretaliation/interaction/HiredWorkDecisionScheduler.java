@@ -117,14 +117,12 @@ public final class HiredWorkDecisionScheduler {
                 || (!stressWorker && villager.getTarget() != null)
                 || villager.getLastHurtByMob() != null
                 || VillagerRecruitmentService.isFollowingAnyPlayer(villager)
-                || (!stressWorker && HiredVillagerFocusService.isVanillaRestActive(villager))) {
+                || (!stressWorker && HiredVillagerFocusService.isVanillaRestActive(villager)
+                        && HiredVillagerFocusService.shouldUseVanillaRest(level, villager))) {
             return false;
         }
-        HireContractSnapshot contract = HiredVillagerContractService.snapshot(level, villager);
-        if (!contract.hired() || contract.awaitingAutoPayment() || contract.hirer().isEmpty()) {
-            return false;
-        }
-        if (level.getServer().getPlayerList().getPlayer(contract.hirer().orElseThrow()) == null) {
+        VillagerWorkAuthority contract = VillagerWorkAuthority.resolve(level, villager);
+        if (!contract.canWork(level, villager)) {
             return false;
         }
         return HiredWorkStateStore.state(villager).getBoolean("Enabled")

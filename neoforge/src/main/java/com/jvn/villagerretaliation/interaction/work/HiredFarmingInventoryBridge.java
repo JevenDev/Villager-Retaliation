@@ -237,7 +237,7 @@ public final class HiredFarmingInventoryBridge {
 
     private static HiredWorkSession activeFarmingSession(ServerLevel level, Villager villager) {
         if (VillagerRetaliationVillagerCombatUtil.isThreatened(villager)
-                || !HiredVillagerContractService.isHired(level, villager)
+                || !com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.hasWork(villager)
                 || HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.FARMING) {
             return null;
         }

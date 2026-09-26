@@ -16,6 +16,9 @@ public final class RecruitmentPolicy {
         Decision inputs = validInputs(level, villager, player);
         if (!inputs.allowed()) return inputs;
         if (villager.isBaby()) return Decision.denied(DenialReason.BABY);
+        if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager)) {
+            return Decision.denied(DenialReason.SETTLEMENT_DUTY);
+        }
         if (!hasTrust(level, villager, player, VillagerReputationLevel.NEUTRAL)) {
             return Decision.denied(DenialReason.INSUFFICIENT_REPUTATION);
         }
@@ -31,6 +34,9 @@ public final class RecruitmentPolicy {
         Decision inputs = validInputs(level, villager, player);
         if (!inputs.allowed()) return inputs;
         if (command == null) return Decision.denied(DenialReason.UNSUPPORTED_COMMAND);
+        if (com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager)) {
+            return Decision.denied(DenialReason.SETTLEMENT_DUTY);
+        }
         VillagerAssignmentSnapshot assignment = VillagerAssignmentStore.snapshot(villager);
         if (PartyVillagerContractService.hasPartyEntityReference(villager)) {
             return Decision.denied(DenialReason.PARTY_CONTROLLED);
@@ -99,6 +105,7 @@ public final class RecruitmentPolicy {
         OWNED_BY_ANOTHER_PLAYER,
         COMMANDED_BY_ANOTHER_PLAYER,
         PARTY_CONTROLLED,
+        SETTLEMENT_DUTY,
         UNSUPPORTED_COMMAND
     }
 

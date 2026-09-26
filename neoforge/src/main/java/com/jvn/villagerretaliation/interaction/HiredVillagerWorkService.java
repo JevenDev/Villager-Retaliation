@@ -106,8 +106,8 @@ public final class HiredVillagerWorkService {
             return;
         }
         HiredVillagerContractService.expireHireContractIfNeeded(level, villager);
-        HireContractSnapshot contract = HiredVillagerContractService.snapshot(level, villager);
-        if (!contract.hired()) {
+        VillagerWorkAuthority contract = VillagerWorkAuthority.resolve(level, villager);
+        if (!contract.active()) {
             return;
         }
         HiredStressGridService.keepStressWorkerAwake(villager);
@@ -117,6 +117,10 @@ public final class HiredVillagerWorkService {
         boolean decisionTick = decisionOpportunity && HiredWorkDecisionScheduler.tryAcquire(level, villager);
 
         HiredWorkSession session = HiredWorkSession.create(level, villager, contract.role());
+        if (contract.civic() && !contract.canWork(level, villager)) {
+            pauseForVanillaRest(level, villager, session);
+            return;
+        }
         if (VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             pauseForRecruitmentCommand(level, villager, session);
@@ -135,8 +139,8 @@ public final class HiredVillagerWorkService {
             return;
         }
 
-        UUID hirerId = contract.hirer().orElse(null);
-        if (hirerId == null || !(level.getServer().getPlayerList().getPlayer(hirerId) instanceof ServerPlayer hirer)) {
+        ServerPlayer hirer = contract.onlineOwner(level);
+        if (hirer == null && !contract.civic()) {
             CompoundTag waitingState = state(villager);
             initializeDefaults(waitingState, villager);
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
@@ -145,7 +149,7 @@ public final class HiredVillagerWorkService {
             setStatus(waitingState, WAITING_FOR_HIRER_STATUS);
             return;
         }
-        if (VillagerAggressionPolicy.shouldAttackOnSight(villager, hirer)) {
+        if (hirer != null && VillagerAggressionPolicy.shouldAttackOnSight(villager, hirer)) {
             pauseForDespisedHirer(level, villager, session);
             return;
         }
@@ -213,22 +217,28 @@ public final class HiredVillagerWorkService {
 
         WorkResult result = session.worker().tick(level, villager, hirer, session.context());
         setStatus(session.state(), result.status(), result.replacements());
-        maybeNotifyStorageFull(level, villager, hirer, session.context(), session.state());
+        if (hirer != null) {
+            maybeNotifyStorageFull(level, villager, hirer, session.context(), session.state());
+        }
         HiredWorkSkillGrowthService.onPractice(
                 level, villager, hirer, session.role(), session.state(), result.practice());
         if (result.completed()) {
-            VillagerReputationAdvancements.onHiredAssignmentCompleted(hirer, villager);
+            if (hirer != null) {
+                VillagerReputationAdvancements.onHiredAssignmentCompleted(hirer, villager);
+            }
             recordCompletedTask(session.state());
             session.state().putLong("NextWorkGameTime", level.getGameTime() + completedTaskCooldownTicks(session.efficiency()));
             HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
-            maybeNotify(
-                    level,
-                    villager,
-                    hirer,
-                    session.state(),
-                    HiredVillagerRoleSettings.workFinalReportMessageKey(session.role()),
-                    workReportReplacements(hirer, level, villager, session, snapshot),
-                    hiredWorkReportNoticeCooldownTicks());
+            if (hirer != null) {
+                maybeNotify(
+                        level,
+                        villager,
+                        hirer,
+                        session.state(),
+                        HiredVillagerRoleSettings.workFinalReportMessageKey(session.role()),
+                        workReportReplacements(hirer, level, villager, session, snapshot),
+                        hiredWorkReportNoticeCooldownTicks());
+            }
             if (session.role() == HiredVillagerRole.BUILDER
                     && contract.oneOffBuilderJob()
                     && !BuilderTaskState.hasTask(session.state())) {
@@ -260,7 +270,7 @@ public final class HiredVillagerWorkService {
                 || VillagerRecoveryService.isForcingRecovery(villager)
                 || (!stressWorker && villager.getTarget() != null)
                 || villager.getLastHurtByMob() != null
-                || !HiredVillagerContractService.hasContract(villager);
+                || !VillagerWorkAuthority.hasWork(villager);
     }
 
     private static void pauseForVanillaRest(ServerLevel level, Villager villager, HiredWorkSession session) {
@@ -1624,6 +1634,10 @@ public final class HiredVillagerWorkService {
             HiredVillagerRole role,
             CompoundTag state,
             int maxRadius) {
+        var duty = com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).orElse(null);
+        if (duty != null) {
+            return HiredJobSite.fromWorkArea(HiredWorkArea.fromBounds(duty.area().min(), duty.area().max(), true));
+        }
         HiredWorkArea storedArea = workAreaWithinMax(state, villager, maxRadius);
         if (role == HiredVillagerRole.BUILDER) {
             return HiredJobSite.fromWorkArea(storedArea.asUsable(false));

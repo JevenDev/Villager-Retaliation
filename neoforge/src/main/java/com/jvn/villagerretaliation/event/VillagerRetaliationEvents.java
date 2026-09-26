@@ -454,6 +454,9 @@ public final class VillagerRetaliationEvents {
             VillagerNaturalJobArmor.maybeRoll(villager);
             VillagerConversationService.tickVillager(villager);
             HiredVillagerContractService.onVillagerTickPost(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                com.jvn.villagerretaliation.settlement.SettlementWorkforceService.reconcile(level, villager);
+            }
             VillagerRecruitmentService.onVillagerTickPost(villager);
             HiredVillagerWorkService.onVillagerTickPost(villager);
             if (villager.level() instanceof ServerLevel level) {
