@@ -211,7 +211,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
         pair.first().setInLove(hirer);
         pair.second().setInLove(hirer);
-        rememberHandledAnimals(context, level.getGameTime(), pair.first(), pair.second());
+        rememberHandledAnimals(context.state(), level.getGameTime(), pair.first(), pair.second());
         setTaskState(context, HiredWorkerTaskState.IDLE, pair.first().blockPosition());
         useWorkItem(level, villager, breedingFood);
         return WorkResult.completedWithPractice(
@@ -871,11 +871,11 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 && (shearSheep && animal instanceof Sheep sheep && sheep.readyForShearing() || isMilkable(animal));
     }
 
-    private static void rememberHandledAnimals(HiredWorkContext context, long gameTime, Animal first, Animal second) {
+    public static void rememberHandledAnimals(CompoundTag state, long gameTime, Animal first, Animal second) {
         long cooldownUntil = gameTime + VANILLA_PARENT_BREEDING_COOLDOWN_TICKS;
         UUID firstId = first.getUUID();
         UUID secondId = second.getUUID();
-        ListTag existing = context.state().getList(RECENTLY_HANDLED_ANIMALS_TAG, Tag.TAG_COMPOUND);
+        ListTag existing = state.getList(RECENTLY_HANDLED_ANIMALS_TAG, Tag.TAG_COMPOUND);
         ListTag updated = new ListTag();
         for (int i = 0; i < existing.size(); i++) {
             CompoundTag entry = existing.getCompound(i);
@@ -889,12 +889,12 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         }
         appendCooldown(updated, firstId, cooldownUntil);
         appendCooldown(updated, secondId, cooldownUntil);
-        context.state().put(RECENTLY_HANDLED_ANIMALS_TAG, updated);
+        state.put(RECENTLY_HANDLED_ANIMALS_TAG, updated);
     }
 
-    private static boolean isHandledAnimalOnCooldown(HiredWorkContext context, Animal animal, long gameTime) {
+    public static boolean isHandledAnimalOnCooldown(CompoundTag state, Animal animal, long gameTime) {
         UUID animalId = animal.getUUID();
-        ListTag handledAnimals = context.state().getList(RECENTLY_HANDLED_ANIMALS_TAG, Tag.TAG_COMPOUND);
+        ListTag handledAnimals = state.getList(RECENTLY_HANDLED_ANIMALS_TAG, Tag.TAG_COMPOUND);
         for (int i = 0; i < handledAnimals.size(); i++) {
             CompoundTag entry = handledAnimals.getCompound(i);
             if (entry.hasUUID(ANIMAL_ID_TAG)
@@ -941,7 +941,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         return animal.isAlive()
                 && !animal.isBaby()
                 && animal.canFallInLove()
-                && !isHandledAnimalOnCooldown(context, animal, level.getGameTime())
+                && !isHandledAnimalOnCooldown(context.state(), animal, level.getGameTime())
                 && context.isInsideWorkArea(animal.blockPosition())
                 && context.isLoaded(level, animal.blockPosition())
                 && !HiredPathMemory.isAvoided(level, villager, animal.blockPosition())

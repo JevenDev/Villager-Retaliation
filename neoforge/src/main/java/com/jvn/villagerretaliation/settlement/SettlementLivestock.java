@@ -26,6 +26,8 @@ public final class SettlementLivestock {
     private boolean pending;
     private boolean unsafe;
     private double grazing;
+    private UUID matingPartner;
+    private int matingTicks;
 
     private SettlementLivestock(UUID id, UUID area, ResourceLocation type) {
         this.id = id;
@@ -71,6 +73,7 @@ public final class SettlementLivestock {
         if (!animal.blockPosition().equals(this.position)) {
             this.access.clear();
             this.grazing = 0.0D;
+            resetMating();
         }
         this.position = animal.blockPosition().immutable();
         this.entity = animal.saveWithoutId(new CompoundTag());
@@ -147,6 +150,35 @@ public final class SettlementLivestock {
         if (age != sheep.getAge() || sheared != sheep.isSheared()) changed();
     }
 
+    void feed() {
+        this.entity.putInt("InLove", 600);
+        changed();
+    }
+
+    int court(UUID partner, int elapsed) {
+        if (!partner.equals(this.matingPartner)) {
+            this.matingPartner = partner;
+            this.matingTicks = 0;
+        }
+        int before = this.matingTicks;
+        this.matingTicks = Math.min(60, this.matingTicks + Math.clamp(elapsed, 0, 200));
+        return before;
+    }
+
+    boolean resetMating() {
+        boolean changed = this.matingPartner != null || this.matingTicks != 0;
+        this.matingPartner = null;
+        this.matingTicks = 0;
+        return changed;
+    }
+
+    void bred(int remainder) {
+        this.entity.putInt("Age", 6000 - Math.clamp(remainder, 0, 200));
+        this.entity.putInt("InLove", 0);
+        resetMating();
+        changed();
+    }
+
     void shear() {
         this.entity.putBoolean("Sheared", true);
         changed();
@@ -160,6 +192,10 @@ public final class SettlementLivestock {
     void access(UUID worker, BlockPos start, int steps) {
         if (steps < 0) this.access.remove(worker);
         else this.access.put(worker, new Access(start.immutable(), steps));
+    }
+
+    void inheritAccess(SettlementLivestock parent) {
+        if (this.area.equals(parent.area) && this.position.equals(parent.position)) this.access.putAll(parent.access);
     }
 
     int steps(SettlementWorkerState worker) {
@@ -179,6 +215,8 @@ public final class SettlementLivestock {
         tag.putBoolean("Pending", this.pending);
         tag.putBoolean("Unsafe", this.unsafe);
         tag.putDouble("Grazing", this.grazing);
+        if (this.matingPartner != null) tag.putUUID("MatingPartner", this.matingPartner);
+        tag.putInt("MatingTicks", this.matingTicks);
         ListTag routes = new ListTag();
         this.access.forEach((worker, route) -> {
             CompoundTag entry = new CompoundTag();
@@ -209,6 +247,11 @@ public final class SettlementLivestock {
         state.grazing = tag.getDouble("Grazing");
         if (!Double.isFinite(state.grazing) || state.grazing < 0.0D || state.grazing >= 1.0D) {
             throw new IllegalArgumentException("Livestock grazing progress is invalid");
+        }
+        state.matingPartner = tag.hasUUID("MatingPartner") ? tag.getUUID("MatingPartner") : null;
+        state.matingTicks = tag.getInt("MatingTicks");
+        if (state.matingTicks < 0 || state.matingTicks > 60 || state.matingTicks > 0 && state.matingPartner == null) {
+            throw new IllegalArgumentException("Livestock mating progress is invalid");
         }
         for (Tag raw : tag.getList("Access", Tag.TAG_COMPOUND)) {
             var entry = (CompoundTag) raw;

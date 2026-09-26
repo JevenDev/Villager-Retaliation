@@ -11,7 +11,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.AABB;
 
@@ -28,7 +27,7 @@ public final class SettlementLivestockService {
         if (area.type() != SettlementAreaType.ANIMAL_PEN) return;
         var animals = level.getEntitiesOfClass(Animal.class, new AABB(area.min().getX(), area.min().getY(), area.min().getZ(),
                 area.max().getX() + 1.0D, area.max().getY() + 1.0D, area.max().getZ() + 1.0D),
-                animal -> animal.isAlive() && (animal instanceof Sheep || AnimalBreedingWorker.isMilkable(animal)));
+                animal -> animal.isAlive() && (SettlementLivestockBreeding.supported(animal) || AnimalBreedingWorker.isMilkable(animal)));
         if (animals.isEmpty()) return;
         int cursor = Math.floorMod(AREA_CURSORS.getOrDefault(area, 0), animals.size());
         int count = Math.min(16, animals.size());
@@ -104,6 +103,8 @@ public final class SettlementLivestockService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
+        SettlementAnimalBirthService.update(level, town);
+        var frames = new java.util.ArrayList<SettlementLivestockBreeding.Frame>();
         for (var state : List.copyOf(town.livestock().values())) {
             var entity = level.getEntity(state.id());
             if (entity != null && (!(entity instanceof Animal) || !entity.isAlive()
@@ -117,26 +118,31 @@ public final class SettlementLivestockService {
                 boolean active = level.isPositionEntityTicking(animal.blockPosition());
                 state.observe(animal, active ? now : state.checkedAt());
                 if (!active) {
-                    int elapsed = state.advance(now);
-                    SettlementPasture.graze(level, town, state, elapsed);
+                    var frame = SettlementLivestockBreeding.step(level, state, now);
+                    frames.add(frame);
+                    if (frame.animal() == null || !frame.animal().isInLove()) SettlementPasture.graze(level, town, state, frame.elapsed());
                     state.restore(animal);
                 } else {
                     state.resetGrazing();
+                    state.resetMating();
                 }
                 if (area == null || area.type() != SettlementAreaType.ANIMAL_PEN || !area.contains(animal.blockPosition())) {
                     town.removeLivestock(state.id());
                     OWNERS.remove(animal);
                 }
-            } else if (level.areEntitiesLoaded(ChunkPos.asLong(state.position()))) {
+            } else if (level.areEntitiesLoaded(ChunkPos.asLong(state.position())) && !SettlementAnimalBirthService.pending(level, town, state.id())) {
                 town.removeLivestock(state.id());
             } else if (area != null && area.type() == SettlementAreaType.ANIMAL_PEN && area.contains(state.position())) {
-                int elapsed = state.advance(now);
-                SettlementPasture.graze(level, town, state, elapsed);
+                var frame = SettlementLivestockBreeding.step(level, state, now);
+                frames.add(frame);
+                if (frame.animal() == null || !frame.animal().isInLove()) SettlementPasture.graze(level, town, state, frame.elapsed());
             } else if (!state.pending()) {
                 town.removeLivestock(state.id());
             }
             town.changed();
         }
+        SettlementLivestockBreeding.advance(level, town, frames, now);
+        SettlementAnimalBirthService.update(level, town);
     }
 
     public static void onActive(Animal animal) {
@@ -146,7 +152,8 @@ public final class SettlementLivestockService {
         var state = town.livestock().get(animal.getUUID());
         if (state != null) {
             boolean restored = state.restore(animal);
-            if (state.resetGrazing() || restored) town.changed();
+            boolean grazing = state.resetGrazing();
+            if (state.resetMating() || grazing || restored) town.changed();
         }
     }
 

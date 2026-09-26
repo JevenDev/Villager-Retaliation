@@ -37,6 +37,8 @@ final class SettlementBackgroundAnimalHandling {
         var inventory = HiredJobInventory.getJobInventory(owner);
         var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
         try {
+            var feeding = SettlementBackgroundBreeding.feed(level, town, worker, inventory, depots, budget);
+            if (feeding == SettlementBackgroundBreeding.Result.ACTED) return;
             for (int action = 0; action < 4; action++) {
                 var candidates = town.livestock().values().stream()
                         .filter(animal -> animal.area().equals(area.id()) && area.contains(animal.position()) && !animal.unsafe())
@@ -55,7 +57,8 @@ final class SettlementBackgroundAnimalHandling {
                     }
                 }
                 if (target == null) {
-                    worker.status(candidates.isEmpty() ? "no_observed_livestock" : "no_animal_products");
+                    worker.status(feeding == SettlementBackgroundBreeding.Result.NO_FOOD ? "missing_breeding_food"
+                            : candidates.isEmpty() ? "no_observed_livestock" : "no_animal_products");
                     return;
                 }
                 int steps = target.steps(worker);
@@ -123,7 +126,7 @@ final class SettlementBackgroundAnimalHandling {
         }
     }
 
-    private static int productTicks(SettlementWorkerState worker) {
+    static int productTicks(SettlementWorkerState worker) {
         int efficiency = HiredVillagerWorkService.calculateEfficiencyPercent(
                 VillagerRetaliationConfig.HIRED_WORK_BASE_EFFICIENCY_PERCENT.get(),
                 HiredVillagerRoles.roleCadencePercent(worker.role(), worker.aptitude()), 0, false,

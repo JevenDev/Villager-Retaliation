@@ -162,6 +162,10 @@ public final class SettlementWorkerState {
         return true;
     }
 
+    long checkedAt() {
+        return this.checkedAt;
+    }
+
     int elapsed(long now) {
         int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
         this.checkedAt = now;
