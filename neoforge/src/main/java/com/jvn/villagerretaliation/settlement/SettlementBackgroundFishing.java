@@ -62,7 +62,8 @@ public final class SettlementBackgroundFishing {
     }
 
     static void restore(SettlementWorkerState worker, Villager villager) {
-        if (worker.role() != HiredVillagerRole.FISHING && !hasPendingCatch(worker.settings())) return;
+        if (worker.role() != HiredVillagerRole.FISHING && !hasPendingCatch(worker.settings())
+                && !worker.settings().contains(EXPERIENCE, Tag.TAG_LIST)) return;
         var state = HiredWorkStateStore.state(villager);
         var hook = ownedHook((ServerLevel) villager.level(), villager, state);
         if (hook != null) hook.discard();

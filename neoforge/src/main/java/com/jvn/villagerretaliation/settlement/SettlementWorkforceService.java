@@ -32,6 +32,23 @@ public final class SettlementWorkforceService {
                 .flatMap(SettlementSavedData.get(level)::get);
     }
 
+    public static boolean assignResident(ServerLevel level, ServerPlayer player, VillageAllegianceId townId, UUID resident, UUID areaId) {
+        var town = SettlementSavedData.get(level).get(townId).orElse(null);
+        if (town == null || resident == null || player == null || !player.isAlive() || player.isSpectator()
+                || player.level() != level || !town.dimension().equals(level.dimension().location())
+                || !town.permits(player.getUUID(), SettlementPermission.STAFF)) return false;
+        for (var dimension : level.getServer().getAllLevels()) {
+            var entity = dimension.getEntity(resident);
+            if (entity != null) return entity instanceof Villager villager && assign(level, player, townId, villager, areaId);
+        }
+        var care = town.residents().get(resident);
+        if (care == null || !care.availableForWork() || town.departures().containsKey(resident)
+                || !VillageAllegianceRegistrySavedData.get(level).canonicalRecord(townId)
+                        .map(record -> record.residents().containsKey(resident)).orElse(false)) return false;
+        var villager = care.context(level);
+        return villager != null && assign(level, player, townId, villager, areaId);
+    }
+
     public static boolean assign(ServerLevel level, ServerPlayer player, VillageAllegianceId townId,
                                  Villager villager, UUID areaId) {
         SettlementRecord town = SettlementSavedData.get(level).get(townId).orElse(null);
@@ -51,10 +68,23 @@ public final class SettlementWorkforceService {
                         && town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) {
             return false;
         }
+        var previous = town.workers().get(villager.getUUID());
+        if (previous != null) previous.restore(villager);
         if (!town.assignDuty(villager.getUUID(), areaId)) {
             return false;
         }
         reconcile(level, villager);
+        var worker = SettlementWorkerState.capture(level, villager, new Duty(town, area), level.getGameTime());
+        worker.changed();
+        town.recordWorker(worker);
+        worker.restore(villager);
+        var care = town.residents().get(villager.getUUID());
+        if (care == null) {
+            town.recordResident(SettlementResidentState.capture(villager, town, level.getGameTime()));
+        } else {
+            care.remember(villager);
+            town.changed();
+        }
         return true;
     }
 
@@ -62,11 +92,17 @@ public final class SettlementWorkforceService {
         SettlementRecord town = SettlementSavedData.get(level).get(townId).orElse(null);
         if (town == null || player == null || !player.isAlive() || player.isSpectator()
                 || player.level() != level || !town.dimension().equals(level.dimension().location())
-                || !town.leader().equals(player.getUUID()) || !town.removeDuty(resident)) {
+                || !town.leader().equals(player.getUUID()) || !town.duties().containsKey(resident)) {
             return false;
         }
-        if (level.getEntity(resident) instanceof Villager villager) {
+        Villager villager = level.getEntity(resident) instanceof Villager loaded ? loaded : null;
+        var worker = town.workers().get(resident);
+        if (villager != null && worker != null) worker.restore(villager);
+        if (!town.removeDuty(resident)) return false;
+        if (villager != null) {
             reconcile(level, villager);
+            var care = town.residents().get(resident);
+            if (care != null) care.remember(villager);
         }
         return true;
     }

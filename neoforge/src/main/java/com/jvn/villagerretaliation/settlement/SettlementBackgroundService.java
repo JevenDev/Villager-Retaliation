@@ -108,6 +108,10 @@ public final class SettlementBackgroundService {
             if (worker != null && worker.restore(villager)) {
                 SettlementLogisticsService.clear(villager);
             }
+            if (!java.util.Objects.equals(town.duties().get(villager.getUUID()),
+                    com.jvn.villagerretaliation.interaction.VillagerAssignmentStore.civicArea(villager).orElse(null))) {
+                SettlementWorkforceService.reconcile(level, villager);
+            }
             if (worker != null) {
                 SettlementBackgroundFishing.finishReturnedCatch(level, villager);
                 SettlementBackgroundFishing.returnExperience(level, villager, worker);

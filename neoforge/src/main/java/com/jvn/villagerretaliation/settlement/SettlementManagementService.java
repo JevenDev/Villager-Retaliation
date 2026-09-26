@@ -78,8 +78,7 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.SaveWorker save -> SettlementWorkerConfigurationService.configure(
                     player, town, save.resident(), save.area(), save.settings());
             case SettlementManagementActionPayload.Guard guard -> SettlementGuardService.command(player, town, guard.resident(), guard.order());
-            case SettlementManagementActionPayload.Assign assign -> level.getEntity(assign.resident()) instanceof Villager villager
-                    && SettlementWorkforceService.assign(level, player, id, villager, assign.area());
+            case SettlementManagementActionPayload.Assign assign -> SettlementWorkforceService.assignResident(level, player, id, assign.resident(), assign.area());
             case SettlementManagementActionPayload.Release release -> SettlementWorkforceService.release(level, player, id, release.resident());
             case SettlementManagementActionPayload.Applicant applicant -> applicant.approve()
                     ? SettlementPopulationService.approve(player, id, applicant.id()) : SettlementPopulationService.decline(player, id, applicant.id());
@@ -207,7 +206,7 @@ public final class SettlementManagementService {
                             : !town.duties().containsKey(member.id()) ? "unassigned"
                             : town.workerSettings().containsKey(member.id()) && !town.workerSettings().get(member.id()).enabled() ? "paused"
                             : worker == null ? "active" : worker.status(),
-                    villager == null || villager.isBaby() ? List.of() : HiredVillagerRoles.availableRoles(level, villager),
+                    villager == null ? care == null ? List.of() : care.availableRoles(level) : HiredVillagerRoles.availableRoles(level, villager),
                     town.guardOrders().get(member.id()), SettlementWorkerConfigurationService.snapshot(level, town, member.id()),
                     SettlementBrewingService.snapshot(level, town, member.id())));
         }

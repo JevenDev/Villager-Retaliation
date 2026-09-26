@@ -2,10 +2,15 @@ package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
-import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
-import com.jvn.villagerretaliation.party.PartyVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
+import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
+import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -13,6 +18,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
@@ -37,6 +43,7 @@ public final class SettlementResidentState {
     private boolean present;
     private boolean downed;
     private boolean personalCommitment;
+    private CompoundTag entityContext = new CompoundTag();
 
     private SettlementResidentState(UUID id) {
         this.id = id;
@@ -116,9 +123,33 @@ public final class SettlementResidentState {
                 && Math.abs(villager.getX() - town.center().getX()) <= radius
                 && Math.abs(villager.getZ() - town.center().getZ()) <= radius;
         this.downed = VillagerDownedService.isDowned(villager);
-        this.personalCommitment = HiredVillagerContractService.hasActiveOrPendingContract(villager)
-                || PartyVillagerContractService.hasPartyEntityReference(villager)
-                || VillagerRecruitmentService.isFollowingAnyPlayer(villager);
+        this.personalCommitment = SettlementWorkforceService.hasPersonalCommitment(villager);
+        remember(villager);
+    }
+
+    void remember(Villager villager) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident context has a different identity");
+        this.entityContext = villager.saveWithoutId(new CompoundTag());
+    }
+
+    Villager context(ServerLevel level) {
+        if (this.entityContext.isEmpty()) return null;
+        var villager = EntityType.VILLAGER.create(level);
+        if (villager == null) return null;
+        villager.load(this.entityContext.copy());
+        restore(villager);
+        return villager;
+    }
+
+    List<HiredVillagerRole> availableRoles(ServerLevel level) {
+        if (!availableForWork() || this.entityContext.isEmpty()) return List.of();
+        var profession = VillagerProfessionUtil.parse(this.entityContext.getCompound("VillagerData").getString("profession"));
+        if (profession.isEmpty()) return List.of();
+        var key = VillagerProfessionSkills.professionKey(profession.get());
+        var profile = VillagerProfileSavedData.get(level).get(this.id);
+        var skills = profile == null ? VillagerSkillSet.EMPTY : profile.skills();
+        return Arrays.stream(HiredVillagerRole.values())
+                .filter(role -> HiredVillagerRoles.isSkillUnlocked(key, false, skills, role)).toList();
     }
 
     boolean restore(Villager villager) {
@@ -266,6 +297,7 @@ public final class SettlementResidentState {
         tag.putBoolean("Present", this.present);
         tag.putBoolean("Downed", this.downed);
         tag.putBoolean("PersonalCommitment", this.personalCommitment);
+        if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
         return tag;
     }
 
@@ -290,6 +322,10 @@ public final class SettlementResidentState {
         state.present = tag.getBoolean("Present");
         state.downed = tag.getBoolean("Downed");
         state.personalCommitment = tag.getBoolean("PersonalCommitment");
+        state.entityContext = tag.getCompound("EntityContext").copy();
+        if (!state.entityContext.isEmpty() && (!state.entityContext.hasUUID("UUID") || !state.id.equals(state.entityContext.getUUID("UUID")))) {
+            throw new IllegalArgumentException("Resident context has a different identity");
+        }
         return state;
     }
 }
