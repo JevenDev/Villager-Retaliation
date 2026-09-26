@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.block;
 
-import com.jvn.villagerretaliation.allegiance.VillageOverviewService;
+import com.jvn.villagerretaliation.settlement.SettlementManagementService;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.settlement.SettlementLeadershipService;
 import com.jvn.villagerretaliation.settlement.SettlementFoundingService;
@@ -36,14 +36,14 @@ public final class SettlementManagementBlock extends Block {
         if (player instanceof ServerPlayer serverPlayer) {
             var result = SettlementFoundingService.found(serverPlayer, pos);
             if (result.town().isPresent()) {
-                VillageOverviewService.open(serverPlayer, pos);
+                SettlementManagementService.open(serverPlayer, result.town().orElseThrow().id());
             } else if (result.status() == SettlementFoundingService.Status.INDEPENDENT_VILLAGE) {
                 var registry = VillageAllegianceRegistrySavedData.get(serverPlayer.serverLevel());
                 var village = registry.discoverAt(serverPlayer.serverLevel(), pos).orElse(null);
                 if (serverPlayer.isShiftKeyDown() && village != null
                         && SettlementLeadershipService.accept(serverPlayer, village, pos).isPresent()) {
                     serverPlayer.displayClientMessage(Component.translatable("settlement.villagerretaliation.leadership_accepted"), false);
-                    VillageOverviewService.open(serverPlayer, pos);
+                    SettlementManagementService.open(serverPlayer, village);
                 } else {
                     SettlementLeadershipService.status(serverPlayer, village).ifPresent(status ->
                             serverPlayer.displayClientMessage(Component.translatable("settlement.villagerretaliation.leadership_requirements",

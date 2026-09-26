@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "77";
+    private static final String PROTOCOL_VERSION = "78";
 
     private VillagerReputationNetworking() {
     }
@@ -115,6 +115,32 @@ public final class VillagerReputationNetworking {
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
                         ToucanNetwork.withServerPlayer(context, player ->
                                 com.jvn.villagerretaliation.allegiance.VillageOverviewService.refresh(player, payload)))
+        );
+        network.safePlayToClientThreaded(
+                SettlementManagementPayload.TYPE,
+                SettlementManagementPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.settlement.SettlementManagementClient",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                SettlementManagementActionResultPayload.TYPE,
+                SettlementManagementActionResultPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.settlement.SettlementManagementClient",
+                "acceptResult"
+        );
+        network.playToServer(
+                SettlementManagementRequestPayload.TYPE,
+                SettlementManagementRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.settlement.SettlementManagementService.request(player, payload)))
+        );
+        network.playToServer(
+                SettlementManagementActionPayload.TYPE,
+                SettlementManagementActionPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.settlement.SettlementManagementService.action(player, payload)))
         );
         network.safePlayToClientThreaded(
                 VillageRenameResultPayload.TYPE,
