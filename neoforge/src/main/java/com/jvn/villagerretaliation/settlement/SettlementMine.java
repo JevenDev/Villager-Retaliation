@@ -148,6 +148,16 @@ public final class SettlementMine implements BlockGetter {
         return true;
     }
 
+    boolean changeHazard(BlockPos position, BlockState state) {
+        var section = this.sections.get(SettlementTerrainSection.sectionOrigin(position));
+        if (!com.jvn.villagerretaliation.interaction.work.mining.MiningHazardManager.isWithinHazardScope(this.min, this.max, position)
+                || section == null || !section.canChange(position, state)
+                || !com.jvn.villagerretaliation.interaction.work.mining.MiningHazardManager.canReplaceWithFill(this, this::observed, position)
+                || !com.jvn.villagerretaliation.interaction.work.mining.MiningHazardManager.isSafeFillBlock(this, position, state)) return false;
+        section.change(Map.of(position, state));
+        return true;
+    }
+
     boolean changeSupport(BlockPos position, BlockState state) {
         boolean backing = !contains(position) && position.getY() >= this.min.getY() && position.getY() <= this.max.getY()
                 && ((position.getX() == this.min.getX() - 1 || position.getX() == this.max.getX() + 1)

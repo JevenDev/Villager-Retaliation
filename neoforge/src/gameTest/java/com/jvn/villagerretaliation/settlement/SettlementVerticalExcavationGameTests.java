@@ -187,13 +187,14 @@ public final class SettlementVerticalExcavationGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_vertical_excavation")
-    public static void verticalExcavationStopsAtUncontainedFluidsAndPreservesItsTools(GameTestHelper helper) {
+    public static void verticalExcavationPreservesUncontainableWaterloggedBlocksAndItsTools(GameTestHelper helper) {
         fixture(helper, 7, fixture -> {
             var water = fixture.area().min().offset(2, 4, 1);
-            set(fixture.chunk(), water, Blocks.WATER.defaultBlockState());
+            var waterlogged = Blocks.OAK_FENCE.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, true);
+            set(fixture.chunk(), water, waterlogged);
             observe(helper, fixture);
             run(helper, fixture, 200, 12_000);
-            helper.assertTrue(fixture.mine().getBlockState(water).is(Blocks.WATER), "excavation cannot erase an uncontained fluid");
+            helper.assertValueEqual(fixture.mine().getBlockState(water), waterlogged, "excavation cannot overwrite an uncontainable waterlogged block");
             helper.assertFalse(fixture.mine().getBlockState(water.above()).isAir(), "the block above an uncontained pocket remains intact");
             helper.assertValueEqual(fixture.worker().status(), "excavation_blocked", "unsafe remaining terrain cannot be reported complete");
             int damage = tool(helper, fixture, Items.DIAMOND_PICKAXE).getDamageValue();
@@ -270,12 +271,12 @@ public final class SettlementVerticalExcavationGameTests {
         return count;
     }
 
-    private static HiredWorkContext context(Fixture fixture) {
+    static HiredWorkContext context(Fixture fixture) {
         return new HiredWorkContext(HiredJobInventory.getJobInventory(fixture.villager()), fixture.worker().settings(),
                 fixture.area().center(), fixture.area().min(), fixture.area().max(), 64, 32, true, 1, false, true);
     }
 
-    private static void assertCleared(GameTestHelper helper, Fixture fixture) {
+    static void assertCleared(GameTestHelper helper, Fixture fixture) {
         for (BlockPos position : BlockPos.betweenClosed(fixture.area().min(), fixture.area().max())) {
             helper.assertTrue(fixture.mine().getBlockState(position).isAir() || fixture.mine().getBlockState(position).is(Blocks.LADDER)
                             || fixture.mine().getBlockState(position).is(Blocks.WALL_TORCH),
@@ -288,34 +289,34 @@ public final class SettlementVerticalExcavationGameTests {
         helper.assertValueEqual(fixture.worker().status(), "excavation_complete", "exhausted excavation is reported complete");
     }
 
-    private static int count(GameTestHelper helper, Fixture fixture, Item item) {
+    static int count(GameTestHelper helper, Fixture fixture, Item item) {
         return fixture.worker().items(helper.getLevel().registryAccess()).stream().filter(stack -> stack.is(item)).mapToInt(ItemStack::getCount).sum();
     }
 
-    private static ItemStack tool(GameTestHelper helper, Fixture fixture, Item item) {
+    static ItemStack tool(GameTestHelper helper, Fixture fixture, Item item) {
         return fixture.worker().items(helper.getLevel().registryAccess()).stream().filter(stack -> stack.is(item)).findFirst().orElse(ItemStack.EMPTY);
     }
 
-    private static void put(GameTestHelper helper, Fixture fixture, int slot, ItemStack stack) {
+    static void put(GameTestHelper helper, Fixture fixture, int slot, ItemStack stack) {
         var items = fixture.worker().items(helper.getLevel().registryAccess());
         items.set(slot, stack);
         fixture.worker().updateInventory(helper.getLevel().registryAccess(), items);
     }
 
-    private static void run(GameTestHelper helper, Fixture fixture, int from, int until) {
+    static void run(GameTestHelper helper, Fixture fixture, int from, int until) {
         for (int now = from; now <= until; now += 200) SettlementBackgroundService.update(helper.getLevel(), fixture.town(), now);
     }
 
-    private static void observe(GameTestHelper helper, Fixture fixture) {
+    static void observe(GameTestHelper helper, Fixture fixture) {
         SettlementMineService.observeArea(helper.getLevel(), fixture.town(), fixture.area(), fixture.chunk());
     }
 
-    private static void set(LevelChunk chunk, BlockPos position, BlockState state) {
+    static void set(LevelChunk chunk, BlockPos position, BlockState state) {
         chunk.getSection(chunk.getSectionIndex(position.getY())).setBlockState(position.getX() & 15,
                 position.getY() & 15, position.getZ() & 15, state);
     }
 
-    private static void fixture(GameTestHelper helper, int height, Consumer<Fixture> check) {
+    static void fixture(GameTestHelper helper, int height, Consumer<Fixture> check) {
         fixture(helper, height, 6, 3, check);
     }
 
@@ -381,7 +382,7 @@ public final class SettlementVerticalExcavationGameTests {
         helper.succeed();
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea area, LevelChunk chunk, SettlementMine mine,
+    record Fixture(SettlementRecord town, SettlementArea area, LevelChunk chunk, SettlementMine mine,
                            SettlementDepot supply, SettlementDepot output, SettlementWorkerState worker, Villager villager) {
     }
 }

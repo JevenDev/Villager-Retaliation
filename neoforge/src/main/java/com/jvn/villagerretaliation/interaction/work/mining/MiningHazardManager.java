@@ -94,6 +94,16 @@ public final class MiningHazardManager {
         return executePlan(level, villager, context, plan);
     }
 
+    public static HazardPlan assess(BlockGetter level, Predicate<BlockPos> observed, HiredWorkContext context, Vec3 origin) {
+        prunePermanentBarriers(level, observed, context);
+        HazardPlan plan = loadPlan(context);
+        if (plan == null) {
+            plan = findPlan(level, observed, context, origin, MiningBlockRules.currentExcavationLayer(level, observed, context));
+            if (plan != null) savePlan(context, plan);
+        }
+        return plan;
+    }
+
     static WorkResult tickHorizontalFloor(ServerLevel level, Villager villager, HiredWorkContext context) {
         prunePermanentBarriers(level, context);
         beginAssessmentUnlessGathering(context);
@@ -192,7 +202,11 @@ public final class MiningHazardManager {
     }
 
     private static HazardPlan findPlan(ServerLevel level, Villager villager, HiredWorkContext context) {
-        Integer layerY = MiningBlockRules.currentExcavationLayer(level, context);
+        return findPlan(level, level::hasChunkAt, context, villager.position(), MiningBlockRules.currentExcavationLayer(level, context));
+    }
+
+    private static HazardPlan findPlan(BlockGetter level, Predicate<BlockPos> observed, HiredWorkContext context,
+                                       Vec3 origin, Integer layerY) {
         if (layerY == null) {
             return null;
         }
@@ -203,13 +217,13 @@ public final class MiningHazardManager {
             for (int z = context.workMin().getZ(); z <= context.workMax().getZ(); z++) {
                 BlockPos target = new BlockPos(x, layerY, z);
                 if (protectedBarriers.contains(target.asLong())
-                        || !MiningBlockRules.isMineableExcavationBlock(level, target)) {
+                        || !MiningBlockRules.isMineableExcavationBlock(level, observed, target)) {
                     continue;
                 }
-                if (!collectFluidSeeds(level, target, seeds)) {
+                if (!collectFluidSeeds(level, observed, target, seeds)) {
                     BlockPos landing = target.below();
-                    if (MiningSafety.needsFallGuard(level, landing)
-                            && canReplaceWithFill(level, landing)) {
+                    if (MiningSafety.needsFallGuard(level, observed, landing)
+                            && canReplaceWithFill(level, observed, landing)) {
                         seeds.add(new HazardSeed(target, landing, HazardKind.FALL));
                     }
                 }
@@ -220,7 +234,7 @@ public final class MiningHazardManager {
         }
         seeds.sort(Comparator
                 .comparingInt((HazardSeed seed) -> seed.kind().priority())
-                .thenComparingDouble(seed -> villager.distanceToSqr(seed.hazardPos().getCenter()))
+                .thenComparingDouble(seed -> origin.distanceToSqr(seed.hazardPos().getCenter()))
                 .thenComparingLong(seed -> seed.hazardPos().asLong()));
 
         HazardSeed first = seeds.getFirst();
@@ -229,18 +243,18 @@ public final class MiningHazardManager {
             return new HazardPlan(first.kind(), List.of(first.hazardPos()), 0, permanent);
         }
 
-        ConnectedFluid connected = collectConnectedFluid(level, context, first.hazardPos(), first.kind());
+        ConnectedFluid connected = collectConnectedFluid(level, observed, context, first.hazardPos(), first.kind());
         int drainLimit = first.kind() == HazardKind.WATER ? MAX_WATER_DRAIN_CELLS : MAX_LAVA_DRAIN_CELLS;
         if (connected.bounded() && !connected.positions().isEmpty() && connected.positions().size() <= drainLimit) {
             List<BlockPos> positions = new ArrayList<>(connected.positions());
-            positions.sort(fluidPlacementOrder(level, villager));
+            positions.sort(fluidPlacementOrder(level, origin));
             return new HazardPlan(first.kind(), positions, 0, false);
         }
 
         LinkedHashSet<BlockPos> sealFaces = new LinkedHashSet<>();
         for (HazardSeed seed : seeds) {
             if (seed.kind() == first.kind()
-                    && canReplaceWithFill(level, seed.hazardPos())
+                    && canReplaceWithFill(level, observed, seed.hazardPos())
                     && sealFaces.size() < MAX_SEAL_FACE_CELLS) {
                 sealFaces.add(seed.hazardPos().immutable());
             }
@@ -251,11 +265,11 @@ public final class MiningHazardManager {
         return new HazardPlan(first.kind(), new ArrayList<>(sealFaces), 0, true);
     }
 
-    private static boolean collectFluidSeeds(ServerLevel level, BlockPos target, List<HazardSeed> seeds) {
+    private static boolean collectFluidSeeds(BlockGetter level, Predicate<BlockPos> observed, BlockPos target, List<HazardSeed> seeds) {
         boolean found = false;
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = target.relative(direction);
-            if (!level.hasChunkAt(neighbor)) {
+            if (!observed.test(neighbor)) {
                 continue;
             }
             HazardKind kind = HazardKind.fromFluid(level.getFluidState(neighbor));
@@ -268,7 +282,8 @@ public final class MiningHazardManager {
     }
 
     private static ConnectedFluid collectConnectedFluid(
-            ServerLevel level,
+            BlockGetter level,
+            Predicate<BlockPos> observed,
             HiredWorkContext context,
             BlockPos origin,
             HazardKind kind) {
@@ -290,14 +305,14 @@ public final class MiningHazardManager {
                 bounded = false;
                 continue;
             }
-            if (!level.hasChunkAt(current)) {
+            if (!observed.test(current)) {
                 bounded = false;
                 continue;
             }
             if (!kind.matches(level.getFluidState(current))) {
                 continue;
             }
-            if (!canReplaceWithFill(level, current)) {
+            if (!canReplaceWithFill(level, observed, current)) {
                 bounded = false;
                 continue;
             }
@@ -311,7 +326,7 @@ public final class MiningHazardManager {
                 if (visited.contains(next.asLong())) {
                     continue;
                 }
-                if (!level.hasChunkAt(next)) {
+                if (!observed.test(next)) {
                     bounded = false;
                     continue;
                 }
@@ -328,10 +343,10 @@ public final class MiningHazardManager {
         return new ConnectedFluid(positions, bounded);
     }
 
-    private static Comparator<BlockPos> fluidPlacementOrder(ServerLevel level, Villager villager) {
+    private static Comparator<BlockPos> fluidPlacementOrder(BlockGetter level, Vec3 origin) {
         return Comparator
                 .comparingInt((BlockPos pos) -> level.getFluidState(pos).isSource() ? 0 : 1)
-                .thenComparingDouble(pos -> villager.distanceToSqr(pos.getCenter()))
+                .thenComparingDouble(pos -> origin.distanceToSqr(pos.getCenter()))
                 .thenComparingInt(BlockPos::getY)
                 .thenComparingLong(BlockPos::asLong);
     }
@@ -342,9 +357,7 @@ public final class MiningHazardManager {
             HiredWorkContext context,
             HazardPlan plan) {
         if (plan.kind() == HazardKind.BLOCKED_TARGET) {
-            addPermanentBarriers(context, plan.positions());
-            clearPlan(context);
-            MiningWorkerState.clearExcavationLayerCache(context);
+            completePlan(context, plan);
             MiningWorkerState.set(context, MiningWorkerState.Phase.REMEDIATE_HAZARD);
             HiredWorkerBrain.setLastTargetScanResult(context, "hazard_target_sealed");
             return WorkResult.progressed("interaction.work.mining.hazard.sealed_uncontainable");
@@ -431,12 +444,8 @@ public final class MiningHazardManager {
     }
 
     private static WorkResult finishPlan(HiredWorkContext context, HazardPlan plan) {
-        if (plan.permanent()) {
-            addPermanentBarriers(context, plan.positions());
-        }
-        clearPlan(context);
+        completePlan(context, plan);
         clearStorageTripIfGatheringHazard(context);
-        MiningWorkerState.clearExcavationLayerCache(context);
         HiredWorkerBrain.clearFailure(context);
         HiredWorkerBrain.setLastTargetScanResult(
                 context,
@@ -648,13 +657,18 @@ public final class MiningHazardManager {
     }
 
     private static boolean isSafeFillState(LevelReader level, BlockPos pos, BlockState state) {
+        return isSafeFillBlock(level, pos, state) && state.canSurvive(level, pos);
+    }
+
+    public static boolean isSafeFillBlock(BlockGetter level, BlockPos pos, BlockState state) {
         if (state.isAir()
                 || state.liquid()
+                || !state.getFluidState().isEmpty()
                 || state.hasBlockEntity()
                 || state.getDestroySpeed(level, pos) < 0.0F
                 || HiredOreBlockTracker.isTrackedOre(state)
                 || MiningSafety.isDamagingBlock(state)
-                || !state.canSurvive(level, pos)) {
+                || state.getBlock() instanceof FallingBlock) {
             return false;
         }
         for (Direction direction : Direction.values()) {
@@ -691,7 +705,13 @@ public final class MiningHazardManager {
                 && pos.getZ() >= min.getZ() && pos.getZ() <= max.getZ();
     }
 
-    private static void advancePlan(HiredWorkContext context, HazardPlan plan) {
+    public static void completePlan(HiredWorkContext context, HazardPlan plan) {
+        if (plan.permanent() || plan.kind() == HazardKind.BLOCKED_TARGET) addPermanentBarriers(context, plan.positions());
+        clearPlan(context);
+        MiningWorkerState.clearExcavationLayerCache(context);
+    }
+
+    public static void advancePlan(HiredWorkContext context, HazardPlan plan) {
         context.state().putInt(PLAN_INDEX_TAG, plan.index() + 1);
     }
 
@@ -749,6 +769,10 @@ public final class MiningHazardManager {
     }
 
     private static void prunePermanentBarriers(ServerLevel level, HiredWorkContext context) {
+        prunePermanentBarriers(level, position -> context.isLoaded(level, position), context);
+    }
+
+    private static void prunePermanentBarriers(BlockGetter level, Predicate<BlockPos> observed, HiredWorkContext context) {
         long[] packed = context.state().getLongArray(PERMANENT_BARRIERS_TAG);
         if (packed.length == 0) {
             return;
@@ -759,7 +783,7 @@ public final class MiningHazardManager {
             if (!isWithinHazardScope(context, pos)) {
                 continue;
             }
-            if (!context.isLoaded(level, pos)
+            if (!observed.test(pos)
                     || (!level.getBlockState(pos).isAir() && level.getFluidState(pos).isEmpty())) {
                 retained.add(value);
             }
@@ -771,14 +795,16 @@ public final class MiningHazardManager {
     }
 
     private static boolean isWithinHazardScope(HiredWorkContext context, BlockPos pos) {
-        return context != null
-                && context.hasWorkArea()
-                && pos.getX() >= context.workMin().getX() - HAZARD_SCAN_MARGIN
-                && pos.getX() <= context.workMax().getX() + HAZARD_SCAN_MARGIN
-                && pos.getY() >= context.workMin().getY() - HAZARD_SCAN_MARGIN
-                && pos.getY() <= context.workMax().getY() + HAZARD_SCAN_MARGIN + 1
-                && pos.getZ() >= context.workMin().getZ() - HAZARD_SCAN_MARGIN
-                && pos.getZ() <= context.workMax().getZ() + HAZARD_SCAN_MARGIN;
+        return context != null && context.hasWorkArea() && isWithinHazardScope(context.workMin(), context.workMax(), pos);
+    }
+
+    public static boolean isWithinHazardScope(BlockPos min, BlockPos max, BlockPos pos) {
+        return pos.getX() >= min.getX() - HAZARD_SCAN_MARGIN
+                && pos.getX() <= max.getX() + HAZARD_SCAN_MARGIN
+                && pos.getY() >= min.getY() - HAZARD_SCAN_MARGIN
+                && pos.getY() <= max.getY() + HAZARD_SCAN_MARGIN + 1
+                && pos.getZ() >= min.getZ() - HAZARD_SCAN_MARGIN
+                && pos.getZ() <= max.getZ() + HAZARD_SCAN_MARGIN;
     }
 
     private record HazardSeed(BlockPos target, BlockPos hazardPos, HazardKind kind) {
@@ -787,7 +813,10 @@ public final class MiningHazardManager {
     private record ConnectedFluid(List<BlockPos> positions, boolean bounded) {
     }
 
-    private record HazardPlan(HazardKind kind, List<BlockPos> positions, int index, boolean permanent) {
+    public record HazardPlan(HazardKind kind, List<BlockPos> positions, int index, boolean permanent) {
+        public HazardPlan {
+            positions = List.copyOf(positions);
+        }
     }
 
     private record ConsumedFill(ItemStack stack, boolean fromOutput) {
@@ -800,7 +829,7 @@ public final class MiningHazardManager {
         FAILED
     }
 
-    private enum HazardKind {
+    public enum HazardKind {
         LAVA("lava", 0),
         FALL("fall", 1),
         WATER("water", 2),

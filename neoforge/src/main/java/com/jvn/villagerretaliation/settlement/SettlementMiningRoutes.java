@@ -24,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
 final class SettlementMiningRoutes {
     private static final Map<SettlementWorkerState, SettlementMiningRoutes> SEARCHES = new WeakHashMap<>();
     private static final Map<SettlementWorkerState, SettlementMiningRoutes> PLACEMENT_SEARCHES = new WeakHashMap<>();
+    private static final Map<SettlementWorkerState, SettlementMiningRoutes> SUPPORT_SEARCHES = new WeakHashMap<>();
     private final SettlementMine mine;
     private final BlockPos origin;
     private final BlockPos actualPosition;
@@ -63,7 +64,7 @@ final class SettlementMiningRoutes {
                                                     boolean placing, double placementReach) {
         var mode = HiredMiningMode.fromState(worker.settings());
         var barriers = worker.settings().getLongArray("MiningPermanentHazardBarriers");
-        var searches = placing ? PLACEMENT_SEARCHES : SEARCHES;
+        var searches = !placing ? SEARCHES : placementReach == HiredMoveToBlockFaceJob.MAX_REACH ? SUPPORT_SEARCHES : PLACEMENT_SEARCHES;
         var routes = searches.get(worker);
         if (routes == null || !routes.matches(mine, origin, worker.position(), mode, placing, placementReach, barriers)) {
             routes = new SettlementMiningRoutes(mine, origin, worker.position(), mode, placing, placementReach, barriers);

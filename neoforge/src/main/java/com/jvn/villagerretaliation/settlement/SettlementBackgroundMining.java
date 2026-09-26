@@ -107,6 +107,11 @@ final class SettlementBackgroundMining {
                 worker.status("no_safe_mining_route");
                 return;
             }
+            if (mode.usesExcavationShaft()) {
+                var hazard = SettlementMiningHazards.tick(level, worker, mine, view, owner, context, origin, depots, budget, routeBudget);
+                if (hazard == SettlementMiningHazards.Result.PROGRESSED) continue;
+                if (hazard == SettlementMiningHazards.Result.WAITING) return;
+            }
             Integer layer = mode.usesExcavationShaft() ? MiningBlockRules.currentExcavationLayer(mine, mine::observed, context) : null;
             if (mode.usesExcavationShaft()) {
                 var support = SettlementMiningSupports.tick(level, worker, mine, view, owner, context, origin, layer, depots, budget, routeBudget);
