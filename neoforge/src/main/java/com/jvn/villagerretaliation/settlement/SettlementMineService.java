@@ -40,7 +40,8 @@ public final class SettlementMineService {
             for (var mine : town.mines().values()) {
                 for (var section : List.copyOf(mine.sections().values())) {
                     if (section.min().getX() >> 4 == chunk.getPos().x && section.min().getZ() >> 4 == chunk.getPos().z) {
-                        if (!reconcile(level, mine, section, chunk) && !section.pending()) mine.remove(section.origin());
+                        boolean deferFluids = event instanceof ChunkEvent.Unload || !level.shouldTickBlocksAt(chunk.getPos().toLong());
+                        if (!reconcile(level, mine, section, chunk, deferFluids) && !section.pending()) mine.remove(section.origin());
                         town.changed();
                     }
                 }
@@ -56,6 +57,7 @@ public final class SettlementMineService {
             town.recordMine(mine);
         }
         if (!mine.matches(area)) return;
+        mine.observeTime(level.getGameTime());
         BlockPos boundsMin = mine.observedMin();
         BlockPos boundsMax = mine.observedMax();
         var origins = new ArrayList<BlockPos>();
@@ -82,7 +84,9 @@ public final class SettlementMineService {
                     Math.min(origin.getZ() + 15, boundsMax.getZ()));
             var section = mine.sections().get(origin);
             if (section == null || !reconcile(level, mine, section, chunk) && !section.pending()) {
-                mine.record(SettlementTerrainSection.capture("Mine", area.id(), min, max, chunk));
+                var captured = SettlementTerrainSection.capture("Mine", area.id(), min, max, chunk);
+                if (!level.shouldTickBlocksAt(chunk.getPos().toLong())) captured.captureFluidTicks(chunk);
+                mine.record(captured);
             }
             observed++;
         }
@@ -93,9 +97,14 @@ public final class SettlementMineService {
     }
 
     static void update(ServerLevel level, SettlementRecord town) {
+        update(level, town, level.getGameTime());
+    }
+
+    static void update(ServerLevel level, SettlementRecord town, long now) {
         for (var mine : List.copyOf(town.mines().values())) {
             refresh(level, mine);
             SettlementMinePhysics.advance(level, mine);
+            SettlementMineFluids.advance(level, mine, now);
             var area = town.areas().get(mine.area());
             if (!mine.pending() && (area == null || !mine.matches(area))) {
                 town.removeMine(mine.area());
@@ -114,6 +123,10 @@ public final class SettlementMineService {
     }
 
     private static boolean reconcile(ServerLevel level, SettlementMine mine, SettlementTerrainSection section, LevelChunk chunk) {
+        return reconcile(level, mine, section, chunk, !level.shouldTickBlocksAt(chunk.getPos().toLong()));
+    }
+
+    private static boolean reconcile(ServerLevel level, SettlementMine mine, SettlementTerrainSection section, LevelChunk chunk, boolean deferFluids) {
         if (section.pending()) {
             for (var other : mine.sections().values()) {
                 if (other.pending() && other.min().getX() >> 4 == chunk.getPos().x
@@ -128,7 +141,8 @@ public final class SettlementMineService {
                 }
             }
         }
-        if (!section.reconcile(chunk, (position, before) -> SettlementMineReactions.queue(chunk, position, before, chunk.getBlockState(position)))) return false;
+        if (!section.reconcile(chunk, (position, before) -> SettlementMineReactions.queue(chunk, position, before, chunk.getBlockState(position)), deferFluids)) return false;
+        if (deferFluids) section.captureFluidTicks(chunk);
         previous.forEach((position, state) -> {
             var updated = chunk.getBlockState(position);
             if (state != updated) {

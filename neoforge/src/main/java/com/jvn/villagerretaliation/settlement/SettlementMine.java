@@ -21,6 +21,7 @@ public final class SettlementMine implements BlockGetter {
     private final BlockPos max;
     private final Map<BlockPos, SettlementTerrainSection> sections = new LinkedHashMap<>();
     private final java.util.Set<BlockPos> reactions = new java.util.LinkedHashSet<>();
+    private long lastFluidTick = -1L;
 
     SettlementMine(SettlementArea area) {
         this(area.id(), area.min(), area.max());
@@ -140,6 +141,16 @@ public final class SettlementMine implements BlockGetter {
         return true;
     }
 
+    void observeTime(long now) {
+        if (this.lastFluidTick < 0L) this.lastFluidTick = now;
+    }
+
+    int fluidElapsed(long now) {
+        int elapsed = this.lastFluidTick < 0L ? 0 : (int) Math.clamp(now - this.lastFluidTick, 0L, 200L);
+        this.lastFluidTick = now;
+        return elapsed;
+    }
+
     java.util.Set<BlockPos> reactions() {
         return this.reactions;
     }
@@ -250,6 +261,7 @@ public final class SettlementMine implements BlockGetter {
         var sections = new ListTag();
         this.sections.values().forEach(section -> sections.add(section.save()));
         tag.put("Sections", sections);
+        if (this.lastFluidTick >= 0L) tag.putLong("LastFluidTick", this.lastFluidTick);
         if (!this.reactions.isEmpty()) tag.putLongArray("Reactions", this.reactions.stream().mapToLong(BlockPos::asLong).toArray());
         return tag;
     }
@@ -266,6 +278,7 @@ public final class SettlementMine implements BlockGetter {
             }
             mine.record(section);
         }
+        mine.lastFluidTick = tag.contains("LastFluidTick", Tag.TAG_LONG) ? Math.max(0L, tag.getLong("LastFluidTick")) : -1L;
         for (long packed : tag.getLongArray("Reactions")) {
             var position = BlockPos.of(packed);
             if (!mine.withinObservations(position) || !mine.reactions.add(position)) {

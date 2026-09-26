@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.settlement.SettlementMiningView.Unavailable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,7 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ColoredFallingBlock;
 import net.minecraft.world.level.block.FallingBlock;
@@ -36,7 +37,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelTickAccess;
 import net.minecraft.world.ticks.ScheduledTick;
 
-final class SettlementMinePhysics extends SettlementMiningView implements LevelAccessor {
+final class SettlementMinePhysics extends Level {
     private final ServerLevel source;
     private final SettlementMine mine;
     private final Map<BlockPos, BlockState> changes = new LinkedHashMap<>();
@@ -45,13 +46,16 @@ final class SettlementMinePhysics extends SettlementMiningView implements LevelA
     private long subTick;
     private int reads;
 
-    private SettlementMinePhysics(ServerLevel source, SettlementMine mine) {
-        super(source, mine);
+    SettlementMinePhysics(ServerLevel source, SettlementMine mine) {
+        super((net.minecraft.world.level.storage.WritableLevelData) source.getLevelData(), source.dimension(), source.registryAccess(),
+                source.dimensionTypeRegistration(), source::getProfiler, false, source.isDebug(), 0L, 512);
         this.source = source;
         this.mine = mine;
     }
 
     static void advance(ServerLevel level, SettlementMine mine) {
+        if (mine.reactions().isEmpty()) return;
+        var world = new SettlementMinePhysics(level, mine);
         var deferred = new java.util.HashSet<BlockPos>();
         for (int work = 0; work < 256 && !mine.reactions().isEmpty(); work++) {
             var iterator = mine.reactions().iterator();
@@ -62,7 +66,6 @@ final class SettlementMinePhysics extends SettlementMiningView implements LevelA
                 mine.reactions().add(position);
                 break;
             }
-            var world = new SettlementMinePhysics(level, mine);
             try {
                 world.update(position);
                 if (!mine.react(world.changes, world.ticks, world.drops)) mine.reactions().add(position);
@@ -73,9 +76,32 @@ final class SettlementMinePhysics extends SettlementMiningView implements LevelA
         }
     }
 
+    boolean commit() {
+        return this.mine.react(this.changes, this.ticks, this.drops);
+    }
+
+    boolean fluidTick(SettlementTerrainTick tick) {
+        resetTransaction();
+        var state = getFluidState(tick.position());
+        if (state.is(BuiltInRegistries.FLUID.get(tick.type()))) state.tick(this, tick.position());
+        return commit();
+    }
+
+    private void resetTransaction() {
+        this.changes.clear();
+        this.ticks.clear();
+        this.drops.clear();
+        this.reads = 0;
+    }
+
     private void update(BlockPos position) {
+        resetTransaction();
         var state = getBlockState(position);
         if (state.isAir()) return;
+        if (state.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock) {
+            state.handleNeighborChanged(this, position, state.getBlock(), position, false);
+            state = getBlockState(position);
+        }
         if (state.getBlock().getClass() == ColoredFallingBlock.class && fall(position, state)) return;
         for (var direction : Direction.values()) {
             state = getBlockState(position);
@@ -113,8 +139,8 @@ final class SettlementMinePhysics extends SettlementMiningView implements LevelA
 
     @Override
     public BlockState getBlockState(BlockPos position) {
-        if (++this.reads > 4096) throw new Unavailable();
-        return this.changes.getOrDefault(position, super.getBlockState(position));
+        if (++this.reads > 4096 || !this.mine.observed(position)) throw new Unavailable();
+        return this.changes.getOrDefault(position, this.mine.getBlockState(position));
     }
 
     @Override
@@ -122,7 +148,13 @@ final class SettlementMinePhysics extends SettlementMiningView implements LevelA
         var before = getBlockState(position);
         if (before.hasBlockEntity() || state.hasBlockEntity() || this.changes.size() >= 256) throw new Unavailable();
         if (before == state) return false;
+        if (state.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock
+                && state.getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+                && !(before.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock) && !before.isAir()) {
+            dropResources(position, before, null);
+        }
         this.changes.put(position.immutable(), state);
+        if (before.getBlock() != state.getBlock()) state.onPlace(this, position, before, false);
         return true;
     }
 
@@ -131,12 +163,37 @@ final class SettlementMinePhysics extends SettlementMiningView implements LevelA
         var state = getBlockState(position);
         if (state.isAir()) return false;
         if (state.hasBlockEntity()) throw new Unavailable();
-        if (dropItems && this.source.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS)) {
-            for (var item : Block.getDrops(state, this.source, position, null, entity, ItemStack.EMPTY)) {
-                if (!item.isEmpty()) this.drops.add(SettlementTerrainDrop.create(this.source, position, item));
-            }
-        }
+        if (dropItems) dropResources(position, state, entity);
         return setBlock(position, state.getFluidState().createLegacyBlock(), Block.UPDATE_ALL, recursionLeft);
+    }
+
+    private void dropResources(BlockPos position, BlockState state, Entity entity) {
+        if (!this.source.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS)) return;
+        for (var item : Block.getDrops(state, this.source, position, null, entity, ItemStack.EMPTY)) {
+            if (!item.isEmpty()) this.drops.add(SettlementTerrainDrop.create(this.source, position, item));
+        }
+    }
+
+    @Override
+    public FluidState getFluidState(BlockPos position) {
+        return getBlockState(position).getFluidState();
+    }
+
+    @Override
+    public net.minecraft.world.level.block.entity.BlockEntity getBlockEntity(BlockPos position) {
+        if (getBlockState(position).hasBlockEntity()) throw new Unavailable();
+        return null;
+    }
+
+    @Override
+    public boolean hasChunk(int x, int z) {
+        return this.mine.sections().values().stream().anyMatch(section -> section.min().getX() >> 4 == x
+                && section.min().getZ() >> 4 == z && !section.conflict());
+    }
+
+    @Override
+    public boolean hasChunkAt(BlockPos position) {
+        return this.mine.observed(position);
     }
 
     @Override
@@ -256,6 +313,128 @@ final class SettlementMinePhysics extends SettlementMiningView implements LevelA
 
     @Override
     public void levelEvent(Player player, int type, BlockPos position, int data) {
+        if (type != 1501) throw new Unavailable();
+    }
+
+    @Override
+    public int getSeaLevel() {
+        return this.source.getSeaLevel();
+    }
+
+    @Override
+    public int getHeight(net.minecraft.world.level.levelgen.Heightmap.Types type, int x, int z) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public float getShade(Direction direction, boolean shade) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public Holder<net.minecraft.world.level.biome.Biome> getUncachedNoiseBiome(int x, int y, int z) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public net.minecraft.world.flag.FeatureFlagSet enabledFeatures() {
+        return this.source.enabledFeatures();
+    }
+
+    @Override
+    public net.minecraft.world.level.border.WorldBorder getWorldBorder() {
+        return this.source.getWorldBorder();
+    }
+
+    @Override
+    public void sendBlockUpdated(BlockPos position, BlockState before, BlockState after, int flags) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public void playSeededSound(Player player, double x, double y, double z, Holder<SoundEvent> sound,
+                                SoundSource source, float volume, float pitch, long seed) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public void playSeededSound(Player player, Entity entity, Holder<SoundEvent> sound,
+                                SoundSource source, float volume, float pitch, long seed) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public String gatherChunkSourceStats() {
+        throw new Unavailable();
+    }
+
+    @Override
+    public Entity getEntity(int id) {
+        throw new Unavailable();
+    }
+
+    @Override
+    protected net.minecraft.world.level.entity.LevelEntityGetter<Entity> getEntities() {
+        throw new Unavailable();
+    }
+
+    @Override
+    public net.minecraft.world.TickRateManager tickRateManager() {
+        return this.source.tickRateManager();
+    }
+
+    @Override
+    public net.minecraft.world.level.saveddata.maps.MapItemSavedData getMapData(net.minecraft.world.level.saveddata.maps.MapId id) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public void setMapData(net.minecraft.world.level.saveddata.maps.MapId id, net.minecraft.world.level.saveddata.maps.MapItemSavedData data) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public net.minecraft.world.level.saveddata.maps.MapId getFreeMapId() {
+        throw new Unavailable();
+    }
+
+    @Override
+    public void destroyBlockProgress(int id, BlockPos position, int progress) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public net.minecraft.world.scores.Scoreboard getScoreboard() {
+        throw new Unavailable();
+    }
+
+    @Override
+    public net.minecraft.world.item.crafting.RecipeManager getRecipeManager() {
+        return this.source.getRecipeManager();
+    }
+
+    @Override
+    public net.minecraft.world.item.alchemy.PotionBrewing potionBrewing() {
+        return this.source.potionBrewing();
+    }
+
+    @Override
+    public void setDayTimeFraction(float value) {
+        throw new Unavailable();
+    }
+
+    @Override
+    public float getDayTimeFraction() {
+        return this.source.getDayTimeFraction();
+    }
+
+    @Override
+    public float getDayTimePerTick() {
+        return this.source.getDayTimePerTick();
+    }
+
+    @Override
+    public void setDayTimePerTick(float value) {
         throw new Unavailable();
     }
 

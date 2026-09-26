@@ -109,11 +109,58 @@ final class SettlementTerrainSection {
 
     void schedule(SettlementTerrainTick tick) {
         if (!contains(tick.position()) || this.conflict) throw new IllegalArgumentException("Terrain tick exceeds its observed section");
+        if (tick.fluid() && this.ticks.stream().anyMatch(previous -> previous.fluid() && previous.position().equals(tick.position())
+                && previous.type().equals(tick.type()))) return;
         if (!this.ticks.contains(tick)) {
             this.ticks.removeIf(previous -> previous.fluid() == tick.fluid() && previous.position().equals(tick.position()));
             this.ticks.add(tick);
             this.version++;
             this.pending = true;
+        }
+    }
+
+    java.util.List<SettlementTerrainTick> fluidTicks() {
+        return this.ticks.stream().filter(SettlementTerrainTick::fluid).toList();
+    }
+
+    void elapseFluids(int elapsed) {
+        boolean changed = false;
+        for (int index = 0; index < this.ticks.size(); index++) {
+            var tick = this.ticks.get(index);
+            if (tick.fluid() && tick.delay() > 0 && elapsed > 0) {
+                this.ticks.set(index, new SettlementTerrainTick(tick.position(), tick.type(), true,
+                        Math.max(0, tick.delay() - elapsed), tick.priority()));
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.version++;
+            this.pending = true;
+        }
+    }
+
+    void consumeFluid(SettlementTerrainTick tick) {
+        if (this.ticks.removeIf(existing -> existing.fluid() && existing.position().equals(tick.position()) && existing.type().equals(tick.type()))) {
+            this.version++;
+            this.pending = true;
+        }
+    }
+
+    void captureFluidTicks(LevelChunk chunk) {
+        if (this.conflict) return;
+        var nativeTicks = (net.minecraft.world.ticks.LevelChunkTicks<net.minecraft.world.level.material.Fluid>) chunk.getFluidTicks();
+        nativeTicks.unpack(chunk.getLevel().getGameTime());
+        var captured = nativeTicks.getAll().filter(tick -> contains(tick.pos())
+                && state(tick.pos()).getFluidState().is(tick.type())
+                && tick.triggerTick() - chunk.getLevel().getGameTime() <= 24_000L)
+                .sorted(net.minecraft.world.ticks.ScheduledTick.DRAIN_ORDER).toList();
+        for (var tick : captured) {
+            schedule(new SettlementTerrainTick(tick.pos(), BuiltInRegistries.FLUID.getKey(tick.type()), true,
+                    (int) Math.max(0L, tick.triggerTick() - chunk.getLevel().getGameTime()), tick.priority()));
+        }
+        if (!captured.isEmpty()) {
+            nativeTicks.removeIf(captured::contains);
+            chunk.setUnsaved(true);
         }
     }
 
@@ -152,6 +199,10 @@ final class SettlementTerrainSection {
     }
 
     boolean reconcile(LevelChunk chunk, java.util.function.BiConsumer<BlockPos, BlockState> onApplied) {
+        return reconcile(chunk, onApplied, false);
+    }
+
+    boolean reconcile(LevelChunk chunk, java.util.function.BiConsumer<BlockPos, BlockState> onApplied, boolean deferFluids) {
         if (!canReconcile(chunk)) return false;
         long applied = SettlementChunkReceipts.version(chunk, this.receiptKey, this.id);
         if (this.pending && applied < this.version) {
@@ -163,14 +214,19 @@ final class SettlementTerrainSection {
                     onApplied.accept(position.immutable(), before);
                 }
             }
-            this.ticks.forEach(tick -> tick.apply(chunk));
+            this.ticks.stream().filter(tick -> !tick.fluid()).forEach(tick -> tick.apply(chunk));
             this.drops.forEach(drop -> SettlementTerrainDrops.queue(chunk, drop));
             SettlementChunkReceipts.applied(chunk, this.receiptKey, this.id, this.version);
         }
+        if (!deferFluids && applied <= this.version && !fluidTicks().isEmpty()) {
+            fluidTicks().forEach(tick -> tick.apply(chunk));
+            SettlementChunkReceipts.applied(chunk, this.receiptKey, this.id, ++this.version);
+        }
+        if (!deferFluids || applied > this.version) this.ticks.clear();
+        else this.ticks.removeIf(tick -> !tick.fluid());
         this.version = Math.max(this.version, applied);
-        this.pending = false;
+        this.pending = !this.ticks.isEmpty();
         conflict(false);
-        this.ticks.clear();
         this.drops.clear();
         refresh(chunk);
         return true;
