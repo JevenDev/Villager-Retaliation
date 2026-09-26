@@ -1,11 +1,13 @@
 package com.jvn.villagerretaliation.interaction.work.mining;
 
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,7 +25,11 @@ public final class MiningSafety {
     }
 
     public static boolean isSafePathPosition(ServerLevel level, BlockPos pos) {
-        if (!isLoadedBodyPosition(level, pos)) {
+        return level != null && isSafePathPosition(level, level::hasChunkAt, pos);
+    }
+
+    public static boolean isSafePathPosition(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
+        if (!isLoadedBodyPosition(level, observed, pos)) {
             return false;
         }
         BlockState feet = level.getBlockState(pos);
@@ -34,7 +40,7 @@ public final class MiningSafety {
                 || !isSafeFloor(level, pos.below(), floor)) {
             return false;
         }
-        return !hasImmediateHeatHazard(level, pos);
+        return !hasImmediateHeatHazard(level, observed, pos);
     }
 
     public static boolean isUnsafeMiningTarget(
@@ -42,12 +48,26 @@ public final class MiningSafety {
             Villager villager,
             BlockPos target,
             BlockPos plannedStance) {
-        return isUnsafeUnderfootTarget(level, target, plannedStance)
-                || isUnsafeUnderfootTarget(level, target, villager == null ? null : villager.blockPosition())
-                || hasUncontainedFluidFace(level, target);
+        return level == null || isUnsafeMiningTarget(level, level::hasChunkAt, target, plannedStance,
+                villager == null ? null : villager.blockPosition());
+    }
+
+    public static boolean isUnsafeMiningTarget(
+            BlockGetter level,
+            Predicate<BlockPos> observed,
+            BlockPos target,
+            BlockPos plannedStance,
+            BlockPos actualStance) {
+        return isUnsafeUnderfootTarget(level, observed, target, plannedStance)
+                || isUnsafeUnderfootTarget(level, observed, target, actualStance)
+                || hasUncontainedFluidFace(level, observed, target);
     }
 
     public static boolean isUnsafeUnderfootTarget(ServerLevel level, BlockPos target, BlockPos stance) {
+        return isUnsafeUnderfootTarget(level, position -> level != null && level.hasChunkAt(position), target, stance);
+    }
+
+    public static boolean isUnsafeUnderfootTarget(BlockGetter level, Predicate<BlockPos> observed, BlockPos target, BlockPos stance) {
         if (target == null
                 || stance == null
                 || stance.getX() != target.getX()
@@ -55,17 +75,21 @@ public final class MiningSafety {
                 || stance.getY() != target.getY() + 1) {
             return false;
         }
-        if (level == null || !level.hasChunkAt(stance)) {
+        if (level == null || !observed.test(stance)) {
             return true;
         }
         if (level.getBlockState(stance).is(Blocks.LADDER)) {
             return false;
         }
-        return needsFallGuard(level, target.below());
+        return needsFallGuard(level, observed, target.below());
     }
 
     public static boolean needsFallGuard(ServerLevel level, BlockPos landing) {
-        if (landing == null || !level.hasChunkAt(landing)) {
+        return level == null || needsFallGuard(level, level::hasChunkAt, landing);
+    }
+
+    public static boolean needsFallGuard(BlockGetter level, Predicate<BlockPos> observed, BlockPos landing) {
+        if (landing == null || !observed.test(landing)) {
             return true;
         }
         BlockState state = level.getBlockState(landing);
@@ -76,12 +100,16 @@ public final class MiningSafety {
     }
 
     public static boolean hasUncontainedFluidFace(ServerLevel level, BlockPos target) {
+        return level == null || hasUncontainedFluidFace(level, level::hasChunkAt, target);
+    }
+
+    public static boolean hasUncontainedFluidFace(BlockGetter level, Predicate<BlockPos> observed, BlockPos target) {
         if (target == null) {
             return true;
         }
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = target.relative(direction);
-            if (!level.hasChunkAt(neighbor)) {
+            if (!observed.test(neighbor)) {
                 return true;
             }
             FluidState fluid = level.getFluidState(neighbor);
@@ -102,15 +130,15 @@ public final class MiningSafety {
                 || state.is(Blocks.POWDER_SNOW);
     }
 
-    private static boolean isLoadedBodyPosition(ServerLevel level, BlockPos pos) {
+    private static boolean isLoadedBodyPosition(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
         return level != null
                 && pos != null
-                && level.hasChunkAt(pos)
-                && level.hasChunkAt(pos.above())
-                && level.hasChunkAt(pos.below());
+                && observed.test(pos)
+                && observed.test(pos.above())
+                && observed.test(pos.below());
     }
 
-    private static boolean isPassableBodyBlock(ServerLevel level, BlockPos pos, BlockState state) {
+    private static boolean isPassableBodyBlock(BlockGetter level, BlockPos pos, BlockState state) {
         if (!state.getFluidState().isEmpty() || isDamagingBlock(state)) {
             return false;
         }
@@ -119,17 +147,17 @@ public final class MiningSafety {
                 || state.getCollisionShape(level, pos).isEmpty();
     }
 
-    private static boolean isSafeFloor(ServerLevel level, BlockPos pos, BlockState state) {
+    private static boolean isSafeFloor(BlockGetter level, BlockPos pos, BlockState state) {
         if (!state.getFluidState().isEmpty() || isDamagingBlock(state)) {
             return false;
         }
         return state.isSolid() || state.is(Blocks.LADDER);
     }
 
-    private static boolean hasImmediateHeatHazard(ServerLevel level, BlockPos pos) {
+    private static boolean hasImmediateHeatHazard(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos neighbor = pos.relative(direction);
-            if (!level.hasChunkAt(neighbor)) {
+            if (!observed.test(neighbor)) {
                 return true;
             }
             if (level.getFluidState(neighbor).is(FluidTags.LAVA)

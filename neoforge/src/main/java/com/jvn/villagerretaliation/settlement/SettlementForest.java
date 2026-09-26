@@ -82,7 +82,7 @@ public final class SettlementForest implements BlockGetter {
         return change(changes, java.util.List.of());
     }
 
-    boolean change(Map<BlockPos, BlockState> changes, java.util.List<SettlementForestTick> ticks) {
+    boolean change(Map<BlockPos, BlockState> changes, java.util.List<SettlementTerrainTick> ticks) {
         for (var tick : ticks) {
             if (!observed(tick.position())) return false;
         }

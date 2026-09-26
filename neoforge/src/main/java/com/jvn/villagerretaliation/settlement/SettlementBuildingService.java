@@ -91,6 +91,7 @@ public final class SettlementBuildingService {
         SettlementFieldService.observeArea(level, town, area, supplied);
         SettlementFisheryService.observeArea(level, town, area, supplied);
         SettlementForestService.observeArea(level, town, area, supplied);
+        SettlementMineService.observeArea(level, town, area, supplied);
         var observed = SettlementBuildingSurvey.inspect(level, area, supplied);
         var previous = town.surveys().get(area.id());
         if (previous != null && !observed.fullyLoaded()) {

@@ -129,6 +129,8 @@ public class VillagerRetaliation {
                 .listener(HiredOreBlockTracker::onFluidPlaceBlock)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementForestService::onChunkLoad)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementForestService::onChunkUnload)
+                .listener(com.jvn.villagerretaliation.settlement.SettlementMineService::onChunkLoad)
+                .listener(com.jvn.villagerretaliation.settlement.SettlementMineService::onChunkUnload)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementFieldService::onChunkLoad)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementFieldService::onChunkUnload)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementBuildingService::onChunkLoad)

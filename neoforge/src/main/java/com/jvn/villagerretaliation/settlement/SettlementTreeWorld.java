@@ -48,7 +48,7 @@ final class SettlementTreeWorld implements WorldGenLevel {
     private final SettlementForest forest;
     private final RandomSource random;
     private final Map<BlockPos, BlockState> changes = new LinkedHashMap<>();
-    private final List<SettlementForestTick> ticks = new ArrayList<>();
+    private final List<SettlementTerrainTick> ticks = new ArrayList<>();
     private long subTick;
 
     SettlementTreeWorld(ServerLevel source, SettlementForest forest, RandomSource random) {
@@ -120,7 +120,7 @@ final class SettlementTreeWorld implements WorldGenLevel {
                 long wait = Math.max(0L, tick.triggerTick() - source.getGameTime());
                 if (wait > 24_000L) throw new Unavailable("tree_needs_native_growth");
                 int delay = (int) wait;
-                var pending = new SettlementForestTick(tick.pos(), type, fluid, delay, tick.priority());
+                var pending = new SettlementTerrainTick(tick.pos(), type, fluid, delay, tick.priority());
                 if (!ticks.contains(pending)) ticks.add(pending);
                 if (ticks.size() > 8192) throw new Unavailable("tree_needs_native_growth");
             }

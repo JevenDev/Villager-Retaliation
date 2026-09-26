@@ -8,11 +8,11 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.ticks.ScheduledTick;
 import net.minecraft.world.ticks.TickPriority;
 
-record SettlementForestTick(BlockPos position, ResourceLocation type, boolean fluid, int delay, TickPriority priority) {
-    SettlementForestTick {
+record SettlementTerrainTick(BlockPos position, ResourceLocation type, boolean fluid, int delay, TickPriority priority) {
+    SettlementTerrainTick {
         position = position.immutable();
         if (delay < 0 || delay > 24_000 || !(fluid ? BuiltInRegistries.FLUID.containsKey(type) : BuiltInRegistries.BLOCK.containsKey(type))) {
-            throw new IllegalArgumentException("Invalid deferred forest tick");
+            throw new IllegalArgumentException("Invalid deferred terrain tick");
         }
     }
 
@@ -42,13 +42,13 @@ record SettlementForestTick(BlockPos position, ResourceLocation type, boolean fl
         return tag;
     }
 
-    static SettlementForestTick load(CompoundTag tag) {
+    static SettlementTerrainTick load(CompoundTag tag) {
         if (!tag.contains("Position", net.minecraft.nbt.Tag.TAG_LONG) || tag.getInt("Priority") < -3 || tag.getInt("Priority") > 3) {
-            throw new IllegalArgumentException("Invalid deferred forest tick position or priority");
+            throw new IllegalArgumentException("Invalid deferred terrain tick position or priority");
         }
         var type = ResourceLocation.tryParse(tag.getString("Type"));
-        if (type == null) throw new IllegalArgumentException("Deferred forest tick requires a registered type");
-        return new SettlementForestTick(BlockPos.of(tag.getLong("Position")), type, tag.getBoolean("Fluid"),
+        if (type == null) throw new IllegalArgumentException("Deferred terrain tick requires a registered type");
+        return new SettlementTerrainTick(BlockPos.of(tag.getLong("Position")), type, tag.getBoolean("Fluid"),
                 tag.getInt("Delay"), TickPriority.byValue(tag.getInt("Priority")));
     }
 }

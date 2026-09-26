@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work.mining;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -10,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -18,7 +20,11 @@ public final class MiningBlockRules {
     }
 
     public static boolean isMineableOre(ServerLevel level, BlockPos pos) {
-        if (!level.hasChunkAt(pos)) {
+        return isMineableOre(level, level::hasChunkAt, pos);
+    }
+
+    public static boolean isMineableOre(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
+        if (!observed.test(pos)) {
             return false;
         }
         BlockState state = level.getBlockState(pos);
@@ -26,11 +32,15 @@ public final class MiningBlockRules {
                 && state.getDestroySpeed(level, pos) >= 0.0F
                 && !state.hasBlockEntity()
                 && HiredOreBlockTracker.isTrackedOre(state)
-                && isExposed(level, pos);
+                && isExposed(level, observed, pos);
     }
 
     public static boolean isMineableExcavationBlock(ServerLevel level, BlockPos pos) {
-        if (!level.hasChunkAt(pos)) {
+        return isMineableExcavationBlock(level, level::hasChunkAt, pos);
+    }
+
+    public static boolean isMineableExcavationBlock(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
+        if (!observed.test(pos)) {
             return false;
         }
         BlockState state = level.getBlockState(pos);
@@ -41,7 +51,7 @@ public final class MiningBlockRules {
                 && state.getDestroySpeed(level, pos) >= 0.0F
                 && !state.hasBlockEntity()
                 && hasExcavationToolTag(state)
-                && isExposed(level, pos);
+                && isExposed(level, observed, pos);
     }
 
     public static boolean isMineableExcavationBlock(
@@ -106,9 +116,13 @@ public final class MiningBlockRules {
     }
 
     public static boolean hasAdjacentExcavationFluid(ServerLevel level, BlockPos pos) {
+        return hasAdjacentExcavationFluid(level, level::hasChunkAt, pos);
+    }
+
+    public static boolean hasAdjacentExcavationFluid(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = pos.relative(direction);
-            if (!level.hasChunkAt(neighbor) || !level.getFluidState(neighbor).isEmpty()) {
+            if (!observed.test(neighbor) || !level.getFluidState(neighbor).isEmpty()) {
                 return true;
             }
         }
@@ -165,7 +179,7 @@ public final class MiningBlockRules {
                 || (state.is(BlockTags.MINEABLE_WITH_AXE) && stack.is(ItemTags.AXES));
     }
 
-    private static boolean isFullExcavationBlock(ServerLevel level, BlockPos pos, BlockState state) {
+    private static boolean isFullExcavationBlock(BlockGetter level, BlockPos pos, BlockState state) {
         for (Direction direction : Direction.values()) {
             if (!state.isFaceSturdy(level, pos, direction)) {
                 return false;
@@ -180,9 +194,9 @@ public final class MiningBlockRules {
                 || state.is(Blocks.WALL_TORCH);
     }
 
-    private static boolean isExposed(ServerLevel level, BlockPos pos) {
+    private static boolean isExposed(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
         for (Direction direction : Direction.values()) {
-            if (!level.hasChunkAt(pos.relative(direction))) {
+            if (!observed.test(pos.relative(direction))) {
                 continue;
             }
             BlockState neighbor = level.getBlockState(pos.relative(direction));
