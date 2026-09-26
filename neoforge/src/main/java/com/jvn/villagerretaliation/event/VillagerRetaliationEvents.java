@@ -419,6 +419,9 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         Entity entity = event.getEntity();
+        if (entity instanceof net.minecraft.world.entity.animal.Animal animal) {
+            com.jvn.villagerretaliation.settlement.SettlementLivestockService.onActive(animal);
+        }
         if (entity instanceof Villager villager) {
             com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onActive(villager);
             com.jvn.villagerretaliation.settlement.SettlementDepartureService.onActive(villager);
@@ -522,6 +525,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof net.minecraft.world.entity.animal.Animal animal) {
+            com.jvn.villagerretaliation.settlement.SettlementLivestockService.onActive(animal);
+        }
         if (!event.getLevel().isClientSide() && event.getEntity() instanceof AbstractVillager villager) {
             VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
             if (villager instanceof Villager regular) {
@@ -948,6 +954,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (event.getEntity() instanceof net.minecraft.world.entity.animal.Animal animal) {
+            com.jvn.villagerretaliation.settlement.SettlementLivestockService.onUnloaded(animal);
+        }
         if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
             ContainerFilterResolver.invalidateFrame(level, frame);
             com.jvn.villagerretaliation.settlement.SettlementDepotRules.changed(frame);

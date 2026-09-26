@@ -12,6 +12,9 @@ public final class SettlementSimulationHandoff {
     }
 
     public static void stopTicking(Entity entity) {
+        if (entity instanceof net.minecraft.world.entity.animal.Animal animal) {
+            SettlementLivestockService.onUnloaded(animal);
+        }
         if (!(entity instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)
                 || !villager.isAlive() || villager.getRemovalReason() != null
                 || SettlementWorkforceService.home(level, villager).isEmpty()) {

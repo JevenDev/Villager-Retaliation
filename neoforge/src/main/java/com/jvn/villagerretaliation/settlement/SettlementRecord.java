@@ -39,6 +39,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementResidentState> residents = new LinkedHashMap<>();
     private final Map<UUID, SettlementDeparture> departures = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
+    private final Map<UUID, SettlementLivestock> livestock = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFurnaceState> furnaces = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementBrewingStandState> brewingStands = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFieldPlot> fields = new LinkedHashMap<>();
@@ -244,6 +245,19 @@ public final class SettlementRecord {
 
     public Map<UUID, SettlementApplicant> applicants() {
         return Collections.unmodifiableMap(this.applicants);
+    }
+
+    public Map<UUID, SettlementLivestock> livestock() {
+        return Collections.unmodifiableMap(this.livestock);
+    }
+
+    void recordLivestock(SettlementLivestock animal) {
+        this.livestock.put(animal.id(), animal);
+        changed();
+    }
+
+    void removeLivestock(UUID animal) {
+        if (this.livestock.remove(animal) != null) changed();
     }
 
     public Map<UUID, SettlementArrival> arrivals() {
@@ -626,6 +640,9 @@ public final class SettlementRecord {
         ListTag workerTags = new ListTag();
         this.workers.values().forEach(worker -> workerTags.add(worker.save()));
         tag.put("Workers", workerTags);
+        ListTag livestockTags = new ListTag();
+        this.livestock.values().forEach(animal -> livestockTags.add(animal.save()));
+        tag.put("Livestock", livestockTags);
         ListTag furnaceTags = new ListTag();
         this.furnaces.values().forEach(furnace -> furnaceTags.add(furnace.save()));
         tag.put("Furnaces", furnaceTags);
@@ -681,6 +698,12 @@ public final class SettlementRecord {
             var worker = SettlementWorkerState.load((CompoundTag) raw);
             if (record.workers.putIfAbsent(worker.id(), worker) != null) {
                 throw new IllegalArgumentException("Background worker duplicates a resident identity");
+            }
+        }
+        for (Tag raw : tag.getList("Livestock", Tag.TAG_COMPOUND)) {
+            var animal = SettlementLivestock.load((CompoundTag) raw);
+            if (record.livestock.putIfAbsent(animal.id(), animal) != null) {
+                throw new IllegalArgumentException("Livestock duplicates an animal identity");
             }
         }
         for (Tag raw : tag.getList("Furnaces", Tag.TAG_COMPOUND)) {

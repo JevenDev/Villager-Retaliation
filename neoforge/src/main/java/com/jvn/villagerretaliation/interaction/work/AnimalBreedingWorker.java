@@ -1188,7 +1188,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         return net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(animal.getType());
     }
 
-    private static boolean isMilkable(Animal animal) {
+    public static boolean isMilkable(Animal animal) {
         return animal instanceof Cow || animal instanceof Goat;
     }
 
@@ -1268,7 +1268,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         return animal instanceof Goat ? SoundEvents.GOAT_MILK : SoundEvents.COW_MILK;
     }
 
-    private static Item woolItem(DyeColor color) {
+    public static Item woolItem(DyeColor color) {
         return switch (color) {
             case WHITE -> Items.WHITE_WOOL;
             case ORANGE -> Items.ORANGE_WOOL;

@@ -34,6 +34,7 @@ public final class SettlementBackgroundService {
         SettlementFisheryService.update(level, town);
         SettlementForestService.update(level, town, now);
         SettlementMineService.update(level, town, now);
+        SettlementLivestockService.update(level, town, now);
         for (SettlementDepot depot : town.depots().values()) {
             SettlementDepotService.observeRules(level, depot);
         }
@@ -75,6 +76,8 @@ public final class SettlementBackgroundService {
                 SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.FISHING) {
                 SettlementBackgroundFishing.tick(level, town, worker, elapsed, multiplier, now);
+            } else if (worker.role() == HiredVillagerRole.ANIMAL_HANDLING) {
+                SettlementBackgroundAnimalHandling.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.LOGGING) {
                 SettlementBackgroundLogging.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.MINING) {
@@ -138,5 +141,6 @@ public final class SettlementBackgroundService {
             worker.observe(level, villager, duty, now);
             duty.town().changed();
         }
+        SettlementLivestockService.observeWorker(level, duty.town(), duty.town().workers().get(villager.getUUID()));
     }
 }
