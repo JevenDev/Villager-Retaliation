@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
+import com.jvn.villagerretaliation.settlement.SettlementAreaType;
+import com.jvn.villagerretaliation.settlement.SettlementWorkforceService;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +26,10 @@ public final class NitwitWorker implements HiredRoleWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        var duty = SettlementWorkforceService.duty(villager).orElse(null);
+        if (duty != null && duty.area().type() == SettlementAreaType.TRADING_POST) {
+            return SettlementTradingWorker.tick(level, villager, context, duty);
+        }
         long lastNotice = context.state().getLong(LAST_NOTICE_TICK_TAG);
         if (context.state().contains(LAST_NOTICE_TICK_TAG, Tag.TAG_LONG)
                 && level.getGameTime() - lastNotice < NOTICE_COOLDOWN_TICKS) {

@@ -31,6 +31,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
     private long nextApplicantAt;
     private SettlementSupportState support = new SettlementSupportState();
+    private SettlementEconomy economy = new SettlementEconomy(this::changed);
     private UUID leader;
     private SettlementStage stage = SettlementStage.CAMP;
     private long revision;
@@ -72,6 +73,10 @@ public final class SettlementRecord {
 
     public SettlementStage stage() {
         return this.stage;
+    }
+
+    public SettlementEconomy economy() {
+        return this.economy;
     }
 
     public Map<UUID, SettlementApplicant> applicants() {
@@ -323,6 +328,7 @@ public final class SettlementRecord {
         });
         tag.put("Surveys", surveyTags);
         tag.put("Support", this.support.save());
+        tag.put("Economy", this.economy.save());
         tag.putLong("NextApplicantAt", this.nextApplicantAt);
         ListTag applicantTags = new ListTag();
         this.applicants.values().forEach(applicant -> applicantTags.add(applicant.save()));
@@ -342,6 +348,7 @@ public final class SettlementRecord {
         record.revision = Math.max(0L, tag.getLong("Revision"));
         record.stage = SettlementStage.valueOf(tag.getString("Stage"));
         record.support = SettlementSupportState.load(tag.getCompound("Support"));
+        record.economy = SettlementEconomy.load(tag.getCompound("Economy"), record::changed);
         if (tag.contains("NextApplicantAt")) {
             record.nextApplicantAt = Math.max(0L, tag.getLong("NextApplicantAt"));
         }

@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.settlement_trade"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.trading.missing_station",
+      "lines": [
+        "The trading post needs a lectern before I can open."
+      ],
+      "id": "global.messages.settlement_trade.missing_station"
+    },
+    {
+      "key": "interaction.work.trading.ready",
+      "lines": [
+        "I'm tending the trading post and its standing orders."
+      ],
+      "id": "global.messages.settlement_trade.ready"
+    },
+    {
+      "key": "interaction.work.trading.unreachable",
+      "lines": [
+        "I need a clear path to the trading post's lectern."
+      ],
+      "id": "global.messages.settlement_trade.unreachable"
+    },
+    {
+      "key": "interaction.work.trading.moving",
+      "lines": [
+        "I'm heading to the trading post."
+      ],
+      "id": "global.messages.settlement_trade.moving"
+    }
+  ]
+}
