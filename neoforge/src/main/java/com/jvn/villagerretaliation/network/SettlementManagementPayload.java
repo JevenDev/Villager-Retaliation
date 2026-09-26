@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementDepotPurpose;
 import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementWorkerSettings;
+import com.jvn.villagerretaliation.settlement.SettlementBrewingOrder;
 import com.jvn.villagerretaliation.settlement.SettlementPermission;
 import com.jvn.villagerretaliation.settlement.SettlementProject;
 import com.jvn.villagerretaliation.settlement.SettlementProgressionService;
@@ -92,6 +93,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     if (resident.settings() != null) {
                         SettlementManagementActionPayload.writeWorkerSettings(buffer, resident.settings());
                     }
+                    SettlementManagementActionPayload.writeBrewingOrder(buffer, resident.brewingOrder());
                 }
                 case Area area -> {
                     buffer.writeEnum(area.kind());
@@ -178,7 +180,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     }
                     yield new Resident(id, name, profession, baby, presence, position, area, food, health, status, available,
                             SettlementManagementActionPayload.readGuardOrder(buffer),
-                            buffer.readBoolean() ? SettlementManagementActionPayload.readWorkerSettings(buffer) : null);
+                            buffer.readBoolean() ? SettlementManagementActionPayload.readWorkerSettings(buffer) : null,
+                            SettlementManagementActionPayload.readBrewingOrder(buffer));
                 }
                 case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
                         buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
@@ -311,7 +314,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
 
     public record Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
                            BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
-                           SettlementGuardOrder guardOrder, SettlementWorkerSettings settings) implements Entry {
+                           SettlementGuardOrder guardOrder, SettlementWorkerSettings settings, SettlementBrewingOrder brewingOrder) implements Entry {
         public Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
                         BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles) {
             this(id, name, profession, baby, presence, position, area, food, health, status, roles, null, null);
@@ -321,6 +324,12 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
                         SettlementGuardOrder guardOrder) {
             this(id, name, profession, baby, presence, position, area, food, health, status, roles, guardOrder, null);
+        }
+
+        public Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
+                        BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
+                        SettlementGuardOrder guardOrder, SettlementWorkerSettings settings) {
+            this(id, name, profession, baby, presence, position, area, food, health, status, roles, guardOrder, settings, null);
         }
 
         public Resident {

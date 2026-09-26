@@ -74,6 +74,7 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.PlaceBlueprint place -> SettlementBlueprintService.place(player, town, place.blueprint(), place.anchor(), place.rotation());
             case SettlementManagementActionPayload.StartProject start -> SettlementConstructionService.start(player, town, start.resident(), start.blueprint());
             case SettlementManagementActionPayload.CancelProject cancel -> SettlementConstructionService.cancel(player, town, cancel.project());
+            case SettlementManagementActionPayload.Brew brew -> SettlementBrewingService.configure(player, town, brew.resident(), brew.area(), brew.order());
             case SettlementManagementActionPayload.SaveWorker save -> SettlementWorkerConfigurationService.configure(
                     player, town, save.resident(), save.area(), save.settings());
             case SettlementManagementActionPayload.Guard guard -> SettlementGuardService.command(player, town, guard.resident(), guard.order());
@@ -206,7 +207,8 @@ public final class SettlementManagementService {
                             : town.workerSettings().containsKey(member.id()) && !town.workerSettings().get(member.id()).enabled() ? "paused"
                             : worker == null ? "active" : worker.status(),
                     villager == null || villager.isBaby() ? List.of() : HiredVillagerRoles.availableRoles(level, villager),
-                    town.guardOrders().get(member.id()), SettlementWorkerConfigurationService.snapshot(level, town, member.id())));
+                    town.guardOrders().get(member.id()), SettlementWorkerConfigurationService.snapshot(level, town, member.id()),
+                    SettlementBrewingService.snapshot(level, town, member.id())));
         }
     }
 

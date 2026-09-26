@@ -273,6 +273,7 @@ public final class SettlementRecord {
         }
         if (!area.equals(this.duties.put(resident, area))) {
             cancelProjects(resident);
+            cancelBrewing(resident);
             this.guardOrders.remove(resident);
             this.workerSettings.remove(resident);
             changed();
@@ -285,10 +286,18 @@ public final class SettlementRecord {
             return false;
         }
         cancelProjects(resident);
+        cancelBrewing(resident);
         this.guardOrders.remove(resident);
         this.workerSettings.remove(resident);
         changed();
         return true;
+    }
+
+    private void cancelBrewing(UUID resident) {
+        var worker = this.workers.get(resident);
+        if (worker != null && worker.role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.BREWING) {
+            worker.brewingOrder(null);
+        }
     }
 
     public Map<UUID, SettlementDepot> depots() {
@@ -428,6 +437,7 @@ public final class SettlementRecord {
         }
         this.projects.values().stream().filter(project -> project.active() && project.area().equals(area))
                 .forEach(project -> finishProject(project.id(), SettlementProject.Status.CANCELLED));
+        this.duties.entrySet().stream().filter(duty -> duty.getValue().equals(area)).map(Map.Entry::getKey).forEach(this::cancelBrewing);
         this.duties.values().removeIf(area::equals);
         this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.workerSettings.keySet().removeIf(resident -> !this.duties.containsKey(resident));

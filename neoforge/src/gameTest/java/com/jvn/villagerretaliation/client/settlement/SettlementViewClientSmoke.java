@@ -54,6 +54,7 @@ public final class SettlementViewClientSmoke {
     private static CompletableFuture<Void> serverCheck;
     private static Fixture fixture;
     private static ProjectFixture projectFixture;
+    private static UUID brewer;
     private static long started;
     private static int phase;
     private static int ticks;
@@ -354,6 +355,67 @@ public final class SettlementViewClientSmoke {
                         == com.jvn.villagerretaliation.settlement.SettlementProject.Status.CANCELLED,
                         "the client cancelled the authoritative construction project");
             }).join();
+            brewer = minecraft.getSingleplayerServer().submit(() -> prepareBrewer(
+                    minecraft.getSingleplayerServer().getPlayerList().getPlayer(player))).join();
+            phase = 34;
+        } else if (phase == 34 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS, brewer.toString());
+            phase = 35;
+        } else if (phase == 35 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().entries().size() == 1 && screen.snapshot().entries().getFirst().id().equals(brewer)) {
+            selectFirstRow(screen);
+            button(screen, "villagerretaliation.gui.settlement.worker_settings").onPress();
+            phase = 36;
+        } else if (phase == 36 && minecraft.screen instanceof SettlementWorkerScreen screen) {
+            button(screen, "villagerretaliation.gui.settlement.brewing_orders").onPress();
+            phase = 37;
+        } else if (phase == 37 && minecraft.screen instanceof SettlementBrewingScreen screen) {
+            var fields = screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).toList();
+            fields.getFirst().setValue("minecraft:healing");
+            fields.getLast().setValue("12");
+            var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                    .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+            String potion = net.minecraft.world.item.alchemy.PotionContents.createItemStack(net.minecraft.world.item.Items.POTION,
+                    net.minecraft.world.item.alchemy.Potions.HEALING).getHoverName().getString();
+            rows.children().stream().filter(row -> row.getNarration().getString().startsWith(potion)).findFirst().orElseThrow().mouseClicked(0, 0, 0);
+            require(button(screen, "villagerretaliation.gui.settlement.brewing_order").active, "a selected recipe and quantity enable production");
+            ticks = 0;
+            phase = 38;
+        } else if (phase == 38 && minecraft.screen instanceof SettlementBrewingScreen screen && ++ticks >= 5) {
+            capture("brewing-order");
+            button(screen, "villagerretaliation.gui.settlement.brewing_order").onPress();
+            phase = 39;
+        } else if (phase == 39 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident resident
+                && resident.id().equals(brewer) && resident.brewingOrder() != null && resident.brewingOrder().amount() == 12) {
+            require(resident.brewingOrder().potion().equals(net.minecraft.resources.ResourceLocation.withDefaultNamespace("healing")),
+                    "the native form accepted the selected potion recipe");
+            selectFirstRow(screen);
+            button(screen, "villagerretaliation.gui.settlement.worker_settings").onPress();
+            phase = 40;
+        } else if (phase == 40 && minecraft.screen instanceof SettlementWorkerScreen screen) {
+            button(screen, "villagerretaliation.gui.settlement.brewing_orders").onPress();
+            ticks = 0;
+            phase = 41;
+        } else if (phase == 41 && minecraft.screen instanceof SettlementBrewingScreen screen && ++ticks >= 10) {
+            capture("brewing-saved");
+            require(button(screen, "villagerretaliation.gui.settlement.brewing_cancel").active, "the accepted order can be stopped");
+            button(screen, "villagerretaliation.gui.settlement.brewing_cancel").onPress();
+            phase = 42;
+        } else if (phase == 42 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident resident
+                && resident.id().equals(brewer) && resident.brewingOrder() == null) {
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
+                require(com.jvn.villagerretaliation.settlement.SettlementBrewingService.snapshot(serverPlayer.serverLevel(), town, brewer) == null,
+                        "the native form cancels the authoritative brewing order");
+            }).join();
+            screen.onClose();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
             } catch (IOException exception) {
@@ -373,6 +435,26 @@ public final class SettlementViewClientSmoke {
         var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
                 .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
         rows.children().getFirst().mouseClicked(0, 0, 0);
+    }
+
+    private static UUID prepareBrewer(ServerPlayer player) {
+        var level = player.serverLevel();
+        var origin = fixture.center().offset(30, 0, 0);
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.BREWERY, "Brewery",
+                origin, origin.offset(4, 4, 4), 5, true);
+        require(SettlementBuildingService.register(player, fixture.town(), area), "the brewery is registered");
+        Villager villager = EntityType.VILLAGER.create(level);
+        villager.setPos(origin.getBottomCenter());
+        villager.setNoAi(true);
+        villager.setCustomName(Component.literal("Juniper"));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.CLERIC));
+        VillageAllegianceApi.assignKnown(level, villager, fixture.town(), AllegianceAssignmentSource.EXPLICIT_API);
+        require(level.addFreshEntity(villager), "the brewer is created");
+        require(SettlementWorkforceService.assign(level, player, fixture.town(), villager, area.id()), "the cleric is assigned to the brewery");
+        SettlementCareService.onUnloaded(villager);
+        com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onUnloaded(villager);
+        SettlementManagementService.open(player, fixture.town());
+        return villager.getUUID();
     }
 
     private static ProjectFixture prepareProject(ServerPlayer player) {

@@ -85,6 +85,7 @@ public final class SettlementBackgroundService {
                     SettlementWorkerConfigurationService.apply(villager, town, duty.area()));
         });
         SettlementConstructionService.reconcile(villager);
+        SettlementBrewingService.reconcile(villager);
     }
 
     public static void onUnloaded(Villager villager) {

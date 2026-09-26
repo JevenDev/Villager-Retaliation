@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.settlement.SettlementArea;
+import com.jvn.villagerretaliation.settlement.SettlementBrewingOrder;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementDepotPurpose;
 import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
@@ -51,6 +52,12 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case CancelProject cancel -> {
                 buffer.writeEnum(Kind.CANCEL_PROJECT);
                 buffer.writeUUID(cancel.project());
+            }
+            case Brew brew -> {
+                buffer.writeEnum(Kind.BREW);
+                buffer.writeUUID(brew.resident());
+                buffer.writeUUID(brew.area());
+                writeBrewingOrder(buffer, brew.order());
             }
             case SaveWorker save -> {
                 buffer.writeEnum(Kind.SAVE_WORKER);
@@ -154,6 +161,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case ADVANCE -> new Advance();
             case VIEW -> new View();
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
+            case BREW -> new Brew(buffer.readUUID(), buffer.readUUID(), readBrewingOrder(buffer));
             case SAVE_WORKER -> new SaveWorker(buffer.readUUID(), buffer.readUUID(), readWorkerSettings(buffer));
             case DRAFT_BLUEPRINT -> new DraftBlueprint(buffer.readResourceLocation());
             case PLACE_BLUEPRINT -> new PlaceBlueprint(buffer.readUUID(), buffer.readBlockPos(), buffer.readEnum(net.minecraft.world.level.block.Rotation.class));
@@ -252,13 +260,35 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         return TYPE;
     }
 
+    public static void writeBrewingOrder(RegistryFriendlyByteBuf buffer, SettlementBrewingOrder order) {
+        buffer.writeBoolean(order != null);
+        if (order != null) {
+            buffer.writeResourceLocation(order.item());
+            buffer.writeResourceLocation(order.potion());
+            buffer.writeVarInt(order.amount());
+            buffer.writeBoolean(order.continuous());
+        }
+    }
+
+    public static SettlementBrewingOrder readBrewingOrder(RegistryFriendlyByteBuf buffer) {
+        return buffer.readBoolean() ? new SettlementBrewingOrder(buffer.readResourceLocation(), buffer.readResourceLocation(),
+                buffer.readVarInt(), buffer.readBoolean()) : null;
+    }
+
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew {
+    }
+
+    public record Brew(UUID resident, UUID area, SettlementBrewingOrder order) implements Command {
+        public Brew {
+            Objects.requireNonNull(resident);
+            Objects.requireNonNull(area);
+        }
     }
 
     public record Advance() implements Command {

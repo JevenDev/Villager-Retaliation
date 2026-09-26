@@ -2661,5 +2661,14 @@
   "villagerretaliation.gui.settlement_view.blueprint_place_hint": "Click the ground to position the held blueprint. Rotate or change its height with the buttons. Right click or Esc stops positioning.",
   "villagerretaliation.gui.settlement_view.blueprint_applied": "Blueprint positioned. Open Projects to choose a builder and commission construction.",
   "villagerretaliation.gui.settlement_view.blueprint_denied": "The blueprint could not be positioned. Check your construction access, blueprint lock, and settlement boundary.",
-  "villagerretaliation.gui.settlement_view.blueprint_sending": "Positioning blueprint..."
+  "villagerretaliation.gui.settlement_view.blueprint_sending": "Positioning blueprint...",
+  "villagerretaliation.gui.settlement.brewing_title": "Brewing: %s",
+  "villagerretaliation.gui.settlement.brewing_orders": "Brewing order",
+  "villagerretaliation.gui.settlement.brewing_open_hint": "Choose a potion and quantity, or stop the current order. Save changed work options first.",
+  "villagerretaliation.gui.settlement.brewing_amount": "Bottles",
+  "villagerretaliation.gui.settlement.brewing_continuous": "Repeat continuously",
+  "villagerretaliation.gui.settlement.brewing_fixed": "Brew a fixed quantity",
+  "villagerretaliation.gui.settlement.brewing_order": "Set order",
+  "villagerretaliation.gui.settlement.brewing_cancel": "Stop order",
+  "villagerretaliation.gui.settlement.brewing_hint": "Use 1 to 4096 bottles, or repeat continuously. Setting an order replaces the current one. Stopping keeps all potions and supplies in place."
 }

@@ -29,6 +29,7 @@ public final class SettlementWorkerState {
     private CompoundTag settings = new CompoundTag();
     private long checkedAt;
     private long version;
+    private long brewingVersion;
     private double progress;
     private int aptitude;
     private String status = "idle";
@@ -65,6 +66,18 @@ public final class SettlementWorkerState {
         return this.version;
     }
 
+    long brewingVersion() {
+        return this.brewingVersion;
+    }
+
+    void brewingOrder(SettlementBrewingOrder order) {
+        com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker.clearOrder(this.settings);
+        if (order != null) {
+            order.apply(this.settings);
+        }
+        this.brewingVersion++;
+    }
+
     public double progress() {
         return this.progress;
     }
@@ -91,12 +104,14 @@ public final class SettlementWorkerState {
         this.settings = HiredWorkStateStore.state(villager).copy();
         this.aptitude = HiredVillagerRoles.roleScore(level, villager, this.role);
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
+        this.brewingVersion = Math.max(this.brewingVersion, SettlementBrewingService.version(villager));
         this.checkedAt = now;
         this.progress = 0.0D;
         this.status = "active";
     }
 
     boolean restore(Villager villager) {
+        SettlementBrewingService.restore(this, villager);
         if (villager.getPersistentData().getLong(VERSION_TAG) >= this.version) {
             return false;
         }
@@ -183,6 +198,7 @@ public final class SettlementWorkerState {
         tag.put("Settings", this.settings.copy());
         tag.putLong("CheckedAt", this.checkedAt);
         tag.putLong("Version", this.version);
+        tag.putLong("BrewingVersion", this.brewingVersion);
         tag.putDouble("Progress", this.progress);
         tag.putInt("Aptitude", this.aptitude);
         tag.putString("Status", this.status);
@@ -201,6 +217,7 @@ public final class SettlementWorkerState {
         state.settings = tag.getCompound("Settings").copy();
         state.checkedAt = Math.max(0L, tag.getLong("CheckedAt"));
         state.version = Math.max(0L, tag.getLong("Version"));
+        state.brewingVersion = Math.max(0L, tag.getLong("BrewingVersion"));
         state.progress = Math.clamp(tag.getDouble("Progress"), 0.0D, 24_000.0D);
         state.aptitude = Math.clamp(tag.getInt("Aptitude"), 0, 100);
         state.status = tag.getString("Status");

@@ -163,6 +163,7 @@ public final class SettlementWorkforceService {
                 SettlementLogisticsService.resetAssignment(villager);
                 HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.paused", Map.of());
                 VillagerAssignmentStore.unassign(villager);
+                SettlementBrewingService.reconcile(villager);
                 AssignedStorageService.removeAllAssignedStorage(level, villager);
                 HiredWorkSession.invalidate(villager);
                 VillagerBehaviorSuppressionPolicy.restoreAfterRelease(level, villager);
@@ -193,6 +194,7 @@ public final class SettlementWorkforceService {
             HiredWorkSession.invalidate(villager);
         }
         SettlementWorkerConfigurationService.apply(villager, town, area);
+        SettlementBrewingService.reconcile(villager);
         if (assignmentChanged || Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), 200L) == 0L) {
             SettlementDepotService.synchronizeStorage(level, villager, town);
         }

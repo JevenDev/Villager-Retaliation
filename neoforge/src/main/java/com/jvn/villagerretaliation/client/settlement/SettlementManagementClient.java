@@ -65,6 +65,8 @@ public final class SettlementManagementClient {
             form.result(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementWorkerScreen form) {
             form.result(payload);
+        } else if (Minecraft.getInstance().screen instanceof SettlementBrewingScreen form) {
+            form.result(payload);
         } else if (Minecraft.getInstance().screen instanceof SettlementBlueprintScreen form) {
             form.result(payload);
         }
@@ -78,6 +80,7 @@ public final class SettlementManagementClient {
             case SettlementWorkerScreen form -> form.parent();
             case SettlementConfirmScreen confirmation -> confirmation.parent();
             case SettlementBlueprintScreen blueprints -> blueprints.parent();
+            case SettlementBrewingScreen brewing -> brewing.parent();
             case SettlementItemPickerScreen picker -> picker.parent().parent();
             case null, default -> null;
         };

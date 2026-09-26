@@ -42,6 +42,7 @@ public final class SettlementWorkerScreen extends Screen {
     private Button next;
     private Button save;
     private Button all;
+    private Button brewing;
     private Component feedback = Component.empty();
     private int left;
     private int top;
@@ -86,6 +87,12 @@ public final class SettlementWorkerScreen extends Screen {
                     .bounds(this.left, this.top + 22, half, 20).build());
             addRenderableWidget(Button.builder(text(this.draft.role() == HiredVillagerRole.LOGGING ? "worker_logs" : "worker_animals"),
                     ignored -> switchPage(true)).bounds(this.left + half + 4, this.top + 22, half, 20).build());
+        }
+        if (this.draft.role() == HiredVillagerRole.BREWING) {
+            this.brewing = addRenderableWidget(Button.builder(text("brewing_orders"), ignored ->
+                    this.minecraft.setScreen(new SettlementBrewingScreen(this, this.resident)))
+                    .bounds(this.left, this.top + 22, this.panelWidth, 20).build());
+            this.brewing.setTooltip(Tooltip.create(text("brewing_open_hint")));
         }
         this.search = addRenderableWidget(new EditBox(this.font, this.left, this.top + 48, this.panelWidth - 100, 20, text("search")));
         this.search.setMaxLength(64);
@@ -205,6 +212,9 @@ public final class SettlementWorkerScreen extends Screen {
         this.previous.active = allowed && this.page > 0;
         this.next.active = allowed && (this.page + 1) * this.rows.size() < total;
         this.save.active = allowed && !this.draft.equals(this.resident.settings());
+        if (this.brewing != null) {
+            this.brewing.active = allowed && this.draft.equals(this.resident.settings());
+        }
     }
 
     private Component value(SettlementWorkerSetting setting, int value) {
