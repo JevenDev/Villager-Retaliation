@@ -51,7 +51,7 @@ final class SettlementMiningRoutes {
         }
     }
 
-    private static boolean safe(SettlementMine mine, BlockPos position) {
+    static boolean safe(SettlementMine mine, BlockPos position) {
         return MiningSafety.isSafePathPosition(mine, mine::observed, position)
                 && !mine.getBlockState(position.below()).hasBlockEntity();
     }

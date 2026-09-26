@@ -58,13 +58,34 @@ final class SettlementBackgroundMining {
         try {
             MiningWorkerState.prepareBackground(context);
             state.remove(DEPOSIT);
-            work(level, worker, mine, owner, context, depots, new SettlementWorkBudget(worker, elapsed, multiplier));
+            var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
+            if (enter(worker, mine, area, budget)) work(level, worker, mine, owner, context, depots, budget);
         } finally {
             var snapshot = inventory.captureSnapshot();
             if (!snapshot.equals(worker.inventory()) || !before.equals(state)) worker.changed();
             worker.inventorySnapshot(snapshot);
             SettlementMineService.refresh(level, mine);
         }
+    }
+
+    private static boolean enter(SettlementWorkerState worker, SettlementMine mine, SettlementArea area, SettlementWorkBudget budget) {
+        var state = worker.settings();
+        var entry = worker.miningEntry(mine, area);
+        if (state.contains(POSITION) && SettlementMiningRoutes.safe(mine, BlockPos.of(state.getLong(POSITION)))) return true;
+        if (SettlementMiningRoutes.safe(mine, worker.position())) {
+            state.remove(POSITION);
+            return true;
+        }
+        if (entry == null) {
+            worker.status("no_safe_mining_route");
+            return false;
+        }
+        if (!budget.spend(16.0D * Math.sqrt(worker.position().distSqr(entry)))) {
+            worker.status("returning_to_mine");
+            return false;
+        }
+        state.putLong(POSITION, entry.asLong());
+        return true;
     }
 
     private static void work(ServerLevel level, SettlementWorkerState worker, SettlementMine mine, Villager owner,

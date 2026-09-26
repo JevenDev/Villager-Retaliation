@@ -31,6 +31,7 @@ public final class SettlementWorkerState {
     private CompoundTag inventory = new CompoundTag();
     private CompoundTag settings = new CompoundTag();
     private CompoundTag entityContext = new CompoundTag();
+    private SettlementMiningAccess miningAccess;
     private long checkedAt;
     private long version;
     private long brewingVersion;
@@ -109,6 +110,8 @@ public final class SettlementWorkerState {
         this.area = duty.area().id();
         this.role = duty.area().type().role();
         this.position = villager.blockPosition().immutable();
+        this.miningAccess = this.role == HiredVillagerRole.MINING
+                ? SettlementMiningAccess.observe(this.miningAccess, duty.town().mines().get(this.area), duty.area(), this.position) : null;
         this.inventory = HiredJobInventory.getJobInventory(villager).captureSnapshot();
         HiredWorkSkillGrowthService.onPractice(level, villager, null, this.role, HiredWorkStateStore.state(villager), List.of());
         this.settings = HiredWorkStateStore.state(villager).copy();
@@ -127,6 +130,14 @@ public final class SettlementWorkerState {
                 || villager.isOnFire() || villager.isInLava()
                 || com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil.hasVanillaFleeState(level, villager.getBrain());
         this.status = this.unsafe ? "unsafe" : "active";
+    }
+
+    BlockPos miningEntry(SettlementMine mine, SettlementArea area) {
+        if (this.miningAccess != null && !this.miningAccess.matches(area)) {
+            this.settings.remove("SettlementMiningPosition");
+        }
+        this.miningAccess = SettlementMiningAccess.observe(this.miningAccess, mine, area, this.position);
+        return this.miningAccess == null ? null : this.miningAccess.entry(mine, area);
     }
 
     boolean restore(Villager villager) {
@@ -253,6 +264,7 @@ public final class SettlementWorkerState {
         tag.put("Inventory", this.inventory.copy());
         tag.put("Settings", this.settings.copy());
         if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
+        if (this.miningAccess != null) tag.put("MiningAccess", this.miningAccess.save());
         tag.putLong("CheckedAt", this.checkedAt);
         tag.putLong("Version", this.version);
         tag.putLong("BrewingVersion", this.brewingVersion);
@@ -274,6 +286,7 @@ public final class SettlementWorkerState {
         state.inventory = tag.getCompound("Inventory").copy();
         state.settings = tag.getCompound("Settings").copy();
         state.entityContext = tag.getCompound("EntityContext").copy();
+        state.miningAccess = SettlementMiningAccess.load(tag.getCompound("MiningAccess"));
         state.checkedAt = Math.max(0L, tag.getLong("CheckedAt"));
         state.version = Math.max(0L, tag.getLong("Version"));
         state.brewingVersion = Math.max(0L, tag.getLong("BrewingVersion"));

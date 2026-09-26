@@ -285,6 +285,114 @@ public final class SettlementMiningWorkGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_mining_work")
+    public static void minersRememberObservedAccessAfterRestingAndReloading(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var entry = fixture.villager().blockPosition();
+            observeWorker(helper, fixture, entry);
+            var home = entry.west(40);
+            observeWorker(helper, fixture, home);
+            var restored = SettlementWorkerState.load(fixture.worker().save());
+            fixture.town().recordWorker(restored);
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 100L);
+            helper.assertValueEqual(restored.status(), "returning_to_mine", "a worker at home first travels to its observed mine access");
+            helper.assertValueEqual(count(helper, restored, Items.RAW_IRON), 0, "returning from home cannot mine instantly");
+            double progress = restored.progress();
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 100L);
+            helper.assertValueEqual(restored.progress(), progress, "repeating the same clock cannot pay the return trip");
+            run(helper, fixture, 200, 600);
+            helper.assertValueEqual(count(helper, restored, Items.RAW_IRON), 0, "the full distance must be paid before entering the mine");
+            run(helper, fixture, 800, 1_000);
+            helper.assertValueEqual(count(helper, restored, Items.RAW_IRON), 3, "one paid return trip resumes the finite vein after reloading");
+            helper.assertTrue(restored.restore(fixture.villager()), "the completed inventory returns to the native worker");
+            helper.assertValueEqual(fixture.villager().blockPosition(), home, "background access never teleports the native villager");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_mining_work")
+    public static void minersRememberAccessAfterUnloadingAtStorage(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            observeWorker(helper, fixture, fixture.villager().blockPosition());
+            observeWorker(helper, fixture, fixture.output().position());
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", true);
+            run(helper, fixture, 200, 4_000);
+            helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.RAW_IRON)), 3,
+                    "an observed worker at storage can return to the mine and deliver its real drops");
+            helper.assertValueEqual(fixture.villager().blockPosition(), fixture.output().position(), "the native storage position remains unchanged");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_mining_work")
+    public static void minersDoNotInventAccessToPreviouslyUnvisitedMines(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            observeWorker(helper, fixture, fixture.output().position());
+            var saved = fixture.worker().save();
+            saved.remove("MiningAccess");
+            var oldWorker = SettlementWorkerState.load(saved);
+            fixture.town().recordWorker(oldWorker);
+            run(helper, fixture, 200, 1_000);
+            helper.assertValueEqual(oldWorker.status(), "no_safe_mining_route", "legacy workers outside the mine wait for actual access observation");
+            helper.assertValueEqual(count(helper, oldWorker, Items.RAW_IRON), 0, "observing ore cannot invent an entry into its chamber");
+            helper.assertValueEqual(oldWorker.progress(), 0.0D, "missing access does not bank work credit");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_mining_work")
+    public static void rememberedMineAccessMustStillHaveASafeBodyAndFloor(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var entry = fixture.villager().blockPosition();
+            observeWorker(helper, fixture, entry);
+            observeWorker(helper, fixture, fixture.output().position());
+            fixture.mine().change(Map.of(entry.above(), Blocks.STONE.defaultBlockState()));
+            run(helper, fixture, 200, 1_000);
+            helper.assertValueEqual(count(helper, fixture.worker(), Items.RAW_IRON), 0, "a blocked remembered entrance cannot start work");
+            helper.assertValueEqual(fixture.worker().status(), "no_safe_mining_route", "the blocked entrance reports its unsafe route");
+            fixture.mine().change(Map.of(entry.above(), Blocks.AIR.defaultBlockState()));
+            run(helper, fixture, 1_200, 3_000);
+            helper.assertValueEqual(count(helper, fixture.worker(), Items.RAW_IRON), 3, "repairing the observed entrance permits returning to work");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_mining_work")
+    public static void resizingAMineInvalidatesRememberedAccessAndVirtualPositions(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var entry = fixture.villager().blockPosition();
+            observeWorker(helper, fixture, entry);
+            observeWorker(helper, fixture, fixture.output().position());
+            fixture.worker().settings().putLong("SettlementMiningPosition", entry.asLong());
+            var resized = new SettlementArea(fixture.area().id(), SettlementAreaType.MINE, "Resized mine",
+                    fixture.area().min().west(), fixture.area().max(), 5, true);
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), resized), "the mine bounds can be changed");
+            SettlementMineService.observeArea(helper.getLevel(), fixture.town(), resized, fixture.chunk());
+            run(helper, fixture, 200, 1_000);
+            helper.assertValueEqual(count(helper, fixture.worker(), Items.RAW_IRON), 0, "changed bounds require a fresh actual access observation");
+            helper.assertFalse(fixture.worker().settings().contains("SettlementMiningPosition"), "resizing clears a virtual position from the old mine");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_mining_work")
+    public static void miningAccessDoesNotSurviveAnotherDutyOrArea(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            observeWorker(helper, fixture, fixture.villager().blockPosition());
+            var other = new SettlementArea(UUID.randomUUID(), SettlementAreaType.MINE, "Other mine",
+                    fixture.area().min(), fixture.area().max(), 5, true);
+            fixture.villager().setPos(fixture.output().position().getBottomCenter());
+            fixture.worker().observe(helper.getLevel(), fixture.villager(), new SettlementWorkforceService.Duty(fixture.town(), other), 0L);
+            helper.assertFalse(fixture.worker().save().contains("MiningAccess"), "another area's identity cannot inherit an old mine entrance");
+            observeWorker(helper, fixture, fixture.ore().west(4));
+            var logging = new SettlementArea(fixture.area().id(), SettlementAreaType.FORESTRY, "Forest",
+                    fixture.area().min(), fixture.area().max(), 5, true);
+            fixture.worker().observe(helper.getLevel(), fixture.villager(), new SettlementWorkforceService.Duty(fixture.town(), logging), 0L);
+            helper.assertFalse(fixture.worker().save().contains("MiningAccess"), "another role clears remembered mine access");
+        });
+    }
+
+    private static void observeWorker(GameTestHelper helper, Fixture fixture, BlockPos position) {
+        fixture.villager().setPos(position.getBottomCenter());
+        fixture.worker().observe(helper.getLevel(), fixture.villager(),
+                new SettlementWorkforceService.Duty(fixture.town(), fixture.area()), 0L);
+    }
+
     private static HiredWorkContext context(Fixture fixture, net.minecraft.nbt.CompoundTag state) {
         return new HiredWorkContext(HiredJobInventory.getJobInventory(fixture.villager()), state, fixture.area().center(),
                 fixture.area().min(), fixture.area().max(), 64, 32, true, 1, false, true);
