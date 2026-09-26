@@ -65,7 +65,7 @@ public final class VillageRegistrationRegressionGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void futureRegistryFormatsFailClosed(GameTestHelper helper) {
         CompoundTag future = new CompoundTag();
-        future.putInt("FormatVersion", 4);
+        future.putInt("FormatVersion", Integer.MAX_VALUE);
         boolean rejected = false;
         try {
             VillageAllegianceRegistrySavedData.load(future, helper.getLevel().registryAccess());

@@ -114,6 +114,15 @@ public final class VillageNamingService {
             ServerLevel level,
             ServerPlayer player,
         VillageAllegianceRegistrySavedData.AllegianceRecord village) {
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        if (registry.isManaged(village.id())) {
+            boolean allowed = com.jvn.villagerretaliation.settlement.SettlementSavedData.get(level)
+                    .get(village.id())
+                    .map(town -> town.permits(player.getUUID(),
+                            com.jvn.villagerretaliation.settlement.SettlementPermission.BUILD))
+                    .orElse(false);
+            return new TrustGate(allowed, 0, 0);
+        }
         var activeAdults = village.activeAdultResidents(level.getGameTime());
         int adults = activeAdults.size();
         int trusted = 0;

@@ -81,7 +81,7 @@ public final class VillageOverviewService {
         List<Resident> residents = new ArrayList<>();
         int adults = 0;
         int present = 0;
-        for (var resident : village.activeResidents(level.getGameTime())) {
+        for (var resident : registry.residentRoster(village.id(), level.getGameTime())) {
             var entity = level.getEntity(resident.id());
             Villager villager = entity instanceof Villager loaded && loaded.isAlive() ? loaded : null;
             String name = villager == null ? social.knownName(resident.id()).orElse("")

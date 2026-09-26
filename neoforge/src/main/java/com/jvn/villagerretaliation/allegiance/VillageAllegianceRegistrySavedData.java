@@ -30,7 +30,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class VillageAllegianceRegistrySavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_village_allegiances";
-    private static final int FORMAT_VERSION = 3;
+    private static final int FORMAT_VERSION = 4;
     private static final int DISCOVERY_RADIUS_BLOCKS = 128;
     private static final long RESIDENT_LAST_SEEN_REFRESH_TICKS = 1_200L;
     private static final long AUTO_MERGE_OBSERVATION_SPACING_TICKS = 100L;
@@ -39,6 +39,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     public static final long RESIDENT_ACTIVE_GRACE_TICKS = 72_000L;
 
     private final Map<VillageAllegianceId, AllegianceRecord> records = new LinkedHashMap<>();
+    private final Set<VillageAllegianceId> managedIdentities = new LinkedHashSet<>();
     private final Map<VillageAllegianceId, VillageAllegianceId> aliases = new LinkedHashMap<>();
     private final Map<VillageAllegianceId, Optional<VillageAllegianceId>> canonicalCache = new HashMap<>();
     private final Map<UUID, LinkedHashSet<VillageAllegianceId>> residentRecords = new HashMap<>();
@@ -73,7 +74,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             Set<Long> sourceSections = longSet(recordTag.getLongArray("SourceSections"));
             Set<Long> footprintSections = longSet(recordTag.getLongArray("FootprintSections"));
             Set<Long> historicalFootprintSections = longSet(recordTag.getLongArray("HistoricalFootprintSections"));
-            if (formatVersion < FORMAT_VERSION && footprintSections.isEmpty()
+            if (formatVersion < 3 && footprintSections.isEmpty()
                     && dimension != null && !state.equals(VillageLifecycleState.ARCHIVED)) {
                 sourceSections = Set.of(SectionPos.asLong(origin));
                 footprintSections = expandedFootprint(sourceSections);
@@ -115,6 +116,12 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 data.aliases.put(
                         new VillageAllegianceId(aliasTag.getUUID("Source")),
                         new VillageAllegianceId(aliasTag.getUUID("Target")));
+            }
+        }
+        for (Tag raw : tag.getList("ManagedIdentities", Tag.TAG_COMPOUND)) {
+            if (raw instanceof CompoundTag entry && entry.hasUUID("Id")) {
+                VillageAllegianceId id = new VillageAllegianceId(entry.getUUID("Id"));
+                data.canonical(id).filter(id::equals).ifPresent(data.managedIdentities::add);
             }
         }
         data.ensureNames();
@@ -166,6 +173,13 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             aliasTags.add(aliasTag);
         }
         tag.put("Aliases", aliasTags);
+        ListTag managedTags = new ListTag();
+        for (VillageAllegianceId id : this.managedIdentities) {
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("Id", id.value());
+            managedTags.add(entry);
+        }
+        tag.put("ManagedIdentities", managedTags);
         return tag;
     }
 
@@ -200,6 +214,38 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     public Optional<AllegianceRecord> canonicalRecord(VillageAllegianceId id) {
         return canonical(id).flatMap(this::record);
+    }
+
+    public boolean isManaged(VillageAllegianceId id) {
+        return canonical(id).filter(this.managedIdentities::contains).isPresent();
+    }
+
+    public boolean manage(VillageAllegianceId id, BlockPos center, Set<Long> footprint) {
+        AllegianceRecord current = canonicalRecord(id).orElse(null);
+        if (current == null || current.archived() || center == null || footprint == null || footprint.isEmpty()) {
+            return false;
+        }
+        boolean changed = this.managedIdentities.add(current.id());
+        if (!changed && current.center().equals(center) && current.footprintSections().equals(footprint)) {
+            return true;
+        }
+        this.records.put(current.id(), new AllegianceRecord(
+                current.id(), current.createdGameTime(), VillageLifecycleState.ACTIVE,
+                current.displayName(), current.customName(), current.originDimension(),
+                current.originPosition(), center, current.sourceSections(), footprint,
+                AllegianceRecord.union(current.historicalFootprintSections(), footprint), current.lastSeenGameTime(), 0L,
+                current.residents()));
+        this.mergeObservations.keySet().removeIf(key -> key.contains(current.id()));
+        markFootprintChanged();
+        return true;
+    }
+
+    public List<ResidentRecord> residentRoster(VillageAllegianceId id, long gameTime) {
+        AllegianceRecord record = canonicalRecord(id).orElse(null);
+        if (record == null) {
+            return List.of();
+        }
+        return isManaged(record.id()) ? List.copyOf(record.residents().values()) : record.activeResidents(gameTime);
     }
 
     public List<AllegianceRecord> records() {
@@ -240,6 +286,10 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     }
 
     public Optional<VillageAllegianceId> discoverAt(ServerLevel level, BlockPos pos) {
+        Optional<VillageAllegianceId> managed = resolveAt(level, pos).filter(this::isManaged);
+        if (managed.isPresent()) {
+            return managed;
+        }
         if (level == null || pos == null || !level.isVillage(pos)) {
             return resolveAt(level, pos);
         }
@@ -256,6 +306,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 level, cluster, pos, DISCOVERY_RADIUS_BLOCKS);
         ResourceLocation dimension = level.dimension().location();
         LinkedHashSet<VillageAllegianceId> matches = activeRecords(dimension).stream()
+                .filter(record -> !isManaged(record.id()))
                 .filter(record -> intersects(record.footprintSections(), footprint))
                 .map(AllegianceRecord::id)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
@@ -311,7 +362,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         AllegianceRecord current = raw != null && canonical.isPresent() && !id.equals(canonical.get())
                 ? raw
                 : canonical.map(this.records::get).orElse(null);
-        if (current == null || current.archived()) {
+        if (current == null || current.archived() || isManaged(current.id())) {
             return false;
         }
         this.records.put(current.id(), current.withLifecycle(VillageLifecycleState.ARCHIVED, current.emptyObservedTicks()));
@@ -321,7 +372,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     public void observeEmpty(VillageAllegianceId id, long observedTicks) {
         AllegianceRecord current = canonicalRecord(id).orElse(null);
-        if (current == null || current.archived() || observedTicks <= 0L) {
+        if (current == null || current.archived() || isManaged(current.id()) || observedTicks <= 0L) {
             return;
         }
         long total = Math.min(ARCHIVE_GRACE_TICKS, current.emptyObservedTicks() + observedTicks);
@@ -359,7 +410,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 .filter(candidate -> !candidate.archived())
                 .filter(candidate -> level.dimension().location().equals(candidate.originDimension()))
                 .orElse(null);
-        if (record == null || record.sourceSections().isEmpty() || !entireFootprintLoaded(level, record)) {
+        if (record == null || isManaged(record.id()) || record.sourceSections().isEmpty()
+                || !entireFootprintLoaded(level, record)) {
             return;
         }
         if (!observeLoadedCluster(level, record)) {
@@ -497,7 +549,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     /** Reverses one direct merge using the still-retained source record. */
     public boolean undoMerge(VillageAllegianceId source) {
         VillageAllegianceId target = this.aliases.get(source);
-        if (target == null || this.aliases.containsKey(target)) {
+        if (target == null || this.aliases.containsKey(target) || isManaged(target)) {
             return false;
         }
         AllegianceRecord sourceRecord = this.records.get(source);
@@ -554,7 +606,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 .distinct()
                 .filter(id -> intersects(this.records.get(id).sourceSections(), occupiedCluster))
                 .toList();
-        if (sourceBacked.size() > 1 && mergeEvidenceConfirmed(sourceBacked, gameTime)) {
+        if (sourceBacked.size() > 1 && sourceBacked.stream().noneMatch(this::isManaged)
+                && mergeEvidenceConfirmed(sourceBacked, gameTime)) {
             return autoMerge(level, sourceBacked);
         }
         Collection<VillageAllegianceId> candidates = sourceBacked.isEmpty() ? matches : sourceBacked;
@@ -595,6 +648,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         AllegianceRecord sourceRecord = this.records.get(source);
         AllegianceRecord targetRecord = this.records.get(target);
         if (sourceRecord == null || targetRecord == null || source.equals(target)
+                || isManaged(source) || isManaged(target)
                 || !java.util.Objects.equals(sourceRecord.originDimension(), targetRecord.originDimension())) {
             return false;
         }
@@ -658,6 +712,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         Set<Long> footprint = VillageFootprintResolver.resolve(
                 level, cluster, record.center(), DISCOVERY_RADIUS_BLOCKS);
         LinkedHashSet<VillageAllegianceId> matches = activeRecords(level.dimension().location()).stream()
+                .filter(candidate -> !isManaged(candidate.id()))
                 .filter(candidate -> intersects(candidate.footprintSections(), footprint))
                 .map(AllegianceRecord::id)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
@@ -673,6 +728,9 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     }
 
     private void putObservedRecord(AllegianceRecord previous, AllegianceRecord updated) {
+        if (isManaged(previous.id())) {
+            return;
+        }
         this.records.put(updated.id(), updated);
         boolean indexedShapeChanged = !previous.footprintSections().equals(updated.footprintSections())
                 || !java.util.Objects.equals(previous.originDimension(), updated.originDimension())
