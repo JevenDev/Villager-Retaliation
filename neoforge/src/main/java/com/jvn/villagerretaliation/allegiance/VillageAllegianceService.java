@@ -19,6 +19,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.ZombieVillager;
@@ -258,7 +259,9 @@ public final class VillageAllegianceService {
                 .flatMap(Optional::stream)
                 .distinct()
                 .toList();
-        Optional<VillageAllegianceId> discovered = activeVillageAt(level, child.blockPosition());
+        Optional<VillageAllegianceId> discovered = activeVillageAt(level, child.blockPosition())
+                .filter(id -> com.jvn.villagerretaliation.settlement.SettlementMembershipService.permitsAutomaticMembership(
+                        level, child, id, AllegianceAssignmentSource.BIRTH, parents));
         if (discovered.isPresent()) {
             assignKnown(level, child, discovered.get(), AllegianceAssignmentSource.BIRTH,
                     child.blockPosition(), AllegianceConfidence.INHERITED, parents);
@@ -316,7 +319,9 @@ public final class VillageAllegianceService {
         if (level == null || villager == null) {
             return false;
         }
-        Optional<VillageAllegianceId> current = activeVillageAt(level, villager.blockPosition());
+        Optional<VillageAllegianceId> current = activeVillageAt(level, villager.blockPosition())
+                .filter(id -> com.jvn.villagerretaliation.settlement.SettlementMembershipService.permitsAutomaticMembership(
+                        level, villager, id, AllegianceAssignmentSource.TRUST_REASSIGNMENT, List.of()));
         if (current.isEmpty()) {
             return false;
         }
@@ -325,9 +330,28 @@ public final class VillageAllegianceService {
         return true;
     }
 
+    public static boolean reassignToCurrentVillage(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (level == null || villager == null || player == null || player.serverLevel() != level
+                || villager.level() != level || !player.isAlive() || player.isSpectator() || !villager.isAlive()) {
+            return false;
+        }
+        var current = activeVillageAt(level, villager.blockPosition()).orElse(null);
+        com.jvn.villagerretaliation.settlement.SettlementSavedData.get(level).get(current).ifPresent(town ->
+                town.areas().values().forEach(area ->
+                        com.jvn.villagerretaliation.settlement.SettlementBuildingService.refresh(level, town, area)));
+        if (current == null || !VillageAllegianceReassignmentService.eligibility(level, player, villager, current).allowed()) {
+            return false;
+        }
+        if (VillageAllegianceRegistrySavedData.get(level).isManaged(current)) {
+            VillageAllegianceApi.assignKnown(level, villager, current, AllegianceAssignmentSource.TRUST_REASSIGNMENT);
+            return true;
+        }
+        return reassignToCurrentVillage(level, villager);
+    }
+
     /**
-     * Advances a Wanderer's settlement clock. A continuous day in one active village makes
-     * that village home, unless the villager is traveling as a party member.
+     * Advances a Wanderer's settlement clock in independent villages. Managed towns require
+     * approval, and party travel does not count toward residency.
      */
     public static boolean updateWanderingResidency(ServerLevel level, Villager villager) {
         if (level == null || villager == null) {
@@ -351,7 +375,9 @@ public final class VillageAllegianceService {
         VillageAllegianceReassignmentService.Residency residency =
                 VillageAllegianceReassignmentService.readResidency(villager).orElse(null);
         Optional<VillageAllegianceId> current = residencyVillageAtCurrentPosition(
-                registry, level, villager.blockPosition(), residency).or(() -> activeVillageAt(level, villager.blockPosition()));
+                registry, level, villager.blockPosition(), residency).or(() -> activeVillageAt(level, villager.blockPosition()))
+                .filter(id -> com.jvn.villagerretaliation.settlement.SettlementMembershipService.permitsAutomaticMembership(
+                        level, villager, id, AllegianceAssignmentSource.SETTLEMENT, List.of()));
         if (current.isEmpty()) {
             VillageAllegianceReassignmentService.resetResidency(villager);
             return false;
@@ -484,7 +510,10 @@ public final class VillageAllegianceService {
                 && data.originDimension().equals(level.dimension().location())
                 ? activeVillageAt(level, data.originPosition())
                 : Optional.empty();
-        VillageAllegianceId home = birthplace.orElse(data.protectedParents().getFirst());
+        VillageAllegianceId home = birthplace
+                .filter(id -> com.jvn.villagerretaliation.settlement.SettlementMembershipService.permitsAutomaticMembership(
+                        level, villager, id, AllegianceAssignmentSource.BIRTH, data.protectedParents()))
+                .orElse(data.protectedParents().getFirst());
         assignKnown(level, villager, home, AllegianceAssignmentSource.BIRTH,
                 data.originPosition(), AllegianceConfidence.INHERITED, data.protectedParents());
     }
@@ -544,6 +573,11 @@ public final class VillageAllegianceService {
             List<VillageAllegianceId> protectedParents) {
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         VillageAllegianceId canonical = registry.canonical(id).orElse(id);
+        if (!com.jvn.villagerretaliation.settlement.SettlementMembershipService.permitsAutomaticMembership(
+                level, entity, canonical, source, protectedParents)) {
+            assignUnaffiliated(level, entity, source);
+            return;
+        }
         registry.ensureRecord(canonical, level.getGameTime(), level.dimension().location(), evidencePosition);
         VillageAllegianceEntityData.write(entity, VillageAllegianceData.known(
                 canonical,

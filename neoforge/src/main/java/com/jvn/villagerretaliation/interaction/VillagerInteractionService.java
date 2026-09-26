@@ -2501,7 +2501,7 @@ public final class VillagerInteractionService {
         boolean wasUnaffiliated = VillageAllegianceApi.get(villager)
                 .map(data -> data.state() == AllegianceState.UNAFFILIATED)
                 .orElse(false);
-        if (!VillageAllegianceService.reassignToCurrentVillage(level, villager)) {
+        if (!VillageAllegianceService.reassignToCurrentVillage(level, villager, player)) {
             sendVillagerNotice(player, villager, "I cannot change my allegiance right now.");
             return;
         }

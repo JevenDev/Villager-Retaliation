@@ -1,4 +1,6 @@
 {
+  "settlement.villagerretaliation.leadership_accepted": "The village has accepted your leadership.",
+  "settlement.villagerretaliation.leadership_requirements": "Leadership: %s/%s adults at Revered, %s beds for %s residents, %s%% sustained housing and food. Sneak-use the table with an empty hand to accept when ready.",
   "text.config.villagerretaliation.category.settlements": "Settlements",
   "text.config.villagerretaliation.category.settlements.tooltip": "Town food consumption, growth, and stage requirements.",
   "text.config.villagerretaliation.option.settlements.dailyNutrition": "Daily Nutrition",

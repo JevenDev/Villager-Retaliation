@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.block;
 
 import com.jvn.villagerretaliation.allegiance.VillageOverviewService;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.settlement.SettlementLeadershipService;
 import com.jvn.villagerretaliation.settlement.SettlementFoundingService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -35,6 +37,19 @@ public final class SettlementManagementBlock extends Block {
             var result = SettlementFoundingService.found(serverPlayer, pos);
             if (result.town().isPresent()) {
                 VillageOverviewService.open(serverPlayer, pos);
+            } else if (result.status() == SettlementFoundingService.Status.INDEPENDENT_VILLAGE) {
+                var registry = VillageAllegianceRegistrySavedData.get(serverPlayer.serverLevel());
+                var village = registry.discoverAt(serverPlayer.serverLevel(), pos).orElse(null);
+                if (serverPlayer.isShiftKeyDown() && village != null
+                        && SettlementLeadershipService.accept(serverPlayer, village, pos).isPresent()) {
+                    serverPlayer.displayClientMessage(Component.translatable("settlement.villagerretaliation.leadership_accepted"), false);
+                    VillageOverviewService.open(serverPlayer, pos);
+                } else {
+                    SettlementLeadershipService.status(serverPlayer, village).ifPresent(status ->
+                            serverPlayer.displayClientMessage(Component.translatable("settlement.villagerretaliation.leadership_requirements",
+                                    status.reveredAdults(), status.adults(), status.support().housing(), status.support().population(),
+                                    Math.min(100L, status.support().sustainedTicks() * 100L / status.requiredTicks())), false));
+                }
             } else {
                 report(serverPlayer, result);
             }

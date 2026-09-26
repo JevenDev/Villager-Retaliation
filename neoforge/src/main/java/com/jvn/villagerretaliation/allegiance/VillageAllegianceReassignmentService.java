@@ -41,6 +41,22 @@ public final class VillageAllegianceReassignmentService {
         if (VillageAllegianceApi.canonicalPrimary(level, villager).filter(village.id()::equals).isPresent()) {
             return Eligibility.denied(Reason.ALREADY_HOME, 0L);
         }
+        if (com.jvn.villagerretaliation.interaction.VillagerAssignmentStore.civicSettlement(villager).isPresent()) {
+            return Eligibility.denied(Reason.CIVIC_DUTY, 0L);
+        }
+        var town = com.jvn.villagerretaliation.settlement.SettlementSavedData.get(level).get(village.id()).orElse(null);
+        if (town != null) {
+            if (!town.permits(player.getUUID(), com.jvn.villagerretaliation.settlement.SettlementPermission.STAFF)) {
+                return Eligibility.denied(Reason.TOWN_APPROVAL, 0L);
+            }
+            int population = registry.residentRoster(town.id(), level.getGameTime()).size();
+            if (town.housingCapacity() <= population
+                    || com.jvn.villagerretaliation.settlement.SettlementFoodService.nutrition(town)
+                            < (long) (population + 1) * com.jvn.villagerretaliation.settlement.SettlementFoodService.dailyNutrition()
+                                    * Math.clamp(com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_FOOD_RESERVE_DAYS.get(), 1, 30)) {
+                return Eligibility.denied(Reason.TOWN_SUPPORT, 0L);
+            }
+        }
         if (PartyService.getPartyForVillager(level, villager.getUUID()).isPresent()
                 && !PartyService.arePlayerAndVillagerInSameParty(
                         level, player.getUUID(), villager.getUUID())) {
@@ -98,6 +114,9 @@ public final class VillageAllegianceReassignmentService {
             case ALREADY_HOME -> "This is already my home village.";
             case INDIVIDUAL_TRUST -> "I do not know you well enough to let you choose my home.";
             case OUTSIDE_PARTY -> "I am traveling with my party. I will only take that order from someone in it.";
+            case CIVIC_DUTY -> "My town leader must release me from my civic duty before I can move.";
+            case TOWN_APPROVAL -> "This town's leader or staffing delegate must approve my arrival.";
+            case TOWN_SUPPORT -> "This town needs a spare bed and enough food before I can move in.";
         };
     }
 
@@ -135,7 +154,10 @@ public final class VillageAllegianceReassignmentService {
         NO_ACTIVE_VILLAGE,
         ALREADY_HOME,
         INDIVIDUAL_TRUST,
-        OUTSIDE_PARTY
+        OUTSIDE_PARTY,
+        CIVIC_DUTY,
+        TOWN_APPROVAL,
+        TOWN_SUPPORT
     }
 
     public record Eligibility(
