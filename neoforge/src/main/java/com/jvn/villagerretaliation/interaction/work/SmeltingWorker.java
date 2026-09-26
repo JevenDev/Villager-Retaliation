@@ -530,7 +530,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         return (RecipeType<AbstractCookingRecipe>) (RecipeType<?>) RecipeType.SMELTING;
     }
 
-    private static boolean isSmeltableOre(
+    public static boolean isSmeltableOre(
             ServerLevel level,
             ItemStack stack,
             RecipeType<AbstractCookingRecipe> recipeType,
@@ -560,7 +560,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 || stack.is(Items.GOLD_INGOT)
                 || stack.is(Items.IRON_INGOT));
     }
-    private static boolean isDesiredSmeltedOutput(ServerLevel level, ItemStack filter, ItemStack stack) {
+    public static boolean isDesiredSmeltedOutput(ServerLevel level, ItemStack filter, ItemStack stack) {
         return isSmeltedOre(stack)
                 && (filter == null || filter.isEmpty()
                         || VillagerFilterMatcher.matches(level, filter, stack));

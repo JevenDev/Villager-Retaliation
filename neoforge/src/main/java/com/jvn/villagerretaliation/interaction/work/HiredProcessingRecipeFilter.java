@@ -18,7 +18,7 @@ public final class HiredProcessingRecipeFilter {
     private HiredProcessingRecipeFilter() {
     }
 
-    static boolean allows(
+    public static boolean allows(
             ServerLevel level,
             ItemStack filter,
             RecipeHolder<?> recipe,

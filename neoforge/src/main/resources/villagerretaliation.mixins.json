@@ -6,6 +6,7 @@
     "AbstractArrowAccessor",
     "AbstractContainerMenuDuelMixin",
     "AbstractContainerMenuAccessor",
+    "AbstractFurnaceSettlementMixin",
     "AttributeMapMixin",
     "BannerHelmetContainerMenuMixin",
     "AvoidEntityGoalMixin",

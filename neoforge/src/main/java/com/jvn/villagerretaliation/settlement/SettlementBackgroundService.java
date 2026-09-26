@@ -26,6 +26,7 @@ public final class SettlementBackgroundService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
+        SettlementFurnaceService.update(level, town, now);
         for (SettlementDepot depot : town.depots().values()) {
             SettlementDepotService.observeRules(level, depot);
         }
@@ -55,7 +56,10 @@ public final class SettlementBackgroundService {
             double multiplier = care.workMultiplier() * (town.housingCapacity() < town.residents().size() ? 0.75D : 1.0D);
             if (worker.role() == HiredVillagerRole.COURIER) {
                 SettlementBackgroundHauling.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.CRAFTSMAN || worker.role() == HiredVillagerRole.COOK) {
+            } else if (worker.role() == HiredVillagerRole.SMELTER) {
+                SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier);
+            } else if (worker.role() == HiredVillagerRole.CRAFTSMAN
+                    || worker.role() == HiredVillagerRole.COOK && !SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier)) {
                 SettlementBackgroundCrafting.tick(level, town, worker, elapsed, multiplier);
             }
         }
