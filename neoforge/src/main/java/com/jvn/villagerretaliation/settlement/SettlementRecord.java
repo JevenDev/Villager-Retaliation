@@ -37,6 +37,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementDeparture> departures = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFurnaceState> furnaces = new LinkedHashMap<>();
+    private final Map<BlockPos, SettlementBrewingStandState> brewingStands = new LinkedHashMap<>();
     private long nextDepartureAt;
     private long nextApplicantAt;
     private SettlementSupportState support = new SettlementSupportState();
@@ -99,6 +100,21 @@ public final class SettlementRecord {
 
     void removeFurnace(BlockPos position) {
         if (this.furnaces.remove(position) != null) {
+            changed();
+        }
+    }
+
+    public Map<BlockPos, SettlementBrewingStandState> brewingStands() {
+        return Collections.unmodifiableMap(this.brewingStands);
+    }
+
+    void recordBrewingStand(SettlementBrewingStandState stand) {
+        this.brewingStands.put(stand.position(), stand);
+        changed();
+    }
+
+    void removeBrewingStand(BlockPos position) {
+        if (this.brewingStands.remove(position) != null) {
             changed();
         }
     }
@@ -360,7 +376,8 @@ public final class SettlementRecord {
         var previous = this.surveys.get(area);
         if (previous != null && previous.beds().equals(survey.beds())
                 && previous.workstations().equals(survey.workstations()) && previous.fullyLoaded() == survey.fullyLoaded()
-                && previous.fixtures().equals(survey.fixtures()) && survey.checkedAt() - previous.checkedAt() < 1_200L) {
+                && previous.fixtures().equals(survey.fixtures()) && previous.waterSources().equals(survey.waterSources())
+                && survey.checkedAt() - previous.checkedAt() < 1_200L) {
             return;
         }
         this.surveys.put(area, survey);
@@ -526,6 +543,9 @@ public final class SettlementRecord {
         ListTag furnaceTags = new ListTag();
         this.furnaces.values().forEach(furnace -> furnaceTags.add(furnace.save()));
         tag.put("Furnaces", furnaceTags);
+        ListTag brewingTags = new ListTag();
+        this.brewingStands.values().forEach(stand -> brewingTags.add(stand.save()));
+        tag.put("BrewingStands", brewingTags);
         ListTag departureTags = new ListTag();
         this.departures.values().forEach(departure -> departureTags.add(departure.save()));
         tag.put("Departures", departureTags);
@@ -566,6 +586,12 @@ public final class SettlementRecord {
             var furnace = SettlementFurnaceState.load((CompoundTag) raw);
             if (record.furnaces.putIfAbsent(furnace.position(), furnace) != null) {
                 throw new IllegalArgumentException("Settlement furnace duplicates a position");
+            }
+        }
+        for (Tag raw : tag.getList("BrewingStands", Tag.TAG_COMPOUND)) {
+            var stand = SettlementBrewingStandState.load((CompoundTag) raw);
+            if (record.brewingStands.putIfAbsent(stand.position(), stand) != null) {
+                throw new IllegalArgumentException("Settlement brewing stand duplicates a position");
             }
         }
         record.nextDepartureAt = Math.max(0L, tag.getLong("NextDepartureAt"));
@@ -670,6 +696,7 @@ public final class SettlementRecord {
             var survey = SettlementBuildingSurvey.Survey.load(entry);
             if (area == null || survey.beds().stream().anyMatch(pos -> !area.contains(pos))
                     || survey.workstations().stream().anyMatch(pos -> !area.contains(pos))
+                    || survey.waterSources().stream().anyMatch(pos -> !area.contains(pos))
                     || record.surveys.putIfAbsent(area.id(), survey) != null) {
                 throw new IllegalArgumentException("Building survey is duplicated or outside its area");
             }

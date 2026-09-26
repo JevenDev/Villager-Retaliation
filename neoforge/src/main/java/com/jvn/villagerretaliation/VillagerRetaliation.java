@@ -130,6 +130,8 @@ public class VillagerRetaliation {
                 .listener(com.jvn.villagerretaliation.settlement.SettlementBuildingService::onChunkUnload)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementFurnaceService::onChunkLoad)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementFurnaceService::onChunkUnload)
+                .listener(com.jvn.villagerretaliation.settlement.SettlementBrewingStandService::onChunkLoad)
+                .listener(com.jvn.villagerretaliation.settlement.SettlementBrewingStandService::onChunkUnload)
                 .listener(ContainerFilterResolver::onChunkUnload)
                 .listener(HiredPathMemory::onFluidPlaceBlock)
                 .listener(HiredOreBlockTracker::onChunkUnload)

@@ -104,6 +104,30 @@ public final class SettlementSurveyHandoffGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_survey_handoff")
+    public static void finalBrewerySurveyUpdatesWaterWithoutLoadingNeighbors(GameTestHelper helper) {
+        Fixture fixture = fixture(helper, SettlementAreaType.BREWERY);
+        var town = fixture.town();
+        BlockPos center = town.center();
+        var area = new SettlementArea(fixture.area().id(), SettlementAreaType.BREWERY, "Brewery",
+                center, center.offset(26, 2, 2), 5, true);
+        town.putArea(town.leader(), area);
+        BlockPos removed = center.east();
+        BlockPos added = center.east(2);
+        BlockPos unobserved = center.east(20);
+        town.recordSurvey(area.id(), new SettlementBuildingSurvey.Survey(0L, List.of(), List.of(), true,
+                Map.of(), List.of(removed, unobserved)));
+        set(fixture.chunk(), added, Blocks.WATER.defaultBlockState());
+        SettlementBuildingService.onChunkUnload(new ChunkEvent.Unload(fixture.chunk()));
+        var survey = town.surveys().get(area.id());
+        helper.assertFalse(survey.waterSources().contains(removed), "removed water is excluded from the final chunk snapshot");
+        helper.assertTrue(survey.waterSources().contains(added), "the final snapshot discovers newly placed water");
+        helper.assertTrue(survey.waterSources().contains(unobserved), "an unobserved neighboring source retains its known state");
+        helper.assertTrue(survey.workstations().isEmpty(), "water cannot increase the brewery equipment count");
+        helper.assertFalse(helper.getLevel().hasChunkAt(unobserved), "water surveys do not load neighboring chunks");
+        helper.succeed();
+    }
+
     private static Fixture fixture(GameTestHelper helper, SettlementAreaType type) {
         var level = helper.getLevel();
         BlockPos origin = helper.absolutePos(BlockPos.ZERO);

@@ -101,7 +101,9 @@ public final class SettlementBuildingService {
                     fixtures.put(pos, type);
                 }
             });
-            observed = new SettlementBuildingSurvey.Survey(observed.checkedAt(), beds, stations, previous.fullyLoaded(), fixtures);
+            List<BlockPos> water = new ArrayList<>(observed.waterSources());
+            previous.waterSources().stream().filter(pos -> !SettlementBuildingSurvey.observed(level, pos, supplied)).forEach(water::add);
+            observed = new SettlementBuildingSurvey.Survey(observed.checkedAt(), beds, stations, previous.fullyLoaded(), fixtures, water);
         }
         town.recordSurvey(area.id(), observed);
     }

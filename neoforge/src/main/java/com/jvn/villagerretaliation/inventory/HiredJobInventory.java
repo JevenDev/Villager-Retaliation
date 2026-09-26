@@ -150,7 +150,9 @@ public final class HiredJobInventory implements Container {
 
     public CompoundTag captureSnapshot() {
         save();
-        return jobInventoryTag(this.villager).copy();
+        CompoundTag snapshot = jobInventoryTag(this.villager).copy();
+        snapshot.putInt(LAYOUT_VERSION_TAG, CURRENT_LAYOUT_VERSION);
+        return snapshot;
     }
 
     public void restoreSnapshot(CompoundTag snapshot) {
@@ -162,7 +164,12 @@ public final class HiredJobInventory implements Container {
                 VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, restored.get(slot));
             }
         }
-        this.villager.getPersistentData().put(TAG, snapshot.copy());
+        CompoundTag restoredSnapshot = snapshot.copy();
+        // captured inventories already use the current layout, including formerly empty snapshots
+        if (!restoredSnapshot.contains(LAYOUT_VERSION_TAG, Tag.TAG_INT)) {
+            restoredSnapshot.putInt(LAYOUT_VERSION_TAG, CURRENT_LAYOUT_VERSION);
+        }
+        this.villager.getPersistentData().put(TAG, restoredSnapshot);
         load();
         save();
     }

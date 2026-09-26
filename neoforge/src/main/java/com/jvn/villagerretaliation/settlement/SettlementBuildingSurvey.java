@@ -36,6 +36,7 @@ public final class SettlementBuildingSurvey {
         ObservedBlocks blocks = new ObservedBlocks(level, supplied);
         List<BlockPos> beds = new ArrayList<>();
         List<BlockPos> workstations = new ArrayList<>();
+        List<BlockPos> waterSources = new ArrayList<>();
         Map<BlockPos, ResourceLocation> fixtures = new LinkedHashMap<>();
         boolean fullyLoaded = true;
         for (int chunkX = Math.floorDiv(area.min().getX(), 16); chunkX <= Math.floorDiv(area.max().getX(), 16); chunkX++) {
@@ -53,6 +54,8 @@ public final class SettlementBuildingSurvey {
                         } else if (bed == BedState.UNOBSERVED) {
                             fullyLoaded = false;
                         }
+                    } else if (area.type() == SettlementAreaType.BREWERY && waterSource(chunk.getBlockState(position))) {
+                        waterSources.add(position);
                     } else {
                         workstations.add(position);
                         if (requiresFixture(area.type())) {
@@ -62,7 +65,7 @@ public final class SettlementBuildingSurvey {
                 }
             }
         }
-        return new Survey(level.getGameTime(), beds, workstations, fullyLoaded, fixtures);
+        return new Survey(level.getGameTime(), beds, workstations, fullyLoaded, fixtures, waterSources);
     }
 
     public static boolean requiresFixture(SettlementAreaType type) {
@@ -78,10 +81,15 @@ public final class SettlementBuildingSurvey {
             case KITCHEN -> state.is(Blocks.SMOKER) || state.is(Blocks.FURNACE) || state.is(Blocks.CRAFTING_TABLE);
             case WORKSHOP -> state.is(Blocks.CRAFTING_TABLE);
             case SMELTERY -> state.is(Blocks.FURNACE) || state.is(Blocks.BLAST_FURNACE);
-            case BREWERY -> state.is(Blocks.BREWING_STAND);
+            case BREWERY -> state.is(Blocks.BREWING_STAND) || waterSource(state);
             case TRADING_POST -> state.is(Blocks.LECTERN);
             default -> PoiTypes.forState(state).filter(poi -> poi.is(PoiTypeTags.ACQUIRABLE_JOB_SITE)).isPresent();
         };
+    }
+
+    static boolean waterSource(BlockState state) {
+        var fluid = state.getFluidState();
+        return fluid.is(net.minecraft.tags.FluidTags.WATER) && fluid.isSource();
     }
 
     private static List<BlockPos> points(ServerLevel level, SettlementArea area, LevelChunk chunk) {
@@ -220,20 +228,27 @@ public final class SettlementBuildingSurvey {
     }
 
     public record Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded,
-                         Map<BlockPos, ResourceLocation> fixtures) {
+                         Map<BlockPos, ResourceLocation> fixtures, List<BlockPos> waterSources) {
         public Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded) {
             this(checkedAt, beds, workstations, fullyLoaded, Map.of());
+        }
+
+        public Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded,
+                      Map<BlockPos, ResourceLocation> fixtures) {
+            this(checkedAt, beds, workstations, fullyLoaded, fixtures, List.of());
         }
 
         public Survey {
             beds = beds.stream().distinct().sorted().toList();
             workstations = workstations.stream().distinct().sorted().toList();
             fixtures = Map.copyOf(fixtures);
+            waterSources = waterSources.stream().distinct().sorted().toList();
             if (!new java.util.HashSet<>(workstations).containsAll(fixtures.keySet())) {
                 throw new IllegalArgumentException("Observed fixtures must belong to surveyed workstations");
             }
             checkedAt = Math.max(0L, checkedAt);
-            if (beds.size() > SettlementArea.MAX_VOLUME || workstations.size() > SettlementArea.MAX_VOLUME) {
+            if (beds.size() > SettlementArea.MAX_VOLUME || workstations.size() > SettlementArea.MAX_VOLUME
+                    || waterSources.size() > SettlementArea.MAX_VOLUME) {
                 throw new IllegalArgumentException("Building survey exceeds its maximum volume");
             }
         }
@@ -244,6 +259,7 @@ public final class SettlementBuildingSurvey {
             tag.putLongArray("Beds", this.beds.stream().mapToLong(BlockPos::asLong).toArray());
             tag.putLongArray("Workstations", this.workstations.stream().mapToLong(BlockPos::asLong).toArray());
             tag.putBoolean("FullyLoaded", this.fullyLoaded);
+            tag.putLongArray("WaterSources", this.waterSources.stream().mapToLong(BlockPos::asLong).toArray());
             ListTag fixtures = new ListTag();
             this.fixtures.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
                 CompoundTag fixture = new CompoundTag();
@@ -267,7 +283,8 @@ public final class SettlementBuildingSurvey {
             return new Survey(tag.getLong("CheckedAt"),
                     Arrays.stream(tag.getLongArray("Beds")).mapToObj(BlockPos::of).toList(),
                     Arrays.stream(tag.getLongArray("Workstations")).mapToObj(BlockPos::of).toList(),
-                    tag.getBoolean("FullyLoaded"), fixtures);
+                    tag.getBoolean("FullyLoaded"), fixtures,
+                    Arrays.stream(tag.getLongArray("WaterSources")).mapToObj(BlockPos::of).toList());
         }
     }
 }

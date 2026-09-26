@@ -6,6 +6,12 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(BrewingStandBlockEntity.class)
 public interface BrewingStandBlockEntityAccessor {
+    @Accessor("ingredient")
+    net.minecraft.world.item.Item villagerretaliation$getIngredient();
+
+    @Accessor("ingredient")
+    void villagerretaliation$setIngredient(net.minecraft.world.item.Item ingredient);
+
     @Accessor("fuel")
     int villagerretaliation$getFuel();
 
