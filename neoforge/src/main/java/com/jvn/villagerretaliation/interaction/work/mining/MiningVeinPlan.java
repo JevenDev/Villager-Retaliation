@@ -7,14 +7,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
-final class MiningVeinPlan {
+public final class MiningVeinPlan {
     private MiningVeinPlan() {
     }
 
-    static List<BlockPos> best(ServerLevel level, BlockPos origin, List<BlockPos> candidates, int maxTargets) {
+    public static List<BlockPos> best(BlockGetter level, BlockPos origin, List<BlockPos> candidates, int maxTargets) {
         Set<Long> remaining = new LinkedHashSet<>();
         for (BlockPos candidate : candidates) {
             remaining.add(candidate.asLong());

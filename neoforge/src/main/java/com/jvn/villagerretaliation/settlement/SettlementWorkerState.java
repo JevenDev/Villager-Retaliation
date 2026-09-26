@@ -112,7 +112,7 @@ public final class SettlementWorkerState {
         this.inventory = HiredJobInventory.getJobInventory(villager).captureSnapshot();
         HiredWorkSkillGrowthService.onPractice(level, villager, null, this.role, HiredWorkStateStore.state(villager), List.of());
         this.settings = HiredWorkStateStore.state(villager).copy();
-        if (this.role == HiredVillagerRole.FISHING || this.role == HiredVillagerRole.LOGGING) {
+        if (this.role == HiredVillagerRole.FISHING || this.role == HiredVillagerRole.LOGGING || this.role == HiredVillagerRole.MINING) {
             this.entityContext = villager.saveWithoutId(new CompoundTag());
         }
         if (this.role == HiredVillagerRole.FISHING) {
@@ -142,6 +142,9 @@ public final class SettlementWorkerState {
         SettlementBackgroundFishing.restore(this, villager);
         if (this.role == HiredVillagerRole.LOGGING) {
             com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.copyState(this.settings, HiredWorkStateStore.state(villager));
+        }
+        if (this.role == HiredVillagerRole.MINING) {
+            com.jvn.villagerretaliation.interaction.work.mining.MiningWorkerState.copyState(this.settings, HiredWorkStateStore.state(villager));
         }
         HiredWorkSession.invalidate(villager);
         return true;

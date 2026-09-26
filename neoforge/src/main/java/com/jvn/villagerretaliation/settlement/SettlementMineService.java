@@ -119,6 +119,7 @@ public final class SettlementMineService {
             if (state != updated) {
                 level.sendBlockUpdated(position, state, updated, 2);
                 com.jvn.villagerretaliation.interaction.work.HiredPathMemory.onBlockChanged(level, position);
+                com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker.onBlockBroken(level, position);
             }
         });
         return true;

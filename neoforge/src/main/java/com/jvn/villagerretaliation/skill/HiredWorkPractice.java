@@ -14,6 +14,10 @@ public final class HiredWorkPractice {
     }
 
     public static List<VillagerSkillPractice> mining(ServerLevel level, BlockPos pos, BlockState state) {
+        return mining((net.minecraft.world.level.BlockGetter) level, pos, state);
+    }
+
+    public static List<VillagerSkillPractice> mining(net.minecraft.world.level.BlockGetter level, BlockPos pos, BlockState state) {
         String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
         double hardness = Math.max(0.0D, state.getDestroySpeed(level, pos));
         double oreBonus = blockId.contains("ore") || blockId.contains("ancient_debris") ? 0.35D : 0.0D;

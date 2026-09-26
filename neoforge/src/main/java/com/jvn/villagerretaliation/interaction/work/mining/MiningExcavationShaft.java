@@ -34,6 +34,13 @@ final class MiningExcavationShaft {
     private MiningExcavationShaft() {
     }
 
+    static void copyState(net.minecraft.nbt.CompoundTag source, net.minecraft.nbt.CompoundTag target) {
+        for (String key : java.util.List.of(X_TAG, Z_TAG, FACING_TAG)) {
+            if (source.contains(key)) target.put(key, source.get(key).copy());
+            else target.remove(key);
+        }
+    }
+
     static BlockPos entryTarget(ServerLevel level, HiredWorkContext context) {
         if (level == null || context == null || !context.hasWorkArea()) {
             return null;

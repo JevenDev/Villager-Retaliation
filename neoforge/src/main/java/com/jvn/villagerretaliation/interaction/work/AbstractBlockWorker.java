@@ -40,6 +40,15 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         HiredPathMemory.clear();
     }
 
+    public static void clearStoredTarget(CompoundTag state) {
+        state.remove(ACTIVE_BLOCK_POS_TAG);
+        state.remove(ACTIVE_APPROACH_POS_TAG);
+        state.remove(ACTIVE_HIT_X_TAG);
+        state.remove(ACTIVE_HIT_Y_TAG);
+        state.remove(ACTIVE_HIT_Z_TAG);
+        state.putInt("ProgressTicks", 0);
+    }
+
     @Override
     public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
         expireWorkPathMemory(level);
@@ -194,11 +203,7 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         if (context.state().contains(ACTIVE_BLOCK_POS_TAG)) {
             clearBreakProgress(level, villager, BlockPos.of(context.state().getLong(ACTIVE_BLOCK_POS_TAG)));
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
-            context.state().remove(ACTIVE_BLOCK_POS_TAG);
-            context.state().remove(ACTIVE_APPROACH_POS_TAG);
-            context.state().remove(ACTIVE_HIT_X_TAG);
-            context.state().remove(ACTIVE_HIT_Y_TAG);
-            context.state().remove(ACTIVE_HIT_Z_TAG);
+            clearStoredTarget(context.state());
         }
         HiredPathMemory.releaseAll(villager);
         HiredPathMemory.clearNavigationProgress(villager);

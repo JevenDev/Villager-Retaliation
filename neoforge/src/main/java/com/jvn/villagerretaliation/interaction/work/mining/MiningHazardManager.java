@@ -63,6 +63,13 @@ final class MiningHazardManager {
     private MiningHazardManager() {
     }
 
+    static void copyState(net.minecraft.nbt.CompoundTag source, net.minecraft.nbt.CompoundTag target) {
+        for (String key : java.util.List.of(PLAN_KIND_TAG, PLAN_POSITIONS_TAG, PLAN_INDEX_TAG, PLAN_PERMANENT_TAG, PERMANENT_BARRIERS_TAG)) {
+            if (source.contains(key)) target.put(key, source.get(key).copy());
+            else target.remove(key);
+        }
+    }
+
     static void reset(HiredWorkContext context, boolean clearPermanentBarriers) {
         clearPlan(context);
         if (clearPermanentBarriers) {

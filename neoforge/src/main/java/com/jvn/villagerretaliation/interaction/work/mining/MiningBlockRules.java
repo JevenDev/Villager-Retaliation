@@ -19,6 +19,26 @@ public final class MiningBlockRules {
     private MiningBlockRules() {
     }
 
+    public static int breakTicks(BlockGetter level, BlockPos pos, ItemStack tool, int speedPercent) {
+        BlockState state = level.getBlockState(pos);
+        float hardness = state.getDestroySpeed(level, pos);
+        if (hardness <= 0.0F) return 1;
+        int divisor = tool.isCorrectToolForDrops(state) ? 30 : 100;
+        int ticks = Math.max(1, (int) Math.ceil(hardness * divisor / Math.max(0.001F, destroySpeed(tool, state))));
+        return com.jvn.villagerretaliation.interaction.HiredVillagerRoles.scaledDurationTicks(ticks, speedPercent);
+    }
+
+    public static float destroySpeed(ItemStack tool, BlockState state) {
+        float speed = tool.getDestroySpeed(state);
+        int efficiency = 0;
+        for (var entry : tool.getEnchantments().entrySet()) {
+            if (entry.getKey().unwrapKey().map(key -> key.location().getPath().equals("efficiency")).orElse(false)) {
+                efficiency = Math.max(efficiency, entry.getIntValue());
+            }
+        }
+        return efficiency > 0 && speed > 1.0F ? speed + efficiency * efficiency + 1 : speed;
+    }
+
     public static boolean isMineableOre(ServerLevel level, BlockPos pos) {
         return isMineableOre(level, level::hasChunkAt, pos);
     }

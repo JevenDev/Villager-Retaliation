@@ -19,6 +19,13 @@ public final class HiredWorkPlan {
     private HiredWorkPlan() {
     }
 
+    public static void copyState(CompoundTag source, CompoundTag target) {
+        for (String key : List.of(PLAN_TARGETS_TAG, PLAN_OBJECTIVE_TYPE_TAG, PLAN_OBJECTIVE_ANCHOR_TAG)) {
+            if (source.contains(key)) target.put(key, source.get(key).copy());
+            else target.remove(key);
+        }
+    }
+
     public static void clear(HiredWorkContext context) {
         context.state().remove(PLAN_TARGETS_TAG);
         context.state().remove(PLAN_OBJECTIVE_TYPE_TAG);

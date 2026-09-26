@@ -13,7 +13,6 @@ import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
 import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
-import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
@@ -1179,15 +1178,7 @@ public final class MiningWorker extends AbstractBlockWorker {
     }
 
     private int actualBreakProgressGoal(ServerLevel level, HiredWorkContext context, BlockPos pos, ItemStack tool) {
-        BlockState state = level.getBlockState(pos);
-        float hardness = state.getDestroySpeed(level, pos);
-        if (hardness <= 0.0F) {
-            return 1;
-        }
-        float speed = Math.max(0.001F, effectiveDestroySpeed(tool, state));
-        int divisor = tool.isCorrectToolForDrops(state) ? 30 : 100;
-        int normalGoal = Math.max(1, (int) Math.ceil(hardness * divisor / speed));
-        return HiredVillagerRoles.scaledDurationTicks(normalGoal, context.skillWorkSpeedPercent());
+        return MiningBlockRules.breakTicks(level, pos, tool, context.skillWorkSpeedPercent());
     }
 
     private static boolean isExcavationComplete(ServerLevel level, HiredWorkContext context, HiredMiningMode mode) {

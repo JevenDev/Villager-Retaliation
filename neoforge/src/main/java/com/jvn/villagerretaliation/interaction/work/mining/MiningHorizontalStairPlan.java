@@ -18,6 +18,13 @@ final class MiningHorizontalStairPlan {
     private MiningHorizontalStairPlan() {
     }
 
+    static void copyState(net.minecraft.nbt.CompoundTag source, net.minecraft.nbt.CompoundTag target) {
+        for (String key : java.util.List.of(AXIS_TAG, FROM_MIN_TAG, LANE_TAG, CLEANUP_TAG)) {
+            if (source.contains(key)) target.put(key, source.get(key).copy());
+            else target.remove(key);
+        }
+    }
+
     static void reset(HiredWorkContext context) {
         context.state().remove(AXIS_TAG);
         context.state().remove(FROM_MIN_TAG);

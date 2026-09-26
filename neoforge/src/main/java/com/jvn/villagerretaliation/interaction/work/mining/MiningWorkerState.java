@@ -6,7 +6,7 @@ import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
-final class MiningWorkerState {
+public final class MiningWorkerState {
     static final String NEXT_FULL_SCAN_GAME_TIME_TAG = "NextMiningFullScanGameTime";
     static final String EXCAVATION_SCAN_CURSOR_TAG = "MiningExcavationScanCursor";
 
@@ -30,6 +30,37 @@ final class MiningWorkerState {
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
 
     private MiningWorkerState() {
+    }
+
+    public static void prepareBackground(HiredWorkContext context) {
+        if (synchronize(context, HiredMiningMode.fromState(context.state())) != Change.NONE) {
+            com.jvn.villagerretaliation.interaction.work.HiredWorkPlan.clear(context);
+            context.setProgressTicks(0);
+        }
+    }
+
+    public static void mined(ServerLevel level, HiredWorkContext context, BlockPos position) {
+        com.jvn.villagerretaliation.interaction.work.HiredWorkPlan.removeTarget(context, position);
+        rememberLastMined(context, position);
+        rememberMiningAnchor(level, context, position);
+        clearExcavationLayerCache(context);
+        context.setProgressTicks(0);
+        set(context, Phase.FIND_TARGET);
+    }
+
+    public static void copyState(net.minecraft.nbt.CompoundTag source, net.minecraft.nbt.CompoundTag target) {
+        for (String key : java.util.List.of(MINING_STATE_TAG, STATE_VERSION_TAG, STATE_MODE_TAG, STATE_WORK_MIN_TAG, STATE_WORK_MAX_TAG,
+                LAST_MINED_BLOCK_POS_TAG, MINING_ANCHOR_POS_TAG, MINING_ANCHOR_EXPIRES_GAME_TIME_TAG, LAST_BREAK_PROGRESS_GAME_TIME_TAG,
+                OUTPUT_CAPACITY_CHECKED_TARGET_TAG, NEXT_FULL_SCAN_GAME_TIME_TAG, EXCAVATION_SCAN_CURSOR_TAG,
+                CURRENT_EXCAVATION_LAYER_PRESENT_TAG, CURRENT_EXCAVATION_LAYER_Y_TAG, CURRENT_EXCAVATION_LAYER_EXPIRES_GAME_TIME_TAG)) {
+            if (source.contains(key)) target.put(key, source.get(key).copy());
+            else target.remove(key);
+        }
+        MiningHazardManager.copyState(source, target);
+        MiningExcavationShaft.copyState(source, target);
+        MiningHorizontalStairPlan.copyState(source, target);
+        com.jvn.villagerretaliation.interaction.work.HiredWorkPlan.copyState(source, target);
+        com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker.clearStoredTarget(target);
     }
 
     static int noTargetScanCooldownTicks() {

@@ -13,7 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.CollisionGetter;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
@@ -380,7 +380,17 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             Vec3 start,
             BlockPos target,
             Predicate<BlockState> sightTransparent) {
-        if (!isLoaded(level, target)) {
+        return visibleHitPosition(level, level::hasChunkAt, villager, start, target, sightTransparent);
+    }
+
+    public static Vec3 visibleHitPosition(
+            BlockGetter level,
+            Predicate<BlockPos> observed,
+            Villager villager,
+            Vec3 start,
+            BlockPos target,
+            Predicate<BlockState> sightTransparent) {
+        if (!observed.test(target)) {
             return null;
         }
         Predicate<BlockState> transparent = sightTransparent == null ? ignored -> false : sightTransparent;
@@ -388,7 +398,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         double bestDistance = Double.MAX_VALUE;
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = target.relative(direction);
-            if (!isLoaded(level, neighbor)) {
+            if (!observed.test(neighbor)) {
                 continue;
             }
             BlockState neighborState = level.getBlockState(neighbor);
@@ -397,7 +407,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 continue;
             }
             Vec3 hit = hitPosition(level, target, direction);
-            if (!hasLineOfSightToBlock(level, villager, start, target, hit, transparent)) {
+            if (!hasLineOfSightToBlock(level, observed, villager, start, target, hit, transparent)) {
                 continue;
             }
             double distance = start.distanceToSqr(hit);
@@ -420,7 +430,18 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             BlockPos target,
             Vec3 hitPos,
             Predicate<BlockState> sightTransparent) {
-        if (!isLoaded(level, target)) {
+        return hasLineOfSightToBlock(level, level::hasChunkAt, villager, start, target, hitPos, sightTransparent);
+    }
+
+    public static boolean hasLineOfSightToBlock(
+            BlockGetter level,
+            Predicate<BlockPos> observed,
+            Villager villager,
+            Vec3 start,
+            BlockPos target,
+            Vec3 hitPos,
+            Predicate<BlockState> sightTransparent) {
+        if (!observed.test(target)) {
             return false;
         }
         Predicate<BlockState> transparent = sightTransparent == null ? ignored -> false : sightTransparent;
@@ -445,7 +466,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             if (hit.getBlockPos().equals(target)) {
                 return true;
             }
-            if (!isLoaded(level, hit.getBlockPos()) || !transparent.test(level.getBlockState(hit.getBlockPos()))) {
+            if (!observed.test(hit.getBlockPos()) || !transparent.test(level.getBlockState(hit.getBlockPos()))) {
                 return false;
             }
             currentStart = hit.getLocation().add(step);
@@ -473,7 +494,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         return approach.distSqr(target) <= 4;
     }
 
-    private static boolean isPassableForApproach(CollisionGetter level, BlockPos pos, BlockState state) {
+    private static boolean isPassableForApproach(BlockGetter level, BlockPos pos, BlockState state) {
         if (state.getFluidState().is(FluidTags.LAVA) || state.getBlock() instanceof BaseFireBlock) {
             return false;
         }
@@ -518,7 +539,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 : faceHitPosition(target, direction);
     }
 
-    private static Vec3 hitPosition(ServerLevel level, BlockPos target, Direction direction) {
+    private static Vec3 hitPosition(BlockGetter level, BlockPos target, Direction direction) {
         return level.getBlockState(target)
                 .getCollisionShape(level, target, CollisionContext.empty())
                 .isEmpty()
