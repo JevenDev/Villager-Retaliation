@@ -28,6 +28,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         buffer.writeUUID(payload.town());
         switch (payload.command()) {
             case Advance ignored -> buffer.writeEnum(Kind.ADVANCE);
+            case View ignored -> buffer.writeEnum(Kind.VIEW);
             case Assign assign -> {
                 buffer.writeEnum(Kind.ASSIGN);
                 buffer.writeUUID(assign.resident());
@@ -117,6 +118,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         UUID town = buffer.readUUID();
         Command command = switch (buffer.readEnum(Kind.class)) {
             case ADVANCE -> new Advance();
+            case VIEW -> new View();
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
             case RELEASE -> new Release(buffer.readUUID());
             case APPLICANT -> new Applicant(buffer.readUUID(), buffer.readBoolean());
@@ -155,14 +157,17 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View {
     }
 
     public record Advance() implements Command {
+    }
+
+    public record View() implements Command {
     }
 
     public record Assign(UUID resident, UUID area) implements Command {

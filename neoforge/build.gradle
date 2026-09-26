@@ -35,6 +35,7 @@ sourceSets.main.resources {
 }
 
 def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('3733')
+def settlementClientSmokeDirectory = layout.buildDirectory.dir("settlement-client-smoke/${System.currentTimeMillis()}")
 
 neoForge {
     version = rootProject.neo_version
@@ -47,6 +48,14 @@ neoForge {
     runs {
         client {
             client()
+        }
+
+        settlementClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(settlementClientSmokeDirectory)
+            systemProperty 'villagerretaliation.settlementClientSmoke', settlementClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'SettlementViewSmoke', '--width', '1280', '--height', '720'
         }
 
         server {
@@ -83,6 +92,28 @@ neoForge {
     }
 
     addModdingDependenciesTo sourceSets.gameTest
+}
+
+tasks.named('runSettlementClientSmoke') {
+    dependsOn tasks.named('runGameTestServer')
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) {
+            throw new GradleException('Settlement client checks require the generated GameTest world metadata.')
+        }
+        copy {
+            from metadata
+            into new File(settlementClientSmokeDirectory.get().asFile, 'saves/SettlementViewSmoke')
+        }
+        new File(settlementClientSmokeDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\n'
+    }
+    doLast {
+        def result = new File(settlementClientSmokeDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Settlement client smoke checks passed')) {
+            throw new GradleException("Settlement client checks did not finish. Inspect ${settlementClientSmokeDirectory.get().asFile}")
+        }
+    }
 }
 
 tasks.named('runGameTestServer') {

@@ -238,6 +238,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onServerStopping(ServerStoppingEvent event) {
         gameTestOriginSeeded = false;
+        com.jvn.villagerretaliation.settlement.SettlementViewService.clear(event.getServer());
         com.jvn.villagerretaliation.raid.PlayerRaidService.clearRuntimeState();
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.clearRuntimeState();
         ClipboardWorkforceService.clearRuntimeState();
@@ -267,6 +268,7 @@ public final class VillagerRetaliationEvents {
         VillagerInventoryAccess.onServerTick(event.getServer());
         PartyVillagerContractService.onServerTick(event.getServer());
         SceneRuntime.tick(event.getServer());
+        com.jvn.villagerretaliation.settlement.SettlementViewService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementBuildingService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementCareService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementDepartureService.tick(event.getServer());

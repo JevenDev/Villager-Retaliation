@@ -69,6 +69,7 @@ public final class SettlementManagementService {
         }
         return switch (payload.command()) {
             case SettlementManagementActionPayload.Advance ignored -> SettlementProgressionService.advance(player, id);
+            case SettlementManagementActionPayload.View ignored -> SettlementViewService.open(player, id);
             case SettlementManagementActionPayload.Assign assign -> level.getEntity(assign.resident()) instanceof Villager villager
                     && SettlementWorkforceService.assign(level, player, id, villager, assign.area());
             case SettlementManagementActionPayload.Release release -> SettlementWorkforceService.release(level, player, id, release.resident());
@@ -221,7 +222,7 @@ public final class SettlementManagementService {
     }
 
     private static String searchable(Entry entry) {
-        return entry.name() + switch (entry) {
+        return entry.name() + " " + entry.id() + switch (entry) {
             case SettlementManagementPayload.Resident resident -> " " + resident.profession().getPath();
             case SettlementManagementPayload.Area area -> " " + area.kind().name();
             case SettlementManagementPayload.Depot depot -> " " + depot.purpose().name();

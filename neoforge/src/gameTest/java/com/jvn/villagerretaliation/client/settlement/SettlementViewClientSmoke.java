@@ -1,0 +1,263 @@
+package com.jvn.villagerretaliation.client.settlement;
+
+import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.settlement.SettlementArea;
+import com.jvn.villagerretaliation.settlement.SettlementAreaType;
+import com.jvn.villagerretaliation.settlement.SettlementBuildingService;
+import com.jvn.villagerretaliation.settlement.SettlementCareService;
+import com.jvn.villagerretaliation.settlement.SettlementManagementService;
+import com.jvn.villagerretaliation.settlement.SettlementSavedData;
+import com.mojang.logging.LogUtils;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import net.minecraft.Util;
+import net.minecraft.client.CameraType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Marker;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import org.lwjgl.glfw.GLFW;
+
+@EventBusSubscriber(modid = VillagerRetaliation.MOD_ID, value = Dist.CLIENT)
+public final class SettlementViewClientSmoke {
+    private static final String OUTPUT = "villagerretaliation.settlementClientSmoke";
+    private static CompletableFuture<Fixture> preparation;
+    private static CompletableFuture<Void> serverCheck;
+    private static Fixture fixture;
+    private static long started;
+    private static int phase;
+    private static int ticks;
+    private static double originalX;
+    private static float originalHeight;
+    private static Vec3 body;
+
+    private SettlementViewClientSmoke() {
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Post event) {
+        if (System.getProperty(OUTPUT) == null || phase == 6) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.options.pauseOnLostFocus = false;
+        if (started == 0L) {
+            started = Util.getMillis();
+        }
+        if (Util.getMillis() - started >= 120_000L) {
+            capture("failure");
+        }
+        require(Util.getMillis() - started < 120_000L, "client smoke run timed out at phase " + phase
+                + " on " + (minecraft.screen == null ? "game" : minecraft.screen.getClass().getSimpleName()));
+        if (minecraft.level == null || minecraft.player == null || minecraft.getSingleplayerServer() == null) {
+            return;
+        }
+        if (phase == 0 && minecraft.screen == null) {
+            minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            minecraft.options.renderDistance().set(6);
+            minecraft.options.guiScale().set(2);
+            minecraft.resizeDisplay();
+            body = minecraft.player.position();
+            UUID player = minecraft.player.getUUID();
+            preparation = minecraft.getSingleplayerServer().submit(() ->
+                    prepare(minecraft.getSingleplayerServer().getPlayerList().getPlayer(player)));
+            phase = 1;
+        } else if (phase == 1 && preparation.isDone()) {
+            fixture = preparation.join();
+            phase = 2;
+        } else if (phase == 2 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            ticks = 0;
+            phase = 3;
+        } else if (phase == 3 && minecraft.screen instanceof SettlementViewScreen screen && visibleResident(minecraft) != null) {
+            if (++ticks < 30) {
+                return;
+            }
+            require(minecraft.getCameraEntity() instanceof Marker, "the view owns a separate camera");
+            require(minecraft.options.getCameraType() == CameraType.FIRST_PERSON, "the view removes third person camera collision");
+            require(minecraft.player.position().distanceToSqr(body) < 4.0D, "the player's body stayed at its original location");
+            require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) != null,
+                    "the remote terrain uses the separate client chunk cache");
+            require(capture("world-view") > 1_000, "the remote grass terrain is rendered");
+            originalX = screen.focusX();
+            originalHeight = screen.viewHeight();
+            screen.keyPressed(GLFW.GLFW_KEY_W, 0, 0);
+            ticks = 0;
+            phase = 4;
+        } else if (phase == 4 && minecraft.screen instanceof SettlementViewScreen screen) {
+            if (++ticks == 8) {
+                screen.keyReleased(GLFW.GLFW_KEY_W, 0, 0);
+                require(screen.focusX() < originalX, "panning changes the remote camera position");
+                screen.mouseScrolled(40, 80, 0, 1);
+                require(screen.viewHeight() < originalHeight, "scrolling changes the zoom");
+            }
+            if (ticks == 20) {
+                Entity resident = visibleResident(minecraft);
+                require(resident != null, "the resident remains visible after panning");
+                var camera = minecraft.gameRenderer.getMainCamera();
+                Vec3 relative = resident.getBoundingBox().getCenter().subtract(camera.getPosition());
+                double distance = relative.dot(new Vec3(camera.getLookVector()));
+                double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D));
+                double x = screen.width / 2.0D - relative.dot(new Vec3(camera.getLeftVector())) * screen.height / (2.0D * distance * tangent);
+                double y = screen.height / 2.0D - relative.dot(new Vec3(camera.getUpVector())) * screen.height / (2.0D * distance * tangent);
+                screen.mouseClicked(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                screen.mouseReleased(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            }
+            if (ticks >= 40 && screen.getNarrationMessage().getString().contains("Tamsin")) {
+                require(button(screen, "villagerretaliation.gui.settlement_view.manage_selection").active,
+                        "selecting the resident enables its management action");
+                capture("selected-resident");
+                UUID player = minecraft.player.getUUID();
+                serverCheck = minecraft.getSingleplayerServer().submit(() -> {
+                    ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                    require(serverPlayer.serverLevel().getChunkSource().chunkMap.getDistanceManager()
+                            .shouldForceTicks(new ChunkPos(fixture.center()).toLong()), "the viewed settlement is actively ticking");
+                    require(serverPlayer.getCamera() == serverPlayer && !serverPlayer.isSpectator(), "the server retains the vulnerable body");
+                    serverPlayer.hurt(serverPlayer.damageSources().generic(), 1.0F);
+                });
+                ticks = 0;
+                phase = 5;
+            }
+        } else if (phase == 5 && !(minecraft.screen instanceof SettlementViewScreen)) {
+            serverCheck.join();
+            require(minecraft.getCameraEntity() == minecraft.player, "damage restores the player's camera");
+            require(minecraft.options.getCameraType() == CameraType.THIRD_PERSON_BACK, "damage restores the previous perspective");
+            require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) == null,
+                    "leaving releases the remote client chunks");
+            if (++ticks >= 10) {
+                UUID player = minecraft.player.getUUID();
+                minecraft.getSingleplayerServer().submit(() -> {
+                    ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                    require(!serverPlayer.serverLevel().getChunkSource().chunkMap.getDistanceManager()
+                            .shouldForceTicks(new ChunkPos(fixture.center()).toLong()), "leaving releases the remote server tickets");
+                }).join();
+                capture("after-damage");
+                try {
+                    Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
+                } catch (IOException exception) {
+                    throw new UncheckedIOException(exception);
+                }
+                LogUtils.getLogger().info("Settlement client smoke checks passed");
+                phase = 6;
+                minecraft.stop();
+            }
+        }
+    }
+
+    private static Fixture prepare(ServerPlayer player) {
+        var level = player.serverLevel();
+        player.setGameMode(GameType.SURVIVAL);
+        level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+        level.setDayTime(6_000L);
+        BlockPos center = new BlockPos(1024, -60, 1024);
+        for (BlockPos position : BlockPos.betweenClosed(center.offset(-12, -1, -10), center.offset(12, 6, 10))) {
+            level.setBlockAndUpdate(position, position.getY() == center.getY() - 1
+                    ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState());
+        }
+        for (BlockPos position : BlockPos.betweenClosed(center.offset(-8, -1, -3), center.offset(-3, -1, 3))) {
+            level.setBlockAndUpdate(position, Blocks.OAK_PLANKS.defaultBlockState());
+        }
+        for (BlockPos position : BlockPos.betweenClosed(center.offset(-8, 0, -3), center.offset(-3, 3, 3))) {
+            if (position.getX() == center.getX() - 8 || position.getX() == center.getX() - 3
+                    || position.getZ() == center.getZ() - 3 || position.getZ() == center.getZ() + 3) {
+                level.setBlockAndUpdate(position, Blocks.OAK_PLANKS.defaultBlockState());
+            }
+        }
+        for (BlockPos position : BlockPos.betweenClosed(center.offset(-9, 4, -4), center.offset(-2, 4, 4))) {
+            level.setBlockAndUpdate(position, Blocks.OAK_SLAB.defaultBlockState());
+        }
+        level.setBlockAndUpdate(center.offset(-3, 0, 0), Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(center.offset(-3, 1, 0), Blocks.AIR.defaultBlockState());
+        BlockPos bed = center.offset(-6, 0, 0);
+        level.setBlockAndUpdate(bed, Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH).setValue(BedBlock.PART, BedPart.FOOT));
+        level.setBlockAndUpdate(bed.north(), Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH).setValue(BedBlock.PART, BedPart.HEAD));
+        level.setBlockAndUpdate(center, Blocks.CRAFTING_TABLE.defaultBlockState());
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var id = registry.create(level.getGameTime(), level.dimension().location(), center, "Willowbank");
+        SettlementSavedData.get(level).establish(registry, id, player.getUUID(), center, level.getGameTime()).orElseThrow();
+        require(SettlementBuildingService.register(player, id, new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME,
+                "First house", center.offset(-9, -1, -4), center.offset(-2, 5, 4), 5, true)), "the test house is registered");
+        Villager resident = EntityType.VILLAGER.create(level);
+        resident.setPos(center.offset(2, 0, 1).getCenter().subtract(0, 0.5D, 0));
+        resident.setNoAi(true);
+        resident.setCustomName(Component.literal("Tamsin"));
+        resident.setVillagerData(resident.getVillagerData().setProfession(VillagerProfession.FARMER));
+        VillageAllegianceApi.assignKnown(level, resident, id, AllegianceAssignmentSource.EXPLICIT_API);
+        level.addFreshEntity(resident);
+        SettlementCareService.onUnloaded(resident);
+        SettlementManagementService.open(player, id);
+        return new Fixture(id, resident.getUUID(), center);
+    }
+
+    private static Entity visibleResident(Minecraft minecraft) {
+        for (Entity entity : minecraft.level.entitiesForRendering()) {
+            if (entity.getUUID().equals(fixture.resident())) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
+    private static Button button(net.minecraft.client.gui.screens.Screen screen, String translation) {
+        String label = Component.translatable(translation).getString();
+        return screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getMessage().getString().equals(label)).findFirst().orElseThrow();
+    }
+
+    private static int capture(String name) {
+        try (var image = Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())) {
+            image.writeToFile(Path.of(System.getProperty(OUTPUT), name + ".png"));
+            int terrainPixels = 0;
+            for (int y = 0; y < image.getHeight(); y++) {
+                for (int x = 0; x < image.getWidth() * 2 / 3; x++) {
+                    int color = image.getPixelRGBA(x, y);
+                    int red = color & 255;
+                    int green = color >>> 8 & 255;
+                    int blue = color >>> 16 & 255;
+                    if (green > 70 && green > red && green > blue) {
+                        terrainPixels++;
+                    }
+                }
+            }
+            return terrainPixels;
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
+    }
+
+    private static void require(boolean condition, String message) {
+        if (!condition) {
+            throw new IllegalStateException(message);
+        }
+    }
+
+    private record Fixture(VillageAllegianceId town, UUID resident, BlockPos center) {
+    }
+}

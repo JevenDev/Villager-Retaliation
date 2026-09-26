@@ -72,6 +72,9 @@ public final class SettlementManagementGameTests {
             }
         }
         helper.assertValueEqual(found, expected, "all residents are reachable across pages");
+        UUID selected = expected.iterator().next();
+        helper.assertValueEqual(snapshot(fixture, Page.RESIDENTS, 0, selected.toString()).entries().getFirst().id(), selected,
+                "world selections resolve the exact resident even when names are duplicated");
         var filtered = snapshot(fixture, Page.RESIDENTS, 1_000_000, "resident 17");
         helper.assertValueEqual(filtered.total(), 5, "search covers the entire roster");
         helper.assertValueEqual(filtered.index(), 0, "a stale page index is clamped after search");
@@ -239,6 +242,7 @@ public final class SettlementManagementGameTests {
         }
         var commands = List.<SettlementManagementActionPayload.Command>of(
                 new SettlementManagementActionPayload.Advance(),
+                new SettlementManagementActionPayload.View(),
                 new SettlementManagementActionPayload.Assign(id, id),
                 new SettlementManagementActionPayload.Release(id),
                 new SettlementManagementActionPayload.Applicant(id, true),

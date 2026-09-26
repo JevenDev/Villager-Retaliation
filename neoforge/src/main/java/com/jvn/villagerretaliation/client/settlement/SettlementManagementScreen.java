@@ -34,6 +34,8 @@ public final class SettlementManagementScreen extends Screen {
     private long refreshAt;
     private long nextRequestAt;
     private boolean submitting;
+    private boolean viewRequested;
+    private Button worldView;
     private UUID selected;
     private Component feedback = Component.empty();
     private long feedbackUntil;
@@ -100,6 +102,7 @@ public final class SettlementManagementScreen extends Screen {
             return;
         }
         this.submitting = false;
+        this.viewRequested = false;
         this.feedback = text(payload.applied() ? "applied" : "not_applied");
         this.feedbackUntil = Util.getMillis() + 4_000L;
         this.refreshAt = Util.getMillis();
@@ -125,6 +128,14 @@ public final class SettlementManagementScreen extends Screen {
                 && this.snapshot.header().leader().equals(this.minecraft.player.getUUID());
     }
 
+    boolean expectingView() {
+        return this.viewRequested && this.submitting;
+    }
+
+    void navigateTo(Page page, String query) {
+        navigate(page, 0, query);
+    }
+
     public boolean submitting() {
         return this.submitting;
     }
@@ -137,15 +148,22 @@ public final class SettlementManagementScreen extends Screen {
         this.top = (this.height - this.panelHeight) / 2;
         this.contentLeft = this.left + 102;
         this.contentWidth = this.panelWidth - 102;
+        this.worldView = addRenderableWidget(Button.builder(text("world_view"), ignored -> {
+            this.viewRequested = true;
+            submit(new SettlementManagementActionPayload.View());
+        }).bounds(this.left + this.panelWidth - 84, this.top - 4, 84, 20).build());
+        this.worldView.visible = this.snapshot.header() != null && this.assigning == null;
+        this.worldView.setTooltip(Tooltip.create(text("world_view_hint")));
         int y = this.top + 28;
+        int navigationHeight = Math.min(20, (this.panelHeight - 56) / Page.values().length - 2);
         for (Page page : Page.values()) {
             if (page != Page.TOWNS && this.snapshot.header() == null || this.assigning != null && page != Page.AREAS) {
                 continue;
             }
             Button button = addRenderableWidget(Button.builder(enumText("page", page), ignored -> navigate(page, 0, ""))
-                    .bounds(this.left, y, 94, 20).build());
+                    .bounds(this.left, y, 94, navigationHeight).build());
             button.active = page != this.desiredPage;
-            y += 22;
+            y += navigationHeight + 2;
         }
         addRenderableWidget(Button.builder(Component.translatable(this.parent == null ? "gui.done" : "gui.back"), ignored -> onClose())
                 .bounds(this.left, this.top + this.panelHeight - 20, 94, 20).build());
@@ -248,6 +266,7 @@ public final class SettlementManagementScreen extends Screen {
             action.visible = false;
             action.active = false;
         }
+        this.worldView.active = permits(SettlementPermission.VIEW) && !this.submitting;
         Entry selected = selectedEntry();
         if (this.assigning != null) {
             boolean suitable = selected instanceof SettlementManagementPayload.Area area
@@ -435,7 +454,7 @@ public final class SettlementManagementScreen extends Screen {
         Component heading = this.assigning != null ? text("assign_resident", name(this.assigning))
                 : this.snapshot.header() == null ? this.title : this.snapshot.header().name().isBlank()
                     ? text("unnamed") : Component.literal(this.snapshot.header().name());
-        fitted(graphics, heading, this.left, this.top, this.panelWidth, 0xFFFFFF);
+        fitted(graphics, heading, this.left, this.top, this.panelWidth - (this.worldView.visible ? 92 : 0), 0xFFFFFF);
         if (this.desiredPage == Page.SUMMARY && this.snapshot.header() != null) {
             fitted(graphics, text("summary_hint"), this.contentLeft, this.top + 34, this.contentWidth, 0xD0D0D0);
         }

@@ -44,6 +44,8 @@ public final class SettlementManagementClient {
         }
         if (payload.openScreen()) {
             minecraft.setScreen(new SettlementManagementScreen(payload));
+        } else if (minecraft.screen instanceof SettlementViewScreen view) {
+            view.acceptManagement(payload);
         } else {
             var current = current();
             if (current != null) {
@@ -66,6 +68,7 @@ public final class SettlementManagementClient {
     private static SettlementManagementScreen current() {
         return switch (Minecraft.getInstance().screen) {
             case SettlementManagementScreen screen -> screen;
+            case SettlementViewScreen view -> view.parent();
             case SettlementEditScreen form -> form.parent();
             case SettlementItemPickerScreen picker -> picker.parent().parent();
             case null, default -> null;

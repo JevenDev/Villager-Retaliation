@@ -1401,8 +1401,10 @@ public final class VillagerGameplayGameTests {
 
         ServerPlayer hirer = fakePlayer(level, "VrWorkAreaDraft");
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
         hirer.moveTo(villager.getX(), villager.getY(), villager.getZ(), 0.0F, 0.0F);
-        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        helper.assertTrue(HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.FARMING),
+                "the work area test uses a farming contract");
         HiredVillagerWorkService.initializeWorkArea(level, villager);
 
         ItemStack clipboard = clipboard();
