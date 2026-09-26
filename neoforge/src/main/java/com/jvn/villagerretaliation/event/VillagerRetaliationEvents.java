@@ -267,6 +267,7 @@ public final class VillagerRetaliationEvents {
         VillagerInventoryAccess.onServerTick(event.getServer());
         PartyVillagerContractService.onServerTick(event.getServer());
         SceneRuntime.tick(event.getServer());
+        com.jvn.villagerretaliation.settlement.SettlementBuildingService.tick(event.getServer());
         if (!BUILDER_CATALOG_SYNC_DIRTY.compareAndSet(true, false)) {
             return;
         }

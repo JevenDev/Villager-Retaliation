@@ -53,17 +53,19 @@ public final class SettlementSavedData extends SavedData {
                 .toList();
     }
 
+    public boolean canEstablish(ResourceLocation dimension, BlockPos center) {
+        return dimension != null && center != null && this.settlements.values().stream().noneMatch(town ->
+                town.dimension().equals(dimension) && (town.center().distSqr(center) < 256.0D
+                        || town.areas().values().stream().anyMatch(area -> area.contains(center))));
+    }
+
     public Optional<SettlementRecord> establish(VillageAllegianceRegistrySavedData registry,
                                                 VillageAllegianceId villageId, UUID leader,
                                                 BlockPos center, long gameTime) {
         var village = registry.canonicalRecord(villageId).orElse(null);
         if (village == null || village.archived() || village.originDimension() == null || leader == null
                 || center == null || this.settlements.containsKey(village.id())
-                || registry.isManaged(village.id())
-                || this.settlements.values().stream().anyMatch(town ->
-                        town.dimension().equals(village.originDimension())
-                                && (town.center().distSqr(center) < 256.0D
-                                || town.areas().values().stream().anyMatch(area -> area.contains(center))))) {
+                || registry.isManaged(village.id()) || !canEstablish(village.originDimension(), center)) {
             return Optional.empty();
         }
         SettlementRecord town = new SettlementRecord(village.id(), village.originDimension(),

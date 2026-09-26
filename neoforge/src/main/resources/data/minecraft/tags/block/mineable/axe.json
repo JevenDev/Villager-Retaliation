@@ -3,6 +3,7 @@
   "values": [
     "villagerretaliation:payment_box",
     "villagerretaliation:sell_box",
-    "villagerretaliation:settlement_depot"
+    "villagerretaliation:settlement_depot",
+    "villagerretaliation:settlement_management"
   ]
 }

@@ -1,4 +1,10 @@
 {
+  "block.villagerretaliation.settlement_management": "Town Management Table",
+  "settlement.villagerretaliation.founded": "Settlement founded. Register homes and workplaces to grow your town.",
+  "settlement.villagerretaliation.existing": "This table belongs to an existing town.",
+  "settlement.villagerretaliation.independent": "This village is independent. Leadership requires its residents' trust and sustained housing and food.",
+  "settlement.villagerretaliation.too_close": "This location is too close to another town.",
+  "settlement.villagerretaliation.unavailable": "You cannot manage a town from this location.",
   "block.villagerretaliation.settlement_depot": "Town Depot",
   "container.villagerretaliation.settlement_depot": "Town Depot",
   "settlement.villagerretaliation.depot_unavailable": "Register this depot in a town work area. Logistics permission is required.",

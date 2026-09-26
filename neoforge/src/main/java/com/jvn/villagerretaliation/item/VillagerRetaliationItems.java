@@ -39,6 +39,10 @@ public final class VillagerRetaliationItems {
             ITEMS.register("settlement_depot",
                     () -> new BlockItem(VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get(), new Item.Properties()));
 
+    public static final DeferredHolder<Item, BlockItem> SETTLEMENT_MANAGEMENT =
+            ITEMS.register("settlement_management",
+                    () -> new BlockItem(VillagerRetaliationBlocks.SETTLEMENT_MANAGEMENT.get(), new Item.Properties()));
+
     private VillagerRetaliationItems() {
     }
 

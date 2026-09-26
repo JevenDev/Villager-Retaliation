@@ -26,6 +26,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementArea> areas = new LinkedHashMap<>();
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
+    private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
     private UUID leader;
     private SettlementStage stage = SettlementStage.CAMP;
     private long revision;
@@ -130,6 +131,33 @@ public final class SettlementRecord {
         return permits(actor, SettlementPermission.LOGISTICS) && depot != null && depot.configure(purpose, priority);
     }
 
+    public Map<UUID, SettlementBuildingSurvey.Survey> surveys() {
+        return Collections.unmodifiableMap(this.surveys);
+    }
+
+    public int housingCapacity() {
+        return this.areas.values().stream()
+                .filter(area -> area.enabled() && area.type() == SettlementAreaType.HOME)
+                .map(area -> this.surveys.get(area.id()))
+                .filter(survey -> survey != null && survey.fullyLoaded())
+                .mapToInt(survey -> survey.beds().size())
+                .sum();
+    }
+
+    void recordSurvey(UUID area, SettlementBuildingSurvey.Survey survey) {
+        if (!this.areas.containsKey(area)) {
+            return;
+        }
+        var previous = this.surveys.get(area);
+        if (previous != null && previous.beds().equals(survey.beds())
+                && previous.workstations().equals(survey.workstations()) && previous.fullyLoaded() == survey.fullyLoaded()
+                && survey.checkedAt() - previous.checkedAt() < 1_200L) {
+            return;
+        }
+        this.surveys.put(area, survey);
+        changed();
+    }
+
     public boolean permits(UUID player, SettlementPermission permission) {
         if (player == null || permission == null) {
             return false;
@@ -180,7 +208,12 @@ public final class SettlementRecord {
                         !existing.id().equals(area.id()) && existing.intersects(area))) {
             return false;
         }
-        if (!area.equals(this.areas.put(area.id(), area))) {
+        SettlementArea previous = this.areas.put(area.id(), area);
+        if (!area.equals(previous)) {
+            if (previous == null || previous.type() != area.type()
+                    || !previous.min().equals(area.min()) || !previous.max().equals(area.max())) {
+                this.surveys.remove(area.id());
+            }
             changed();
         }
         return true;
@@ -193,6 +226,7 @@ public final class SettlementRecord {
             return false;
         }
         this.duties.values().removeIf(area::equals);
+        this.surveys.remove(area);
         changed();
         return true;
     }
@@ -242,6 +276,13 @@ public final class SettlementRecord {
         ListTag depotTags = new ListTag();
         this.depots.values().forEach(depot -> depotTags.add(depot.save(provider)));
         tag.put("Depots", depotTags);
+        ListTag surveyTags = new ListTag();
+        this.surveys.forEach((area, survey) -> {
+            CompoundTag entry = survey.save();
+            entry.putUUID("Area", area);
+            surveyTags.add(entry);
+        });
+        tag.put("Surveys", surveyTags);
         return tag;
     }
 
@@ -298,6 +339,16 @@ public final class SettlementRecord {
                     || record.depots.values().stream().anyMatch(existing -> existing.position().equals(depot.position()))
                     || record.depots.putIfAbsent(depot.id(), depot) != null) {
                 throw new IllegalArgumentException("Depot is duplicated or outside its functional area");
+            }
+        }
+        for (Tag raw : tag.getList("Surveys", Tag.TAG_COMPOUND)) {
+            CompoundTag entry = (CompoundTag) raw;
+            SettlementArea area = entry.hasUUID("Area") ? record.areas.get(entry.getUUID("Area")) : null;
+            var survey = SettlementBuildingSurvey.Survey.load(entry);
+            if (area == null || survey.beds().stream().anyMatch(pos -> !area.contains(pos))
+                    || survey.workstations().stream().anyMatch(pos -> !area.contains(pos))
+                    || record.surveys.putIfAbsent(area.id(), survey) != null) {
+                throw new IllegalArgumentException("Building survey is duplicated or outside its area");
             }
         }
         return record;
