@@ -1636,6 +1636,13 @@ public final class HiredVillagerWorkService {
             int maxRadius) {
         var duty = com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).orElse(null);
         if (duty != null) {
+            if (role == HiredVillagerRole.COURIER) {
+                int radius = duty.town().stage().radius();
+                BlockPos center = duty.town().center();
+                return HiredJobSite.fromWorkArea(HiredWorkArea.fromBounds(
+                        new BlockPos(center.getX() - radius, level.getMinBuildHeight(), center.getZ() - radius),
+                        new BlockPos(center.getX() + radius, level.getMaxBuildHeight() - 1, center.getZ() + radius), true));
+            }
             return HiredJobSite.fromWorkArea(HiredWorkArea.fromBounds(duty.area().min(), duty.area().max(), true));
         }
         HiredWorkArea storedArea = workAreaWithinMax(state, villager, maxRadius);

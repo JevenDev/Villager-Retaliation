@@ -565,6 +565,38 @@ public final class AssignedStorageService {
     }
 
 
+    public static int unreservedFramedAllowance(ServerLevel level, BlockPos position, ItemStack sample,
+                                                VillagerFilterPolicy.TransferOperation operation) {
+        if (!level.hasChunkAt(position)) {
+            return 0;
+        }
+        var candidate = VillagerInventoryOverflowService.ContainerCandidate.resolve(level, position);
+        if (candidate == null) {
+            return 0;
+        }
+        var resolution = ContainerFilterResolver.resolve(level, candidate);
+        if (!resolution.live()) {
+            return 0;
+        }
+        var evaluation = evaluateContainerRules(level, candidate, resolution.rules(), sample, operation, null, List.of());
+        if (!evaluation.valid() || !evaluation.permitted()) {
+            return 0;
+        }
+        return operation == VillagerFilterPolicy.TransferOperation.RECEIVE
+                ? Math.min(evaluation.allowance(), legacyReceiveAllowance(level, candidate, resolution.rules(), sample, null, List.of()))
+                : evaluation.allowance();
+    }
+
+    public static int reservedItemCount(ServerLevel level, BlockPos position, UUID excludedOwner,
+                                         VillagerFilterPolicy.TransferOperation operation, ItemStack sample) {
+        if (!level.hasChunkAt(position)) {
+            return 0;
+        }
+        var candidate = VillagerInventoryOverflowService.ContainerCandidate.resolve(level, position);
+        return candidate == null ? 0 : ContainerTransferClaimLedger.count(level, candidate, excludedOwner, operation,
+                stack -> ItemStack.isSameItemSameComponents(stack, sample));
+    }
+
     public static void releaseCourierClaims(Villager villager) {
         if (villager != null) {
             ContainerTransferClaimLedger.release(villager.getUUID());
@@ -845,7 +877,7 @@ public final class AssignedStorageService {
             VillagerFilterPolicy.TransferOperation operation,
             UUID excludedOwner,
             List<ItemStack> additionalClaims) {
-        return ContainerFilterEvaluator.evaluate(
+        ContainerFilterEvaluator.Evaluation evaluation = ContainerFilterEvaluator.evaluate(
                 level,
                 rules,
                 stack,
@@ -868,6 +900,17 @@ public final class AssignedStorageService {
                     claims = saturatingAdd(claims, countMatchingStacks(additionalClaims, matcher));
                     return new ContainerFilterEvaluator.StockState(currentStock, claims);
                 });
+        if (excludedOwner == null || !(level.getEntity(excludedOwner) instanceof Villager worker)
+                || !com.jvn.villagerretaliation.settlement.SettlementLogisticsService.isHauler(worker)) {
+            return evaluation;
+        }
+        Predicate<ItemStack> sameStack = stored -> ItemStack.isSameItemSameComponents(stored, stack);
+        int claimed = saturatingAdd(ContainerTransferClaimLedger.count(level, candidate, excludedOwner, operation, sameStack),
+                countMatchingStacks(additionalClaims, sameStack));
+        int townAllowance = com.jvn.villagerretaliation.settlement.SettlementLogisticsService.transferAllowance(
+                level, excludedOwner, candidate.pos(), stack, operation, claimed);
+        return new ContainerFilterEvaluator.Evaluation(evaluation.permitted(), Math.min(evaluation.allowance(), townAllowance),
+                evaluation.applicableAllowRules(), evaluation.matchingAllowRules(), evaluation.matchingDenyRules(), evaluation.valid());
     }
 
     private static int legacyReceiveAllowance(

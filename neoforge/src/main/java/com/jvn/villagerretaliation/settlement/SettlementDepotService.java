@@ -90,6 +90,9 @@ public final class SettlementDepotService {
         if (area == null || !area.enabled() || !town.permits(record.hirerId(), SettlementPermission.LOGISTICS)) {
             return false;
         }
+        if (duty != null && duty.area().type() == SettlementAreaType.DEPOT) {
+            return SettlementLogisticsService.permitsStorage(villager, depot, AssignedStorageService.normalizePurpose(record.purpose()));
+        }
         return switch (AssignedStorageService.normalizePurpose(record.purpose())) {
             case AssignedStorageService.SUPPLY_PURPOSE -> depot.purpose().providesSupplies();
             case AssignedStorageService.OUTPUT_PURPOSE -> depot.purpose().acceptsOutputs();
@@ -100,8 +103,10 @@ public final class SettlementDepotService {
 
     public static void synchronizeStorage(ServerLevel level, Villager villager, SettlementRecord town) {
         AssignedStorageSavedData storage = AssignedStorageSavedData.get(level);
-        List<AssignedContainerRecord> desired = new ArrayList<>();
-        for (SettlementDepot depot : town.depots().values()) {
+        boolean hauler = SettlementLogisticsService.isHauler(villager);
+        List<AssignedContainerRecord> desired = new ArrayList<>(hauler
+                ? SettlementLogisticsService.assignments(level, villager, town) : List.of());
+        for (SettlementDepot depot : hauler ? List.<SettlementDepot>of() : town.depots().values()) {
             SettlementArea area = town.areas().get(depot.area());
             if (area == null || !area.enabled()) {
                 continue;

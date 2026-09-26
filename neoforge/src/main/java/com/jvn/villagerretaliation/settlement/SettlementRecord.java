@@ -14,6 +14,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 
 public final class SettlementRecord {
     public static final int MAX_AREAS = 256;
@@ -169,6 +170,11 @@ public final class SettlementRecord {
     public boolean configureDepot(UUID actor, UUID id, SettlementDepotPurpose purpose, int priority) {
         SettlementDepot depot = this.depots.get(id);
         return permits(actor, SettlementPermission.LOGISTICS) && depot != null && depot.configure(purpose, priority);
+    }
+
+    public boolean setDepotStockTarget(UUID actor, UUID depotId, ItemStack sample, int count) {
+        SettlementDepot depot = this.depots.get(depotId);
+        return permits(actor, SettlementPermission.LOGISTICS) && depot != null && depot.setStockTarget(sample, count);
     }
 
     public Map<UUID, SettlementBuildingSurvey.Survey> surveys() {

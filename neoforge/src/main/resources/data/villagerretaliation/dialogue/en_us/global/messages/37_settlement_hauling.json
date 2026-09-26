@@ -1,0 +1,34 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.settlement_hauling"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.hauling.no_space",
+      "lines": [
+        "I'm carrying supplies, but the town depots have no room for them."
+      ],
+      "id": "global.messages.settlement_hauling.no_space"
+    },
+    {
+      "key": "interaction.work.hauling.no_demand",
+      "lines": [
+        "I'm waiting for a depot that needs supplies or has surplus output."
+      ],
+      "id": "global.messages.settlement_hauling.no_demand"
+    },
+    {
+      "key": "interaction.work.hauling.unreachable",
+      "lines": [
+        "I need a clear path to the depot before I can move those supplies."
+      ],
+      "id": "global.messages.settlement_hauling.unreachable"
+    }
+  ]
+}

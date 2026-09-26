@@ -150,6 +150,7 @@ public final class SettlementWorkforceService {
         }
         if (area == null || area.type().role() == null || !town.dimension().equals(level.dimension().location())) {
             if (before.state() == VillagerAssignmentState.CIVIC) {
+                SettlementLogisticsService.resetAssignment(villager);
                 HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.paused", Map.of());
                 VillagerAssignmentStore.unassign(villager);
                 AssignedStorageService.removeAllAssignedStorage(level, villager);
@@ -166,6 +167,7 @@ public final class SettlementWorkforceService {
         boolean boundsChanged = state.getLong(HiredWorkArea.WORK_MIN_POS_TAG) != area.min().asLong()
                 || state.getLong(HiredWorkArea.WORK_MAX_POS_TAG) != area.max().asLong();
         if (assignmentChanged || boundsChanged) {
+            SettlementLogisticsService.resetAssignment(villager);
             HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.waiting_tick", Map.of());
             if (before.state() != VillagerAssignmentState.CIVIC) {
                 AssignedStorageService.removeAllAssignedStorage(level, villager);
