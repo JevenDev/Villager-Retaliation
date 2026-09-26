@@ -30,6 +30,7 @@ public final class SettlementWorkerState {
     private BlockPos position;
     private CompoundTag inventory = new CompoundTag();
     private CompoundTag settings = new CompoundTag();
+    private CompoundTag entityContext = new CompoundTag();
     private long checkedAt;
     private long version;
     private long brewingVersion;
@@ -111,6 +112,10 @@ public final class SettlementWorkerState {
         this.inventory = HiredJobInventory.getJobInventory(villager).captureSnapshot();
         HiredWorkSkillGrowthService.onPractice(level, villager, null, this.role, HiredWorkStateStore.state(villager), List.of());
         this.settings = HiredWorkStateStore.state(villager).copy();
+        if (this.role == HiredVillagerRole.FISHING) {
+            this.entityContext = villager.saveWithoutId(new CompoundTag());
+            SettlementBackgroundFishing.capture(level, villager, this.settings);
+        }
         this.aptitude = HiredVillagerRoles.roleScore(level, villager, this.role);
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
         this.brewingVersion = Math.max(this.brewingVersion, SettlementBrewingService.version(villager));
@@ -132,6 +137,7 @@ public final class SettlementWorkerState {
         if (this.settings.contains("CraftsmanCursor", Tag.TAG_INT)) {
             HiredWorkStateStore.state(villager).putInt("CraftsmanCursor", this.settings.getInt("CraftsmanCursor"));
         }
+        SettlementBackgroundFishing.restore(this, villager);
         HiredWorkSession.invalidate(villager);
         return true;
     }
@@ -153,6 +159,18 @@ public final class SettlementWorkerState {
         this.progress -= cost;
         this.version++;
         return true;
+    }
+
+    void changed() {
+        this.version++;
+    }
+
+    void inventorySnapshot(CompoundTag snapshot) {
+        this.inventory = snapshot.copy();
+    }
+
+    CompoundTag entityContext() {
+        return this.entityContext.copy();
     }
 
     void practice(ServerLevel level, List<VillagerSkillPractice> practice) {
@@ -215,6 +233,7 @@ public final class SettlementWorkerState {
         tag.putLong("Position", this.position.asLong());
         tag.put("Inventory", this.inventory.copy());
         tag.put("Settings", this.settings.copy());
+        if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
         tag.putLong("CheckedAt", this.checkedAt);
         tag.putLong("Version", this.version);
         tag.putLong("BrewingVersion", this.brewingVersion);
@@ -235,6 +254,7 @@ public final class SettlementWorkerState {
         state.position = BlockPos.of(tag.getLong("Position"));
         state.inventory = tag.getCompound("Inventory").copy();
         state.settings = tag.getCompound("Settings").copy();
+        state.entityContext = tag.getCompound("EntityContext").copy();
         state.checkedAt = Math.max(0L, tag.getLong("CheckedAt"));
         state.version = Math.max(0L, tag.getLong("Version"));
         state.brewingVersion = Math.max(0L, tag.getLong("BrewingVersion"));

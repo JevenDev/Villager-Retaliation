@@ -63,6 +63,7 @@ public class VillagerFishingHook extends Projectile {
     private int timeUntilHooked;
     private float fishAngle;
     private boolean openWater = true;
+    private long fishingUpdatedAt = -1L;
     @Nullable
     private Entity hookedIn;
     private FishHookState currentState = FishHookState.FLYING;
@@ -282,13 +283,23 @@ public class VillagerFishingHook extends Projectile {
     }
 
     private void catchingFish(BlockPos pos) {
+        this.fishingUpdatedAt = this.level().getGameTime();
+        catchingFish(this.level().isRainingAt(pos.above()), this.level().canSeeSky(pos.above()), true);
+    }
+
+    public void advanceBackground(int ticks, boolean raining, boolean skyVisible) {
+        for (int tick = 0; tick < Math.clamp(ticks, 0, 200) && this.nibble <= 0; tick++) {
+            catchingFish(raining, skyVisible, false);
+        }
+    }
+
+    private void catchingFish(boolean raining, boolean skyVisible, boolean effects) {
         ServerLevel serverLevel = (ServerLevel)this.level();
         int tickSpeed = 1;
-        BlockPos above = pos.above();
-        if (this.random.nextFloat() < 0.25F && this.level().isRainingAt(above)) {
+        if (this.random.nextFloat() < 0.25F && raining) {
             tickSpeed++;
         }
-        if (this.random.nextFloat() < 0.5F && !this.level().canSeeSky(above)) {
+        if (this.random.nextFloat() < 0.5F && !skyVisible) {
             tickSpeed--;
         }
 
@@ -302,12 +313,14 @@ public class VillagerFishingHook extends Projectile {
         } else if (this.timeUntilHooked > 0) {
             this.timeUntilHooked -= tickSpeed;
             if (this.timeUntilHooked > 0) {
-                spawnApproachParticles(serverLevel);
+                if (effects) {
+                    spawnApproachParticles(serverLevel);
+                }
             } else {
-                splashBite(serverLevel);
+                splashBite(serverLevel, effects);
             }
         } else if (this.timeUntilLured > 0) {
-            lureFish(serverLevel);
+            lureFish(serverLevel, effects);
         } else {
             int normalWait = Math.max(20, Mth.nextInt(this.random, 100, 600) - this.lureSpeed);
             this.timeUntilLured = Math.max(
@@ -335,16 +348,18 @@ public class VillagerFishingHook extends Projectile {
         }
     }
 
-    private void splashBite(ServerLevel serverLevel) {
-        this.playSound(SoundEvents.FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
-        double y = this.getY() + 0.5D;
-        serverLevel.sendParticles(ParticleTypes.BUBBLE, this.getX(), y, this.getZ(), (int)(1.0F + this.getBbWidth() * 20.0F), this.getBbWidth(), 0.0D, this.getBbWidth(), 0.2F);
-        serverLevel.sendParticles(ParticleTypes.FISHING, this.getX(), y, this.getZ(), (int)(1.0F + this.getBbWidth() * 20.0F), this.getBbWidth(), 0.0D, this.getBbWidth(), 0.2F);
+    private void splashBite(ServerLevel serverLevel, boolean effects) {
+        if (effects) {
+            this.playSound(SoundEvents.FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+            double y = this.getY() + 0.5D;
+            serverLevel.sendParticles(ParticleTypes.BUBBLE, this.getX(), y, this.getZ(), (int)(1.0F + this.getBbWidth() * 20.0F), this.getBbWidth(), 0.0D, this.getBbWidth(), 0.2F);
+            serverLevel.sendParticles(ParticleTypes.FISHING, this.getX(), y, this.getZ(), (int)(1.0F + this.getBbWidth() * 20.0F), this.getBbWidth(), 0.0D, this.getBbWidth(), 0.2F);
+        }
         this.nibble = Mth.nextInt(this.random, 20, 40);
         this.getEntityData().set(DATA_BITING, true);
     }
 
-    private void lureFish(ServerLevel serverLevel) {
+    private void lureFish(ServerLevel serverLevel, boolean effects) {
         this.timeUntilLured--;
         float chance = 0.15F;
         if (this.timeUntilLured < 20) {
@@ -354,7 +369,7 @@ public class VillagerFishingHook extends Projectile {
         } else if (this.timeUntilLured < 60) {
             chance += (60 - this.timeUntilLured) * 0.01F;
         }
-        if (this.random.nextFloat() < chance) {
+        if (effects && this.random.nextFloat() < chance) {
             float angle = Mth.nextFloat(this.random, 0.0F, 360.0F) * (float)(Math.PI / 180.0D);
             float distance = Mth.nextFloat(this.random, 25.0F, 60.0F);
             double x = this.getX() + Mth.sin(angle) * distance * 0.1D;
@@ -402,6 +417,46 @@ public class VillagerFishingHook extends Projectile {
         }
         this.discard();
         return new CatchResult(loot, rodDamage, experience, completedCatch);
+    }
+
+    public CompoundTag captureFishingProgress() {
+        var tag = new CompoundTag();
+        tag.putLong("UpdatedAt", this.fishingUpdatedAt);
+        tag.putInt("Lured", Math.max(0, this.timeUntilLured));
+        tag.putInt("Hooked", Math.max(0, this.timeUntilHooked));
+        tag.putInt("Nibble", this.nibble);
+        tag.putBoolean("OpenWater", this.openWater);
+        tag.putInt("Luck", this.luck);
+        tag.putInt("LureSpeed", this.lureSpeed);
+        tag.putInt("WorkSpeedPercent", this.workSpeedPercent);
+        return tag;
+    }
+
+    public void restoreFishingProgress(CompoundTag tag) {
+        this.timeUntilLured = Math.clamp(tag.getInt("Lured"), 0, 1_200);
+        this.timeUntilHooked = Math.clamp(tag.getInt("Hooked"), 0, 80);
+        this.nibble = Math.clamp(tag.getInt("Nibble"), 0, 40);
+        this.openWater = tag.getBoolean("OpenWater");
+        this.luck = Math.max(0, tag.getInt("Luck"));
+        this.lureSpeed = Math.max(0, tag.getInt("LureSpeed"));
+        this.workSpeedPercent = Math.clamp(tag.getInt("WorkSpeedPercent"), 50, 125);
+        this.getEntityData().set(DATA_BITING, this.nibble > 0);
+    }
+
+    public void resumeFishingAt(BlockPos water, CompoundTag progress) {
+        this.setPos(water.getCenter());
+        this.setDeltaMovement(Vec3.ZERO);
+        this.currentState = FishHookState.BOBBING;
+        this.fishingUpdatedAt = this.level().getGameTime();
+        restoreFishingProgress(progress);
+    }
+
+    public boolean canResumeFishing() {
+        return this.currentState == FishHookState.BOBBING && !shouldRetrieveWithoutCatch();
+    }
+
+    public void backgroundOpenWater(boolean openWater) {
+        this.openWater = openWater;
     }
 
     public boolean isBiting() {

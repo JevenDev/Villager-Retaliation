@@ -4,9 +4,13 @@ import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.settlement.SettlementBackgroundFishing;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
+import com.jvn.villagerretaliation.skill.VillagerSkillPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -91,6 +95,14 @@ public final class FishingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if (SettlementBackgroundFishing.hasPendingCatch(context.state())) {
+            WorkResult deposit = depositFullOutputIfNeeded(level, villager, context);
+            if (deposit != null) return deposit;
+            if (!SettlementBackgroundFishing.finishReturnedCatch(level, villager)) {
+                return WorkResult.idle("interaction.work.fishing.output_full_blocked");
+            }
+            return WorkResult.completed("interaction.work.fishing.completed");
+        }
         if (context.state().getBoolean(CATCH_COMPLETED_TAG)) {
             return finishCompletedCatch(level, villager, context);
         }
@@ -225,20 +237,24 @@ public final class FishingWorker extends AbstractBlockWorker {
             return depositResult;
         }
         boolean overflow = context.state().getBoolean(CATCH_OVERFLOW_TAG);
-        double practiceUnits = context.state().getDouble(CATCH_PRACTICE_UNITS_TAG);
-        long repetitionKey = context.state().getLong(CATCH_REPETITION_KEY_TAG);
-        context.state().remove(CATCH_COMPLETED_TAG);
-        context.state().remove(CATCH_OVERFLOW_TAG);
-        context.state().remove(CATCH_PRACTICE_UNITS_TAG);
-        context.state().remove(CATCH_REPETITION_KEY_TAG);
+        List<VillagerSkillPractice> practice = takeCompletedPractice(context.state());
         clearFishingTarget(context);
         setTaskState(context, HiredWorkerTaskState.IDLE);
         String status = overflow
                 ? "interaction.work.fishing.completed_overflow"
                 : "interaction.work.fishing.completed";
-        return Double.isFinite(practiceUnits) && practiceUnits > 0.0D
-                ? WorkResult.completedWithPractice(status, HiredWorkPractice.fishing(practiceUnits, repetitionKey))
-                : WorkResult.completed(status);
+        return practice.isEmpty() ? WorkResult.completed(status) : WorkResult.completedWithPractice(status, practice);
+    }
+
+    public static List<VillagerSkillPractice> takeCompletedPractice(CompoundTag state) {
+        boolean completed = state.getBoolean(CATCH_COMPLETED_TAG);
+        double units = state.getDouble(CATCH_PRACTICE_UNITS_TAG);
+        long key = state.getLong(CATCH_REPETITION_KEY_TAG);
+        state.remove(CATCH_COMPLETED_TAG);
+        state.remove(CATCH_OVERFLOW_TAG);
+        state.remove(CATCH_PRACTICE_UNITS_TAG);
+        state.remove(CATCH_REPETITION_KEY_TAG);
+        return completed && Double.isFinite(units) && units > 0.0D ? HiredWorkPractice.fishing(units, key) : List.of();
     }
 
     @Override
@@ -339,6 +355,7 @@ public final class FishingWorker extends AbstractBlockWorker {
         discardExistingOwnedHooks(level, villager);
         VillagerFishingHook hook = new VillagerFishingHook(
                 villager, level, target, luck, lure, context.skillWorkSpeedPercent());
+        SettlementBackgroundFishing.resume(context.state(), rod, spot.water(), spot.approach(), hook);
         level.addFreshEntity(hook);
         context.state().putInt(ACTIVE_HOOK_ID_TAG, hook.getId());
         level.playSound(null, villager.getX(), villager.getY(), villager.getZ(), SoundEvents.FISHING_BOBBER_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));
@@ -722,6 +739,7 @@ public final class FishingWorker extends AbstractBlockWorker {
     }
 
     private void clearFishingTarget(HiredWorkContext context) {
+        SettlementBackgroundFishing.discardCast(context.state());
         clearHookState(context);
         context.state().remove(ACTIVE_WATER_POS_TAG);
         context.state().remove(ACTIVE_APPROACH_POS_TAG);

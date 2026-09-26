@@ -69,6 +69,8 @@ public final class SettlementBackgroundService {
                 SettlementBackgroundHauling.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.SMELTER) {
                 SettlementBackgroundSmelting.tick(level, town, worker, elapsed, multiplier);
+            } else if (worker.role() == HiredVillagerRole.FISHING) {
+                SettlementBackgroundFishing.tick(level, town, worker, elapsed, multiplier, now);
             } else if (worker.role() == HiredVillagerRole.FARMING) {
                 SettlementBackgroundFarming.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.BREWING) {
@@ -91,6 +93,10 @@ public final class SettlementBackgroundService {
             var worker = town.workers().get(villager.getUUID());
             if (worker != null && worker.restore(villager)) {
                 SettlementLogisticsService.clear(villager);
+            }
+            if (worker != null) {
+                SettlementBackgroundFishing.finishReturnedCatch(level, villager);
+                SettlementBackgroundFishing.returnExperience(level, villager, worker);
             }
             SettlementWorkforceService.duty(villager).ifPresent(duty ->
                     SettlementWorkerConfigurationService.apply(villager, town, duty.area()));
