@@ -1,9 +1,11 @@
 package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -39,6 +41,7 @@ public final class SettlementRecord {
     private final Map<BlockPos, SettlementFurnaceState> furnaces = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementBrewingStandState> brewingStands = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFieldPlot> fields = new LinkedHashMap<>();
+    private final Map<UUID, List<SettlementFishingSpot>> fishingSpots = new LinkedHashMap<>();
     private long nextDepartureAt;
     private long nextApplicantAt;
     private SettlementSupportState support = new SettlementSupportState();
@@ -88,6 +91,23 @@ public final class SettlementRecord {
 
     public SettlementEconomy economy() {
         return this.economy;
+    }
+
+    public Map<UUID, List<SettlementFishingSpot>> fishingSpots() {
+        return Collections.unmodifiableMap(this.fishingSpots);
+    }
+
+    void recordFishingSpots(UUID area, List<SettlementFishingSpot> spots) {
+        if (spots.size() > SettlementFisheryService.MAX_SPOTS || spots.stream().anyMatch(spot -> !spot.area().equals(area))
+                || spots.stream().map(SettlementFishingSpot::water).distinct().count() != spots.size()) {
+            throw new IllegalArgumentException("Fishing sites exceed their limit or duplicate a water position");
+        }
+        if (spots.isEmpty()) {
+            this.fishingSpots.remove(area);
+        } else {
+            this.fishingSpots.put(area, List.copyOf(spots));
+        }
+        changed();
     }
 
     public Map<BlockPos, SettlementFieldPlot> fields() {
@@ -565,6 +585,9 @@ public final class SettlementRecord {
         ListTag fieldTags = new ListTag();
         this.fields.values().forEach(plot -> fieldTags.add(plot.save()));
         tag.put("Fields", fieldTags);
+        ListTag fishingTags = new ListTag();
+        this.fishingSpots.values().forEach(spots -> spots.forEach(spot -> fishingTags.add(spot.save())));
+        tag.put("FishingSpots", fishingTags);
         ListTag departureTags = new ListTag();
         this.departures.values().forEach(departure -> departureTags.add(departure.save()));
         tag.put("Departures", departureTags);
@@ -618,6 +641,18 @@ public final class SettlementRecord {
             if (record.fields.putIfAbsent(plot.position(), plot) != null) {
                 throw new IllegalArgumentException("Settlement field duplicates a position");
             }
+        }
+        Map<UUID, List<SettlementFishingSpot>> fishingSpots = new LinkedHashMap<>();
+        for (Tag raw : tag.getList("FishingSpots", Tag.TAG_COMPOUND)) {
+            var spot = SettlementFishingSpot.load((CompoundTag) raw);
+            fishingSpots.computeIfAbsent(spot.area(), ignored -> new ArrayList<>()).add(spot);
+        }
+        for (var entry : fishingSpots.entrySet()) {
+            if (entry.getValue().size() > SettlementFisheryService.MAX_SPOTS
+                    || entry.getValue().stream().map(SettlementFishingSpot::water).distinct().count() != entry.getValue().size()) {
+                throw new IllegalArgumentException("Saved fishing sites exceed their limit or duplicate a water position");
+            }
+            record.fishingSpots.put(entry.getKey(), List.copyOf(entry.getValue()));
         }
         record.nextDepartureAt = Math.max(0L, tag.getLong("NextDepartureAt"));
         for (Tag raw : tag.getList("Departures", Tag.TAG_COMPOUND)) {

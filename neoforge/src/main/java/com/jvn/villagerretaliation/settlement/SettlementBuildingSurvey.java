@@ -189,13 +189,13 @@ public final class SettlementBuildingSurvey {
                 && blocks.getFluidState(pos).isEmpty();
     }
 
-    private record ObservedBlocks(ServerLevel level, LevelChunk supplied) implements BlockGetter {
-        private LevelChunk chunk(int x, int z) {
+    record ObservedBlocks(ServerLevel level, LevelChunk supplied) implements BlockGetter {
+        LevelChunk chunk(int x, int z) {
             return this.supplied != null && this.supplied.getPos().x == x && this.supplied.getPos().z == z
                     ? this.supplied : this.level.getChunkSource().getChunkNow(x, z);
         }
 
-        private boolean observed(BlockPos position) {
+        boolean observed(BlockPos position) {
             return chunk(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16)) != null;
         }
 

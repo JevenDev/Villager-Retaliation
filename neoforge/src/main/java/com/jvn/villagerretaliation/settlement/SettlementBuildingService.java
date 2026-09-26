@@ -74,8 +74,9 @@ public final class SettlementBuildingService {
                 continue;
             }
             for (SettlementArea area : town.areas().values()) {
-                if (area.min().getX() <= position.getMaxBlockX() + 2 && area.max().getX() >= position.getMinBlockX() - 2
-                        && area.min().getZ() <= position.getMaxBlockZ() + 2 && area.max().getZ() >= position.getMinBlockZ() - 2) {
+                int margin = area.type() == SettlementAreaType.FISHERY ? 11 : 2;
+                if (area.min().getX() <= position.getMaxBlockX() + margin && area.max().getX() >= position.getMinBlockX() - margin
+                        && area.min().getZ() <= position.getMaxBlockZ() + margin && area.max().getZ() >= position.getMinBlockZ() - margin) {
                     refresh(level, town, area, chunk);
                 }
             }
@@ -88,6 +89,7 @@ public final class SettlementBuildingService {
 
     private static void refresh(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
         SettlementFieldService.observeArea(level, town, area, supplied);
+        SettlementFisheryService.observeArea(level, town, area, supplied);
         var observed = SettlementBuildingSurvey.inspect(level, area, supplied);
         var previous = town.surveys().get(area.id());
         if (previous != null && !observed.fullyLoaded()) {

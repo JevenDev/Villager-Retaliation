@@ -30,6 +30,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
@@ -420,6 +421,10 @@ public class VillagerFishingHook extends Projectile {
     }
 
     public static boolean isOpenWater(Level level, BlockPos pos) {
+        return isOpenWater((BlockGetter) level, pos);
+    }
+
+    public static boolean isOpenWater(BlockGetter level, BlockPos pos) {
         OpenWaterType current = OpenWaterType.INVALID;
         for (int yOffset = -1; yOffset <= 2; yOffset++) {
             OpenWaterType area = getOpenWaterTypeForArea(level, pos.offset(-2, yOffset, -2), pos.offset(2, yOffset, 2));
@@ -442,14 +447,14 @@ public class VillagerFishingHook extends Projectile {
         return true;
     }
 
-    private static OpenWaterType getOpenWaterTypeForArea(Level level, BlockPos firstPos, BlockPos secondPos) {
+    private static OpenWaterType getOpenWaterTypeForArea(BlockGetter level, BlockPos firstPos, BlockPos secondPos) {
         return BlockPos.betweenClosedStream(firstPos, secondPos)
                 .map(pos -> getOpenWaterTypeForBlock(level, pos))
                 .reduce((first, second) -> first == second ? first : OpenWaterType.INVALID)
                 .orElse(OpenWaterType.INVALID);
     }
 
-    private static OpenWaterType getOpenWaterTypeForBlock(Level level, BlockPos pos) {
+    private static OpenWaterType getOpenWaterTypeForBlock(BlockGetter level, BlockPos pos) {
         BlockState blockState = level.getBlockState(pos);
         if (!blockState.isAir() && !blockState.is(Blocks.LILY_PAD)) {
             FluidState fluidState = blockState.getFluidState();
