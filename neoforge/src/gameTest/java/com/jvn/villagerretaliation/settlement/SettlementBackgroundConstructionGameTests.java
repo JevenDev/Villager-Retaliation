@@ -434,6 +434,114 @@ public final class SettlementBackgroundConstructionGameTests {
         return Map.of(BlockPos.ZERO, Blocks.OAK_PLANKS.defaultBlockState());
     }
 
+    @GameTest(template = "empty", timeoutTicks = 200, batch = "settlement_construction_return")
+    public static void aSavedBackgroundHouseReturnsAcrossChunksWithUsableHousing(GameTestHelper helper) {
+        var base = helper.absolutePos(new BlockPos(2, 2, 2)).offset(10_000_000, 0, 10_000_000);
+        var origin = new BlockPos((base.getX() >> 4 << 4) + 14, 80, (base.getZ() >> 4 << 4) + 14);
+        fixture(helper, origin, null, false, fixture -> {
+            int slot = 0;
+            for (var material : fixture.plan().materials()) {
+                int remaining = material.count();
+                while (remaining > 0) {
+                    int count = Math.min(material.item().getMaxStackSize(), remaining);
+                    fixture.depot().setItem(slot++, material.item().copyWithCount(count));
+                    remaining -= count;
+                }
+            }
+            fixture.depot().setItem(slot++, new ItemStack(Items.IRON_AXE));
+            fixture.depot().setItem(slot++, new ItemStack(Items.IRON_SHOVEL));
+            fixture.depot().setItem(slot, new ItemStack(Items.IRON_HOE));
+            work(helper, fixture, 1000);
+            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.COMPLETED,
+                    "background construction completes before any site chunk loads");
+            var town = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+            var project = town.projects().get(fixture.project().id());
+            var site = project.site();
+            var originalJournal = site.save();
+            helper.assertFalse(helper.getLevel().hasChunkAt(origin), "the entire saved house was built without loading its chunks");
+            var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Completed house",
+                    fixture.area().min(), fixture.area().max(), 5, true);
+            helper.assertTrue(town.removeArea(town.leader(), fixture.area().id()), "completed construction releases its work designation");
+            helper.assertTrue(town.putArea(town.leader(), home), "the completed house has a residential designation");
+            helper.assertTrue(site.pending(), "changing the designation preserves already funded construction");
+            var level = helper.getLevel();
+            var chunks = new LinkedHashMap<net.minecraft.world.level.ChunkPos, net.minecraft.world.level.chunk.LevelChunk>();
+            for (int x = site.min().getX() >> 4; x <= site.max().getX() >> 4; x++) {
+                for (int z = site.min().getZ() >> 4; z <= site.max().getZ() >> 4; z++) {
+                    var position = new net.minecraft.world.level.ChunkPos(x, z);
+                    level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, position, 2, position);
+                    chunks.put(position, level.getChunk(x, z));
+                }
+            }
+            helper.assertTrue(fixture.plan().blocks().stream().map(block -> new net.minecraft.world.level.ChunkPos(
+                    fixture.plan().worldPos(origin, block))).distinct().count() >= 4, "the actual house crosses both chunk boundaries");
+            for (var section : site.sections().values()) {
+                var chunk = chunks.get(new net.minecraft.world.level.ChunkPos(section.min()));
+                for (var position : BlockPos.betweenClosed(section.min(), section.max())) chunk.setBlockState(position, section.state(position), false);
+            }
+            helper.startSequence().thenWaitUntil(() -> {
+                SettlementConstructionSiteService.refresh(level, site);
+                helper.assertFalse(site.conflict(), "returning baseline remains compatible with the saved construction journal");
+                helper.assertFalse(site.pending(), "every saved placement reaches its real chunk");
+            }).thenIdle(20).thenExecute(() -> {
+                try {
+                    for (var block : fixture.plan().blocks()) {
+                        var position = fixture.plan().worldPos(origin, block);
+                        helper.assertTrue(BuilderStructureScanner.sameSchematicState(level.getBlockState(position), block.state()),
+                                "native reactions preserve the completed blueprint at " + position + ": " + level.getBlockState(position) + " expected " + block.state());
+                    }
+                    helper.assertTrue(chunks.values().stream().allMatch(chunk -> SettlementChunkReceipts.mineUpdates(chunk, false).isEmpty()),
+                            "ordinary server ticks finish every deferred block reaction");
+                    SettlementBuildingService.refresh(level, town, home);
+                    helper.assertValueEqual(town.housingCapacity(), 1, "the materialized house provides one real accessible bed");
+                    for (var material : fixture.plan().materials()) helper.assertValueEqual(count(helper, fixture, material.item().getItem()), 0,
+                            "returning terrain does not refund or duplicate construction inputs");
+                    var replay = SettlementConstructionSite.load(project.id(), originalJournal);
+                    for (int index = 0; index < 32 && replay.pending(); index++) SettlementConstructionSiteService.refresh(level, replay);
+                    helper.assertFalse(replay.pending(), "the original project journal recognizes already delivered blocks");
+                } finally {
+                    chunks.keySet().forEach(position -> level.getChunkSource().removeRegionTicket(
+                            net.minecraft.server.level.TicketType.FORCED, position, 2, position));
+                }
+            }).thenSucceed();
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_builder_return")
+    public static void aReturningBuilderWalksOutOfItsPendingPlacement(GameTestHelper helper) {
+        fixture(helper, true, planks(), fixture -> {
+            var level = helper.getLevel();
+            for (var position : BlockPos.betweenClosed(fixture.site().min(), fixture.site().max())) {
+                level.setBlock(position, position.getY() < fixture.origin().getY() ? Blocks.DIRT.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
+            }
+            var builder = fixture.builder();
+            builder.setPos(fixture.origin().getBottomCenter());
+            builder.setOnGround(true);
+            level.addFreshEntity(builder);
+            fixture.site().queue(placement(fixture, Blocks.OAK_PLANKS.defaultBlockState(), null));
+            var state = HiredWorkStateStore.state(builder);
+            fixture.project().restore(state);
+            var context = new com.jvn.villagerretaliation.interaction.work.HiredWorkContext(
+                    HiredJobInventory.getJobInventory(builder), state, fixture.origin(), fixture.area().min(), fixture.area().max(),
+                    8, 5, true, 100, true, true);
+            var before = builder.position();
+            var result = new com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker().tick(level, builder, null, context);
+            helper.assertValueEqual(result.status(), "interaction.work.builder.moving_to_site", "pending delivery retains native evacuation movement");
+            helper.assertTrue(result.progressed(), "the returning builder starts a real movement step");
+            helper.assertValueEqual(builder.position(), before, "evacuation does not teleport the worker");
+            helper.assertTrue(fixture.site().pending() && level.getBlockState(fixture.origin()).isAir(),
+                    "the occupied placement waits until the builder physically leaves");
+            helper.assertTrue(builder.getNavigation().getPath() != null && builder.getNavigation().getPath().canReach(),
+                    "the native path can reach an unoccupied position");
+            var destination = builder.getNavigation().getPath().getTarget();
+            helper.assertFalse(destination.equals(fixture.origin()), "the evacuation target leaves the queued block");
+            builder.setPos(destination.getBottomCenter());
+            SettlementConstructionSiteService.refresh(level, fixture.site());
+            helper.assertFalse(fixture.site().pending(), "delivery completes after the worker leaves");
+            helper.assertTrue(level.getBlockState(fixture.origin()).is(Blocks.OAK_PLANKS), "the saved block reaches the vacated location");
+        });
+    }
+
     private static void work(GameTestHelper helper, Fixture fixture, int intervals) {
         for (int index = 0; index < intervals; index++) SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
     }
@@ -444,6 +552,11 @@ public final class SettlementBackgroundConstructionGameTests {
     }
 
     private static void fixture(GameTestHelper helper, boolean loaded, Map<BlockPos, BlockState> blocks, Consumer<Fixture> check) {
+        var base = helper.absolutePos(new BlockPos(2, 2, 2));
+        fixture(helper, loaded ? base : base.offset(8_000_000, 0, 8_000_000).atY(80), blocks, true, check);
+    }
+
+    private static void fixture(GameTestHelper helper, BlockPos origin, Map<BlockPos, BlockState> blocks, boolean finish, Consumer<Fixture> check) {
         var level = helper.getLevel();
         var id = ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1");
         var template = level.getStructureManager().get(id).orElseThrow();
@@ -456,8 +569,6 @@ public final class SettlementBackgroundConstructionGameTests {
         try {
             var entry = BuilderStructureCatalog.byId(level.getServer(), id).orElseThrow();
             var plan = BuilderStructureScanner.scan(level, entry, Rotation.NONE).orElseThrow();
-            var base = helper.absolutePos(new BlockPos(2, 2, 2));
-            var origin = loaded ? base : base.offset(8_000_000, 0, 8_000_000).atY(80);
             var registry = VillageAllegianceRegistrySavedData.get(level);
             var townId = registry.create(0L, level.dimension().location(), origin, "");
             var town = SettlementSavedData.get(level).establish(registry, townId, UUID.randomUUID(), origin, 0L).orElseThrow();
@@ -495,7 +606,7 @@ public final class SettlementBackgroundConstructionGameTests {
                 BuilderStructureScanner.clearCache();
             }
         }
-        helper.succeed();
+        if (finish) helper.succeed();
     }
 
     private static CompoundTag template(Map<BlockPos, BlockState> blocks) {

@@ -105,7 +105,22 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.builder.structure_unavailable", BuilderTaskState.replacements(context.state()));
         }
 
+        BlockPos origin = BuilderTaskState.origin(context.state());
+        HiredWorkArea area = SettlementWorkforceService.duty(villager)
+                .map(duty -> HiredWorkArea.fromBounds(duty.area().min(), duty.area().max(), true)).orElse(null);
         if (!SettlementConstructionService.prepare(villager, context.state())) {
+            if (SettlementConstructionService.allows(villager, context.state(), plan.get())) {
+                var positions = placementCollisionPositions(level, plan.get(), origin);
+                var center = origin.offset(plan.get().localCenter());
+                if (bodyIntersectsAnyPlacement(villager, villager.getBoundingBox().inflate(-0.02D), positions)
+                        && moveAwayFromPlacements(level, villager, area, center, villager.blockPosition(), positions, BUILD_APPROACH_RADIUS)) {
+                    setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, center);
+                    BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.TRAVELING_TO_SITE);
+                    return WorkResult.progressed("interaction.work.builder.moving_to_site", Map.of(
+                            "target", HiredWorkerBrain.formatPos(center),
+                            "structure", BuilderTaskState.structureLabel(context.state())));
+                }
+            }
             BuilderTaskState.setBlocked(context.state(), "pending_world");
             return WorkResult.idle("interaction.work.builder.pending_world");
         }
@@ -113,9 +128,6 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BuilderTaskState.setBlocked(context.state(), "interaction.work.builder.site_outside_area");
             return WorkResult.idle("interaction.work.builder.site_outside_area");
         }
-        BlockPos origin = BuilderTaskState.origin(context.state());
-        HiredWorkArea area = SettlementWorkforceService.duty(villager)
-                .map(duty -> HiredWorkArea.fromBounds(duty.area().min(), duty.area().max(), true)).orElse(null);
         BuilderSitePlanner.SiteResult siteResult = BuilderSitePlanner.validateStartedSite(
                 level,
                 villager,
