@@ -535,6 +535,7 @@ public final class VillagerRetaliationEvents {
         com.jvn.villagerretaliation.duel.DuelService.onEntityJoinLevel(event);
         if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
             ContainerFilterResolver.invalidateFrame(level, frame);
+            com.jvn.villagerretaliation.settlement.SettlementDepotRules.changed(frame);
         }
         if (event.getEntity() instanceof LivingEntity livingEntity) {
             VillagerCombatAttributeCompat.ensureCombatAttributes(livingEntity);
@@ -949,6 +950,7 @@ public final class VillagerRetaliationEvents {
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
             ContainerFilterResolver.invalidateFrame(level, frame);
+            com.jvn.villagerretaliation.settlement.SettlementDepotRules.changed(frame);
         }
         VillageCombatAuthorizationService.clearFor(event.getEntity());
         Entity.RemovalReason removalReason = event.getEntity().getRemovalReason();

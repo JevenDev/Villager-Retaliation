@@ -3,11 +3,14 @@ package com.jvn.villagerretaliation.settlement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -18,6 +21,7 @@ import net.minecraft.world.item.ItemStack;
 public final class SettlementDepot extends SimpleContainer {
     public static final int SLOT_COUNT = 54;
     public static final int MAX_STOCK_TARGETS = 16;
+    private static final int MAX_FRAME_RULES = 32;
     private final UUID id;
     private final UUID area;
     private final BlockPos position;
@@ -25,6 +29,8 @@ public final class SettlementDepot extends SimpleContainer {
     private final List<StockTarget> stockTargets = new ArrayList<>();
     private List<ItemStack> observedRules = List.of();
     private boolean rulesObserved;
+    private boolean framesObserved;
+    private final Map<UUID, FrameRule> frameRules = new LinkedHashMap<>();
     private SettlementDepotPurpose purpose;
     private int priority;
     private boolean loading;
@@ -81,6 +87,63 @@ public final class SettlementDepot extends SimpleContainer {
         this.observedRules = rules.stream().map(stack -> stack.copyWithCount(1)).toList();
         this.rulesObserved = true;
         setChanged();
+    }
+
+    void observeFrames(Map<UUID, FrameRule> frames) {
+        if (frames.size() > MAX_FRAME_RULES) {
+            invalidateRules();
+            return;
+        }
+        boolean same = this.framesObserved && this.frameRules.keySet().equals(frames.keySet())
+                && frames.entrySet().stream().allMatch(entry -> entry.getValue().same(this.frameRules.get(entry.getKey())));
+        this.frameRules.clear();
+        this.frameRules.putAll(frames);
+        this.framesObserved = true;
+        updateFrameRules();
+        if (!same) {
+            setChanged();
+        }
+    }
+
+    void observeFrame(UUID frame, Direction direction, ItemStack rule) {
+        FrameRule previous = this.frameRules.get(frame);
+        FrameRule next = rule.isEmpty() ? null : new FrameRule(direction, rule);
+        boolean same = next == null ? previous == null : next.same(previous);
+        if (next == null) {
+            this.frameRules.remove(frame);
+        } else if (previous != null || this.frameRules.size() < MAX_FRAME_RULES) {
+            this.frameRules.put(frame, next);
+        } else {
+            invalidateRules();
+            return;
+        }
+        if (this.framesObserved) {
+            updateFrameRules();
+        } else {
+            invalidateRules();
+        }
+        if (!same) {
+            setChanged();
+        }
+    }
+
+    boolean knowsFrame(UUID frame) {
+        return this.frameRules.containsKey(frame);
+    }
+
+    private void invalidateRules() {
+        if (this.rulesObserved || this.framesObserved) {
+            this.rulesObserved = false;
+            this.framesObserved = false;
+            setChanged();
+        }
+    }
+
+    private void updateFrameRules() {
+        observeRules(this.frameRules.entrySet().stream()
+                .sorted(java.util.Comparator.<Map.Entry<UUID, FrameRule>>comparingInt(entry -> entry.getValue().direction().get3DDataValue())
+                        .thenComparing(entry -> entry.getKey().toString()))
+                .map(entry -> entry.getValue().item()).toList());
     }
 
     public List<StockTarget> stockTargets() {
@@ -189,6 +252,16 @@ public final class SettlementDepot extends SimpleContainer {
         ListTag rules = new ListTag();
         this.observedRules.forEach(rule -> rules.add(rule.save(provider)));
         tag.put("ObservedRules", rules);
+        tag.putBoolean("FramesObserved", this.framesObserved);
+        ListTag frames = new ListTag();
+        this.frameRules.forEach((id, rule) -> {
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("Id", id);
+            entry.putString("Direction", rule.direction().name());
+            entry.put("Item", rule.item().save(provider));
+            frames.add(entry);
+        });
+        tag.put("FrameRules", frames);
         return tag;
     }
 
@@ -230,8 +303,43 @@ public final class SettlementDepot extends SimpleContainer {
             rules.add(rule.copyWithCount(1));
         }
         depot.observedRules = List.copyOf(rules);
+        depot.framesObserved = tag.getBoolean("FramesObserved");
+        for (Tag raw : tag.getList("FrameRules", Tag.TAG_COMPOUND)) {
+            CompoundTag entry = (CompoundTag) raw;
+            if (!entry.hasUUID("Id") || depot.frameRules.size() >= MAX_FRAME_RULES) {
+                throw new IllegalArgumentException("Observed depot frame is missing its identity or exceeds its limit");
+            }
+            var rule = new FrameRule(Direction.valueOf(entry.getString("Direction")), ItemStack.parseOptional(provider, entry.getCompound("Item")));
+            if (depot.frameRules.putIfAbsent(entry.getUUID("Id"), rule) != null) {
+                throw new IllegalArgumentException("Observed depot frame is duplicated");
+            }
+        }
+        if (depot.framesObserved) {
+            depot.updateFrameRules();
+        } else if (!depot.frameRules.isEmpty()) {
+            depot.rulesObserved = false;
+        }
         depot.loading = false;
         return depot;
+    }
+
+    record FrameRule(Direction direction, ItemStack item) {
+        FrameRule {
+            Objects.requireNonNull(direction);
+            if (item == null || item.isEmpty()) {
+                throw new IllegalArgumentException("Observed depot frame requires an item");
+            }
+            item = item.copyWithCount(1);
+        }
+
+        @Override
+        public ItemStack item() {
+            return this.item.copy();
+        }
+
+        boolean same(FrameRule other) {
+            return other != null && this.direction == other.direction && ItemStack.isSameItemSameComponents(this.item, other.item);
+        }
     }
 
     public record StockTarget(ItemStack sample, int count) {

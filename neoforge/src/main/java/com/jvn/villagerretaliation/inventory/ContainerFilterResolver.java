@@ -11,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
@@ -112,16 +113,22 @@ public final class ContainerFilterResolver {
 
     private static boolean canResolveLive(ServerLevel level, List<BlockPos> positions) {
         for (BlockPos pos : positions) {
-            if (!level.hasChunkAt(pos)) {
+            if (!canObserveEntities(level, pos)) {
                 return false;
             }
             for (Direction direction : Direction.values()) {
-                if (!level.hasChunkAt(pos.relative(direction))) {
+                if (!canObserveEntities(level, pos.relative(direction))) {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    public static boolean canObserveEntities(ServerLevel level, BlockPos position) {
+        var chunk = level.getChunkSource().getChunkNow(position.getX() >> 4, position.getZ() >> 4);
+        return chunk != null && chunk.getFullStatus().isOrAfter(FullChunkStatus.FULL)
+                && level.areEntitiesLoaded(ChunkPos.asLong(position));
     }
 
     private static void invalidateAround(ServerLevel level, BlockPos changedPos) {

@@ -44,7 +44,7 @@ public final class SettlementDepotService {
     }
 
     public static void observeRules(ServerLevel level, SettlementDepot depot) {
-        AssignedStorageService.observedContainerRules(level, depot.position()).ifPresent(depot::observeRules);
+        SettlementDepotRules.observe(level, depot);
     }
 
     public static void restoreBinding(ServerLevel level, SettlementDepotBlockEntity block) {
