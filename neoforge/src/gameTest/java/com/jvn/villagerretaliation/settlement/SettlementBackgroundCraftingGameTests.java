@@ -39,14 +39,18 @@ public final class SettlementBackgroundCraftingGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
     public static void unloadedCraftsmanMakesAndDeliversChestFromRealLogs(GameTestHelper helper) {
         fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             fixture.supply().setItem(0, new ItemStack(Items.OAK_LOG, 2));
             SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 200L);
             helper.assertTrue(fixture.supply().isEmpty(), "the two real logs are consumed by intermediate plank recipes");
             helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 1, "one chest is held by the absent worker");
             helper.assertValueEqual(carried(helper, fixture, Items.OAK_PLANKS), 0, "exact intermediate batches leave no extra planks");
+            double practice = SettlementPracticeGameTests.xp(profile);
+            helper.assertTrue(practice > 0.0D, "successful crafting earns practice");
             SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 400L);
             helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.CHEST)), 1, "the actual output depot receives the chest");
             helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 0, "delivered output is removed from carried stock");
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), practice, "depositing crafted output grants no second practice award");
             helper.assertFalse(helper.getLevel().hasChunkAt(fixture.town().center()), "crafting and delivery do not load the town");
         });
     }
@@ -54,6 +58,7 @@ public final class SettlementBackgroundCraftingGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
     public static void backgroundCakeCraftReturnsEveryMilkBucket(GameTestHelper helper) {
         fixture(helper, SettlementAreaType.KITCHEN, Items.CAKE, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             fixture.supply().setItem(0, new ItemStack(Items.MILK_BUCKET));
             fixture.supply().setItem(1, new ItemStack(Items.MILK_BUCKET));
             fixture.supply().setItem(2, new ItemStack(Items.MILK_BUCKET));
@@ -64,6 +69,7 @@ public final class SettlementBackgroundCraftingGameTests {
             helper.assertTrue(fixture.supply().isEmpty(), "the cake consumes exactly the actual ingredients");
             helper.assertValueEqual(carried(helper, fixture, Items.CAKE), 1, "the kitchen produces a cake");
             helper.assertValueEqual(carried(helper, fixture, Items.BUCKET), 3, "all three recipe container remainders survive");
+            helper.assertTrue(SettlementPracticeGameTests.xp(profile) > 0.0D, "completed kitchen crafting earns cooking practice");
         });
     }
 

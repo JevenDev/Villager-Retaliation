@@ -109,6 +109,7 @@ public final class SettlementFurnaceGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
     public static void unloadedSmithSuppliesSmeltsAndDeliversRealOre(GameTestHelper helper) {
         fixture(helper, false, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             fixture.supply().setItem(0, new ItemStack(Items.RAW_IRON, 2));
             fixture.supply().setItem(1, new ItemStack(Items.COAL));
             for (int now = 200; now <= 1_200; now += 200) {
@@ -122,12 +123,14 @@ public final class SettlementFurnaceGameTests {
                     helper.getLevel().registryAccess(), () -> { });
             helper.assertValueEqual(restored.furnaces().size(), 1, "the furnace survives a settlement save");
             helper.assertTrue(restored.furnaces().values().iterator().next().pending(), "unloaded changes await their physical block");
+            helper.assertTrue(SettlementPracticeGameTests.xp(profile) > 0.0D, "collected smelting output earns smithing practice");
         });
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
     public static void unloadedCookUsesSmokerAndReturnsTheFuelBucket(GameTestHelper helper) {
         fixture(helper, true, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             fixture.supply().setItem(0, new ItemStack(Items.POTATO, 2));
             fixture.supply().setItem(1, new ItemStack(Items.LAVA_BUCKET));
             for (int now = 200; now <= 1_200; now += 200) {
@@ -136,12 +139,14 @@ public final class SettlementFurnaceGameTests {
             helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.BAKED_POTATO)), 2, "the kitchen delivers cooked food");
             helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.BUCKET)), 1, "the fuel bucket is returned once");
             helper.assertTrue(fixture.supply().isEmpty(), "food and fuel are not invented");
+            helper.assertTrue(SettlementPracticeGameTests.xp(profile) > 0.0D, "collected cooked food earns practice");
         });
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
     public static void furnaceWorkersRespectSourceRulesAndFullCarriedOutput(GameTestHelper helper) {
         fixture(helper, false, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             ItemStack rule = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
             VillagerItemFilterData.setEntry(rule, 0, new ItemStack(Items.RAW_IRON));
             VillagerFilterPolicy.setDirection(rule, VillagerFilterPolicy.TransferDirection.PROVIDE);
@@ -162,6 +167,7 @@ public final class SettlementFurnaceGameTests {
             SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 600L);
             helper.assertTrue(fixture.machine().items(helper.getLevel().registryAccess()).get(2).is(Items.IRON_INGOT),
                     "a full worker leaves the finished item in its finite furnace slot");
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), 0.0D, "supply collection and blocked output grant no practice");
         });
     }
 
@@ -285,6 +291,20 @@ public final class SettlementFurnaceGameTests {
             level.setDayTime(dayTime);
         }
         helper.succeed();
+    }
+
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
+    public static void collectingAFurnaceFuelRemainderDoesNotGrantProductionPractice(GameTestHelper helper) {
+        fixture(helper, true, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
+            var items = fixture.machine().items(helper.getLevel().registryAccess());
+            items.set(1, new ItemStack(Items.BUCKET));
+            fixture.machine().updateItems(helper.getLevel(), items);
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 200L);
+            helper.assertTrue(fixture.machine().items(helper.getLevel().registryAccess()).get(1).isEmpty(), "the real fuel bucket was collected");
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), 0.0D, "collecting a container grants no production practice");
+        });
     }
 
     private record Fixture(SettlementRecord town, SettlementDepot supply, SettlementDepot output,

@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.settlement;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -56,6 +57,9 @@ final class SettlementBackgroundHauling {
             source.removeItem(slot, accepted);
             moved += accepted;
         }
+        if (moved > 0) {
+            worker.practice(level, HiredWorkPractice.courier(moved, Math.sqrt(source.position().distSqr(destination.position()))));
+        }
         worker.status(moved > 0 ? "delivered" : "storage_full");
     }
 
@@ -90,6 +94,9 @@ final class SettlementBackgroundHauling {
                 int moved = count - remainder.getCount();
                 cargo.shrink(moved);
                 worker.updateInventory(level.registryAccess(), items);
+                if (courier && moved > 0) {
+                    worker.practice(level, HiredWorkPractice.courier(moved, Math.sqrt(worker.position().distSqr(destination.position()))));
+                }
                 worker.status(moved > 0 ? "delivered" : "storage_full");
                 return true;
             }

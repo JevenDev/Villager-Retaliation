@@ -177,6 +177,7 @@ public final class SettlementBackgroundBrewingGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_brewing")
     public static void unloadedBrewerFillsBottlesCompletesExactOrderAndDelivers(GameTestHelper helper) {
         fixture(helper, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             fixture.worker().brewingOrder(order("potion", 4, false));
             supply(fixture, 4, 2);
             run(helper, fixture, 200, 8_000);
@@ -192,6 +193,10 @@ public final class SettlementBackgroundBrewingGameTests {
             helper.assertTrue(restored.brewingStands().values().iterator().next().pending(), "unloaded work awaits its physical stand");
             helper.assertValueEqual(restored.surveys().get(fixture.area().id()).waterSources(), List.of(fixture.town().center().east()),
                     "the observed source survives saving without loading water");
+            double practice = SettlementPracticeGameTests.xp(profile);
+            helper.assertTrue(practice > 0.0D, "completed potion batches earn brewing practice");
+            run(helper, fixture, 8_200, 9_000);
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), practice, "completed orders cannot grant repeated practice");
         });
     }
 
@@ -232,6 +237,7 @@ public final class SettlementBackgroundBrewingGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_brewing")
     public static void fullWorkerKeepsPotionsInStandAndRestoresCompletedOrderOnlyOnce(GameTestHelper helper) {
         fixture(helper, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             var level = helper.getLevel();
             fixture.worker().brewingOrder(order("potion", 3, false));
             fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
@@ -243,6 +249,7 @@ public final class SettlementBackgroundBrewingGameTests {
             fixture.worker().updateInventory(level.registryAccess(), inventory);
             run(helper, fixture, 200, 4_000);
             helper.assertValueEqual(fixture.worker().status(), "output_full", "finished potions wait for actual carried space");
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), 0.0D, "supply trips and blocked output cannot earn brewing practice");
             helper.assertValueEqual(SettlementBrewingOrder.read(fixture.worker().settings()).amount(), 3, "uncollected potions do not complete the order");
             var expected = PotionContents.createItemStack(Items.POTION, Potions.HEALING);
             helper.assertTrue(ItemStack.isSameItemSameComponents(fixture.machine().items(level.registryAccess()).get(0), expected),

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -39,31 +40,10 @@ public final class HiredWorkSkillGrowthService {
         }
 
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
-        boolean migrated = migrateLegacyProgress(profile, workState, level.getGameTime());
-        if (!VillagerRetaliationConfig.ENABLE_HIRED_WORK_SKILL_GROWTH.get()
-                || practice == null
-                || practice.isEmpty()) {
-            if (migrated) {
-                VillagerProfileSavedData.get(level).setDirty();
-            }
-            return VillagerSkillProgressionResult.NONE;
+        if (migrateLegacyProgress(profile, workState, level.getGameTime())) {
+            VillagerProfileSavedData.get(level).setDirty();
         }
-
-        double xpPerUnit = HiredVillagerRoleSettings.skillGrowthAmount(role);
-        if (!Double.isFinite(xpPerUnit) || xpPerUnit <= 0.0D) {
-            if (migrated) {
-                VillagerProfileSavedData.get(level).setDirty();
-            }
-            return VillagerSkillProgressionResult.NONE;
-        }
-        long dayIndex = Math.floorDiv(level.getServer().overworld().getDayTime(), 24_000L);
-        VillagerSkillProgressionResult result = VillagerSkillProgressionService.apply(
-                profile, normalizeRolePractice(role, practice), dayIndex, level.getGameTime(), xpPerUnit);
-        if (!migrated && !result.profileChanged()) {
-            return result;
-        }
-
-        VillagerProfileSavedData.get(level).setDirty();
+        VillagerSkillProgressionResult result = applyPractice(level, profile, role, practice);
         if (hirer != null && result.increased()) {
             VillagerReputationNetworking.sendProfile(hirer, villager, profile);
             sendFeedback(hirer, villager, result.increases().getFirst().skill());
@@ -71,6 +51,33 @@ public final class HiredWorkSkillGrowthService {
                     .filter(increase -> increase.newValue() >= VillagerSkillSet.MAX_VALUE)
                     .forEach(increase -> VillagerReputationAdvancements.onSkillMaxedThroughWork(
                             hirer, villager, increase.skill()));
+        }
+        return result;
+    }
+
+    public static VillagerSkillProgressionResult onBackgroundPractice(
+            ServerLevel level, UUID villager, HiredVillagerRole role, List<VillagerSkillPractice> practice) {
+        if (level == null || villager == null || role == null) {
+            return VillagerSkillProgressionResult.NONE;
+        }
+        var profile = VillagerProfileSavedData.get(level).get(villager);
+        return profile == null ? VillagerSkillProgressionResult.NONE : applyPractice(level, profile, role, practice);
+    }
+
+    private static VillagerSkillProgressionResult applyPractice(
+            ServerLevel level, VillagerProfile profile, HiredVillagerRole role, List<VillagerSkillPractice> practice) {
+        if (!VillagerRetaliationConfig.ENABLE_HIRED_WORK_SKILL_GROWTH.get() || practice == null || practice.isEmpty()) {
+            return VillagerSkillProgressionResult.NONE;
+        }
+        double xpPerUnit = HiredVillagerRoleSettings.skillGrowthAmount(role);
+        if (!Double.isFinite(xpPerUnit) || xpPerUnit <= 0.0D) {
+            return VillagerSkillProgressionResult.NONE;
+        }
+        long dayIndex = Math.floorDiv(level.getServer().overworld().getDayTime(), 24_000L);
+        var result = VillagerSkillProgressionService.apply(
+                profile, normalizeRolePractice(role, practice), dayIndex, level.getGameTime(), xpPerUnit);
+        if (result.profileChanged()) {
+            VillagerProfileSavedData.get(level).setDirty();
         }
         return result;
     }

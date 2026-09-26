@@ -30,6 +30,7 @@ public final class SettlementBackgroundHaulingGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_hauling")
     public static void unloadedCouriersMoveRealStockWithoutLoadingTheTown(GameTestHelper helper) {
         fixture(helper, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             fixture.source().setItem(0, new ItemStack(Items.IRON_INGOT, 20));
             fixture.town().setDepotStockTarget(fixture.town().leader(), fixture.source().id(), new ItemStack(Items.IRON_INGOT), 13);
             fixture.town().setDepotStockTarget(fixture.town().leader(), fixture.destination().id(), new ItemStack(Items.IRON_INGOT), 7);
@@ -39,6 +40,10 @@ public final class SettlementBackgroundHaulingGameTests {
             helper.assertValueEqual(fixture.source().getItem(0).getCount(), 13, "the source reserve is protected");
             helper.assertFalse(helper.getLevel().hasChunkAt(fixture.town().center()), "background hauling never loads world chunks");
             helper.assertValueEqual(fixture.worker().status(), "delivered", "the saved worker reports the completed delivery");
+            double practice = SettlementPracticeGameTests.xp(profile);
+            helper.assertTrue(practice > 0.0D, "completed courier delivery earns practice");
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 400L);
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), practice, "a satisfied request cannot grant another award");
         });
     }
 
@@ -98,6 +103,7 @@ public final class SettlementBackgroundHaulingGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_hauling")
     public static void carriedCargoAndEquipmentReturnFromBackgroundExactlyOnce(GameTestHelper helper) {
         fixture(helper, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             fixture.town().configureDepot(fixture.town().leader(), fixture.destination().id(), SettlementDepotPurpose.GENERAL, 9);
             var inventory = HiredJobInventory.getJobInventory(fixture.courier());
             ItemStack helmet = new ItemStack(Items.IRON_HELMET);
@@ -110,6 +116,8 @@ public final class SettlementBackgroundHaulingGameTests {
             fixture.courier().saveWithoutId(staleEntity);
             SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 200L);
             helper.assertValueEqual(fixture.destination().count(stack -> stack.is(Items.IRON_INGOT)), 7, "real carried cargo reaches the depot");
+            double practice = SettlementPracticeGameTests.xp(profile);
+            helper.assertTrue(practice > 0.0D, "delivered carried cargo earns courier practice");
             Villager returning = EntityType.VILLAGER.create(helper.getLevel());
             returning.load(staleEntity);
             SettlementBackgroundService.onActive(returning);
@@ -120,6 +128,7 @@ public final class SettlementBackgroundHaulingGameTests {
             SettlementBackgroundService.onActive(returning);
             helper.assertTrue(restoredInventory.hasOutput(stack -> stack.is(Items.GOLD_INGOT)), "an already applied revision cannot overwrite later inventory changes");
             helper.assertValueEqual(fixture.destination().count(stack -> stack.is(Items.IRON_INGOT)), 7, "returning never repeats the completed delivery");
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), practice, "restoring inventory cannot replay skill growth");
         });
     }
 

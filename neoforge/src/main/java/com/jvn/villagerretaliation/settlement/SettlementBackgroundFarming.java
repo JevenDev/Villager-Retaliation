@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.settlement;
 import com.jvn.villagerretaliation.interaction.work.FarmerHoeRequirement;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -58,6 +59,7 @@ final class SettlementBackgroundFarming {
                 updated.get(HiredJobInventory.MAINHAND_SLOT).hurtAndBreak(1, level, (net.minecraft.world.entity.LivingEntity) null, item -> {});
                 plot.change(Blocks.FARMLAND.defaultBlockState(), crop);
                 commit(level, worker, plot, updated);
+                worker.practice(level, HiredWorkPractice.farming("till"));
                 worker.status("tilled");
                 return;
             }
@@ -115,6 +117,7 @@ final class SettlementBackgroundFarming {
             }
             plot.change(plot.soil(), seed.isEmpty() ? Blocks.AIR.defaultBlockState() : plantFor(seed));
             commit(level, worker, plot, updated);
+            worker.practice(level, HiredWorkPractice.farming(harvest ? seed.isEmpty() ? "harvest" : "harvest_replant" : "plant"));
             worker.status(harvest ? "harvested" : "planted");
             return;
         }

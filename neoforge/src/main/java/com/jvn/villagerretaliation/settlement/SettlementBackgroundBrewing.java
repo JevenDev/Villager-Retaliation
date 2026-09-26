@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -88,6 +90,8 @@ final class SettlementBackgroundBrewing {
                     worker.brewingOrder(collected >= order.amount() ? null
                             : new SettlementBrewingOrder(order.item(), order.potion(), order.amount() - collected, false));
                 }
+                worker.practice(level, HiredWorkPractice.batch(VillagerSkill.MEDICINE, "hired:brewing:batch",
+                        collected, route.output().getItem().hashCode()));
                 worker.status("brewed");
                 return;
             }

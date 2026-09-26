@@ -6,6 +6,9 @@ import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
+import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
+import com.jvn.villagerretaliation.skill.HiredWorkSkillGrowthService;
+import com.jvn.villagerretaliation.skill.VillagerSkillPractice;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -106,6 +109,7 @@ public final class SettlementWorkerState {
         this.role = duty.area().type().role();
         this.position = villager.blockPosition().immutable();
         this.inventory = HiredJobInventory.getJobInventory(villager).captureSnapshot();
+        HiredWorkSkillGrowthService.onPractice(level, villager, null, this.role, HiredWorkStateStore.state(villager), List.of());
         this.settings = HiredWorkStateStore.state(villager).copy();
         this.aptitude = HiredVillagerRoles.roleScore(level, villager, this.role);
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
@@ -149,6 +153,13 @@ public final class SettlementWorkerState {
         this.progress -= cost;
         this.version++;
         return true;
+    }
+
+    void practice(ServerLevel level, List<VillagerSkillPractice> practice) {
+        var result = HiredWorkSkillGrowthService.onBackgroundPractice(level, this.id, this.role, practice);
+        if (result.increased()) {
+            this.aptitude = HiredVillagerRoles.roleScore(VillagerProfileSavedData.get(level).get(this.id).skills(), this.role);
+        }
     }
 
     void status(String status) {

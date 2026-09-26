@@ -6,6 +6,8 @@ import com.jvn.villagerretaliation.interaction.work.HiredProcessingRecipeFilter;
 import com.jvn.villagerretaliation.interaction.work.SmeltingWorker;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.item.VillagerFilterMatcher;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -51,10 +53,16 @@ final class SettlementBackgroundSmelting {
                     worker.status("collecting");
                     return true;
                 }
+                ItemStack collected = items.get(collectSlot);
                 items.set(collectSlot, ItemStack.EMPTY);
                 machine.updateItems(level, items);
                 worker.updateInventory(level.registryAccess(), carried);
                 SettlementFurnaceService.applyLoaded(level, machine);
+                if (collectSlot == 2) {
+                    boolean cooking = worker.role() == HiredVillagerRole.COOK;
+                    worker.practice(level, HiredWorkPractice.batch(cooking ? VillagerSkill.COOKING : VillagerSkill.SMITHING,
+                            cooking ? "hired:cooking:batch" : "hired:smelting:batch", collected.getCount(), collected.getItem().hashCode()));
+                }
                 worker.status("collected");
                 return true;
             }

@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.interaction.work.CraftsmanWorker;
 import com.jvn.villagerretaliation.interaction.work.CookingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredProcessingRecipeFilter;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +103,9 @@ final class SettlementBackgroundCrafting {
                 if (worker.role() == HiredVillagerRole.CRAFTSMAN) {
                     CraftsmanWorker.advanceCursor(worker.settings(), targets, target.slot());
                 }
+                boolean cooking = worker.role() == HiredVillagerRole.COOK;
+                worker.practice(level, HiredWorkPractice.batch(cooking ? VillagerSkill.COOKING : VillagerSkill.CRAFTING,
+                        cooking ? "hired:cooking:craft" : "hired:craftsman:recipe", output.getCount(), output.getItem().hashCode()));
                 worker.status("crafted");
                 return;
             }

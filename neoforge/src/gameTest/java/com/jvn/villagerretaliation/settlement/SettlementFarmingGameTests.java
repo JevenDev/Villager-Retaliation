@@ -36,13 +36,17 @@ public final class SettlementFarmingGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
     public static void unloadedFarmerHarvestsActualWheatAndKeepsAPlantingReserve(GameTestHelper helper) {
         fixture(helper, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             fixture.supply().setItem(0, new ItemStack(Items.WHEAT_SEEDS));
             SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 200L);
             helper.assertValueEqual(((CropBlock) fixture.plot().crop().getBlock()).getAge(fixture.plot().crop()), 0,
                     "one harvested mature crop becomes a newly planted crop");
             helper.assertValueEqual(carried(helper, fixture, Items.WHEAT), 1, "the real crop loot produces one wheat");
             helper.assertTrue(fixture.plot().pending(), "the harvested block awaits its unloaded chunk");
+            double practice = SettlementPracticeGameTests.xp(profile);
+            helper.assertTrue(practice > 0.0D, "a completed harvest and replant earns farming practice");
             SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 400L);
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), practice, "depositing a farmer\'s output cannot grant extra practice");
             helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.WHEAT)), 1, "the worker deposits real harvested wheat");
             helper.assertFalse(helper.getLevel().hasChunkAt(fixture.plot().position()), "crop loot and depot transfers do not load the field");
             helper.assertTrue(((CropBlock) fixture.chunk().getBlockState(fixture.plot().position().above()).getBlock())
@@ -97,6 +101,7 @@ public final class SettlementFarmingGameTests {
     public static void fullInventoryLeavesMatureCropsAndSeedsUntouched(GameTestHelper helper) {
         fixture(helper, fixture -> {
             var level = helper.getLevel();
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
             fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
             var items = fixture.worker().items(level.registryAccess());
             for (int slot : fixture.worker().outputSlots()) items.set(slot, new ItemStack(Items.STONE, 64));
@@ -106,6 +111,7 @@ public final class SettlementFarmingGameTests {
             SettlementBackgroundService.update(level, fixture.town(), 200L);
             helper.assertTrue(((CropBlock) fixture.plot().crop().getBlock()).isMaxAge(fixture.plot().crop()), "a full worker leaves the real mature crop unharvested");
             helper.assertValueEqual(fixture.worker().status(), "output_full", "the worker reports finite inventory capacity");
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), 0.0D, "an uncompleted harvest grants no practice");
             helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 1, "failed harvesting does not spend a depot seed");
         });
     }
@@ -342,6 +348,46 @@ public final class SettlementFarmingGameTests {
             } finally {
                 level.getGameRules().getRule(GameRules.RULE_RANDOMTICKING).set(previous, level.getServer());
             }
+        });
+    }
+
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void successfulBackgroundPracticeUpdatesWorkerAptitude(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
+            var primary = com.jvn.villagerretaliation.interaction.HiredVillagerRoles.primarySkill(fixture.worker().role());
+            profile.setSkillPracticeXp(primary,
+                    com.jvn.villagerretaliation.skill.VillagerSkillProgressionService.requiredXp(40) - 0.000_001D,
+                    helper.getLevel().getGameTime());
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 200L);
+            helper.assertTrue(profile.skills().get(primary) > 40, "completed farming can cross a real skill threshold");
+            helper.assertValueEqual(fixture.worker().aptitude(),
+                    com.jvn.villagerretaliation.interaction.HiredVillagerRoles.roleScore(profile.skills(), fixture.worker().role()),
+                    "the background worker uses its newly earned aptitude");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void legacyWorkPracticeMigratesBeforeWorkerSnapshotAndCannotReplayOnReturn(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var profile = SettlementPracticeGameTests.prepare(helper, fixture.worker());
+            var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(fixture.villager());
+            var legacy = new net.minecraft.nbt.CompoundTag();
+            legacy.putDouble("farming", 0.5D);
+            state.put("HiredWorkSkillGrowthProgress", legacy);
+            var duty = SettlementWorkforceService.duty(fixture.villager()).orElseThrow();
+            fixture.worker().observe(level, fixture.villager(), duty, 0L);
+            helper.assertFalse(state.contains("HiredWorkSkillGrowthProgress"), "capture removes migrated legacy state from the real worker");
+            helper.assertFalse(fixture.worker().settings().contains("HiredWorkSkillGrowthProgress"), "the snapshot cannot repeat legacy migration");
+            double practice = SettlementPracticeGameTests.xp(profile);
+            helper.assertTrue(practice > 0.0D, "capture preserves legacy fractional practice");
+            fixture.worker().restore(fixture.villager());
+            com.jvn.villagerretaliation.skill.HiredWorkSkillGrowthService.onPractice(
+                    level, fixture.villager(), null, fixture.worker().role(), state, List.of());
+            fixture.worker().observe(level, fixture.villager(), duty, 200L);
+            helper.assertValueEqual(SettlementPracticeGameTests.xp(profile), practice, "return and recapture cannot migrate the same practice twice");
         });
     }
 
