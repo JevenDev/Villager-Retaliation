@@ -103,7 +103,7 @@ public final class SettlementPopulationGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100)
-    public static void approvedUnloadedArrivalPersistsWithoutLoadingTheTown(GameTestHelper helper) {
+    public static void approvedUnloadedArrivalJoinsTheCensusWithoutLoadingTheTown(GameTestHelper helper) {
         var level = helper.getLevel();
         BlockPos center = new BlockPos(5_000_000, 64, 5_000_000);
         ServerPlayer leader = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "RemoteLeader"));
@@ -125,12 +125,15 @@ public final class SettlementPopulationGameTests {
         helper.assertTrue(level.getEntity(applicant.id()) == null, "arrival waits for a safe loaded position");
         var restored = SettlementSavedData.load(SettlementSavedData.get(level).save(new CompoundTag(), level.registryAccess()),
                 level.registryAccess()).get(id).orElseThrow();
-        helper.assertValueEqual(restored.applicants().get(applicant.id()).approvedBy().orElseThrow(), leader.getUUID(),
-                "queued approval survives reload");
+        helper.assertTrue(restored.arrivals().containsKey(applicant.id()), "the pending world entity survives reload");
+        helper.assertTrue(restored.residents().containsKey(applicant.id()), "the admitted resident receives background care");
+        helper.assertTrue(town.applicants().isEmpty(), "completed admission consumes the application");
+        helper.assertValueEqual(registry.residentRoster(id, level.getGameTime()).size(), 1, "the admitted resident occupies the vacant bed");
+        helper.assertFalse(SettlementPopulationService.canGrow(level, town), "unloaded arrivals count toward housing capacity");
         town.transferLeadership(leader.getUUID(), UUID.randomUUID());
-        helper.assertFalse(SettlementPopulationService.arrive(level, town, town.applicants().get(applicant.id())),
-                "revoked staffing authority cannot complete an outstanding admission");
-        helper.assertTrue(town.applicants().get(applicant.id()).approvedBy().isEmpty(), "the new leadership can review the pending applicant");
+        SettlementArrivalService.update(level, town);
+        helper.assertTrue(town.arrivals().containsKey(applicant.id()), "a completed admission survives a leadership transfer");
+        helper.assertFalse(level.hasChunkAt(center), "reconciliation also leaves the remote town unloaded");
         helper.succeed();
     }
 
@@ -171,7 +174,7 @@ public final class SettlementPopulationGameTests {
         helper.succeed();
     }
 
-    private static Fixture fixture(GameTestHelper helper) {
+    static Fixture fixture(GameTestHelper helper) {
         var level = helper.getLevel();
         BlockPos center = helper.absolutePos(new BlockPos(1, 2, 1));
         ServerPlayer leader = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "PopulationLeader"));
@@ -201,6 +204,6 @@ public final class SettlementPopulationGameTests {
         return new Fixture(town, home, depot, leader);
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea home, SettlementDepot depot, ServerPlayer leader) {
+    record Fixture(SettlementRecord town, SettlementArea home, SettlementDepot depot, ServerPlayer leader) {
     }
 }

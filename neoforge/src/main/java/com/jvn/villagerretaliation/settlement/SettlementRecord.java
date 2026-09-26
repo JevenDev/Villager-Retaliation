@@ -35,6 +35,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
     private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
+    private final Map<UUID, SettlementArrival> arrivals = new LinkedHashMap<>();
     private final Map<UUID, SettlementResidentState> residents = new LinkedHashMap<>();
     private final Map<UUID, SettlementDeparture> departures = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
@@ -232,13 +233,34 @@ public final class SettlementRecord {
     }
 
     void removeResident(UUID resident) {
-        if (this.residents.remove(resident) != null) {
+        boolean removed = this.residents.remove(resident) != null;
+        if (!this.departures.containsKey(resident) && this.arrivals.remove(resident) != null) {
+            removed = true;
+        }
+        if (removed) {
             changed();
         }
     }
 
     public Map<UUID, SettlementApplicant> applicants() {
         return Collections.unmodifiableMap(this.applicants);
+    }
+
+    public Map<UUID, SettlementArrival> arrivals() {
+        return Collections.unmodifiableMap(this.arrivals);
+    }
+
+    void recordArrival(SettlementArrival arrival) {
+        if (this.arrivals.putIfAbsent(arrival.id(), arrival) != null) {
+            throw new IllegalArgumentException("Arrival duplicates a resident identity");
+        }
+        changed();
+    }
+
+    void removeArrival(UUID id) {
+        if (this.arrivals.remove(id) != null) {
+            changed();
+        }
     }
 
     public long nextApplicantAt() {
@@ -630,6 +652,9 @@ public final class SettlementRecord {
         ListTag applicantTags = new ListTag();
         this.applicants.values().forEach(applicant -> applicantTags.add(applicant.save()));
         tag.put("Applicants", applicantTags);
+        ListTag arrivalTags = new ListTag();
+        this.arrivals.values().forEach(arrival -> arrivalTags.add(arrival.save()));
+        tag.put("Arrivals", arrivalTags);
         return tag;
     }
 
@@ -705,6 +730,13 @@ public final class SettlementRecord {
             var departure = SettlementDeparture.load((CompoundTag) raw);
             if (record.departures.putIfAbsent(departure.id(), departure) != null) {
                 throw new IllegalArgumentException("Departure duplicates a resident identity");
+            }
+        }
+        for (Tag raw : tag.getList("Arrivals", Tag.TAG_COMPOUND)) {
+            var arrival = SettlementArrival.load((CompoundTag) raw);
+            if (!record.residents.containsKey(arrival.id()) && !record.departures.containsKey(arrival.id())
+                    || record.arrivals.putIfAbsent(arrival.id(), arrival) != null) {
+                throw new IllegalArgumentException("Arrival is duplicated or has no resident care");
             }
         }
         if (tag.contains("NextApplicantAt")) {

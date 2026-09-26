@@ -203,7 +203,8 @@ public final class SettlementManagementService {
                     profession, villager == null ? !member.adult() : villager.isBaby(), presence, position, town.duties().get(member.id()),
                     villager != null ? VillagerRecoveryService.captureRecoveryState(villager).food() : care == null ? -1 : care.food(),
                     villager != null ? villager.getHealth() : care == null ? -1.0F : care.health(),
-                    !town.duties().containsKey(member.id()) ? "unassigned"
+                    town.arrivals().containsKey(member.id()) ? "awaiting_arrival"
+                            : !town.duties().containsKey(member.id()) ? "unassigned"
                             : town.workerSettings().containsKey(member.id()) && !town.workerSettings().get(member.id()).enabled() ? "paused"
                             : worker == null ? "active" : worker.status(),
                     villager == null || villager.isBaby() ? List.of() : HiredVillagerRoles.availableRoles(level, villager),

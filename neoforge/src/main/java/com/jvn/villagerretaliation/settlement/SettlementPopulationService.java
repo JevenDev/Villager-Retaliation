@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.settlement;
 
-import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
@@ -9,7 +8,6 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -19,7 +17,6 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 
 public final class SettlementPopulationService {
     private static final List<VillagerProfession> PROFESSIONS = List.of(VillagerProfession.FARMER,
@@ -43,6 +40,7 @@ public final class SettlementPopulationService {
                 if (level.hasChunkAt(town.center()) && town.applicants().values().stream().anyMatch(applicant -> applicant.approvedBy().isPresent())) {
                     town.areas().values().forEach(area -> SettlementBuildingService.refresh(level, town, area));
                 }
+                SettlementArrivalService.update(level, town);
                 for (SettlementApplicant applicant : List.copyOf(town.applicants().values())) {
                     if (applicant.approvedBy().isPresent()) {
                         arrive(level, town, applicant);
@@ -139,29 +137,26 @@ public final class SettlementPopulationService {
             }
             return false;
         }
-        if (level.getEntity(applicant.id()) instanceof Villager existing) {
-            if (VillageAllegianceApi.canonicalPrimary(level, existing).filter(town.id()::equals).isPresent()) {
-                town.removeApplicant(applicant.id());
-                return true;
+        for (ServerLevel dimension : level.getServer().getAllLevels()) {
+            var existing = dimension.getEntity(applicant.id());
+            if (existing != null) {
+                if (existing instanceof Villager
+                        && VillageAllegianceApi.canonicalPrimary(level, existing).filter(town.id()::equals).isPresent()) {
+                    town.removeApplicant(applicant.id());
+                    return true;
+                }
+                return false;
             }
-            return false;
         }
         if (!canGrow(level, town)) {
             return false;
         }
         Villager resident = EntityType.VILLAGER.create(level);
         resident.load(applicant.entity());
-        Optional<BlockPos> arrival = arrivalPosition(level, town, resident);
-        if (arrival.isEmpty()) {
-            return false;
-        }
-        resident.setPos(Vec3.atBottomCenterOf(arrival.get()));
-        VillageAllegianceApi.assignKnown(level, resident, town.id(), AllegianceAssignmentSource.EXPLICIT_API);
-        if (!level.addFreshEntity(resident)) {
-            VillageAllegianceRegistrySavedData.get(level).removeResident(town.id(), resident.getUUID());
-            return false;
-        }
+        resident.setPos(town.center().getCenter());
+        SettlementArrivalService.admit(level, town, resident);
         town.removeApplicant(applicant.id());
+        SettlementArrivalService.materialize(level, town, resident.getUUID());
         return true;
     }
 
@@ -195,23 +190,5 @@ public final class SettlementPopulationService {
     private static int familyFoodPoints(ItemStack stack) {
         return stack.is(Items.BREAD) ? 4
                 : stack.is(Items.CARROT) || stack.is(Items.POTATO) || stack.is(Items.BEETROOT) ? 1 : 0;
-    }
-
-    private static Optional<BlockPos> arrivalPosition(ServerLevel level, SettlementRecord town, Villager resident) {
-        for (BlockPos offset : BlockPos.betweenClosed(-4, -2, -4, 4, 3, 4)) {
-            BlockPos pos = town.center().offset(offset);
-            if (!level.hasChunkAt(pos) || !level.getWorldBorder().isWithinBounds(pos)
-                    || !level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), net.minecraft.core.Direction.UP)
-                    || !level.getFluidState(pos).isEmpty()) {
-                continue;
-            }
-            var box = resident.getDimensions(resident.getPose()).makeBoundingBox(Vec3.atBottomCenterOf(pos));
-            if (level.hasChunkAt(BlockPos.containing(box.minX, box.minY, box.minZ))
-                    && level.hasChunkAt(BlockPos.containing(box.maxX, box.maxY, box.maxZ))
-                    && level.getFluidState(pos.above()).isEmpty() && level.noCollision(resident, box)) {
-                return Optional.of(pos);
-            }
-        }
-        return Optional.empty();
     }
 }

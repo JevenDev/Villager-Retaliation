@@ -2494,6 +2494,7 @@
   "villagerretaliation.gui.settlement.requirement.workshop": "Staffed workshop",
   "villagerretaliation.gui.settlement.requirement.trading_post": "Staffed trading post",
   "villagerretaliation.gui.settlement.work.unassigned": "Unassigned",
+  "villagerretaliation.gui.settlement.work.awaiting_arrival": "Awaiting arrival",
   "villagerretaliation.gui.settlement.work.active": "Working",
   "villagerretaliation.gui.settlement.work.paused": "Work paused",
   "villagerretaliation.gui.settlement.work.idle": "Idle",
