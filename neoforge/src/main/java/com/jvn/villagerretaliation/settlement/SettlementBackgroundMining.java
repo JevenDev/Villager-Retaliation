@@ -64,6 +64,8 @@ final class SettlementBackgroundMining {
             state.remove(DEPOSIT);
             var budget = new SettlementWorkBudget(worker, elapsed, multiplier);
             if (enter(worker, mine, area, budget)) work(level, worker, mine, owner, context, depots, budget);
+        } catch (SettlementMiningView.Unavailable unavailable) {
+            worker.status("excavation_needs_observation");
         } finally {
             var snapshot = inventory.captureSnapshot();
             if (!snapshot.equals(worker.inventory()) || !before.equals(state)) worker.changed();
@@ -96,6 +98,7 @@ final class SettlementBackgroundMining {
                              HiredWorkContext context, List<SettlementDepot> depots, SettlementWorkBudget budget) {
         var routeBudget = new SettlementMiningRoutes.Budget();
         var mode = HiredMiningMode.fromState(context.state());
+        var view = new SettlementMiningView(level, mine);
         for (int action = 0; action < MAX_ACTIONS; action++) {
             var state = context.state();
             BlockPos origin = state.contains(POSITION) ? BlockPos.of(state.getLong(POSITION)) : worker.position();
@@ -103,6 +106,12 @@ final class SettlementBackgroundMining {
             if (!SettlementMiningRoutes.safe(mine, origin)) {
                 worker.status("no_safe_mining_route");
                 return;
+            }
+            Integer layer = mode.usesExcavationShaft() ? MiningBlockRules.currentExcavationLayer(mine, mine::observed, context) : null;
+            if (mode.usesExcavationShaft()) {
+                var support = SettlementMiningSupports.tick(level, worker, mine, view, owner, context, origin, layer, depots, budget, routeBudget);
+                if (support == SettlementMiningSupports.Result.PROGRESSED) continue;
+                if (support == SettlementMiningSupports.Result.WAITING) return;
             }
             boolean floorDeferred = false;
             if (mode.excavatesHorizontally() && com.jvn.villagerretaliation.interaction.work.mining.MiningHorizontalOptions.patchFloor(state)) {
@@ -114,6 +123,8 @@ final class SettlementBackgroundMining {
             var routes = SettlementMiningRoutes.forWorker(worker, mine, origin);
             var target = mode.excavatesHorizontally()
                     ? SettlementHorizontalExcavation.target(worker, mine, owner, origin, context, routes, routeBudget)
+                    : mode.usesExcavationShaft()
+                    ? SettlementVerticalExcavation.target(worker, mine, view, owner, origin, context, layer, routes, routeBudget)
                     : target(worker, mine, owner, context, routes, routeBudget);
             if (target == null) {
                 if (floorDeferred && worker.status().equals("excavation_complete")) worker.status("floor_unreachable");

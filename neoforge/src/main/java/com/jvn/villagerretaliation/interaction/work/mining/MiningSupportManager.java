@@ -20,6 +20,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
@@ -30,7 +31,7 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
 /** Plans, reaches, and places physical excavation infrastructure. */
-final class MiningSupportManager {
+public final class MiningSupportManager {
     private static final int TORCH_LAYER_INTERVAL = 5;
 
     private MiningSupportManager() {
@@ -111,7 +112,7 @@ final class MiningSupportManager {
         return context.inventory().canStoreSuppliesAfterDepositingOutputs(List.of(type.probeStack()));
     }
 
-    static boolean hasInventoryBacking(ServerLevel level, HiredWorkContext context, BackingNeed need) {
+    static boolean hasInventoryBacking(LevelReader level, HiredWorkContext context, BackingNeed need) {
         return context.inventory().hasOutput(
                 stack -> canUseBacking(level, need.backingPos(), need.supportFace(), stack));
     }
@@ -123,7 +124,7 @@ final class MiningSupportManager {
                 stack -> canUseBacking(level, need.backingPos(), need.supportFace(), stack)) > 0;
     }
 
-    static boolean canUseBacking(ServerLevel level, BlockPos pos, Direction supportFace, ItemStack stack) {
+    public static boolean canUseBacking(LevelReader level, BlockPos pos, Direction supportFace, ItemStack stack) {
         if (!(stack.getItem() instanceof BlockItem blockItem)
                 || blockItem.getBlock() instanceof FallingBlock) {
             return false;
@@ -132,23 +133,25 @@ final class MiningSupportManager {
         return !state.isAir()
                 && !state.liquid()
                 && !state.hasBlockEntity()
+                && state.getDestroySpeed(level, pos) >= 0.0F
                 && !HiredOreBlockTracker.isTrackedOre(state)
+                && !MiningSafety.isDamagingBlock(state)
                 && state.canSurvive(level, pos)
                 && state.isFaceSturdy(level, pos, supportFace);
     }
 
-    static boolean canPlace(ServerLevel level, BlockPos pos, BlockState state) {
+    public static boolean canPlace(LevelReader level, BlockPos pos, BlockState state) {
         return level.hasChunkAt(pos)
                 && level.getBlockState(pos).isAir()
                 && state.canSurvive(level, pos);
     }
 
-    static boolean canPrepareBacking(ServerLevel level, HiredWorkContext context, BlockPos pos, BlockState state) {
+    static boolean canPrepareBacking(LevelReader level, HiredWorkContext context, BlockPos pos, BlockState state) {
         BackingNeed need = backingNeed(level, context, pos, state);
         return need != null && hasInventoryBacking(level, context, need);
     }
 
-    static boolean canEventuallyPlace(ServerLevel level, HiredWorkContext context, BlockPos pos, BlockState state) {
+    public static boolean canEventuallyPlace(LevelReader level, HiredWorkContext context, BlockPos pos, BlockState state) {
         return canPlace(level, pos, state) || backingNeed(level, context, pos, state) != null;
     }
 
@@ -408,8 +411,8 @@ final class MiningSupportManager {
                 || hasStoredBacking(level, villager, need));
     }
 
-    private static BackingNeed backingNeed(
-            ServerLevel level,
+    public static BackingNeed backingNeed(
+            LevelReader level,
             HiredWorkContext context,
             BlockPos pos,
             BlockState state) {
@@ -452,7 +455,7 @@ final class MiningSupportManager {
                 && villager.getEyePosition().distanceToSqr(pos.getCenter()) <= HiredMoveToBlockFaceJob.MAX_REACH_SQR;
     }
 
-    private static boolean isTorchLayer(HiredWorkContext context, int y) {
+    public static boolean isTorchLayer(HiredWorkContext context, int y) {
         return y < context.workMax().getY()
                 && Math.floorMod(context.workMax().getY() - y, TORCH_LAYER_INTERVAL) == 0;
     }
@@ -463,7 +466,7 @@ final class MiningSupportManager {
         FAILED
     }
 
-    private static List<TorchPlacement> torchPlacements(HiredWorkContext context, int y) {
+    public static List<TorchPlacement> torchPlacements(HiredWorkContext context, int y) {
         int centerX = Math.floorDiv(context.workMin().getX() + context.workMax().getX(), 2);
         int centerZ = Math.floorDiv(context.workMin().getZ() + context.workMax().getZ(), 2);
         LinkedHashSet<TorchPlacement> placements = new LinkedHashSet<>();
@@ -474,7 +477,7 @@ final class MiningSupportManager {
         return new ArrayList<>(placements);
     }
 
-    record BackingNeed(BlockPos backingPos, Direction supportFace) {
+    public record BackingNeed(BlockPos backingPos, Direction supportFace) {
     }
 
     enum SupportType {
@@ -518,7 +521,7 @@ final class MiningSupportManager {
         abstract ItemStack probeStack();
     }
 
-    private record TorchPlacement(BlockPos pos, Direction facing) {
+    public record TorchPlacement(BlockPos pos, Direction facing) {
     }
 
     private record Placement(BlockPos pos, BlockState state, SupportType type) {

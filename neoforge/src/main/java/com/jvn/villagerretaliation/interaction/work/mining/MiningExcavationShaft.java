@@ -17,13 +17,14 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 
 /** Owns the persisted excavation shaft and all geometry derived from it. */
-final class MiningExcavationShaft {
+public final class MiningExcavationShaft {
     private static final String X_TAG = "ExcavationLadderX";
     private static final String Z_TAG = "ExcavationLadderZ";
     private static final String FACING_TAG = "ExcavationLadderFacing";
@@ -128,7 +129,7 @@ final class MiningExcavationShaft {
         return Math.abs(verticalDelta) > 1;
     }
 
-    static boolean hasCompleteRouteToLayer(ServerLevel level, HiredWorkContext context, int layerY) {
+    public static boolean hasCompleteRouteToLayer(LevelReader level, HiredWorkContext context, int layerY) {
         Shaft shaft = stored(context);
         Iterable<Shaft> possibleShafts = shaft == null ? candidates(context) : List.of(shaft);
         for (Shaft candidate : possibleShafts) {
@@ -154,17 +155,20 @@ final class MiningExcavationShaft {
     }
 
     static boolean canMineCurrentLayerTarget(ServerLevel level, HiredWorkContext context, BlockPos target) {
+        return canMineCurrentLayerTarget(level, context, MiningBlockRules.currentExcavationLayer(level, context), target);
+    }
+
+    public static boolean canMineCurrentLayerTarget(LevelReader level, HiredWorkContext context, Integer currentLayerY, BlockPos target) {
         if (target == null) {
             return false;
         }
-        Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
         if (currentLayerY == null
                 || target.getY() != currentLayerY
                 || !requiresLadder(level, context, currentLayerY)
                 || hasCompleteRouteToLayer(level, context, currentLayerY)) {
             return true;
         }
-        Shaft shaft = select(level, context, currentLayerY);
+        Shaft shaft = select(level, context, null, currentLayerY, false);
         if (shaft == null) {
             return false;
         }
@@ -175,30 +179,34 @@ final class MiningExcavationShaft {
         if (currentLayerY <= context.workMin().getY()) {
             return false;
         }
-        if ((MiningBlockRules.isMineableExcavationBlock(level, context, shaftPos)
+        if ((!MiningHazardManager.isProtectedBarrier(context, shaftPos)
+                && MiningBlockRules.isMineableExcavationBlock(level, level::hasChunkAt, shaftPos)
                 || isMineableShaftBlock(level, shaftPos))
-                && !MiningBlockRules.hasAdjacentExcavationFluid(level, shaftPos)) {
+                && !MiningBlockRules.hasAdjacentExcavationFluid(level, level::hasChunkAt, shaftPos)) {
             return false;
         }
         return horizontalDistance(target, shaftPos) == 1;
     }
 
     static boolean isNeededTarget(ServerLevel level, HiredWorkContext context, BlockPos target) {
+        return isNeededTarget(level, context, MiningBlockRules.currentExcavationLayer(level, context), target);
+    }
+
+    public static boolean isNeededTarget(LevelReader level, HiredWorkContext context, Integer currentLayerY, BlockPos target) {
         if (target == null) {
             return false;
         }
-        Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
         if (currentLayerY == null
                 || target.getY() != currentLayerY
                 || !requiresLadder(level, context, currentLayerY)
                 || hasCompleteRouteToLayer(level, context, currentLayerY)) {
             return false;
         }
-        Shaft shaft = select(level, context, currentLayerY);
+        Shaft shaft = select(level, context, null, currentLayerY, false);
         return shaft != null
                 && shaft.contains(target)
                 && isMineableShaftBlock(level, target)
-                && !MiningBlockRules.hasAdjacentExcavationFluid(level, target);
+                && !MiningBlockRules.hasAdjacentExcavationFluid(level, level::hasChunkAt, target);
     }
 
     static BlockPos nextNeededTarget(ServerLevel level, HiredWorkContext context) {
@@ -231,20 +239,26 @@ final class MiningExcavationShaft {
         return shaft != null && !shaft.contains(target);
     }
 
-    static int supportFloorY(ServerLevel level, HiredWorkContext context, int currentLayerY) {
+    public static int supportFloorY(LevelReader level, HiredWorkContext context, int currentLayerY) {
         int openY = Math.max(deepestOpenY(level, context), currentLayerY);
         return Math.clamp(openY, context.workMin().getY(), context.workMax().getY());
     }
 
     static Shaft select(ServerLevel level, HiredWorkContext context, int lowestOpenY) {
-        return select(level, null, context, lowestOpenY, false);
+        return select(level, context, null, lowestOpenY, false);
     }
 
     static Shaft select(ServerLevel level, Villager villager, HiredWorkContext context, int lowestOpenY) {
-        return select(level, villager, context, lowestOpenY, true);
+        Shaft existing = stored(context);
+        if (existing != null && hasViableRoute(level, context, existing, lowestOpenY, true)) return existing;
+        return select(level, context, villager == null ? null : context.nearestDepositStorage(level, villager), lowestOpenY, true);
     }
 
-    static Shaft stored(HiredWorkContext context) {
+    public static Shaft select(LevelReader level, HiredWorkContext context, BlockPos storage, int lowestOpenY) {
+        return select(level, context, storage, lowestOpenY, true);
+    }
+
+    public static Shaft stored(HiredWorkContext context) {
         boolean hasSelection = context.state().contains(X_TAG)
                 || context.state().contains(Z_TAG)
                 || context.state().contains(FACING_TAG);
@@ -278,7 +292,7 @@ final class MiningExcavationShaft {
         context.state().remove(FACING_TAG);
     }
 
-    static int topY(ServerLevel level, HiredWorkContext context) {
+    public static int topY(LevelReader level, HiredWorkContext context) {
         Shaft stored = stored(context);
         if (stored != null) {
             return topY(level, context, stored);
@@ -293,7 +307,7 @@ final class MiningExcavationShaft {
         return foundSurface ? topY : context.workMax().getY();
     }
 
-    static int topY(ServerLevel level, HiredWorkContext context, Shaft shaft) {
+    public static int topY(LevelReader level, HiredWorkContext context, Shaft shaft) {
         for (int y = context.workMax().getY(); y >= context.workMin().getY(); y--) {
             if (hasDismount(level, context, shaft, y)) {
                 return y;
@@ -302,7 +316,7 @@ final class MiningExcavationShaft {
         return context.workMax().getY();
     }
 
-    static boolean requiresLadder(ServerLevel level, HiredWorkContext context, int layerY) {
+    public static boolean requiresLadder(LevelReader level, HiredWorkContext context, int layerY) {
         return layerY < topY(level, context);
     }
 
@@ -327,11 +341,11 @@ final class MiningExcavationShaft {
     }
 
     private static Shaft select(
-            ServerLevel level,
-            Villager villager,
+            LevelReader level,
             HiredWorkContext context,
+            BlockPos storage,
             int lowestOpenY,
-        boolean storeSelected) {
+            boolean storeSelected) {
         Shaft stored = stored(context);
         if (stored != null && hasViableRoute(level, context, stored, lowestOpenY, true)) {
             return stored;
@@ -339,7 +353,7 @@ final class MiningExcavationShaft {
         if (stored != null) {
             clear(context);
         }
-        for (Shaft candidate : candidatesByTop(level, villager, context)) {
+        for (Shaft candidate : candidatesByTop(level, context, storage)) {
             if (!hasViableRoute(level, context, candidate, lowestOpenY, false)) {
                 continue;
             }
@@ -352,7 +366,7 @@ final class MiningExcavationShaft {
     }
 
     private static boolean hasViableRoute(
-            ServerLevel level,
+            LevelReader level,
             HiredWorkContext context,
             Shaft shaft,
             int lowestOpenY,
@@ -374,7 +388,7 @@ final class MiningExcavationShaft {
             }
             if (y == routeFloorY
                     && isMineableShaftBlock(level, pos)
-                    && !MiningBlockRules.hasAdjacentExcavationFluid(level, pos)) {
+                    && !MiningBlockRules.hasAdjacentExcavationFluid(level, level::hasChunkAt, pos)) {
                 continue;
             }
             return false;
@@ -382,7 +396,7 @@ final class MiningExcavationShaft {
         return true;
     }
 
-    private static int deepestOpenY(ServerLevel level, HiredWorkContext context) {
+    private static int deepestOpenY(LevelReader level, HiredWorkContext context) {
         int lowestOpenY = context.workMax().getY();
         Shaft stored = stored(context);
         Iterable<Shaft> possibleShafts = stored == null ? candidates(context) : List.of(stored);
@@ -494,7 +508,7 @@ final class MiningExcavationShaft {
                 villagerDistance + centerDistance * 0.5D + ladderDistance + (outsideX + outsideZ) * 6.0D));
     }
 
-    private static boolean hasDismount(ServerLevel level, HiredWorkContext context, Shaft shaft, int y) {
+    private static boolean hasDismount(LevelReader level, HiredWorkContext context, Shaft shaft, int y) {
         BlockPos ladder = shaft.at(y);
         if (!level.hasChunkAt(ladder)) {
             return false;
@@ -508,7 +522,7 @@ final class MiningExcavationShaft {
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos dismount = ladder.relative(direction);
             if (context.isInsideWorkArea(dismount)
-                    && HiredMoveToBlockFaceJob.isValidApproachPosition(level, dismount)) {
+                    && HiredMoveToBlockFaceJob.isValidApproachPosition(level, level::hasChunkAt, dismount)) {
                 return true;
             }
             BlockPos surfaceDismount = dismount.above();
@@ -520,11 +534,11 @@ final class MiningExcavationShaft {
         return false;
     }
 
-    private static boolean hasSurfaceExit(ServerLevel level, HiredWorkContext context, Shaft shaft) {
+    private static boolean hasSurfaceExit(LevelReader level, HiredWorkContext context, Shaft shaft) {
         return surfaceExitScore(level, context, shaft) < Double.MAX_VALUE;
     }
 
-    private static double surfaceExitScore(ServerLevel level, HiredWorkContext context, Shaft shaft) {
+    private static double surfaceExitScore(LevelReader level, HiredWorkContext context, Shaft shaft) {
         double bestScore = Double.MAX_VALUE;
         BlockPos ladderTop = shaft.at(context.workMax().getY());
         for (Direction direction : Direction.Plane.HORIZONTAL) {
@@ -538,7 +552,7 @@ final class MiningExcavationShaft {
     }
 
     private static double storageExitScore(
-            ServerLevel level,
+            LevelReader level,
             HiredWorkContext context,
             Shaft shaft,
             BlockPos storage) {
@@ -557,7 +571,7 @@ final class MiningExcavationShaft {
         return bestScore;
     }
 
-    private static boolean isValidSurfaceEntry(ServerLevel level, BlockPos pos) {
+    private static boolean isValidSurfaceEntry(LevelReader level, BlockPos pos) {
         if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
             return false;
         }
@@ -609,11 +623,7 @@ final class MiningExcavationShaft {
         return new ArrayList<>(candidates);
     }
 
-    private static List<Shaft> candidatesByTop(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context) {
-        BlockPos storage = villager == null ? null : context.nearestDepositStorage(level, villager);
+    private static List<Shaft> candidatesByTop(LevelReader level, HiredWorkContext context, BlockPos storage) {
         LinkedHashSet<Shaft> ordered = new LinkedHashSet<>();
         if (storage != null) {
             ordered.addAll(storageFacingCandidates(context, storage));
@@ -659,7 +669,7 @@ final class MiningExcavationShaft {
         candidates.add(new Shaft(x, z, facing));
     }
 
-    private static BlockPos highestExistingLadder(ServerLevel level, HiredWorkContext context, Shaft shaft) {
+    private static BlockPos highestExistingLadder(LevelReader level, HiredWorkContext context, Shaft shaft) {
         int topY = topY(level, context, shaft);
         for (int y = topY; y >= context.workMin().getY(); y--) {
             BlockPos pos = shaft.at(y);
@@ -670,7 +680,7 @@ final class MiningExcavationShaft {
         return null;
     }
 
-    private static boolean isMineableShaftBlock(ServerLevel level, BlockPos pos) {
+    private static boolean isMineableShaftBlock(LevelReader level, BlockPos pos) {
         if (!MiningBlockRules.isBuilderClearableObstruction(level, pos, level.getBlockState(pos))) {
             return false;
         }
@@ -701,16 +711,16 @@ final class MiningExcavationShaft {
         return 0;
     }
 
-    record Shaft(int x, int z, Direction facing) {
-        BlockPos at(int y) {
+    public record Shaft(int x, int z, Direction facing) {
+        public BlockPos at(int y) {
             return new BlockPos(this.x, y, this.z);
         }
 
-        boolean contains(BlockPos pos) {
+        public boolean contains(BlockPos pos) {
             return pos.getX() == this.x && pos.getZ() == this.z;
         }
 
-        BlockState ladderState() {
+        public BlockState ladderState() {
             return Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, this.facing);
         }
     }

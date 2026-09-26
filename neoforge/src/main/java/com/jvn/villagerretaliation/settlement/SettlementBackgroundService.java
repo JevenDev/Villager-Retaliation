@@ -75,9 +75,7 @@ public final class SettlementBackgroundService {
                 SettlementBackgroundFishing.tick(level, town, worker, elapsed, multiplier, now);
             } else if (worker.role() == HiredVillagerRole.LOGGING) {
                 SettlementBackgroundLogging.tick(level, town, worker, elapsed, multiplier);
-            } else if (worker.role() == HiredVillagerRole.MINING
-                    && com.jvn.villagerretaliation.interaction.HiredMiningMode.fromState(worker.settings())
-                    != com.jvn.villagerretaliation.interaction.HiredMiningMode.EXCAVATE_AREA) {
+            } else if (worker.role() == HiredVillagerRole.MINING) {
                 SettlementBackgroundMining.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.FARMING) {
                 SettlementBackgroundFarming.tick(level, town, worker, elapsed, multiplier);

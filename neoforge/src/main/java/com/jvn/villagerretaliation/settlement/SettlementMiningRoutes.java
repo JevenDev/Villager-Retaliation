@@ -29,18 +29,20 @@ final class SettlementMiningRoutes {
     private final BlockPos actualPosition;
     private final HiredMiningMode mode;
     private final boolean placing;
+    private final double placementReach;
     private final long[] permanentBarriers;
     private final Map<BlockPos, Observation> observations = new HashMap<>();
     private final Map<BlockPos, Target> completed = new HashMap<>();
     private final Set<BlockPos> unreachable = new HashSet<>();
     private Search active;
 
-    private SettlementMiningRoutes(SettlementMine mine, BlockPos origin, BlockPos actualPosition, HiredMiningMode mode, boolean placing, long[] barriers) {
+    private SettlementMiningRoutes(SettlementMine mine, BlockPos origin, BlockPos actualPosition, HiredMiningMode mode, boolean placing, double placementReach, long[] barriers) {
         this.mine = mine;
         this.origin = origin.immutable();
         this.actualPosition = actualPosition.immutable();
         this.mode = mode;
         this.placing = placing;
+        this.placementReach = placementReach;
         this.permanentBarriers = barriers.clone();
         mine.sections().forEach((position, section) -> this.observations.put(position, new Observation(section, section.observationVersion())));
     }
@@ -50,19 +52,28 @@ final class SettlementMiningRoutes {
     }
 
     static SettlementMiningRoutes forWorker(SettlementWorkerState worker, SettlementMine mine, BlockPos origin, boolean placing) {
+        return forWorker(worker, mine, origin, placing, 4.5D);
+    }
+
+    static SettlementMiningRoutes forSupport(SettlementWorkerState worker, SettlementMine mine, BlockPos origin) {
+        return forWorker(worker, mine, origin, true, HiredMoveToBlockFaceJob.MAX_REACH);
+    }
+
+    private static SettlementMiningRoutes forWorker(SettlementWorkerState worker, SettlementMine mine, BlockPos origin,
+                                                    boolean placing, double placementReach) {
         var mode = HiredMiningMode.fromState(worker.settings());
         var barriers = worker.settings().getLongArray("MiningPermanentHazardBarriers");
         var searches = placing ? PLACEMENT_SEARCHES : SEARCHES;
         var routes = searches.get(worker);
-        if (routes == null || !routes.matches(mine, origin, worker.position(), mode, placing, barriers)) {
-            routes = new SettlementMiningRoutes(mine, origin, worker.position(), mode, placing, barriers);
+        if (routes == null || !routes.matches(mine, origin, worker.position(), mode, placing, placementReach, barriers)) {
+            routes = new SettlementMiningRoutes(mine, origin, worker.position(), mode, placing, placementReach, barriers);
             searches.put(worker, routes);
         }
         return routes;
     }
 
-    private boolean matches(SettlementMine mine, BlockPos origin, BlockPos actualPosition, HiredMiningMode mode, boolean placing, long[] barriers) {
-        if (this.mine != mine || this.mode != mode || this.placing != placing || !Arrays.equals(this.permanentBarriers, barriers)
+    private boolean matches(SettlementMine mine, BlockPos origin, BlockPos actualPosition, HiredMiningMode mode, boolean placing, double placementReach, long[] barriers) {
+        if (this.mine != mine || this.mode != mode || this.placing != placing || this.placementReach != placementReach || !Arrays.equals(this.permanentBarriers, barriers)
                 || !this.origin.equals(origin) || !this.actualPosition.equals(actualPosition)
                 || this.observations.size() != mine.sections().size()) return false;
         for (var entry : mine.sections().entrySet()) {
@@ -105,14 +116,26 @@ final class SettlementMiningRoutes {
     }
 
     private boolean approachAllowed(BlockPos position) {
-        if (!this.placing && !this.mode.excavatesHorizontally()) return true;
+        if (!this.placing && !this.mode.excavatesArea()) return true;
         var min = this.mine.min();
         var max = this.mine.max();
-        if (this.placing && this.mine.contains(position)) return true;
+        if ((this.placing || this.mode.usesExcavationShaft()) && this.mine.contains(position)) return true;
+        if (this.mode.usesExcavationShaft() && position.getY() == max.getY() + 1) {
+            return position.getX() >= min.getX() - 1 && position.getX() <= max.getX() + 1
+                    && position.getZ() >= min.getZ() - 1 && position.getZ() <= max.getZ() + 1;
+        }
+        if (this.mode.usesExcavationShaft() && !this.placing) return false;
         return position.getY() >= (this.placing ? max.getY() + 1 : min.getY())
                 && position.getY() <= (this.placing ? max.getY() + 1 : max.getY())
                 && position.getX() >= min.getX() - 1 && position.getX() <= max.getX() + 1
                 && position.getZ() >= min.getZ() - 1 && position.getZ() <= max.getZ() + 1;
+    }
+
+    boolean protectsNativeLanding(BlockPos target) {
+        return this.mode.usesExcavationShaft() && target.equals(this.actualPosition.below(2))
+                && this.mine.observed(this.actualPosition) && this.mine.observed(this.actualPosition.below())
+                && !this.mine.getBlockState(this.actualPosition).is(Blocks.LADDER)
+                && !this.mine.getBlockState(this.actualPosition.below()).isSolid();
     }
 
     private boolean unsafeBarrierLanding(BlockPos target, BlockPos stance) {
@@ -136,27 +159,32 @@ final class SettlementMiningRoutes {
             if (placing) {
                 owner.setPos(origin.getBottomCenter());
                 Vec3 hit = target.getCenter();
-                if (owner.getEyePosition().distanceToSqr(hit) <= 4.5D * 4.5D) {
+                if (owner.getEyePosition().distanceToSqr(hit) <= placementReach * placementReach) {
                     this.goals.put(origin, new Target(this.target, origin, hit, List.of()));
                     visit(origin, 0, null);
                     return;
                 }
             }
-            double reach = placing ? 4.5D : mode.excavatesHorizontally() ? MiningWorker.HORIZONTAL_EXCAVATION_REACH : HiredMoveToBlockFaceJob.MAX_REACH;
-            int radius = !placing && mode.excavatesHorizontally() ? (int) Math.ceil(reach) : 2;
+            double reach = placing ? placementReach : mode.excavatesHorizontally() ? MiningWorker.HORIZONTAL_EXCAVATION_REACH : HiredMoveToBlockFaceJob.MAX_REACH;
+            int radius = !placing && mode.excavatesHorizontally() ? (int) Math.ceil(reach) : placing && placementReach <= 3.0D ? 1 : 2;
             for (BlockPos raw : BlockPos.betweenClosed(target.offset(-radius, placing ? -1 : -radius, -radius), target.offset(radius, radius, radius))) {
                 if ((!placing && !mode.excavatesHorizontally() && raw.distSqr(target) > 4.0D)
                         || !approachAllowed(raw) || !safe(mine, raw)) continue;
-                if (!placing && (MiningSafety.isUnsafeMiningTarget(mine, mine::observed, target, raw, actualPosition)
+                if (!placing && mode.usesExcavationShaft()
+                        && (target.getY() >= mine.max().getY() ? raw.getY() != mine.max().getY() + 1 && !raw.equals(origin)
+                        : !mine.contains(raw) || raw.getY() < target.getY() || raw.getY() > target.getY() + 1)) continue;
+                if (!placing && (protectsNativeLanding(target) || MiningSafety.isUnsafeMiningTarget(mine, mine::observed, target, raw, actualPosition)
                         || unsafeBarrierLanding(target, raw) || unsafeBarrierLanding(target, actualPosition)
-                        || mode.excavatesArea() && mine.getBlockState(raw).is(Blocks.LADDER))) continue;
+                        || mode.excavatesArea() && mine.getBlockState(raw).is(Blocks.LADDER)
+                        && !(mode.usesExcavationShaft() && raw.equals(target.above())))) continue;
                 owner.setPos(raw.getBottomCenter());
                 Vec3 eye = owner.getEyePosition();
                 Vec3 hit;
                 if (placing) {
                     hit = target.getCenter();
                 } else {
-                    hit = HiredMoveToBlockFaceJob.visibleHitPosition(mine, mine::observed, owner, eye, target, ignored -> false);
+                    hit = HiredMoveToBlockFaceJob.visibleHitPosition(mine, mine::observed, owner, eye, target,
+                            state -> mode.usesExcavationShaft() && state.is(Blocks.LADDER));
                 }
                 if (hit != null && eye.distanceToSqr(hit) <= reach * reach
                         && (placing || raw.getCenter().distanceToSqr(hit) <= (reach + 0.75D) * (reach + 0.75D))) {
@@ -196,7 +224,7 @@ final class SettlementMiningRoutes {
 
         private void visit(BlockPos position, int steps, Node previous) {
             if (steps >= this.distances.getOrDefault(position, Integer.MAX_VALUE)
-                    || !placing && mode.excavatesHorizontally() && !position.equals(origin) && !approachAllowed(position)
+                    || !placing && mode.excavatesArea() && !position.equals(origin) && !approachAllowed(position)
                     || !this.safePositions.computeIfAbsent(position, key -> safe(mine, key))) return;
             var immutable = position.immutable();
             this.distances.put(immutable, steps);

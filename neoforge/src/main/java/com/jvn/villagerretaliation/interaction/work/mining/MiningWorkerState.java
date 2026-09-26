@@ -232,7 +232,7 @@ public final class MiningWorkerState {
         context.state().putLong(CURRENT_EXCAVATION_LAYER_EXPIRES_GAME_TIME_TAG, level.getGameTime() + EXCAVATION_LAYER_CACHE_TICKS);
     }
 
-    static void clearExcavationLayerCache(HiredWorkContext context) {
+    public static void clearExcavationLayerCache(HiredWorkContext context) {
         context.state().remove(CURRENT_EXCAVATION_LAYER_PRESENT_TAG);
         context.state().remove(CURRENT_EXCAVATION_LAYER_Y_TAG);
         context.state().remove(CURRENT_EXCAVATION_LAYER_EXPIRES_GAME_TIME_TAG);

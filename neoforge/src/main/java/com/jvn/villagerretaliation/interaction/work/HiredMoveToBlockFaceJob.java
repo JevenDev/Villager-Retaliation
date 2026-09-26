@@ -478,7 +478,11 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     public static boolean isValidApproachPosition(ServerLevel level, BlockPos pos) {
-        if (!isLoaded(level, pos) || !isLoaded(level, pos.above()) || !isLoaded(level, pos.below())) {
+        return isValidApproachPosition(level, level::hasChunkAt, pos);
+    }
+
+    public static boolean isValidApproachPosition(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
+        if (!observed.test(pos) || !observed.test(pos.above()) || !observed.test(pos.below())) {
             return false;
         }
         BlockState feet = level.getBlockState(pos);
@@ -487,7 +491,8 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         return isPassableForApproach(level, pos, feet)
                 && isPassableForApproach(level, pos.above(), head)
                 && floor.isSolid()
-                && !VillagerContainerClimbGuard.isForbiddenStandingFloor(level, pos.below());
+                && (!floor.hasBlockEntity() || level instanceof ServerLevel
+                && !VillagerContainerClimbGuard.isForbiddenStandingFloor(level, pos.below()));
     }
 
     private static boolean isAdjacentApproach(BlockPos approach, BlockPos target) {

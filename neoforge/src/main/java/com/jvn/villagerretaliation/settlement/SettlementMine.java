@@ -148,6 +148,23 @@ public final class SettlementMine implements BlockGetter {
         return true;
     }
 
+    boolean changeSupport(BlockPos position, BlockState state) {
+        boolean backing = !contains(position) && position.getY() >= this.min.getY() && position.getY() <= this.max.getY()
+                && ((position.getX() == this.min.getX() - 1 || position.getX() == this.max.getX() + 1)
+                && position.getZ() >= this.min.getZ() && position.getZ() <= this.max.getZ()
+                || (position.getZ() == this.min.getZ() - 1 || position.getZ() == this.max.getZ() + 1)
+                && position.getX() >= this.min.getX() && position.getX() <= this.max.getX());
+        boolean infrastructure = contains(position) && (state.is(Blocks.LADDER) || state.is(Blocks.WALL_TORCH));
+        var section = this.sections.get(SettlementTerrainSection.sectionOrigin(position));
+        if ((!backing && !infrastructure) || section == null || !section.canChange(position, state)
+                || !getBlockState(position).isAir() || state.isAir() || !state.getFluidState().isEmpty()
+                || state.getDestroySpeed(this, position) < 0.0F
+                || state.getBlock() instanceof net.minecraft.world.level.block.FallingBlock
+                || com.jvn.villagerretaliation.interaction.work.mining.MiningSafety.isDamagingBlock(state)) return false;
+        section.change(Map.of(position, state));
+        return true;
+    }
+
     @Override
     public BlockState getBlockState(BlockPos position) {
         var section = this.sections.get(SettlementTerrainSection.sectionOrigin(position));

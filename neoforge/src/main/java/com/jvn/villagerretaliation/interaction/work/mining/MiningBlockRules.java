@@ -106,20 +106,24 @@ public final class MiningBlockRules {
         if (MiningWorkerState.hasFreshExcavationLayerCache(level, context)) {
             return MiningWorkerState.cachedExcavationLayer(context);
         }
+        Integer layer = currentExcavationLayer(level, level::hasChunkAt, context);
+        MiningWorkerState.rememberExcavationLayer(level, context, layer);
+        return layer;
+    }
+
+    public static Integer currentExcavationLayer(BlockGetter level, Predicate<BlockPos> observed, HiredWorkContext context) {
         LongSet protectedBarriers = MiningHazardManager.protectedBarrierPositions(context);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int y = context.workMax().getY(); y >= context.workMin().getY(); y--) {
             for (int x = context.workMin().getX(); x <= context.workMax().getX(); x++) {
                 for (int z = context.workMin().getZ(); z <= context.workMax().getZ(); z++) {
                     pos.set(x, y, z);
-                    if (isMineableExcavationBlock(level, pos, protectedBarriers)) {
-                        MiningWorkerState.rememberExcavationLayer(level, context, y);
+                    if (!protectedBarriers.contains(pos.asLong()) && isMineableExcavationBlock(level, observed, pos)) {
                         return y;
                     }
                 }
             }
         }
-        MiningWorkerState.rememberExcavationLayer(level, context, null);
         return null;
     }
 
@@ -178,6 +182,10 @@ public final class MiningBlockRules {
     }
 
     public static boolean isBuilderClearableObstruction(ServerLevel level, BlockPos pos, BlockState state) {
+        return isBuilderClearableObstruction((BlockGetter) level, pos, state);
+    }
+
+    public static boolean isBuilderClearableObstruction(BlockGetter level, BlockPos pos, BlockState state) {
         return !state.isAir()
                 && !state.liquid()
                 && state.getDestroySpeed(level, pos) >= 0.0F

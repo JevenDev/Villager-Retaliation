@@ -10,6 +10,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 
@@ -37,7 +38,7 @@ public final class MiningSafety {
         BlockState floor = level.getBlockState(pos.below());
         if (!isPassableBodyBlock(level, pos, feet)
                 || !isPassableBodyBlock(level, pos.above(), head)
-                || !isSafeFloor(level, pos.below(), floor)) {
+                || !isSafeFloor(level, pos.below(), floor) && !hasLadderSupport(level, observed, pos, feet)) {
             return false;
         }
         return !hasImmediateHeatHazard(level, observed, pos);
@@ -145,6 +146,15 @@ public final class MiningSafety {
         return state.isAir()
                 || state.is(Blocks.LADDER)
                 || state.getCollisionShape(level, pos).isEmpty();
+    }
+
+    private static boolean hasLadderSupport(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos, BlockState state) {
+        if (!state.is(Blocks.LADDER)) return false;
+        Direction facing = state.getValue(LadderBlock.FACING);
+        BlockPos backing = pos.relative(facing.getOpposite());
+        BlockState below = level.getBlockState(pos.below());
+        return below.getFluidState().isEmpty() && !isDamagingBlock(below)
+                && observed.test(backing) && level.getBlockState(backing).isFaceSturdy(level, backing, facing);
     }
 
     private static boolean isSafeFloor(BlockGetter level, BlockPos pos, BlockState state) {
