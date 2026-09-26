@@ -4679,6 +4679,52 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerHarvestsMatureTorchflowerOutput(GameTestHelper helper) {
+        assertFlowerHarvest(helper, Blocks.TORCHFLOWER.defaultBlockState(), Items.TORCHFLOWER);
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerHarvestsOneCompletePitcherPlant(GameTestHelper helper) {
+        assertFlowerHarvest(helper, Blocks.PITCHER_CROP.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.PitcherCropBlock.AGE, 4), Items.PITCHER_PLANT);
+    }
+
+    private static void assertFlowerHarvest(GameTestHelper helper, BlockState crop, net.minecraft.world.item.Item output) {
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingFlower");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        BlockPos composterRel = new BlockPos(2, 1, 2);
+        setBlock(helper, composterRel, Blocks.COMPOSTER.defaultBlockState());
+        villager.getBrain().setMemory(MemoryModuleType.JOB_SITE, GlobalPos.of(level.dimension(), helper.absolutePos(composterRel)));
+        BlockPos cropRel = new BlockPos(3, 2, 2);
+        setBlock(helper, cropRel.below(), Blocks.FARMLAND.defaultBlockState());
+        setBlock(helper, cropRel, crop);
+        if (crop.is(Blocks.PITCHER_CROP)) {
+            setBlock(helper, cropRel.above(), crop.setValue(net.minecraft.world.level.block.PitcherCropBlock.HALF,
+                    net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+        }
+        HiredWorkContext context = context(helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(5, 4, 4), false);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+        try {
+            var result = new FarmingWorker().tick(level, villager, hirer, context);
+            helper.assertValueEqual(result.status(), "interaction.work.farming.completed_output", "the native farmer completes its flower harvest");
+            helper.assertTrue(level.getBlockState(helper.absolutePos(cropRel)).isAir(), "the lower harvested block is removed");
+            helper.assertTrue(level.getBlockState(helper.absolutePos(cropRel.above())).isAir(), "harvesting leaves no upper plant half");
+            int count = context.inventory().outputSlots().stream().map(context.inventory()::getItem)
+                    .filter(stack -> stack.is(output)).mapToInt(ItemStack::getCount).sum();
+            helper.assertValueEqual(count, 1, "one flower harvest produces exactly one stored item");
+            helper.assertTrue(level.getEntitiesOfClass(ItemEntity.class,
+                    new net.minecraft.world.phys.AABB(helper.absolutePos(cropRel)).inflate(1.0D),
+                    entity -> entity.getItem().is(output)).isEmpty(), "the upper half cannot produce a duplicate dropped item");
+        } finally {
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void farmingWorkerIgnoresCropOutsideCircularJobSiteRange(GameTestHelper helper) {
         buildFloor(helper, 0, 12, 0, 12, 1);
         ServerLevel level = helper.getLevel();

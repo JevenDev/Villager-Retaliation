@@ -56,7 +56,11 @@ public final class SettlementFieldService {
                 int maxY = Math.min(level.getMaxBuildHeight() - 2, area.max().getY());
                 for (int sectionY = Math.floorDiv(minY, 16); sectionY <= Math.floorDiv(maxY, 16); sectionY++) {
                     var section = chunk.getSection(level.getSectionIndexFromSectionY(sectionY));
-                    if (!section.maybeHas(SettlementFieldPlot::supportedSoil)) {
+                    int aboveSection = chunk.getSectionIndexFromSectionY(sectionY + 1);
+                    boolean cropsAbove = aboveSection < chunk.getSections().length
+                            && chunk.getSection(aboveSection).maybeHas(SettlementFieldPlot::supportedCrop);
+                    if (!section.maybeHas(state -> SettlementFieldPlot.supportedSoil(state)
+                            || SettlementFieldPlot.supportedCrop(state) || state.is(net.minecraft.tags.BlockTags.DIRT)) && !cropsAbove) {
                         continue;
                     }
                     for (int y = Math.max(minY, sectionY * 16); y <= Math.min(maxY, sectionY * 16 + 15); y++) {
@@ -65,7 +69,7 @@ public final class SettlementFieldService {
                                 BlockPos position = new BlockPos(x, y, z);
                                 var soil = chunk.getBlockState(position);
                                 var crop = chunk.getBlockState(position.above());
-                                if (!SettlementFieldPlot.supportedSoil(soil) || !crop.isAir() && !SettlementFieldPlot.supportedCrop(crop)) {
+                                if (!SettlementFieldPlot.supportedSite(soil, crop)) {
                                     continue;
                                 }
                                 var plot = town.fields().get(position);
@@ -102,8 +106,7 @@ public final class SettlementFieldService {
             if (chunk != null) {
                 plot.refresh(chunk);
             }
-            if (!plot.pending() && (!SettlementFieldPlot.supportedSoil(plot.soil())
-                    || !plot.crop().isAir() && !SettlementFieldPlot.supportedCrop(plot.crop()))) {
+            if (!plot.pending() && !SettlementFieldPlot.supportedSite(plot.soil(), plot.crop())) {
                 town.removeField(plot.position());
             } else if (area == null || area.type() != SettlementAreaType.FARM
                     || !area.contains(plot.position()) && !area.contains(plot.position().above())) {
@@ -117,6 +120,7 @@ public final class SettlementFieldService {
             } else if (chunk != null && level.getChunkSource().isPositionTicking(chunk.getPos().toLong())) {
                 plot.observe(level, chunk, now);
             } else {
+                plot.observeEnvironment(level, chunk);
                 plot.advance(level, town, now);
                 applyLoaded(level, plot);
             }
@@ -138,7 +142,8 @@ public final class SettlementFieldService {
             return false;
         }
         plot.refresh(chunk);
-        return SettlementFieldPlot.supportedSoil(plot.soil()) && (plot.crop().isAir() || SettlementFieldPlot.supportedCrop(plot.crop()));
+        plot.observeEnvironment(level, chunk);
+        return SettlementFieldPlot.supportedSite(plot.soil(), plot.crop());
     }
 
     static void applyLoaded(ServerLevel level, SettlementFieldPlot plot) {
@@ -146,9 +151,25 @@ public final class SettlementFieldService {
         if (chunk != null) {
             var soil = chunk.getBlockState(plot.position());
             var crop = chunk.getBlockState(plot.position().above());
+            var top = chunk.getBlockState(plot.position().above(2));
             if (plot.reconcile(chunk)) {
                 level.sendBlockUpdated(plot.position(), soil, plot.soil(), 2);
                 level.sendBlockUpdated(plot.position().above(), crop, plot.crop(), 2);
+                if (plot.position().getY() + 2 < level.getMaxBuildHeight() && top != plot.top()) {
+                    level.sendBlockUpdated(plot.position().above(2), top, plot.top(), 2);
+                }
+            }
+        }
+    }
+
+    static void releaseFruit(ServerLevel level, SettlementRecord town, SettlementFieldPlot fruit) {
+        for (var direction : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+            var stem = town.fields().get(fruit.position().relative(direction));
+            if (stem != null && available(level, stem) && SettlementFarmPlants.attachedStem(stem.crop())
+                    && stem.crop().getValue(net.minecraft.world.level.block.AttachedStemBlock.FACING) == direction.getOpposite()
+                    && !fruit.crop().is(SettlementFarmPlants.fruitFor(stem.crop()).getBlock())) {
+                stem.change(stem.soil(), SettlementFarmPlants.detachedFor(stem.crop()));
+                applyLoaded(level, stem);
             }
         }
     }

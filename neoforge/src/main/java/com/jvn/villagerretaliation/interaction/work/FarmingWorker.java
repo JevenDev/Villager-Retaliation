@@ -747,8 +747,15 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (state.getBlock() instanceof CocoaBlock) {
             return state.getValue(CocoaBlock.AGE) >= CocoaBlock.MAX_AGE;
         }
+        if (state.is(Blocks.PITCHER_CROP)) {
+            return state.getValue(net.minecraft.world.level.block.PitcherCropBlock.HALF)
+                    == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER
+                    && state.getValue(net.minecraft.world.level.block.PitcherCropBlock.AGE)
+                    == net.minecraft.world.level.block.PitcherCropBlock.MAX_AGE;
+        }
         return state.is(Blocks.PUMPKIN)
                 || state.is(Blocks.MELON)
+                || state.is(Blocks.TORCHFLOWER)
                 || state.is(BlockTags.CROPS) && !hasImmatureAgeProperty(state);
     }
 

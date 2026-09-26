@@ -4,18 +4,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.AttachedStemBlock;
+import net.minecraft.world.level.block.CocoaBlock;
+import net.minecraft.world.level.block.PitcherCropBlock;
+import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 public final class SettlementFieldPlot {
@@ -26,6 +33,9 @@ public final class SettlementFieldPlot {
     private BlockState baselineCrop;
     private BlockState soil;
     private BlockState crop;
+    private BlockState baselineTop = Blocks.AIR.defaultBlockState();
+    private BlockState top = Blocks.AIR.defaultBlockState();
+    private boolean topKnown;
     private final List<BlockState> nearbySoil = new ArrayList<>();
     private final List<BlockState> nearbyCrops = new ArrayList<>();
     private boolean environmentKnown;
@@ -71,11 +81,27 @@ public final class SettlementFieldPlot {
     }
 
     static boolean supportedCrop(BlockState state) {
-        return state.is(Blocks.WHEAT) || state.is(Blocks.CARROTS) || state.is(Blocks.POTATOES) || state.is(Blocks.BEETROOTS);
+        return SettlementFarmPlants.supported(state);
     }
 
     static boolean supportedSoil(BlockState state) {
         return state.is(Blocks.FARMLAND) || state.is(Blocks.DIRT) || state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT_PATH);
+    }
+
+    static boolean supportedSite(BlockState soil, BlockState crop) {
+        return supportedCrop(crop) || crop.isAir() && (supportedSoil(soil) || soil.is(BlockTags.DIRT));
+    }
+
+    BlockState top() {
+        return this.top;
+    }
+
+    boolean harvestable() {
+        return SettlementFarmPlants.harvestable(this.crop)
+                && (!this.crop.is(Blocks.COCOA) || cocoaSupported())
+                && (!this.crop.is(Blocks.PITCHER_CROP) || this.topKnown && this.top.is(Blocks.PITCHER_CROP)
+                        && this.top.getValue(PitcherCropBlock.HALF) == DoubleBlockHalf.UPPER
+                        && this.top.getValue(PitcherCropBlock.AGE).equals(this.crop.getValue(PitcherCropBlock.AGE)));
     }
 
     static SettlementFieldPlot capture(ServerLevel level, UUID area, BlockPos position, LevelChunk chunk, long now) {
@@ -95,12 +121,14 @@ public final class SettlementFieldPlot {
             return true;
         }
         if (applied < this.version) {
-            if (chunk.getBlockState(this.position) != this.baselineSoil || chunk.getBlockState(this.position.above()) != this.baselineCrop) {
+            if (chunk.getBlockState(this.position) != this.baselineSoil || chunk.getBlockState(this.position.above()) != this.baselineCrop
+                    || this.topKnown && this.top != this.baselineTop && chunk.getBlockState(this.position.above(2)) != this.baselineTop) {
                 this.conflict = true;
                 return false;
             }
             chunk.setBlockState(this.position, this.soil, false);
             chunk.setBlockState(this.position.above(), this.crop, false);
+            if (this.topKnown && this.top != this.baselineTop) chunk.setBlockState(this.position.above(2), this.top, false);
             SettlementChunkReceipts.applied(chunk, this.position, this.id, this.version);
         }
         this.pending = false;
@@ -119,6 +147,11 @@ public final class SettlementFieldPlot {
         this.baselineCrop = chunk.getBlockState(this.position.above());
         this.soil = this.baselineSoil;
         this.crop = this.baselineCrop;
+        this.topKnown = this.position.getY() + 2 < chunk.getMaxBuildHeight();
+        if (this.topKnown) {
+            this.baselineTop = chunk.getBlockState(this.position.above(2));
+            this.top = this.baselineTop;
+        }
         if (this.crop != previous) {
             this.growth = 0.0D;
         }
@@ -162,12 +195,14 @@ public final class SettlementFieldPlot {
                 this.waterSources.add(sample.immutable());
             }
         }
+        var ownChunk = chunk(level, chunk, this.position);
+        if (ownChunk == null) return;
         this.skyLight = level.getBrightness(LightLayer.SKY, this.position.above());
         this.blockLight = level.getBrightness(LightLayer.BLOCK, this.position.above());
         this.rainExposed = this.skyLight == 15
-                && chunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,
+                && ownChunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,
                         this.position.getX(), this.position.getZ()) < this.position.above().getY()
-                && chunk.getNoiseBiome(this.position.getX() >> 2,
+                && ownChunk.getNoiseBiome(this.position.getX() >> 2,
                 this.position.above().getY() >> 2, this.position.getZ() >> 2).value().getPrecipitationAt(this.position.above())
                 == net.minecraft.world.level.biome.Biome.Precipitation.RAIN;
     }
@@ -175,7 +210,7 @@ public final class SettlementFieldPlot {
     void advance(ServerLevel level, SettlementRecord town, long now) {
         int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
         this.checkedAt = now;
-        if (elapsed == 0 || this.conflict || !this.environmentKnown || !this.soil.is(Blocks.FARMLAND)) {
+        if (elapsed == 0 || this.conflict || !this.environmentKnown) {
             return;
         }
         // use the expected random ticks per block, bounded to running server time
@@ -185,31 +220,89 @@ public final class SettlementFieldPlot {
         }
         BlockState updatedSoil = this.soil;
         BlockState updatedCrop = this.crop;
-        this.drying += randomTicks;
-        if (this.drying >= 1.0D) {
+        this.drying += this.soil.is(Blocks.FARMLAND) ? randomTicks : 0.0D;
+        if (this.soil.is(Blocks.FARMLAND) && this.drying >= 1.0D) {
             int moisture = this.soil.getValue(FarmBlock.MOISTURE);
             if (!this.waterSources.isEmpty() || this.rainExposed && level.isRaining()) {
                 updatedSoil = this.soil.setValue(FarmBlock.MOISTURE, 7);
             } else {
                 updatedSoil = this.soil.setValue(FarmBlock.MOISTURE, Math.max(0, moisture - (int) Math.min(7, this.drying)));
-                if (Math.floor(this.drying) > moisture && this.crop.isAir()) {
+                if (Math.floor(this.drying) > moisture && !this.crop.is(BlockTags.MAINTAINS_FARMLAND)) {
                     updatedSoil = Blocks.DIRT.defaultBlockState();
                 }
             }
             this.drying %= 1.0D;
         }
-        if (supportedCrop(this.crop) && Math.max(this.blockLight, this.skyLight) >= 9) {
-            CropBlock plant = (CropBlock) this.crop.getBlock();
-            double rate = 1.0D / ((int) (25.0F / growthSpeed(town)) + 1);
-            if (this.crop.is(Blocks.BEETROOTS)) {
-                rate *= 2.0D / 3.0D;
-            }
-            this.growth += randomTicks * rate;
-            int age = Math.min(plant.getMaxAge(), plant.getAge(this.crop) + (int) Math.min(plant.getMaxAge(), this.growth));
-            updatedCrop = plant.getStateForAge(age);
+        BlockState updatedTop = this.top;
+        if (this.crop.is(Blocks.COCOA) && cocoaSupported()) {
+            this.growth += randomTicks / 5.0D;
+            updatedCrop = this.crop.setValue(CocoaBlock.AGE,
+                    Math.min(CocoaBlock.MAX_AGE, SettlementFarmPlants.age(this.crop) + (int) Math.min(2.0D, this.growth)));
             this.growth %= 1.0D;
+        } else if (this.soil.is(Blocks.FARMLAND)) {
+            double rate = 1.0D / ((int) (25.0F / growthSpeed(town)) + 1);
+            if (supportedCrop(this.crop) && this.crop.getBlock() instanceof CropBlock plant
+                    && Math.max(this.blockLight, this.skyLight) >= 9) {
+                if (this.crop.is(Blocks.BEETROOTS) || this.crop.is(Blocks.TORCHFLOWER_CROP)) rate *= 2.0D / 3.0D;
+                this.growth += randomTicks * rate;
+                int age = Math.min(plant.getMaxAge(), plant.getAge(this.crop) + (int) Math.min(plant.getMaxAge(), this.growth));
+                updatedCrop = plant.getStateForAge(age);
+                this.growth %= 1.0D;
+            } else if (this.crop.is(Blocks.PITCHER_CROP) && Math.max(this.blockLight, this.skyLight) >= 8) {
+                this.growth += randomTicks * rate;
+                int maximum = this.topKnown && (this.top.isAir() || this.top.is(Blocks.PITCHER_CROP)) ? PitcherCropBlock.MAX_AGE : 2;
+                int age = Math.min(maximum, SettlementFarmPlants.age(this.crop) + (int) Math.min(4.0D, this.growth));
+                if (age >= SettlementFarmPlants.age(this.crop)) {
+                    updatedCrop = this.crop.setValue(PitcherCropBlock.AGE, age);
+                    if (age >= 3) updatedTop = updatedCrop.setValue(PitcherCropBlock.HALF, DoubleBlockHalf.UPPER);
+                }
+                this.growth %= 1.0D;
+            } else if (SettlementFarmPlants.stem(this.crop) && Math.max(this.blockLight, this.skyLight) >= 9) {
+                if (SettlementFarmPlants.age(this.crop) < StemBlock.MAX_AGE) {
+                    this.growth += randomTicks * rate;
+                    updatedCrop = this.crop.setValue(StemBlock.AGE,
+                            Math.min(StemBlock.MAX_AGE, SettlementFarmPlants.age(this.crop) + (int) Math.min(7.0D, this.growth)));
+                } else {
+                    var directions = fruitDirections(level, town);
+                    this.growth += randomTicks * rate * directions.size() / 4.0D;
+                    if (this.growth >= 1.0D && !directions.isEmpty()) {
+                        var direction = directions.get(level.getRandom().nextInt(directions.size()));
+                        var fruit = town.fields().get(this.position.relative(direction));
+                        fruit.change(fruit.soil, SettlementFarmPlants.fruitFor(this.crop));
+                        SettlementFieldService.applyLoaded(level, fruit);
+                        updatedCrop = SettlementFarmPlants.attachedFor(this.crop).setValue(AttachedStemBlock.FACING, direction);
+                    }
+                }
+                this.growth %= 1.0D;
+            } else if (SettlementFarmPlants.attachedStem(this.crop)) {
+                var direction = this.crop.getValue(AttachedStemBlock.FACING);
+                var fruit = town.fields().get(this.position.relative(direction));
+                if (fruit != null && !fruit.conflict() && !fruit.crop.is(SettlementFarmPlants.fruitFor(this.crop).getBlock())) {
+                    updatedCrop = SettlementFarmPlants.detachedFor(this.crop);
+                }
+            }
         }
-        change(updatedSoil, updatedCrop);
+        change(updatedSoil, updatedCrop, updatedTop);
+    }
+
+    private boolean cocoaSupported() {
+        if (!this.environmentKnown || this.nearbyCrops.size() != 9) return false;
+        var direction = this.crop.getValue(CocoaBlock.FACING);
+        int index = (direction.getStepX() + 1) * 3 + direction.getStepZ() + 1;
+        return this.nearbyCrops.get(index).is(BlockTags.JUNGLE_LOGS);
+    }
+
+    private List<Direction> fruitDirections(ServerLevel level, SettlementRecord town) {
+        var area = town.areas().get(this.area);
+        if (area == null) return List.of();
+        List<Direction> result = new ArrayList<>();
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            var fruit = town.fields().get(this.position.relative(direction));
+            if (fruit != null && fruit.area.equals(this.area) && (area.contains(fruit.position) || area.contains(fruit.position.above()))
+                    && SettlementFieldService.available(level, fruit) && fruit.crop.isAir()
+                    && (fruit.soil.is(Blocks.FARMLAND) || fruit.soil.is(BlockTags.DIRT))) result.add(direction);
+        }
+        return result;
     }
 
     private float growthSpeed(SettlementRecord town) {
@@ -233,13 +326,22 @@ public final class SettlementFieldPlot {
     }
 
     void change(BlockState soil, BlockState crop) {
-        if (this.soil != soil || this.crop != crop) {
+        BlockState top = this.top;
+        if (this.crop.is(Blocks.PITCHER_CROP) && !crop.is(Blocks.PITCHER_CROP) && this.top.is(Blocks.PITCHER_CROP)) {
+            top = Blocks.AIR.defaultBlockState();
+        }
+        change(soil, crop, top);
+    }
+
+    private void change(BlockState soil, BlockState crop, BlockState top) {
+        if (this.soil != soil || this.crop != crop || this.top != top) {
             if (this.crop != crop && (!supportedCrop(crop) || !crop.is(this.crop.getBlock())
-                    || ((CropBlock) crop.getBlock()).getAge(crop) < ((CropBlock) this.crop.getBlock()).getAge(this.crop))) {
+                    || SettlementFarmPlants.age(crop) < SettlementFarmPlants.age(this.crop))) {
                 this.growth = 0.0D;
             }
             this.soil = soil;
             this.crop = crop;
+            this.top = top;
             this.pending = true;
             this.version++;
         }
@@ -258,7 +360,7 @@ public final class SettlementFieldPlot {
     }
 
     private static LevelChunk chunk(ServerLevel level, LevelChunk supplied, BlockPos position) {
-        return supplied.getPos().x == Math.floorDiv(position.getX(), 16) && supplied.getPos().z == Math.floorDiv(position.getZ(), 16)
+        return supplied != null && supplied.getPos().x == Math.floorDiv(position.getX(), 16) && supplied.getPos().z == Math.floorDiv(position.getZ(), 16)
                 ? supplied : level.getChunkSource().getChunkNow(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16));
     }
 
@@ -271,6 +373,10 @@ public final class SettlementFieldPlot {
         tag.put("BaselineCrop", NbtUtils.writeBlockState(this.baselineCrop));
         tag.put("Soil", NbtUtils.writeBlockState(this.soil));
         tag.put("Crop", NbtUtils.writeBlockState(this.crop));
+        if (this.topKnown) {
+            tag.put("BaselineTop", NbtUtils.writeBlockState(this.baselineTop));
+            tag.put("Top", NbtUtils.writeBlockState(this.top));
+        }
         ListTag environment = new ListTag();
         for (int index = 0; index < this.nearbySoil.size(); index++) {
             var entry = new CompoundTag();
@@ -302,6 +408,11 @@ public final class SettlementFieldPlot {
         plot.baselineCrop = state(tag, "BaselineCrop");
         plot.soil = state(tag, "Soil");
         plot.crop = state(tag, "Crop");
+        plot.topKnown = tag.contains("Top", Tag.TAG_COMPOUND);
+        if (plot.topKnown) {
+            plot.baselineTop = state(tag, "BaselineTop");
+            plot.top = state(tag, "Top");
+        }
         for (Tag raw : tag.getList("Environment", Tag.TAG_COMPOUND)) {
             plot.nearbySoil.add(state((CompoundTag) raw, "Soil"));
             plot.nearbyCrops.add(state((CompoundTag) raw, "Crop"));

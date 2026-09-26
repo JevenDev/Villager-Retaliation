@@ -10,7 +10,6 @@ import java.util.List;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
@@ -41,7 +40,7 @@ final class SettlementBackgroundFarming {
                 continue;
             }
             BlockState crop = plot.crop();
-            boolean harvest = SettlementFieldPlot.supportedCrop(crop) && ((CropBlock) crop.getBlock()).isMaxAge(crop);
+            boolean harvest = plot.harvestable();
             boolean plant = plot.canPlant();
             boolean till = crop.isAir() && !plot.soil().is(Blocks.FARMLAND) && SettlementFieldPlot.supportedSoil(plot.soil())
                     && HiredFarmingOptions.tillSoil(worker.settings());
@@ -69,7 +68,8 @@ final class SettlementBackgroundFarming {
             var supplies = SettlementProductionInventory.supplies(level, worker, updated, depots);
             int selected = -1;
             ItemStack seed = ItemStack.EMPTY;
-            if (harvest && plot.canReplant()) {
+            boolean replant = plot.canReplant() && (!harvest || crop.getBlock() instanceof CropBlock);
+            if (harvest && replant) {
                 for (ItemStack drop : drops) {
                     if (plantFor(drop) != null) {
                         seed = drop.copyWithCount(1);
@@ -78,7 +78,7 @@ final class SettlementBackgroundFarming {
                     }
                 }
             }
-            if (seed.isEmpty() && plot.canReplant()) {
+            if (seed.isEmpty() && replant) {
                 List<Integer> consumed = new ArrayList<>(java.util.Collections.nCopies(supplies.size(), 0));
                 for (int index = 0; index < supplies.size(); index++) {
                     var source = supplies.get(index);
@@ -117,6 +117,7 @@ final class SettlementBackgroundFarming {
             }
             plot.change(plot.soil(), seed.isEmpty() ? Blocks.AIR.defaultBlockState() : plantFor(seed));
             commit(level, worker, plot, updated);
+            if (SettlementFarmPlants.fruit(crop)) SettlementFieldService.releaseFruit(level, town, plot);
             worker.practice(level, HiredWorkPractice.farming(harvest ? seed.isEmpty() ? "harvest" : "harvest_replant" : "plant"));
             worker.status(harvest ? "harvested" : "planted");
             return;
@@ -125,7 +126,7 @@ final class SettlementBackgroundFarming {
     }
 
     private static int priority(SettlementFieldPlot plot) {
-        return SettlementFieldPlot.supportedCrop(plot.crop()) && ((CropBlock) plot.crop().getBlock()).isMaxAge(plot.crop()) ? 0
+        return plot.harvestable() ? 0
                 : plot.soil().is(Blocks.FARMLAND) && plot.crop().isAir() ? 1 : 2;
     }
 
@@ -189,11 +190,7 @@ final class SettlementBackgroundFarming {
     }
 
     private static BlockState plantFor(ItemStack seed) {
-        if (seed.is(Items.WHEAT_SEEDS)) return Blocks.WHEAT.defaultBlockState();
-        if (seed.is(Items.CARROT)) return Blocks.CARROTS.defaultBlockState();
-        if (seed.is(Items.POTATO)) return Blocks.POTATOES.defaultBlockState();
-        if (seed.is(Items.BEETROOT_SEEDS)) return Blocks.BEETROOTS.defaultBlockState();
-        return null;
+        return SettlementFarmPlants.plant(seed);
     }
 
     private static void commit(ServerLevel level, SettlementWorkerState worker, SettlementFieldPlot plot, NonNullList<ItemStack> items) {

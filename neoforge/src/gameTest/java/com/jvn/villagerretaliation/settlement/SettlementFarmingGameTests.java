@@ -391,6 +391,335 @@ public final class SettlementFarmingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void fieldSurveyFindsFruitCocoaAndOnlyTheLowerPitcherHalf(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            BlockPos center = fixture.plot().position();
+            var area = new SettlementArea(fixture.area().id(), SettlementAreaType.FARM, "Mixed field",
+                    center, center.offset(2, 16, 0), 5, true);
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), area), "the mixed field fits its existing assignment");
+            extendedPlot(helper, fixture, center, Blocks.FARMLAND.defaultBlockState(), Blocks.TORCHFLOWER.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            var pitcher = pitcher(4);
+            extendedPlot(helper, fixture, center.east(), Blocks.FARMLAND.defaultBlockState(), pitcher,
+                    pitcher.setValue(net.minecraft.world.level.block.PitcherCropBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+            extendedPlot(helper, fixture, center.east(2), Blocks.STONE.defaultBlockState(), Blocks.MELON.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            BlockPos cocoa = center.atY(79);
+            setBlock(fixture.chunk(), cocoa.above(), Blocks.COCOA.defaultBlockState()
+                    .setValue(net.minecraft.world.level.block.CocoaBlock.FACING, net.minecraft.core.Direction.EAST));
+            setBlock(fixture.chunk(), cocoa.above().east(), Blocks.JUNGLE_LOG.defaultBlockState());
+            SettlementFieldService.observeArea(level, fixture.town(), area, fixture.chunk());
+            helper.assertTrue(fixture.town().fields().get(center).harvestable(), "mature torchflowers remain harvestable");
+            helper.assertTrue(fixture.town().fields().get(center.east()).harvestable(), "a complete pitcher plant is one harvestable plot");
+            helper.assertFalse(fixture.town().fields().containsKey(center.east().above()), "the pitcher upper half is not a second crop");
+            helper.assertTrue(fixture.town().fields().get(center.east(2)).harvestable(), "placed fruit can be harvested from non-farm soil");
+            helper.assertTrue(fixture.town().fields().containsKey(cocoa), "cocoa above an air block is discovered across a section boundary");
+            helper.assertFalse(level.hasChunkAt(center), "mixed field observation never loads the detached chunk");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void backgroundFarmerPlantsGrowsAndHarvestsTorchflowers(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var plot = extendedPlot(helper, fixture, fixture.plot().position(), fixture.plot().soil(),
+                    Blocks.AIR.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            fixture.supply().setItem(0, new ItemStack(Items.TORCHFLOWER_SEEDS));
+            SettlementBackgroundService.update(level, fixture.town(), 200L);
+            helper.assertTrue(plot.crop().is(Blocks.TORCHFLOWER_CROP), "a real depot seed plants a torchflower crop");
+            helper.assertTrue(fixture.supply().getItem(0).isEmpty(), "planting consumes the finite seed");
+            fastGrowth(helper, () -> SettlementFieldService.update(level, fixture.town(), 400L));
+            helper.assertTrue(plot.crop().is(Blocks.TORCHFLOWER), "growth transforms the crop into its mature flower block");
+            SettlementBackgroundService.update(level, fixture.town(), 600L);
+            helper.assertValueEqual(carried(helper, fixture, Items.TORCHFLOWER), 1, "the mature flower enters job output");
+            helper.assertTrue(plot.crop().isAir(), "harvesting does not invent replacement seeds");
+            helper.assertFalse(level.hasChunkAt(plot.position()), "torchflower production keeps terrain unloaded");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void backgroundPitcherPlantsGrowAndClearBothHalvesThroughSavedReceipts(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var plot = extendedPlot(helper, fixture, fixture.plot().position(), fixture.plot().soil(),
+                    Blocks.AIR.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            fixture.supply().setItem(0, new ItemStack(Items.PITCHER_POD));
+            SettlementBackgroundService.update(level, fixture.town(), 200L);
+            helper.assertTrue(plot.crop().is(Blocks.PITCHER_CROP), "a supplied pitcher pod creates the lower crop");
+            fastGrowth(helper, () -> SettlementFieldService.update(level, fixture.town(), 400L));
+            helper.assertTrue(plot.harvestable(), "growth produces matching mature lower and upper halves");
+            helper.assertTrue(plot.reconcile(fixture.chunk()), "both grown halves reach the native chunk together");
+            helper.assertTrue(fixture.chunk().getBlockState(plot.position().above(2)).is(Blocks.PITCHER_CROP),
+                    "the native chunk receives the upper half");
+            SettlementBackgroundService.update(level, fixture.town(), 600L);
+            helper.assertValueEqual(carried(helper, fixture, Items.PITCHER_PLANT), 1, "one complete crop yields one pitcher plant");
+            helper.assertTrue(plot.crop().isAir() && plot.top().isAir(), "harvesting clears both saved halves");
+            var saved = plot.save();
+            helper.assertTrue(SettlementFieldPlot.load(saved).reconcile(fixture.chunk()), "saved harvesting clears both native halves");
+            helper.assertTrue(fixture.chunk().getBlockState(plot.position().above()).isAir()
+                            && fixture.chunk().getBlockState(plot.position().above(2)).isAir(), "no orphaned upper half remains");
+            setBlock(fixture.chunk(), plot.position().above(), pitcher(4));
+            setBlock(fixture.chunk(), plot.position().above(2), pitcher(4).setValue(
+                    net.minecraft.world.level.block.PitcherCropBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+            helper.assertTrue(SettlementFieldPlot.load(saved).reconcile(fixture.chunk()), "an applied harvest receipt is recognized after reload");
+            helper.assertTrue(fixture.chunk().getBlockState(plot.position().above(2)).is(Blocks.PITCHER_CROP),
+                    "an old harvest cannot erase a later identical plant");
+            helper.assertFalse(level.hasChunkAt(plot.position()), "growing and reconciling pitcher halves never load the field");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void pitcherGrowthRespectsBlockedAndUnobservedUpperSpace(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var plot = extendedPlot(helper, fixture, fixture.plot().position(), fixture.plot().soil(),
+                    pitcher(0), Blocks.STONE.defaultBlockState());
+            fastGrowth(helper, () -> plot.advance(helper.getLevel(), fixture.town(), 200L));
+            helper.assertValueEqual(SettlementFarmPlants.age(plot.crop()), 2, "a low ceiling stops growth before the double-height stage");
+            helper.assertTrue(plot.top().is(Blocks.STONE), "growth preserves the blocking upper block");
+            helper.assertTrue(plot.reconcile(fixture.chunk()), "the lower growth can still be applied safely");
+            helper.assertTrue(fixture.chunk().getBlockState(plot.position().above(2)).is(Blocks.STONE), "reconciliation preserves the ceiling");
+            var legacy = plot.save();
+            legacy.remove("Top");
+            legacy.remove("BaselineTop");
+            var unknown = SettlementFieldPlot.load(legacy);
+            fastGrowth(helper, () -> unknown.advance(helper.getLevel(), fixture.town(), 400L));
+            helper.assertValueEqual(SettlementFarmPlants.age(unknown.crop()), 2, "older snapshots cannot invent clear upper space");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void changedPitcherUpperSpaceRejectsTheWholePendingGrowth(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var plot = extendedPlot(helper, fixture, fixture.plot().position(), fixture.plot().soil(), pitcher(2), Blocks.AIR.defaultBlockState());
+            fastGrowth(helper, () -> plot.advance(helper.getLevel(), fixture.town(), 200L));
+            var saved = SettlementFieldPlot.load(plot.save());
+            setBlock(fixture.chunk(), plot.position().above(2), Blocks.DIAMOND_BLOCK.defaultBlockState());
+            helper.assertFalse(saved.reconcile(fixture.chunk()), "a changed upper block rejects pending double-height growth");
+            helper.assertTrue(saved.conflict(), "the rejected growth remains recoverable");
+            helper.assertValueEqual(SettlementFarmPlants.age(fixture.chunk().getBlockState(plot.position().above())), 2,
+                    "a failed upper check cannot partially apply the lower half");
+            helper.assertTrue(fixture.chunk().getBlockState(plot.position().above(2)).is(Blocks.DIAMOND_BLOCK),
+                    "the player's upper block remains intact");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void fullFarmerInventoryPreservesBothMaturePitcherHalves(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var lower = pitcher(4);
+            var plot = extendedPlot(helper, fixture, fixture.plot().position(), fixture.plot().soil(), lower,
+                    lower.setValue(net.minecraft.world.level.block.PitcherCropBlock.HALF,
+                            net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+            var items = fixture.worker().items(helper.getLevel().registryAccess());
+            for (int slot : fixture.worker().outputSlots()) items.set(slot, new ItemStack(Items.STONE, 64));
+            fixture.worker().updateInventory(helper.getLevel().registryAccess(), items);
+            fixture.worker().settings().putBoolean("AutoDepositOutputs", false);
+            SettlementBackgroundService.update(helper.getLevel(), fixture.town(), 200L);
+            helper.assertValueEqual(fixture.worker().status(), "output_full", "finite job storage blocks harvesting");
+            helper.assertTrue(plot.harvestable() && !plot.pending(), "a blocked harvest leaves both halves untouched");
+            helper.assertValueEqual(carried(helper, fixture, Items.PITCHER_PLANT), 0, "a blocked harvest yields no duplicate item");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void unloadedFruitFarmsKeepTheirStemsAndProduceRepeatedHarvests(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            BlockPos center = fixture.plot().position();
+            var area = new SettlementArea(fixture.area().id(), SettlementAreaType.FARM, "Fruit field", center, center.east().above(), 5, true);
+            fixture.town().putArea(fixture.town().leader(), area);
+            var stem = extendedPlot(helper, fixture, center, fixture.plot().soil(),
+                    Blocks.PUMPKIN_STEM.defaultBlockState().setValue(net.minecraft.world.level.block.StemBlock.AGE, 7), Blocks.AIR.defaultBlockState());
+            var fruit = extendedPlot(helper, fixture, center.east(), Blocks.DIRT.defaultBlockState(),
+                    Blocks.AIR.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            fixture.worker().settings().putBoolean(HiredFarmingOptions.TILL_SOIL_TAG, false);
+            fastGrowth(helper, () -> run(helper, fixture, 200, 2_000));
+            helper.assertTrue(fixture.output().count(stack -> stack.is(Items.PUMPKIN)) >= 2, "the same living stem supplies repeated finite harvests");
+            helper.assertTrue(SettlementFarmPlants.stem(stem.crop()) || SettlementFarmPlants.attachedStem(stem.crop()),
+                    "fruit harvesting never removes its source stem");
+            helper.assertTrue(stem.reconcile(fixture.chunk()) && fruit.reconcile(fixture.chunk()), "stem and fruit changes both reach their original chunk");
+            helper.assertValueEqual(fixture.chunk().getBlockState(center.above()), stem.crop(), "the physical stem matches the ledger");
+            helper.assertValueEqual(fixture.chunk().getBlockState(center.east().above()), fruit.crop(), "the physical fruit matches the ledger");
+            helper.assertFalse(level.hasChunkAt(center), "repeated fruit cycles do not load the farm");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void melonHarvestUsesTheRealHoeAndDetachesItsStem(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            BlockPos center = fixture.plot().position();
+            fixture.town().putArea(fixture.town().leader(), new SettlementArea(fixture.area().id(), SettlementAreaType.FARM,
+                    "Melon field", center, center.east().above(), 5, true));
+            var stem = extendedPlot(helper, fixture, center, fixture.plot().soil(),
+                    Blocks.ATTACHED_MELON_STEM.defaultBlockState().setValue(net.minecraft.world.level.block.AttachedStemBlock.FACING,
+                            net.minecraft.core.Direction.EAST), Blocks.AIR.defaultBlockState());
+            var fruit = extendedPlot(helper, fixture, center.east(), Blocks.DIRT.defaultBlockState(),
+                    Blocks.MELON.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            var items = fixture.worker().items(level.registryAccess());
+            items.get(HiredJobInventory.MAINHAND_SLOT).enchant(level.registryAccess()
+                    .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                    .getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH), 1);
+            fixture.worker().updateInventory(level.registryAccess(), items);
+            SettlementBackgroundService.update(level, fixture.town(), 200L);
+            helper.assertValueEqual(carried(helper, fixture, Items.MELON), 1, "Silk Touch uses the native melon loot table");
+            helper.assertValueEqual(carried(helper, fixture, Items.MELON_SLICE), 0, "the enchanted harvest does not also produce slices");
+            helper.assertTrue(stem.crop().is(Blocks.MELON_STEM) && SettlementFarmPlants.age(stem.crop()) == 7,
+                    "removing the fruit returns its attached stem to the mature growing state");
+            helper.assertTrue(fruit.crop().isAir(), "one harvested fruit becomes an empty site");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void stemsCannotCreateFruitInUnobservedOrOccupiedSites(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            BlockPos center = fixture.plot().position();
+            var stem = extendedPlot(helper, fixture, center, fixture.plot().soil(),
+                    Blocks.MELON_STEM.defaultBlockState().setValue(net.minecraft.world.level.block.StemBlock.AGE, 7), Blocks.AIR.defaultBlockState());
+            fastGrowth(helper, () -> stem.advance(level, fixture.town(), 200L));
+            helper.assertTrue(stem.crop().is(Blocks.MELON_STEM), "unrecorded adjacent space cannot produce fruit");
+            fixture.town().putArea(fixture.town().leader(), new SettlementArea(fixture.area().id(), SettlementAreaType.FARM,
+                    "Blocked field", center, center.east().above(), 5, true));
+            var occupied = extendedPlot(helper, fixture, center.east(), Blocks.DIRT.defaultBlockState(),
+                    Blocks.MELON.defaultBlockState(), Blocks.AIR.defaultBlockState());
+            fastGrowth(helper, () -> stem.advance(level, fixture.town(), 400L));
+            helper.assertTrue(stem.crop().is(Blocks.MELON_STEM), "an occupied target cannot accept another fruit");
+            helper.assertTrue(occupied.crop().is(Blocks.MELON) && !occupied.pending(), "the existing fruit remains unchanged");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void backgroundCocoaNeedsItsObservedJungleSupportAndYieldsRealBeans(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            BlockPos center = fixture.plot().position();
+            setBlock(fixture.chunk(), center.above().east(), Blocks.JUNGLE_LOG.defaultBlockState());
+            var cocoa = Blocks.COCOA.defaultBlockState().setValue(net.minecraft.world.level.block.CocoaBlock.FACING, net.minecraft.core.Direction.EAST);
+            var plot = extendedPlot(helper, fixture, center, Blocks.AIR.defaultBlockState(), cocoa, Blocks.AIR.defaultBlockState());
+            fastGrowth(helper, () -> plot.advance(level, fixture.town(), 200L));
+            helper.assertTrue(plot.harvestable(), "supported cocoa matures without farmland or light requirements");
+            setBlock(fixture.chunk(), center.above().east(), Blocks.AIR.defaultBlockState());
+            plot.observeEnvironment(level, fixture.chunk());
+            helper.assertFalse(plot.harvestable(), "removing the observed jungle support blocks the stale crop");
+            SettlementBackgroundService.update(level, fixture.town(), 200L);
+            helper.assertValueEqual(carried(helper, fixture, Items.COCOA_BEANS), 0, "unsupported cocoa cannot generate beans");
+            setBlock(fixture.chunk(), center.above().east(), Blocks.JUNGLE_LOG.defaultBlockState());
+            plot.observeEnvironment(level, fixture.chunk());
+            SettlementBackgroundService.update(level, fixture.town(), 400L);
+            helper.assertValueEqual(carried(helper, fixture, Items.COCOA_BEANS), 3, "mature cocoa uses its real block loot");
+            helper.assertTrue(plot.crop().isAir(), "harvesting does not invent a replacement cocoa pod");
+            helper.assertFalse(level.hasChunkAt(center), "cocoa work does not load its supporting terrain");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void cocoaSurveyIncludesAnOtherwiseEmptySectionBelowItsPod(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var original = fixture.plot().position();
+            setBlock(fixture.chunk(), original, Blocks.STONE.defaultBlockState());
+            setBlock(fixture.chunk(), original.above(), Blocks.AIR.defaultBlockState());
+            var soil = original.atY(79);
+            var area = new SettlementArea(fixture.area().id(), SettlementAreaType.FARM, "Cocoa",
+                    soil, soil.above(), 5, true);
+            fixture.town().putArea(fixture.town().leader(), area);
+            setBlock(fixture.chunk(), soil.above(), Blocks.COCOA.defaultBlockState());
+            SettlementFieldService.observeArea(level, fixture.town(), area, fixture.chunk());
+            helper.assertTrue(fixture.town().fields().containsKey(soil),
+                    "the section above is checked even when the soil section contains no farm blocks");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void fruitAndStemReceiptsSurviveDifferentChunkReturnOrders(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var first = fixture.chunk();
+            var second = new LevelChunk(level, new ChunkPos(first.getPos().x + 1, first.getPos().z));
+            BlockPos stemPos = new BlockPos(first.getPos().getMaxBlockX(), 64, first.getPos().getMinBlockZ() + 11);
+            BlockPos fruitPos = stemPos.east();
+            var area = new SettlementArea(fixture.area().id(), SettlementAreaType.FARM, "Boundary fruit",
+                    stemPos, fruitPos.above(), 5, true);
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), area), "the cross-chunk field fits its assignment");
+            fixture.town().removeField(fixture.plot().position());
+            setBlock(first, stemPos, Blocks.FARMLAND.defaultBlockState().setValue(FarmBlock.MOISTURE, 7));
+            setBlock(first, stemPos.above(), Blocks.PUMPKIN_STEM.defaultBlockState().setValue(net.minecraft.world.level.block.StemBlock.AGE, 7));
+            setBlock(second, fruitPos, Blocks.DIRT.defaultBlockState());
+            var stem = boundaryPlot(helper, fixture, stemPos, first, second);
+            var fruit = boundaryPlot(helper, fixture, fruitPos, first, second);
+            fastGrowth(helper, () -> SettlementFieldService.update(level, fixture.town(), 200L));
+            helper.assertTrue(stem.crop().is(Blocks.ATTACHED_PUMPKIN_STEM) && fruit.crop().is(Blocks.PUMPKIN),
+                    "one observed stem creates one adjacent fruit across the boundary");
+            var grownStem = stem.save();
+            var grownFruit = fruit.save();
+            helper.assertTrue(fruit.reconcile(second), "the fruit chunk can return first");
+            helper.assertTrue(stem.reconcile(first), "the stem chunk can return later");
+            SettlementBackgroundFarming.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(carried(helper, fixture, Items.PUMPKIN), 1, "the cross-chunk fruit produces one real harvest");
+            helper.assertTrue(fruit.crop().isAir() && stem.crop().is(Blocks.PUMPKIN_STEM), "harvesting retires the fruit and detaches the stem");
+            helper.assertTrue(stem.reconcile(first), "the stem can apply its next revision first");
+            helper.assertTrue(fruit.reconcile(second), "the fruit can apply its next revision later");
+            helper.assertTrue(SettlementFieldPlot.load(grownStem).reconcile(first)
+                    && SettlementFieldPlot.load(grownFruit).reconcile(second), "older growth receipts recognize the later applied harvest");
+            helper.assertTrue(first.getBlockState(stemPos.above()).is(Blocks.PUMPKIN_STEM)
+                    && second.getBlockState(fruitPos.above()).isAir(), "stale growth cannot resurrect the harvested fruit or attachment");
+            helper.assertFalse(level.hasChunkAt(stemPos) || level.hasChunkAt(fruitPos), "neither transaction direction loads a chunk");
+        });
+    }
+
+    private static SettlementFieldPlot boundaryPlot(GameTestHelper helper, Fixture fixture, BlockPos position,
+                                                       LevelChunk first, LevelChunk second) {
+        var own = new ChunkPos(position).equals(first.getPos()) ? first : second;
+        var plot = SettlementFieldPlot.capture(helper.getLevel(), fixture.area().id(), position, own, 0L);
+        var saved = plot.save();
+        var environment = new net.minecraft.nbt.ListTag();
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                var sample = position.offset(x, 0, z);
+                var chunk = new ChunkPos(sample).equals(first.getPos()) ? first : second;
+                var entry = new net.minecraft.nbt.CompoundTag();
+                entry.put("Soil", net.minecraft.nbt.NbtUtils.writeBlockState(chunk.getBlockState(sample)));
+                entry.put("Crop", net.minecraft.nbt.NbtUtils.writeBlockState(chunk.getBlockState(sample.above())));
+                environment.add(entry);
+            }
+        }
+        saved.put("Environment", environment);
+        saved.putBoolean("EnvironmentKnown", true);
+        saved.putInt("BlockLight", 15);
+        plot = SettlementFieldPlot.load(saved);
+        fixture.town().recordField(plot);
+        return plot;
+    }
+
+    private static BlockState pitcher(int age) {
+        return Blocks.PITCHER_CROP.defaultBlockState().setValue(net.minecraft.world.level.block.PitcherCropBlock.AGE, age);
+    }
+
+    private static SettlementFieldPlot extendedPlot(GameTestHelper helper, Fixture fixture, BlockPos position,
+                                                     BlockState soil, BlockState crop, BlockState top) {
+        setBlock(fixture.chunk(), position, soil);
+        setBlock(fixture.chunk(), position.above(), crop);
+        setBlock(fixture.chunk(), position.above(2), top);
+        var plot = SettlementFieldPlot.capture(helper.getLevel(), fixture.area().id(), position, fixture.chunk(), 0L);
+        var saved = plot.save();
+        saved.putInt("BlockLight", 15);
+        plot = SettlementFieldPlot.load(saved);
+        fixture.town().recordField(plot);
+        return plot;
+    }
+
+    private static void fastGrowth(GameTestHelper helper, Runnable work) {
+        var level = helper.getLevel();
+        int previous = level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
+        try {
+            level.getGameRules().getRule(GameRules.RULE_RANDOMTICKING).set(4096, level.getServer());
+            work.run();
+        } finally {
+            level.getGameRules().getRule(GameRules.RULE_RANDOMTICKING).set(previous, level.getServer());
+        }
+    }
+
     private static void setBlock(LevelChunk chunk, BlockPos position, BlockState state) {
         chunk.getSection(chunk.getSectionIndex(position.getY())).setBlockState(position.getX() & 15,
                 position.getY() & 15, position.getZ() & 15, state);
