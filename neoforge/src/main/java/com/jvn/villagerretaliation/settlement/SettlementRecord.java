@@ -41,6 +41,7 @@ public final class SettlementRecord {
     private final Map<BlockPos, SettlementFurnaceState> furnaces = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementBrewingStandState> brewingStands = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFieldPlot> fields = new LinkedHashMap<>();
+    private final Map<UUID, SettlementForest> forests = new LinkedHashMap<>();
     private final Map<UUID, List<SettlementFishingSpot>> fishingSpots = new LinkedHashMap<>();
     private long nextDepartureAt;
     private long nextApplicantAt;
@@ -108,6 +109,19 @@ public final class SettlementRecord {
             this.fishingSpots.put(area, List.copyOf(spots));
         }
         changed();
+    }
+
+    public Map<UUID, SettlementForest> forests() {
+        return Collections.unmodifiableMap(this.forests);
+    }
+
+    void recordForest(SettlementForest forest) {
+        this.forests.put(forest.area(), forest);
+        changed();
+    }
+
+    void removeForest(UUID area) {
+        if (this.forests.remove(area) != null) changed();
     }
 
     public Map<BlockPos, SettlementFieldPlot> fields() {
@@ -585,6 +599,9 @@ public final class SettlementRecord {
         ListTag fieldTags = new ListTag();
         this.fields.values().forEach(plot -> fieldTags.add(plot.save()));
         tag.put("Fields", fieldTags);
+        var forestTags = new ListTag();
+        this.forests.values().forEach(forest -> forestTags.add(forest.save()));
+        tag.put("Forests", forestTags);
         ListTag fishingTags = new ListTag();
         this.fishingSpots.values().forEach(spots -> spots.forEach(spot -> fishingTags.add(spot.save())));
         tag.put("FishingSpots", fishingTags);
@@ -640,6 +657,12 @@ public final class SettlementRecord {
             var plot = SettlementFieldPlot.load((CompoundTag) raw);
             if (record.fields.putIfAbsent(plot.position(), plot) != null) {
                 throw new IllegalArgumentException("Settlement field duplicates a position");
+            }
+        }
+        for (Tag raw : tag.getList("Forests", Tag.TAG_COMPOUND)) {
+            var forest = SettlementForest.load((CompoundTag) raw);
+            if (record.forests.putIfAbsent(forest.area(), forest) != null) {
+                throw new IllegalArgumentException("Settlement forests duplicate an area");
             }
         }
         Map<UUID, List<SettlementFishingSpot>> fishingSpots = new LinkedHashMap<>();

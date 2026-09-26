@@ -25,25 +25,37 @@ public final class SettlementChunkReceipts {
     }
 
     static UUID identity(LevelChunk chunk, BlockPos position) {
-        var entry = chunk.getData(RECEIPTS).getCompound(Long.toString(position.asLong()));
+        return identity(chunk, Long.toString(position.asLong()));
+    }
+
+    static UUID identity(LevelChunk chunk, String key) {
+        var entry = chunk.getData(RECEIPTS).getCompound(key);
         if (entry.hasUUID("Id")) {
             return entry.getUUID("Id");
         }
         UUID id = UUID.randomUUID();
-        applied(chunk, position, id, 0L);
+        applied(chunk, key, id, 0L);
         return id;
     }
 
     static long version(LevelChunk chunk, BlockPos position, UUID id) {
-        var entry = chunk.getData(RECEIPTS).getCompound(Long.toString(position.asLong()));
+        return version(chunk, Long.toString(position.asLong()), id);
+    }
+
+    static long version(LevelChunk chunk, String key, UUID id) {
+        var entry = chunk.getData(RECEIPTS).getCompound(key);
         return entry.hasUUID("Id") && entry.getUUID("Id").equals(id) ? entry.getLong("Version") : -1L;
     }
 
     static void applied(LevelChunk chunk, BlockPos position, UUID id, long version) {
+        applied(chunk, Long.toString(position.asLong()), id, version);
+    }
+
+    static void applied(LevelChunk chunk, String key, UUID id, long version) {
         var entry = new CompoundTag();
         entry.putUUID("Id", id);
         entry.putLong("Version", version);
-        chunk.getData(RECEIPTS).put(Long.toString(position.asLong()), entry);
+        chunk.getData(RECEIPTS).put(key, entry);
         chunk.setUnsaved(true);
     }
 

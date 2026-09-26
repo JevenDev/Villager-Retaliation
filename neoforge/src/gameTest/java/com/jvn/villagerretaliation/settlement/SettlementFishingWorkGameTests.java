@@ -351,6 +351,11 @@ public final class SettlementFishingWorkGameTests {
                 : new LevelChunk(level, new ChunkPos(660_000 + origin.getX() * 4, 660_000 + origin.getZ() * 4));
         var water = new BlockPos(chunk.getPos().getMinBlockX() + 8, loaded ? origin.getY() + 4 : 63, chunk.getPos().getMinBlockZ() + 8);
         var approach = water.west(4).above();
+        if (loaded) {
+            for (BlockPos position : BlockPos.betweenClosed(water.offset(-5, -2, -3), water.offset(3, 3, 3))) {
+                chunk.setBlockState(position, Blocks.AIR.defaultBlockState(), false);
+            }
+        }
         for (int x = -3; x <= 3; x++) {
             for (int z = -3; z <= 3; z++) {
                 setBlock(chunk, water.offset(x, 0, z), Blocks.WATER.defaultBlockState());
@@ -384,7 +389,7 @@ public final class SettlementFishingWorkGameTests {
         town.recordWorker(worker);
         town.recordResident(SettlementResidentState.capture(villager, town, 0L));
         var spot = SettlementFishingSpot.capture(level, area, water, approach, chunk);
-        helper.assertTrue(spot != null && spot.valid(), "the detached shore has observed water and a safe casting site");
+        helper.assertTrue(spot != null && spot.valid(), "the prepared shore has observed water and a safe casting site");
         town.recordFishingSpots(area.id(), List.of(spot));
         if (!loaded) helper.assertFalse(level.hasChunkAt(water), "the fixture does not load the fishing shore");
         long dayTime = level.getDayTime();

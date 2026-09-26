@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -19,13 +20,14 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /** Tree classification and bounded geometry discovery shared by target planning and harvesting. */
-final class LoggingTreeGeometry {
+public final class LoggingTreeGeometry {
     private static final int MAX_HORIZONTAL_DISTANCE = 12;
     private static final int MAX_VERTICAL_DISTANCE = 48;
     private static final int MAX_LEAF_BRIDGE_POSITIONS = 1536;
@@ -46,11 +48,36 @@ final class LoggingTreeGeometry {
     }
 
     static DiscoveryCache discovery(ServerLevel level, Set<ResourceLocation> filters) {
-        return new DiscoveryCache(level, filters == null ? Set.of() : Set.copyOf(filters));
+        return new DiscoveryCache(new TreeView(level, level::hasChunkAt), filters == null ? Set.of() : Set.copyOf(filters));
     }
 
-    static List<BlockPos> connectedTreeLogs(
-            ServerLevel level,
+    static List<BlockPos> connectedTreeLogs(ServerLevel level, BlockPos origin, Set<ResourceLocation> filters) {
+        return connectedTreeLogs(level, level::hasChunkAt, origin, filters);
+    }
+
+    public static List<BlockPos> connectedTreeLogs(BlockGetter blocks, Predicate<BlockPos> observed,
+                                                    BlockPos origin, Set<ResourceLocation> filters) {
+        return connectedTreeLogs(new TreeView(blocks, observed), origin, filters);
+    }
+
+    static List<BlockPos> naturalTreeLeaves(ServerLevel level, List<BlockPos> logs) {
+        return naturalTreeLeaves(level, level::hasChunkAt, logs);
+    }
+
+    public static List<BlockPos> naturalTreeLeaves(BlockGetter blocks, Predicate<BlockPos> observed, List<BlockPos> logs) {
+        return naturalTreeLeaves(new TreeView(blocks, observed), logs);
+    }
+
+    static ItemStack saplingForTree(ServerLevel level, List<BlockPos> logs) {
+        return saplingForTree(level, level::hasChunkAt, logs);
+    }
+
+    public static ItemStack saplingForTree(BlockGetter blocks, Predicate<BlockPos> observed, List<BlockPos> logs) {
+        return saplingForTree(new TreeView(blocks, observed), logs);
+    }
+
+    private static List<BlockPos> connectedTreeLogs(
+            TreeView level,
             BlockPos origin,
             Set<ResourceLocation> filters) {
         List<BlockPos> originComponent = connectedLogs(level, origin, filters);
@@ -68,7 +95,7 @@ final class LoggingTreeGeometry {
         return orderedTreeLogs(logs);
     }
 
-    static List<BlockPos> naturalTreeLeaves(ServerLevel level, List<BlockPos> logs) {
+    private static List<BlockPos> naturalTreeLeaves(TreeView level, List<BlockPos> logs) {
         List<BlockPos> leaves = new ArrayList<>();
         Set<Long> seen = new HashSet<>();
         Set<Long> selectedLogs = new HashSet<>();
@@ -89,7 +116,7 @@ final class LoggingTreeGeometry {
     }
 
     private static boolean isAttachedToExternalLog(
-            ServerLevel level,
+            TreeView level,
             BlockPos leaf,
             Set<Long> selectedLogs) {
         for (BlockPos rawPos : BlockPos.betweenClosed(leaf.offset(-3, -4, -3), leaf.offset(3, 2, 3))) {
@@ -104,7 +131,7 @@ final class LoggingTreeGeometry {
         return false;
     }
 
-    static ItemStack saplingForTree(ServerLevel level, List<BlockPos> logs) {
+    private static ItemStack saplingForTree(TreeView level, List<BlockPos> logs) {
         BlockPos root = treeRoot(logs);
         if (root != null && level.hasChunkAt(root)) {
             ItemStack sapling = saplingForLogState(level.getBlockState(root));
@@ -145,7 +172,7 @@ final class LoggingTreeGeometry {
         return positions;
     }
 
-    static BlockPos treeRoot(List<BlockPos> logs) {
+    public static BlockPos treeRoot(List<BlockPos> logs) {
         BlockPos root = null;
         for (BlockPos log : logs) {
             if (root == null
@@ -161,7 +188,7 @@ final class LoggingTreeGeometry {
         return state.is(BlockTags.LOGS) && HiredLoggingFilters.matches(state, filters);
     }
 
-    static String logFamilyKey(BlockState state) {
+    public static String logFamilyKey(BlockState state) {
         ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         String path = id.getPath().toLowerCase(Locale.ROOT);
         if (path.startsWith("stripped_")) {
@@ -176,7 +203,7 @@ final class LoggingTreeGeometry {
         return id.getNamespace() + ":" + path;
     }
 
-    static boolean isNaturalLeaf(BlockState state) {
+    public static boolean isNaturalLeaf(BlockState state) {
         return (state.is(BlockTags.LEAVES)
                 && (!state.hasProperty(BlockStateProperties.PERSISTENT)
                 || !state.getValue(BlockStateProperties.PERSISTENT)))
@@ -219,7 +246,7 @@ final class LoggingTreeGeometry {
     }
 
     private static List<BlockPos> retainOriginTreeComponents(
-            ServerLevel level,
+            TreeView level,
             List<BlockPos> logs,
             List<BlockPos> originComponentLogs) {
         if (logs.isEmpty()) {
@@ -266,14 +293,14 @@ final class LoggingTreeGeometry {
     }
 
     private static List<BlockPos> connectedLogs(
-            ServerLevel level,
+            TreeView level,
             BlockPos origin,
             Set<ResourceLocation> filters) {
         return connectedLogs(level, origin, filters, false);
     }
 
     private static List<BlockPos> connectedLogs(
-            ServerLevel level,
+            TreeView level,
             BlockPos origin,
             Set<ResourceLocation> filters,
             boolean includeLeafAttachedLogs) {
@@ -325,7 +352,7 @@ final class LoggingTreeGeometry {
     }
 
     private static void enqueueNearbyTreeLogs(
-            ServerLevel level,
+            TreeView level,
             BlockPos origin,
             BlockPos center,
             Set<ResourceLocation> filters,
@@ -347,7 +374,7 @@ final class LoggingTreeGeometry {
     }
 
     private static void enqueueNearbyTreeLeaves(
-            ServerLevel level,
+            TreeView level,
             BlockPos origin,
             BlockPos center,
             int distance,
@@ -374,7 +401,7 @@ final class LoggingTreeGeometry {
         }
     }
 
-    private static boolean isLikelyNaturalTree(ServerLevel level, List<BlockPos> logs) {
+    private static boolean isLikelyNaturalTree(TreeView level, List<BlockPos> logs) {
         return !logs.isEmpty()
                 && hasRootedLog(level, logs)
                 && naturalLeavesNearLogs(level, logs) >= MIN_NATURAL_LEAVES;
@@ -411,7 +438,7 @@ final class LoggingTreeGeometry {
                 && Math.abs(origin.getY() - pos.getY()) <= MAX_VERTICAL_DISTANCE;
     }
 
-    private static int naturalLeavesNearLogs(ServerLevel level, List<BlockPos> logs) {
+    private static int naturalLeavesNearLogs(TreeView level, List<BlockPos> logs) {
         Set<Long> leaves = new HashSet<>();
         for (BlockPos log : logs) {
             for (BlockPos rawPos : BlockPos.betweenClosed(log.offset(-2, -1, -2), log.offset(2, 3, 2))) {
@@ -426,7 +453,7 @@ final class LoggingTreeGeometry {
         return leaves.size();
     }
 
-    private static boolean hasRootedLog(ServerLevel level, List<BlockPos> logs) {
+    private static boolean hasRootedLog(TreeView level, List<BlockPos> logs) {
         for (BlockPos log : logs) {
             BlockPos below = log.below();
             if (level.hasChunkAt(below)) {
@@ -450,13 +477,13 @@ final class LoggingTreeGeometry {
     static final class DiscoveryCache {
         private static final Candidate NOT_A_TREE = new Candidate(null, false);
 
-        private final ServerLevel level;
+        private final TreeView level;
         private final Set<ResourceLocation> filters;
         private final Map<Long, Candidate> byLog = new HashMap<>();
         private final Map<Long, BlockPos> harvestRootByLog = new HashMap<>();
         private int analysisCount;
 
-        private DiscoveryCache(ServerLevel level, Set<ResourceLocation> filters) {
+        private DiscoveryCache(TreeView level, Set<ResourceLocation> filters) {
             this.level = level;
             this.filters = filters;
         }
@@ -520,6 +547,16 @@ final class LoggingTreeGeometry {
                 this.harvestRootByLog.put(log.asLong(), root);
             }
             return root;
+        }
+    }
+
+    private record TreeView(BlockGetter blocks, Predicate<BlockPos> observed) {
+        boolean hasChunkAt(BlockPos position) {
+            return this.observed.test(position);
+        }
+
+        BlockState getBlockState(BlockPos position) {
+            return this.blocks.getBlockState(position);
         }
     }
 
