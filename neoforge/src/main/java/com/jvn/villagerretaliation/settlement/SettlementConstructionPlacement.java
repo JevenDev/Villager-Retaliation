@@ -88,6 +88,10 @@ final class SettlementConstructionPlacement {
         return true;
     }
 
+    boolean applied(net.minecraft.world.level.chunk.LevelChunk chunk, UUID project, BlockPos pos) {
+        return SettlementChunkReceipts.version(chunk, key(project, pos), this.id) >= 1L;
+    }
+
     private String key(UUID project, BlockPos pos) {
         return "Construction:" + project + ":" + this.id + ":" + pos.asLong();
     }

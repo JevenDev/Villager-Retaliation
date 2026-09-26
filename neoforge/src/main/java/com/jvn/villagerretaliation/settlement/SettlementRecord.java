@@ -480,7 +480,7 @@ public final class SettlementRecord {
         return this.areas.values().stream()
                 .filter(area -> area.enabled() && area.type() == SettlementAreaType.HOME)
                 .map(area -> this.surveys.get(area.id()))
-                .filter(survey -> survey != null && survey.fullyLoaded())
+                .filter(Objects::nonNull)
                 .mapToInt(survey -> survey.beds().size())
                 .sum();
     }

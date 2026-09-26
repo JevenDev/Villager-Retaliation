@@ -33,7 +33,11 @@ public final class SettlementBuildingSurvey {
     }
 
     static Survey inspect(ServerLevel level, SettlementArea area, LevelChunk supplied) {
-        ObservedBlocks blocks = new ObservedBlocks(level, supplied);
+        return inspect(new ObservedBlocks(level, supplied), area);
+    }
+
+    static Survey inspect(ObservedBlocks blocks, SettlementArea area) {
+        var level = blocks.level();
         List<BlockPos> beds = new ArrayList<>();
         List<BlockPos> workstations = new ArrayList<>();
         List<BlockPos> waterSources = new ArrayList<>();
@@ -42,11 +46,34 @@ public final class SettlementBuildingSurvey {
         for (int chunkX = Math.floorDiv(area.min().getX(), 16); chunkX <= Math.floorDiv(area.max().getX(), 16); chunkX++) {
             for (int chunkZ = Math.floorDiv(area.min().getZ(), 16); chunkZ <= Math.floorDiv(area.max().getZ(), 16); chunkZ++) {
                 LevelChunk chunk = blocks.chunk(chunkX, chunkZ);
-                if (chunk == null) {
-                    fullyLoaded = false;
-                    continue;
+                var candidates = new java.util.LinkedHashSet<BlockPos>();
+                if (chunk != null) {
+                    candidates.addAll(points(level, area, chunk));
+                } else {
+                    if (!blocks.construction.observedChunk(chunkX, chunkZ)) {
+                        fullyLoaded = false;
+                        continue;
+                    }
+                    int minX = Math.max(area.min().getX(), chunkX << 4);
+                    int maxX = Math.min(area.max().getX(), (chunkX << 4) + 15);
+                    int minZ = Math.max(area.min().getZ(), chunkZ << 4);
+                    int maxZ = Math.min(area.max().getZ(), (chunkZ << 4) + 15);
+                    for (var pos : BlockPos.betweenClosed(minX, Math.max(area.min().getY(), level.getMinBuildHeight()), minZ,
+                            maxX, Math.min(area.max().getY(), level.getMaxBuildHeight() - 1), maxZ)) {
+                        if (!blocks.observed(pos)) {
+                            fullyLoaded = false;
+                        } else if (relevant(area.type(), blocks.getBlockState(pos))) {
+                            candidates.add(pos.immutable());
+                        }
+                    }
                 }
-                for (BlockPos position : points(level, area, chunk)) {
+                for (var entry : blocks.construction.changes().entrySet()) {
+                    var pos = entry.getKey();
+                    if (pos.getX() >> 4 == chunkX && pos.getZ() >> 4 == chunkZ && area.contains(pos)
+                            && relevant(area.type(), entry.getValue())) candidates.add(pos);
+                }
+                for (BlockPos position : candidates) {
+                    if (!relevant(area.type(), blocks.getBlockState(position))) continue;
                     if (area.type() == SettlementAreaType.HOME) {
                         BedState bed = inspectBed(blocks, area, position);
                         if (bed == BedState.AVAILABLE) {
@@ -54,12 +81,12 @@ public final class SettlementBuildingSurvey {
                         } else if (bed == BedState.UNOBSERVED) {
                             fullyLoaded = false;
                         }
-                    } else if (area.type() == SettlementAreaType.BREWERY && waterSource(chunk.getBlockState(position))) {
+                    } else if (area.type() == SettlementAreaType.BREWERY && waterSource(blocks.getBlockState(position))) {
                         waterSources.add(position);
                     } else {
                         workstations.add(position);
                         if (requiresFixture(area.type())) {
-                            fixtures.put(position, BuiltInRegistries.BLOCK.getKey(chunk.getBlockState(position).getBlock()));
+                            fixtures.put(position, BuiltInRegistries.BLOCK.getKey(blocks.getBlockState(position).getBlock()));
                         }
                     }
                 }
@@ -122,9 +149,9 @@ public final class SettlementBuildingSurvey {
         return new ObservedBlocks(level, supplied).observed(position);
     }
 
-    static boolean fixtureAvailable(ServerLevel level, BlockPos position, ResourceLocation expected) {
-        var chunk = level.getChunkSource().getChunkNow(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16));
-        return chunk == null || BuiltInRegistries.BLOCK.getKey(chunk.getBlockState(position).getBlock()).equals(expected);
+    static boolean fixtureAvailable(ObservedBlocks blocks, BlockPos position, ResourceLocation expected) {
+        return blocks.observed(position) ? BuiltInRegistries.BLOCK.getKey(blocks.getBlockState(position).getBlock()).equals(expected)
+                : !blocks.blocked(position);
     }
 
     public static boolean usableBed(ServerLevel level, BlockPos head) {
@@ -139,9 +166,9 @@ public final class SettlementBuildingSurvey {
         return inspectBed(new ObservedBlocks(level, supplied), area, head);
     }
 
-    private static BedState inspectBed(ObservedBlocks blocks, SettlementArea area, BlockPos head) {
+    static BedState inspectBed(ObservedBlocks blocks, SettlementArea area, BlockPos head) {
         if (!blocks.observed(head)) {
-            return BedState.UNOBSERVED;
+            return blocks.blocked(head) ? BedState.BLOCKED : BedState.UNOBSERVED;
         }
         BlockState state = blocks.getBlockState(head);
         if (!(state.getBlock() instanceof BedBlock) || state.getValue(BedBlock.PART) != BedPart.HEAD) {
@@ -153,21 +180,25 @@ public final class SettlementBuildingSurvey {
             return BedState.BLOCKED;
         }
         if (!blocks.observed(foot)) {
-            return BedState.UNOBSERVED;
+            return blocks.blocked(foot) ? BedState.BLOCKED : BedState.UNOBSERVED;
         }
         BlockState other = blocks.getBlockState(foot);
         if (!other.is(state.getBlock()) || other.getValue(BedBlock.PART) != BedPart.FOOT
-                || other.getValue(BedBlock.FACING) != facing || !clearAbove(blocks, head) || !clearAbove(blocks, foot)) {
+                || other.getValue(BedBlock.FACING) != facing) {
             return BedState.BLOCKED;
         }
+        for (var pos : List.of(head, foot)) {
+            if (blocks.blocked(pos.above()) || blocks.observed(pos.above()) && !clearAbove(blocks, pos)) return BedState.BLOCKED;
+        }
+        if (!blocks.observed(head.above()) || !blocks.observed(foot.above())) return BedState.UNOBSERVED;
         boolean unobservedExit = false;
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos headExit = head.relative(direction);
             BlockPos footExit = foot.relative(direction);
-            if (safeExit(blocks, headExit) || safeExit(blocks, footExit)) {
-                return BedState.AVAILABLE;
-            }
-            unobservedExit |= !blocks.observed(headExit) || !blocks.observed(footExit);
+            var headState = exit(blocks, headExit);
+            var footState = exit(blocks, footExit);
+            if (headState == BedState.AVAILABLE || footState == BedState.AVAILABLE) return BedState.AVAILABLE;
+            unobservedExit |= headState == BedState.UNOBSERVED || footState == BedState.UNOBSERVED;
         }
         return unobservedExit ? BedState.UNOBSERVED : BedState.BLOCKED;
     }
@@ -182,21 +213,45 @@ public final class SettlementBuildingSurvey {
         return blocks.getBlockState(pos.above()).getCollisionShape(blocks, pos.above()).isEmpty();
     }
 
-    private static boolean safeExit(ObservedBlocks blocks, BlockPos pos) {
-        return blocks.observed(pos) && blocks.getBlockState(pos).getCollisionShape(blocks, pos).isEmpty()
-                && clearAbove(blocks, pos)
+    private static BedState exit(ObservedBlocks blocks, BlockPos pos) {
+        if (blocks.blocked(pos) || blocks.blocked(pos.above()) || blocks.blocked(pos.below())) return BedState.BLOCKED;
+        if (!blocks.observed(pos) || !blocks.observed(pos.above()) || !blocks.observed(pos.below())) return BedState.UNOBSERVED;
+        return blocks.getBlockState(pos).getCollisionShape(blocks, pos).isEmpty() && clearAbove(blocks, pos)
                 && !blocks.getBlockState(pos.below()).getCollisionShape(blocks, pos.below()).isEmpty()
-                && blocks.getFluidState(pos).isEmpty();
+                && blocks.getFluidState(pos).isEmpty() ? BedState.AVAILABLE : BedState.BLOCKED;
     }
 
-    record ObservedBlocks(ServerLevel level, LevelChunk supplied) implements BlockGetter {
+    static final class ObservedBlocks implements BlockGetter {
+        private final ServerLevel level;
+        private final LevelChunk supplied;
+        private final SettlementConstructionObservations construction;
+
+        ObservedBlocks(ServerLevel level, LevelChunk supplied) {
+            this(level, supplied, null);
+        }
+
+        ObservedBlocks(ServerLevel level, LevelChunk supplied, SettlementRecord town) {
+            this.level = level;
+            this.supplied = supplied;
+            this.construction = new SettlementConstructionObservations(town, this);
+        }
+
+        ServerLevel level() {
+            return this.level;
+        }
+
         LevelChunk chunk(int x, int z) {
             return this.supplied != null && this.supplied.getPos().x == x && this.supplied.getPos().z == z
                     ? this.supplied : this.level.getChunkSource().getChunkNow(x, z);
         }
 
         boolean observed(BlockPos position) {
-            return chunk(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16)) != null;
+            return chunk(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16)) != null
+                    || this.construction.state(position) != null;
+        }
+
+        boolean blocked(BlockPos position) {
+            return chunk(position.getX() >> 4, position.getZ() >> 4) == null && this.construction.blocked(position);
         }
 
         @Override
@@ -208,7 +263,11 @@ public final class SettlementBuildingSurvey {
         @Override
         public BlockState getBlockState(BlockPos position) {
             var chunk = chunk(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16));
-            return chunk == null ? Blocks.AIR.defaultBlockState() : chunk.getBlockState(position);
+            var pending = this.construction.changedState(position);
+            if (pending != null) return pending;
+            if (chunk != null) return chunk.getBlockState(position);
+            var observed = this.construction.state(position);
+            return observed == null ? Blocks.AIR.defaultBlockState() : observed;
         }
 
         @Override

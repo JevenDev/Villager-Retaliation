@@ -140,7 +140,7 @@ public final class SettlementTradeService {
             if (area.enabled() && area.type() == SettlementAreaType.TRADING_POST) {
                 SettlementBuildingService.refresh(level, town, area);
                 var survey = town.surveys().get(area.id());
-                if (survey != null && survey.fullyLoaded() && !survey.workstations().isEmpty()) {
+                if (survey != null && !survey.workstations().isEmpty()) {
                     equipped.put(area.id(), area);
                 }
             }

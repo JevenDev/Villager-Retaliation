@@ -94,22 +94,23 @@ public final class SettlementBuildingService {
         SettlementMineService.observeArea(level, town, area, supplied);
         SettlementConstructionSiteService.observeArea(level, town, area, supplied);
         SettlementLivestockService.observeArea(level, town, area);
-        var observed = SettlementBuildingSurvey.inspect(level, area, supplied);
+        var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, supplied, town);
+        var observed = SettlementBuildingSurvey.inspect(blocks, area);
         var previous = town.surveys().get(area.id());
         if (previous != null && !observed.fullyLoaded()) {
             List<BlockPos> beds = new ArrayList<>(observed.beds());
-            previous.beds().stream().filter(pos -> SettlementBuildingSurvey.inspectBed(level, area, pos, supplied)
+            previous.beds().stream().filter(pos -> SettlementBuildingSurvey.inspectBed(blocks, area, pos)
                     == SettlementBuildingSurvey.BedState.UNOBSERVED).forEach(beds::add);
             List<BlockPos> stations = new ArrayList<>(observed.workstations());
-            previous.workstations().stream().filter(pos -> !SettlementBuildingSurvey.observed(level, pos, supplied)).forEach(stations::add);
+            previous.workstations().stream().filter(pos -> !blocks.observed(pos) && !blocks.blocked(pos)).forEach(stations::add);
             var fixtures = new java.util.LinkedHashMap<>(observed.fixtures());
             previous.fixtures().forEach((pos, type) -> {
-                if (!SettlementBuildingSurvey.observed(level, pos, supplied)) {
+                if (!blocks.observed(pos) && !blocks.blocked(pos)) {
                     fixtures.put(pos, type);
                 }
             });
             List<BlockPos> water = new ArrayList<>(observed.waterSources());
-            previous.waterSources().stream().filter(pos -> !SettlementBuildingSurvey.observed(level, pos, supplied)).forEach(water::add);
+            previous.waterSources().stream().filter(pos -> !blocks.observed(pos) && !blocks.blocked(pos)).forEach(water::add);
             observed = new SettlementBuildingSurvey.Survey(observed.checkedAt(), beds, stations, previous.fullyLoaded(), fixtures, water);
         }
         town.recordSurvey(area.id(), observed);

@@ -108,7 +108,7 @@ public final class SettlementProgressionService {
     private static boolean staffed(SettlementRecord town, SettlementArea area, Set<UUID> adults) {
         var survey = town.surveys().get(area.id());
         boolean equipped = !SettlementBuildingSurvey.requiresFixture(area.type())
-                || survey != null && survey.fullyLoaded() && !survey.workstations().isEmpty();
+                || survey != null && !survey.workstations().isEmpty();
         return area.enabled() && equipped && town.duties().entrySet().stream()
                 .anyMatch(duty -> duty.getValue().equals(area.id()) && adults.contains(duty.getKey())
                         && (!town.workerSettings().containsKey(duty.getKey()) || town.workerSettings().get(duty.getKey()).enabled()));

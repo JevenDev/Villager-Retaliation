@@ -464,6 +464,8 @@ public final class SettlementBackgroundConstructionGameTests {
             helper.assertTrue(town.removeArea(town.leader(), fixture.area().id()), "completed construction releases its work designation");
             helper.assertTrue(town.putArea(town.leader(), home), "the completed house has a residential designation");
             helper.assertTrue(site.pending(), "changing the designation preserves already funded construction");
+            SettlementBuildingService.refresh(helper.getLevel(), town, home);
+            helper.assertValueEqual(town.housingCapacity(), 1, "the real completed house provides housing before its chunks return");
             var level = helper.getLevel();
             var chunks = new LinkedHashMap<net.minecraft.world.level.ChunkPos, net.minecraft.world.level.chunk.LevelChunk>();
             for (int x = site.min().getX() >> 4; x <= site.max().getX() >> 4; x++) {
@@ -540,6 +542,239 @@ public final class SettlementBackgroundConstructionGameTests {
             helper.assertFalse(fixture.site().pending(), "delivery completes after the worker leaves");
             helper.assertTrue(level.getBlockState(fixture.origin()).is(Blocks.OAK_PLANKS), "the saved block reaches the vacated location");
         });
+    }
+
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_capacity")
+    public static void fundedBackgroundBedsProvideHousingAndAttractApplicantsBeforeReturning(GameTestHelper helper) {
+        var blocks = new LinkedHashMap<BlockPos, BlockState>(bed());
+        bed().forEach((pos, state) -> blocks.put(pos.south(2), state));
+        capacityFixture(helper, 0, blocks, fixture -> {
+            fixture.depot().setItem(0, new ItemStack(Items.RED_BED));
+            fixture.depot().setItem(1, new ItemStack(Items.RED_BED));
+            work(helper, fixture, 50);
+            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.COMPLETED, "both real beds are completed: " + fixture.worker().status() + " / " + fixture.project().blocker() + " / " + fixture.project().placed() + " of " + fixture.project().total());
+            var home = designate(helper, fixture, SettlementAreaType.HOME);
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), home);
+            helper.assertValueEqual(fixture.town().housingCapacity(), 2, "the completed recorded beds provide capacity while their chunks are absent");
+            helper.assertValueEqual(count(helper, fixture, Items.RED_BED), 0, "housing is backed by two consumed bed items");
+            helper.assertTrue(fixture.town().configureDepot(fixture.town().leader(), fixture.depot().id(), SettlementDepotPurpose.FOOD, 5),
+                    "the empty depot can supply resident meals");
+            fixture.depot().setItem(0, new ItemStack(Items.BREAD, 16));
+            helper.assertTrue(SettlementPopulationService.canGrow(helper.getLevel(), fixture.town()), "recorded housing and real food allow another resident");
+            helper.assertTrue(SettlementPopulationService.propose(helper.getLevel(), fixture.town()).isPresent(), "the vacancy attracts an applicant");
+            var restored = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+            SettlementBuildingService.refresh(helper.getLevel(), restored, restored.areas().get(home.id()));
+            helper.assertValueEqual(restored.housingCapacity(), 2, "housing survives a save and a new unloaded survey");
+            helper.assertFalse(helper.getLevel().hasChunkAt(fixture.origin()), "capacity and growth never load the construction site");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_capacity")
+    public static void recordedBedObstructionsRemovePreviouslyCountedHousing(GameTestHelper helper) {
+        capacityFixture(helper, 1, bed(), fixture -> {
+            scene(fixture, Map.of(fixture.origin().east().above(), Blocks.STONE.defaultBlockState()));
+            fixture.depot().setItem(0, new ItemStack(Items.RED_BED));
+            work(helper, fixture, 50);
+            var home = designate(helper, fixture, SettlementAreaType.HOME);
+            fixture.town().recordSurvey(home.id(), new SettlementBuildingSurvey.Survey(0L, List.of(fixture.origin().east()), List.of(), true));
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), home);
+            helper.assertValueEqual(fixture.town().housingCapacity(), 0, "a known obstruction above a recorded bed invalidates its old capacity");
+            helper.assertFalse(helper.getLevel().hasChunkAt(fixture.origin()), "checking headroom never loads a chunk");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_capacity")
+    public static void incompleteConstructionObservationsCannotInventBedHeadroom(GameTestHelper helper) {
+        capacityFixture(helper, 2, bed(), fixture -> {
+            fixture.depot().setItem(0, new ItemStack(Items.RED_BED));
+            work(helper, fixture, 50);
+            var home = designate(helper, fixture, SettlementAreaType.HOME);
+            var saved = fixture.town().save(helper.getLevel().registryAccess());
+            var sections = saved.getList("Projects", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0)
+                    .getCompound("Site").getList("Sections", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            sections.removeIf(raw -> BlockPos.of(((CompoundTag) raw).getLong("Min")).getY() >= 96);
+            var restored = SettlementRecord.load(saved, helper.getLevel().registryAccess(), () -> {});
+            SettlementBuildingService.refresh(helper.getLevel(), restored, home);
+            helper.assertValueEqual(restored.housingCapacity(), 0, "unobserved space above the bed is not assumed to be air");
+            var site = restored.projects().get(fixture.project().id()).site();
+            fixture.site().sections().values().forEach(site::record);
+            SettlementBuildingService.refresh(helper.getLevel(), restored, home);
+            helper.assertValueEqual(restored.housingCapacity(), 1, "complete observations establish the same funded bed without another item");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_capacity")
+    public static void anUnfundedBlueprintCannotProvideHousing(GameTestHelper helper) {
+        capacityFixture(helper, 3, bed(), fixture -> {
+            work(helper, fixture, 10);
+            helper.assertFalse(fixture.site().pending(), "missing bed items leave the project unbuilt");
+            var home = designate(helper, fixture, SettlementAreaType.HOME);
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), home);
+            helper.assertValueEqual(fixture.town().housingCapacity(), 0, "a blueprint alone never contributes a bed");
+            helper.assertFalse(helper.getLevel().hasChunkAt(fixture.origin()), "an unfunded home does not trigger world generation");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_capacity")
+    public static void aPartiallyReturnedBedDetectsConflictsBeyondTheWaitingChunk(GameTestHelper helper) {
+        capacityFixture(helper, 4, bed(), fixture -> {
+            fixture.depot().setItem(0, new ItemStack(Items.RED_BED));
+            work(helper, fixture, 50);
+            var home = designate(helper, fixture, SettlementAreaType.HOME);
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), home);
+            helper.assertValueEqual(fixture.town().housingCapacity(), 1, "the complete unloaded bed initially provides housing");
+            var head = fixture.origin().east();
+            var level = helper.getLevel();
+            var chunk = level.getChunk(head.getX() >> 4, head.getZ() >> 4);
+            chunk.setBlockState(head, Blocks.GOLD_BLOCK.defaultBlockState(), false);
+            SettlementBuildingService.refresh(level, fixture.town(), home);
+            helper.assertValueEqual(fixture.town().housingCapacity(), 0, "a later loaded conflict invalidates housing even while the first chunk is absent");
+            helper.assertTrue(chunk.getBlockState(head).is(Blocks.GOLD_BLOCK), "capacity checks preserve the player's conflicting block");
+            chunk.setBlockState(head, Blocks.AIR.defaultBlockState(), false);
+            SettlementBuildingService.refresh(level, fixture.town(), home);
+            helper.assertValueEqual(fixture.town().housingCapacity(), 1, "restoring the original terrain restores the funded bed's capacity");
+            helper.assertTrue(chunk.getBlockState(head).isAir(), "the survey does not materialize either bed half");
+            helper.assertFalse(level.hasChunkAt(fixture.origin()), "the other half stays unloaded throughout the transition");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_capacity")
+    public static void cancelledConstructionRetainsOnlyItsAlreadyBuiltHousing(GameTestHelper helper) {
+        var blocks = new LinkedHashMap<BlockPos, BlockState>(bed());
+        bed().forEach((pos, state) -> blocks.put(pos.above(3), state));
+        capacityFixture(helper, 5, blocks, fixture -> {
+            fixture.depot().setItem(0, new ItemStack(Items.RED_BED));
+            work(helper, fixture, 50);
+            helper.assertTrue(fixture.project().active() && fixture.site().pending(), "the unfunded upper bed leaves a partly built project");
+            helper.assertValueEqual(count(helper, fixture, Items.RED_BED), 0, "the only supplied item funds the completed lower bed");
+            var home = designate(helper, fixture, SettlementAreaType.HOME);
+            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.CANCELLED, "removing the work designation cancels the unfinished project");
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), home);
+            helper.assertValueEqual(fixture.town().housingCapacity(), 1, "cancelled work retains the actual lower bed without inventing the upper one");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_fixture_return")
+    public static void fixtureConflictsAndDeliveryReceiptsTakePrecedenceOverOldConstruction(GameTestHelper helper) {
+        fixture(helper, true, Map.of(BlockPos.ZERO, Blocks.CRAFTING_TABLE.defaultBlockState()), fixture -> {
+            var level = helper.getLevel();
+            level.setBlock(fixture.origin(), Blocks.AIR.defaultBlockState(), 2);
+            var placement = placement(fixture, Blocks.CRAFTING_TABLE.defaultBlockState(), null);
+            fixture.site().queue(placement);
+            fixture.town().finishProject(fixture.project().id(), SettlementProject.Status.COMPLETED);
+            var workshop = designate(helper, fixture, SettlementAreaType.WORKSHOP);
+            SettlementBuildingService.refresh(level, fixture.town(), workshop);
+            helper.assertValueEqual(fixture.town().surveys().get(workshop.id()).fixtures().size(), 1, "a funded table is available before delivery");
+            level.setBlock(fixture.origin(), Blocks.GOLD_BLOCK.defaultBlockState(), 2);
+            helper.assertFalse(placement.reconcile(level, fixture.project().id()), "changed terrain rejects construction");
+            SettlementBuildingService.refresh(level, fixture.town(), workshop);
+            helper.assertTrue(fixture.town().surveys().get(workshop.id()).fixtures().isEmpty(), "a persistent conflict removes the old table observation");
+            level.setBlock(fixture.origin(), Blocks.AIR.defaultBlockState(), 2);
+            helper.assertTrue(placement.reconcile(level, fixture.project().id()), "restoring the baseline delivers the table");
+            SettlementBuildingService.refresh(level, fixture.town(), workshop);
+            helper.assertValueEqual(fixture.town().surveys().get(workshop.id()).fixtures().size(), 1, "delivered fixtures remain usable");
+            level.setBlock(fixture.origin(), Blocks.GOLD_BLOCK.defaultBlockState(), 2);
+            SettlementBuildingService.refresh(level, fixture.town(), workshop);
+            helper.assertTrue(fixture.town().surveys().get(workshop.id()).fixtures().isEmpty(), "a delivery receipt prevents the old journal from restoring a removed table");
+            helper.assertTrue(level.getBlockState(fixture.origin()).is(Blocks.GOLD_BLOCK), "the later replacement remains untouched");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_capacity")
+    public static void aBackgroundBuiltWorkshopCanCraftBeforeItsChunkReturns(GameTestHelper helper) {
+        capacityFixture(helper, 6, Map.of(BlockPos.ZERO, Blocks.CRAFTING_TABLE.defaultBlockState()), fixture -> {
+            fixture.depot().setItem(0, new ItemStack(Items.CRAFTING_TABLE));
+            work(helper, fixture, 50);
+            var workshop = enlarge(helper, fixture, designate(helper, fixture, SettlementAreaType.WORKSHOP));
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), workshop);
+            helper.assertTrue(fixture.town().assignDuty(fixture.builder().getUUID(), workshop.id()), "the workshop receives its worker");
+            SettlementWorkforceService.reconcile(helper.getLevel(), fixture.builder());
+            var filter = new ItemStack(com.jvn.villagerretaliation.item.VillagerRetaliationItems.ITEM_FILTER.get());
+            com.jvn.villagerretaliation.item.VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.STICK));
+            HiredJobInventory.getJobInventory(fixture.builder()).setItem(HiredJobInventory.FILTER_SLOT, filter);
+            var worker = SettlementWorkerState.capture(helper.getLevel(), fixture.builder(),
+                    SettlementWorkforceService.duty(fixture.builder()).orElseThrow(), 0L);
+            worker.settings().putBoolean("AutoDepositOutputs", false);
+            fixture.town().recordWorker(worker);
+            fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 2));
+            for (int index = 0; index < 20; index++) SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), worker, 200, 1.0D);
+            helper.assertValueEqual(worker.items(helper.getLevel().registryAccess()).stream().filter(stack -> stack.is(Items.STICK))
+                    .mapToInt(ItemStack::getCount).sum(), 4, "the completed workshop produces one real recipe batch");
+            helper.assertTrue(fixture.depot().isEmpty(), "the two real planks are consumed exactly once");
+            fixture.town().advance();
+            fixture.town().advance();
+            helper.assertFalse(SettlementProgressionService.assess(helper.getLevel(), fixture.town()).missing()
+                    .contains(SettlementProgressionService.Requirement.WORKSHOP), "the staffed verified table satisfies its progression service");
+            helper.assertFalse(fixture.town().surveys().get(workshop.id()).fullyLoaded(), "unobserved workshop rooms do not prevent real work");
+            helper.assertFalse(helper.getLevel().hasChunkAt(fixture.origin()), "construction and subsequent crafting both stay unloaded");
+        });
+    }
+
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_capacity")
+    public static void verifiedBedsCountWithoutSurveyingEveryRoomInTheDesignation(GameTestHelper helper) {
+        capacityFixture(helper, 7, bed(), fixture -> {
+            fixture.depot().setItem(0, new ItemStack(Items.RED_BED));
+            work(helper, fixture, 50);
+            var home = enlarge(helper, fixture, designate(helper, fixture, SettlementAreaType.HOME));
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), home);
+            helper.assertFalse(fixture.town().surveys().get(home.id()).fullyLoaded(), "the extended designation contains unobserved space");
+            helper.assertValueEqual(fixture.town().housingCapacity(), 1, "a complete usable bed counts independently of other unobserved rooms");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction_capacity_trade")
+    public static void aBackgroundBuiltTradingPostCanSellFromItsVerifiedLectern(GameTestHelper helper) {
+        capacityFixture(helper, 8, Map.of(BlockPos.ZERO, Blocks.LECTERN.defaultBlockState()), fixture -> {
+            fixture.depot().setItem(0, new ItemStack(Items.LECTERN));
+            work(helper, fixture, 50);
+            var post = enlarge(helper, fixture, designate(helper, fixture, SettlementAreaType.TRADING_POST));
+            fixture.town().advance();
+            helper.assertTrue(fixture.town().assignDuty(fixture.builder().getUUID(), post.id()), "the completed post has a clerk");
+            fixture.town().configureDepot(fixture.town().leader(), fixture.depot().id(), SettlementDepotPurpose.GENERAL, 5);
+            fixture.depot().setItem(0, new ItemStack(Items.WHEAT, 8));
+            var order = new SettlementTradeOrder(UUID.randomUUID(), SettlementTradeOrder.Direction.SELL,
+                    ResourceLocation.withDefaultNamespace("wheat"), 0, com.jvn.villagerretaliation.sell.CurrencyAmount.ZERO,
+                    com.jvn.villagerretaliation.sell.CurrencyAmount.of(100, 1), true);
+            fixture.town().economy().putOrder(order);
+            long previousTime = helper.getLevel().getDayTime();
+            try {
+                helper.getLevel().setDayTime(6_000L);
+                var result = SettlementTradeService.process(helper.getLevel(), fixture.town(), 200L).get(order.id());
+                helper.assertTrue(result.count() > 0, "the staffed, funded lectern supports real sales: " + result.status());
+                helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.WHEAT)), 8 - result.count(), "sales remove exactly the traded stock");
+                helper.assertFalse(fixture.town().economy().balance().isZero(), "the sale credits the shared treasury");
+                helper.assertFalse(fixture.town().surveys().get(post.id()).fullyLoaded(), "unobserved parts of the post do not suppress its verified lectern");
+                helper.assertFalse(helper.getLevel().hasChunkAt(fixture.origin()), "the new trading post operates without loading its site");
+            } finally {
+                helper.getLevel().setDayTime(previousTime);
+            }
+        });
+    }
+
+    private static SettlementArea enlarge(GameTestHelper helper, Fixture fixture, SettlementArea area) {
+        var enlarged = new SettlementArea(area.id(), area.type(), area.name(), area.min().west(20), area.max(), area.priority(), area.enabled());
+        helper.assertTrue(fixture.town().putArea(fixture.town().leader(), enlarged), "the designation can include additional unobserved rooms");
+        return enlarged;
+    }
+
+    private static Map<BlockPos, BlockState> bed() {
+        var foot = Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST).setValue(BedBlock.PART, BedPart.FOOT);
+        return Map.of(BlockPos.ZERO, foot, BlockPos.ZERO.east(), foot.setValue(BedBlock.PART, BedPart.HEAD));
+    }
+
+    private static void capacityFixture(GameTestHelper helper, int region, Map<BlockPos, BlockState> blocks, Consumer<Fixture> check) {
+        var base = helper.absolutePos(new BlockPos(2, 2, 2)).offset(14_000_000 + region * 256, 0, 14_000_000);
+        var origin = new BlockPos((base.getX() >> 4 << 4) + 15, region == 2 ? 95 : 80, base.getZ());
+        fixture(helper, origin, blocks, true, check);
+    }
+
+    private static SettlementArea designate(GameTestHelper helper, Fixture fixture, SettlementAreaType type) {
+        helper.assertTrue(fixture.town().removeArea(fixture.town().leader(), fixture.area().id()), "the old construction designation is removed");
+        var area = new SettlementArea(UUID.randomUUID(), type, "Completed building", fixture.area().min(), fixture.area().max(), 5, true);
+        helper.assertTrue(fixture.town().putArea(fixture.town().leader(), area), "the building receives its intended function");
+        return area;
     }
 
     private static void work(GameTestHelper helper, Fixture fixture, int intervals) {
