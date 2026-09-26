@@ -38,6 +38,21 @@ public final class SettlementBrewingStandState {
         this.position = position.immutable();
     }
 
+    UUID id() {
+        return this.id;
+    }
+
+    static void bindConstruction(BrewingStandBlockEntity entity, UUID id) {
+        var persistent = entity.getPersistentData();
+        persistent.putUUID(ID_TAG, id);
+        persistent.remove(VERSION_TAG);
+        persistent.remove(LAST_TICK_TAG);
+    }
+
+    void constructionReady() {
+        this.conflict = false;
+    }
+
     public UUID area() {
         return this.area;
     }

@@ -45,8 +45,20 @@ public final class SettlementBrewingStandService {
     }
 
     static void reconcileChunk(ServerLevel level, SettlementRecord town, LevelChunk chunk) {
+        var construction = new SettlementConstructionMachines(level, town, chunk);
         for (var state : List.copyOf(town.brewingStands().values())) {
             if (!new ChunkPos(state.position()).equals(chunk.getPos())) {
+                continue;
+            }
+            var source = construction.source(state.position(), state.id());
+            if (source != null) {
+                if (source.ready()) {
+                    state.constructionReady();
+                } else {
+                    state.missing();
+                    state.pause(level.getGameTime());
+                }
+                town.changed();
                 continue;
             }
             boolean pending = state.pending();
@@ -73,6 +85,7 @@ public final class SettlementBrewingStandService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
+        var construction = new SettlementConstructionMachines(level, town, null);
         for (var entry : town.surveys().entrySet()) {
             var area = town.areas().get(entry.getKey());
             if (area == null || !area.enabled() || area.type() != SettlementAreaType.BREWERY) {
@@ -80,7 +93,12 @@ public final class SettlementBrewingStandService {
             }
             for (BlockPos position : entry.getValue().fixtures().keySet()) {
                 var existing = town.brewingStands().get(position);
-                if ((existing == null || !existing.pending() && !existing.area().equals(area.id()))
+                var source = construction.source(position);
+                if (source != null && source.ready()
+                        && (existing == null || !existing.pending() && (!existing.area().equals(area.id()) || !existing.id().equals(source.id())))
+                        && source.create(level) instanceof BrewingStandBlockEntity stand && accepts(area, stand)) {
+                    town.recordBrewingStand(SettlementBrewingStandState.capture(level, area.id(), stand, now));
+                } else if (source == null && (existing == null || !existing.pending() && !existing.area().equals(area.id()))
                         && level.hasChunkAt(position) && level.getBlockEntity(position) instanceof BrewingStandBlockEntity stand
                         && accepts(area, stand)) {
                     observe(level, town, area, stand, now);
@@ -90,6 +108,21 @@ public final class SettlementBrewingStandService {
         }
         for (var state : List.copyOf(town.brewingStands().values())) {
             var area = town.areas().get(state.area());
+            var source = construction.source(state.position(), state.id());
+            if (source != null) {
+                if (source.ready()) {
+                    state.constructionReady();
+                    if (area != null && area.enabled() && area.type() == SettlementAreaType.BREWERY && area.contains(state.position())) {
+                        state.advance(level, now);
+                    } else {
+                        state.pause(now);
+                    }
+                } else {
+                    state.missing();
+                    state.pause(now);
+                }
+                continue;
+            }
             boolean pending = state.pending();
             if (level.hasChunkAt(state.position())) {
                 if (!(level.getBlockEntity(state.position()) instanceof BrewingStandBlockEntity stand)
@@ -124,7 +157,12 @@ public final class SettlementBrewingStandService {
         }
     }
 
-    static boolean available(ServerLevel level, SettlementBrewingStandState state) {
+    static boolean available(ServerLevel level, SettlementBrewingStandState state, SettlementConstructionMachines construction) {
+        var source = construction.source(state.position(), state.id());
+        if (source != null) {
+            if (source.ready()) state.constructionReady();
+            return source.ready();
+        }
         if (state.conflict()) {
             return false;
         }

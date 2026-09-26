@@ -764,20 +764,20 @@ public final class SettlementBackgroundConstructionGameTests {
         return Map.of(BlockPos.ZERO, foot, BlockPos.ZERO.east(), foot.setValue(BedBlock.PART, BedPart.HEAD));
     }
 
-    private static void capacityFixture(GameTestHelper helper, int region, Map<BlockPos, BlockState> blocks, Consumer<Fixture> check) {
+    static void capacityFixture(GameTestHelper helper, int region, Map<BlockPos, BlockState> blocks, Consumer<Fixture> check) {
         var base = helper.absolutePos(new BlockPos(2, 2, 2)).offset(14_000_000 + region * 256, 0, 14_000_000);
         var origin = new BlockPos((base.getX() >> 4 << 4) + 15, region == 2 ? 95 : 80, base.getZ());
         fixture(helper, origin, blocks, true, check);
     }
 
-    private static SettlementArea designate(GameTestHelper helper, Fixture fixture, SettlementAreaType type) {
+    static SettlementArea designate(GameTestHelper helper, Fixture fixture, SettlementAreaType type) {
         helper.assertTrue(fixture.town().removeArea(fixture.town().leader(), fixture.area().id()), "the old construction designation is removed");
         var area = new SettlementArea(UUID.randomUUID(), type, "Completed building", fixture.area().min(), fixture.area().max(), 5, true);
         helper.assertTrue(fixture.town().putArea(fixture.town().leader(), area), "the building receives its intended function");
         return area;
     }
 
-    private static void work(GameTestHelper helper, Fixture fixture, int intervals) {
+    static void work(GameTestHelper helper, Fixture fixture, int intervals) {
         for (int index = 0; index < intervals; index++) SettlementBackgroundConstruction.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
     }
 
@@ -786,12 +786,12 @@ public final class SettlementBackgroundConstructionGameTests {
                 .filter(stack -> stack.is(item)).mapToInt(ItemStack::getCount).sum();
     }
 
-    private static void fixture(GameTestHelper helper, boolean loaded, Map<BlockPos, BlockState> blocks, Consumer<Fixture> check) {
+    static void fixture(GameTestHelper helper, boolean loaded, Map<BlockPos, BlockState> blocks, Consumer<Fixture> check) {
         var base = helper.absolutePos(new BlockPos(2, 2, 2));
         fixture(helper, loaded ? base : base.offset(8_000_000, 0, 8_000_000).atY(80), blocks, true, check);
     }
 
-    private static void fixture(GameTestHelper helper, BlockPos origin, Map<BlockPos, BlockState> blocks, boolean finish, Consumer<Fixture> check) {
+    static void fixture(GameTestHelper helper, BlockPos origin, Map<BlockPos, BlockState> blocks, boolean finish, Consumer<Fixture> check) {
         var level = helper.getLevel();
         var id = ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1");
         var template = level.getStructureManager().get(id).orElseThrow();
@@ -910,7 +910,7 @@ public final class SettlementBackgroundConstructionGameTests {
         }
     }
 
-    private record Fixture(SettlementRecord town, SettlementArea area, SettlementDepot depot, Villager builder,
+    record Fixture(SettlementRecord town, SettlementArea area, SettlementDepot depot, Villager builder,
                            SettlementWorkerState worker, SettlementProject project, SettlementConstructionSite site,
                            BlockPos origin, BuilderStructureScanner.StructurePlan plan) {
     }

@@ -46,6 +46,21 @@ public final class SettlementFurnaceState {
         this.block = block;
     }
 
+    UUID id() {
+        return this.id;
+    }
+
+    static void bindConstruction(AbstractFurnaceBlockEntity entity, UUID id) {
+        var persistent = entity.getPersistentData();
+        persistent.putUUID(ID_TAG, id);
+        persistent.remove(VERSION_TAG);
+        persistent.remove(LAST_TICK_TAG);
+    }
+
+    void constructionReady() {
+        this.conflict = false;
+    }
+
     public UUID area() {
         return this.area;
     }

@@ -44,8 +44,20 @@ public final class SettlementFurnaceService {
     }
 
     static void reconcileChunk(ServerLevel level, SettlementRecord town, LevelChunk chunk) {
+        var construction = new SettlementConstructionMachines(level, town, chunk);
         for (SettlementFurnaceState state : List.copyOf(town.furnaces().values())) {
             if (!new ChunkPos(state.position()).equals(chunk.getPos())) {
+                continue;
+            }
+            var source = construction.source(state.position(), state.id());
+            if (source != null) {
+                if (source.ready()) {
+                    state.constructionReady();
+                } else {
+                    state.missing();
+                    state.pause(level.getGameTime());
+                }
+                town.changed();
                 continue;
             }
             boolean pending = state.pending();
@@ -69,6 +81,7 @@ public final class SettlementFurnaceService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
+        var construction = new SettlementConstructionMachines(level, town, null);
         for (var entry : town.surveys().entrySet()) {
             var area = town.areas().get(entry.getKey());
             if (area == null || !area.enabled()) {
@@ -76,9 +89,14 @@ public final class SettlementFurnaceService {
             }
             for (BlockPos position : entry.getValue().fixtures().keySet()) {
                 var existing = town.furnaces().get(position);
-                if ((existing == null || !existing.pending() && !existing.area().equals(area.id()))
-                        && level.hasChunkAt(position)
-                        && level.getBlockEntity(position) instanceof AbstractFurnaceBlockEntity furnace && accepts(area, furnace)) {
+                var source = construction.source(position);
+                if (source != null && source.ready()
+                        && (existing == null || !existing.pending() && (!existing.area().equals(area.id()) || !existing.id().equals(source.id())))
+                        && source.create(level) instanceof AbstractFurnaceBlockEntity furnace && accepts(area, furnace)) {
+                    town.recordFurnace(SettlementFurnaceState.capture(level, area.id(), furnace, now));
+                } else if (source == null && (existing == null || !existing.pending() && !existing.area().equals(area.id()))
+                        && level.hasChunkAt(position) && level.getBlockEntity(position) instanceof AbstractFurnaceBlockEntity furnace
+                        && accepts(area, furnace)) {
                     observe(level, town, area, furnace, now);
                     level.getChunkAt(position).setUnsaved(true);
                 }
@@ -86,6 +104,21 @@ public final class SettlementFurnaceService {
         }
         for (SettlementFurnaceState state : List.copyOf(town.furnaces().values())) {
             var area = town.areas().get(state.area());
+            var source = construction.source(state.position(), state.id());
+            if (source != null) {
+                if (source.ready()) {
+                    state.constructionReady();
+                    if (area != null && area.enabled() && accepts(area, state.position(), state.block())) {
+                        state.advance(level, now);
+                    } else {
+                        state.pause(now);
+                    }
+                } else {
+                    state.missing();
+                    state.pause(now);
+                }
+                continue;
+            }
             boolean pending = state.pending();
             if (level.hasChunkAt(state.position())) {
                 if (!(level.getBlockEntity(state.position()) instanceof AbstractFurnaceBlockEntity furnace)
@@ -109,7 +142,7 @@ public final class SettlementFurnaceService {
                     state.advance(level, now);
                     applyLoaded(level, state);
                 }
-            } else if (area != null && area.enabled() && area.contains(state.position())) {
+            } else if (area != null && area.enabled() && accepts(area, state.position(), state.block())) {
                 state.advance(level, now);
             } else {
                 state.pause(now);
@@ -120,7 +153,12 @@ public final class SettlementFurnaceService {
         }
     }
 
-    static boolean available(ServerLevel level, SettlementFurnaceState state) {
+    static boolean available(ServerLevel level, SettlementFurnaceState state, SettlementConstructionMachines construction) {
+        var source = construction.source(state.position(), state.id());
+        if (source != null) {
+            if (source.ready()) state.constructionReady();
+            return source.ready();
+        }
         if (state.conflict()) {
             return false;
         }
@@ -153,11 +191,15 @@ public final class SettlementFurnaceService {
     }
 
     private static boolean accepts(SettlementArea area, AbstractFurnaceBlockEntity furnace) {
-        return area.contains(furnace.getBlockPos()) && SettlementFurnaceState.supported(furnace)
-                && (area.type() == SettlementAreaType.KITCHEN
-                        && !(furnace instanceof net.minecraft.world.level.block.entity.BlastFurnaceBlockEntity)
-                    || area.type() == SettlementAreaType.SMELTERY
-                        && !(furnace instanceof net.minecraft.world.level.block.entity.SmokerBlockEntity));
+        return SettlementFurnaceState.supported(furnace)
+                && accepts(area, furnace.getBlockPos(), net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(furnace.getBlockState().getBlock()));
+    }
+
+    private static boolean accepts(SettlementArea area, BlockPos position, net.minecraft.resources.ResourceLocation block) {
+        return area.contains(position) && (area.type() == SettlementAreaType.KITCHEN
+                && !block.equals(net.minecraft.resources.ResourceLocation.withDefaultNamespace("blast_furnace"))
+                || area.type() == SettlementAreaType.SMELTERY
+                && !block.equals(net.minecraft.resources.ResourceLocation.withDefaultNamespace("smoker")));
     }
 
     private static void observe(ServerLevel level, SettlementRecord town, SettlementArea area,

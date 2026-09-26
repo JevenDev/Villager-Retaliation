@@ -71,18 +71,13 @@ final class SettlementConstructionPlacement {
                 this.conflict = true;
                 return false;
             }
-            if (part.blockEntity() != null && chunk.getBlockEntity(pos) != null) {
-                var tag = part.blockEntity().copy();
-                tag.remove("LootTable");
-                tag.remove("LootTableSeed");
-                tag.putInt("x", pos.getX());
-                tag.putInt("y", pos.getY());
-                tag.putInt("z", pos.getZ());
-                var entity = chunk.getBlockEntity(pos);
-                entity.loadWithComponents(tag, level.registryAccess());
+            var entity = chunk.getBlockEntity(pos);
+            if (entity != null) {
+                SettlementConstructionMachines.restore(level, this.id, part, entity);
+                SettlementConstructionMachines.delivered(level, project, entity);
                 entity.setChanged();
             }
-            SettlementMineReactions.queue(chunk, pos, part.before(), part.after());
+            SettlementMineReactions.queue(chunk, pos, part.before(), chunk.getBlockState(pos));
             SettlementChunkReceipts.applied(chunk, key(project, pos), this.id, 1L);
         }
         return true;

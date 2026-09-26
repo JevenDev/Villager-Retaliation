@@ -33,10 +33,11 @@ final class SettlementBackgroundBrewing {
             worker.status("choose_brewing_order");
             return;
         }
+        var construction = new SettlementConstructionMachines(level, town, null);
         var machines = town.brewingStands().values().stream().filter(state -> state.area().equals(worker.area()))
                 .sorted(Comparator.comparingDouble(state -> state.position().distSqr(worker.position()))).toList();
         for (var machine : machines) {
-            if (!SettlementBrewingStandService.available(level, machine)) {
+            if (!SettlementBrewingStandService.available(level, machine, construction)) {
                 continue;
             }
             var items = machine.items(level.registryAccess());
