@@ -90,16 +90,17 @@ final class SettlementBackgroundMining {
 
     private static void work(ServerLevel level, SettlementWorkerState worker, SettlementMine mine, Villager owner,
                              HiredWorkContext context, List<SettlementDepot> depots, SettlementWorkBudget budget) {
+        var routeBudget = new SettlementMiningRoutes.Budget();
         for (int action = 0; action < MAX_ACTIONS; action++) {
             var state = context.state();
             BlockPos origin = state.contains(POSITION) ? BlockPos.of(state.getLong(POSITION)) : worker.position();
-            var routes = SettlementMiningRoutes.reachable(mine, origin);
-            if (routes.isEmpty() && !origin.equals(worker.position())) routes = SettlementMiningRoutes.reachable(mine, worker.position());
-            if (routes.isEmpty()) {
+            if (!SettlementMiningRoutes.safe(mine, origin)) origin = worker.position();
+            if (!SettlementMiningRoutes.safe(mine, origin)) {
                 worker.status("no_safe_mining_route");
                 return;
             }
-            var target = target(worker, mine, owner, context, routes);
+            var routes = SettlementMiningRoutes.forWorker(worker, mine, origin);
+            var target = target(worker, mine, owner, context, routes, routeBudget);
             if (target == null) return;
             var block = mine.getBlockState(target.position());
             var tool = context.inventory().equipBestTool(
@@ -116,8 +117,14 @@ final class SettlementBackgroundMining {
             double cost = 16.0D * target.steps()
                     + Math.max(1, MiningBlockRules.breakTicks(mine, target.position(), tool, context.skillWorkSpeedPercent()) - progress);
             if (budget.available() < cost) {
-                budget.spend(cost);
-                worker.status(target.steps() > 0 ? "approaching_ore" : "mining");
+                int steps = Math.min(target.steps(), (int) (budget.available() / 16.0D));
+                if (steps > 0) {
+                    budget.spend(16.0D * steps);
+                    state.putLong(POSITION, target.path().get(steps).asLong());
+                } else {
+                    budget.spend(target.steps() > 0 ? 16.0D : cost);
+                }
+                worker.status(target.steps() > steps ? "approaching_ore" : "mining");
                 return;
             }
             owner.setPos(target.stance().getBottomCenter());
@@ -152,19 +159,31 @@ final class SettlementBackgroundMining {
     }
 
     private static SettlementMiningRoutes.Target target(SettlementWorkerState worker, SettlementMine mine, Villager owner,
-                                                         HiredWorkContext context, Map<BlockPos, Integer> routes) {
+                                                         HiredWorkContext context, SettlementMiningRoutes routes, SettlementMiningRoutes.Budget budget) {
         HiredWorkPlan.retainMatching(context, position -> mine.contains(position)
                 && MiningBlockRules.isMineableOre(mine, mine::observed, position), 20);
         for (var position : HiredWorkPlan.targets(context)) {
-            var target = SettlementMiningRoutes.target(mine, owner, worker.position(), position, routes);
+            var target = routes.target(owner, position, budget);
             if (target != null) return target;
+            if (routes.pending(position)) {
+                worker.status("searching_mining_route");
+                return null;
+            }
         }
         var scan = HiredWorkAreaScan.collect(context, "SettlementMiningScanCursor", 4096,
                 position -> mine.observed(position) && MiningBlockRules.isMineableOre(mine, mine::observed, position));
         var reachable = new LinkedHashMap<BlockPos, SettlementMiningRoutes.Target>();
         for (var position : scan.candidates()) {
-            var target = SettlementMiningRoutes.target(mine, owner, worker.position(), position, routes);
+            var target = routes.target(owner, position, budget);
             if (target != null) reachable.put(position, target);
+            if (routes.pending(position)) {
+                if (reachable.isEmpty()) {
+                    HiredWorkPlan.replaceWithObjective(context, "ore", position, List.of(position), 20);
+                    worker.status("searching_mining_route");
+                    return null;
+                }
+                break;
+            }
         }
         var vein = MiningVeinPlan.best(mine, worker.position(), List.copyOf(reachable.keySet()), 20);
         HiredWorkPlan.replaceWithObjective(context, vein.size() > 1 ? "vein" : "ore",

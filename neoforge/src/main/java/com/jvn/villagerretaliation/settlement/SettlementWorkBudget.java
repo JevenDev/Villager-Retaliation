@@ -12,7 +12,7 @@ final class SettlementWorkBudget {
     }
 
     double available() {
-        return this.worker.progress() + this.elapsed * this.multiplier;
+        return this.worker.availableWork(this.elapsed, this.multiplier);
     }
 
     boolean spend(double cost) {

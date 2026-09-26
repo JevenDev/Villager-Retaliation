@@ -279,9 +279,8 @@ public final class SettlementMiningWorkGameTests {
             var barrel = fixture.worker().position().east().below();
             set(fixture.chunk(), barrel, Blocks.BARREL.defaultBlockState());
             observe(helper, fixture);
-            var routes = SettlementMiningRoutes.reachable(fixture.mine(), fixture.worker().position());
-            helper.assertFalse(routes.containsKey(barrel.above()), "background routes honor the native container climbing restriction");
-            helper.assertTrue(routes.containsKey(fixture.worker().position().south()), "ordinary observed floor remains available");
+            helper.assertFalse(SettlementMiningRoutes.safe(fixture.mine(), barrel.above()), "background routes honor the native container climbing restriction");
+            helper.assertTrue(SettlementMiningRoutes.safe(fixture.mine(), fixture.worker().position().south()), "ordinary observed floor remains available");
         });
     }
 

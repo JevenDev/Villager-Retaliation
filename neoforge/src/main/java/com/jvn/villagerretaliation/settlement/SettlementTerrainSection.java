@@ -23,6 +23,7 @@ final class SettlementTerrainSection {
     private final BlockState[] blocks;
     private final java.util.List<SettlementTerrainTick> ticks = new ArrayList<>();
     private long version;
+    private long observationVersion;
     private boolean pending;
     private boolean conflict;
 
@@ -100,6 +101,7 @@ final class SettlementTerrainSection {
         }
         if (changed) {
             this.version++;
+            this.observationVersion++;
             this.pending = true;
         }
     }
@@ -118,14 +120,14 @@ final class SettlementTerrainSection {
         if (chunk.getPos().x != this.min.getX() >> 4 || chunk.getPos().z != this.min.getZ() >> 4) return false;
         long applied = SettlementChunkReceipts.version(chunk, this.receiptKey, this.id);
         if (applied < 0L) {
-            this.conflict = this.pending;
+            conflict(this.pending);
             return false;
         }
         if (this.pending && applied < this.version) {
             for (BlockPos position : BlockPos.betweenClosed(this.min, this.max)) {
                 int index = index(position);
                 if (this.blocks[index] != this.baseline[index] && chunk.getBlockState(position) != this.baseline[index]) {
-                    this.conflict = true;
+                    conflict(true);
                     return false;
                 }
             }
@@ -140,19 +142,31 @@ final class SettlementTerrainSection {
         }
         this.version = Math.max(this.version, applied);
         this.pending = false;
-        this.conflict = false;
+        conflict(false);
         this.ticks.clear();
         refresh(chunk);
         return true;
     }
 
     private void refresh(LevelChunk chunk) {
+        boolean changed = false;
         for (BlockPos position : BlockPos.betweenClosed(this.min, this.max)) {
             int index = index(position);
             var updated = chunk.getBlockState(position);
+            changed |= this.blocks[index] != updated;
             this.blocks[index] = updated;
             this.baseline[index] = updated;
         }
+        if (changed) this.observationVersion++;
+    }
+
+    private void conflict(boolean conflict) {
+        if (this.conflict != conflict) this.observationVersion++;
+        this.conflict = conflict;
+    }
+
+    long observationVersion() {
+        return this.observationVersion;
     }
 
     int size() {

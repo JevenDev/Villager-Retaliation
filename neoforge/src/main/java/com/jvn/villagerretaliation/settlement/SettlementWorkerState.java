@@ -167,8 +167,12 @@ public final class SettlementWorkerState {
         return elapsed;
     }
 
+    double availableWork(int elapsed, double multiplier) {
+        return Math.min(24_000.0D, this.progress + elapsed * multiplier);
+    }
+
     void work(int elapsed, double multiplier) {
-        this.progress = Math.min(24_000.0D, this.progress + elapsed * multiplier);
+        this.progress = availableWork(elapsed, multiplier);
     }
 
     boolean spend(double cost) {
