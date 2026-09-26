@@ -33,6 +33,8 @@ public final class SettlementForestService {
                 for (var section : List.copyOf(forest.sections().values())) {
                     if (section.min().getX() >> 4 == chunk.getPos().x && section.min().getZ() >> 4 == chunk.getPos().z) {
                         if (!reconcile(level, section, chunk) && !section.pending()) forest.remove(section.origin());
+                        section.pause(level.getGameTime());
+                        forest.invalidateLight();
                         town.changed();
                     }
                 }
@@ -74,16 +76,29 @@ public final class SettlementForestService {
             if (section == null || !reconcile(level, section, chunk) && !section.pending()) {
                 forest.record(SettlementForestSection.capture(area.id(), min, max, chunk));
             }
+            section = forest.sections().get(origin);
+            if (section != null && (supplied != null || level.getChunkSource().isPositionTicking(chunk.getPos().toLong()))) {
+                section.pause(level.getGameTime());
+            }
             observed++;
         }
         if (supplied == null) CURSORS.put(forest, (cursor + visited) % origins.size());
-        if (observed > 0) town.changed();
+        if (observed > 0) {
+            forest.invalidateLight();
+            town.changed();
+        }
     }
 
     static void update(ServerLevel level, SettlementRecord town) {
+        update(level, town, level.getGameTime());
+    }
+
+    static void update(ServerLevel level, SettlementRecord town, long now) {
         for (var forest : List.copyOf(town.forests().values())) {
             refresh(level, forest);
             var area = town.areas().get(forest.area());
+            SettlementForestGrowth.advance(level, forest, area != null && area.enabled() && forest.matches(area), now);
+            applyLoaded(level, forest);
             if (!forest.pending() && (area == null || !forest.matches(area))) {
                 town.removeForest(forest.area());
             }
@@ -94,7 +109,10 @@ public final class SettlementForestService {
     static void refresh(ServerLevel level, SettlementForest forest) {
         for (var section : List.copyOf(forest.sections().values())) {
             var chunk = level.getChunkSource().getChunkNow(section.min().getX() >> 4, section.min().getZ() >> 4);
-            if (chunk != null && !reconcile(level, section, chunk) && !section.pending()) forest.remove(section.origin());
+            if (chunk != null) {
+                if (!reconcile(level, section, chunk) && !section.pending()) forest.remove(section.origin());
+                forest.invalidateLight();
+            }
         }
     }
 
@@ -102,7 +120,10 @@ public final class SettlementForestService {
         for (var section : forest.sections().values()) {
             if (!section.pending()) continue;
             var chunk = level.getChunkSource().getChunkNow(section.min().getX() >> 4, section.min().getZ() >> 4);
-            if (chunk != null) reconcile(level, section, chunk);
+            if (chunk != null) {
+                reconcile(level, section, chunk);
+                forest.invalidateLight();
+            }
         }
     }
 

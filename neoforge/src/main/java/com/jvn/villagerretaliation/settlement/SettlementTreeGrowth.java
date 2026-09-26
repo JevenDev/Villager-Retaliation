@@ -29,6 +29,12 @@ final class SettlementTreeGrowth {
                 || state.is(Blocks.CRIMSON_FUNGUS) || state.is(Blocks.WARPED_FUNGUS);
     }
 
+    static boolean growsNaturally(BlockState state) {
+        return state != null && (state.getBlock().getClass() == SaplingBlock.class
+                || state.getBlock().getClass() == MangrovePropaguleBlock.class
+                && (!state.getValue(MangrovePropaguleBlock.HANGING) || state.getValue(MangrovePropaguleBlock.AGE) < MangrovePropaguleBlock.MAX_AGE));
+    }
+
     static Plan bonemeal(ServerLevel level, SettlementForest forest, BlockPos position, RandomSource random) {
         var world = new SettlementTreeWorld(level, forest, random);
         try {
@@ -64,6 +70,11 @@ final class SettlementTreeGrowth {
                 return new Plan(null, "tree_needs_native_growth", false);
             }
             if (!state.canSurvive(world, position)) return new Plan(null, "sapling_blocked", false);
+            if (state.is(Blocks.MANGROVE_PROPAGULE) && state.getValue(MangrovePropaguleBlock.HANGING)) {
+                if (state.getValue(MangrovePropaguleBlock.AGE) >= MangrovePropaguleBlock.MAX_AGE) return new Plan(null, "waiting_for_trees", false);
+                world.setBlock(position, state.cycle(MangrovePropaguleBlock.AGE), 2);
+                return new Plan(world, "sapling_growing", true);
+            }
             return advance(level, world, position, state, (SaplingBlockAccessor) sapling, random);
         } catch (SettlementTreeWorld.Unavailable unavailable) {
             return new Plan(null, unavailable.getMessage(), false);

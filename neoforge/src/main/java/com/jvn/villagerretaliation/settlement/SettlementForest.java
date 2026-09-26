@@ -19,6 +19,8 @@ public final class SettlementForest implements BlockGetter {
     private final BlockPos min;
     private final BlockPos max;
     private final Map<BlockPos, SettlementForestSection> sections = new LinkedHashMap<>();
+    private SettlementForestLight light;
+    private int growthCursor;
 
     SettlementForest(SettlementArea area) {
         this(area.id(), area.min(), area.max());
@@ -57,10 +59,12 @@ public final class SettlementForest implements BlockGetter {
             throw new IllegalArgumentException("Observed forest section exceeds its area");
         }
         this.sections.put(section.origin(), section);
+        invalidateLight();
     }
 
     void remove(BlockPos origin) {
         this.sections.remove(origin);
+        invalidateLight();
     }
 
     boolean contains(BlockPos position) {
@@ -88,9 +92,29 @@ public final class SettlementForest implements BlockGetter {
             if (section == null || !section.canChange(entry.getKey(), entry.getValue())) return false;
             grouped.computeIfAbsent(section, ignored -> new LinkedHashMap<>()).put(entry.getKey().immutable(), entry.getValue());
         }
+        boolean lightChanged = changes.entrySet().stream().anyMatch(entry -> net.minecraft.world.level.lighting.LightEngine
+                .hasDifferentLightProperties(this, entry.getKey(), getBlockState(entry.getKey()), entry.getValue()));
         grouped.forEach(SettlementForestSection::change);
+        if (lightChanged) invalidateLight();
         for (var tick : ticks) this.sections.get(SettlementForestSection.sectionOrigin(tick.position())).schedule(tick);
         return true;
+    }
+
+    int brightness(BlockPos position, int skyDarken) {
+        if (this.light == null) this.light = new SettlementForestLight(this);
+        return this.light.brightness(position, skyDarken);
+    }
+
+    void invalidateLight() {
+        this.light = null;
+    }
+
+    int growthCursor() {
+        return this.growthCursor;
+    }
+
+    void growthCursor(int cursor) {
+        this.growthCursor = Math.max(0, cursor);
     }
 
     @Override
@@ -124,6 +148,7 @@ public final class SettlementForest implements BlockGetter {
         tag.putUUID("Area", this.area);
         tag.putLong("Min", this.min.asLong());
         tag.putLong("Max", this.max.asLong());
+        tag.putInt("GrowthCursor", this.growthCursor);
         var sections = new ListTag();
         this.sections.values().forEach(section -> sections.add(section.save()));
         tag.put("Sections", sections);
@@ -142,6 +167,7 @@ public final class SettlementForest implements BlockGetter {
             }
             forest.record(section);
         }
+        forest.growthCursor = Math.max(0, tag.getInt("GrowthCursor"));
         return forest;
     }
 }

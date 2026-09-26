@@ -22,6 +22,10 @@ final class SettlementForestSection {
     private final BlockState[] baseline;
     private final BlockState[] blocks;
     private final java.util.List<SettlementForestTick> ticks = new ArrayList<>();
+    private final Map<BlockPos, Double> growth = new java.util.LinkedHashMap<>();
+    private Map<BlockPos, SettlementForestLight.Source> lightSources = Map.of();
+    private boolean environmentKnown;
+    private long checkedAt;
     private long version;
     private boolean pending;
     private boolean conflict;
@@ -94,6 +98,7 @@ final class SettlementForestSection {
         for (var entry : changes.entrySet()) {
             int index = index(entry.getKey());
             if (this.blocks[index] != entry.getValue()) {
+                observeGrowth(entry.getKey(), entry.getValue(), this.blocks[index]);
                 this.blocks[index] = entry.getValue();
                 changed = true;
             }
@@ -138,6 +143,10 @@ final class SettlementForestSection {
             this.ticks.forEach(tick -> tick.apply(chunk));
             SettlementChunkReceipts.applied(chunk, receiptKey(this.area, this.min), this.id, this.version);
         }
+        if (applied > this.version) {
+            this.growth.clear();
+            pause(chunk.getLevel().getGameTime());
+        }
         this.version = Math.max(this.version, applied);
         this.pending = false;
         this.conflict = false;
@@ -149,12 +158,61 @@ final class SettlementForestSection {
     private void refresh(LevelChunk chunk) {
         for (BlockPos position : BlockPos.betweenClosed(this.min, this.max)) {
             int index = index(position);
-            this.blocks[index] = chunk.getBlockState(position);
-            this.baseline[index] = this.blocks[index];
+            var updated = chunk.getBlockState(position);
+            observeGrowth(position, updated, this.blocks[index]);
+            this.blocks[index] = updated;
+            this.baseline[index] = updated;
         }
+        observeEnvironment(chunk);
     }
 
-    private int index(BlockPos position) {
+    int size() {
+        return this.blocks.length;
+    }
+
+    boolean environmentKnown() {
+        return this.environmentKnown;
+    }
+
+    Map<BlockPos, SettlementForestLight.Source> lightSources() {
+        return this.lightSources;
+    }
+
+    java.util.Set<BlockPos> saplings() {
+        return java.util.Set.copyOf(this.growth.keySet());
+    }
+
+    double growth(BlockPos position) {
+        return this.growth.getOrDefault(position, 0.0D);
+    }
+
+    void growth(BlockPos position, double progress) {
+        if (this.growth.containsKey(position)) this.growth.put(position.immutable(), Math.clamp(progress, 0.0D, 1.0D));
+    }
+
+    int elapsed(long now) {
+        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
+        this.checkedAt = Math.max(now, this.checkedAt);
+        return elapsed;
+    }
+
+    void pause(long now) {
+        this.checkedAt = Math.max(now, this.checkedAt);
+    }
+
+    private void observeGrowth(BlockPos position, BlockState state, BlockState previous) {
+        if (!SettlementTreeGrowth.growsNaturally(state)) this.growth.remove(position);
+        else if (state != previous || !this.growth.containsKey(position)) this.growth.put(position.immutable(), 0.0D);
+    }
+
+    private void observeEnvironment(LevelChunk chunk) {
+        if (!this.environmentKnown) this.checkedAt = chunk.getLevel().getGameTime();
+        this.checkedAt = Math.max(this.checkedAt, SettlementChunkReceipts.lastTick(chunk));
+        this.lightSources = SettlementForestLight.observe(chunk, this.min, this.max);
+        this.environmentKnown = true;
+    }
+
+    int index(BlockPos position) {
         return (position.getY() - this.min.getY()) * (this.max.getZ() - this.min.getZ() + 1) * (this.max.getX() - this.min.getX() + 1)
                 + (position.getZ() - this.min.getZ()) * (this.max.getX() - this.min.getX() + 1) + position.getX() - this.min.getX();
     }
@@ -186,6 +244,18 @@ final class SettlementForestSection {
         tag.putLong("Version", this.version);
         tag.putBoolean("Pending", this.pending);
         tag.putBoolean("Conflict", this.conflict);
+        tag.putLong("CheckedAt", this.checkedAt);
+        if (this.environmentKnown) tag.put("LightBoundary", SettlementForestLight.save(this.lightSources));
+        var growth = new ListTag();
+        this.growth.forEach((position, progress) -> {
+            if (progress > 0.0D) {
+                var entry = new CompoundTag();
+                entry.putLong("Position", position.asLong());
+                entry.putDouble("Progress", progress);
+                growth.add(entry);
+            }
+        });
+        tag.put("Growth", growth);
         if (!this.ticks.isEmpty()) {
             var ticks = new ListTag();
             this.ticks.forEach(tick -> ticks.add(tick.save()));
@@ -238,6 +308,23 @@ final class SettlementForestSection {
             }
             section.baseline[index] = palette.get(baseline[index]);
             section.blocks[index] = palette.get(blocks[index]);
+        }
+        section.checkedAt = Math.max(0L, tag.getLong("CheckedAt"));
+        section.environmentKnown = tag.contains("LightBoundary", Tag.TAG_COMPOUND);
+        if (section.environmentKnown) section.lightSources = SettlementForestLight.load(tag.getCompound("LightBoundary"), min, max);
+        for (BlockPos position : BlockPos.betweenClosed(min, max)) {
+            if (SettlementTreeGrowth.growsNaturally(section.state(position))) section.growth.put(position.immutable(), 0.0D);
+        }
+        var seenGrowth = new java.util.HashSet<BlockPos>();
+        for (Tag raw : tag.getList("Growth", Tag.TAG_COMPOUND)) {
+            var entry = (CompoundTag) raw;
+            var position = BlockPos.of(entry.getLong("Position"));
+            double progress = entry.getDouble("Progress");
+            if (!entry.contains("Position", Tag.TAG_LONG) || !section.growth.containsKey(position)
+                    || !seenGrowth.add(position) || !Double.isFinite(progress) || progress < 0.0D || progress > 1.0D) {
+                throw new IllegalArgumentException("Forest growth must reference one observed sapling with bounded progress");
+            }
+            section.growth.put(position, progress);
         }
         section.version = Math.max(0L, tag.getLong("Version"));
         section.pending = tag.getBoolean("Pending");
