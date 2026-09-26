@@ -181,6 +181,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return waitForWorkAreaAssignment(level, villager, context);
         }
 
+        LoggingHarvestPlan.clearCompletedDeposit(context);
         WorkResult blockedExitResult = clearTreeBlockedExit(level, villager, context);
         if (blockedExitResult != null) {
             return blockedExitResult;
@@ -954,6 +955,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private static WorkResult completedTreeWork(HiredWorkContext context, int logsCut) {
+        LoggingHarvestPlan.clear(context);
         context.state().remove(NEXT_WORK_GAME_TIME_TAG);
         context.state().putBoolean(TREE_DEPOSIT_PENDING_TAG, true);
         LoggingWorkerState.wakeTreeSearch(context);
@@ -2272,7 +2274,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 && (logFamily == null || logFamily.isBlank() || logFamilyKey(state).equals(logFamily));
     }
 
-    static boolean isLeafHarvestTool(ItemStack stack) {
+    public static boolean isLeafHarvestTool(ItemStack stack) {
         return !stack.isEmpty()
                 && (stack.is(Items.SHEARS)
                 || (stack.is(ItemTags.HOES) && hasSilkTouch(stack)));
@@ -2287,7 +2289,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                         .orElse(false));
     }
 
-    private static double leafToolScore(ItemStack stack) {
+    public static double leafToolScore(ItemStack stack) {
         if (stack.is(Items.SHEARS)) {
             return 100.0D;
         }

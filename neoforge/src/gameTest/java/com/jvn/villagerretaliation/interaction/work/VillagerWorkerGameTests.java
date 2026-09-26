@@ -7263,6 +7263,7 @@ public final class VillagerWorkerGameTests {
                 !level.getBlockState(helper.absolutePos(logRel)).is(BlockTags.LOGS));
         helper.assertFalse(level.getBlockState(helper.absolutePos(logRel)).is(BlockTags.LOGS), "logger should remove the valid natural log");
         helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.OAK_LOG)), "logger should store log drops");
+        helper.assertFalse(state.contains("PendingLoggingTreeOrigin"), "an immediately completed tree clears its plan before awarding practice");
 
         BlockPos removedTreeRel = new BlockPos(6, 2, 3);
         setBlock(helper, removedTreeRel, Blocks.OAK_LOG.defaultBlockState());

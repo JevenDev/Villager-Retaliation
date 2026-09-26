@@ -112,8 +112,10 @@ public final class SettlementWorkerState {
         this.inventory = HiredJobInventory.getJobInventory(villager).captureSnapshot();
         HiredWorkSkillGrowthService.onPractice(level, villager, null, this.role, HiredWorkStateStore.state(villager), List.of());
         this.settings = HiredWorkStateStore.state(villager).copy();
-        if (this.role == HiredVillagerRole.FISHING) {
+        if (this.role == HiredVillagerRole.FISHING || this.role == HiredVillagerRole.LOGGING) {
             this.entityContext = villager.saveWithoutId(new CompoundTag());
+        }
+        if (this.role == HiredVillagerRole.FISHING) {
             SettlementBackgroundFishing.capture(level, villager, this.settings);
         }
         this.aptitude = HiredVillagerRoles.roleScore(level, villager, this.role);
@@ -138,6 +140,9 @@ public final class SettlementWorkerState {
             HiredWorkStateStore.state(villager).putInt("CraftsmanCursor", this.settings.getInt("CraftsmanCursor"));
         }
         SettlementBackgroundFishing.restore(this, villager);
+        if (this.role == HiredVillagerRole.LOGGING) {
+            com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.copyState(this.settings, HiredWorkStateStore.state(villager));
+        }
         HiredWorkSession.invalidate(villager);
         return true;
     }
@@ -171,6 +176,17 @@ public final class SettlementWorkerState {
 
     CompoundTag entityContext() {
         return this.entityContext.copy();
+    }
+
+    Villager context(ServerLevel level, SettlementRecord town) {
+        if (this.entityContext.isEmpty()) return null;
+        var owner = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+        if (owner == null) return null;
+        owner.load(this.entityContext.copy());
+        HiredJobInventory.getJobInventory(owner).restoreSnapshot(this.inventory);
+        var care = town.residents().get(this.id);
+        if (care != null) care.restore(owner);
+        return owner;
     }
 
     void practice(ServerLevel level, List<VillagerSkillPractice> practice) {

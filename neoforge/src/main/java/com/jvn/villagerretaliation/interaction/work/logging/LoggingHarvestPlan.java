@@ -20,7 +20,7 @@ import net.minecraft.world.item.ItemStack;
  * individual blocks of a large tree. Once a tree is selected, finishing that bounded plan is the
  * only way to avoid leaving half-cut trees or switching species midway through a harvest.</p>
  */
-final class LoggingHarvestPlan {
+public final class LoggingHarvestPlan {
     static final int MAX_LOGS = 256;
     static final int MAX_LEAVES = 384;
     static final int MAX_SAPLINGS = 256;
@@ -42,7 +42,7 @@ final class LoggingHarvestPlan {
     private LoggingHarvestPlan() {
     }
 
-    static void begin(
+    public static void begin(
             HiredWorkContext context,
             BlockPos origin,
             BlockPos harvestPos,
@@ -78,7 +78,7 @@ final class LoggingHarvestPlan {
      * Reads and normalizes persisted state. Invalid entries, duplicates, and entries outside the
      * current work assignment are removed. An empty or incomplete plan is cleared atomically.
      */
-    static Snapshot read(HiredWorkContext context) {
+    public static Snapshot read(HiredWorkContext context) {
         CompoundTag state = context.state();
         if (!state.contains(ORIGIN_TAG)
                 && !state.contains(HARVEST_POS_TAG)
@@ -153,26 +153,26 @@ final class LoggingHarvestPlan {
                 logsCut);
     }
 
-    static void rememberLogFamily(HiredWorkContext context, String logFamily) {
+    public static void rememberLogFamily(HiredWorkContext context, String logFamily) {
         if (logFamily == null || logFamily.isBlank()) {
             return;
         }
         context.state().putString(LOG_FAMILY_TAG, logFamily);
     }
 
-    static void replaceLogs(HiredWorkContext context, long[] positions) {
+    public static void replaceLogs(HiredWorkContext context, long[] positions) {
         putPositions(context.state(), LOGS_TAG, positions);
     }
 
-    static void replaceLeaves(HiredWorkContext context, long[] positions) {
+    public static void replaceLeaves(HiredWorkContext context, long[] positions) {
         putPositions(context.state(), LEAVES_TAG, positions);
     }
 
-    static void removeLeaf(HiredWorkContext context, BlockPos pos) {
+    public static void removeLeaf(HiredWorkContext context, BlockPos pos) {
         removePosition(context.state(), LEAVES_TAG, pos);
     }
 
-    static void removeSapling(HiredWorkContext context, BlockPos pos) {
+    public static void removeSapling(HiredWorkContext context, BlockPos pos) {
         removePosition(context.state(), SAPLINGS_TAG, pos);
     }
 
@@ -180,11 +180,11 @@ final class LoggingHarvestPlan {
         context.state().remove(LEAVES_TAG);
     }
 
-    static void clearSaplings(HiredWorkContext context) {
+    public static void clearSaplings(HiredWorkContext context) {
         context.state().remove(SAPLINGS_TAG);
     }
 
-    static int incrementLogsCut(HiredWorkContext context) {
+    public static int incrementLogsCut(HiredWorkContext context) {
         int next = Math.min(MAX_LOGS, context.state().getInt(LOGS_CUT_TAG) + 1);
         context.state().putInt(LOGS_CUT_TAG, next);
         return next;
@@ -203,7 +203,13 @@ final class LoggingHarvestPlan {
         return false;
     }
 
-    static void clear(HiredWorkContext context) {
+    public static void clearCompletedDeposit(HiredWorkContext context) {
+        if (!context.state().getBoolean("LoggingTreeDepositPending")) return;
+        var plan = read(context);
+        if (plan != null && !plan.hasLogs() && !plan.hasLeaves() && plan.saplings().length == 0) clear(context);
+    }
+
+    public static void clear(HiredWorkContext context) {
         CompoundTag state = context.state();
         state.remove(ORIGIN_TAG);
         state.remove(HARVEST_POS_TAG);
@@ -217,6 +223,18 @@ final class LoggingHarvestPlan {
         state.remove(VERSION_TAG);
         state.remove(WORK_MIN_TAG);
         state.remove(WORK_MAX_TAG);
+    }
+
+    public static void removeLog(HiredWorkContext context, BlockPos position) {
+        removePosition(context.state(), LOGS_TAG, position);
+    }
+
+    public static void copyState(CompoundTag source, CompoundTag destination) {
+        for (String key : List.of(ORIGIN_TAG, HARVEST_POS_TAG, LOGS_TAG, LEAVES_TAG, SAPLINGS_TAG, SAPLING_ITEM_TAG,
+                STRIP_LOGS_TAG, LOG_FAMILY_TAG, LOGS_CUT_TAG, VERSION_TAG, WORK_MIN_TAG, WORK_MAX_TAG, "LoggingTreeDepositPending")) {
+            destination.remove(key);
+            if (source.contains(key)) destination.put(key, source.get(key).copy());
+        }
     }
 
     private static boolean needsNormalization(HiredWorkContext context, CompoundTag state) {
@@ -342,7 +360,7 @@ final class LoggingHarvestPlan {
         }
     }
 
-    record Snapshot(
+    public record Snapshot(
             BlockPos origin,
             BlockPos harvestPos,
             long[] logs,
@@ -352,11 +370,11 @@ final class LoggingHarvestPlan {
             boolean stripLogs,
             String logFamily,
             int logsCut) {
-        boolean hasLogs() {
+        public boolean hasLogs() {
             return this.logs.length > 0;
         }
 
-        boolean hasLeaves() {
+        public boolean hasLeaves() {
             return this.leaves.length > 0;
         }
     }

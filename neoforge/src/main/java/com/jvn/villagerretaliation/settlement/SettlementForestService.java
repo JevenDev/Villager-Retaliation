@@ -98,6 +98,14 @@ public final class SettlementForestService {
         }
     }
 
+    static void applyLoaded(ServerLevel level, SettlementForest forest) {
+        for (var section : forest.sections().values()) {
+            if (!section.pending()) continue;
+            var chunk = level.getChunkSource().getChunkNow(section.min().getX() >> 4, section.min().getZ() >> 4);
+            if (chunk != null) reconcile(level, section, chunk);
+        }
+    }
+
     private static boolean reconcile(ServerLevel level, SettlementForestSection section, LevelChunk chunk) {
         var previous = new java.util.LinkedHashMap<BlockPos, BlockState>();
         if (section.pending() && level.getChunkSource().getChunkNow(chunk.getPos().x, chunk.getPos().z) == chunk) {

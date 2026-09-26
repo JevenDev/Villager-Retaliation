@@ -21,7 +21,6 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
@@ -146,7 +145,7 @@ public final class SettlementBackgroundFishing {
             worker.status("no_observed_fishery");
             return;
         }
-        var owner = context(level, town, worker);
+        var owner = worker.context(level, town);
         if (owner == null) {
             worker.status("awaiting_worker_observation");
             return;
@@ -216,18 +215,6 @@ public final class SettlementBackgroundFishing {
         state.remove(CAST);
         worker.changed();
         finishBackgroundCatch(level, worker);
-    }
-
-    private static Villager context(ServerLevel level, SettlementRecord town, SettlementWorkerState worker) {
-        var saved = worker.entityContext();
-        if (saved.isEmpty()) return null;
-        var owner = EntityType.VILLAGER.create(level);
-        if (owner == null) return null;
-        owner.load(saved);
-        HiredJobInventory.getJobInventory(owner).restoreSnapshot(worker.inventory());
-        var care = town.residents().get(worker.id());
-        if (care != null) care.restore(owner);
-        return owner;
     }
 
     private static VillagerFishingHook hook(ServerLevel level, Villager owner, ItemStack rod,

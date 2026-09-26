@@ -48,7 +48,11 @@ public final class LoggingTreeGeometry {
     }
 
     static DiscoveryCache discovery(ServerLevel level, Set<ResourceLocation> filters) {
-        return new DiscoveryCache(new TreeView(level, level::hasChunkAt), filters == null ? Set.of() : Set.copyOf(filters));
+        return discovery(level, level::hasChunkAt, filters);
+    }
+
+    public static DiscoveryCache discovery(BlockGetter blocks, Predicate<BlockPos> observed, Set<ResourceLocation> filters) {
+        return new DiscoveryCache(new TreeView(blocks, observed), filters == null ? Set.of() : Set.copyOf(filters));
     }
 
     static List<BlockPos> connectedTreeLogs(ServerLevel level, BlockPos origin, Set<ResourceLocation> filters) {
@@ -466,7 +470,7 @@ public final class LoggingTreeGeometry {
         return false;
     }
 
-    private static boolean isNaturalTreeBase(BlockState state) {
+    public static boolean isNaturalTreeBase(BlockState state) {
         return state.is(BlockTags.DIRT)
                 || state.is(Blocks.MANGROVE_ROOTS)
                 || state.is(Blocks.MUDDY_MANGROVE_ROOTS)
@@ -474,7 +478,7 @@ public final class LoggingTreeGeometry {
                 || state.is(Blocks.WARPED_NYLIUM);
     }
 
-    static final class DiscoveryCache {
+    public static final class DiscoveryCache {
         private static final Candidate NOT_A_TREE = new Candidate(null, false);
 
         private final TreeView level;
@@ -488,11 +492,11 @@ public final class LoggingTreeGeometry {
             this.filters = filters;
         }
 
-        boolean isNaturalTree(BlockPos pos) {
+        public boolean isNaturalTree(BlockPos pos) {
             return candidate(pos).naturalTree();
         }
 
-        List<BlockPos> distinctRoots(Iterable<BlockPos> candidates) {
+        public List<BlockPos> distinctRoots(Iterable<BlockPos> candidates) {
             Set<Long> seen = new LinkedHashSet<>();
             List<BlockPos> roots = new ArrayList<>();
             for (BlockPos candidatePos : candidates) {
