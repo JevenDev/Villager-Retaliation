@@ -1004,7 +1004,8 @@ public final class HiredVillagerWorkService {
     }
 
     public static void onVillagerLeaveLevel(ServerLevel level, Villager villager) {
-        if (!HiredVillagerContractService.isHired(level, villager)) {
+        if (!HiredVillagerContractService.isHired(level, villager)
+                && VillagerAssignmentStore.snapshot(villager).state() != VillagerAssignmentState.CIVIC) {
             return;
         }
 

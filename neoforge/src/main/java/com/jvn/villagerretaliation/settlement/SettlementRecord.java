@@ -32,6 +32,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
     private final Map<UUID, SettlementResidentState> residents = new LinkedHashMap<>();
     private final Map<UUID, SettlementDeparture> departures = new LinkedHashMap<>();
+    private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
     private long nextDepartureAt;
     private long nextApplicantAt;
     private SettlementSupportState support = new SettlementSupportState();
@@ -81,6 +82,21 @@ public final class SettlementRecord {
 
     public SettlementEconomy economy() {
         return this.economy;
+    }
+
+    public Map<UUID, SettlementWorkerState> workers() {
+        return Collections.unmodifiableMap(this.workers);
+    }
+
+    void recordWorker(SettlementWorkerState worker) {
+        this.workers.put(worker.id(), worker);
+        changed();
+    }
+
+    void removeWorker(UUID worker) {
+        if (this.workers.remove(worker) != null) {
+            changed();
+        }
     }
 
     public Map<UUID, SettlementDeparture> departures() {
@@ -380,6 +396,9 @@ public final class SettlementRecord {
         ListTag residentTags = new ListTag();
         this.residents.values().forEach(resident -> residentTags.add(resident.save()));
         tag.put("ResidentCare", residentTags);
+        ListTag workerTags = new ListTag();
+        this.workers.values().forEach(worker -> workerTags.add(worker.save()));
+        tag.put("Workers", workerTags);
         ListTag departureTags = new ListTag();
         this.departures.values().forEach(departure -> departureTags.add(departure.save()));
         tag.put("Departures", departureTags);
@@ -408,6 +427,12 @@ public final class SettlementRecord {
             var resident = SettlementResidentState.load((CompoundTag) raw);
             if (record.residents.putIfAbsent(resident.id(), resident) != null) {
                 throw new IllegalArgumentException("Resident care duplicates an identity");
+            }
+        }
+        for (Tag raw : tag.getList("Workers", Tag.TAG_COMPOUND)) {
+            var worker = SettlementWorkerState.load((CompoundTag) raw);
+            if (record.workers.putIfAbsent(worker.id(), worker) != null) {
+                throw new IllegalArgumentException("Background worker duplicates a resident identity");
             }
         }
         record.nextDepartureAt = Math.max(0L, tag.getLong("NextDepartureAt"));

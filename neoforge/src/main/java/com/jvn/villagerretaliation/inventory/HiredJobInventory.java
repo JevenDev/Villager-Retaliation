@@ -148,6 +148,25 @@ public final class HiredJobInventory implements Container {
         return this.modificationVersion;
     }
 
+    public CompoundTag captureSnapshot() {
+        save();
+        return jobInventoryTag(this.villager).copy();
+    }
+
+    public void restoreSnapshot(CompoundTag snapshot) {
+        NonNullList<ItemStack> restored = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+        ContainerHelper.loadAllItems(snapshot, restored, this.villager.level().registryAccess());
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
+            if (equipmentSlot != null && (!this.items.get(slot).isEmpty() || !restored.get(slot).isEmpty())) {
+                VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, restored.get(slot));
+            }
+        }
+        this.villager.getPersistentData().put(TAG, snapshot.copy());
+        load();
+        save();
+    }
+
     public static void clearInheritedStateForNewborn(Villager child) {
         if (child == null) return;
         child.getPersistentData().remove(TAG);

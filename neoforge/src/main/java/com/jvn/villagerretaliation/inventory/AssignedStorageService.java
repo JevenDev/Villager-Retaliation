@@ -565,6 +565,28 @@ public final class AssignedStorageService {
     }
 
 
+    public static java.util.Optional<List<ItemStack>> observedContainerRules(ServerLevel level, BlockPos position) {
+        if (!level.hasChunkAt(position)) {
+            return java.util.Optional.empty();
+        }
+        var candidate = VillagerInventoryOverflowService.ContainerCandidate.resolve(level, position);
+        if (candidate == null) {
+            return java.util.Optional.empty();
+        }
+        var resolution = ContainerFilterResolver.resolve(level, candidate);
+        return resolution.live() ? java.util.Optional.of(resolution.rules().stream().map(ItemStack::copy).toList())
+                : java.util.Optional.empty();
+    }
+
+    public static int observedTransferAllowance(ServerLevel level, BlockPos position, Container container,
+                                                 List<ItemStack> rules, ItemStack stack,
+                                                 VillagerFilterPolicy.TransferOperation operation) {
+        var candidate = new VillagerInventoryOverflowService.ContainerCandidate(position, container, List.of(position));
+        return operation == VillagerFilterPolicy.TransferOperation.PROVIDE
+                ? sourceAllowance(level, candidate, rules, stack, null, List.of())
+                : outputAllowance(level, candidate, rules, stack, null, List.of());
+    }
+
     public static int unreservedFramedAllowance(ServerLevel level, BlockPos position, ItemStack sample,
                                                 VillagerFilterPolicy.TransferOperation operation) {
         if (!level.hasChunkAt(position)) {

@@ -270,6 +270,7 @@ public final class VillagerRetaliationEvents {
         com.jvn.villagerretaliation.settlement.SettlementBuildingService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementCareService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementDepartureService.tick(event.getServer());
+        com.jvn.villagerretaliation.settlement.SettlementBackgroundService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementProgressionService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementLeadershipService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementPopulationService.tick(event.getServer());
@@ -416,6 +417,7 @@ public final class VillagerRetaliationEvents {
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         Entity entity = event.getEntity();
         if (entity instanceof Villager villager) {
+            com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onActive(villager);
             com.jvn.villagerretaliation.settlement.SettlementDepartureService.onActive(villager);
             com.jvn.villagerretaliation.settlement.SettlementCareService.onActive(villager);
             VillagerDownedService.onVillagerTickPre(villager);
@@ -520,6 +522,7 @@ public final class VillagerRetaliationEvents {
         if (!event.getLevel().isClientSide() && event.getEntity() instanceof AbstractVillager villager) {
             VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
             if (villager instanceof Villager regular) {
+                com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onActive(regular);
                 com.jvn.villagerretaliation.settlement.SettlementDepartureService.onActive(regular);
                 com.jvn.villagerretaliation.settlement.SettlementCareService.onActive(regular);
                 com.jvn.villagerretaliation.duel.DuelService.recoverPendingVillager(regular);
@@ -956,6 +959,7 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
             VillagerDownedService.onVillagerUnloaded(villager);
             com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerUnloaded(villager);
+            com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onUnloaded(villager);
             com.jvn.villagerretaliation.settlement.SettlementCareService.onUnloaded(villager);
             com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerUnloaded(villager);
             if (removalReason == Entity.RemovalReason.DISCARDED || removalReason == Entity.RemovalReason.KILLED) {

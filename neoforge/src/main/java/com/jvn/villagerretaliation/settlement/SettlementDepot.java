@@ -23,6 +23,8 @@ public final class SettlementDepot extends SimpleContainer {
     private final BlockPos position;
     private final Runnable dirty;
     private final List<StockTarget> stockTargets = new ArrayList<>();
+    private List<ItemStack> observedRules = List.of();
+    private boolean rulesObserved;
     private SettlementDepotPurpose purpose;
     private int priority;
     private boolean loading;
@@ -58,6 +60,27 @@ public final class SettlementDepot extends SimpleContainer {
 
     public int priority() {
         return this.priority;
+    }
+
+    public boolean rulesObserved() {
+        return this.rulesObserved;
+    }
+
+    public List<ItemStack> observedRules() {
+        return this.observedRules.stream().map(ItemStack::copy).toList();
+    }
+
+    void observeRules(List<ItemStack> rules) {
+        boolean same = this.observedRules.size() == rules.size();
+        for (int index = 0; same && index < rules.size(); index++) {
+            same = ItemStack.isSameItemSameComponents(this.observedRules.get(index), rules.get(index));
+        }
+        if (this.rulesObserved && same) {
+            return;
+        }
+        this.observedRules = rules.stream().map(stack -> stack.copyWithCount(1)).toList();
+        this.rulesObserved = true;
+        setChanged();
     }
 
     public List<StockTarget> stockTargets() {
@@ -162,6 +185,10 @@ public final class SettlementDepot extends SimpleContainer {
             targets.add(entry);
         }
         tag.put("StockTargets", targets);
+        tag.putBoolean("RulesObserved", this.rulesObserved);
+        ListTag rules = new ListTag();
+        this.observedRules.forEach(rule -> rules.add(rule.save(provider)));
+        tag.put("ObservedRules", rules);
         return tag;
     }
 
@@ -193,6 +220,16 @@ public final class SettlementDepot extends SimpleContainer {
             }
             depot.stockTargets.add(new StockTarget(sample, count));
         }
+        depot.rulesObserved = tag.getBoolean("RulesObserved");
+        List<ItemStack> rules = new ArrayList<>();
+        for (Tag raw : tag.getList("ObservedRules", Tag.TAG_COMPOUND)) {
+            ItemStack rule = ItemStack.parseOptional(provider, (CompoundTag) raw);
+            if (rule.isEmpty()) {
+                throw new IllegalArgumentException("Observed depot rule has no item");
+            }
+            rules.add(rule.copyWithCount(1));
+        }
+        depot.observedRules = List.copyOf(rules);
         depot.loading = false;
         return depot;
     }

@@ -114,31 +114,44 @@ public final class SettlementLogisticsService {
     }
 
     static SettlementHaulTask select(ServerLevel level, SettlementRecord town, List<SettlementDepot> depots, Villager worker) {
+        return select(level, town, depots, worker.getUUID(), worker.blockPosition(),
+                sample -> VillagerItemFilterService.mayWithdraw(worker, sample), false);
+    }
+
+    static SettlementHaulTask selectBackground(ServerLevel level, SettlementRecord town, List<SettlementDepot> depots,
+                                               SettlementWorkerState worker) {
+        ItemStack filter = worker.items(level.registryAccess()).get(HiredJobInventory.FILTER_SLOT);
+        return select(level, town, depots, worker.id(), worker.position(), sample -> filter.isEmpty()
+                || com.jvn.villagerretaliation.item.VillagerRetaliationItems.isRecipeFilter(filter)
+                || com.jvn.villagerretaliation.item.VillagerFilterMatcher.matches(level, filter, sample), true);
+    }
+
+    private static SettlementHaulTask select(ServerLevel level, SettlementRecord town, List<SettlementDepot> depots,
+                                             UUID worker, net.minecraft.core.BlockPos position,
+                                             java.util.function.Predicate<ItemStack> mayWithdraw, boolean background) {
         for (SettlementDepot destination : depots) {
             if (destination.stockTargets().isEmpty() && destination.purpose() != SettlementDepotPurpose.FOOD) {
                 continue;
             }
-            List<SettlementDepot> sources = sources(depots, destination, worker.blockPosition());
+            List<SettlementDepot> sources = sources(depots, destination, position);
             for (SettlementDepot source : sources) {
                 for (int slot = 0; slot < source.getContainerSize(); slot++) {
                     ItemStack sample = source.getItem(slot);
                     if (sample.isEmpty() || !destination.purpose().accepts(sample)
-                            || !VillagerItemFilterService.mayWithdraw(worker, sample)) {
+                            || !mayWithdraw.test(sample)) {
                         continue;
                     }
                     int target = requestedTarget(level, town, destination, sample);
                     int available = source.count(stack -> ItemStack.isSameItemSameComponents(stack, sample))
                             - Math.max(0, requestedTarget(level, town, source, sample))
-                            - AssignedStorageService.reservedItemCount(level, source.position(), worker.getUUID(),
+                            - AssignedStorageService.reservedItemCount(level, source.position(), worker,
                                     VillagerFilterPolicy.TransferOperation.PROVIDE, sample);
-                    available = Math.min(available, AssignedStorageService.unreservedFramedAllowance(level, source.position(), sample,
-                            VillagerFilterPolicy.TransferOperation.PROVIDE));
-                    int reserved = AssignedStorageService.reservedItemCount(level, destination.position(), worker.getUUID(),
+                    available = Math.min(available, framedAllowance(level, source, sample, VillagerFilterPolicy.TransferOperation.PROVIDE, background));
+                    int reserved = AssignedStorageService.reservedItemCount(level, destination.position(), worker,
                             VillagerFilterPolicy.TransferOperation.RECEIVE, sample);
                     if (target > destination.count(stack -> ItemStack.isSameItemSameComponents(stack, sample)) + reserved
                             && available > 0 && SettlementStock.capacity(List.of(destination), sample) > 0
-                            && AssignedStorageService.unreservedFramedAllowance(level, destination.position(), sample,
-                                    VillagerFilterPolicy.TransferOperation.RECEIVE) > 0) {
+                            && framedAllowance(level, destination, sample, VillagerFilterPolicy.TransferOperation.RECEIVE, background) > 0) {
                         return new SettlementHaulTask(source.id(), destination.id(), sample, target, false);
                     }
                 }
@@ -150,22 +163,20 @@ public final class SettlementLogisticsService {
             }
             for (int slot = 0; slot < source.getContainerSize(); slot++) {
                 ItemStack sample = source.getItem(slot);
-                if (sample.isEmpty() || !VillagerItemFilterService.mayWithdraw(worker, sample)
+                if (sample.isEmpty() || !mayWithdraw.test(sample)
                         || source.count(stack -> ItemStack.isSameItemSameComponents(stack, sample))
                                 <= Math.max(0, source.stockTarget(sample))
-                                        + AssignedStorageService.reservedItemCount(level, source.position(), worker.getUUID(),
+                                        + AssignedStorageService.reservedItemCount(level, source.position(), worker,
                                                 VillagerFilterPolicy.TransferOperation.PROVIDE, sample)) {
                     continue;
                 }
-                if (AssignedStorageService.unreservedFramedAllowance(level, source.position(), sample,
-                        VillagerFilterPolicy.TransferOperation.PROVIDE) <= 0) {
+                if (framedAllowance(level, source, sample, VillagerFilterPolicy.TransferOperation.PROVIDE, background) <= 0) {
                     continue;
                 }
                 for (SettlementDepot destination : depots) {
                     if (!destination.id().equals(source.id()) && destination.purpose() == SettlementDepotPurpose.GENERAL
                             && destination.stockTarget(sample) < 0 && SettlementStock.capacity(List.of(destination), sample) > 0
-                            && AssignedStorageService.unreservedFramedAllowance(level, destination.position(), sample,
-                                    VillagerFilterPolicy.TransferOperation.RECEIVE) > 0) {
+                            && framedAllowance(level, destination, sample, VillagerFilterPolicy.TransferOperation.RECEIVE, background) > 0) {
                         int existing = destination.count(stack -> ItemStack.isSameItemSameComponents(stack, sample));
                         return new SettlementHaulTask(source.id(), destination.id(), sample, existing + 64, true);
                     }
@@ -173,6 +184,15 @@ public final class SettlementLogisticsService {
             }
         }
         return null;
+    }
+
+    static int framedAllowance(ServerLevel level, SettlementDepot depot, ItemStack sample,
+                               VillagerFilterPolicy.TransferOperation operation, boolean background) {
+        if (!background) {
+            return AssignedStorageService.unreservedFramedAllowance(level, depot.position(), sample, operation);
+        }
+        return depot.rulesObserved() ? AssignedStorageService.observedTransferAllowance(level, depot.position(), depot,
+                depot.observedRules(), sample, operation) : 0;
     }
 
     private static List<SettlementDepot> sources(List<SettlementDepot> depots, SettlementDepot destination, BlockPos worker) {

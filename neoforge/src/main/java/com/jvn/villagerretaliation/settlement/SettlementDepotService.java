@@ -39,7 +39,12 @@ public final class SettlementDepotService {
             return false;
         }
         block.bind(town.id(), depot.id());
+        observeRules(level, depot);
         return true;
+    }
+
+    public static void observeRules(ServerLevel level, SettlementDepot depot) {
+        AssignedStorageService.observedContainerRules(level, depot.position()).ifPresent(depot::observeRules);
     }
 
     public static void restoreBinding(ServerLevel level, SettlementDepotBlockEntity block) {
