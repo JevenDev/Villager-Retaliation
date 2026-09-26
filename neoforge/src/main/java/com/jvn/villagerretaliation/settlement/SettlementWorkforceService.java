@@ -152,6 +152,7 @@ public final class SettlementWorkforceService {
             if (before.state() == VillagerAssignmentState.CIVIC) {
                 HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.paused", Map.of());
                 VillagerAssignmentStore.unassign(villager);
+                AssignedStorageService.removeAllAssignedStorage(level, villager);
                 HiredWorkSession.invalidate(villager);
                 VillagerBehaviorSuppressionPolicy.restoreAfterRelease(level, villager);
             }
@@ -176,6 +177,9 @@ public final class SettlementWorkforceService {
             HiredWorkSession.invalidate(villager);
         } else if (state.getBoolean("Enabled") != area.enabled()) {
             state.putBoolean("Enabled", area.enabled());
+        }
+        if (assignmentChanged || Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), 200L) == 0L) {
+            SettlementDepotService.synchronizeStorage(level, villager, town);
         }
     }
 

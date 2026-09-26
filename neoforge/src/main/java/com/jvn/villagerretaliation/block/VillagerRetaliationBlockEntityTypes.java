@@ -20,6 +20,11 @@ public final class VillagerRetaliationBlockEntityTypes {
                     .of(SellBoxBlockEntity::new, VillagerRetaliationBlocks.SELL_BOX.get())
                     .build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SettlementDepotBlockEntity>> SETTLEMENT_DEPOT =
+            BLOCK_ENTITY_TYPES.register("settlement_depot", () -> BlockEntityType.Builder
+                    .of(SettlementDepotBlockEntity::new, VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get())
+                    .build(null));
+
     private VillagerRetaliationBlockEntityTypes() {
     }
 

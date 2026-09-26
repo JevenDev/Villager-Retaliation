@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -24,6 +25,7 @@ public final class SettlementRecord {
     private final Map<UUID, Set<SettlementPermission>> delegates = new LinkedHashMap<>();
     private final Map<UUID, SettlementArea> areas = new LinkedHashMap<>();
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
+    private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
     private UUID leader;
     private SettlementStage stage = SettlementStage.CAMP;
     private long revision;
@@ -97,6 +99,37 @@ public final class SettlementRecord {
         return true;
     }
 
+    public Map<UUID, SettlementDepot> depots() {
+        return Collections.unmodifiableMap(this.depots);
+    }
+
+    SettlementDepot registerDepot(UUID actor, UUID areaId, BlockPos position, SettlementDepotPurpose purpose) {
+        SettlementArea area = this.areas.get(areaId);
+        if (!permits(actor, SettlementPermission.LOGISTICS) || area == null || purpose == null
+                || area.type() == SettlementAreaType.HOME || !area.contains(position)
+                || this.depots.size() >= this.stage.depots()
+                || this.depots.values().stream().anyMatch(depot -> depot.position().equals(position))) {
+            return null;
+        }
+        SettlementDepot depot = new SettlementDepot(UUID.randomUUID(), areaId, position, purpose, 5, this::changed);
+        this.depots.put(depot.id(), depot);
+        changed();
+        return depot;
+    }
+
+    boolean removeDepot(UUID id) {
+        if (this.depots.remove(id) == null) {
+            return false;
+        }
+        changed();
+        return true;
+    }
+
+    public boolean configureDepot(UUID actor, UUID id, SettlementDepotPurpose purpose, int priority) {
+        SettlementDepot depot = this.depots.get(id);
+        return permits(actor, SettlementPermission.LOGISTICS) && depot != null && depot.configure(purpose, priority);
+    }
+
     public boolean permits(UUID player, SettlementPermission permission) {
         if (player == null || permission == null) {
             return false;
@@ -141,6 +174,8 @@ public final class SettlementRecord {
                 || !this.areas.containsKey(area.id()) && this.areas.size() >= MAX_AREAS
                 || this.areas.containsKey(area.id()) && this.areas.get(area.id()).type() != area.type()
                         && this.duties.containsValue(area.id())
+                || this.depots.values().stream().anyMatch(depot -> depot.area().equals(area.id())
+                        && (area.type() == SettlementAreaType.HOME || !area.contains(depot.position())))
                 || this.areas.values().stream().anyMatch(existing ->
                         !existing.id().equals(area.id()) && existing.intersects(area))) {
             return false;
@@ -152,7 +187,9 @@ public final class SettlementRecord {
     }
 
     boolean removeArea(UUID actor, UUID area) {
-        if (!permits(actor, SettlementPermission.BUILD) || this.areas.remove(area) == null) {
+        if (!permits(actor, SettlementPermission.BUILD)
+                || this.depots.values().stream().anyMatch(depot -> depot.area().equals(area))
+                || this.areas.remove(area) == null) {
             return false;
         }
         this.duties.values().removeIf(area::equals);
@@ -172,7 +209,7 @@ public final class SettlementRecord {
         this.dirty.run();
     }
 
-    CompoundTag save() {
+    CompoundTag save(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", this.id.value());
         tag.putString("Dimension", this.dimension.toString());
@@ -202,10 +239,13 @@ public final class SettlementRecord {
             dutyTags.add(entry);
         });
         tag.put("Duties", dutyTags);
+        ListTag depotTags = new ListTag();
+        this.depots.values().forEach(depot -> depotTags.add(depot.save(provider)));
+        tag.put("Depots", depotTags);
         return tag;
     }
 
-    static SettlementRecord load(CompoundTag tag, Runnable dirty) {
+    static SettlementRecord load(CompoundTag tag, HolderLookup.Provider provider, Runnable dirty) {
         ResourceLocation dimension = ResourceLocation.tryParse(tag.getString("Dimension"));
         if (dimension == null || !tag.hasUUID("Id") || !tag.hasUUID("Leader")
                 || !tag.contains("Center", Tag.TAG_LONG)) {
@@ -249,6 +289,15 @@ public final class SettlementRecord {
             if (area == null || area.type().role() == null
                     || record.duties.putIfAbsent(entry.getUUID("Resident"), area.id()) != null) {
                 throw new IllegalArgumentException("Settlement duty is duplicated or has no workplace");
+            }
+        }
+        for (Tag raw : tag.getList("Depots", Tag.TAG_COMPOUND)) {
+            SettlementDepot depot = SettlementDepot.load((CompoundTag) raw, provider, record::changed);
+            SettlementArea area = record.areas.get(depot.area());
+            if (area == null || area.type() == SettlementAreaType.HOME || !area.contains(depot.position())
+                    || record.depots.values().stream().anyMatch(existing -> existing.position().equals(depot.position()))
+                    || record.depots.putIfAbsent(depot.id(), depot) != null) {
+                throw new IllegalArgumentException("Depot is duplicated or outside its functional area");
             }
         }
         return record;

@@ -22,7 +22,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class SettlementSavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_settlements";
-    private static final int FORMAT_VERSION = 1;
+    private static final int FORMAT_VERSION = 2;
     private final Map<VillageAllegianceId, SettlementRecord> settlements = new LinkedHashMap<>();
 
     public static SettlementSavedData get(ServerLevel level) {
@@ -128,7 +128,7 @@ public final class SettlementSavedData extends SavedData {
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putInt("FormatVersion", FORMAT_VERSION);
         ListTag entries = new ListTag();
-        this.settlements.values().forEach(town -> entries.add(town.save()));
+        this.settlements.values().forEach(town -> entries.add(town.save(provider)));
         tag.put("Settlements", entries);
         return tag;
     }
@@ -140,7 +140,7 @@ public final class SettlementSavedData extends SavedData {
         }
         SettlementSavedData data = new SettlementSavedData();
         for (Tag raw : tag.getList("Settlements", Tag.TAG_COMPOUND)) {
-            SettlementRecord town = SettlementRecord.load((CompoundTag) raw, data::setDirty);
+            SettlementRecord town = SettlementRecord.load((CompoundTag) raw, provider, data::setDirty);
             if (data.settlements.putIfAbsent(town.id(), town) != null) {
                 throw new IllegalArgumentException("Duplicate settlement identity " + town.id());
             }

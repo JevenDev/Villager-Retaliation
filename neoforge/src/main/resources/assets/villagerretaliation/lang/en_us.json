@@ -1,4 +1,7 @@
 {
+  "block.villagerretaliation.settlement_depot": "Town Depot",
+  "container.villagerretaliation.settlement_depot": "Town Depot",
+  "settlement.villagerretaliation.depot_unavailable": "Register this depot in a town work area. Logistics permission is required.",
   "block.villagerretaliation.sell_box": "Sell Box",
   "container.villagerretaliation.sell_box": "Sell Box",
   "villagerretaliation.sell_box.balance": "Balance: %s",

@@ -112,7 +112,9 @@ public final class AssignedStorageService {
                 continue;
             }
             ServerLevel targetLevel = player.server.getLevel(position.dimension());
-            if (targetLevel == null || !isValidContainerForPurpose(targetLevel, position.pos(), normalizedPurpose)) {
+            if (targetLevel == null || !isValidContainerForPurpose(targetLevel, position.pos(), normalizedPurpose)
+                    || !com.jvn.villagerretaliation.settlement.SettlementDepotService.canAssign(
+                            player, villager, targetLevel, position.pos())) {
                 invalid++;
                 continue;
             }
@@ -2067,7 +2069,8 @@ public final class AssignedStorageService {
         Map<BlockPos, VillagerInventoryOverflowService.ContainerCandidate> containers = new LinkedHashMap<>();
         Optional<UUID> contractHirer = HiredVillagerContractService.currentContractHirer(villager);
         for (AssignedContainerRecord record : data.assignedTo(villager.getUUID())) {
-            if (recordFilter != null && !recordFilter.test(record)) {
+            if (!com.jvn.villagerretaliation.settlement.SettlementDepotService.permittedForWorker(level, villager, record)
+                    || recordFilter != null && !recordFilter.test(record)) {
                 continue;
             }
             if (contractHirer.isPresent() && !contractHirer.get().equals(record.hirerId())) {

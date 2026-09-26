@@ -31,6 +31,10 @@ public enum SettlementStage {
         return this.projects;
     }
 
+    public int depots() {
+        return 8 << ordinal();
+    }
+
     public Optional<SettlementStage> next() {
         int next = ordinal() + 1;
         return next < values().length ? Optional.of(values()[next]) : Optional.empty();

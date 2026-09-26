@@ -23,6 +23,10 @@ public final class VillagerRetaliationBlocks {
                     "sell_box",
                     () -> new SellBoxBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BARREL).noOcclusion()));
 
+    public static final DeferredHolder<Block, SettlementDepotBlock> SETTLEMENT_DEPOT =
+            BLOCKS.register("settlement_depot",
+                    () -> new SettlementDepotBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BARREL)));
+
     public static final List<DeferredHolder<Block, PaymentBoxBlock>> PAYMENT_BOXES = List.of(PAYMENT_BOX);
 
     private VillagerRetaliationBlocks() {
