@@ -22,6 +22,7 @@ final class SettlementTerrainSection {
     private final BlockState[] baseline;
     private final BlockState[] blocks;
     private final java.util.List<SettlementTerrainTick> ticks = new ArrayList<>();
+    private final java.util.List<SettlementTerrainDrop> drops = new ArrayList<>();
     private long version;
     private long observationVersion;
     private boolean pending;
@@ -116,11 +117,22 @@ final class SettlementTerrainSection {
         }
     }
 
+    boolean canDrop(int count) {
+        return !this.conflict && this.drops.size() + count <= 4096;
+    }
+
+    void drop(SettlementTerrainDrop drop) {
+        if (!contains(drop.position()) || !canDrop(1)) throw new IllegalArgumentException("Terrain drops exceed their observed section");
+        this.drops.add(drop);
+        this.version++;
+        this.pending = true;
+    }
+
     boolean reconcile(LevelChunk chunk) {
         return reconcile(chunk, (position, before) -> {});
     }
 
-    boolean reconcile(LevelChunk chunk, java.util.function.BiConsumer<BlockPos, BlockState> onApplied) {
+    boolean canReconcile(LevelChunk chunk) {
         if (chunk.getPos().x != this.min.getX() >> 4 || chunk.getPos().z != this.min.getZ() >> 4) return false;
         long applied = SettlementChunkReceipts.version(chunk, this.receiptKey, this.id);
         if (applied < 0L) {
@@ -135,6 +147,14 @@ final class SettlementTerrainSection {
                     return false;
                 }
             }
+        }
+        return true;
+    }
+
+    boolean reconcile(LevelChunk chunk, java.util.function.BiConsumer<BlockPos, BlockState> onApplied) {
+        if (!canReconcile(chunk)) return false;
+        long applied = SettlementChunkReceipts.version(chunk, this.receiptKey, this.id);
+        if (this.pending && applied < this.version) {
             for (BlockPos position : BlockPos.betweenClosed(this.min, this.max)) {
                 int index = index(position);
                 if (this.blocks[index] != this.baseline[index]) {
@@ -144,12 +164,14 @@ final class SettlementTerrainSection {
                 }
             }
             this.ticks.forEach(tick -> tick.apply(chunk));
+            this.drops.forEach(drop -> SettlementTerrainDrops.queue(chunk, drop));
             SettlementChunkReceipts.applied(chunk, this.receiptKey, this.id, this.version);
         }
         this.version = Math.max(this.version, applied);
         this.pending = false;
         conflict(false);
         this.ticks.clear();
+        this.drops.clear();
         refresh(chunk);
         return true;
     }
@@ -220,6 +242,11 @@ final class SettlementTerrainSection {
             this.ticks.forEach(tick -> ticks.add(tick.save()));
             tag.put("Ticks", ticks);
         }
+        if (!this.drops.isEmpty()) {
+            var drops = new ListTag();
+            this.drops.forEach(drop -> drops.add(drop.save()));
+            tag.put("Drops", drops);
+        }
         var palette = new ArrayList<BlockState>();
         var indexes = new HashMap<BlockState, Integer>();
         int[] baseline = new int[this.blocks.length];
@@ -279,7 +306,15 @@ final class SettlementTerrainSection {
             }
             section.ticks.add(tick);
         }
-        if (!section.pending && (!section.ticks.isEmpty() || !Arrays.equals(section.baseline, section.blocks))) {
+        for (Tag raw : tag.getList("Drops", Tag.TAG_COMPOUND)) {
+            var drop = SettlementTerrainDrop.load((CompoundTag) raw);
+            if (!section.contains(drop.position()) || section.drops.size() >= 4096
+                    || section.drops.stream().anyMatch(previous -> previous.id().equals(drop.id()))) {
+                throw new IllegalArgumentException("Terrain drops must be unique and fit their observed section");
+            }
+            section.drops.add(drop);
+        }
+        if (!section.pending && (!section.ticks.isEmpty() || !section.drops.isEmpty() || !Arrays.equals(section.baseline, section.blocks))) {
             throw new IllegalArgumentException("Changed terrain blocks require a pending revision");
         }
         return section;

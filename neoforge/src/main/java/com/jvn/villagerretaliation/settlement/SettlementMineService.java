@@ -19,12 +19,18 @@ public final class SettlementMineService {
 
     public static void onChunkLoad(ChunkEvent.Load event) {
         reconcileChunk(event);
-        if (event.getLevel() instanceof ServerLevel && event.getChunk() instanceof LevelChunk chunk) SettlementMineReactions.track(chunk);
+        if (event.getLevel() instanceof ServerLevel && event.getChunk() instanceof LevelChunk chunk) {
+            SettlementMineReactions.track(chunk);
+            SettlementTerrainDrops.track(chunk);
+        }
     }
 
     public static void onChunkUnload(ChunkEvent.Unload event) {
         reconcileChunk(event);
-        if (event.getChunk() instanceof LevelChunk chunk) SettlementMineReactions.forget(chunk);
+        if (event.getChunk() instanceof LevelChunk chunk) {
+            SettlementMineReactions.forget(chunk);
+            SettlementTerrainDrops.forget(chunk);
+        }
     }
 
     private static void reconcileChunk(ChunkEvent event) {
@@ -34,7 +40,7 @@ public final class SettlementMineService {
             for (var mine : town.mines().values()) {
                 for (var section : List.copyOf(mine.sections().values())) {
                     if (section.min().getX() >> 4 == chunk.getPos().x && section.min().getZ() >> 4 == chunk.getPos().z) {
-                        if (!reconcile(level, section, chunk) && !section.pending()) mine.remove(section.origin());
+                        if (!reconcile(level, mine, section, chunk) && !section.pending()) mine.remove(section.origin());
                         town.changed();
                     }
                 }
@@ -75,7 +81,7 @@ public final class SettlementMineService {
             BlockPos max = new BlockPos(Math.min(origin.getX() + 15, boundsMax.getX()), Math.min(origin.getY() + 15, boundsMax.getY()),
                     Math.min(origin.getZ() + 15, boundsMax.getZ()));
             var section = mine.sections().get(origin);
-            if (section == null || !reconcile(level, section, chunk) && !section.pending()) {
+            if (section == null || !reconcile(level, mine, section, chunk) && !section.pending()) {
                 mine.record(SettlementTerrainSection.capture("Mine", area.id(), min, max, chunk));
             }
             observed++;
@@ -89,6 +95,7 @@ public final class SettlementMineService {
     static void update(ServerLevel level, SettlementRecord town) {
         for (var mine : List.copyOf(town.mines().values())) {
             refresh(level, mine);
+            SettlementMinePhysics.advance(level, mine);
             var area = town.areas().get(mine.area());
             if (!mine.pending() && (area == null || !mine.matches(area))) {
                 town.removeMine(mine.area());
@@ -101,12 +108,18 @@ public final class SettlementMineService {
         for (var section : List.copyOf(mine.sections().values())) {
             var chunk = level.getChunkSource().getChunkNow(section.min().getX() >> 4, section.min().getZ() >> 4);
             if (chunk != null) {
-                if (!reconcile(level, section, chunk) && !section.pending()) mine.remove(section.origin());
+                if (!reconcile(level, mine, section, chunk) && !section.pending()) mine.remove(section.origin());
             }
         }
     }
 
-    private static boolean reconcile(ServerLevel level, SettlementTerrainSection section, LevelChunk chunk) {
+    private static boolean reconcile(ServerLevel level, SettlementMine mine, SettlementTerrainSection section, LevelChunk chunk) {
+        if (section.pending()) {
+            for (var other : mine.sections().values()) {
+                if (other.pending() && other.min().getX() >> 4 == chunk.getPos().x
+                        && other.min().getZ() >> 4 == chunk.getPos().z && !other.canReconcile(chunk)) return false;
+            }
+        }
         var previous = new java.util.LinkedHashMap<BlockPos, BlockState>();
         if (section.pending() && level.getChunkSource().getChunkNow(chunk.getPos().x, chunk.getPos().z) == chunk) {
             for (BlockPos position : BlockPos.betweenClosed(section.min(), section.max())) {

@@ -386,6 +386,24 @@ public final class SettlementMiningWorkGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_mining_work")
+    public static void backgroundOreMiningReactsBeforeReturningToTheWorld(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            set(fixture.chunk(), fixture.ore().above(), Blocks.TORCH.defaultBlockState());
+            observe(helper, fixture);
+            int chunks = helper.getLevel().getChunkSource().getLoadedChunksCount();
+            run(helper, fixture, 200, 2_000);
+            helper.assertValueEqual(count(helper, fixture.worker(), Items.RAW_IRON), 3, "normal background work still harvests the finite vein");
+            helper.assertTrue(fixture.mine().getBlockState(fixture.ore().above()).isAir(), "removing support releases the observed torch during background work");
+            int drops = fixture.mine().save().getList("Sections", net.minecraft.nbt.Tag.TAG_COMPOUND).stream()
+                    .mapToInt(raw -> ((net.minecraft.nbt.CompoundTag) raw).getList("Drops", net.minecraft.nbt.Tag.TAG_COMPOUND).size()).sum();
+            helper.assertValueEqual(drops, 1, "the released torch remains one real loose item in the terrain ledger");
+            helper.assertValueEqual(count(helper, fixture.worker(), Items.TORCH), 0, "a loose neighbor drop is not silently added to the miner");
+            helper.assertValueEqual(helper.getLevel().getChunkSource().getLoadedChunksCount(), chunks, "background reactions do not load the mine");
+            helper.assertTrue(fixture.chunk().getBlockState(fixture.ore().above()).is(Blocks.TORCH), "unloaded physical terrain still waits for the journal");
+        });
+    }
+
     private static void observeWorker(GameTestHelper helper, Fixture fixture, BlockPos position) {
         fixture.villager().setPos(position.getBottomCenter());
         fixture.worker().observe(helper.getLevel(), fixture.villager(),

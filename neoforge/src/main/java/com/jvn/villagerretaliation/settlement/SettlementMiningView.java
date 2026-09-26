@@ -24,7 +24,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-final class SettlementMiningView implements LevelReader {
+class SettlementMiningView implements LevelReader {
     private final ServerLevel source;
     private final SettlementMine mine;
 

@@ -70,6 +70,7 @@ final class SettlementBackgroundMining {
             var snapshot = inventory.captureSnapshot();
             if (!snapshot.equals(worker.inventory()) || !before.equals(state)) worker.changed();
             worker.inventorySnapshot(snapshot);
+            SettlementMinePhysics.advance(level, mine);
             SettlementMineService.refresh(level, mine);
         }
     }
@@ -100,6 +101,7 @@ final class SettlementBackgroundMining {
         var mode = HiredMiningMode.fromState(context.state());
         var view = new SettlementMiningView(level, mine);
         for (int action = 0; action < MAX_ACTIONS; action++) {
+            SettlementMinePhysics.advance(level, mine);
             var state = context.state();
             BlockPos origin = state.contains(POSITION) ? BlockPos.of(state.getLong(POSITION)) : worker.position();
             if (!SettlementMiningRoutes.safe(mine, origin)) origin = worker.position();

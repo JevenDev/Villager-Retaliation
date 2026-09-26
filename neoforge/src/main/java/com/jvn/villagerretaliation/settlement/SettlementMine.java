@@ -20,6 +20,7 @@ public final class SettlementMine implements BlockGetter {
     private final BlockPos min;
     private final BlockPos max;
     private final Map<BlockPos, SettlementTerrainSection> sections = new LinkedHashMap<>();
+    private final java.util.Set<BlockPos> reactions = new java.util.LinkedHashSet<>();
 
     SettlementMine(SettlementArea area) {
         this(area.id(), area.min(), area.max());
@@ -135,6 +136,43 @@ public final class SettlementMine implements BlockGetter {
             grouped.computeIfAbsent(section, ignored -> new LinkedHashMap<>()).put(entry.getKey().immutable(), entry.getValue());
         }
         grouped.forEach(SettlementTerrainSection::change);
+        changes.keySet().forEach(this::reactAround);
+        return true;
+    }
+
+    java.util.Set<BlockPos> reactions() {
+        return this.reactions;
+    }
+
+    private void reactAround(BlockPos position) {
+        if (observed(position)) this.reactions.add(position.immutable());
+        for (var direction : net.minecraft.core.Direction.values()) {
+            var neighbor = position.relative(direction);
+            if (observed(neighbor)) this.reactions.add(neighbor);
+        }
+    }
+
+    boolean react(Map<BlockPos, BlockState> changes, java.util.List<SettlementTerrainTick> ticks,
+                  java.util.List<SettlementTerrainDrop> drops) {
+        var grouped = new LinkedHashMap<SettlementTerrainSection, Map<BlockPos, BlockState>>();
+        var dropCounts = new java.util.HashMap<SettlementTerrainSection, Integer>();
+        for (var entry : changes.entrySet()) {
+            var section = this.sections.get(SettlementTerrainSection.sectionOrigin(entry.getKey()));
+            if (section == null || !section.canChange(entry.getKey(), entry.getValue())) return false;
+            grouped.computeIfAbsent(section, ignored -> new LinkedHashMap<>()).put(entry.getKey(), entry.getValue());
+        }
+        for (var tick : ticks) {
+            if (!observed(tick.position())) return false;
+        }
+        for (var drop : drops) {
+            var section = this.sections.get(SettlementTerrainSection.sectionOrigin(drop.position()));
+            if (section == null || !section.contains(drop.position())
+                    || !section.canDrop(dropCounts.merge(section, 1, Integer::sum))) return false;
+        }
+        grouped.forEach(SettlementTerrainSection::change);
+        ticks.forEach(tick -> this.sections.get(SettlementTerrainSection.sectionOrigin(tick.position())).schedule(tick));
+        drops.forEach(drop -> this.sections.get(SettlementTerrainSection.sectionOrigin(drop.position())).drop(drop));
+        changes.keySet().forEach(this::reactAround);
         return true;
     }
 
@@ -145,6 +183,7 @@ public final class SettlementMine implements BlockGetter {
                 || state.isAir() || !state.getFluidState().isEmpty() || !section.canChange(position, state)
                 || !com.jvn.villagerretaliation.interaction.work.mining.MiningHazardManager.canReplaceWithFill(this, this::observed, position)) return false;
         section.change(Map.of(position, state));
+        reactAround(position);
         return true;
     }
 
@@ -155,6 +194,7 @@ public final class SettlementMine implements BlockGetter {
                 || !com.jvn.villagerretaliation.interaction.work.mining.MiningHazardManager.canReplaceWithFill(this, this::observed, position)
                 || !com.jvn.villagerretaliation.interaction.work.mining.MiningHazardManager.isSafeFillBlock(this, position, state)) return false;
         section.change(Map.of(position, state));
+        reactAround(position);
         return true;
     }
 
@@ -172,6 +212,7 @@ public final class SettlementMine implements BlockGetter {
                 || state.getBlock() instanceof net.minecraft.world.level.block.FallingBlock
                 || com.jvn.villagerretaliation.interaction.work.mining.MiningSafety.isDamagingBlock(state)) return false;
         section.change(Map.of(position, state));
+        reactAround(position);
         return true;
     }
 
@@ -209,6 +250,7 @@ public final class SettlementMine implements BlockGetter {
         var sections = new ListTag();
         this.sections.values().forEach(section -> sections.add(section.save()));
         tag.put("Sections", sections);
+        if (!this.reactions.isEmpty()) tag.putLongArray("Reactions", this.reactions.stream().mapToLong(BlockPos::asLong).toArray());
         return tag;
     }
 
@@ -223,6 +265,12 @@ public final class SettlementMine implements BlockGetter {
                 throw new IllegalArgumentException("Mine observations duplicate a chunk section");
             }
             mine.record(section);
+        }
+        for (long packed : tag.getLongArray("Reactions")) {
+            var position = BlockPos.of(packed);
+            if (!mine.withinObservations(position) || !mine.reactions.add(position)) {
+                throw new IllegalArgumentException("Mine reactions require unique positions inside the observed bounds");
+            }
         }
         return mine;
     }

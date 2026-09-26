@@ -13,6 +13,7 @@ public final class SettlementBackgroundService {
 
     public static void tick(MinecraftServer server) {
         SettlementMineReactions.tick(server);
+        SettlementTerrainDrops.tick(server);
         long now = server.overworld().getGameTime();
         if (now % 200L != 0L) {
             return;
