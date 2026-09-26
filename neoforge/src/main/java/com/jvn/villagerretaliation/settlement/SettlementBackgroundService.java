@@ -84,6 +84,7 @@ public final class SettlementBackgroundService {
             SettlementWorkforceService.duty(villager).ifPresent(duty ->
                     SettlementWorkerConfigurationService.apply(villager, town, duty.area()));
         });
+        SettlementConstructionService.reconcile(villager);
     }
 
     public static void onUnloaded(Villager villager) {
@@ -102,6 +103,7 @@ public final class SettlementBackgroundService {
         if (duty == null) {
             return;
         }
+        SettlementConstructionService.observe(villager, com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager));
         var worker = duty.town().workers().get(villager.getUUID());
         if (worker == null) {
             duty.town().recordWorker(SettlementWorkerState.capture(level, villager, duty, now));

@@ -33,6 +33,15 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
         switch (payload.command()) {
             case Advance ignored -> buffer.writeEnum(Kind.ADVANCE);
             case View ignored -> buffer.writeEnum(Kind.VIEW);
+            case StartProject start -> {
+                buffer.writeEnum(Kind.START_PROJECT);
+                buffer.writeUUID(start.resident());
+                buffer.writeUUID(start.blueprint());
+            }
+            case CancelProject cancel -> {
+                buffer.writeEnum(Kind.CANCEL_PROJECT);
+                buffer.writeUUID(cancel.project());
+            }
             case SaveWorker save -> {
                 buffer.writeEnum(Kind.SAVE_WORKER);
                 buffer.writeUUID(save.resident());
@@ -136,6 +145,8 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case VIEW -> new View();
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
             case SAVE_WORKER -> new SaveWorker(buffer.readUUID(), buffer.readUUID(), readWorkerSettings(buffer));
+            case START_PROJECT -> new StartProject(buffer.readUUID(), buffer.readUUID());
+            case CANCEL_PROJECT -> new CancelProject(buffer.readUUID());
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
             case RELEASE -> new Release(buffer.readUUID());
             case APPLICANT -> new Applicant(buffer.readUUID(), buffer.readBoolean());
@@ -231,17 +242,30 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject {
     }
 
     public record Advance() implements Command {
     }
 
     public record View() implements Command {
+    }
+
+    public record StartProject(UUID resident, UUID blueprint) implements Command {
+        public StartProject {
+            Objects.requireNonNull(resident);
+            Objects.requireNonNull(blueprint);
+        }
+    }
+
+    public record CancelProject(UUID project) implements Command {
+        public CancelProject {
+            Objects.requireNonNull(project);
+        }
     }
 
     public record SaveWorker(UUID resident, UUID area, SettlementWorkerSettings settings) implements Command {

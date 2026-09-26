@@ -178,7 +178,11 @@ public final class SettlementWorkforceService {
                 || state.getLong(HiredWorkArea.WORK_MAX_POS_TAG) != area.max().asLong();
         if (assignmentChanged || boundsChanged) {
             SettlementLogisticsService.resetAssignment(villager);
-            HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.waiting_tick", Map.of());
+            if (!assignmentChanged && before.role() == HiredVillagerRole.BUILDER) {
+                HiredWorkStateStore.pauseWork(level, villager, before.role(), "interaction.work.status.waiting_tick", Map.of());
+            } else {
+                HiredWorkStateStore.cancelWork(level, villager, before.role(), "interaction.work.status.waiting_tick", Map.of());
+            }
             if (before.state() != VillagerAssignmentState.CIVIC) {
                 AssignedStorageService.removeAllAssignedStorage(level, villager);
             }

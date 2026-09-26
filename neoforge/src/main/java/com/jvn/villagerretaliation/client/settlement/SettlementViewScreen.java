@@ -231,13 +231,7 @@ public final class SettlementViewScreen extends Screen {
             this.guardFeedback = text("guard_denied");
             updateActions();
         }
-        if (now >= this.nextViewRequest && (this.moved || now >= this.keepAliveAt)) {
-            PacketDistributor.sendToServer(new SettlementViewRequestPayload(this.session, nextRequestId(),
-                    this.focusX, this.focusZ, this.viewHeight, false));
-            this.moved = false;
-            this.nextViewRequest = now + 150L;
-            this.keepAliveAt = now + 1_000L;
-        }
+        keepAlive();
         if (this.waitingRequestId >= 0 && now - this.waitingSince > 3_000L) {
             this.waitingRequestId = -1;
         }
@@ -248,6 +242,17 @@ public final class SettlementViewScreen extends Screen {
             } else if (now >= this.areaRefreshAt) {
                 requestDetails(Page.AREAS, this.areaPage, "", now);
             }
+        }
+    }
+
+    void keepAlive() {
+        long now = Util.getMillis();
+        if (now >= this.nextViewRequest && (this.moved || now >= this.keepAliveAt)) {
+            PacketDistributor.sendToServer(new SettlementViewRequestPayload(this.session, nextRequestId(),
+                    this.focusX, this.focusZ, this.viewHeight, false));
+            this.moved = false;
+            this.nextViewRequest = now + 150L;
+            this.keepAliveAt = now + 1_000L;
         }
     }
 
@@ -644,8 +649,8 @@ public final class SettlementViewScreen extends Screen {
     }
 
     private SettlementManagementScreen management() {
-        return new SettlementManagementScreen(new SettlementManagementPayload(this.minecraft.level.dimension().location(),
-                this.header, Page.SUMMARY, 0, 0, "", 0, false, List.of()));
+        SettlementViewClient.openPanels(this);
+        return this.parent;
     }
 
     private void openManagement(Page page, String query) {
@@ -671,7 +676,9 @@ public final class SettlementViewScreen extends Screen {
     @Override
     public void removed() {
         this.heldKeys.clear();
-        SettlementViewClient.end(this);
+        if (!SettlementViewClient.panelsOpen(this)) {
+            SettlementViewClient.end(this);
+        }
     }
 
     @Override

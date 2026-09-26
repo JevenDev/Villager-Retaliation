@@ -19,6 +19,9 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
+import com.jvn.villagerretaliation.settlement.SettlementConstructionService;
+import com.jvn.villagerretaliation.settlement.SettlementProject;
+import com.jvn.villagerretaliation.settlement.SettlementWorkforceService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
@@ -78,6 +81,14 @@ public final class BuilderWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        try {
+            return tickBuild(level, villager, hirer, context);
+        } finally {
+            SettlementConstructionService.observe(villager, context.state());
+        }
+    }
+
+    private WorkResult tickBuild(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (!BuilderTaskState.hasTask(context.state())) {
             HiredWorkerBrain.clearFailure(context);
             HiredStorageNavigationGoal.clearStorageTarget(context);
@@ -94,8 +105,13 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.builder.structure_unavailable", BuilderTaskState.replacements(context.state()));
         }
 
+        if (!SettlementConstructionService.allows(villager, context.state(), plan.get())) {
+            BuilderTaskState.setBlocked(context.state(), "interaction.work.builder.site_outside_area");
+            return WorkResult.idle("interaction.work.builder.site_outside_area");
+        }
         BlockPos origin = BuilderTaskState.origin(context.state());
-        HiredWorkArea area = null;
+        HiredWorkArea area = SettlementWorkforceService.duty(villager)
+                .map(duty -> HiredWorkArea.fromBounds(duty.area().min(), duty.area().max(), true)).orElse(null);
         BuilderSitePlanner.SiteResult siteResult = BuilderSitePlanner.validateStartedSite(
                 level,
                 villager,
@@ -322,6 +338,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
 
     @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+        SettlementConstructionService.finish(villager, context.state(), SettlementProject.Status.CANCELLED);
         clearActiveBreakingTarget(level, context, villager);
         clearBuildSiteIntermediateNavigation(context);
         BuilderTaskState.clearPendingStructure(context.state());
@@ -2611,6 +2628,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         clearActiveBreakingTarget(level, context, villager);
         clearBuildSiteIntermediateNavigation(context);
         Optional<java.util.UUID> jobId = BuilderTaskState.jobId(context.state());
+        SettlementConstructionService.finish(villager, context.state(), SettlementProject.Status.COMPLETED);
         BuilderPaymentEscrowService.releaseToWallet(villager, jobId);
         jobId.ifPresent(id -> ConstructionBlueprintItem.completeMatchingBlueprints(level, id));
         if (hirer != null) {

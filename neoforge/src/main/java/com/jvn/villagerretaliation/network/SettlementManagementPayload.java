@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.settlement.SettlementDepotPurpose;
 import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementWorkerSettings;
 import com.jvn.villagerretaliation.settlement.SettlementPermission;
+import com.jvn.villagerretaliation.settlement.SettlementProject;
 import com.jvn.villagerretaliation.settlement.SettlementProgressionService;
 import com.jvn.villagerretaliation.settlement.SettlementStage;
 import com.jvn.villagerretaliation.settlement.SettlementTradeOrder;
@@ -44,6 +45,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case APPLICANTS -> entry instanceof Applicant;
                 case TRADE -> entry instanceof Order;
                 case DELEGATES -> entry instanceof Delegate;
+                case PROJECTS -> entry instanceof Project;
                 case SUMMARY -> false;
             };
             if (!valid) {
@@ -127,6 +129,18 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.writeBoolean(order.enabled());
                     buffer.writeUtf(order.result(), 64);
                 }
+                case Project project -> {
+                    buffer.writeUUID(project.area());
+                    buffer.writeUUID(project.builder());
+                    buffer.writeBlockPos(project.origin());
+                    buffer.writeEnum(project.status());
+                    buffer.writeVarInt(project.placed());
+                    buffer.writeVarInt(project.total());
+                    buffer.writeUtf(project.blocker(), 128);
+                    buffer.writeUtf(project.materials(), 512);
+                    buffer.writeEnum(project.phase());
+                    buffer.writeUtf(project.missingMaterials(), 512);
+                }
                 case Delegate delegate -> writePermissions(buffer, delegate.permissions());
             }
         }
@@ -187,6 +201,9 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         buffer.readResourceLocation(), buffer.readVarInt(), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer),
                         buffer.readBoolean(), buffer.readUtf(64));
                 case DELEGATES -> new Delegate(id, name, readPermissions(buffer));
+                case PROJECTS -> new Project(id, name, buffer.readUUID(), buffer.readUUID(), buffer.readBlockPos(),
+                        buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
+                        buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512));
                 case SUMMARY -> throw new IllegalArgumentException("Settlement summary cannot contain rows");
             });
         }
@@ -284,7 +301,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
     }
 
-    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate {
+    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project {
         UUID id();
         String name();
     }
@@ -330,6 +347,18 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
 
     public record Order(UUID id, String name, SettlementTradeOrder.Direction direction, ResourceLocation item, int target,
                         CurrencyAmount price, CurrencyAmount budget, boolean enabled, String result) implements Entry {
+    }
+
+    public record Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, SettlementProject.Status status,
+                          int placed, int total, String blocker, String materials,
+                          com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials) implements Entry {
+        public Project {
+            if (id == null || area == null || builder == null || origin == null || status == null || name == null || name.length() > 128
+                    || placed < 0 || total <= 0 || placed > total || blocker == null || blocker.length() > 128
+                    || materials == null || materials.length() > 512 || phase == null || missingMaterials == null || missingMaterials.length() > 512) {
+                throw new IllegalArgumentException("Invalid construction project snapshot");
+            }
+        }
     }
 
     public record Delegate(UUID id, String name, Set<SettlementPermission> permissions) implements Entry {

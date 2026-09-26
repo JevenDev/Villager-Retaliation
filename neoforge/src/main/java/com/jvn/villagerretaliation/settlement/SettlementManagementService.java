@@ -70,6 +70,8 @@ public final class SettlementManagementService {
         return switch (payload.command()) {
             case SettlementManagementActionPayload.Advance ignored -> SettlementProgressionService.advance(player, id);
             case SettlementManagementActionPayload.View ignored -> SettlementViewService.open(player, id);
+            case SettlementManagementActionPayload.StartProject start -> SettlementConstructionService.start(player, town, start.resident(), start.blueprint());
+            case SettlementManagementActionPayload.CancelProject cancel -> SettlementConstructionService.cancel(player, town, cancel.project());
             case SettlementManagementActionPayload.SaveWorker save -> SettlementWorkerConfigurationService.configure(
                     player, town, save.resident(), save.area(), save.settings());
             case SettlementManagementActionPayload.Guard guard -> SettlementGuardService.command(player, town, guard.resident(), guard.order());
@@ -139,6 +141,11 @@ public final class SettlementManagementService {
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
                 case DEPOTS -> depots(town, entries);
+                case PROJECTS -> town.projects().values().forEach(project -> entries.add(new SettlementManagementPayload.Project(
+                        project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.status(),
+                        project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
+                        project.materials().substring(0, Math.min(512, project.materials().length())), project.phase(),
+                        project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())))));
                 case APPLICANTS -> {
                     for (var applicant : town.applicants().values()) {
                         ResourceLocation profession = ResourceLocation.tryParse(applicant.entity().getCompound("VillagerData").getString("profession"));

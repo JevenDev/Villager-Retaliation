@@ -22,6 +22,7 @@ public final class SettlementViewClient {
     private static Entity previousCamera;
     private static CameraType previousPerspective;
     private static Marker camera;
+    private static boolean panels;
 
     private SettlementViewClient() {
     }
@@ -31,6 +32,7 @@ public final class SettlementViewClient {
         if (!payload.active()) {
             if (active != null && active.session().equals(payload.session())) {
                 minecraft.setScreen(null);
+                end(active);
             }
             return;
         }
@@ -64,15 +66,40 @@ public final class SettlementViewClient {
 
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (active != null && (minecraft.screen != active || minecraft.level == null || minecraft.player == null
-                || !minecraft.player.isAlive() || minecraft.player.isSpectator() || minecraft.player.hurtTime > 0
-                || camera == null || camera.level() != minecraft.level || minecraft.getCameraEntity() != camera)) {
-            if (minecraft.screen == active) {
-                minecraft.setScreen(null);
-            } else {
-                end(active);
-            }
+        if (active == null) {
+            return;
         }
+        var management = SettlementManagementClient.current();
+        boolean linked = panels && management != null && management.root() == active.parent().root()
+                && management.snapshot().header() != null;
+        if (minecraft.screen != active && !linked || minecraft.level == null || minecraft.player == null
+                || !minecraft.player.isAlive() || minecraft.player.isSpectator() || minecraft.player.hurtTime > 0
+                || camera == null || camera.level() != minecraft.level || minecraft.getCameraEntity() != camera) {
+            var closing = active;
+            if (minecraft.screen == active || linked) {
+                minecraft.setScreen(null);
+            }
+            end(closing);
+        } else if (linked) {
+            active.keepAlive();
+        }
+    }
+
+    static void openPanels(SettlementViewScreen view) {
+        panels = active == view;
+    }
+
+    static boolean panelsOpen(SettlementViewScreen view) {
+        return active == view && panels;
+    }
+
+    static boolean resume(SettlementManagementScreen management) {
+        if (active == null || !panels || management.root() != active.parent().root()) {
+            return false;
+        }
+        panels = false;
+        Minecraft.getInstance().setScreen(active);
+        return true;
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
@@ -117,11 +144,12 @@ public final class SettlementViewClient {
     }
 
     static void end(SettlementViewScreen screen) {
-        if (active != screen) {
+        if (screen == null || active != screen) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
         active = null;
+        panels = false;
         if (minecraft.getConnection() != null) {
             PacketDistributor.sendToServer(new SettlementViewRequestPayload(screen.session(), screen.nextRequestId(),
                     screen.focusX(), screen.focusZ(), screen.viewHeight(), true));

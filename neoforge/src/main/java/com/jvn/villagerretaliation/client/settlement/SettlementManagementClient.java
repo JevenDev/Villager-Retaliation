@@ -70,12 +70,13 @@ public final class SettlementManagementClient {
         }
     }
 
-    private static SettlementManagementScreen current() {
+    static SettlementManagementScreen current() {
         return switch (Minecraft.getInstance().screen) {
             case SettlementManagementScreen screen -> screen;
             case SettlementViewScreen view -> view.parent();
             case SettlementEditScreen form -> form.parent();
             case SettlementWorkerScreen form -> form.parent();
+            case SettlementConfirmScreen confirmation -> confirmation.parent();
             case SettlementItemPickerScreen picker -> picker.parent().parent();
             case null, default -> null;
         };

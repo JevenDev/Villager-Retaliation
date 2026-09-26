@@ -53,6 +53,7 @@ public final class SettlementViewClientSmoke {
     private static CompletableFuture<Fixture> preparation;
     private static CompletableFuture<Void> serverCheck;
     private static Fixture fixture;
+    private static ProjectFixture projectFixture;
     private static long started;
     private static int phase;
     private static int ticks;
@@ -148,11 +149,34 @@ public final class SettlementViewClientSmoke {
                 require(order != null && order.mode() == SettlementGuardOrder.Mode.MOVE
                         && order.points().equals(java.util.List.of(fixture.center().offset(4, 0, 3))),
                         "the world-view click applies the exact guard destination");
+            });
+            serverCheck.join();
+            button(screen, "villagerretaliation.gui.settlement_view.manage_selection").onPress();
+            ticks = 0;
+            phase = 12;
+        } else if (phase == 12 && minecraft.screen instanceof SettlementManagementScreen screen && ++ticks >= 30
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS
+                && screen.snapshot().entries().size() == 1 && screen.snapshot().entries().getFirst().id().equals(fixture.resident())) {
+            require(((com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident) screen.snapshot().entries().getFirst()).presence()
+                    != com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.UNLOADED, "linked panels keep the selected resident loaded");
+            require(minecraft.getCameraEntity() instanceof Marker, "linked panels retain the remote camera");
+            require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) != null,
+                    "linked panels retain the remote chunks");
+            capture("linked-management");
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            phase = 13;
+        } else if (phase == 13 && minecraft.screen instanceof SettlementViewScreen screen) {
+            button(screen, "villagerretaliation.gui.settlement_view.overview").onPress();
+            UUID player = minecraft.player.getUUID();
+            serverCheck = minecraft.getSingleplayerServer().submit(() -> {
+                ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                require(serverPlayer.serverLevel().getChunkSource().chunkMap.getDistanceManager()
+                        .shouldForceTicks(new ChunkPos(fixture.center()).toLong()), "returning from panels retains the same viewed town");
                 serverPlayer.hurt(serverPlayer.damageSources().generic(), 1.0F);
             });
             ticks = 0;
             phase = 5;
-        } else if (phase == 5 && !(minecraft.screen instanceof SettlementViewScreen)) {
+        } else if (phase == 5 && minecraft.screen == null) {
             serverCheck.join();
             require(minecraft.getCameraEntity() == minecraft.player, "damage restores the player's camera");
             require(minecraft.options.getCameraType() == CameraType.THIRD_PERSON_BACK, "damage restores the previous perspective");
@@ -193,7 +217,7 @@ public final class SettlementViewClientSmoke {
             button(screen, "villagerretaliation.gui.settlement.save").onPress();
             ticks = 0;
             phase = 11;
-        } else if (phase == 11 && minecraft.screen instanceof SettlementManagementScreen && ++ticks >= 10) {
+        } else if (phase == 11 && minecraft.screen instanceof SettlementManagementScreen screen && ++ticks >= 10) {
             UUID player = minecraft.player.getUUID();
             minecraft.getSingleplayerServer().submit(() -> {
                 ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
@@ -202,6 +226,72 @@ public final class SettlementViewClientSmoke {
                         "saving the native settings form pauses the authoritative civic worker");
             }).join();
             capture("worker-settings-saved");
+            projectFixture = minecraft.getSingleplayerServer().submit(() -> prepareProject(
+                    minecraft.getSingleplayerServer().getPlayerList().getPlayer(player))).join();
+            button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
+            ticks = 0;
+            phase = 14;
+        } else if (phase == 14 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30) {
+            button(screen, "villagerretaliation.gui.settlement_view.residents").onPress();
+            phase = 15;
+        } else if (phase == 15 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
+            phase = 16;
+        } else if (phase == 16 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS) {
+            require(button(screen, "villagerretaliation.gui.settlement.new_project").active, "a held blueprint enables commissioning");
+            button(screen, "villagerretaliation.gui.settlement.new_project").onPress();
+            phase = 17;
+        } else if (phase == 17 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS, projectFixture.builder().toString());
+            phase = 18;
+        } else if (phase == 18 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS
+                && screen.snapshot().entries().size() == 1 && screen.snapshot().entries().getFirst().id().equals(projectFixture.builder())) {
+            selectFirstRow(screen);
+            require(button(screen, "villagerretaliation.gui.settlement.commission").active, "the remote assigned builder remains available");
+            button(screen, "villagerretaliation.gui.settlement.commission").onPress();
+            ticks = 0;
+            phase = 19;
+        } else if (phase == 19 && minecraft.screen instanceof SettlementConfirmScreen screen && ++ticks >= 5) {
+            capture("project-review");
+            button(screen, "gui.yes").onPress();
+            phase = 20;
+        } else if (phase == 20 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS
+                && screen.snapshot().entries().stream().anyMatch(entry -> entry.id().equals(projectFixture.project()))) {
+            capture("project-started");
+            selectFirstRow(screen);
+            button(screen, "villagerretaliation.gui.settlement.cancel_project").onPress();
+            ticks = 0;
+            phase = 21;
+        } else if (phase == 21 && minecraft.screen instanceof SettlementConfirmScreen screen && ++ticks >= 5) {
+            capture("project-cancel-review");
+            button(screen, "gui.yes").onPress();
+            phase = 22;
+        } else if (phase == 22 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().entries().stream().anyMatch(entry ->
+                        entry instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Project project
+                                && project.id().equals(projectFixture.project())
+                                && project.status() == com.jvn.villagerretaliation.settlement.SettlementProject.Status.CANCELLED)) {
+            capture("project-cancelled");
+            screen.onClose();
+            ticks = 0;
+            phase = 23;
+        } else if (phase == 23 && minecraft.screen == null && ++ticks >= 20) {
+            require(minecraft.getCameraEntity() == minecraft.player, "closing linked management restores the player's camera");
+            require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) == null,
+                    "closing linked management releases remote client chunks");
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                ServerPlayer serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                require(!serverPlayer.serverLevel().getChunkSource().chunkMap.getDistanceManager()
+                        .shouldForceTicks(new ChunkPos(fixture.center()).toLong()), "closing linked management releases server tickets");
+                var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
+                require(town.projects().get(projectFixture.project()).status()
+                        == com.jvn.villagerretaliation.settlement.SettlementProject.Status.CANCELLED,
+                        "the client cancelled the authoritative construction project");
+            }).join();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
             } catch (IOException exception) {
@@ -211,6 +301,50 @@ public final class SettlementViewClientSmoke {
             phase = 6;
             minecraft.stop();
         }
+    }
+
+    private static void selectFirstRow(SettlementManagementScreen screen) {
+        var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
+                .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
+        rows.children().getFirst().mouseClicked(0, 0, 0);
+    }
+
+    private static ProjectFixture prepareProject(ServerPlayer player) {
+        var level = player.serverLevel();
+        var saved = SettlementSavedData.get(level).save(new net.minecraft.nbt.CompoundTag(), level.registryAccess());
+        for (var raw : saved.getList("Settlements", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+            var entry = (net.minecraft.nbt.CompoundTag) raw;
+            if (entry.getUUID("Id").equals(fixture.town().value())) {
+                entry.putString("Stage", "HAMLET");
+            }
+        }
+        level.getServer().overworld().getDataStorage().set("villagerretaliation_settlements", SettlementSavedData.load(saved, level.registryAccess()));
+        var origin = fixture.center().offset(12, 0, 0);
+        for (BlockPos position : BlockPos.betweenClosed(origin.offset(-3, -1, -4), origin.offset(14, 12, 12))) {
+            level.setBlockAndUpdate(position, position.getY() == origin.getY() - 1
+                    ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState());
+        }
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Second house",
+                origin.offset(-3, -1, -4), origin.offset(14, 12, 12), 5, true);
+        require(SettlementBuildingService.register(player, fixture.town(), area), "the construction area is registered");
+        Villager builder = EntityType.VILLAGER.create(level);
+        builder.setPos(origin.offset(-2, 0, 2).getBottomCenter());
+        builder.setNoAi(true);
+        builder.setCustomName(Component.literal("Rowan"));
+        builder.setVillagerData(builder.getVillagerData().setProfession(VillagerProfession.MASON));
+        VillageAllegianceApi.assignKnown(level, builder, fixture.town(), AllegianceAssignmentSource.EXPLICIT_API);
+        require(level.addFreshEntity(builder), "the civic builder is loaded");
+        require(SettlementWorkforceService.assign(level, player, fixture.town(), builder, area.id()), "the builder is assigned to construction");
+        SettlementCareService.onUnloaded(builder);
+        var entry = com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog.byId(level.getServer(),
+                net.minecraft.resources.ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1")).orElseThrow();
+        var plan = com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner.scan(level, entry,
+                net.minecraft.world.level.block.Rotation.NONE).orElseThrow();
+        UUID project = UUID.randomUUID();
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+                com.jvn.villagerretaliation.item.ConstructionBlueprintItem.create(level, null, plan, origin, project, 0, plan.price(), "", 0L));
+        player.containerMenu.broadcastChanges();
+        return new ProjectFixture(builder.getUUID(), project);
     }
 
     private static Fixture prepare(ServerPlayer player) {
@@ -313,6 +447,9 @@ public final class SettlementViewClientSmoke {
         if (!condition) {
             throw new IllegalStateException(message);
         }
+    }
+
+    private record ProjectFixture(UUID builder, UUID project) {
     }
 
     private record Fixture(VillageAllegianceId town, UUID resident, BlockPos center) {

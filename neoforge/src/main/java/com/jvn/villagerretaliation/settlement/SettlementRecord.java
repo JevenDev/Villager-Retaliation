@@ -29,6 +29,7 @@ public final class SettlementRecord {
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
     private final Map<UUID, SettlementGuardOrder> guardOrders = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerSettings> workerSettings = new LinkedHashMap<>();
+    private final Map<UUID, SettlementProject> projects = new LinkedHashMap<>();
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
     private final Map<UUID, SettlementBuildingSurvey.Survey> surveys = new LinkedHashMap<>();
     private final Map<UUID, SettlementApplicant> applicants = new LinkedHashMap<>();
@@ -215,6 +216,41 @@ public final class SettlementRecord {
         return true;
     }
 
+    public Map<UUID, SettlementProject> projects() {
+        return Collections.unmodifiableMap(this.projects);
+    }
+
+    public SettlementProject activeProject(UUID builder) {
+        return this.projects.values().stream().filter(project -> project.active() && project.builder().equals(builder)).findFirst().orElse(null);
+    }
+
+    boolean startProject(UUID actor, SettlementProject project) {
+        if (!permits(actor, SettlementPermission.BUILD) || !project.active() || !project.town().equals(this.id.value())
+                || this.projects.containsKey(project.id()) || !project.within(this.areas.get(project.area()))
+                || !project.area().equals(this.duties.get(project.builder())) || activeProject(project.builder()) != null
+                || this.projects.values().stream().filter(SettlementProject::active).count() >= this.stage.projects()
+                || this.projects.values().stream().anyMatch(existing -> existing.active() && existing.overlaps(project))) {
+            return false;
+        }
+        this.projects.put(project.id(), project);
+        changed();
+        return true;
+    }
+
+    void finishProject(UUID id, SettlementProject.Status status) {
+        var project = this.projects.get(id);
+        if (project != null && project.finish(status)) {
+            changed();
+        }
+    }
+
+    private void cancelProjects(UUID builder) {
+        var project = activeProject(builder);
+        if (project != null) {
+            finishProject(project.id(), SettlementProject.Status.CANCELLED);
+        }
+    }
+
     public Map<UUID, SettlementWorkerSettings> workerSettings() {
         return Collections.unmodifiableMap(this.workerSettings);
     }
@@ -236,6 +272,7 @@ public final class SettlementRecord {
             return false;
         }
         if (!area.equals(this.duties.put(resident, area))) {
+            cancelProjects(resident);
             this.guardOrders.remove(resident);
             this.workerSettings.remove(resident);
             changed();
@@ -247,6 +284,7 @@ public final class SettlementRecord {
         if (this.duties.remove(resident) == null) {
             return false;
         }
+        cancelProjects(resident);
         this.guardOrders.remove(resident);
         this.workerSettings.remove(resident);
         changed();
@@ -366,6 +404,7 @@ public final class SettlementRecord {
                         && this.duties.containsValue(area.id())
                 || this.depots.values().stream().anyMatch(depot -> depot.area().equals(area.id())
                         && (area.type() == SettlementAreaType.HOME || !area.contains(depot.position())))
+                || this.projects.values().stream().anyMatch(project -> project.active() && project.area().equals(area.id()) && !project.within(area))
                 || this.areas.values().stream().anyMatch(existing ->
                         !existing.id().equals(area.id()) && existing.intersects(area))) {
             return false;
@@ -387,6 +426,8 @@ public final class SettlementRecord {
                 || this.areas.remove(area) == null) {
             return false;
         }
+        this.projects.values().stream().filter(project -> project.active() && project.area().equals(area))
+                .forEach(project -> finishProject(project.id(), SettlementProject.Status.CANCELLED));
         this.duties.values().removeIf(area::equals);
         this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.workerSettings.keySet().removeIf(resident -> !this.duties.containsKey(resident));
@@ -451,6 +492,9 @@ public final class SettlementRecord {
             settingsTags.add(entry);
         });
         tag.put("WorkerSettings", settingsTags);
+        ListTag projectTags = new ListTag();
+        this.projects.values().forEach(project -> projectTags.add(project.save()));
+        tag.put("Projects", projectTags);
         ListTag depotTags = new ListTag();
         this.depots.values().forEach(depot -> depotTags.add(depot.save(provider)));
         tag.put("Depots", depotTags);
@@ -589,6 +633,16 @@ public final class SettlementRecord {
             if (area == null || area.type().role() != settings.role()
                     || record.workerSettings.putIfAbsent(resident, settings) != null) {
                 throw new IllegalArgumentException("Worker settings are duplicated or have no matching duty");
+            }
+        }
+        for (Tag raw : tag.getList("Projects", Tag.TAG_COMPOUND)) {
+            var project = SettlementProject.load((CompoundTag) raw);
+            if (!project.town().equals(record.id.value())
+                    || project.active() && (!project.within(record.areas.get(project.area()))
+                            || !project.area().equals(record.duties.get(project.builder())) || record.activeProject(project.builder()) != null
+                            || record.projects.values().stream().anyMatch(existing -> existing.active() && existing.overlaps(project)))
+                    || record.projects.putIfAbsent(project.id(), project) != null) {
+                throw new IllegalArgumentException("Construction project is duplicated or has no matching duty");
             }
         }
         for (Tag raw : tag.getList("Depots", Tag.TAG_COMPOUND)) {
