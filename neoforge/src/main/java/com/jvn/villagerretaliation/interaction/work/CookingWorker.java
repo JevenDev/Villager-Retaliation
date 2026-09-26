@@ -929,7 +929,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         return level.getRecipeManager().getRecipeFor(recipeType, new SingleRecipeInput(stack), level);
     }
 
-    private static boolean isFood(ItemStack stack) {
+    public static boolean isFood(ItemStack stack) {
         return stack != null
                 && !stack.isEmpty()
                 && (stack.get(DataComponents.FOOD) != null || stack.is(Items.CAKE));

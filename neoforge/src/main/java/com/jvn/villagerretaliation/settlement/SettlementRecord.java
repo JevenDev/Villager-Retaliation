@@ -259,7 +259,7 @@ public final class SettlementRecord {
         var previous = this.surveys.get(area);
         if (previous != null && previous.beds().equals(survey.beds())
                 && previous.workstations().equals(survey.workstations()) && previous.fullyLoaded() == survey.fullyLoaded()
-                && survey.checkedAt() - previous.checkedAt() < 1_200L) {
+                && previous.fixtures().equals(survey.fixtures()) && survey.checkedAt() - previous.checkedAt() < 1_200L) {
             return;
         }
         this.surveys.put(area, survey);

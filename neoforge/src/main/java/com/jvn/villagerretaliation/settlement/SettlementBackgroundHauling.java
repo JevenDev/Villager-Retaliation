@@ -14,39 +14,7 @@ final class SettlementBackgroundHauling {
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         List<SettlementDepot> depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
-        var items = worker.items(level.registryAccess());
-        for (int slot : worker.outputSlots()) {
-            ItemStack cargo = items.get(slot);
-            if (cargo.isEmpty()) {
-                continue;
-            }
-            for (SettlementDepot destination : depots) {
-                if (!destination.purpose().providesSupplies()) {
-                    continue;
-                }
-                int count = Math.min(cargo.getCount(), receiveAllowance(level, destination, cargo));
-                int target = SettlementLogisticsService.requestedTarget(level, town, destination, cargo);
-                if (target >= 0) {
-                    int reserved = AssignedStorageService.reservedItemCount(level, destination.position(), null,
-                            VillagerFilterPolicy.TransferOperation.RECEIVE, cargo);
-                    count = Math.min(count, target - destination.count(stack -> ItemStack.isSameItemSameComponents(stack, cargo)) - reserved);
-                }
-                if (count <= 0) {
-                    continue;
-                }
-                worker.work(elapsed, multiplier);
-                if (!worker.spend(travelCost(worker.position(), worker.position(), destination.position()))) {
-                    worker.status("hauling");
-                    return;
-                }
-                ItemStack remainder = destination.deposit(cargo.copyWithCount(count));
-                int moved = count - remainder.getCount();
-                cargo.shrink(moved);
-                worker.updateInventory(level.registryAccess(), items);
-                worker.status(moved > 0 ? "delivered" : "storage_full");
-                return;
-            }
-            worker.status("storage_full");
+        if (depositCarried(level, town, worker, elapsed, multiplier, depots, true)) {
             return;
         }
         SettlementHaulTask task = SettlementLogisticsService.selectBackground(level, town, depots, worker);
@@ -89,6 +57,46 @@ final class SettlementBackgroundHauling {
             moved += accepted;
         }
         worker.status(moved > 0 ? "delivered" : "storage_full");
+    }
+
+    static boolean depositCarried(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,
+                                  int elapsed, double multiplier, List<SettlementDepot> depots, boolean courier) {
+        var items = worker.items(level.registryAccess());
+        for (int slot : worker.outputSlots()) {
+            ItemStack cargo = items.get(slot);
+            if (cargo.isEmpty()) {
+                continue;
+            }
+            for (SettlementDepot destination : depots) {
+                if (courier ? !destination.purpose().providesSupplies() : !destination.purpose().acceptsOutputs()) {
+                    continue;
+                }
+                int count = Math.min(cargo.getCount(), receiveAllowance(level, destination, cargo));
+                int target = courier ? SettlementLogisticsService.requestedTarget(level, town, destination, cargo) : -1;
+                if (target >= 0) {
+                    int reserved = AssignedStorageService.reservedItemCount(level, destination.position(), null,
+                            VillagerFilterPolicy.TransferOperation.RECEIVE, cargo);
+                    count = Math.min(count, target - destination.count(stack -> ItemStack.isSameItemSameComponents(stack, cargo)) - reserved);
+                }
+                if (count <= 0) {
+                    continue;
+                }
+                worker.work(elapsed, multiplier);
+                if (!worker.spend(travelCost(worker.position(), worker.position(), destination.position()))) {
+                    worker.status("hauling");
+                    return true;
+                }
+                ItemStack remainder = destination.deposit(cargo.copyWithCount(count));
+                int moved = count - remainder.getCount();
+                cargo.shrink(moved);
+                worker.updateInventory(level.registryAccess(), items);
+                worker.status(moved > 0 ? "delivered" : "storage_full");
+                return true;
+            }
+            worker.status("storage_full");
+            return true;
+        }
+        return false;
     }
 
     private static int receiveAllowance(ServerLevel level, SettlementDepot depot, ItemStack sample) {

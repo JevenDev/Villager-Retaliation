@@ -581,10 +581,17 @@ public final class AssignedStorageService {
     public static int observedTransferAllowance(ServerLevel level, BlockPos position, Container container,
                                                  List<ItemStack> rules, ItemStack stack,
                                                  VillagerFilterPolicy.TransferOperation operation) {
+        return observedTransferAllowance(level, position, container, rules, stack, operation, List.of());
+    }
+
+    public static int observedTransferAllowance(ServerLevel level, BlockPos position, Container container,
+                                                 List<ItemStack> rules, ItemStack stack,
+                                                 VillagerFilterPolicy.TransferOperation operation,
+                                                 List<ItemStack> reservations) {
         var candidate = new VillagerInventoryOverflowService.ContainerCandidate(position, container, List.of(position));
         return operation == VillagerFilterPolicy.TransferOperation.PROVIDE
-                ? sourceAllowance(level, candidate, rules, stack, null, List.of())
-                : outputAllowance(level, candidate, rules, stack, null, List.of());
+                ? sourceAllowance(level, candidate, rules, stack, null, reservations)
+                : outputAllowance(level, candidate, rules, stack, null, reservations);
     }
 
     public static int unreservedFramedAllowance(ServerLevel level, BlockPos position, ItemStack sample,

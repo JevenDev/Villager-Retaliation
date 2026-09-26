@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.settlement;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
+import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ public final class SettlementWorkerState {
     private HiredVillagerRole role;
     private BlockPos position;
     private CompoundTag inventory = new CompoundTag();
+    private CompoundTag settings = new CompoundTag();
     private long checkedAt;
     private long version;
     private double progress;
@@ -71,6 +73,10 @@ public final class SettlementWorkerState {
         return this.inventory.copy();
     }
 
+    CompoundTag settings() {
+        return this.settings;
+    }
+
     static SettlementWorkerState capture(ServerLevel level, Villager villager, SettlementWorkforceService.Duty duty, long now) {
         var state = new SettlementWorkerState(villager.getUUID());
         state.observe(level, villager, duty, now);
@@ -82,6 +88,7 @@ public final class SettlementWorkerState {
         this.role = duty.area().type().role();
         this.position = villager.blockPosition().immutable();
         this.inventory = HiredJobInventory.getJobInventory(villager).captureSnapshot();
+        this.settings = HiredWorkStateStore.state(villager).copy();
         this.aptitude = HiredVillagerRoles.roleScore(level, villager, this.role);
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
         this.checkedAt = now;
@@ -95,6 +102,9 @@ public final class SettlementWorkerState {
         }
         HiredJobInventory.getJobInventory(villager).restoreSnapshot(this.inventory);
         villager.getPersistentData().putLong(VERSION_TAG, this.version);
+        if (this.settings.contains("CraftsmanCursor", Tag.TAG_INT)) {
+            HiredWorkStateStore.state(villager).putInt("CraftsmanCursor", this.settings.getInt("CraftsmanCursor"));
+        }
         HiredWorkSession.invalidate(villager);
         return true;
     }
@@ -133,13 +143,25 @@ public final class SettlementWorkerState {
     }
 
     List<Integer> outputSlots() {
+        return slots(HiredJobInventorySlotType.OUTPUT);
+    }
+
+    List<Integer> supplySlots() {
+        return slots(HiredJobInventorySlotType.SUPPLY);
+    }
+
+    private List<Integer> slots(HiredJobInventorySlotType type) {
         boolean[] outputs = new boolean[HiredJobInventory.SLOT_COUNT];
-        java.util.Arrays.fill(outputs, HiredJobInventory.MAIN_GRID_START, HiredJobInventory.HOTBAR_START, true);
+        if (type == HiredJobInventorySlotType.OUTPUT) {
+            java.util.Arrays.fill(outputs, HiredJobInventory.MAIN_GRID_START, HiredJobInventory.HOTBAR_START, true);
+        } else if (type == HiredJobInventorySlotType.SUPPLY) {
+            java.util.Arrays.fill(outputs, HiredJobInventory.HOTBAR_START, HiredJobInventory.FILTER_SLOT, true);
+        }
         for (Tag raw : this.inventory.getList("SlotTypes", Tag.TAG_COMPOUND)) {
             CompoundTag tag = (CompoundTag) raw;
             int slot = tag.getInt("Slot");
             if (slot >= HiredJobInventory.MAIN_GRID_START && slot < HiredJobInventory.FILTER_SLOT) {
-                outputs[slot] = HiredJobInventorySlotType.OUTPUT.id().equals(tag.getString("Type"));
+                outputs[slot] = type.id().equals(tag.getString("Type"));
             }
         }
         List<Integer> result = new ArrayList<>();
@@ -158,6 +180,7 @@ public final class SettlementWorkerState {
         tag.putString("Role", this.role.name());
         tag.putLong("Position", this.position.asLong());
         tag.put("Inventory", this.inventory.copy());
+        tag.put("Settings", this.settings.copy());
         tag.putLong("CheckedAt", this.checkedAt);
         tag.putLong("Version", this.version);
         tag.putDouble("Progress", this.progress);
@@ -175,6 +198,7 @@ public final class SettlementWorkerState {
         state.role = HiredVillagerRole.valueOf(tag.getString("Role"));
         state.position = BlockPos.of(tag.getLong("Position"));
         state.inventory = tag.getCompound("Inventory").copy();
+        state.settings = tag.getCompound("Settings").copy();
         state.checkedAt = Math.max(0L, tag.getLong("CheckedAt"));
         state.version = Math.max(0L, tag.getLong("Version"));
         state.progress = Math.clamp(tag.getDouble("Progress"), 0.0D, 24_000.0D);

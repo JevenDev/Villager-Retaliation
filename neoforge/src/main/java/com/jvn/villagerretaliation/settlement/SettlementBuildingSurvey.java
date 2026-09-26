@@ -2,10 +2,16 @@ package com.jvn.villagerretaliation.settlement;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.PoiTypeTags;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
@@ -23,6 +29,7 @@ public final class SettlementBuildingSurvey {
     public static Survey inspect(ServerLevel level, SettlementArea area) {
         List<BlockPos> beds = new ArrayList<>();
         List<BlockPos> workstations = new ArrayList<>();
+        Map<BlockPos, ResourceLocation> fixtures = new LinkedHashMap<>();
         boolean fullyLoaded = true;
         int minChunkX = Math.floorDiv(area.min().getX(), 16);
         int maxChunkX = Math.floorDiv(area.max().getX(), 16);
@@ -53,11 +60,11 @@ public final class SettlementBuildingSurvey {
                     }
                 }
                 if (requiresFixture(area.type())) {
-                    collectFixtures(level, area, x, z, workstations);
+                    collectFixtures(level, area, x, z, workstations, fixtures);
                 }
             }
         }
-        return new Survey(level.getGameTime(), beds, workstations, fullyLoaded);
+        return new Survey(level.getGameTime(), beds, workstations, fullyLoaded, fixtures);
     }
 
     public static boolean requiresFixture(SettlementAreaType type) {
@@ -79,7 +86,7 @@ public final class SettlementBuildingSurvey {
     }
 
     private static void collectFixtures(ServerLevel level, SettlementArea area, int chunkX, int chunkZ,
-                                        List<BlockPos> fixtures) {
+                                        List<BlockPos> fixtures, Map<BlockPos, ResourceLocation> types) {
         var chunk = level.getChunk(chunkX, chunkZ);
         int minX = Math.max(area.min().getX(), chunkX * 16);
         int maxX = Math.min(area.max().getX(), chunkX * 16 + 15);
@@ -96,7 +103,9 @@ public final class SettlementBuildingSurvey {
                 for (int x = minX; x <= maxX; x++) {
                     for (int z = minZ; z <= maxZ; z++) {
                         if (fixture(area.type(), section.getBlockState(x & 15, y & 15, z & 15))) {
-                            fixtures.add(new BlockPos(x, y, z));
+                            BlockPos position = new BlockPos(x, y, z);
+                            fixtures.add(position);
+                            types.put(position, BuiltInRegistries.BLOCK.getKey(section.getBlockState(x & 15, y & 15, z & 15).getBlock()));
                         }
                     }
                 }
@@ -168,10 +177,19 @@ public final class SettlementBuildingSurvey {
                 && level.getFluidState(pos).isEmpty();
     }
 
-    public record Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded) {
+    public record Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded,
+                         Map<BlockPos, ResourceLocation> fixtures) {
+        public Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded) {
+            this(checkedAt, beds, workstations, fullyLoaded, Map.of());
+        }
+
         public Survey {
             beds = beds.stream().distinct().sorted().toList();
             workstations = workstations.stream().distinct().sorted().toList();
+            fixtures = Map.copyOf(fixtures);
+            if (!new java.util.HashSet<>(workstations).containsAll(fixtures.keySet())) {
+                throw new IllegalArgumentException("Observed fixtures must belong to surveyed workstations");
+            }
             checkedAt = Math.max(0L, checkedAt);
             if (beds.size() > SettlementArea.MAX_VOLUME || workstations.size() > SettlementArea.MAX_VOLUME) {
                 throw new IllegalArgumentException("Building survey exceeds its maximum volume");
@@ -184,14 +202,30 @@ public final class SettlementBuildingSurvey {
             tag.putLongArray("Beds", this.beds.stream().mapToLong(BlockPos::asLong).toArray());
             tag.putLongArray("Workstations", this.workstations.stream().mapToLong(BlockPos::asLong).toArray());
             tag.putBoolean("FullyLoaded", this.fullyLoaded);
+            ListTag fixtures = new ListTag();
+            this.fixtures.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+                CompoundTag fixture = new CompoundTag();
+                fixture.putLong("Position", entry.getKey().asLong());
+                fixture.putString("Block", entry.getValue().toString());
+                fixtures.add(fixture);
+            });
+            tag.put("Fixtures", fixtures);
             return tag;
         }
 
         static Survey load(CompoundTag tag) {
+            Map<BlockPos, ResourceLocation> fixtures = new LinkedHashMap<>();
+            for (Tag raw : tag.getList("Fixtures", Tag.TAG_COMPOUND)) {
+                CompoundTag entry = (CompoundTag) raw;
+                ResourceLocation block = ResourceLocation.tryParse(entry.getString("Block"));
+                if (block == null || fixtures.putIfAbsent(BlockPos.of(entry.getLong("Position")), block) != null) {
+                    throw new IllegalArgumentException("Observed fixture has an invalid block or duplicate position");
+                }
+            }
             return new Survey(tag.getLong("CheckedAt"),
                     Arrays.stream(tag.getLongArray("Beds")).mapToObj(BlockPos::of).toList(),
                     Arrays.stream(tag.getLongArray("Workstations")).mapToObj(BlockPos::of).toList(),
-                    tag.getBoolean("FullyLoaded"));
+                    tag.getBoolean("FullyLoaded"), fixtures);
         }
     }
 }

@@ -14,7 +14,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 
 /** Applies exact recipe-filter identity and ingredient choices to worker production decisions. */
-final class HiredProcessingRecipeFilter {
+public final class HiredProcessingRecipeFilter {
     private HiredProcessingRecipeFilter() {
     }
 
@@ -40,7 +40,7 @@ final class HiredProcessingRecipeFilter {
         return policy.listMode() == VillagerFilterPolicy.ListMode.ALLOW_MATCHING ? exact : !exact;
     }
 
-    static boolean allowsCraftingRecipe(
+    public static boolean allowsCraftingRecipe(
             ServerLevel level,
             ItemStack filter,
             RecipeHolder<?> recipe,
@@ -73,7 +73,7 @@ final class HiredProcessingRecipeFilter {
                 || resolution.recipe().value().getType() == recipeType;
     }
 
-    static Map<Integer, Item> narrowedCraftingIngredients(
+    public static Map<Integer, Item> narrowedCraftingIngredients(
             ServerLevel level,
             ItemStack filter,
             RecipeHolder<?> recipe) {

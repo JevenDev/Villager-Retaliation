@@ -63,7 +63,13 @@ public final class SettlementBuildingService {
                     == SettlementBuildingSurvey.BedState.UNOBSERVED).forEach(beds::add);
             List<BlockPos> stations = new ArrayList<>(observed.workstations());
             previous.workstations().stream().filter(pos -> !level.hasChunkAt(pos)).forEach(stations::add);
-            observed = new SettlementBuildingSurvey.Survey(observed.checkedAt(), beds, stations, previous.fullyLoaded());
+            var fixtures = new java.util.LinkedHashMap<>(observed.fixtures());
+            previous.fixtures().forEach((pos, type) -> {
+                if (!level.hasChunkAt(pos)) {
+                    fixtures.put(pos, type);
+                }
+            });
+            observed = new SettlementBuildingSurvey.Survey(observed.checkedAt(), beds, stations, previous.fullyLoaded(), fixtures);
         }
         town.recordSurvey(area.id(), observed);
     }

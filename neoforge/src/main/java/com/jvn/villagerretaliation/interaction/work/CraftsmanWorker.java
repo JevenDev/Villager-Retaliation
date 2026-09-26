@@ -217,7 +217,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         return best;
     }
 
-    private static List<Target> targets(ServerLevel level, ItemStack filter) {
+    public static List<Target> targets(ServerLevel level, ItemStack filter) {
         if (filter.isEmpty()) {
             return List.of();
         }
@@ -255,7 +255,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         return List.copyOf(targets);
     }
 
-    private static int indexAtOrAfter(List<Target> targets, int cursor) {
+    public static int indexAtOrAfter(List<Target> targets, int cursor) {
         for (int index = 0; index < targets.size(); index++) {
             if (targets.get(index).slot() >= Math.max(0, cursor)) {
                 return index;
@@ -264,7 +264,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         return 0;
     }
 
-    private static void advanceCursor(CompoundTag state, List<Target> targets, int completedSlot) {
+    public static void advanceCursor(CompoundTag state, List<Target> targets, int completedSlot) {
         if (mode(state) == Mode.PREFER_FIRST) {
             return;
         }
@@ -294,7 +294,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                 "count", Integer.toString(stack.getCount()));
     }
 
-    private record Target(int slot, ItemStack stack) {}
+    public record Target(int slot, ItemStack stack) {}
     private record Selection(Target target, CraftingRecipe recipe, Map<Item, Integer> materials) {}
 
     public enum Mode {

@@ -47,13 +47,16 @@ public final class SettlementBackgroundService {
             var care = town.residents().get(worker.id());
             if (area == null || !area.enabled() || !area.id().equals(worker.area()) || area.type().role() != worker.role()
                     || care == null || !care.availableForWork()
+                    || worker.settings().contains("Enabled") && !worker.settings().getBoolean("Enabled")
                     || !SettlementWorkforceService.workingHours(level.getDayTime(), worker.id(), worker.role())) {
                 worker.status("resting");
                 continue;
             }
+            double multiplier = care.workMultiplier() * (town.housingCapacity() < town.residents().size() ? 0.75D : 1.0D);
             if (worker.role() == HiredVillagerRole.COURIER) {
-                SettlementBackgroundHauling.tick(level, town, worker, elapsed,
-                        care.workMultiplier() * (town.housingCapacity() < town.residents().size() ? 0.75D : 1.0D));
+                SettlementBackgroundHauling.tick(level, town, worker, elapsed, multiplier);
+            } else if (worker.role() == HiredVillagerRole.CRAFTSMAN || worker.role() == HiredVillagerRole.COOK) {
+                SettlementBackgroundCrafting.tick(level, town, worker, elapsed, multiplier);
             }
         }
         if (!town.workers().isEmpty()) {
