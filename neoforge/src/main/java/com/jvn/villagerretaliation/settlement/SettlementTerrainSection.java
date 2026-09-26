@@ -117,6 +117,10 @@ final class SettlementTerrainSection {
     }
 
     boolean reconcile(LevelChunk chunk) {
+        return reconcile(chunk, (position, before) -> {});
+    }
+
+    boolean reconcile(LevelChunk chunk, java.util.function.BiConsumer<BlockPos, BlockState> onApplied) {
         if (chunk.getPos().x != this.min.getX() >> 4 || chunk.getPos().z != this.min.getZ() >> 4) return false;
         long applied = SettlementChunkReceipts.version(chunk, this.receiptKey, this.id);
         if (applied < 0L) {
@@ -134,7 +138,9 @@ final class SettlementTerrainSection {
             for (BlockPos position : BlockPos.betweenClosed(this.min, this.max)) {
                 int index = index(position);
                 if (this.blocks[index] != this.baseline[index]) {
+                    BlockState before = chunk.getBlockState(position);
                     chunk.setBlockState(position, this.blocks[index], false);
+                    onApplied.accept(position.immutable(), before);
                 }
             }
             this.ticks.forEach(tick -> tick.apply(chunk));

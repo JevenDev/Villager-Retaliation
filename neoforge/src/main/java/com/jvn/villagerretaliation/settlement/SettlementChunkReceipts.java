@@ -59,6 +59,15 @@ public final class SettlementChunkReceipts {
         chunk.setUnsaved(true);
     }
 
+    static CompoundTag mineUpdates(LevelChunk chunk, boolean create) {
+        if (!create && !chunk.hasData(RECEIPTS)) return new CompoundTag();
+        var data = chunk.getData(RECEIPTS);
+        if (create && !data.contains("MineUpdates", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+            data.put("MineUpdates", new CompoundTag());
+        }
+        return data.getCompound("MineUpdates");
+    }
+
     static long lastTick(LevelChunk chunk) {
         return chunk.hasData(RECEIPTS) ? chunk.getData(RECEIPTS).getLong("LastTick") : 0L;
     }

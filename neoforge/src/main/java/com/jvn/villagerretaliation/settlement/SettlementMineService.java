@@ -19,10 +19,12 @@ public final class SettlementMineService {
 
     public static void onChunkLoad(ChunkEvent.Load event) {
         reconcileChunk(event);
+        if (event.getLevel() instanceof ServerLevel && event.getChunk() instanceof LevelChunk chunk) SettlementMineReactions.track(chunk);
     }
 
     public static void onChunkUnload(ChunkEvent.Unload event) {
         reconcileChunk(event);
+        if (event.getChunk() instanceof LevelChunk chunk) SettlementMineReactions.forget(chunk);
     }
 
     private static void reconcileChunk(ChunkEvent event) {
@@ -113,7 +115,7 @@ public final class SettlementMineService {
                 }
             }
         }
-        if (!section.reconcile(chunk)) return false;
+        if (!section.reconcile(chunk, (position, before) -> SettlementMineReactions.queue(chunk, position, before, chunk.getBlockState(position)))) return false;
         previous.forEach((position, state) -> {
             var updated = chunk.getBlockState(position);
             if (state != updated) {
