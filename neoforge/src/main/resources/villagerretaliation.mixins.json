@@ -17,6 +17,7 @@
     "AvoidEntityGoalMixin",
     "BrewingStandBlockEntityAccessor",
     "BrewingStandSettlementMixin",
+    "SettlementTerrainTickMixin",
     "EntityDuelDropMixin",
     "EntityNameMixin",
     "ExperienceOrbMixin",

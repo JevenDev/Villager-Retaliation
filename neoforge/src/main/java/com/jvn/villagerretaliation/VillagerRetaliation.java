@@ -59,6 +59,7 @@ public class VillagerRetaliation {
         VillagerRetaliationRegistries.registerBuiltIns();
         VillagerSecondWindCompat.init();
         VillagerRetaliationConfig.init();
+        com.jvn.villagerretaliation.settlement.SettlementChunkReceipts.register(modEventBus);
         VillagerRetaliationBlocks.register(modEventBus);
         VillagerRetaliationBlockEntityTypes.register(modEventBus);
         VillagerRetaliationEntityTypes.register(modEventBus);
@@ -126,6 +127,8 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onBlockPlace)
                 .listener(HiredOreBlockTracker::onBlockPlace)
                 .listener(HiredOreBlockTracker::onFluidPlaceBlock)
+                .listener(com.jvn.villagerretaliation.settlement.SettlementFieldService::onChunkLoad)
+                .listener(com.jvn.villagerretaliation.settlement.SettlementFieldService::onChunkUnload)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementBuildingService::onChunkLoad)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementBuildingService::onChunkUnload)
                 .listener(com.jvn.villagerretaliation.settlement.SettlementFurnaceService::onChunkLoad)

@@ -38,6 +38,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFurnaceState> furnaces = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementBrewingStandState> brewingStands = new LinkedHashMap<>();
+    private final Map<BlockPos, SettlementFieldPlot> fields = new LinkedHashMap<>();
     private long nextDepartureAt;
     private long nextApplicantAt;
     private SettlementSupportState support = new SettlementSupportState();
@@ -87,6 +88,21 @@ public final class SettlementRecord {
 
     public SettlementEconomy economy() {
         return this.economy;
+    }
+
+    public Map<BlockPos, SettlementFieldPlot> fields() {
+        return Collections.unmodifiableMap(this.fields);
+    }
+
+    void recordField(SettlementFieldPlot plot) {
+        this.fields.put(plot.position(), plot);
+        changed();
+    }
+
+    void removeField(BlockPos position) {
+        if (this.fields.remove(position) != null) {
+            changed();
+        }
     }
 
     public Map<BlockPos, SettlementFurnaceState> furnaces() {
@@ -546,6 +562,9 @@ public final class SettlementRecord {
         ListTag brewingTags = new ListTag();
         this.brewingStands.values().forEach(stand -> brewingTags.add(stand.save()));
         tag.put("BrewingStands", brewingTags);
+        ListTag fieldTags = new ListTag();
+        this.fields.values().forEach(plot -> fieldTags.add(plot.save()));
+        tag.put("Fields", fieldTags);
         ListTag departureTags = new ListTag();
         this.departures.values().forEach(departure -> departureTags.add(departure.save()));
         tag.put("Departures", departureTags);
@@ -592,6 +611,12 @@ public final class SettlementRecord {
             var stand = SettlementBrewingStandState.load((CompoundTag) raw);
             if (record.brewingStands.putIfAbsent(stand.position(), stand) != null) {
                 throw new IllegalArgumentException("Settlement brewing stand duplicates a position");
+            }
+        }
+        for (Tag raw : tag.getList("Fields", Tag.TAG_COMPOUND)) {
+            var plot = SettlementFieldPlot.load((CompoundTag) raw);
+            if (record.fields.putIfAbsent(plot.position(), plot) != null) {
+                throw new IllegalArgumentException("Settlement field duplicates a position");
             }
         }
         record.nextDepartureAt = Math.max(0L, tag.getLong("NextDepartureAt"));

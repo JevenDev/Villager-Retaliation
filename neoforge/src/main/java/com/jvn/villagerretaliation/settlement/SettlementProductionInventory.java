@@ -73,10 +73,18 @@ final class SettlementProductionInventory {
     }
 
     static boolean insertOutputs(SettlementWorkerState worker, NonNullList<ItemStack> items, List<ItemStack> outputs) {
+        return insert(worker.outputSlots(), items, outputs);
+    }
+
+    static boolean insertSupplies(SettlementWorkerState worker, NonNullList<ItemStack> items, List<ItemStack> supplies) {
+        return insert(worker.supplySlots(), items, supplies);
+    }
+
+    private static boolean insert(List<Integer> slots, NonNullList<ItemStack> items, List<ItemStack> outputs) {
         for (ItemStack output : outputs) {
             ItemStack remaining = output.copy();
             for (int pass = 0; pass < 2 && !remaining.isEmpty(); pass++) {
-                for (int slot : worker.outputSlots()) {
+                for (int slot : slots) {
                     ItemStack existing = items.get(slot);
                     if (pass == 0 ? existing.isEmpty() || !ItemStack.isSameItemSameComponents(existing, remaining) : !existing.isEmpty()) {
                         continue;
