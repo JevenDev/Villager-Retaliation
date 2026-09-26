@@ -1905,6 +1905,7 @@ public final class SceneRegistryGameTests {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         SceneSavedData data = new SceneSavedData();
         var definition = compiledValidScene();
+        SceneResources.installTestScenes(helper.getLevel().getServer(), List.of(definition));
         SceneInstance scene =
                 data.start(
                                 definition,
