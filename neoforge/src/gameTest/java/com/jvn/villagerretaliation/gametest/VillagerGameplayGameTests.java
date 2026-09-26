@@ -246,6 +246,8 @@ public final class VillagerGameplayGameTests {
                 itemPos.getZ() + 0.5D,
                 new ItemStack(Items.BREAD));
         bread.setNoPickUpDelay();
+        bread.setNoGravity(true);
+        bread.setDeltaMovement(Vec3.ZERO);
         level.addFreshEntity(bread);
         villager.getBrain().setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, bread);
 

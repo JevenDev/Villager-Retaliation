@@ -38,6 +38,10 @@ public final class VillagerItemPickupReach {
                 && hasOnlyPartialCollisionBetween(villager, item);
     }
 
+    public static boolean isWithinReachThroughPartialBlock(LivingEntity villager, Entity item, double horizontalReachSqr) {
+        return isWithinReach(villager, item, horizontalReachSqr) && hasOnlyPartialCollisionBetween(villager, item);
+    }
+
     private static boolean hasOnlyPartialCollisionBetween(LivingEntity villager, Entity item) {
         boolean foundPartialCollision = false;
         for (int sample = 1; sample <= OBSTRUCTION_SAMPLES; sample++) {

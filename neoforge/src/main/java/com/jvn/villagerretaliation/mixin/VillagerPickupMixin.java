@@ -11,6 +11,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.event.EventHooks;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,7 +29,7 @@ public abstract class VillagerPickupMixin {
     @Inject(method = "customServerAiStep", at = @At("RETURN"))
     private void villagerretaliation$pickUpReachableWantedItem(CallbackInfo ci) {
         Villager villager = (Villager) (Object) this;
-        if (!(villager.level() instanceof ServerLevel)) {
+        if (!(villager.level() instanceof ServerLevel) || !villager.canPickUpLoot() || !villager.isAlive()) {
             return;
         }
         ItemEntity wantedItem = villager.getBrain()
@@ -42,7 +43,8 @@ public abstract class VillagerPickupMixin {
                 || !VillagerItemPickupReach.isWithinReach(
                         villager,
                         wantedItem,
-                        WANTED_ITEM_PICKUP_REACH_SQR)) {
+                        WANTED_ITEM_PICKUP_REACH_SQR)
+                || !EventHooks.canEntityGrief(villager.level(), villager)) {
             return;
         }
         this.pickUpItem(wantedItem);
