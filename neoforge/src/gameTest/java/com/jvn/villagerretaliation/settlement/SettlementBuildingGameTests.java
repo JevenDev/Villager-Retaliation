@@ -160,6 +160,42 @@ public final class SettlementBuildingGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_housing_boundary")
+    public static void unobservedBedExitsPreserveHousingUntilTheBoundaryLoads(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos head = new BlockPos(6_000_015, 64, 6_000_008);
+        BlockPos foot = head.south();
+        var chunk = level.getChunk(Math.floorDiv(head.getX(), 16), Math.floorDiv(head.getZ(), 16));
+        var bed = Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH);
+        chunk.setBlockState(head, bed.setValue(BedBlock.PART, BedPart.HEAD), false);
+        chunk.setBlockState(foot, bed.setValue(BedBlock.PART, BedPart.FOOT), false);
+        for (BlockPos wall : List.of(head.north(), head.west(), foot.west(), foot.south())) {
+            chunk.setBlockState(wall, Blocks.STONE.defaultBlockState(), false);
+        }
+        level.getPoiManager().add(head, level.registryAccess().registryOrThrow(Registries.POINT_OF_INTEREST_TYPE)
+                .getHolderOrThrow(PoiTypes.HOME));
+        helper.assertFalse(level.hasChunkAt(head.east()), "the possible bed exits lie in an unloaded neighboring chunk");
+        var registry = new VillageAllegianceRegistrySavedData();
+        var data = new SettlementSavedData();
+        var id = registry.create(0L, level.dimension().location(), head, "");
+        var town = data.establish(registry, id, UUID.randomUUID(), head, 0L).orElseThrow();
+        var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Boundary home", head, foot.above(), 5, true);
+        data.putArea(registry, id, town.leader(), home);
+        town.recordSurvey(home.id(), new SettlementBuildingSurvey.Survey(0L, List.of(head), List.of(), true));
+        SettlementBuildingService.refresh(level, town, home);
+        helper.assertValueEqual(town.housingCapacity(), 1, "an unobserved exit does not erase previously verified housing");
+        helper.assertFalse(level.hasChunkAt(head.east()), "the survey leaves the neighboring chunk unloaded");
+        var neighbor = level.getChunk(Math.floorDiv(head.east().getX(), 16), Math.floorDiv(head.getZ(), 16));
+        neighbor.setBlockState(head.east().below(), Blocks.STONE.defaultBlockState(), false);
+        SettlementBuildingService.refresh(level, town, home);
+        helper.assertValueEqual(town.housingCapacity(), 1, "a newly observed safe exit confirms the existing bed");
+        neighbor.setBlockState(head.east(), Blocks.STONE.defaultBlockState(), false);
+        neighbor.setBlockState(foot.east(), Blocks.STONE.defaultBlockState(), false);
+        SettlementBuildingService.refresh(level, town, home);
+        helper.assertValueEqual(town.housingCapacity(), 0, "fully observed blocked exits remove unusable housing");
+        helper.succeed();
+    }
+
     private static ServerPlayer player(GameTestHelper helper, BlockPos center) {
         ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "TownBuilder"));
         player.setPos(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D);

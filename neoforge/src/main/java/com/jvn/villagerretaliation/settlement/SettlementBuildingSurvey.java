@@ -34,20 +34,24 @@ public final class SettlementBuildingSurvey {
                     fullyLoaded = false;
                     continue;
                 }
-                level.getPoiManager().getInChunk(type -> type.is(PoiTypes.HOME)
+                var points = level.getPoiManager().getInChunk(type -> type.is(PoiTypes.HOME)
                                 || type.is(PoiTypeTags.ACQUIRABLE_JOB_SITE), new ChunkPos(x, z), PoiManager.Occupancy.ANY)
-                        .filter(poi -> area.contains(poi.getPos()))
-                        .forEach(poi -> {
-                            BlockPos pos = poi.getPos();
-                            if (poi.getPoiType().is(PoiTypes.HOME)) {
-                                if (area.type() == SettlementAreaType.HOME && usableBed(level, pos)
-                                        && area.contains(pos.relative(level.getBlockState(pos).getValue(BedBlock.FACING).getOpposite()))) {
-                                    beds.add(pos.immutable());
-                                }
-                            } else if (!requiresFixture(area.type())) {
-                                workstations.add(pos.immutable());
+                        .filter(poi -> area.contains(poi.getPos())).toList();
+                for (var poi : points) {
+                    BlockPos pos = poi.getPos();
+                    if (poi.getPoiType().is(PoiTypes.HOME)) {
+                        if (area.type() == SettlementAreaType.HOME) {
+                            BedState bed = inspectBed(level, area, pos);
+                            if (bed == BedState.AVAILABLE) {
+                                beds.add(pos.immutable());
+                            } else if (bed == BedState.UNOBSERVED) {
+                                fullyLoaded = false;
                             }
-                        });
+                        }
+                    } else if (!requiresFixture(area.type())) {
+                        workstations.add(pos.immutable());
+                    }
+                }
                 if (requiresFixture(area.type())) {
                     collectFixtures(level, area, x, z, workstations);
                 }
@@ -101,30 +105,55 @@ public final class SettlementBuildingSurvey {
     }
 
     public static boolean usableBed(ServerLevel level, BlockPos head) {
+        return inspectBed(level, head) == BedState.AVAILABLE;
+    }
+
+    static BedState inspectBed(ServerLevel level, SettlementArea area, BlockPos head) {
+        if (level.hasChunkAt(head)) {
+            BlockState state = level.getBlockState(head);
+            if (state.getBlock() instanceof BedBlock
+                    && !area.contains(head.relative(state.getValue(BedBlock.FACING).getOpposite()))) {
+                return BedState.BLOCKED;
+            }
+        }
+        return inspectBed(level, head);
+    }
+
+    private static BedState inspectBed(ServerLevel level, BlockPos head) {
         if (!level.hasChunkAt(head)) {
-            return false;
+            return BedState.UNOBSERVED;
         }
         BlockState state = level.getBlockState(head);
         if (!(state.getBlock() instanceof BedBlock) || state.getValue(BedBlock.PART) != BedPart.HEAD) {
-            return false;
+            return BedState.BLOCKED;
         }
         Direction facing = state.getValue(BedBlock.FACING);
         BlockPos foot = head.relative(facing.getOpposite());
         if (!level.hasChunkAt(foot)) {
-            return false;
+            return BedState.UNOBSERVED;
         }
         BlockState other = level.getBlockState(foot);
         if (!other.is(state.getBlock()) || other.getValue(BedBlock.PART) != BedPart.FOOT
                 || other.getValue(BedBlock.FACING) != facing
                 || !clearAbove(level, head) || !clearAbove(level, foot)) {
-            return false;
+            return BedState.BLOCKED;
         }
+        boolean unobservedExit = false;
         for (Direction direction : Direction.Plane.HORIZONTAL) {
-            if (safeExit(level, head.relative(direction)) || safeExit(level, foot.relative(direction))) {
-                return true;
+            BlockPos headExit = head.relative(direction);
+            BlockPos footExit = foot.relative(direction);
+            if (safeExit(level, headExit) || safeExit(level, footExit)) {
+                return BedState.AVAILABLE;
             }
+            unobservedExit |= !level.hasChunkAt(headExit) || !level.hasChunkAt(footExit);
         }
-        return false;
+        return unobservedExit ? BedState.UNOBSERVED : BedState.BLOCKED;
+    }
+
+    enum BedState {
+        AVAILABLE,
+        BLOCKED,
+        UNOBSERVED
     }
 
     private static boolean clearAbove(ServerLevel level, BlockPos pos) {

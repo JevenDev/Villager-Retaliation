@@ -8,7 +8,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.block.BedBlock;
 
 public final class SettlementBuildingService {
     private static final int SURVEYS_PER_SECOND = 4;
@@ -60,21 +59,13 @@ public final class SettlementBuildingService {
         var previous = town.surveys().get(area.id());
         if (previous != null && !observed.fullyLoaded()) {
             List<BlockPos> beds = new ArrayList<>(observed.beds());
-            previous.beds().stream().filter(pos -> bedUnavailable(level, pos)).forEach(beds::add);
+            previous.beds().stream().filter(pos -> SettlementBuildingSurvey.inspectBed(level, area, pos)
+                    == SettlementBuildingSurvey.BedState.UNOBSERVED).forEach(beds::add);
             List<BlockPos> stations = new ArrayList<>(observed.workstations());
             previous.workstations().stream().filter(pos -> !level.hasChunkAt(pos)).forEach(stations::add);
             observed = new SettlementBuildingSurvey.Survey(observed.checkedAt(), beds, stations, previous.fullyLoaded());
         }
         town.recordSurvey(area.id(), observed);
-    }
-
-    private static boolean bedUnavailable(ServerLevel level, BlockPos head) {
-        if (!level.hasChunkAt(head)) {
-            return true;
-        }
-        var state = level.getBlockState(head);
-        return state.getBlock() instanceof BedBlock
-                && !level.hasChunkAt(head.relative(state.getValue(BedBlock.FACING).getOpposite()));
     }
 
     private record Site(SettlementRecord town, SettlementArea area) {
