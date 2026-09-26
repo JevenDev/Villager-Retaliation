@@ -392,6 +392,7 @@ public final class VillagerRetaliationEvents {
                     .ifPresent(killer -> VillagerAmbientIndicatorService.onPlayerKilled(level, killer, player));
         }
         if (event.getEntity() instanceof Villager villager) {
+            com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
             broadcastVillagerDeathMessage(villager, event.getSource());
             VillagerCombatSurvivalService.onVillagerDeath(villager);
             VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
@@ -522,6 +523,7 @@ public final class VillagerRetaliationEvents {
         if (!event.getLevel().isClientSide() && event.getEntity() instanceof AbstractVillager villager) {
             VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
             if (villager instanceof Villager regular) {
+                com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerLoaded(regular);
                 com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onActive(regular);
                 com.jvn.villagerretaliation.settlement.SettlementDepartureService.onActive(regular);
                 com.jvn.villagerretaliation.settlement.SettlementCareService.onActive(regular);

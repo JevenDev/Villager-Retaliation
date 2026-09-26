@@ -53,6 +53,8 @@ public final class SettlementCareGameTests {
         var savedTown = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()),
                 helper.getLevel().registryAccess(), () -> {});
         var restoredState = savedTown.residents().get(fixture.resident().getUUID());
+        helper.assertValueEqual(restoredState.save().getFloat("Saturation"), 12.0F,
+                "two background bread meals add their actual saturation");
         Villager returning = EntityType.VILLAGER.create(helper.getLevel());
         returning.load(oldEntity);
         int stock = fixture.depot().count(stack -> stack.is(Items.BREAD));

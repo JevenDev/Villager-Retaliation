@@ -205,7 +205,7 @@ public final class SettlementResidentState {
         }
         FoodProperties properties = meal.get(DataComponents.FOOD);
         this.food = Math.min(20, this.food + properties.nutrition());
-        this.saturation = Math.min(this.food, this.saturation + properties.nutrition() * properties.saturation() * 2.0F);
+        this.saturation = Math.min(this.food, this.saturation + properties.saturation());
         ItemStack remainder = remainder(properties);
         if (!remainder.isEmpty()) {
             SettlementStock.deposit(town, remainder);

@@ -63,7 +63,7 @@ public final class SettlementEconomyGameTests {
         fixture.depot().setItem(0, new ItemStack(Items.BREAD));
         VillagerRecoveryService.restoreRecoveryState(resident, new VillagerRecoveryService.RecoverySnapshot(0, 0, 0, 0));
         VillagerRecoveryService.onVillagerTickPost(resident);
-        VillagerRecoveryService.onVillagerUnloaded(resident);
+        VillagerRecoveryService.cancelForcedRecovery(resident);
         helper.assertValueEqual(resident.getInventory().countItem(Items.BREAD), 1, "cancelled eating returns the reserved meal");
         helper.assertTrue(fixture.depot().isEmpty(), "cancelling does not also refund the town ledger");
         fixture.depot().setItem(0, new ItemStack(Items.BREAD, 6));

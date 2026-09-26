@@ -32,6 +32,7 @@ import net.minecraft.world.level.GameRules;
 /** Universal, player-like recovery state for every villager. */
 public final class VillagerRecoveryService {
     private static final String TAG = "VillagerRetaliationRecovery";
+    private static final String USE_TAG = "VillagerRetaliationRecoveryUse";
     private static final String FOOD = "Food";
     private static final String SATURATION = "Saturation";
     private static final String EXHAUSTION = "Exhaustion";
@@ -182,11 +183,21 @@ public final class VillagerRecoveryService {
         return forced || combatRecovery;
     }
 
+    public static void onVillagerLoaded(Villager villager) {
+        if (villager != null) {
+            cancelUse(villager, true);
+        }
+    }
+
     public static void onVillagerUnloaded(Villager villager) {
         if (villager == null) {
             return;
         }
-        cancelUse(villager, true);
+        UseState use = ACTIVE_USES.remove(villager.getUUID());
+        if (use != null) {
+            villager.stopUsingItem();
+            VillagerRetaliationVillagerEquipment.restoreVisualMainHand(villager, use.resumeMainHand());
+        }
         FORCED_RECOVERY.remove(villager.getUUID());
         COMBAT_RECOVERY.remove(villager.getUUID());
     }
@@ -280,6 +291,10 @@ public final class VillagerRecoveryService {
         } else {
             duration = Math.max(2, stack.getUseDuration(villager)) - 1;
         }
+        CompoundTag reservation = new CompoundTag();
+        reservation.put("Stack", stack.save(villager.level().registryAccess()));
+        reservation.put("ResumeMainHand", resumeMainHand.saveOptional(villager.level().registryAccess()));
+        villager.getPersistentData().put(USE_TAG, reservation);
         ACTIVE_USES.put(villager.getUUID(), new UseState(stack.copy(), resumeMainHand, duration));
     }
 
@@ -290,6 +305,7 @@ public final class VillagerRecoveryService {
             return;
         }
         ACTIVE_USES.remove(villager.getUUID());
+        villager.getPersistentData().remove(USE_TAG);
         villager.stopUsingItem();
         ItemStack used = use.stack().copy();
         if (isFood(used)) {
@@ -297,6 +313,9 @@ public final class VillagerRecoveryService {
             RecoveryState recovery = state(villager);
             save(villager, recovery.addFood(properties.nutrition(), properties.saturation()));
             ItemStack remainder = used.finishUsingItem(level, villager);
+            if (remainder.isEmpty()) {
+                remainder = properties.usingConvertsTo().map(ItemStack::copy).orElse(ItemStack.EMPTY);
+            }
             if (!remainder.isEmpty()) {
                 ItemStack leftover = VillagerInventoryAccess.addItem(villager, remainder.copy());
                 if (!leftover.isEmpty()) villager.spawnAtLocation(leftover);
@@ -334,13 +353,22 @@ public final class VillagerRecoveryService {
 
     private static void cancelUse(Villager villager, boolean restoreItem) {
         UseState use = ACTIVE_USES.remove(villager.getUUID());
+        if (use == null && villager.getPersistentData().contains(USE_TAG, CompoundTag.TAG_COMPOUND)) {
+            CompoundTag reservation = villager.getPersistentData().getCompound(USE_TAG);
+            ItemStack stack = ItemStack.parseOptional(villager.level().registryAccess(), reservation.getCompound("Stack"));
+            if (!stack.isEmpty()) {
+                use = new UseState(stack, ItemStack.parseOptional(villager.level().registryAccess(),
+                        reservation.getCompound("ResumeMainHand")), 1);
+            }
+        }
+        villager.getPersistentData().remove(USE_TAG);
         if (use == null) return;
         villager.stopUsingItem();
+        VillagerRetaliationVillagerEquipment.restoreVisualMainHand(villager, use.resumeMainHand());
         if (restoreItem) {
             ItemStack remainder = VillagerInventoryAccess.addItem(villager, use.stack().copy());
             if (!remainder.isEmpty()) villager.spawnAtLocation(remainder);
         }
-        VillagerRetaliationVillagerEquipment.restoreVisualMainHand(villager, use.resumeMainHand());
     }
 
     private static RecoveryState consumeExhaustion(RecoveryState state) {
@@ -457,10 +485,9 @@ public final class VillagerRecoveryService {
     }
 
     private record RecoveryState(int food, float saturation, float exhaustion, int healTimer) {
-        RecoveryState addFood(int nutrition, float saturationModifier) {
+        RecoveryState addFood(int nutrition, float saturation) {
             int updatedFood = Math.min(MAX_FOOD, this.food + Math.max(0, nutrition));
-            float updatedSaturation = Math.min(updatedFood,
-                    this.saturation + Math.max(0, nutrition) * Math.max(0.0F, saturationModifier) * 2.0F);
+            float updatedSaturation = Math.min(updatedFood, this.saturation + Math.max(0.0F, saturation));
             return new RecoveryState(updatedFood, updatedSaturation, this.exhaustion, this.healTimer);
         }
 
