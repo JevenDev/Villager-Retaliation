@@ -160,6 +160,16 @@ public class VillagerSocialGraphSavedData extends SavedData {
         return profile;
     }
 
+    public Optional<String> knownName(UUID villagerId) {
+        VillagerProfile profile = this.profiles.get(villagerId);
+        return profile == null || profile.name().isBlank() ? Optional.empty() : Optional.of(profile.name());
+    }
+
+    public Optional<String> knownProfession(UUID villagerId) {
+        VillagerProfile profile = this.profiles.get(villagerId);
+        return profile == null || profile.profession.isBlank() ? Optional.empty() : Optional.of(profile.profession);
+    }
+
     public Optional<Boolean> knownBaby(UUID villagerId) {
         VillagerProfile profile = villagerId == null ? null : this.profiles.get(villagerId);
         return profile == null ? Optional.empty() : Optional.of(profile.baby());

@@ -119,6 +119,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onEntityInteract)
                 .listener(VillagerRetaliationEvents::onEntityInteractSpecific)
                 .listener(VillageNamingService::onRightClickBlock)
+                .listener(com.jvn.villagerretaliation.allegiance.VillageOverviewService::onRightClickBlock)
                 .listener(VillagerRetaliationEvents::onRightClickBlock)
                 .listener(VillagerRetaliationEvents::onLeftClickBlock)
                 .listener(VillagerRetaliationEvents::onBlockBreak)

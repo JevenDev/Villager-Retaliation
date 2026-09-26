@@ -35,6 +35,11 @@ final class VrPlayerCommands {
                             false);
                     return 1;
                 })
+                .then(literal("village").executes(context -> {
+                    var player = context.getSource().getPlayerOrException();
+                    com.jvn.villagerretaliation.allegiance.VillageOverviewService.open(player, player.blockPosition());
+                    return 1;
+                }))
                 .then(party())
                 .then(duel());
     }

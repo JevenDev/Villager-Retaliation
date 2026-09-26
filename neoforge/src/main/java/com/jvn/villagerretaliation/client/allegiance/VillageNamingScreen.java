@@ -69,7 +69,7 @@ public final class VillageNamingScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 48, 0xFFFFFF);
         Component status = this.payload.canRename()
                 ? Component.translatable("villagerretaliation.gui.village_naming.trust_met")
@@ -79,7 +79,6 @@ public final class VillageNamingScreen extends Screen {
                         this.payload.requiredResidents());
         graphics.drawCenteredString(this.font, status, this.width / 2, this.height / 2 - 34,
                 this.payload.canRename() ? 0xE9C46A : 0xD0D0D0);
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
