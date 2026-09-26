@@ -18,6 +18,9 @@ import com.jvn.villagerretaliation.interaction.VillagerAssignmentState;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentStore;
 import com.jvn.villagerretaliation.interaction.VillagerWorkAuthority;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
+import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
+import com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import com.mojang.authlib.GameProfile;
@@ -260,6 +263,116 @@ public final class SettlementWorkforceGameTests {
         helper.assertValueEqual(VillagerAssignmentStore.snapshot(fixture.villager()).state(),
                 VillagerAssignmentState.UNASSIGNED, "departure clears civic employment");
         fixture.villager().discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicEquipmentAccessUsesLogisticsAndRevokesOpenMenus(GameTestHelper helper) {
+        Fixture fixture = fixture(helper);
+        assign(helper, fixture);
+        var level = helper.getLevel();
+        var delegate = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "CivicEquipment"));
+        delegate.setPos(fixture.villager().position());
+        var inventory = HiredJobInventory.getJobInventory(fixture.villager());
+        inventory.setItem(HiredJobInventory.MAIN_GRID_START, new ItemStack(Items.BREAD, 5));
+        try {
+            helper.assertTrue(VillagerJobInventoryAuthorization.canAccess(level, fixture.villager(), fixture.leader()),
+                    "the leader can supply civic equipment");
+            fixture.town().setPermissions(fixture.leader().getUUID(), delegate.getUUID(), Set.of(SettlementPermission.STAFF));
+            helper.assertFalse(VillagerJobInventoryAuthorization.canAccess(level, fixture.villager(), delegate),
+                    "staffing access does not grant control of supplies");
+            fixture.town().setPermissions(fixture.leader().getUUID(), delegate.getUUID(), Set.of(SettlementPermission.LOGISTICS));
+            helper.assertTrue(VillagerJobInventoryAuthorization.canAccess(level, fixture.villager(), delegate),
+                    "logistics delegates can manage civic equipment");
+            var menu = new VillagerInventoryMenu(1, delegate.getInventory(), fixture.villager(), VillagerInventoryMenu.ViewMode.JOB);
+            try {
+                helper.assertTrue(menu.stillValid(delegate), "the nearby authorized job inventory stays open");
+                helper.assertFalse(menu.canSwitchToPersonalInventory(), "settlement access does not reveal personal belongings");
+                menu.switchViewMode(VillagerInventoryMenu.ViewMode.PERSONAL);
+                helper.assertValueEqual(menu.viewMode(), VillagerInventoryMenu.ViewMode.JOB, "personal inventory remains inaccessible");
+                fixture.town().setPermissions(fixture.leader().getUUID(), delegate.getUUID(), Set.of());
+                helper.assertFalse(menu.stillValid(delegate), "revoking logistics invalidates an already open menu");
+                helper.assertTrue(menu.quickMoveStack(delegate, HiredJobInventory.MAIN_GRID_START).isEmpty(),
+                        "stale menu shift-clicks cannot take settlement goods");
+                menu.clicked(HiredJobInventory.MAIN_GRID_START, 0, net.minecraft.world.inventory.ClickType.PICKUP, delegate);
+                helper.assertValueEqual(inventory.getItem(HiredJobInventory.MAIN_GRID_START).getCount(), 5,
+                        "stale menu clicks leave goods untouched");
+                helper.assertTrue(menu.getCarried().isEmpty(), "no item reaches the cursor after access is revoked");
+            } finally {
+                menu.removed(delegate);
+            }
+            helper.assertTrue(VillagerJobInventoryAuthorization.activeContractId(level, fixture.villager()).isEmpty(),
+                    "civic equipment does not invent a paid contract identity");
+        } finally {
+            fixture.villager().discard();
+            delegate.getInventory().clearContent();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicFilterAssignmentConsumesRealItemsAndRejectsStaleDelegates(GameTestHelper helper) {
+        Fixture fixture = fixture(helper);
+        assign(helper, fixture);
+        var delegate = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "CivicFilter"));
+        delegate.setPos(fixture.villager().position());
+        delegate.getInventory().clearContent();
+        delegate.getAbilities().instabuild = false;
+        fixture.town().setPermissions(fixture.leader().getUUID(), delegate.getUUID(), Set.of(SettlementPermission.LOGISTICS));
+        ItemStack filter = new ItemStack(com.jvn.villagerretaliation.item.VillagerRetaliationItems.ITEM_FILTER.get(), 3);
+        com.jvn.villagerretaliation.item.VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.WHEAT_SEEDS));
+        delegate.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, filter);
+        try {
+            var mode = com.jvn.villagerretaliation.item.VillagerItemFilterData.Mode.ALLOWLIST;
+            var result = VillagerItemFilterService.assignHeldFilter(delegate, fixture.villager(), mode);
+            helper.assertTrue(result.assigned(), "a logistics delegate can assign the held filter");
+            helper.assertValueEqual(filter.getCount(), 2, "assignment consumes exactly one real filter");
+            helper.assertTrue(VillagerItemFilterService.mayWithdraw(fixture.villager(), new ItemStack(Items.WHEAT_SEEDS)),
+                    "the civic worker follows the assigned filter");
+            helper.assertFalse(VillagerItemFilterService.mayWithdraw(fixture.villager(), new ItemStack(Items.COBBLESTONE)),
+                    "the civic filter rejects unlisted supplies");
+            ItemStack replacement = new ItemStack(com.jvn.villagerretaliation.item.VillagerRetaliationItems.ITEM_FILTER.get(), 2);
+            com.jvn.villagerretaliation.item.VillagerItemFilterData.setEntry(replacement, 0, new ItemStack(Items.CARROT));
+            delegate.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, replacement);
+            result = VillagerItemFilterService.assignHeldFilter(delegate, fixture.villager(), mode);
+            helper.assertTrue(result.assigned() && result.replaced(), "replacement returns the previous filter");
+            long returned = delegate.getInventory().items.stream()
+                    .filter(stack -> com.jvn.villagerretaliation.item.VillagerRetaliationItems.isItemFilter(stack)
+                            && com.jvn.villagerretaliation.item.VillagerItemFilterData.entry(stack, 0).is(Items.WHEAT_SEEDS))
+                    .mapToInt(ItemStack::getCount).sum();
+            helper.assertValueEqual(returned, 1L, "the prior filter is returned once");
+            fixture.town().setPermissions(fixture.leader().getUUID(), delegate.getUUID(), Set.of());
+            helper.assertFalse(VillagerItemFilterService.assignHeldFilter(delegate, fixture.villager(), mode).assigned(),
+                    "revoked delegates cannot use a stale filter conversation");
+            helper.assertValueEqual(replacement.getCount(), 1, "a denied request consumes no filter");
+            helper.assertFalse(HiredVillagerContractService.hasContract(fixture.villager()), "filter access creates no wages or hire contract");
+        } finally {
+            fixture.villager().discard();
+            delegate.getInventory().clearContent();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void civicEquipmentAccessEndsWhenLeadershipOrDutyChanges(GameTestHelper helper) {
+        Fixture fixture = fixture(helper);
+        assign(helper, fixture);
+        var level = helper.getLevel();
+        var successor = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "CivicSuccessor"));
+        try {
+            fixture.town().transferLeadership(fixture.leader().getUUID(), successor.getUUID());
+            helper.assertFalse(VillagerJobInventoryAuthorization.canAccess(level, fixture.villager(), fixture.leader()),
+                    "former leaders do not retain civic equipment access");
+            helper.assertTrue(VillagerJobInventoryAuthorization.canAccess(level, fixture.villager(), successor),
+                    "the successor can manage the existing civic equipment");
+            SettlementWorkforceService.release(level, successor, fixture.town().id(), fixture.villager().getUUID());
+            helper.assertFalse(VillagerJobInventoryAuthorization.canAccess(level, fixture.villager(), successor),
+                    "release removes civic access without granting access to personal property");
+            helper.assertFalse(VillagerItemFilterService.canAssign(level, fixture.villager(), successor),
+                    "released residents do not accept civic filters");
+        } finally {
+            fixture.villager().discard();
+        }
         helper.succeed();
     }
 

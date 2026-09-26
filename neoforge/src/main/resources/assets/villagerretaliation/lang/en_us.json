@@ -2346,6 +2346,8 @@
   "villagerretaliation.gui.settlement.budget_hint": "Set the treasury reserve and daily spending limit.",
   "villagerretaliation.gui.settlement.assign": "Assign",
   "villagerretaliation.gui.settlement.assign_hint": "Choose a compatible area for this resident's civic work.",
+  "villagerretaliation.gui.settlement.inventory": "Equipment",
+  "villagerretaliation.gui.settlement.inventory_hint": "Open this worker's tools, supplies and recipe filter. Stand near the worker to exchange items.",
   "villagerretaliation.gui.settlement.release": "Release",
   "villagerretaliation.gui.settlement.release_hint": "Release this resident from civic work. Only the leader can do this.",
   "villagerretaliation.gui.settlement.add": "Add",

@@ -71,6 +71,15 @@ public final class SettlementWorkforceService {
         return true;
     }
 
+    public static boolean canManageEquipment(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (player == null || villager == null || !player.isAlive() || player.isSpectator()
+                || player.level() != level || villager.level() != level || !villager.isAlive() || villager.isBaby()
+                || hasPersonalCommitment(villager)) {
+            return false;
+        }
+        return duty(villager).map(duty -> duty.town().permits(player.getUUID(), SettlementPermission.LOGISTICS)).orElse(false);
+    }
+
     public static Optional<Duty> duty(Villager villager) {
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
             return Optional.empty();

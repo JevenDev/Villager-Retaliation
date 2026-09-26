@@ -10,7 +10,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 
-/** Central access point for a hired villager's assigned item filter. */
 public final class VillagerItemFilterService {
     private VillagerItemFilterService() {
     }
@@ -55,8 +54,7 @@ public final class VillagerItemFilterService {
                 || mode == null
                 || !(villager.level() instanceof ServerLevel level)
                 || player.serverLevel() != level
-                || !HiredVillagerContractService.isHired(level, villager)
-                || !HiredVillagerContractService.isHiredBy(level, villager, player)) {
+                || !canAssign(level, villager, player)) {
             return AssignmentResult.REJECTED;
         }
         ItemStack heldFilter = player.getMainHandItem();
@@ -84,6 +82,13 @@ public final class VillagerItemFilterService {
         player.getInventory().setChanged();
         player.containerMenu.broadcastChanges();
         return new AssignmentResult(true, hadOldFilter, droppedOldFilter);
+    }
+
+    public static boolean canAssign(ServerLevel level, Villager villager, ServerPlayer player) {
+        return player != null && villager != null && !villager.isBaby() && player.isAlive() && !player.isSpectator()
+                && villager.isAlive() && player.level() == level && villager.level() == level
+                && (HiredVillagerContractService.isHiredBy(level, villager, player)
+                    || com.jvn.villagerretaliation.settlement.SettlementWorkforceService.canManageEquipment(level, villager, player));
     }
 
     public record AssignmentResult(boolean assigned, boolean replaced, boolean droppedOldFilter) {

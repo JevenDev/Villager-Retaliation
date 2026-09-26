@@ -14,7 +14,6 @@ import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.mojang.authlib.GameProfile;
 import io.netty.buffer.Unpooled;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -153,12 +152,27 @@ public final class SettlementManagementGameTests {
             VillageAllegianceApi.assignKnown(level, resident, fixture.town().id(), AllegianceAssignmentSource.ADMIN);
             helper.assertTrue(act(staff, fixture.town(), new SettlementManagementActionPayload.Assign(resident.getUUID(), area.id())),
                     "staff can assign an enrolled adult to a compatible job");
+            helper.assertFalse(act(staff, fixture.town(), new SettlementManagementActionPayload.Inventory(resident.getUUID())),
+                    "staff access cannot open equipment");
+            fixture.leader().setPos(resident.position().add(1_000.0D, 0.0D, 0.0D));
+            helper.assertFalse(act(fixture.leader(), fixture.town(), new SettlementManagementActionPayload.Inventory(resident.getUUID())),
+                    "remote management cannot transfer physical equipment from a distant worker");
+            fixture.leader().setPos(resident.position());
+            helper.assertTrue(act(fixture.leader(), fixture.town(), new SettlementManagementActionPayload.Inventory(resident.getUUID())),
+                    "nearby leaders can open the civic job inventory");
+            var registry = VillageAllegianceRegistrySavedData.get(level);
+            BlockPos otherCenter = fixture.town().center().offset(256, 0, 0);
+            var otherId = registry.create(level.getGameTime(), level.dimension().location(), otherCenter, "Other town");
+            var other = SettlementSavedData.get(level).establish(registry, otherId, fixture.leader().getUUID(), otherCenter, level.getGameTime()).orElseThrow();
+            helper.assertFalse(act(fixture.leader(), other, new SettlementManagementActionPayload.Inventory(resident.getUUID())),
+                    "equipment requests cannot cross settlement identities");
             helper.assertFalse(act(staff, fixture.town(), new SettlementManagementActionPayload.Release(resident.getUUID())),
                     "only the leader can release civic workers");
             helper.assertValueEqual(fixture.town().duties().get(resident.getUUID()), area.id(), "a rejected release preserves the assignment");
             helper.assertTrue(act(fixture.leader(), fixture.town(), new SettlementManagementActionPayload.Release(resident.getUUID())),
                     "the leader can explicitly release a civic worker");
         } finally {
+            fixture.leader().closeContainer();
             resident.discard();
         }
         helper.succeed();
@@ -238,7 +252,8 @@ public final class SettlementManagementGameTests {
                         ResourceLocation.withDefaultNamespace("bread"), 64, fraction, fraction, false)),
                 new SettlementManagementActionPayload.RemoveOrder(id),
                 new SettlementManagementActionPayload.Permissions(id, Set.of(SettlementPermission.BUILD, SettlementPermission.LOGISTICS)),
-                new SettlementManagementActionPayload.Transfer(id));
+                new SettlementManagementActionPayload.Transfer(id),
+                new SettlementManagementActionPayload.Inventory(id));
         for (var command : commands) {
             roundTrip(helper, SettlementManagementActionPayload.STREAM_CODEC,
                     new SettlementManagementActionPayload(fixture.town().id().value(), command));

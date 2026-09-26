@@ -10,6 +10,15 @@
   },
   "messages": [
     {
+      "key": "interaction.item_filter.requires_logistics",
+      "lines": [
+        "Our leader decides who can change my work supplies.",
+        "You need logistics access to change my filter.",
+        "Ask our leader for access to manage my equipment."
+      ],
+      "id": "global.messages.20_item_filter.requires_logistics"
+    },
+    {
       "key": "interaction.item_filter.prompt",
       "lines": [
         "How should I use this item filter?",

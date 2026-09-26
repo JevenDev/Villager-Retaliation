@@ -15,7 +15,8 @@ public final class VillagerJobInventoryAuthorization {
 
     public static boolean canAccess(ServerLevel level, Villager villager, ServerPlayer player) {
         return HiredVillagerContractService.canAccessJobInventory(level, villager, player)
-                || PartyVillagerContractService.canAccessJobInventory(level, villager, player);
+                || PartyVillagerContractService.canAccessJobInventory(level, villager, player)
+                || com.jvn.villagerretaliation.settlement.SettlementWorkforceService.canManageEquipment(level, villager, player);
     }
 
     public static Optional<UUID> activeContractId(ServerLevel level, Villager villager) {

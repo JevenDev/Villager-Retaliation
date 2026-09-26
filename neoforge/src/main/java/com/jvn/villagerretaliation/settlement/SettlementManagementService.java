@@ -91,6 +91,10 @@ public final class SettlementManagementService {
                     town.setPermissions(player.getUUID(), permissions.player(), permissions.grants());
             case SettlementManagementActionPayload.Transfer transfer ->
                     town.transferLeadership(player.getUUID(), transfer.successor());
+            case SettlementManagementActionPayload.Inventory inventory -> level.getEntity(inventory.resident()) instanceof Villager villager
+                    && SettlementWorkforceService.duty(villager).filter(duty -> duty.town().id().equals(id)).isPresent()
+                    && SettlementWorkforceService.canManageEquipment(level, villager, player)
+                    && com.jvn.villagerretaliation.inventory.VillagerInventoryAccess.openJobInventory(player, villager);
         };
     }
 

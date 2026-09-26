@@ -106,6 +106,10 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
                 buffer.writeEnum(Kind.TRANSFER);
                 buffer.writeUUID(transfer.successor());
             }
+            case Inventory inventory -> {
+                buffer.writeEnum(Kind.INVENTORY);
+                buffer.writeUUID(inventory.resident());
+            }
         }
     }
 
@@ -139,6 +143,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
                 yield new Permissions(player, permissions);
             }
             case TRANSFER -> new Transfer(buffer.readUUID());
+            case INVENTORY -> new Inventory(buffer.readUUID());
         };
         return new SettlementManagementActionPayload(town, command);
     }
@@ -150,11 +155,11 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory {
     }
 
     public record Advance() implements Command {
@@ -200,5 +205,8 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
     }
 
     public record Transfer(UUID successor) implements Command {
+    }
+
+    public record Inventory(UUID resident) implements Command {
     }
 }

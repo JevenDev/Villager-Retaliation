@@ -266,6 +266,8 @@ public final class SettlementManagementScreen extends Screen {
                 action(0, "assign", permits(SettlementPermission.STAFF) && selected instanceof SettlementManagementPayload.Resident resident
                         && !resident.baby() && !resident.roles().isEmpty());
                 action(1, "release", leader() && selected instanceof SettlementManagementPayload.Resident resident && resident.area() != null);
+                action(2, "inventory", permits(SettlementPermission.LOGISTICS) && selected instanceof SettlementManagementPayload.Resident resident
+                        && resident.area() != null && resident.presence() != com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.UNLOADED);
             }
             case AREAS -> {
                 action(0, "add", permits(SettlementPermission.BUILD));
@@ -325,8 +327,10 @@ public final class SettlementManagementScreen extends Screen {
                 if (selected instanceof SettlementManagementPayload.Resident resident) {
                     if (action == 0) {
                         this.minecraft.setScreen(new SettlementManagementScreen(this.snapshot, this, resident));
-                    } else {
+                    } else if (action == 1) {
                         submit(new SettlementManagementActionPayload.Release(resident.id()));
+                    } else {
+                        submit(new SettlementManagementActionPayload.Inventory(resident.id()));
                     }
                 }
             }

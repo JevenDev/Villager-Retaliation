@@ -29,12 +29,15 @@ final class VillagerItemFilterInteractionHandler {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.item_filter.adult_hired_only");
             return InteractionResult.FAIL;
         }
-        if (!HiredVillagerContractService.isHired(level, villager)) {
+        if (!HiredVillagerContractService.isHired(level, villager)
+                && com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isEmpty()) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.item_filter.not_hired");
             return InteractionResult.FAIL;
         }
-        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.item_filter.requires_hirer");
+        if (!VillagerItemFilterService.canAssign(level, villager, player)) {
+            VillagerInteractionService.sendVillagerNotice(player, villager,
+                    com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).isPresent()
+                            ? "interaction.item_filter.requires_logistics" : "interaction.item_filter.requires_hirer");
             return InteractionResult.FAIL;
         }
         if (!VillagerConversationService.startForced(player, villager)) {
@@ -58,8 +61,7 @@ final class VillagerItemFilterInteractionHandler {
                 || !VillagerInteractionService.canUseForcedInteractionSystem(player, villager)
                 || !VillagerConversationService.validate(player, villager)
                 || villager.isBaby()
-                || !HiredVillagerContractService.isHired(player.serverLevel(), villager)
-                || !HiredVillagerContractService.isHiredBy(player.serverLevel(), villager, player)) {
+                || !VillagerItemFilterService.canAssign(player.serverLevel(), villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
             return true;
         }
