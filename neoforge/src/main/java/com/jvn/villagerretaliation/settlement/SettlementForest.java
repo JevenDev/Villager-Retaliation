@@ -75,6 +75,13 @@ public final class SettlementForest implements BlockGetter {
     }
 
     boolean change(Map<BlockPos, BlockState> changes) {
+        return change(changes, java.util.List.of());
+    }
+
+    boolean change(Map<BlockPos, BlockState> changes, java.util.List<SettlementForestTick> ticks) {
+        for (var tick : ticks) {
+            if (!observed(tick.position())) return false;
+        }
         var grouped = new LinkedHashMap<SettlementForestSection, Map<BlockPos, BlockState>>();
         for (var entry : changes.entrySet()) {
             var section = this.sections.get(SettlementForestSection.sectionOrigin(entry.getKey()));
@@ -82,6 +89,7 @@ public final class SettlementForest implements BlockGetter {
             grouped.computeIfAbsent(section, ignored -> new LinkedHashMap<>()).put(entry.getKey().immutable(), entry.getValue());
         }
         grouped.forEach(SettlementForestSection::change);
+        for (var tick : ticks) this.sections.get(SettlementForestSection.sectionOrigin(tick.position())).schedule(tick);
         return true;
     }
 

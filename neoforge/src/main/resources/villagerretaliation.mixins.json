@@ -17,6 +17,8 @@
     "AvoidEntityGoalMixin",
     "BrewingStandBlockEntityAccessor",
     "BushBlockAccessor",
+    "SaplingBlockAccessor",
+    "TreeGrowerAccessor",
     "BrewingStandSettlementMixin",
     "SettlementTerrainTickMixin",
     "EntityDuelDropMixin",

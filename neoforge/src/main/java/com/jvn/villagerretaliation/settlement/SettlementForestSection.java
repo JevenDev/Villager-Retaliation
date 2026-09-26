@@ -21,6 +21,7 @@ final class SettlementForestSection {
     private final BlockPos max;
     private final BlockState[] baseline;
     private final BlockState[] blocks;
+    private final java.util.List<SettlementForestTick> ticks = new ArrayList<>();
     private long version;
     private boolean pending;
     private boolean conflict;
@@ -103,6 +104,16 @@ final class SettlementForestSection {
         }
     }
 
+    void schedule(SettlementForestTick tick) {
+        if (!contains(tick.position()) || this.conflict) throw new IllegalArgumentException("Forest tick exceeds its observed section");
+        if (!this.ticks.contains(tick)) {
+            this.ticks.removeIf(previous -> previous.fluid() == tick.fluid() && previous.position().equals(tick.position()));
+            this.ticks.add(tick);
+            this.version++;
+            this.pending = true;
+        }
+    }
+
     boolean reconcile(LevelChunk chunk) {
         if (chunk.getPos().x != this.min.getX() >> 4 || chunk.getPos().z != this.min.getZ() >> 4) return false;
         long applied = SettlementChunkReceipts.version(chunk, receiptKey(this.area, this.min), this.id);
@@ -124,11 +135,13 @@ final class SettlementForestSection {
                     chunk.setBlockState(position, this.blocks[index], false);
                 }
             }
+            this.ticks.forEach(tick -> tick.apply(chunk));
             SettlementChunkReceipts.applied(chunk, receiptKey(this.area, this.min), this.id, this.version);
         }
         this.version = Math.max(this.version, applied);
         this.pending = false;
         this.conflict = false;
+        this.ticks.clear();
         refresh(chunk);
         return true;
     }
@@ -173,6 +186,11 @@ final class SettlementForestSection {
         tag.putLong("Version", this.version);
         tag.putBoolean("Pending", this.pending);
         tag.putBoolean("Conflict", this.conflict);
+        if (!this.ticks.isEmpty()) {
+            var ticks = new ListTag();
+            this.ticks.forEach(tick -> ticks.add(tick.save()));
+            tag.put("Ticks", ticks);
+        }
         var palette = new ArrayList<BlockState>();
         var indexes = new HashMap<BlockState, Integer>();
         int[] baseline = new int[this.blocks.length];
@@ -224,7 +242,15 @@ final class SettlementForestSection {
         section.version = Math.max(0L, tag.getLong("Version"));
         section.pending = tag.getBoolean("Pending");
         section.conflict = tag.getBoolean("Conflict");
-        if (!section.pending && !Arrays.equals(section.baseline, section.blocks)) {
+        for (Tag raw : tag.getList("Ticks", Tag.TAG_COMPOUND)) {
+            var tick = SettlementForestTick.load((CompoundTag) raw);
+            if (!section.contains(tick.position()) || section.ticks.stream().anyMatch(previous -> previous.fluid() == tick.fluid()
+                    && previous.position().equals(tick.position())) || section.ticks.size() >= size * 2) {
+                throw new IllegalArgumentException("Forest ticks must be unique and fit their observed section");
+            }
+            section.ticks.add(tick);
+        }
+        if (!section.pending && (!section.ticks.isEmpty() || !Arrays.equals(section.baseline, section.blocks))) {
             throw new IllegalArgumentException("Changed forest blocks require a pending revision");
         }
         return section;

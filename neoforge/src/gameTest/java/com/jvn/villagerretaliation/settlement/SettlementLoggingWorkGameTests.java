@@ -277,6 +277,72 @@ public final class SettlementLoggingWorkGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_logging_work")
+    public static void backgroundLoggerUsesRealBoneMealToGrowAndHarvestNewTrees(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            plantBirch(helper, fixture);
+            fixture.worker().settings().putBoolean(HiredLoggingOptions.BONEMEAL_SAPLINGS_TAG, true);
+            fixture.supply().setItem(1, new ItemStack(Items.BONE_MEAL, 64));
+            int chunks = helper.getLevel().getChunkSource().getLoadedChunksCount();
+            run(helper, fixture, 200, 24_000);
+            helper.assertTrue(fixture.supply().getItem(1).getCount() < 64, "growth consumes actual depot bone meal");
+            helper.assertTrue(count(helper, fixture.worker(), Items.BIRCH_LOG) > 0, "the worker harvests logs from its actual newly generated birch tree");
+            helper.assertValueEqual(count(helper, fixture.worker(), Items.OAK_LOG), 0, "no removed fixture timber is awarded");
+            helper.assertTrue(tool(helper, fixture.worker(), Items.DIAMOND_AXE).getDamageValue() > 0, "harvesting the grown tree wears the real axe");
+            helper.assertValueEqual(helper.getLevel().getChunkSource().getLoadedChunksCount(), chunks, "growing and harvesting the tree never loads a chunk");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_logging_work")
+    public static void backgroundBoneMealRespectsWorkerOptionsAndSupplyAccess(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            plantBirch(helper, fixture);
+            fixture.supply().setItem(1, new ItemStack(Items.BONE_MEAL, 16));
+            run(helper, fixture, 200, 2_000);
+            helper.assertValueEqual(fixture.supply().getItem(1).getCount(), 16, "disabled bone meal settings preserve the stock");
+            fixture.worker().settings().putBoolean(HiredLoggingOptions.BONEMEAL_SAPLINGS_TAG, true);
+            fixture.worker().settings().putBoolean("UseAssignedStorageForSupplies", false);
+            run(helper, fixture, 2_200, 4_000);
+            helper.assertValueEqual(fixture.supply().getItem(1).getCount(), 16, "disabled depot access prevents growth supplies being taken");
+            var items = fixture.worker().items(helper.getLevel().registryAccess());
+            items.set(HiredJobInventory.HOTBAR_START + 1, new ItemStack(Items.BONE_MEAL, 4));
+            fixture.worker().updateInventory(helper.getLevel().registryAccess(), items);
+            run(helper, fixture, 4_200, 6_000);
+            helper.assertTrue(count(helper, fixture.worker(), Items.BONE_MEAL) < 4, "the same worker can still use carried supplies");
+            helper.assertValueEqual(fixture.supply().getItem(1).getCount(), 16, "using carried bone meal does not touch forbidden stock");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_logging_work")
+    public static void canceledBoneMealEventsPreserveSaplingsAndDepotStock(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            plantBirch(helper, fixture);
+            fixture.worker().settings().putBoolean(HiredLoggingOptions.BONEMEAL_SAPLINGS_TAG, true);
+            fixture.supply().setItem(1, new ItemStack(Items.BONE_MEAL, 16));
+            java.util.function.Consumer<net.neoforged.neoforge.event.entity.player.BonemealEvent> cancel = event -> {
+                if (event.getPos().equals(fixture.root())) event.setCanceled(true);
+            };
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(cancel);
+            try {
+                run(helper, fixture, 200, 4_000);
+                helper.assertValueEqual(fixture.supply().getItem(1).getCount(), 16, "a canceled growth application cannot consume supplies");
+                helper.assertValueEqual(fixture.forest().getBlockState(fixture.root()).getValue(net.minecraft.world.level.block.SaplingBlock.STAGE),
+                        0, "canceled bone meal leaves the sapling unchanged");
+            } finally {
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(cancel);
+            }
+        });
+    }
+
+    private static void plantBirch(GameTestHelper helper, Fixture fixture) {
+        for (int y = 0; y < 4; y++) set(fixture.chunk(), fixture.root().above(y), Blocks.AIR.defaultBlockState());
+        for (var direction : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+            set(fixture.chunk(), fixture.root().above(3).relative(direction), Blocks.AIR.defaultBlockState());
+        }
+        set(fixture.chunk(), fixture.root(), Blocks.BIRCH_SAPLING.defaultBlockState());
+        SettlementForestService.observeArea(helper.getLevel(), fixture.town(), fixture.area(), fixture.chunk());
+    }
+
     private static HiredWorkContext nativeContext(Fixture fixture, net.minecraft.nbt.CompoundTag state, HiredJobInventory inventory) {
         return new HiredWorkContext(inventory, state, fixture.area().center(), fixture.area().min(), fixture.area().max(),
                 64, 32, true, 1, false, true);

@@ -104,6 +104,7 @@ final class SettlementBackgroundLogging {
             var roots = trees.distinctRoots(candidates.candidates()).stream()
                     .sorted(Comparator.comparingDouble(position -> position.distSqr(worker.position()))).toList();
             if (roots.isEmpty()) {
+                if (bonemeal(level, worker, forest, context, depots, budget)) return;
                 worker.status(candidates.completedFullPass() ? "waiting_for_trees" : "searching_forest");
                 return;
             }
@@ -197,6 +198,51 @@ final class SettlementBackgroundLogging {
                 return;
             }
         }
+    }
+
+    private static boolean bonemeal(ServerLevel level, SettlementWorkerState worker, SettlementForest forest,
+                                    HiredWorkContext context, List<SettlementDepot> depots, WorkBudget budget) {
+        if (!HiredLoggingOptions.bonemealSaplings(context.state())) return false;
+        var updated = items(context.inventory());
+        var supplies = SettlementProductionInventory.supplies(level, worker, updated, depots);
+        int selected = -1;
+        for (int index = 0; index < supplies.size(); index++) {
+            if (supplies.get(index).available().is(net.minecraft.world.item.Items.BONE_MEAL) && allowed(level, supplies, index)) {
+                selected = index;
+                break;
+            }
+        }
+        if (selected < 0) return false;
+        String targetKey = "SettlementLoggingSapling";
+        BlockPos position = context.state().contains(targetKey) ? BlockPos.of(context.state().getLong(targetKey)) : null;
+        if (position == null || !forest.observed(position) || !SettlementTreeGrowth.sapling(forest.getBlockState(position))) {
+            var candidates = HiredWorkAreaScan.collect(context, "SettlementLoggingSaplingCursor", 4096,
+                    pos -> forest.observed(pos) && SettlementTreeGrowth.sapling(forest.getBlockState(pos)));
+            position = candidates.candidates().stream().min(Comparator.comparingDouble(pos -> pos.distSqr(worker.position()))).orElse(null);
+            if (position == null) return false;
+            context.state().putLong(targetKey, position.asLong());
+        }
+        var source = supplies.get(selected);
+        double cost = 40.0D + 16.0D * Math.sqrt(position.distSqr(worker.position()))
+                + (source.depot() == null ? 0.0D : 16.0D * Math.sqrt(position.distSqr(source.depot().position())));
+        if (budget.available() < cost) {
+            budget.spend(cost);
+            worker.status("fetching_bonemeal");
+            return true;
+        }
+        var plan = SettlementTreeGrowth.bonemeal(level, forest, position, level.random);
+        context.state().remove(targetKey);
+        worker.status(plan.status());
+        if (!plan.accepted()) return true;
+        if (!plan.commit()) {
+            worker.status("forest_conflict");
+            return true;
+        }
+        budget.spend(cost);
+        if (source.depot() == null) updated.get(source.slot()).shrink(1);
+        else source.depot().removeItem(source.slot(), 1);
+        replaceItems(level, context.inventory(), updated);
+        return true;
     }
 
     private static boolean harvest(ServerLevel level, SettlementWorkerState worker, SettlementForest forest, Villager owner,
