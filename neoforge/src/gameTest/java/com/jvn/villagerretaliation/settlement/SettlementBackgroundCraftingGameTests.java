@@ -219,6 +219,26 @@ public final class SettlementBackgroundCraftingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void backgroundCraftingChecksLoadedTablesBeforeConsumingIngredients(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
+            var level = helper.getLevel();
+            BlockPos table = fixture.town().center();
+            var chunk = level.getChunkAt(table);
+            chunk.setBlockState(table, Blocks.AIR.defaultBlockState(), false);
+            observeTable(fixture);
+            fixture.supply().setItem(0, new ItemStack(Items.OAK_LOG, 2));
+            SettlementBackgroundCrafting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertValueEqual(fixture.worker().status(), "no_crafting_table", "the worker notices a destroyed loaded table immediately");
+            helper.assertValueEqual(fixture.supply().getItem(0).getCount(), 2, "stale survey data cannot consume real ingredients");
+            helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 0, "a missing table produces no goods");
+            chunk.setBlockState(table, Blocks.CRAFTING_TABLE.defaultBlockState(), false);
+            SettlementBackgroundCrafting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(fixture.supply().isEmpty(), "restoring the real table permits production");
+            helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 1, "production resumes from the same real stock");
+        });
+    }
+
     private static int carried(GameTestHelper helper, Fixture fixture, Item item) {
         return fixture.worker().items(helper.getLevel().registryAccess()).stream()
                 .filter(stack -> stack.is(item)).mapToInt(ItemStack::getCount).sum();

@@ -14,9 +14,11 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.PoiTypeTags;
-import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
-import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -27,40 +29,36 @@ public final class SettlementBuildingSurvey {
     }
 
     public static Survey inspect(ServerLevel level, SettlementArea area) {
+        return inspect(level, area, null);
+    }
+
+    static Survey inspect(ServerLevel level, SettlementArea area, LevelChunk supplied) {
+        ObservedBlocks blocks = new ObservedBlocks(level, supplied);
         List<BlockPos> beds = new ArrayList<>();
         List<BlockPos> workstations = new ArrayList<>();
         Map<BlockPos, ResourceLocation> fixtures = new LinkedHashMap<>();
         boolean fullyLoaded = true;
-        int minChunkX = Math.floorDiv(area.min().getX(), 16);
-        int maxChunkX = Math.floorDiv(area.max().getX(), 16);
-        int minChunkZ = Math.floorDiv(area.min().getZ(), 16);
-        int maxChunkZ = Math.floorDiv(area.max().getZ(), 16);
-        for (int x = minChunkX; x <= maxChunkX; x++) {
-            for (int z = minChunkZ; z <= maxChunkZ; z++) {
-                if (!level.hasChunk(x, z)) {
+        for (int chunkX = Math.floorDiv(area.min().getX(), 16); chunkX <= Math.floorDiv(area.max().getX(), 16); chunkX++) {
+            for (int chunkZ = Math.floorDiv(area.min().getZ(), 16); chunkZ <= Math.floorDiv(area.max().getZ(), 16); chunkZ++) {
+                LevelChunk chunk = blocks.chunk(chunkX, chunkZ);
+                if (chunk == null) {
                     fullyLoaded = false;
                     continue;
                 }
-                var points = level.getPoiManager().getInChunk(type -> type.is(PoiTypes.HOME)
-                                || type.is(PoiTypeTags.ACQUIRABLE_JOB_SITE), new ChunkPos(x, z), PoiManager.Occupancy.ANY)
-                        .filter(poi -> area.contains(poi.getPos())).toList();
-                for (var poi : points) {
-                    BlockPos pos = poi.getPos();
-                    if (poi.getPoiType().is(PoiTypes.HOME)) {
-                        if (area.type() == SettlementAreaType.HOME) {
-                            BedState bed = inspectBed(level, area, pos);
-                            if (bed == BedState.AVAILABLE) {
-                                beds.add(pos.immutable());
-                            } else if (bed == BedState.UNOBSERVED) {
-                                fullyLoaded = false;
-                            }
+                for (BlockPos position : points(level, area, chunk)) {
+                    if (area.type() == SettlementAreaType.HOME) {
+                        BedState bed = inspectBed(blocks, area, position);
+                        if (bed == BedState.AVAILABLE) {
+                            beds.add(position);
+                        } else if (bed == BedState.UNOBSERVED) {
+                            fullyLoaded = false;
                         }
-                    } else if (!requiresFixture(area.type())) {
-                        workstations.add(pos.immutable());
+                    } else {
+                        workstations.add(position);
+                        if (requiresFixture(area.type())) {
+                            fixtures.put(position, BuiltInRegistries.BLOCK.getKey(chunk.getBlockState(position).getBlock()));
+                        }
                     }
-                }
-                if (requiresFixture(area.type())) {
-                    collectFixtures(level, area, x, z, workstations, fixtures);
                 }
             }
         }
@@ -74,87 +72,94 @@ public final class SettlementBuildingSurvey {
         };
     }
 
-    private static boolean fixture(SettlementAreaType type, BlockState state) {
+    private static boolean relevant(SettlementAreaType type, BlockState state) {
         return switch (type) {
+            case HOME -> state.getBlock() instanceof BedBlock && state.getValue(BedBlock.PART) == BedPart.HEAD;
             case KITCHEN -> state.is(Blocks.SMOKER) || state.is(Blocks.FURNACE) || state.is(Blocks.CRAFTING_TABLE);
             case WORKSHOP -> state.is(Blocks.CRAFTING_TABLE);
             case SMELTERY -> state.is(Blocks.FURNACE) || state.is(Blocks.BLAST_FURNACE);
             case BREWERY -> state.is(Blocks.BREWING_STAND);
             case TRADING_POST -> state.is(Blocks.LECTERN);
-            default -> false;
+            default -> PoiTypes.forState(state).filter(poi -> poi.is(PoiTypeTags.ACQUIRABLE_JOB_SITE)).isPresent();
         };
     }
 
-    private static void collectFixtures(ServerLevel level, SettlementArea area, int chunkX, int chunkZ,
-                                        List<BlockPos> fixtures, Map<BlockPos, ResourceLocation> types) {
-        var chunk = level.getChunk(chunkX, chunkZ);
-        int minX = Math.max(area.min().getX(), chunkX * 16);
-        int maxX = Math.min(area.max().getX(), chunkX * 16 + 15);
-        int minZ = Math.max(area.min().getZ(), chunkZ * 16);
-        int maxZ = Math.min(area.max().getZ(), chunkZ * 16 + 15);
+    private static List<BlockPos> points(ServerLevel level, SettlementArea area, LevelChunk chunk) {
+        List<BlockPos> result = new ArrayList<>();
+        int minX = Math.max(area.min().getX(), chunk.getPos().getMinBlockX());
+        int maxX = Math.min(area.max().getX(), chunk.getPos().getMaxBlockX());
+        int minZ = Math.max(area.min().getZ(), chunk.getPos().getMinBlockZ());
+        int maxZ = Math.min(area.max().getZ(), chunk.getPos().getMaxBlockZ());
         int minY = Math.max(area.min().getY(), level.getMinBuildHeight());
         int maxY = Math.min(area.max().getY(), level.getMaxBuildHeight() - 1);
         for (int sectionY = Math.floorDiv(minY, 16); sectionY <= Math.floorDiv(maxY, 16); sectionY++) {
             var section = chunk.getSection(level.getSectionIndexFromSectionY(sectionY));
-            if (!section.maybeHas(state -> fixture(area.type(), state))) {
+            if (!section.maybeHas(state -> relevant(area.type(), state))) {
                 continue;
             }
             for (int y = Math.max(minY, sectionY * 16); y <= Math.min(maxY, sectionY * 16 + 15); y++) {
                 for (int x = minX; x <= maxX; x++) {
                     for (int z = minZ; z <= maxZ; z++) {
-                        if (fixture(area.type(), section.getBlockState(x & 15, y & 15, z & 15))) {
-                            BlockPos position = new BlockPos(x, y, z);
-                            fixtures.add(position);
-                            types.put(position, BuiltInRegistries.BLOCK.getKey(section.getBlockState(x & 15, y & 15, z & 15).getBlock()));
+                        if (relevant(area.type(), section.getBlockState(x & 15, y & 15, z & 15))) {
+                            result.add(new BlockPos(x, y, z));
                         }
                     }
                 }
             }
         }
+        return result;
+    }
+
+    static boolean observed(ServerLevel level, BlockPos position, LevelChunk supplied) {
+        return new ObservedBlocks(level, supplied).observed(position);
+    }
+
+    static boolean fixtureAvailable(ServerLevel level, BlockPos position, ResourceLocation expected) {
+        var chunk = level.getChunkSource().getChunkNow(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16));
+        return chunk == null || BuiltInRegistries.BLOCK.getKey(chunk.getBlockState(position).getBlock()).equals(expected);
     }
 
     public static boolean usableBed(ServerLevel level, BlockPos head) {
-        return inspectBed(level, head) == BedState.AVAILABLE;
+        return inspectBed(new ObservedBlocks(level, null), null, head) == BedState.AVAILABLE;
     }
 
     static BedState inspectBed(ServerLevel level, SettlementArea area, BlockPos head) {
-        if (level.hasChunkAt(head)) {
-            BlockState state = level.getBlockState(head);
-            if (state.getBlock() instanceof BedBlock
-                    && !area.contains(head.relative(state.getValue(BedBlock.FACING).getOpposite()))) {
-                return BedState.BLOCKED;
-            }
-        }
-        return inspectBed(level, head);
+        return inspectBed(level, area, head, null);
     }
 
-    private static BedState inspectBed(ServerLevel level, BlockPos head) {
-        if (!level.hasChunkAt(head)) {
+    static BedState inspectBed(ServerLevel level, SettlementArea area, BlockPos head, LevelChunk supplied) {
+        return inspectBed(new ObservedBlocks(level, supplied), area, head);
+    }
+
+    private static BedState inspectBed(ObservedBlocks blocks, SettlementArea area, BlockPos head) {
+        if (!blocks.observed(head)) {
             return BedState.UNOBSERVED;
         }
-        BlockState state = level.getBlockState(head);
+        BlockState state = blocks.getBlockState(head);
         if (!(state.getBlock() instanceof BedBlock) || state.getValue(BedBlock.PART) != BedPart.HEAD) {
             return BedState.BLOCKED;
         }
         Direction facing = state.getValue(BedBlock.FACING);
         BlockPos foot = head.relative(facing.getOpposite());
-        if (!level.hasChunkAt(foot)) {
+        if (area != null && !area.contains(foot)) {
+            return BedState.BLOCKED;
+        }
+        if (!blocks.observed(foot)) {
             return BedState.UNOBSERVED;
         }
-        BlockState other = level.getBlockState(foot);
+        BlockState other = blocks.getBlockState(foot);
         if (!other.is(state.getBlock()) || other.getValue(BedBlock.PART) != BedPart.FOOT
-                || other.getValue(BedBlock.FACING) != facing
-                || !clearAbove(level, head) || !clearAbove(level, foot)) {
+                || other.getValue(BedBlock.FACING) != facing || !clearAbove(blocks, head) || !clearAbove(blocks, foot)) {
             return BedState.BLOCKED;
         }
         boolean unobservedExit = false;
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos headExit = head.relative(direction);
             BlockPos footExit = foot.relative(direction);
-            if (safeExit(level, headExit) || safeExit(level, footExit)) {
+            if (safeExit(blocks, headExit) || safeExit(blocks, footExit)) {
                 return BedState.AVAILABLE;
             }
-            unobservedExit |= !level.hasChunkAt(headExit) || !level.hasChunkAt(footExit);
+            unobservedExit |= !blocks.observed(headExit) || !blocks.observed(footExit);
         }
         return unobservedExit ? BedState.UNOBSERVED : BedState.BLOCKED;
     }
@@ -165,16 +170,53 @@ public final class SettlementBuildingSurvey {
         UNOBSERVED
     }
 
-    private static boolean clearAbove(ServerLevel level, BlockPos pos) {
-        return level.getBlockState(pos.above()).getCollisionShape(level, pos.above()).isEmpty();
+    private static boolean clearAbove(ObservedBlocks blocks, BlockPos pos) {
+        return blocks.getBlockState(pos.above()).getCollisionShape(blocks, pos.above()).isEmpty();
     }
 
-    private static boolean safeExit(ServerLevel level, BlockPos pos) {
-        return level.hasChunkAt(pos)
-                && level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()
-                && clearAbove(level, pos)
-                && !level.getBlockState(pos.below()).getCollisionShape(level, pos.below()).isEmpty()
-                && level.getFluidState(pos).isEmpty();
+    private static boolean safeExit(ObservedBlocks blocks, BlockPos pos) {
+        return blocks.observed(pos) && blocks.getBlockState(pos).getCollisionShape(blocks, pos).isEmpty()
+                && clearAbove(blocks, pos)
+                && !blocks.getBlockState(pos.below()).getCollisionShape(blocks, pos.below()).isEmpty()
+                && blocks.getFluidState(pos).isEmpty();
+    }
+
+    private record ObservedBlocks(ServerLevel level, LevelChunk supplied) implements BlockGetter {
+        private LevelChunk chunk(int x, int z) {
+            return this.supplied != null && this.supplied.getPos().x == x && this.supplied.getPos().z == z
+                    ? this.supplied : this.level.getChunkSource().getChunkNow(x, z);
+        }
+
+        private boolean observed(BlockPos position) {
+            return chunk(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16)) != null;
+        }
+
+        @Override
+        public BlockEntity getBlockEntity(BlockPos position) {
+            var chunk = chunk(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16));
+            return chunk == null ? null : chunk.getBlockEntity(position, LevelChunk.EntityCreationType.CHECK);
+        }
+
+        @Override
+        public BlockState getBlockState(BlockPos position) {
+            var chunk = chunk(Math.floorDiv(position.getX(), 16), Math.floorDiv(position.getZ(), 16));
+            return chunk == null ? Blocks.AIR.defaultBlockState() : chunk.getBlockState(position);
+        }
+
+        @Override
+        public FluidState getFluidState(BlockPos position) {
+            return getBlockState(position).getFluidState();
+        }
+
+        @Override
+        public int getHeight() {
+            return this.level.getHeight();
+        }
+
+        @Override
+        public int getMinBuildHeight() {
+            return this.level.getMinBuildHeight();
+        }
     }
 
     public record Survey(long checkedAt, List<BlockPos> beds, List<BlockPos> workstations, boolean fullyLoaded,

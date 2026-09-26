@@ -8,6 +8,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.neoforged.neoforge.event.level.ChunkEvent;
 
 public final class SettlementBuildingService {
     private static final int SURVEYS_PER_SECOND = 4;
@@ -54,18 +56,48 @@ public final class SettlementBuildingService {
         }
     }
 
+    public static void onChunkLoad(ChunkEvent.Load event) {
+        refreshChunk(event);
+    }
+
+    public static void onChunkUnload(ChunkEvent.Unload event) {
+        refreshChunk(event);
+    }
+
+    private static void refreshChunk(ChunkEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level) || !(event.getChunk() instanceof LevelChunk chunk)) {
+            return;
+        }
+        var position = chunk.getPos();
+        for (SettlementRecord town : SettlementSavedData.get(level).settlements()) {
+            if (!town.dimension().equals(level.dimension().location())) {
+                continue;
+            }
+            for (SettlementArea area : town.areas().values()) {
+                if (area.min().getX() <= position.getMaxBlockX() + 2 && area.max().getX() >= position.getMinBlockX() - 2
+                        && area.min().getZ() <= position.getMaxBlockZ() + 2 && area.max().getZ() >= position.getMinBlockZ() - 2) {
+                    refresh(level, town, area, chunk);
+                }
+            }
+        }
+    }
+
     public static void refresh(ServerLevel level, SettlementRecord town, SettlementArea area) {
-        var observed = SettlementBuildingSurvey.inspect(level, area);
+        refresh(level, town, area, null);
+    }
+
+    private static void refresh(ServerLevel level, SettlementRecord town, SettlementArea area, LevelChunk supplied) {
+        var observed = SettlementBuildingSurvey.inspect(level, area, supplied);
         var previous = town.surveys().get(area.id());
         if (previous != null && !observed.fullyLoaded()) {
             List<BlockPos> beds = new ArrayList<>(observed.beds());
-            previous.beds().stream().filter(pos -> SettlementBuildingSurvey.inspectBed(level, area, pos)
+            previous.beds().stream().filter(pos -> SettlementBuildingSurvey.inspectBed(level, area, pos, supplied)
                     == SettlementBuildingSurvey.BedState.UNOBSERVED).forEach(beds::add);
             List<BlockPos> stations = new ArrayList<>(observed.workstations());
-            previous.workstations().stream().filter(pos -> !level.hasChunkAt(pos)).forEach(stations::add);
+            previous.workstations().stream().filter(pos -> !SettlementBuildingSurvey.observed(level, pos, supplied)).forEach(stations::add);
             var fixtures = new java.util.LinkedHashMap<>(observed.fixtures());
             previous.fixtures().forEach((pos, type) -> {
-                if (!level.hasChunkAt(pos)) {
+                if (!SettlementBuildingSurvey.observed(level, pos, supplied)) {
                     fixtures.put(pos, type);
                 }
             });

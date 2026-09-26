@@ -29,7 +29,8 @@ final class SettlementBackgroundCrafting {
         }
         var survey = town.surveys().get(worker.area());
         BlockPos table = survey == null ? null : survey.fixtures().entrySet().stream()
-                .filter(entry -> CRAFTING_TABLE.equals(entry.getValue())).map(Map.Entry::getKey)
+                .filter(entry -> CRAFTING_TABLE.equals(entry.getValue())
+                        && SettlementBuildingSurvey.fixtureAvailable(level, entry.getKey(), entry.getValue())).map(Map.Entry::getKey)
                 .min(Comparator.comparingDouble(pos -> pos.distSqr(worker.position()))).orElse(null);
         if (table == null) {
             worker.status("no_crafting_table");
