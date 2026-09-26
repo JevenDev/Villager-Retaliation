@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerRecipeFilterData;
@@ -236,6 +238,60 @@ public final class SettlementBackgroundCraftingGameTests {
             SettlementBackgroundCrafting.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
             helper.assertTrue(fixture.supply().isEmpty(), "restoring the real table permits production");
             helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 1, "production resumes from the same real stock");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void stoppingEntityTicksCapturesFinalInventoryAndHealth(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
+            var villager = fixture.villager();
+            HiredJobInventory.getJobInventory(villager).setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.OAK_LOG, 2));
+            villager.setHealth(7.0F);
+            VillagerRecoveryService.restoreRecoveryState(villager,
+                    new VillagerRecoveryService.RecoverySnapshot(0, 0.0F, 0.0F, 0));
+            SettlementSimulationHandoff.stopTicking(villager);
+            var care = fixture.town().residents().get(villager.getUUID());
+            helper.assertValueEqual(carried(helper, fixture, Items.OAK_LOG), 2, "the final active supplies reach the worker ledger");
+            helper.assertValueEqual(care.health(), 7.0F, "recent damage reaches the care ledger");
+            helper.assertValueEqual(care.food(), 0, "recent hunger reaches the care ledger");
+            SettlementBackgroundCrafting.tick(helper.getLevel(), fixture.town(), fixture.worker(), 200, 1.0D);
+            SettlementCareService.update(helper.getLevel(), fixture.town(), care.checkedAt() + 200L);
+            SettlementSimulationHandoff.stopTicking(villager);
+            helper.assertValueEqual(carried(helper, fixture, Items.OAK_LOG), 0, "a repeated transition preserves background consumption");
+            helper.assertValueEqual(carried(helper, fixture, Items.CHEST), 1, "a repeated transition preserves background output");
+            SettlementBackgroundService.onActive(villager);
+            SettlementCareService.onActive(villager);
+            helper.assertValueEqual(HiredJobInventory.getJobInventory(villager).collectOutputItems().stream()
+                    .filter(entry -> entry.stack().is(Items.CHEST)).mapToInt(entry -> entry.stack().getCount()).sum(), 1,
+                    "returning to active simulation restores one crafted chest");
+            helper.assertTrue(villager.getHealth() <= 7.0F, "returning cannot restore health from the older observation");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_crafting")
+    public static void stoppingEntityTicksRefundsAnInterruptedMealBeforeSnapshotting(GameTestHelper helper) {
+        fixture(helper, SettlementAreaType.WORKSHOP, Items.CHEST, fixture -> {
+            var villager = fixture.villager();
+            VillagerRecoveryService.restoreRecoveryState(villager,
+                    new VillagerRecoveryService.RecoverySnapshot(9, 0.0F, 0.0F, 0));
+            VillagerInventoryAccess.addItem(villager, new ItemStack(Items.BREAD));
+            helper.assertTrue(VillagerRecoveryService.onVillagerTickPost(villager), "the resident starts using the real meal");
+            SettlementSimulationHandoff.stopTicking(villager);
+            SettlementSimulationHandoff.stopTicking(villager);
+            helper.assertValueEqual(VillagerInventoryAccess.captureFullInventory(villager).stream()
+                    .filter(stack -> stack.is(Items.BREAD)).mapToInt(ItemStack::getCount).sum(), 1,
+                    "the interrupted meal returns to personal inventory exactly once");
+            helper.assertValueEqual(carried(helper, fixture, Items.BREAD), 0, "the visual meal cannot become job equipment");
+            CompoundTag saved = new CompoundTag();
+            villager.saveWithoutId(saved);
+            Villager returning = EntityType.VILLAGER.create(helper.getLevel());
+            returning.load(saved);
+            VillagerRecoveryService.onVillagerLoaded(returning);
+            SettlementBackgroundService.onActive(returning);
+            helper.assertValueEqual(VillagerInventoryAccess.captureFullInventory(returning).stream()
+                    .filter(stack -> stack.is(Items.BREAD)).mapToInt(ItemStack::getCount).sum(), 1,
+                    "saving after the transition leaves no second refundable meal");
+            helper.assertValueEqual(VillagerRecoveryService.foodLevel(returning), 9, "interrupted eating grants no nutrition");
         });
     }
 
