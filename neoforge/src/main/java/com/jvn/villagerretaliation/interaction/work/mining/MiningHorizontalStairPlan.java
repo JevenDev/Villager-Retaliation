@@ -8,7 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 
 /** Reserves a mined-in-place staircase while a tall horizontal excavation is opened. */
-final class MiningHorizontalStairPlan {
+public final class MiningHorizontalStairPlan {
     private static final String AXIS_TAG = "HorizontalExcavationStairAxis";
     private static final String FROM_MIN_TAG = "HorizontalExcavationStairFromMin";
     private static final String LANE_TAG = "HorizontalExcavationStairLane";
@@ -33,7 +33,11 @@ final class MiningHorizontalStairPlan {
     }
 
     static boolean isReservedSupport(HiredWorkContext context, Villager villager, BlockPos pos) {
-        ensureInitialized(context, villager);
+        return isReservedSupport(context, villager.blockPosition(), pos);
+    }
+
+    public static boolean isReservedSupport(HiredWorkContext context, BlockPos origin, BlockPos pos) {
+        ensureInitialized(context, origin);
         return !cleanup(context) && isSupport(context, pos);
     }
 
@@ -84,11 +88,11 @@ final class MiningHorizontalStairPlan {
         return false;
     }
 
-    static void beginCleanup(HiredWorkContext context) {
+    public static void beginCleanup(HiredWorkContext context) {
         context.state().putBoolean(CLEANUP_TAG, true);
     }
 
-    static boolean cleanup(HiredWorkContext context) {
+    public static boolean cleanup(HiredWorkContext context) {
         return context.state().getBoolean(CLEANUP_TAG);
     }
 
@@ -96,7 +100,7 @@ final class MiningHorizontalStairPlan {
         return context.workMax().getY() - context.workMin().getY() + 1 > GROUND_REACHABLE_HEIGHT;
     }
 
-    private static void ensureInitialized(HiredWorkContext context, Villager villager) {
+    private static void ensureInitialized(HiredWorkContext context, BlockPos origin) {
         if (!needsStairs(context)) {
             reset(context);
             return;
@@ -107,11 +111,11 @@ final class MiningHorizontalStairPlan {
         int sizeX = context.workMax().getX() - context.workMin().getX();
         int sizeZ = context.workMax().getZ() - context.workMin().getZ();
         boolean xAxis = sizeX >= sizeZ;
-        int value = xAxis ? villager.blockPosition().getX() : villager.blockPosition().getZ();
+        int value = xAxis ? origin.getX() : origin.getZ();
         int min = xAxis ? context.workMin().getX() : context.workMin().getZ();
         int max = xAxis ? context.workMax().getX() : context.workMax().getZ();
         boolean fromMin = Math.abs(value - min) <= Math.abs(value - max);
-        int lineValue = xAxis ? villager.blockPosition().getZ() : villager.blockPosition().getX();
+        int lineValue = xAxis ? origin.getZ() : origin.getX();
         int lineMin = xAxis ? context.workMin().getZ() : context.workMin().getX();
         int lineMax = xAxis ? context.workMax().getZ() : context.workMax().getX();
         context.state().putString(AXIS_TAG, xAxis ? "x" : "z");

@@ -7,7 +7,7 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.npc.Villager;
 
-final class MiningExcavationPlan {
+public final class MiningExcavationPlan {
     private MiningExcavationPlan() {
     }
 
@@ -16,16 +16,20 @@ final class MiningExcavationPlan {
             HiredWorkContext context,
             List<BlockPos> candidates,
             int maxTargets) {
+        return lineOrder(villager.blockPosition(), context, candidates, maxTargets);
+    }
+
+    public static List<BlockPos> lineOrder(BlockPos origin, HiredWorkContext context, List<BlockPos> candidates, int maxTargets) {
         List<BlockPos> ordered = new ArrayList<>();
         for (BlockPos candidate : candidates) {
             if (candidate != null) {
                 ordered.add(candidate.immutable());
             }
         }
-        HorizontalAxis depthAxis = excavationDepthAxis(villager.blockPosition(), context);
+        HorizontalAxis depthAxis = excavationDepthAxis(origin, context);
         HorizontalAxis lineAxis = depthAxis == HorizontalAxis.X ? HorizontalAxis.Z : HorizontalAxis.X;
-        boolean depthFromMin = startsFromMin(villager.blockPosition(), context, depthAxis);
-        boolean lineFromMin = startsFromMin(villager.blockPosition(), context, lineAxis);
+        boolean depthFromMin = startsFromMin(origin, context, depthAxis);
+        boolean lineFromMin = startsFromMin(origin, context, lineAxis);
         boolean horizontal = HiredMiningMode.fromState(context.state()).excavatesHorizontally();
         if (horizontal && MiningHorizontalStairPlan.cleanup(context)) {
             ordered.sort((left, right) -> {
@@ -44,7 +48,7 @@ final class MiningExcavationPlan {
                     return Integer.compare(rightDepth, leftDepth);
                 }
                 return compareLineOrder(left, right, context, depthAxis, lineAxis,
-                        depthFromMin, lineFromMin, villager.blockPosition(), true);
+                        depthFromMin, lineFromMin, origin, true);
             });
         } else {
             ordered.sort((left, right) -> compareLineOrder(
@@ -55,7 +59,7 @@ final class MiningExcavationPlan {
                     lineAxis,
                     depthFromMin,
                     lineFromMin,
-                    villager.blockPosition(),
+                    origin,
                     horizontal));
         }
         if (ordered.size() > maxTargets) {

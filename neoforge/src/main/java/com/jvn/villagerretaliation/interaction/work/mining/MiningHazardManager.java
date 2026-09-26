@@ -28,6 +28,8 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
@@ -44,7 +46,7 @@ import net.minecraft.world.phys.Vec3;
  * completely and their temporary fill is then excavated normally. Large or externally
  * fed pockets are sealed at the excavation face and the seal is deliberately retained.</p>
  */
-final class MiningHazardManager {
+public final class MiningHazardManager {
     private static final String PLAN_KIND_TAG = "MiningHazardPlanKind";
     private static final String PLAN_POSITIONS_TAG = "MiningHazardPlanPositions";
     private static final String PLAN_INDEX_TAG = "MiningHazardPlanIndex";
@@ -111,12 +113,20 @@ final class MiningHazardManager {
             ServerLevel level,
             Villager villager,
             HiredWorkContext context) {
+        BlockPos target = horizontalFloorTarget(level, level::hasChunkAt, context, villager.position());
+        if (target == null) return null;
+        HazardKind kind = level.getFluidState(target).is(FluidTags.LAVA) ? HazardKind.LAVA : HazardKind.FALL;
+        return new HazardPlan(kind, List.of(target), 0, true);
+    }
+
+    public static BlockPos horizontalFloorTarget(BlockGetter level, Predicate<BlockPos> observed,
+                                                 HiredWorkContext context, Vec3 origin) {
         int floorY = context.workMin().getY() - 1;
         List<BlockPos> holes = new ArrayList<>();
         for (int x = context.workMin().getX(); x <= context.workMax().getX(); x++) {
             for (int z = context.workMin().getZ(); z <= context.workMax().getZ(); z++) {
                 BlockPos floor = new BlockPos(x, floorY, z);
-                if (canReplaceWithFill(level, floor)) {
+                if (canReplaceWithFill(level, observed, floor)) {
                     holes.add(floor);
                 }
             }
@@ -126,14 +136,12 @@ final class MiningHazardManager {
         }
         holes.sort(Comparator
                 .comparingInt((BlockPos pos) -> level.getFluidState(pos).is(FluidTags.LAVA) ? 0 : 1)
-                .thenComparingDouble(pos -> villager.distanceToSqr(pos.getCenter()))
+                .thenComparingDouble(pos -> origin.distanceToSqr(pos.getCenter()))
                 .thenComparingLong(BlockPos::asLong));
-        BlockPos target = holes.getFirst();
-        HazardKind kind = level.getFluidState(target).is(FluidTags.LAVA) ? HazardKind.LAVA : HazardKind.FALL;
-        return new HazardPlan(kind, List.of(target), 0, true);
+        return holes.getFirst();
     }
 
-    static boolean isProtectedBarrier(HiredWorkContext context, BlockPos pos) {
+    public static boolean isProtectedBarrier(HiredWorkContext context, BlockPos pos) {
         if (context == null || pos == null) {
             return false;
         }
@@ -151,7 +159,7 @@ final class MiningHazardManager {
         return false;
     }
 
-    static LongSet protectedBarrierPositions(HiredWorkContext context) {
+    public static LongSet protectedBarrierPositions(HiredWorkContext context) {
         if (context == null) {
             return LongSets.emptySet();
         }
@@ -632,19 +640,20 @@ final class MiningHazardManager {
         }
     }
 
-    private static boolean isSafeFillStack(ServerLevel level, BlockPos pos, ItemStack stack) {
+    public static boolean isSafeFillStack(LevelReader level, BlockPos pos, ItemStack stack) {
         return stack != null
                 && stack.getItem() instanceof BlockItem blockItem
                 && !(blockItem.getBlock() instanceof FallingBlock)
                 && isSafeFillState(level, pos, blockItem.getBlock().defaultBlockState());
     }
 
-    private static boolean isSafeFillState(ServerLevel level, BlockPos pos, BlockState state) {
+    private static boolean isSafeFillState(LevelReader level, BlockPos pos, BlockState state) {
         if (state.isAir()
                 || state.liquid()
                 || state.hasBlockEntity()
                 || state.getDestroySpeed(level, pos) < 0.0F
                 || HiredOreBlockTracker.isTrackedOre(state)
+                || MiningSafety.isDamagingBlock(state)
                 || !state.canSurvive(level, pos)) {
             return false;
         }
@@ -657,7 +666,11 @@ final class MiningHazardManager {
     }
 
     private static boolean canReplaceWithFill(ServerLevel level, BlockPos pos) {
-        if (pos == null || !level.hasChunkAt(pos)) {
+        return canReplaceWithFill(level, level::hasChunkAt, pos);
+    }
+
+    public static boolean canReplaceWithFill(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
+        if (pos == null || !observed.test(pos)) {
             return false;
         }
         BlockState state = level.getBlockState(pos);
@@ -714,6 +727,14 @@ final class MiningHazardManager {
         context.state().remove(PLAN_POSITIONS_TAG);
         context.state().remove(PLAN_INDEX_TAG);
         context.state().remove(PLAN_PERMANENT_TAG);
+    }
+
+    public static void floorPatched(HiredWorkContext context, BlockPos position) {
+        addPermanentBarriers(context, List.of(position));
+        var plan = loadPlan(context);
+        if (plan != null && plan.positions().size() == 1 && plan.positions().getFirst().equals(position)) clearPlan(context);
+        MiningWorkerState.clearExcavationLayerCache(context);
+        MiningWorkerState.set(context, MiningWorkerState.Phase.REMEDIATE_HAZARD);
     }
 
     private static void addPermanentBarriers(HiredWorkContext context, List<BlockPos> positions) {

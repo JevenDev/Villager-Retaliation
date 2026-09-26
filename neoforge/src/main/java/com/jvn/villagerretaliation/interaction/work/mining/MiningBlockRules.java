@@ -60,6 +60,10 @@ public final class MiningBlockRules {
     }
 
     public static boolean isMineableExcavationBlock(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
+        return isExcavationMaterial(level, observed, pos) && isExposed(level, observed, pos);
+    }
+
+    public static boolean isExcavationMaterial(BlockGetter level, Predicate<BlockPos> observed, BlockPos pos) {
         if (!observed.test(pos)) {
             return false;
         }
@@ -70,8 +74,7 @@ public final class MiningBlockRules {
                 && isFullExcavationBlock(level, pos, state)
                 && state.getDestroySpeed(level, pos) >= 0.0F
                 && !state.hasBlockEntity()
-                && hasExcavationToolTag(state)
-                && isExposed(level, observed, pos);
+                && hasExcavationToolTag(state);
     }
 
     public static boolean isMineableExcavationBlock(

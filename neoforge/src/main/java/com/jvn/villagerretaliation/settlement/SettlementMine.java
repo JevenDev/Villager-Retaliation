@@ -80,6 +80,42 @@ public final class SettlementMine implements BlockGetter {
                 && position.getZ() >= min.getZ() && position.getZ() <= max.getZ();
     }
 
+    BlockPos min() {
+        return this.min;
+    }
+
+    BlockPos max() {
+        return this.max;
+    }
+
+    boolean fullyObserved(int minHeight, int maxHeight) {
+        if (this.min.getY() < minHeight || this.max.getY() >= maxHeight) return false;
+        var observedMin = observedMin();
+        var observedMax = observedMax();
+        var min = new BlockPos(observedMin.getX(), Math.max(minHeight, observedMin.getY()), observedMin.getZ());
+        var max = new BlockPos(observedMax.getX(), Math.min(maxHeight - 1, observedMax.getY()), observedMax.getZ());
+        for (int x = min.getX() >> 4; x <= max.getX() >> 4; x++) {
+            for (int y = min.getY() >> 4; y <= max.getY() >> 4; y++) {
+                for (int z = min.getZ() >> 4; z <= max.getZ() >> 4; z++) {
+                    var origin = new BlockPos(x << 4, y << 4, z << 4);
+                    var section = this.sections.get(origin);
+                    if (section == null || section.conflict()
+                            || !section.contains(new BlockPos(Math.max(min.getX(), origin.getX()), Math.max(min.getY(), origin.getY()),
+                                    Math.max(min.getZ(), origin.getZ())))
+                            || !section.contains(new BlockPos(Math.min(max.getX(), origin.getX() + 15), Math.min(max.getY(), origin.getY() + 15),
+                                    Math.min(max.getZ(), origin.getZ() + 15)))) return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    boolean containsAccess(BlockPos position) {
+        return position.getX() >= this.min.getX() - 1 && position.getX() <= this.max.getX() + 1
+                && position.getY() >= this.min.getY() && position.getY() <= this.max.getY() + 1
+                && position.getZ() >= this.min.getZ() - 1 && position.getZ() <= this.max.getZ() + 1;
+    }
+
     boolean contains(BlockPos position) {
         return position.getX() >= this.min.getX() && position.getX() <= this.max.getX()
                 && position.getY() >= this.min.getY() && position.getY() <= this.max.getY()
@@ -99,6 +135,16 @@ public final class SettlementMine implements BlockGetter {
             grouped.computeIfAbsent(section, ignored -> new LinkedHashMap<>()).put(entry.getKey().immutable(), entry.getValue());
         }
         grouped.forEach(SettlementTerrainSection::change);
+        return true;
+    }
+
+    boolean changeFloor(BlockPos position, BlockState state) {
+        var section = this.sections.get(SettlementTerrainSection.sectionOrigin(position));
+        if (position.getY() != this.min.getY() - 1 || position.getX() < this.min.getX() || position.getX() > this.max.getX()
+                || position.getZ() < this.min.getZ() || position.getZ() > this.max.getZ() || section == null
+                || state.isAir() || !state.getFluidState().isEmpty() || !section.canChange(position, state)
+                || !com.jvn.villagerretaliation.interaction.work.mining.MiningHazardManager.canReplaceWithFill(this, this::observed, position)) return false;
+        section.change(Map.of(position, state));
         return true;
     }
 

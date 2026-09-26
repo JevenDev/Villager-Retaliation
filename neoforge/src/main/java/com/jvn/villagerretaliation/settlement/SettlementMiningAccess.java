@@ -8,14 +8,14 @@ import net.minecraft.nbt.Tag;
 record SettlementMiningAccess(UUID area, BlockPos min, BlockPos max, BlockPos position) {
     static SettlementMiningAccess observe(SettlementMiningAccess previous, SettlementMine mine,
                                           SettlementArea area, BlockPos position) {
-        if (mine != null && mine.matches(area) && mine.contains(position) && SettlementMiningRoutes.safe(mine, position)) {
+        if (mine != null && mine.matches(area) && mine.containsAccess(position) && SettlementMiningRoutes.safe(mine, position)) {
             return new SettlementMiningAccess(area.id(), area.min(), area.max(), position.immutable());
         }
         return previous != null && previous.matches(area) ? previous : null;
     }
 
     BlockPos entry(SettlementMine mine, SettlementArea area) {
-        return matches(area) && mine.matches(area) && mine.contains(this.position) && SettlementMiningRoutes.safe(mine, this.position)
+        return matches(area) && mine.matches(area) && mine.containsAccess(this.position) && SettlementMiningRoutes.safe(mine, this.position)
                 ? this.position : null;
     }
 

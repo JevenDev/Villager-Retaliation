@@ -22,7 +22,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.block.Block;
 
 final class SettlementBackgroundMining {
-    private static final String POSITION = "SettlementMiningPosition";
+    static final String POSITION = "SettlementMiningPosition";
     private static final String DEPOSIT = "SettlementMiningDepositPending";
     private static final int MAX_ACTIONS = 32;
 
@@ -41,6 +41,10 @@ final class SettlementBackgroundMining {
             return;
         }
         var state = worker.settings();
+        if (HiredMiningMode.fromState(state).excavatesArea() && !mine.fullyObserved(level.getMinBuildHeight(), level.getMaxBuildHeight())) {
+            worker.status("excavation_needs_observation");
+            return;
+        }
         var depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
         boolean autoDeposit = !state.contains("AutoDepositOutputs") || state.getBoolean("AutoDepositOutputs");
         if (autoDeposit && (state.getBoolean(DEPOSIT) || worker.status().equals("output_full"))
@@ -91,6 +95,7 @@ final class SettlementBackgroundMining {
     private static void work(ServerLevel level, SettlementWorkerState worker, SettlementMine mine, Villager owner,
                              HiredWorkContext context, List<SettlementDepot> depots, SettlementWorkBudget budget) {
         var routeBudget = new SettlementMiningRoutes.Budget();
+        var mode = HiredMiningMode.fromState(context.state());
         for (int action = 0; action < MAX_ACTIONS; action++) {
             var state = context.state();
             BlockPos origin = state.contains(POSITION) ? BlockPos.of(state.getLong(POSITION)) : worker.position();
@@ -99,34 +104,36 @@ final class SettlementBackgroundMining {
                 worker.status("no_safe_mining_route");
                 return;
             }
+            boolean floorDeferred = false;
+            if (mode.excavatesHorizontally() && com.jvn.villagerretaliation.interaction.work.mining.MiningHorizontalOptions.patchFloor(state)) {
+                var floor = SettlementMiningFloor.tick(level, worker, mine, owner, context, origin, depots, budget, routeBudget);
+                if (floor == SettlementMiningFloor.Result.PROGRESSED) continue;
+                if (floor == SettlementMiningFloor.Result.WAITING) return;
+                floorDeferred = floor == SettlementMiningFloor.Result.DEFERRED;
+            }
             var routes = SettlementMiningRoutes.forWorker(worker, mine, origin);
-            var target = target(worker, mine, owner, context, routes, routeBudget);
-            if (target == null) return;
+            var target = mode.excavatesHorizontally()
+                    ? SettlementHorizontalExcavation.target(worker, mine, owner, origin, context, routes, routeBudget)
+                    : target(worker, mine, owner, context, routes, routeBudget);
+            if (target == null) {
+                if (floorDeferred && worker.status().equals("excavation_complete")) worker.status("floor_unreachable");
+                return;
+            }
             var block = mine.getBlockState(target.position());
             var tool = context.inventory().equipBestTool(
-                    stack -> MiningBlockRules.isUsableMiningTool(HiredMiningMode.EXPOSED_ORES, stack, block),
+                    stack -> MiningBlockRules.isUsableMiningTool(mode, stack, block),
                     stack -> MiningBlockRules.destroySpeed(stack, block));
             if (tool.isEmpty()) {
                 SettlementBackgroundTools.fetchTool(level, worker, context.inventory(), depots,
-                        stack -> MiningBlockRules.isUsableMiningTool(HiredMiningMode.EXPOSED_ORES, stack, block),
-                        stack -> MiningBlockRules.destroySpeed(stack, block), "pickaxe", budget);
+                        stack -> MiningBlockRules.isUsableMiningTool(mode, stack, block),
+                        stack -> MiningBlockRules.destroySpeed(stack, block), MiningBlockRules.requiredMiningToolLabel(mode, block), budget);
                 return;
             }
             int progress = state.contains("ActiveWorkBlockPos") && state.getLong("ActiveWorkBlockPos") == target.position().asLong()
                     ? context.progressTicks() : 0;
             double cost = 16.0D * target.steps()
                     + Math.max(1, MiningBlockRules.breakTicks(mine, target.position(), tool, context.skillWorkSpeedPercent()) - progress);
-            if (budget.available() < cost) {
-                int steps = Math.min(target.steps(), (int) (budget.available() / 16.0D));
-                if (steps > 0) {
-                    budget.spend(16.0D * steps);
-                    state.putLong(POSITION, target.path().get(steps).asLong());
-                } else {
-                    budget.spend(target.steps() > 0 ? 16.0D : cost);
-                }
-                worker.status(target.steps() > steps ? "approaching_ore" : "mining");
-                return;
-            }
+            if (!ready(worker, target, budget, cost, mode.excavatesArea() ? "approaching_excavation" : "approaching_ore", "mining")) return;
             owner.setPos(target.stance().getBottomCenter());
             var drops = Block.getDrops(block, level, target.position(), null, owner, tool);
             var updated = SettlementBackgroundTools.items(context.inventory());
@@ -154,8 +161,22 @@ final class SettlementBackgroundMining {
             state.putLong(POSITION, stance.asLong());
             state.putBoolean(DEPOSIT, true);
             worker.practice(level, HiredWorkPractice.mining(mine, target.position(), block));
-            worker.status("mined_ore");
+            worker.status(mode.excavatesArea() ? "excavated_block" : "mined_ore");
         }
+    }
+
+    static boolean ready(SettlementWorkerState worker, SettlementMiningRoutes.Target target, SettlementWorkBudget budget,
+                         double cost, String approaching, String working) {
+        if (budget.available() >= cost) return true;
+        int steps = Math.min(target.steps(), (int) (budget.available() / 16.0D));
+        if (steps > 0) {
+            budget.spend(16.0D * steps);
+            worker.settings().putLong(POSITION, target.path().get(steps).asLong());
+        } else {
+            budget.spend(target.steps() > 0 ? 16.0D : cost);
+        }
+        worker.status(target.steps() > steps ? approaching : working);
+        return false;
     }
 
     private static SettlementMiningRoutes.Target target(SettlementWorkerState worker, SettlementMine mine, Villager owner,

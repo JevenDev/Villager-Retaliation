@@ -77,7 +77,7 @@ public final class SettlementBackgroundService {
                 SettlementBackgroundLogging.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.MINING
                     && com.jvn.villagerretaliation.interaction.HiredMiningMode.fromState(worker.settings())
-                    == com.jvn.villagerretaliation.interaction.HiredMiningMode.EXPOSED_ORES) {
+                    != com.jvn.villagerretaliation.interaction.HiredMiningMode.EXCAVATE_AREA) {
                 SettlementBackgroundMining.tick(level, town, worker, elapsed, multiplier);
             } else if (worker.role() == HiredVillagerRole.FARMING) {
                 SettlementBackgroundFarming.tick(level, town, worker, elapsed, multiplier);
