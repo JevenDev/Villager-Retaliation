@@ -33,6 +33,10 @@ final class SettlementHuntingPursuit {
     }
 
     boolean step(Villager owner, LivingEntity target) {
+        return step(owner, target, VillagerRetaliationHandler.observedMeleeMovementSpeed(owner, target));
+    }
+
+    boolean step(Villager owner, LivingEntity target, double movementSpeed) {
         if (this.area == null || !this.area.contains(owner.blockPosition()) || !this.area.contains(target.blockPosition())
                 || !VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(owner, target)) return false;
         if (this.path == null || this.path.isEmpty() || !target.blockPosition().equals(this.targetPosition)) {
@@ -47,14 +51,14 @@ final class SettlementHuntingPursuit {
         if (this.cursor == this.path.size() - 1 && owner.position().distanceToSqr(destination) < 0.25D) {
             destination = target.position();
         }
-        return move(owner, destination.subtract(owner.position()), target);
+        return move(owner, destination.subtract(owner.position()), target, movementSpeed);
     }
 
     boolean coast(Villager owner) {
-        return this.area != null && this.area.contains(owner.blockPosition()) && move(owner, Vec3.ZERO, null);
+        return this.area != null && this.area.contains(owner.blockPosition()) && move(owner, Vec3.ZERO, null, 0.0D);
     }
 
-    private boolean move(Villager owner, Vec3 offset, LivingEntity target) {
+    private boolean move(Villager owner, Vec3 offset, LivingEntity target, double movementSpeed) {
         if (!ordinary(owner.getBoundingBox())) return false;
         var floorPosition = BlockPos.containing(owner.getX(), owner.getY() - 0.500001D, owner.getZ());
         var floor = this.terrain.getBlockState(floorPosition);
@@ -64,7 +68,7 @@ final class SettlementHuntingPursuit {
         if (!Double.isFinite(friction) || friction <= 0.0D) return false;
         boolean grounded = this.terrain.getBlockCollisions(owner, owner.getBoundingBox().move(0.0D, -0.01D, 0.0D)).iterator().hasNext();
         double speed = target == null ? 0.0D
-                : VillagerRetaliationHandler.observedMeleeMovementSpeed(owner, target) * owner.getAttributeValue(Attributes.MOVEMENT_SPEED);
+                : movementSpeed * owner.getAttributeValue(Attributes.MOVEMENT_SPEED);
         if (!Double.isFinite(speed) || target != null && speed <= 0.0D) return false;
         double acceleration = target == null ? 0.0D : grounded ? speed * 0.21600002D / (friction * friction * friction) : 0.02D;
         var velocity = owner.getDeltaMovement();

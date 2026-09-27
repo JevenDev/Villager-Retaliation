@@ -206,8 +206,9 @@ public final class VillagerInventoryAccess {
                 && HiredJobInventory.isJobInventoryAvailable(villager)) {
             HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
             ItemStack available = jobInventory.findSupply(predicate);
-            if (!available.isEmpty() && jobInventory.consumeSupply(predicate, 1) > 0) {
-                return available.copyWithCount(1);
+            if (!available.isEmpty()) {
+                ItemStack taken = available.copyWithCount(1);
+                if (jobInventory.consumeSupply(predicate, 1) > 0) return taken;
             }
         }
         return VillagerInventoryContainer.takeFirstCarriedItem(villager, predicate);

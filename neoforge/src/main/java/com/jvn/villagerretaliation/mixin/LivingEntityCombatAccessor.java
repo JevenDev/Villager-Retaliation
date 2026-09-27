@@ -7,6 +7,9 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(LivingEntity.class)
 public interface LivingEntityCombatAccessor {
+    @Invoker("updatingUsingItem")
+    void villagerretaliation$updatingUsingItem();
+
     @Accessor("useItem")
     void villagerretaliation$setUseItem(net.minecraft.world.item.ItemStack item);
 

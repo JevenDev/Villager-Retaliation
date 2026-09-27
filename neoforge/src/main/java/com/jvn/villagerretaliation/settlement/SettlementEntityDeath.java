@@ -36,8 +36,13 @@ final class SettlementEntityDeath {
 
     static SettlementEntityDeath create(LivingEntity entity, BlockPos nativePosition, SettlementWorkerState worker,
                                         List<ExperienceOrb> orbs, long now, boolean killed) {
+        return create(entity, nativePosition, worker.area(), worker.id(), worker.position(), orbs, now, killed);
+    }
+
+    static SettlementEntityDeath create(LivingEntity entity, BlockPos nativePosition, UUID area, UUID worker, BlockPos workerStart,
+                                        List<ExperienceOrb> orbs, long now, boolean killed) {
         var death = new SettlementEntityDeath(killed ? entity.getUUID() : UUID.randomUUID(), BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()),
-                nativePosition, worker.area(), worker.id(), worker.position());
+                nativePosition, area, worker, workerStart);
         death.applied = !killed;
         for (var orb : orbs) {
             var experience = new Experience(orb.saveWithoutId(new CompoundTag()), -1, now);

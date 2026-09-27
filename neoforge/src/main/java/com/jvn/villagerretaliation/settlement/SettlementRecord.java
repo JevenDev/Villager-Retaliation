@@ -45,6 +45,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
     private final Map<UUID, SettlementLivestock> livestock = new LinkedHashMap<>();
     private final Map<UUID, SettlementHuntingTarget> huntingTargets = new LinkedHashMap<>();
+    private final Map<UUID, SettlementProjectile> projectiles = new LinkedHashMap<>();
     private final Map<UUID, SettlementAnimalBirth> animalBirths = new LinkedHashMap<>();
     private final Map<UUID, SettlementItemDrop> itemDrops = new LinkedHashMap<>();
     private final Map<UUID, SettlementGroundItem> groundItems = new LinkedHashMap<>();
@@ -387,6 +388,21 @@ public final class SettlementRecord {
 
     void removeGroundExperience(UUID id) {
         if (this.groundExperience.remove(id) != null) changed();
+    }
+
+    Map<UUID, SettlementProjectile> projectiles() {
+        return Collections.unmodifiableMap(this.projectiles);
+    }
+
+    void recordProjectile(SettlementProjectile projectile) {
+        if (this.projectiles.putIfAbsent(projectile.id(), projectile) != null) {
+            throw new IllegalArgumentException("Settlement projectiles duplicate an identity");
+        }
+        changed();
+    }
+
+    void removeProjectile(UUID id) {
+        if (this.projectiles.remove(id) != null) changed();
     }
 
     Map<UUID, SettlementHuntingTarget> huntingTargets() {
@@ -817,6 +833,9 @@ public final class SettlementRecord {
         var huntingTags = new ListTag();
         this.huntingTargets.values().forEach(target -> huntingTags.add(target.save()));
         tag.put("HuntingTargets", huntingTags);
+        var projectileTags = new ListTag();
+        this.projectiles.values().forEach(projectile -> projectileTags.add(projectile.save()));
+        tag.put("Projectiles", projectileTags);
         ListTag animalBirthTags = new ListTag();
         this.animalBirths.values().forEach(birth -> animalBirthTags.add(birth.save()));
         tag.put("AnimalBirths", animalBirthTags);
@@ -928,6 +947,12 @@ public final class SettlementRecord {
             var target = SettlementHuntingTarget.load((CompoundTag) raw);
             if (record.huntingTargets.putIfAbsent(target.id(), target) != null) {
                 throw new IllegalArgumentException("Hunting targets duplicate an identity");
+            }
+        }
+        for (Tag raw : tag.getList("Projectiles", Tag.TAG_COMPOUND)) {
+            var projectile = SettlementProjectile.load((CompoundTag) raw);
+            if (record.projectiles.putIfAbsent(projectile.id(), projectile) != null) {
+                throw new IllegalArgumentException("Settlement projectiles duplicate an identity");
             }
         }
         for (Tag raw : tag.getList("AnimalBirths", Tag.TAG_COMPOUND)) {

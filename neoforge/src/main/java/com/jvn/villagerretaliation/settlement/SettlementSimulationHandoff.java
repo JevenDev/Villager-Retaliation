@@ -12,6 +12,9 @@ public final class SettlementSimulationHandoff {
     }
 
     public static void stopTicking(Entity entity) {
+        if (entity instanceof net.minecraft.world.entity.projectile.Projectile projectile) {
+            SettlementProjectileService.onUnloaded(projectile);
+        }
         if (entity instanceof net.minecraft.world.entity.LivingEntity living) SettlementHuntingTargetService.onUnloaded(living);
         if (entity instanceof net.minecraft.world.entity.ExperienceOrb orb) {
             SettlementGroundExperienceService.onUnloaded(orb);

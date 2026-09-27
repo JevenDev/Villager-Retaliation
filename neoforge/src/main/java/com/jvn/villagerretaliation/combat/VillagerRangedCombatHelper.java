@@ -35,6 +35,7 @@ import net.minecraft.world.phys.AABB;
 
 public final class VillagerRangedCombatHelper {
     private static final String STATE_TAG = "VillagerRetaliationRangedCombat";
+    private static final ThreadLocal<ObservedAttack> OBSERVED = new ThreadLocal<>();
     private static final double MAX_BOW_DISTANCE_SQR = 225.0D;
     private static final int BOW_DRAW_TICKS = 20;
     private static final int BOW_ATTACK_INTERVAL_TICKS = 20;
@@ -78,16 +79,14 @@ public final class VillagerRangedCombatHelper {
         if (VillagerRetaliationVillagerWeapons.isTridentWeapon(rangedWeapon)) {
             return tryTridentAttack(villager, target, level, distanceSqr, movementSpeed);
         }
-        if (!HiredRangedAmmo.canUseRangedAttack(villager, rangedWeapon)
-                && !(VillagerRetaliationVillagerWeapons.isCrossbowWeapon(rangedWeapon)
-                && (hasLoadedCrossbowProjectile(villager) || hasActiveCrossbowCycle(villager)))) {
+        if (!HiredRangedAmmo.canUseRangedAttack(villager, rangedWeapon)) {
             stopAmmoBlockedRangedUse(villager, rangedWeapon);
             return true;
         }
 
-        boolean hasLineOfSight = hasRangedLineOfSight(villager, target, villager.hasLineOfSight(target));
+        boolean hasLineOfSight = hasRangedLineOfSight(villager, target, lineOfSight(villager, target, false));
         if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(rangedWeapon)) {
-            hasLineOfSight = hasRangedLineOfSight(villager, target, villager.getSensing().hasLineOfSight(target));
+            hasLineOfSight = hasRangedLineOfSight(villager, target, lineOfSight(villager, target, true));
             int seeTime = updateSeeTime(villager, hasLineOfSight);
             handleCrossbowAttack(villager, target, level, rangedWeapon, hasLineOfSight, seeTime, movementSpeed);
             return true;
@@ -104,6 +103,54 @@ public final class VillagerRangedCombatHelper {
         }
 
         return false;
+    }
+
+    public static boolean attackObserved(Villager villager, LivingEntity target,
+                                         net.minecraft.world.level.BlockGetter blocks, java.util.function.DoubleConsumer movement) {
+        var previous = OBSERVED.get();
+        OBSERVED.set(new ObservedAttack(villager, blocks, movement));
+        try {
+            ((com.jvn.villagerretaliation.mixin.LivingEntityCombatAccessor) villager).villagerretaliation$updatingUsingItem();
+            return tryAttack(villager, target, (ServerLevel) villager.level(), villager.distanceToSqr(target));
+        } finally {
+            if (previous == null) OBSERVED.remove();
+            else OBSERVED.set(previous);
+        }
+    }
+
+    public static boolean hasReservedCrossbowAmmunition(AbstractVillager villager, ItemStack weapon) {
+        return VillagerRetaliationVillagerWeapons.isCrossbowWeapon(weapon)
+                && ItemStack.isSameItem(weapon, VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager))
+                && (hasLoadedCrossbowProjectile(villager) || hasActiveCrossbowCycle(villager));
+    }
+
+    private static boolean lineOfSight(AbstractVillager villager, LivingEntity target, boolean sensing) {
+        var context = OBSERVED.get();
+        if (context == null || context.owner() != villager) {
+            return sensing ? villager.getSensing().hasLineOfSight(target) : villager.hasLineOfSight(target);
+        }
+        return context.blocks().clip(new net.minecraft.world.level.ClipContext(villager.getEyePosition(), target.getEyePosition(),
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, villager))
+                .getType() == net.minecraft.world.phys.HitResult.Type.MISS;
+    }
+
+    private static void moveToward(AbstractVillager villager, LivingEntity target, double speed) {
+        var context = OBSERVED.get();
+        if (context != null && context.owner() == villager) context.movement().accept(speed);
+        else VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, speed);
+    }
+
+    private static void stopNavigation(AbstractVillager villager) {
+        var context = OBSERVED.get();
+        if (context != null && context.owner() == villager) context.movement().accept(0.0D);
+        else {
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+            VillagerRetaliationRetaliationUtil.clearPathingState(villager);
+        }
+    }
+
+    private record ObservedAttack(AbstractVillager owner, net.minecraft.world.level.BlockGetter blocks,
+                                  java.util.function.DoubleConsumer movement) {
     }
 
     public static void clearDuelState(AbstractVillager villager) {
@@ -188,12 +235,12 @@ public final class VillagerRangedCombatHelper {
         int attackDelay = readState(villager).getInt("AttackDelay");
         if (attackDelay > 0) {
             state(villager).putInt("AttackDelay", attackDelay - 1);
-            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed * 0.85D);
+            moveToward(villager, target, movementSpeed * 0.85D);
             return true;
         }
 
-        if (!villager.hasLineOfSight(target)) {
-            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
+        if (!lineOfSight(villager, target, false)) {
+            moveToward(villager, target, movementSpeed);
             return true;
         }
 
@@ -253,10 +300,9 @@ public final class VillagerRangedCombatHelper {
             double movementSpeed
     ) {
         if (hasLineOfSight && (villager.isUsingItem() || distanceSqr <= 100.0D && seeTime >= 5)) {
-            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
-            VillagerRetaliationRetaliationUtil.clearPathingState(villager);
+            stopNavigation(villager);
         } else {
-            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
+            moveToward(villager, target, movementSpeed);
         }
 
         if (villager.isUsingItem()) {
@@ -348,8 +394,7 @@ public final class VillagerRangedCombatHelper {
             tickCrossbowPathing(villager, target, movementSpeed, state == CrossbowState.UNCHARGED);
         } else {
             readState(villager).remove("PathDelay");
-            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
-            VillagerRetaliationRetaliationUtil.clearPathingState(villager);
+            stopNavigation(villager);
         }
 
         villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
@@ -435,8 +480,11 @@ public final class VillagerRangedCombatHelper {
     }
 
     static boolean hasPointBlankRangedShot(AbstractVillager villager, LivingEntity target) {
-        return isPointBlankRange(villager, target)
-                && VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target);
+        if (!isPointBlankRange(villager, target)) return false;
+        var context = OBSERVED.get();
+        return context != null && context.owner() == villager
+                ? VillagerRetaliationRetaliationUtil.hasClearLineOfSight(context.blocks(), villager, target)
+                : VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target);
     }
 
     private static boolean isPointBlankRange(AbstractVillager villager, LivingEntity target) {
@@ -457,11 +505,15 @@ public final class VillagerRangedCombatHelper {
     ) {
         int updatePathDelay = readState(villager).getInt("PathDelay") - 1;
         if (updatePathDelay <= 0) {
-            VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
-            villager.getNavigation().moveTo(target, canRun ? movementSpeed : movementSpeed * 0.5D);
+            if (OBSERVED.get() == null || OBSERVED.get().owner() != villager) {
+                VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
+                villager.getNavigation().moveTo(target, canRun ? movementSpeed : movementSpeed * 0.5D);
+            }
             updatePathDelay = CROSSBOW_PATHFINDING_DELAY_RANGE.sample(villager.getRandom());
         }
         state(villager).putInt("PathDelay", updatePathDelay);
+        var context = OBSERVED.get();
+        if (context != null && context.owner() == villager) context.movement().accept(canRun ? movementSpeed : movementSpeed * 0.5D);
     }
 
     private static boolean fireCrossbowLikePillager(AbstractVillager villager, LivingEntity target, ServerLevel level) {

@@ -37,6 +37,8 @@ final class SettlementHuntingCombat {
             while (at <= now && target.isAlive() && owner.isAlive()) {
                 if (!HuntingWorker.isEligibleTarget(owner, target, HiredHuntingTargets.fromState(worker.settings()))) break;
                 worker.huntingTimers(owner, at);
+                SettlementProjectileService.advanceOwned(level, town, worker, owner, target, at);
+                if (!target.isAlive() || !owner.isAlive()) break;
                 var readiness = VillagerRetaliationHandler.prepareObservedMelee(owner, target, terrain, at);
                 if (readiness == VillagerRetaliationHandler.ObservedMelee.OUT_OF_REACH) {
                     var before = owner.saveWithoutId(new CompoundTag());
@@ -52,10 +54,29 @@ final class SettlementHuntingCombat {
                     at++;
                     continue;
                 }
+                if (readiness == VillagerRetaliationHandler.ObservedMelee.RANGED) {
+                    var before = owner.saveWithoutId(new CompoundTag());
+                    double[] movement = {0.0D};
+                    try (var capture = new SettlementProjectileCapture(owner)) {
+                        boolean handled = com.jvn.villagerretaliation.combat.VillagerRangedCombatHelper.attackObserved(
+                                owner, target, terrain, speed -> movement[0] = speed);
+                        if (!handled) movement[0] = VillagerRetaliationHandler.observedMeleeMovementSpeed(owner, target);
+                        for (var projectile : capture.projectiles()) SettlementProjectileService.launched(town, worker, projectile, at);
+                    }
+                    if (movement[0] > 0.0D) pursuit.step(owner, target, movement[0]);
+                    else pursuit.coast(owner);
+                    worker.huntingEngaged(target.getUUID());
+                    worker.huntingMoved(owner, before, at);
+                    var care = town.residents().get(worker.id());
+                    if (care != null) care.combat(owner);
+                    worker.status("attacking_hunting_target");
+                    at++;
+                    continue;
+                }
                 if (readiness != VillagerRetaliationHandler.ObservedMelee.READY) {
                     worker.status(switch (readiness) {
                         case RETREAT -> "avoiding_hunting_target";
-                        case RANGED -> "waiting_for_ranged_hunting";
+                        case RANGED -> "attacking_hunting_target";
                         case BLOCKING -> "blocking_hunting_target";
                         case OUT_OF_REACH -> "tracking_hunting_target";
                         default -> "hunting_combat_unavailable";
@@ -114,7 +135,7 @@ final class SettlementHuntingCombat {
         }
     }
 
-    private static boolean outcome(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,
+    static boolean outcome(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,
                                     Villager owner, LivingEntity victim, BlockPos nativePosition,
                                     SettlementDeathCapture capture, long now) {
         boolean killed = !victim.isAlive() && capture.accepted();

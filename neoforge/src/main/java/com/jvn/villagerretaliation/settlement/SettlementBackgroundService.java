@@ -101,6 +101,7 @@ public final class SettlementBackgroundService {
                 SettlementBackgroundCrafting.tick(level, town, worker, elapsed, multiplier);
             }
         }
+        SettlementProjectileService.update(level, town, now);
         if (!town.workers().isEmpty()) {
             town.changed();
         }

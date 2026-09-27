@@ -65,7 +65,8 @@ public final class HiredRangedAmmo {
 
     public static boolean hasAmmoForEquippedWeapon(HiredWorkContext context, Villager villager) {
         ItemStack weapon = ammoCheckedWeapon(context, villager);
-        return !isWeaponRequiringAmmo(weapon) || hasAmmo(context);
+        return !isWeaponRequiringAmmo(weapon) || (villager == null
+                ? hasAmmo(context) || CrossbowItem.isCharged(weapon) : canUseRangedAttack(villager, weapon));
     }
 
     public static boolean requiresAmmo(AbstractVillager villager, ItemStack weapon) {
@@ -77,7 +78,8 @@ public final class HiredRangedAmmo {
         if (!requiresAmmo(villager, weapon)) {
             return true;
         }
-        if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(weapon) && CrossbowItem.isCharged(weapon)) {
+        if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(weapon) && (CrossbowItem.isCharged(weapon)
+                || com.jvn.villagerretaliation.combat.VillagerRangedCombatHelper.hasReservedCrossbowAmmunition(villager, weapon))) {
             return true;
         }
         return villager instanceof Villager regular && hasAmmo(regular);
@@ -122,7 +124,7 @@ public final class HiredRangedAmmo {
         if (!isWeaponRequiringAmmo(weapon)) {
             return null;
         }
-        if (hasAmmo(context)) {
+        if (hasAmmo(context) || canUseRangedAttack(villager, weapon)) {
             HiredWorkerBrain.clearFailure(context);
             return null;
         }

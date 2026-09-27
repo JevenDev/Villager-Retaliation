@@ -2549,6 +2549,7 @@
   "villagerretaliation.gui.settlement.work.blocking_hunting_target": "Blocking an attack",
   "villagerretaliation.gui.settlement.work.hunting_combat_unavailable": "Unable to engage a hunting target",
   "villagerretaliation.gui.settlement.work.hunting_visibility_unobserved": "No clear view of the hunting target",
+  "villagerretaliation.gui.settlement.work.hunting_projectile_needs_world": "Projectile needs loaded surroundings",
   "villagerretaliation.gui.settlement.work.attacking_hunting_target": "Attacking a hunting target",
   "villagerretaliation.gui.settlement.work.killed_hunting_target": "Defeated a hunting target",
   "villagerretaliation.gui.settlement.work.missing_hunting_weapon": "Needs a hunting weapon",

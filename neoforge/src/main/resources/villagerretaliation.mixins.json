@@ -4,6 +4,10 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AbstractArrowAccessor",
+    "ProjectileCombatAccessor",
+    "ProjectileObservedTerrainMixin",
+    "ArrowObservedTerrainMixin",
+    "SettlementProjectileSpawnMixin",
     "AcquireSettlementHomeMixin",
     "AbstractContainerMenuDuelMixin",
     "AbstractContainerMenuAccessor",

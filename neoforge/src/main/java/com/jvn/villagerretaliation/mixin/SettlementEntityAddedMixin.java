@@ -14,5 +14,8 @@ public abstract class SettlementEntityAddedMixin {
     @Inject(method = "addEntityWithoutEvent", at = @At("RETURN"), remap = false)
     private void villagerretaliation$observeAcceptedExperience(EntityAccess entity, boolean loaded, CallbackInfoReturnable<Boolean> callback) {
         if (callback.getReturnValueZ() && entity instanceof ExperienceOrb orb) SettlementGroundExperienceService.onChanged(orb);
+        if (callback.getReturnValueZ() && entity instanceof net.minecraft.world.entity.projectile.Projectile projectile) {
+            com.jvn.villagerretaliation.settlement.SettlementProjectileService.onAdded(projectile);
+        }
     }
 }

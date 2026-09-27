@@ -2368,9 +2368,11 @@ public final class PartyGameTests {
                     }
                 })
                 .thenWaitUntil(() -> {
-                    level.tickNonPassenger(villager);
-                    VillagerRangedCombatHelper.tryDuelAttack(
-                            villager, target, level, villager.distanceToSqr(target));
+                    if (!crossbowShotObserved(level, villager, target)) {
+                        level.tickNonPassenger(villager);
+                        VillagerRangedCombatHelper.tryDuelAttack(
+                                villager, target, level, villager.distanceToSqr(target));
+                    }
                     helper.assertTrue(
                             crossbowShotObserved(level, villager, target),
                             "ranged party villager has not completed the crossbow load-and-fire cycle: "

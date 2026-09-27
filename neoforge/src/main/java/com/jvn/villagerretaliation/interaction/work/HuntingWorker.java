@@ -85,7 +85,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return;
         }
 
-        if (!hasHuntingWeaponReadyForTarget(context)) {
+        if (!hasHuntingWeaponReadyForTarget(villager, context)) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, context.workCenter());
             return;
         }
@@ -484,8 +484,8 @@ public final class HuntingWorker extends AbstractBlockWorker {
         return isHuntingWeapon(context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT));
     }
 
-    private static boolean hasHuntingWeaponReadyForTarget(HiredWorkContext context) {
-        return hasCarriedHuntingWeapon(context) && HiredRangedAmmo.hasAmmoForEquippedWeapon(context);
+    private static boolean hasHuntingWeaponReadyForTarget(Villager villager, HiredWorkContext context) {
+        return hasCarriedHuntingWeapon(context) && HiredRangedAmmo.hasAmmoForEquippedWeapon(context, villager);
     }
 
     public static boolean isHuntingWeapon(ItemStack stack) {

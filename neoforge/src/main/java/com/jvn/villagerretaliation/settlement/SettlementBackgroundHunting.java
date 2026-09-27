@@ -63,7 +63,8 @@ final class SettlementBackgroundHunting {
                 });
                 return;
             }
-            if (HiredRangedAmmo.isWeaponRequiringAmmo(weapon) && inventory.findSupply(HiredRangedAmmo::isAmmo).isEmpty()) {
+            if (HiredRangedAmmo.isWeaponRequiringAmmo(weapon)
+                    && !HiredRangedAmmo.canUseRangedAttack(owner, weapon)) {
                 if (inventory.promoteOutputToSupply(HiredRangedAmmo::isAmmo, 64) > 0) {
                     worker.status("restocked_hunting_ammo");
                     return;

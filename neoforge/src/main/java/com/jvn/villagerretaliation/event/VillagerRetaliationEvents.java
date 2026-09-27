@@ -419,6 +419,11 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         Entity entity = event.getEntity();
+        if (entity instanceof net.minecraft.world.entity.projectile.Projectile projectile
+                && !com.jvn.villagerretaliation.settlement.SettlementProjectileService.onActive(projectile)) {
+            event.setCanceled(true);
+            return;
+        }
         if (entity instanceof net.minecraft.world.entity.ExperienceOrb orb
                 && !com.jvn.villagerretaliation.settlement.SettlementGroundExperienceService.onActive(orb)) {
             event.setCanceled(true);
@@ -471,6 +476,9 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
         Entity entity = event.getEntity();
+        if (entity instanceof net.minecraft.world.entity.projectile.Projectile projectile) {
+            com.jvn.villagerretaliation.settlement.SettlementProjectileService.onChanged(projectile);
+        }
         if (entity instanceof ServerPlayer player) {
             VillagerReputationAdvancements.onPlayerTick(player);
             VillagerRecruitmentService.onPlayerTick(player);
@@ -544,6 +552,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof net.minecraft.world.entity.projectile.Projectile projectile
+                && !com.jvn.villagerretaliation.settlement.SettlementProjectileService.onActive(projectile)) {
+            event.setCanceled(true);
+            return;
+        }
         if (event.getEntity() instanceof net.minecraft.world.entity.ExperienceOrb orb
                 && !com.jvn.villagerretaliation.settlement.SettlementGroundExperienceService.onJoined(orb)) {
             event.setCanceled(true);
@@ -989,6 +1002,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (event.getEntity() instanceof net.minecraft.world.entity.projectile.Projectile projectile) {
+            com.jvn.villagerretaliation.settlement.SettlementProjectileService.onUnloaded(projectile);
+        }
         if (event.getEntity() instanceof LivingEntity living) {
             com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.onUnloaded(living);
         }
