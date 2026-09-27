@@ -16,16 +16,19 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 final class SettlementBackgroundFarming {
+    private static final String DEPOSIT_BATCH = "SettlementFarmingDepositBatch";
+
     private SettlementBackgroundFarming() {
     }
 
     static void tick(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, int elapsed, double multiplier) {
         var depots = SettlementStock.depots(town).stream().filter(SettlementDepot::rulesObserved).toList();
-        if ((!worker.settings().contains("AutoDepositOutputs") || worker.settings().getBoolean("AutoDepositOutputs"))
-                && SettlementBackgroundHauling.depositCarried(level, town, worker, elapsed, multiplier, depots, false)) {
-            return;
-        }
+        boolean autoDeposit = !worker.settings().contains("AutoDepositOutputs") || worker.settings().getBoolean("AutoDepositOutputs");
         var carried = worker.items(level.registryAccess());
+        boolean fullStack = worker.outputSlots().stream().map(carried::get)
+                .anyMatch(stack -> !stack.isEmpty() && stack.getCount() >= stack.getMaxStackSize());
+        if (autoDeposit && (fullStack || worker.settings().getBoolean(DEPOSIT_BATCH))
+                && depositBatch(level, town, worker, elapsed, multiplier, depots)) return;
         if (!FarmerHoeRequirement.isHoe(carried.get(HiredJobInventory.MAINHAND_SLOT))) {
             equipHoe(level, worker, carried, depots, elapsed, multiplier);
             return;
@@ -103,6 +106,7 @@ final class SettlementBackgroundFarming {
                 continue;
             }
             if (!storeDrops(worker, updated, drops)) {
+                if (autoDeposit && depositBatch(level, town, worker, elapsed, multiplier, depots)) return;
                 worker.status("output_full");
                 return;
             }
@@ -122,7 +126,16 @@ final class SettlementBackgroundFarming {
             worker.status(harvest ? "harvested" : "planted");
             return;
         }
+        if (autoDeposit && depositBatch(level, town, worker, elapsed, multiplier, depots)) return;
         worker.status(plots.isEmpty() ? "no_observed_field" : "waiting_for_crops");
+    }
+
+    private static boolean depositBatch(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,
+                                        int elapsed, double multiplier, List<SettlementDepot> depots) {
+        worker.settings().putBoolean(DEPOSIT_BATCH, true);
+        if (SettlementBackgroundHauling.depositCarried(level, town, worker, elapsed, multiplier, depots, false)) return true;
+        worker.settings().remove(DEPOSIT_BATCH);
+        return false;
     }
 
     private static int priority(SettlementFieldPlot plot) {

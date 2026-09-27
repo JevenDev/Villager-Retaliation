@@ -55,6 +55,33 @@ public final class SettlementFarmingGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
+    public static void backgroundFarmersBatchHarvestsAndResumeDeliveryAfterSaving(GameTestHelper helper) {
+        fixture(helper, fixture -> {
+            var level = helper.getLevel();
+            var worker = fixture.worker();
+            var items = worker.items(level.registryAccess());
+            items.set(worker.outputSlots().getFirst(), new ItemStack(Items.WHEAT, 8));
+            worker.updateInventory(level.registryAccess(), items);
+            fixture.supply().setItem(0, new ItemStack(Items.WHEAT_SEEDS));
+            SettlementBackgroundFarming.tick(level, fixture.town(), worker, 200, 1.0D);
+            helper.assertValueEqual(carried(helper, fixture, Items.WHEAT), 9, "a partial batch keeps harvesting instead of taking another round trip");
+            helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.WHEAT)), 0, "ongoing field work does not deliver every crop separately");
+            items = worker.items(level.registryAccess());
+            for (int slot : worker.outputSlots()) items.set(slot, ItemStack.EMPTY);
+            items.set(worker.outputSlots().getFirst(), new ItemStack(Items.WHEAT, 64));
+            worker.updateInventory(level.registryAccess(), items);
+            worker.spend(worker.progress());
+            SettlementBackgroundFarming.tick(level, fixture.town(), worker, 10, 1.0D);
+            helper.assertValueEqual(worker.status(), "hauling", "a full stack starts a real paid delivery");
+            var restored = SettlementWorkerState.load(worker.save());
+            SettlementBackgroundFarming.tick(level, fixture.town(), restored, 200, 1.0D);
+            helper.assertValueEqual(fixture.output().count(stack -> stack.is(Items.WHEAT)), 64, "the saved delivery transfers the original batch");
+            helper.assertValueEqual(restored.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.WHEAT))
+                    .mapToInt(ItemStack::getCount).sum(), 0, "delivery preserves the item count across saving");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_farming")
     public static void fieldAndChunkReceiptsSurviveSavingAndDoNotReplayAPlanting(GameTestHelper helper) {
         fixture(helper, fixture -> {
             var level = helper.getLevel();
@@ -534,7 +561,12 @@ public final class SettlementFarmingGameTests {
                     Blocks.AIR.defaultBlockState(), Blocks.AIR.defaultBlockState());
             fixture.worker().settings().putBoolean(HiredFarmingOptions.TILL_SOIL_TAG, false);
             fastGrowth(helper, () -> run(helper, fixture, 200, 2_000));
-            helper.assertTrue(fixture.output().count(stack -> stack.is(Items.PUMPKIN)) >= 2, "the same living stem supplies repeated finite harvests");
+            int harvested = fixture.output().count(stack -> stack.is(Items.PUMPKIN)) + carried(helper, fixture, Items.PUMPKIN);
+            helper.assertTrue(harvested >= 2, "the same living stem supplies repeated finite harvests");
+            for (int tick = 0; tick < 10; tick++) SettlementBackgroundFarming.tick(level, fixture.town(), fixture.worker(), 200, 1.0D);
+            helper.assertTrue(fixture.output().count(stack -> stack.is(Items.PUMPKIN)) >= harvested,
+                    "the farmer delivers the partial batch when no further fruit has grown");
+            helper.assertValueEqual(carried(helper, fixture, Items.PUMPKIN), 0, "delivery clears the harvested batch without losing fruit");
             helper.assertTrue(SettlementFarmPlants.stem(stem.crop()) || SettlementFarmPlants.attachedStem(stem.crop()),
                     "fruit harvesting never removes its source stem");
             helper.assertTrue(stem.reconcile(fixture.chunk()) && fruit.reconcile(fixture.chunk()), "stem and fruit changes both reach their original chunk");
