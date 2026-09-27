@@ -49,6 +49,7 @@ public final class SettlementPopulationService {
                     }
                 }
                 provideFamilyFood(level, town);
+                SettlementFamilyService.update(level, town, now);
                 if (now >= town.nextApplicantAt() && canGrow(level, town)
                         && town.applicants().size() < SettlementRecord.MAX_APPLICANTS) {
                     propose(level, town);
@@ -176,7 +177,7 @@ public final class SettlementPopulationService {
     }
 
     static Villager familyContext(ServerLevel level, SettlementRecord town, SettlementResidentState care) {
-        if (care == null || !care.canDepart() || care.age() != 0 || town.departures().containsKey(care.id())) return null;
+        if (care == null || !care.safeForFamily() || care.age() != 0 || town.departures().containsKey(care.id())) return null;
         var resident = care.context(level);
         if (resident == null) return null;
         var area = town.areas().get(town.duties().get(care.id()));

@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 final class SettlementTerrainObservations {
     private final SettlementBuildingSurvey.ObservedBlocks blocks;
     private final SettlementConstructionObservations construction;
+    private final Map<BlockPos, SettlementNavigationSection> navigation;
     private final Map<BlockPos, List<SettlementTerrainSection>> sections = new HashMap<>();
     private final Map<BlockPos, SettlementFieldPlot> plots = new HashMap<>();
     private final Set<Long> chunks = new HashSet<>();
@@ -20,7 +21,9 @@ final class SettlementTerrainObservations {
     SettlementTerrainObservations(SettlementRecord town, SettlementBuildingSurvey.ObservedBlocks blocks) {
         this.blocks = blocks;
         this.construction = new SettlementConstructionObservations(town, blocks);
+        this.navigation = town != null && town.dimension().equals(blocks.level().dimension().location()) ? town.navigation() : Map.of();
         if (town == null || !town.dimension().equals(blocks.level().dimension().location())) return;
+        this.navigation.keySet().forEach(origin -> this.chunks.add(ChunkPos.asLong(origin)));
         for (var forest : town.forests().values()) {
             var area = town.areas().get(forest.area());
             if (forest.pending() || area != null && forest.matches(area)) {
@@ -84,7 +87,10 @@ final class SettlementTerrainObservations {
                 if (state != null) combined.accept(state, plot.changedFrom(position), plot.conflict());
             }
         }
-        return combined.result();
+        var result = combined.result();
+        if (result.state() != null || result.blocked()) return result;
+        var observed = this.navigation.get(SettlementTerrainSection.sectionOrigin(position));
+        return observed == null ? result : new Observation(observed.state(position), false);
     }
 
     private record Observation(BlockState state, boolean blocked) {

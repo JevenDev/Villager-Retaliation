@@ -39,7 +39,7 @@ final class SettlementArrivalService {
     static boolean materialize(ServerLevel level, SettlementRecord town, UUID id) {
         var arrival = town.arrivals().get(id);
         if (arrival == null || !town.dimension().equals(level.dimension().location())) return false;
-        var center = new ChunkPos(town.center());
+        var center = new ChunkPos(arrival.origin(town));
         var chunk = level.getChunkSource().getChunkNow(center.x, center.z);
         if (chunk == null) return false;
         String key = "Arrival:" + town.id().value() + ":" + id;
@@ -70,18 +70,20 @@ final class SettlementArrivalService {
         } else {
             care.restore(resident);
         }
-        var position = arrivalPosition(level, town, resident);
+        var position = arrivalPosition(level, arrival.origin(town), resident);
         if (position.isEmpty()) return false;
         resident.setPos(Vec3.atBottomCenterOf(position.get()));
         if (!level.addFreshEntity(resident)) return false;
         SettlementChunkReceipts.applied(chunk, key, id, 1L);
         town.removeArrival(id);
+        SettlementHousingService.reconcile(resident);
+        if (care != null) care.remember(resident);
         return true;
     }
 
-    private static Optional<BlockPos> arrivalPosition(ServerLevel level, SettlementRecord town, Villager resident) {
+    private static Optional<BlockPos> arrivalPosition(ServerLevel level, BlockPos origin, Villager resident) {
         for (BlockPos offset : BlockPos.betweenClosed(-4, -2, -4, 4, 3, 4)) {
-            BlockPos pos = town.center().offset(offset);
+            BlockPos pos = origin.offset(offset);
             if (!level.hasChunkAt(pos) || !level.areEntitiesLoaded(ChunkPos.asLong(pos))
                     || level.isOutsideBuildHeight(pos.below()) || level.isOutsideBuildHeight(pos.above())
                     || !level.getWorldBorder().isWithinBounds(pos)

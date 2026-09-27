@@ -38,6 +38,8 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementArrival> arrivals = new LinkedHashMap<>();
     private final Map<UUID, SettlementResidentState> residents = new LinkedHashMap<>();
     private final Map<UUID, SettlementHome> homes = new LinkedHashMap<>();
+    private final Map<UUID, SettlementCourtship> courtships = new LinkedHashMap<>();
+    private final Map<BlockPos, SettlementNavigationSection> navigation = new LinkedHashMap<>();
     private final Map<UUID, SettlementHomeRelease> homeReleases = new LinkedHashMap<>();
     private final Map<UUID, SettlementDeparture> departures = new LinkedHashMap<>();
     private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
@@ -239,12 +241,43 @@ public final class SettlementRecord {
     void removeResident(UUID resident) {
         boolean removed = this.residents.remove(resident) != null;
         removed |= this.homes.remove(resident) != null;
+        removed |= this.courtships.values().removeIf(attempt -> attempt.involves(resident));
         if (!this.departures.containsKey(resident) && this.arrivals.remove(resident) != null) {
             removed = true;
         }
         if (removed) {
             changed();
         }
+    }
+
+    Map<UUID, SettlementCourtship> courtships() {
+        return Collections.unmodifiableMap(this.courtships);
+    }
+
+    void recordCourtship(SettlementCourtship attempt) {
+        if (this.courtships.values().stream().anyMatch(existing -> !existing.first().equals(attempt.first())
+                && (existing.involves(attempt.first()) || existing.involves(attempt.second()) || existing.bed().equals(attempt.bed())))) {
+            throw new IllegalArgumentException("Courtship duplicates an occupied parent or bed");
+        }
+        this.courtships.put(attempt.first(), attempt);
+        changed();
+    }
+
+    void removeCourtship(UUID resident) {
+        if (this.courtships.values().removeIf(attempt -> attempt.involves(resident))) changed();
+    }
+
+    Map<BlockPos, SettlementNavigationSection> navigation() {
+        return Collections.unmodifiableMap(this.navigation);
+    }
+
+    void retainNavigation(Set<BlockPos> wanted) {
+        if (this.navigation.keySet().retainAll(wanted)) changed();
+    }
+
+    void recordNavigation(SettlementNavigationSection section) {
+        this.navigation.put(section.origin(), section);
+        changed();
     }
 
     public Map<UUID, SettlementHome> homes() {
@@ -687,6 +720,12 @@ public final class SettlementRecord {
         var homeTags = new ListTag();
         this.homes.values().forEach(home -> homeTags.add(home.save()));
         tag.put("Homes", homeTags);
+        var courtshipTags = new ListTag();
+        this.courtships.values().forEach(attempt -> courtshipTags.add(attempt.save()));
+        tag.put("Courtships", courtshipTags);
+        var navigationTags = new ListTag();
+        this.navigation.values().forEach(section -> navigationTags.add(section.save()));
+        tag.put("Navigation", navigationTags);
         var homeReleaseTags = new ListTag();
         this.homeReleases.values().forEach(release -> homeReleaseTags.add(release.save()));
         tag.put("HomeReleases", homeReleaseTags);
@@ -748,6 +787,22 @@ public final class SettlementRecord {
             var resident = SettlementResidentState.load((CompoundTag) raw);
             if (record.residents.putIfAbsent(resident.id(), resident) != null) {
                 throw new IllegalArgumentException("Resident care duplicates an identity");
+            }
+        }
+        var occupiedParents = new java.util.HashSet<UUID>();
+        var courtshipBeds = new java.util.HashSet<BlockPos>();
+        for (var raw : tag.getList("Courtships", Tag.TAG_COMPOUND)) {
+            var attempt = SettlementCourtship.load((CompoundTag) raw);
+            if (!record.residents.containsKey(attempt.first()) || !record.residents.containsKey(attempt.second())
+                    || !occupiedParents.add(attempt.first()) || !occupiedParents.add(attempt.second()) || !courtshipBeds.add(attempt.bed())) {
+                throw new IllegalArgumentException("Courtship has missing or duplicate parents or bed");
+            }
+            record.courtships.put(attempt.first(), attempt);
+        }
+        for (var raw : tag.getList("Navigation", Tag.TAG_COMPOUND)) {
+            var section = SettlementNavigationSection.load((CompoundTag) raw);
+            if (record.navigation.putIfAbsent(section.origin(), section) != null) {
+                throw new IllegalArgumentException("Navigation observations duplicate a section");
             }
         }
         var claimedBeds = new java.util.HashSet<BlockPos>();

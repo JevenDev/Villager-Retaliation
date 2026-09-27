@@ -43,6 +43,7 @@ public final class SettlementResidentState {
     private boolean present;
     private boolean downed;
     private boolean personalCommitment;
+    private boolean familyUnsafe;
     private CompoundTag entityContext = new CompoundTag();
     private SettlementFamilyInventory familyInventory;
 
@@ -94,6 +95,10 @@ public final class SettlementResidentState {
         return this.present && !this.downed && !this.personalCommitment;
     }
 
+    boolean safeForFamily() {
+        return canDepart() && !this.familyUnsafe;
+    }
+
     public double workMultiplier() {
         return this.food <= 0 ? 0.4D : this.food < 6 ? 0.7D : 1.0D;
     }
@@ -126,6 +131,8 @@ public final class SettlementResidentState {
                 && Math.abs(villager.getZ() - town.center().getZ()) <= radius;
         this.downed = VillagerDownedService.isDowned(villager);
         this.personalCommitment = SettlementWorkforceService.hasPersonalCommitment(villager);
+        this.familyUnsafe = villager.getTarget() != null || villager.getLastHurtByMob() != null || villager.isOnFire() || villager.isInLava()
+                || com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil.hasVanillaFleeState((ServerLevel) villager.level(), villager.getBrain());
         rememberFamily(villager);
     }
 
@@ -139,6 +146,15 @@ public final class SettlementResidentState {
         if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident context has a different identity");
         this.familyInventory = SettlementFamilyInventory.capture(villager, this.familyInventory);
         this.entityContext = villager.saveWithoutId(new CompoundTag());
+    }
+
+    void completeFamilyAttempt(Villager villager) {
+        rememberFamily(villager);
+        if (this.age != villager.getAge()) {
+            this.age = villager.getAge();
+            this.version++;
+            villager.getPersistentData().putLong(VERSION_TAG, this.version);
+        }
     }
 
     Villager context(ServerLevel level) {
@@ -313,6 +329,7 @@ public final class SettlementResidentState {
         tag.putBoolean("Present", this.present);
         tag.putBoolean("Downed", this.downed);
         tag.putBoolean("PersonalCommitment", this.personalCommitment);
+        tag.putBoolean("FamilyUnsafe", this.familyUnsafe);
         if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
         if (this.familyInventory != null) tag.put("FamilyInventory", this.familyInventory.save());
         return tag;
@@ -339,6 +356,7 @@ public final class SettlementResidentState {
         state.present = tag.getBoolean("Present");
         state.downed = tag.getBoolean("Downed");
         state.personalCommitment = tag.getBoolean("PersonalCommitment");
+        state.familyUnsafe = tag.getBoolean("FamilyUnsafe");
         state.entityContext = tag.getCompound("EntityContext").copy();
         if (tag.contains("FamilyInventory")) state.familyInventory = SettlementFamilyInventory.load(tag.getCompound("FamilyInventory"));
         if (!state.entityContext.isEmpty() && (!state.entityContext.hasUUID("UUID") || !state.id.equals(state.entityContext.getUUID("UUID")))) {

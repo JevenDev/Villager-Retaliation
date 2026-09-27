@@ -74,7 +74,8 @@ public final class SettlementCareService {
         if (town == null) {
             return;
         }
-        SettlementHousingService.reconcile(villager);
+        town.removeCourtship(villager.getUUID());
+        if (!town.arrivals().containsKey(villager.getUUID())) SettlementHousingService.reconcile(villager);
         SettlementResidentState state = town.residents().get(villager.getUUID());
         if (state != null) {
             state.restore(villager);
