@@ -47,6 +47,7 @@
     "VillagerGossipMixin",
     "VillagerJobInventoryMixin",
     "VillagerMakeLoveMixin",
+    "VillagerFamilyAccessor",
     "VillagerBrainTickMixin",
     "VillagerPickupMixin",
     "VillagerPanicTriggerMixin",

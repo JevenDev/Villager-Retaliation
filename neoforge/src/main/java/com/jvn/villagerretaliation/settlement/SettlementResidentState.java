@@ -44,6 +44,7 @@ public final class SettlementResidentState {
     private boolean downed;
     private boolean personalCommitment;
     private CompoundTag entityContext = new CompoundTag();
+    private SettlementFamilyInventory familyInventory;
 
     private SettlementResidentState(UUID id) {
         this.id = id;
@@ -104,6 +105,7 @@ public final class SettlementResidentState {
     }
 
     void observe(Villager villager, SettlementRecord town, long now) {
+        if (this.familyInventory != null) this.familyInventory.restore(villager);
         var snapshot = VillagerRecoveryService.captureRecoveryState(villager);
         this.position = villager.blockPosition().immutable();
         this.checkedAt = now;
@@ -124,11 +126,18 @@ public final class SettlementResidentState {
                 && Math.abs(villager.getZ() - town.center().getZ()) <= radius;
         this.downed = VillagerDownedService.isDowned(villager);
         this.personalCommitment = SettlementWorkforceService.hasPersonalCommitment(villager);
-        remember(villager);
+        rememberFamily(villager);
     }
 
     void remember(Villager villager) {
         if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident context has a different identity");
+        if (this.familyInventory != null) this.familyInventory.restore(villager);
+        rememberFamily(villager);
+    }
+
+    void rememberFamily(Villager villager) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident context has a different identity");
+        this.familyInventory = SettlementFamilyInventory.capture(villager, this.familyInventory);
         this.entityContext = villager.saveWithoutId(new CompoundTag());
     }
 
@@ -137,8 +146,14 @@ public final class SettlementResidentState {
         var villager = EntityType.VILLAGER.create(level);
         if (villager == null) return null;
         villager.load(this.entityContext.copy());
-        restore(villager);
+        restoreContext(villager);
         return villager;
+    }
+
+    void restoreContext(Villager villager) {
+        if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident context has a different identity");
+        if (this.familyInventory != null) this.familyInventory.copyTo(villager);
+        restore(villager);
     }
 
     List<HiredVillagerRole> availableRoles(ServerLevel level) {
@@ -153,8 +168,9 @@ public final class SettlementResidentState {
     }
 
     boolean restore(Villager villager) {
+        boolean familyRestored = this.familyInventory != null && this.familyInventory.restore(villager);
         if (villager.getPersistentData().getLong(VERSION_TAG) >= this.version) {
-            return false;
+            return familyRestored;
         }
         VillagerRecoveryService.restoreRecoveryState(villager,
                 new VillagerRecoveryService.RecoverySnapshot(this.food, this.saturation, this.exhaustion, this.healTimer));
@@ -298,6 +314,7 @@ public final class SettlementResidentState {
         tag.putBoolean("Downed", this.downed);
         tag.putBoolean("PersonalCommitment", this.personalCommitment);
         if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
+        if (this.familyInventory != null) tag.put("FamilyInventory", this.familyInventory.save());
         return tag;
     }
 
@@ -323,6 +340,7 @@ public final class SettlementResidentState {
         state.downed = tag.getBoolean("Downed");
         state.personalCommitment = tag.getBoolean("PersonalCommitment");
         state.entityContext = tag.getCompound("EntityContext").copy();
+        if (tag.contains("FamilyInventory")) state.familyInventory = SettlementFamilyInventory.load(tag.getCompound("FamilyInventory"));
         if (!state.entityContext.isEmpty() && (!state.entityContext.hasUUID("UUID") || !state.id.equals(state.entityContext.getUUID("UUID")))) {
             throw new IllegalArgumentException("Resident context has a different identity");
         }

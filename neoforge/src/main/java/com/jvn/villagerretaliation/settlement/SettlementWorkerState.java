@@ -209,7 +209,7 @@ public final class SettlementWorkerState {
         owner.load(this.entityContext.copy());
         HiredJobInventory.getJobInventory(owner).restoreSnapshot(this.inventory);
         var care = town.residents().get(this.id);
-        if (care != null) care.restore(owner);
+        if (care != null) care.restoreContext(owner);
         return owner;
     }
 

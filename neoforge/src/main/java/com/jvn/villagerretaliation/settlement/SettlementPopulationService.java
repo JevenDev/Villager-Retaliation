@@ -48,11 +48,7 @@ public final class SettlementPopulationService {
                         town.removeApplicant(applicant.id());
                     }
                 }
-                for (var member : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), now)) {
-                    if (level.getEntity(member.id()) instanceof Villager resident) {
-                        provideFamilyFood(level, town, resident);
-                    }
-                }
+                provideFamilyFood(level, town);
                 if (now >= town.nextApplicantAt() && canGrow(level, town)
                         && town.applicants().size() < SettlementRecord.MAX_APPLICANTS) {
                     propose(level, town);
@@ -160,16 +156,53 @@ public final class SettlementPopulationService {
         return true;
     }
 
+    static void provideFamilyFood(ServerLevel level, SettlementRecord town) {
+        for (var member : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime())) {
+            net.minecraft.world.entity.Entity existing = null;
+            for (var dimension : level.getServer().getAllLevels()) {
+                existing = dimension.getEntity(member.id());
+                if (existing != null) break;
+            }
+            if (existing != null && (!(existing instanceof Villager) || !existing.isAlive() || existing.level() != level
+                    || VillageAllegianceApi.canonicalPrimary(level, existing).filter(town.id()::equals).isEmpty())) continue;
+            if (existing instanceof Villager resident && level.isPositionEntityTicking(resident.blockPosition())) {
+                provideFamilyFood(level, town, resident);
+                continue;
+            }
+            var care = town.residents().get(member.id());
+            var resident = familyContext(level, town, care);
+            if (resident != null) provideFamilyFood(level, town, resident);
+        }
+    }
+
+    static Villager familyContext(ServerLevel level, SettlementRecord town, SettlementResidentState care) {
+        if (care == null || !care.canDepart() || care.age() != 0 || town.departures().containsKey(care.id())) return null;
+        var resident = care.context(level);
+        if (resident == null) return null;
+        var area = town.areas().get(town.duties().get(care.id()));
+        var worker = town.workers().get(care.id());
+        if (area != null) {
+            var settings = town.workerSettings().get(care.id());
+            boolean enabled = settings == null || settings.enabled();
+            if (settings == null && worker != null && worker.settings().contains("Enabled")) enabled = worker.settings().getBoolean("Enabled");
+            if (worker == null || worker.unsafe() || area.enabled() && enabled
+                    && SettlementWorkforceService.workingHours(level.getDayTime(), care.id(), area.type().role())) return null;
+            com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(resident).putString("WorkerTaskState",
+                    com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState.IDLE.id());
+        }
+        return resident;
+    }
+
     static void provideFamilyFood(ServerLevel level, SettlementRecord town, Villager resident) {
-        if (resident.getAge() != 0 || resident.canBreed() || !canGrow(level, town)
+        var care = town.residents().get(resident.getUUID());
+        if (care != null) care.restore(resident);
+        if (resident.getAge() != 0 || familyFood(resident) >= 12 || !canGrow(level, town)
                 || !com.jvn.villagerretaliation.social.VillagerBreedingPolicy.evaluateParent(level, resident).allowed()) {
             return;
         }
         var inventory = resident.getInventory();
-        int points = 0;
-        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-            points += familyFoodPoints(inventory.getItem(slot)) * inventory.getItem(slot).getCount();
-        }
+        int points = familyFood(resident);
+        boolean changed = false;
         for (SettlementDepot depot : SettlementStock.supplies(town)) {
             for (int slot = 0; slot < depot.getContainerSize() && points < 12; slot++) {
                 ItemStack stock = depot.getItem(slot);
@@ -178,13 +211,27 @@ public final class SettlementPopulationService {
                     ItemStack remainder = inventory.addItem(depot.removeItem(slot, 1));
                     if (!remainder.isEmpty()) {
                         depot.deposit(remainder);
-                        return;
+                        break;
                     }
                     points += value;
+                    changed = true;
                     stock = depot.getItem(slot);
                 }
             }
         }
+        if (changed) {
+            if (care == null) {
+                town.recordResident(SettlementResidentState.capture(resident, town, level.getGameTime()));
+            } else {
+                care.rememberFamily(resident);
+                town.changed();
+            }
+        }
+    }
+
+    static int familyFood(Villager resident) {
+        var access = (com.jvn.villagerretaliation.mixin.VillagerFamilyAccessor) resident;
+        return access.villagerretaliation$getFamilyFood() + access.villagerretaliation$countFamilyFood();
     }
 
     private static int familyFoodPoints(ItemStack stack) {
