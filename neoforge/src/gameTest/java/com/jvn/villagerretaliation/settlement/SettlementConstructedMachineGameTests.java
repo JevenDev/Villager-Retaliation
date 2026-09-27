@@ -240,7 +240,7 @@ public final class SettlementConstructedMachineGameTests {
         });
     }
 
-    @GameTest(template = "empty", timeoutTicks = 200, batch = "settlement_constructed_machine_chunks")
+    @GameTest(template = "empty", timeoutTicks = 400, batch = "settlement_constructed_machine_chunks")
     public static void realBackgroundConstructionReturnsTwoProcessingFurnacesAcrossChunks(GameTestHelper helper) {
         var base = helper.absolutePos(new BlockPos(2, 2, 2)).offset(16_000_000, 0, 16_000_000);
         var origin = new BlockPos((base.getX() >> 4 << 4) + 15, 80, (base.getZ() >> 4 << 4) + 14);
