@@ -36,7 +36,7 @@ final class SettlementBackgroundHunting {
             return true;
         }).sorted(Comparator.comparingInt(SettlementDepot::priority).reversed()
                 .thenComparingInt(depot -> access.get(depot.id())).thenComparing(SettlementDepot::id)).toList();
-        if ((!worker.settings().contains("AutoDepositOutputs") || worker.settings().getBoolean("AutoDepositOutputs"))
+        if (!worker.huntingEngaged() && (!worker.settings().contains("AutoDepositOutputs") || worker.settings().getBoolean("AutoDepositOutputs"))
                 && SettlementBackgroundHauling.depositCarried(level, town, worker, elapsed, multiplier, depots, false)) {
             if (worker.status().equals("storage_full") && depots.stream().noneMatch(depot -> depot.purpose().acceptsOutputs())
                     && allDepots.stream().anyMatch(depot -> depot.purpose().acceptsOutputs())) worker.status("hunting_storage_unreachable");
@@ -54,7 +54,7 @@ final class SettlementBackgroundHunting {
                         allDepots, depots, allowed)) worker.status("hunting_storage_unreachable");
                 return;
             }
-            if (SettlementItemDropService.collect(level, town, worker, owner, inventory, budget, HuntingWorker::isHuntingLoot)) {
+            if (!worker.huntingEngaged() && SettlementItemDropService.collect(level, town, worker, owner, inventory, budget, HuntingWorker::isHuntingLoot)) {
                 worker.status(switch (worker.status()) {
                     case "collected_animal_drops" -> "collected_hunting_loot";
                     case "collecting_animal_drops" -> "collecting_hunting_loot";

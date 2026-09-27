@@ -27,6 +27,7 @@ public final class SettlementWorkerState {
     private final UUID id;
     private UUID area;
     private UUID huntingTarget;
+    private boolean huntingEngaged;
     private long huntingCombatAt;
     private long huntingAttackAt;
     private SettlementHuntingTarget huntingBody;
@@ -58,10 +59,27 @@ public final class SettlementWorkerState {
 
     void huntingTarget(UUID target) {
         this.huntingTarget = target;
+        if (target == null) this.huntingEngaged = false;
+    }
+
+    boolean huntingEngaged() {
+        return this.huntingEngaged;
+    }
+
+    void huntingEngaged(UUID target) {
+        this.huntingTarget = target;
+        this.huntingEngaged = target != null;
     }
 
     void huntingTimers(Villager villager, long now) {
         if (this.huntingBody != null) this.huntingBody.restoreTimers(villager, now);
+    }
+
+    void huntingNativeDamage(Villager villager, long now, boolean ticking) {
+        if (this.huntingBody != null) {
+            this.huntingBody.nativeDamage(villager, now, ticking);
+            this.entityContext = villager.saveWithoutId(new CompoundTag());
+        }
     }
 
     void huntingInjury(Villager villager, CompoundTag before, long now) {
@@ -143,7 +161,10 @@ public final class SettlementWorkerState {
     }
 
     void observe(ServerLevel level, Villager villager, SettlementWorkforceService.Duty duty, long now) {
-        if (!duty.area().id().equals(this.area) || duty.area().type().role() != this.role) this.huntingTarget = null;
+        if (!duty.area().id().equals(this.area) || duty.area().type().role() != this.role) huntingTarget(null);
+        var engagement = SettlementHuntingTargetService.observeEngagement(level, duty, villager);
+        this.huntingEngaged = engagement != null;
+        if (engagement != null) this.huntingTarget = engagement;
         if (this.huntingBody != null) this.huntingBody.observe(villager, now);
         else if (duty.area().type().role() == HiredVillagerRole.HUNTING) this.huntingBody = SettlementHuntingTarget.capture(villager, now);
         this.huntingCombatAt = now;
@@ -170,7 +191,8 @@ public final class SettlementWorkerState {
         this.brewingVersion = Math.max(this.brewingVersion, SettlementBrewingService.version(villager));
         this.checkedAt = now;
         this.progress = 0.0D;
-        this.unsafe = villager.getTarget() != null || villager.getLastHurtByMob() != null
+        this.unsafe = villager.getTarget() != null && engagement == null
+                || villager.getLastHurtByMob() != null && !villager.getLastHurtByMob().getUUID().equals(engagement)
                 || villager.isOnFire() || villager.isInLava()
                 || com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil.hasVanillaFleeState(level, villager.getBrain());
         this.status = this.unsafe ? "unsafe" : "active";
@@ -325,6 +347,7 @@ public final class SettlementWorkerState {
         tag.putUUID("Id", this.id);
         tag.putUUID("Area", this.area);
         if (this.huntingTarget != null) tag.putUUID("HuntingTarget", this.huntingTarget);
+        tag.putBoolean("HuntingEngaged", this.huntingEngaged);
         tag.putLong("HuntingCombatAt", this.huntingCombatAt);
         tag.putLong("HuntingAttackAt", this.huntingAttackAt);
         if (this.huntingBody != null) tag.put("HuntingBody", this.huntingBody.save());
@@ -351,6 +374,7 @@ public final class SettlementWorkerState {
         var state = new SettlementWorkerState(tag.getUUID("Id"));
         state.area = tag.getUUID("Area");
         state.huntingTarget = tag.hasUUID("HuntingTarget") ? tag.getUUID("HuntingTarget") : null;
+        state.huntingEngaged = state.huntingTarget != null && tag.getBoolean("HuntingEngaged");
         state.huntingCombatAt = tag.contains("HuntingCombatAt") ? tag.getLong("HuntingCombatAt") : tag.getLong("CheckedAt");
         state.huntingAttackAt = Math.max(0L, tag.getLong("HuntingAttackAt"));
         state.huntingBody = tag.contains("HuntingBody", Tag.TAG_COMPOUND) ? SettlementHuntingTarget.load(tag.getCompound("HuntingBody")) : null;

@@ -230,8 +230,29 @@ public final class HuntingWorker extends AbstractBlockWorker {
         return com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.requestedNativeTarget(villager,
                         target -> isEligibleTarget(villager, target, context, targets))
                 .or(() -> findNearestTarget(level, villager, context, targets))
-                .filter(target -> VillagerRetaliationHandler.engageCustomTarget(villager, target, false))
-                .isPresent();
+                .filter(target -> {
+                    if (!VillagerRetaliationHandler.engageCustomTarget(villager, target, false)) return false;
+                    state.putUUID(ACTIVE_TARGET_ID_TAG, target.getUUID());
+                    return true;
+                }).isPresent();
+    }
+
+    public static Optional<LivingEntity> activeTarget(Villager villager) {
+        return activeTarget(villager, id -> null);
+    }
+
+    public static Optional<LivingEntity> activeTarget(Villager villager, java.util.function.Function<UUID, LivingEntity> unloaded) {
+        var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager);
+        if (!state.hasUUID(ACTIVE_TARGET_ID_TAG)) return Optional.empty();
+        var target = villager.getTarget();
+        if (target == null && villager.level() instanceof ServerLevel level) {
+            var existing = level.getEntity(state.getUUID(ACTIVE_TARGET_ID_TAG));
+            if (existing != null && !(existing instanceof LivingEntity)) return Optional.empty();
+            target = existing instanceof LivingEntity living ? living : unloaded.apply(state.getUUID(ACTIVE_TARGET_ID_TAG));
+        }
+        return target != null
+                && state.getUUID(ACTIVE_TARGET_ID_TAG).equals(target.getUUID())
+                && VillagerRetaliationHandler.hasRetaliationTarget(villager, target) ? Optional.of(target) : Optional.empty();
     }
 
     private static Optional<LivingEntity> findNearestTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredHuntingTargets.Selection targets) {

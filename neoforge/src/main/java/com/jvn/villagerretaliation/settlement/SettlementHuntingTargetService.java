@@ -104,6 +104,29 @@ public final class SettlementHuntingTargetService {
         }
     }
 
+    static java.util.UUID observeEngagement(ServerLevel level, SettlementWorkforceService.Duty duty, Villager villager) {
+        var area = duty.area();
+        if (area.type() != SettlementAreaType.HUNTING_GROUNDS || !area.enabled() || !area.contains(villager.blockPosition())) return null;
+        var target = HuntingWorker.activeTarget(villager, id -> {
+            var observed = duty.town().huntingTargets().get(id);
+            return observed == null ? null : observed.context(level);
+        }).orElse(null);
+        if (target == null || target.level() != level || !recordable(target) || !area.contains(target.blockPosition())
+                || villager.getHealth() <= 0.0F || villager.isRemoved() && villager.getRemovalReason() != Entity.RemovalReason.UNLOADED_TO_CHUNK) return null;
+        var owner = villager;
+        if (villager.isRemoved()) {
+            owner = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+            if (owner == null) return null;
+            owner.load(villager.saveWithoutId(new net.minecraft.nbt.CompoundTag()));
+        }
+        var candidate = target.isRemoved() ? SettlementHuntingTarget.capture(target, level.getGameTime()).context(level) : target;
+        if (candidate == null || !HuntingWorker.isEligibleTarget(owner, candidate,
+                HiredHuntingTargets.fromState(com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager)))
+                || !VillagerRetaliationHandler.canEngageCustomTarget(owner, candidate)) return null;
+        observe(level, duty.town(), target, true);
+        return duty.town().huntingTargets().containsKey(target.getUUID()) ? target.getUUID() : null;
+    }
+
     static LivingEntity select(ServerLevel level, SettlementRecord town, SettlementWorkerState worker, Villager owner) {
         var area = town.areas().get(worker.area());
         if (area == null || !area.enabled() || area.type() != SettlementAreaType.HUNTING_GROUNDS || !area.contains(worker.position())) return null;
@@ -136,6 +159,7 @@ public final class SettlementHuntingTargetService {
                     || !HuntingWorker.isEligibleTarget(owner, target, selection)
                     || !VillagerRetaliationHandler.canEngageCustomTarget(owner, target)
                     || !visible(terrain, owner, target)) continue;
+            if (target.getUUID().equals(worker.huntingTarget())) return target;
             if (nearest == null || owner.distanceToSqr(target) < owner.distanceToSqr(nearest)) nearest = target;
         }
         return nearest;
@@ -150,6 +174,54 @@ public final class SettlementHuntingTargetService {
             if (!town.dimension().equals(level.dimension().location()) && state.matches(target)) {
                 town.removeHuntingTarget(target.getUUID());
             }
+        }
+    }
+
+    public static boolean beforeNativeDamage(LivingEntity target) {
+        if (target instanceof Player || !(target.level() instanceof ServerLevel level) || level.getEntity(target.getUUID()) != target
+                || SettlementDeathCapture.active(target)) return true;
+        if (!SettlementEntityDeathService.onActive(target)) return false;
+        if (target instanceof net.minecraft.world.entity.animal.Animal animal) SettlementLivestockService.onActive(animal);
+        onActive(target);
+        if (target instanceof Villager villager) {
+            SettlementBackgroundService.onActive(villager);
+            SettlementCareService.onActive(villager);
+        }
+        SettlementHuntingTarget.resumeNativeTimers(target, level.getGameTime());
+        return !target.isRemoved();
+    }
+
+    public static void afterNativeDamage(LivingEntity target) {
+        if (target instanceof Player || !(target.level() instanceof ServerLevel level) || level.getEntity(target.getUUID()) != target
+                || SettlementDeathCapture.active(target) || !target.isAlive()) return;
+        boolean ticking = level.isPositionEntityTicking(target.blockPosition());
+        for (var town : SettlementSavedData.get(level).settlements()) {
+            var state = town.huntingTargets().get(target.getUUID());
+            if (state != null && state.matches(target)) {
+                state.nativeDamage(target, level.getGameTime(), ticking);
+                town.changed();
+            }
+            if (target instanceof Villager villager && town.dimension().equals(level.dimension().location())) {
+                var care = town.residents().get(villager.getUUID());
+                if (care != null) {
+                    care.observe(villager, town, level.getGameTime());
+                    town.changed();
+                }
+                var worker = town.workers().get(villager.getUUID());
+                var area = town.areas().get(town.duties().get(villager.getUUID()));
+                if (worker != null && area != null && area.id().equals(worker.area())) {
+                    worker.observe(level, villager, new SettlementWorkforceService.Duty(town, area), level.getGameTime());
+                    worker.huntingNativeDamage(villager, level.getGameTime(), ticking);
+                    town.changed();
+                }
+            }
+        }
+    }
+
+    public static void onNativeTick(LivingEntity target) {
+        if (target.level() instanceof ServerLevel level && level.getEntity(target.getUUID()) == target
+                && level.isPositionEntityTicking(target.blockPosition())) {
+            SettlementHuntingTarget.resumeNativeTimers(target, level.getGameTime());
         }
     }
 

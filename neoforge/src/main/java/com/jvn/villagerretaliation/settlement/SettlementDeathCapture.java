@@ -31,6 +31,10 @@ public final class SettlementDeathCapture implements AutoCloseable {
         return null;
     }
 
+    static boolean active(LivingEntity victim) {
+        return capture(victim) != null;
+    }
+
     public static void accepted(LivingEntity victim) {
         var capture = capture(victim);
         if (capture != null) capture.accepted = true;

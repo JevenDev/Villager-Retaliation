@@ -16,10 +16,8 @@ final class SettlementHuntingTarget {
     private final UUID id;
     private final ResourceLocation type;
     private CompoundTag entity;
-    private long observedAt;
     private long version;
-    private int invulnerableTicks;
-    private float lastHurt;
+    private SettlementCombatClock clock;
 
     private SettlementHuntingTarget(ResourceLocation type, CompoundTag entity, long observedAt) {
         var position = entity.getList("Pos", Tag.TAG_DOUBLE);
@@ -31,7 +29,7 @@ final class SettlementHuntingTarget {
         this.id = entity.getUUID("UUID");
         this.type = type;
         this.entity = entity.copy();
-        this.observedAt = Math.max(0L, observedAt);
+        this.clock = new SettlementCombatClock(Math.max(0L, observedAt), 0, Math.max(0, entity.getShort("HurtTime")), 0.0F);
     }
 
     static SettlementHuntingTarget capture(LivingEntity entity, long now) {
@@ -51,7 +49,7 @@ final class SettlementHuntingTarget {
     }
 
     long observedAt() {
-        return this.observedAt;
+        return this.clock.at();
     }
 
     BlockPos position() {
@@ -68,7 +66,7 @@ final class SettlementHuntingTarget {
         restore(target, now);
         this.entity = target.saveWithoutId(new CompoundTag());
         this.version = Math.max(this.version, target.getPersistentData().getLong(VERSION_TAG));
-        captureTimers(target, now);
+        this.clock = SettlementCombatClock.observe(target, now, target.getPersistentData().getLong(VERSION_TAG));
     }
 
     void interacted(LivingEntity target, CompoundTag before, long now) {
@@ -77,14 +75,9 @@ final class SettlementHuntingTarget {
         this.changes.record(before, target.saveWithoutId(new CompoundTag()), next);
         this.version = next;
         target.getPersistentData().putLong(VERSION_TAG, next);
+        this.clock = SettlementCombatClock.capture(target, now);
+        this.clock.pending(target, next);
         this.entity = target.saveWithoutId(new CompoundTag());
-        captureTimers(target, now);
-    }
-
-    private void captureTimers(LivingEntity target, long now) {
-        this.observedAt = now;
-        this.invulnerableTicks = target.invulnerableTime;
-        this.lastHurt = ((com.jvn.villagerretaliation.mixin.LivingEntityCombatAccessor) target).villagerretaliation$getLastHurt();
     }
 
     boolean restore(LivingEntity target, long now) {
@@ -99,15 +92,25 @@ final class SettlementHuntingTarget {
         }
         target.load(merged);
         target.getPersistentData().putLong(VERSION_TAG, this.version);
+        this.clock.pending(target, this.version);
         restoreTimers(target, now);
         return true;
     }
 
     void restoreTimers(LivingEntity target, long now) {
-        int elapsed = (int) Math.clamp(now - this.observedAt, 0L, 200L);
-        target.invulnerableTime = Math.max(0, this.invulnerableTicks - elapsed);
-        target.hurtTime = Math.max(0, this.entity.getShort("HurtTime") - elapsed);
-        ((com.jvn.villagerretaliation.mixin.LivingEntityCombatAccessor) target).villagerretaliation$setLastHurt(this.lastHurt);
+        this.clock.apply(target, now);
+    }
+
+    void nativeDamage(LivingEntity target, long now, boolean ticking) {
+        observe(target, now);
+        if (!ticking) {
+            this.clock.pending(target, this.version);
+            this.entity = target.saveWithoutId(new CompoundTag());
+        }
+    }
+
+    static void resumeNativeTimers(LivingEntity target, long now) {
+        SettlementCombatClock.resume(target, now, target.getPersistentData().getLong(VERSION_TAG));
     }
 
     LivingEntity context(ServerLevel level) {
@@ -122,11 +125,9 @@ final class SettlementHuntingTarget {
         var tag = new CompoundTag();
         tag.putString("Type", this.type.toString());
         tag.put("Entity", this.entity.copy());
-        tag.putLong("ObservedAt", this.observedAt);
+        this.clock.save(tag);
         tag.putLong("Version", this.version);
         tag.put("Changes", this.changes.save());
-        tag.putInt("InvulnerableTicks", this.invulnerableTicks);
-        tag.putFloat("LastHurt", this.lastHurt);
         return tag;
     }
 
@@ -135,8 +136,7 @@ final class SettlementHuntingTarget {
                 tag.getCompound("Entity"), tag.getLong("ObservedAt"));
         state.version = Math.max(0L, tag.getLong("Version"));
         state.changes.load(tag.getList("Changes", Tag.TAG_COMPOUND), state.version);
-        state.invulnerableTicks = Math.max(0, tag.getInt("InvulnerableTicks"));
-        state.lastHurt = Math.max(0.0F, tag.getFloat("LastHurt"));
+        state.clock = SettlementCombatClock.load(tag);
         return state;
     }
 }

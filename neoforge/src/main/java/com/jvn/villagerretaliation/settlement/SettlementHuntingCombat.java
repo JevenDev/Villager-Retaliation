@@ -55,6 +55,7 @@ final class SettlementHuntingCombat {
                 var ownerPosition = owner.blockPosition().immutable();
                 try (var victimCapture = new SettlementDeathCapture(target);
                      var ownerCapture = new SettlementDeathCapture(owner)) {
+                    worker.huntingEngaged(target.getUUID());
                     VillagerRetaliationHandler.performMeleeStrike(owner, target, at);
                     HiredJobInventory.synchronizeEquipmentDurability(owner, EquipmentSlot.MAINHAND);
                     HiredJobInventory.synchronizeEquipmentDurability(owner, EquipmentSlot.OFFHAND);

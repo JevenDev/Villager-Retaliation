@@ -442,6 +442,9 @@ public final class VillagerRetaliationEvents {
             com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onActive(villager);
             com.jvn.villagerretaliation.settlement.SettlementDepartureService.onActive(villager);
             com.jvn.villagerretaliation.settlement.SettlementCareService.onActive(villager);
+        }
+        if (entity instanceof LivingEntity living) com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.onNativeTick(living);
+        if (entity instanceof Villager villager) {
             VillagerDownedService.onVillagerTickPre(villager);
             VillagerSleepHealingService.onVillagerTick(villager);
             VillagerStudyService.tick(villager);

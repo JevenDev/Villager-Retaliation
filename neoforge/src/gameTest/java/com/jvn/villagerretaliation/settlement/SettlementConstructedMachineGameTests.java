@@ -276,7 +276,7 @@ public final class SettlementConstructedMachineGameTests {
             helper.startSequence().thenWaitUntil(() -> {
                 SettlementConstructionSiteService.refresh(level, fixture.site());
                 helper.assertFalse(fixture.site().conflict(), "restored construction terrain remains compatible");
-                helper.assertFalse(fixture.site().pending(), "both processing machines reach their physical chunks");
+                helper.assertFalse(fixture.site().pending(), "both processing machines reach their physical chunks: " + pendingDetails(level, fixture.site()));
             }).thenExecute(() -> {
                 try {
                     for (var machine : fixture.town().furnaces().values()) {
@@ -451,6 +451,28 @@ public final class SettlementConstructedMachineGameTests {
         items.set(0, new ItemStack(Items.RAW_IRON, count));
         items.set(1, new ItemStack(Items.COAL));
         machine.updateItems(helper.getLevel(), items);
+    }
+
+    private static String pendingDetails(net.minecraft.server.level.ServerLevel level, SettlementConstructionSite site) {
+        var details = new StringBuilder();
+        for (var placement : site.placements().values()) {
+            for (var part : placement.parts()) {
+                var pos = part.position();
+                var chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+                details.append("position=").append(pos).append(", chunk=").append(chunk != null)
+                        .append(", entitiesLoaded=").append(level.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.asLong(pos)))
+                        .append(", state=").append(chunk == null ? "unloaded" : chunk.getBlockState(pos))
+                        .append(", occupants=").append(level.getEntities((net.minecraft.world.entity.Entity) null,
+                                new net.minecraft.world.phys.AABB(pos), entity -> entity.isAlive() && !entity.isSpectator()));
+                for (int x = pos.getX() - 2 >> 4; x <= pos.getX() + 2 >> 4; x++) {
+                    for (int z = pos.getZ() - 2 >> 4; z <= pos.getZ() + 2 >> 4; z++) {
+                        if (level.getChunkSource().getChunkNow(x, z) == null) details.append(", missingNeighbor=").append(x).append(",").append(z);
+                    }
+                }
+                details.append(" | ");
+            }
+        }
+        return details.toString();
     }
 
     private static void queued(GameTestHelper helper, Block block, SettlementAreaType type, CompoundTag data,
