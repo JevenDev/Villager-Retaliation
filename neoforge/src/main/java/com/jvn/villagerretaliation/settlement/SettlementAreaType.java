@@ -29,6 +29,10 @@ public enum SettlementAreaType {
         return this.role;
     }
 
+    boolean changesTerrain() {
+        return this == FARM || this == ANIMAL_PEN || this == FORESTRY || this == MINE || this == CONSTRUCTION;
+    }
+
     public boolean foodProduction() {
         return this == FARM || this == FISHERY || this == HUNTING_GROUNDS || this == KITCHEN;
     }

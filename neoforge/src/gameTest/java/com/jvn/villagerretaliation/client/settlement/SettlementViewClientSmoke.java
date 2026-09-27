@@ -110,6 +110,18 @@ public final class SettlementViewClientSmoke {
             require(SettlementViewChunks.get(minecraft.level, fixture.center().getX() >> 4, fixture.center().getZ() >> 4) != null,
                     "the remote terrain uses the separate client chunk cache");
             require(capture("world-view") > 1_000, "the remote grass terrain is rendered");
+            Vec3 table = fixture.center().getCenter().add(0.0D, 0.5D, 0.0D);
+            clickWorld(screen, table);
+            String firstArea = screen.getNarrationMessage().getString();
+            require(firstArea.contains("Guard post") || firstArea.contains("Shared workshop"), "the shared building can be selected");
+            clickWorld(screen, table);
+            String secondArea = screen.getNarrationMessage().getString();
+            require(!secondArea.equals(firstArea) && (secondArea.contains("Guard post") || secondArea.contains("Shared workshop")),
+                    "another click selects the other use of the same building");
+            require(button(screen, "villagerretaliation.gui.settlement_view.manage_selection").active,
+                    "each shared designation can open its management panel");
+            clickWorld(screen, table);
+            require(screen.getNarrationMessage().getString().equals(firstArea), "selection cycles back through the shared designations");
             originalX = screen.focusX();
             originalHeight = screen.viewHeight();
             screen.keyPressed(GLFW.GLFW_KEY_W, 0, 0);
@@ -117,6 +129,7 @@ public final class SettlementViewClientSmoke {
             phase = 4;
         } else if (phase == 4 && minecraft.screen instanceof SettlementViewScreen screen) {
             if (++ticks == 8) {
+                capture("shared-workplace");
                 screen.keyReleased(GLFW.GLFW_KEY_W, 0, 0);
                 require(screen.focusX() < originalX, "panning changes the remote camera position");
                 screen.mouseScrolled(40, 80, 0, 1);
@@ -532,6 +545,8 @@ public final class SettlementViewClientSmoke {
         var post = new SettlementArea(UUID.randomUUID(), SettlementAreaType.GUARD_POST, "Guard post",
                 center.offset(0, -1, -2), center.offset(5, 3, 4), 5, true);
         require(SettlementBuildingService.register(player, id, post), "the guard post is registered");
+        require(SettlementBuildingService.register(player, id, new SettlementArea(UUID.randomUUID(), SettlementAreaType.WORKSHOP,
+                "Shared workshop", post.min(), post.max(), 5, true)), "a workshop can share the guard post");
         require(SettlementWorkforceService.assign(level, player, id, resident, post.id()), "the resident is a civic guard");
         SettlementCareService.onUnloaded(resident);
         SettlementManagementService.open(player, id);

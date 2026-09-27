@@ -49,6 +49,9 @@ public final class SettlementBackgroundConstructionGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_construction")
     public static void anUnloadedBuilderCompletesARealHouseFromFiniteDepotMaterials(GameTestHelper helper) {
         fixture(helper, false, null, fixture -> {
+            var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "New house",
+                    fixture.area().min(), fixture.area().max(), 5, true);
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), home), "the future home can be designated during construction");
             int slot = 0;
             for (var material : fixture.plan().materials()) {
                 int remaining = material.count();
@@ -68,9 +71,14 @@ public final class SettlementBackgroundConstructionGameTests {
                     fixture.site().getBlockState(fixture.plan().worldPos(fixture.origin(), block)), block.state()), "every real blueprint block is recorded");
             for (var material : fixture.plan().materials()) helper.assertValueEqual(count(helper, fixture, material.item().getItem()), 0,
                     "each blueprint material is consumed exactly once");
+            SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), home);
+            helper.assertValueEqual(fixture.town().housingCapacity(), 1, "the completed real house becomes usable without replacing its construction designation");
+            helper.assertValueEqual(fixture.town().duties().get(fixture.builder().getUUID()), fixture.area().id(),
+                    "designating the home preserves its builder's construction duty");
             var saved = fixture.town().save(helper.getLevel().registryAccess());
             var restored = SettlementRecord.load(saved, helper.getLevel().registryAccess(), () -> {});
             helper.assertTrue(restored.projects().get(fixture.project().id()).site().pending(), "the completed house retains its pending world placements");
+            helper.assertValueEqual(restored.housingCapacity(), 1, "the shared home and construction site survive reloading");
             int pending = fixture.site().placements().size();
             work(helper, fixture, 10);
             helper.assertValueEqual(fixture.site().placements().size(), pending, "completion cannot enqueue another house");

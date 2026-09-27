@@ -91,10 +91,10 @@ public final class SettlementFurnaceService {
                 var existing = town.furnaces().get(position);
                 var source = construction.source(position);
                 if (source != null && source.ready()
-                        && (existing == null || !existing.pending() && (!existing.area().equals(area.id()) || !existing.id().equals(source.id())))
+                        && (existing == null || !existing.pending() && !existing.id().equals(source.id()))
                         && source.create(level) instanceof AbstractFurnaceBlockEntity furnace && accepts(area, furnace)) {
                     town.recordFurnace(SettlementFurnaceState.capture(level, area.id(), furnace, now));
-                } else if (source == null && (existing == null || !existing.pending() && !existing.area().equals(area.id()))
+                } else if (source == null && existing == null
                         && level.hasChunkAt(position) && level.getBlockEntity(position) instanceof AbstractFurnaceBlockEntity furnace
                         && accepts(area, furnace)) {
                     observe(level, town, area, furnace, now);
@@ -103,12 +103,12 @@ public final class SettlementFurnaceService {
             }
         }
         for (SettlementFurnaceState state : List.copyOf(town.furnaces().values())) {
-            var area = town.areas().get(state.area());
+            boolean operating = town.areas().values().stream().anyMatch(area -> serves(area, state));
             var source = construction.source(state.position(), state.id());
             if (source != null) {
                 if (source.ready()) {
                     state.constructionReady();
-                    if (area != null && area.enabled() && accepts(area, state.position(), state.block())) {
+                    if (operating) {
                         state.advance(level, now);
                     } else {
                         state.pause(now);
@@ -135,14 +135,14 @@ public final class SettlementFurnaceService {
                     applyLoaded(level, state);
                 }
                 if (level.getChunkSource().isPositionTicking(ChunkPos.asLong(state.position()))
-                        || area == null || !area.enabled() || !accepts(area, furnace)) {
+                        || !operating) {
                     state.observe(level.registryAccess(), furnace, now);
                 } else {
                     state.refresh(level.registryAccess(), furnace);
                     state.advance(level, now);
                     applyLoaded(level, state);
                 }
-            } else if (area != null && area.enabled() && accepts(area, state.position(), state.block())) {
+            } else if (operating) {
                 state.advance(level, now);
             } else {
                 state.pause(now);
@@ -190,6 +190,10 @@ public final class SettlementFurnaceService {
         }
     }
 
+    static boolean serves(SettlementArea area, SettlementFurnaceState state) {
+        return area != null && area.enabled() && accepts(area, state.position(), state.block());
+    }
+
     private static boolean accepts(SettlementArea area, AbstractFurnaceBlockEntity furnace) {
         return SettlementFurnaceState.supported(furnace)
                 && accepts(area, furnace.getBlockPos(), net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(furnace.getBlockState().getBlock()));
@@ -205,7 +209,7 @@ public final class SettlementFurnaceService {
     private static void observe(ServerLevel level, SettlementRecord town, SettlementArea area,
                                 AbstractFurnaceBlockEntity furnace, long now) {
         var state = town.furnaces().get(furnace.getBlockPos());
-        if (state == null || !state.pending() && (!state.matches(furnace) || !state.area().equals(area.id()))) {
+        if (state == null || !state.pending() && !state.matches(furnace)) {
             town.recordFurnace(SettlementFurnaceState.capture(level, area.id(), furnace, now));
         } else if (state.reconcile(level.registryAccess(), furnace)) {
             state.observe(level.registryAccess(), furnace, now);

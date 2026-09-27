@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -30,7 +31,11 @@ public final class SettlementDepotService {
         if (town == null) {
             return false;
         }
-        var area = town.areas().values().stream().filter(candidate -> candidate.contains(pos)).findFirst().orElse(null);
+        var area = town.areas().values().stream()
+                .filter(candidate -> candidate.type() != SettlementAreaType.HOME && candidate.contains(pos))
+                .min(Comparator.comparing((SettlementArea candidate) -> candidate.type() != SettlementAreaType.DEPOT)
+                        .thenComparing(Comparator.comparingInt(SettlementArea::priority).reversed())
+                        .thenComparing(SettlementArea::id)).orElse(null);
         if (area == null) {
             return false;
         }

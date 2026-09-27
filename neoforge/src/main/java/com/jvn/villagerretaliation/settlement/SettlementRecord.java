@@ -548,7 +548,7 @@ public final class SettlementRecord {
                         && (area.type() == SettlementAreaType.HOME || !area.contains(depot.position())))
                 || this.projects.values().stream().anyMatch(project -> project.active() && project.area().equals(area.id()) && !project.within(area))
                 || this.areas.values().stream().anyMatch(existing ->
-                        !existing.id().equals(area.id()) && existing.intersects(area))) {
+                        !existing.id().equals(area.id()) && existing.conflictsWith(area))) {
             return false;
         }
         SettlementArea previous = this.areas.put(area.id(), area);
@@ -815,8 +815,8 @@ public final class SettlementRecord {
             SettlementArea area = SettlementArea.load((CompoundTag) raw);
             if (!area.within(record.center, record.stage.radius()) || record.areas.size() >= MAX_AREAS
                     || record.areas.containsKey(area.id())
-                    || record.areas.values().stream().anyMatch(existing -> existing.intersects(area))) {
-                throw new IllegalArgumentException("Settlement areas exceed their bounds or overlap");
+                    || record.areas.values().stream().anyMatch(existing -> existing.conflictsWith(area))) {
+                throw new IllegalArgumentException("Settlement areas exceed their bounds or have conflicting uses");
             }
             record.areas.put(area.id(), area);
         }

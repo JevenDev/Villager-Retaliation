@@ -29,7 +29,8 @@ final class SettlementBackgroundSmelting {
             return true;
         }
         var construction = new SettlementConstructionMachines(level, town, null);
-        var machines = town.furnaces().values().stream().filter(state -> state.area().equals(worker.area()))
+        var area = town.areas().get(worker.area());
+        var machines = town.furnaces().values().stream().filter(state -> SettlementFurnaceService.serves(area, state))
                 .sorted(Comparator.comparingDouble(state -> state.position().distSqr(worker.position()))).toList();
         var carried = worker.items(level.registryAccess());
         ItemStack filter = carried.get(HiredJobInventory.FILTER_SLOT);

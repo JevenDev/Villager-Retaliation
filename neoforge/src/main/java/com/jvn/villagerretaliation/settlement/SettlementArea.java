@@ -44,6 +44,10 @@ public record SettlementArea(
                 && min.getZ() <= other.max.getZ() && max.getZ() >= other.min.getZ();
     }
 
+    boolean conflictsWith(SettlementArea other) {
+        return intersects(other) && (type == other.type || type.changesTerrain() && other.type.changesTerrain());
+    }
+
     public boolean within(BlockPos center, int radius) {
         return (long) min.getX() >= (long) center.getX() - radius
                 && (long) max.getX() <= (long) center.getX() + radius

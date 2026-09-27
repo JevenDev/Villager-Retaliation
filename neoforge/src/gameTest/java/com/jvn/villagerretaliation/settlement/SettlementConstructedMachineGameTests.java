@@ -350,6 +350,38 @@ public final class SettlementConstructedMachineGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_constructed_machines")
+    public static void aSharedMachineCanBeDesignatedBeforeItsConstructionFinishes(GameTestHelper helper) {
+        SettlementBackgroundConstructionGameTests.capacityFixture(helper, 40, Map.of(BlockPos.ZERO, Blocks.FURNACE.defaultBlockState()), fixture -> {
+            var level = helper.getLevel();
+            var kitchen = new SettlementArea(UUID.randomUUID(), SettlementAreaType.KITCHEN, "Kitchen",
+                    fixture.area().min(), fixture.area().max(), 5, true);
+            var smeltery = new SettlementArea(UUID.randomUUID(), SettlementAreaType.SMELTERY, "Smeltery",
+                    fixture.area().min(), fixture.area().max(), 5, true);
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), kitchen)
+                    && fixture.town().putArea(fixture.town().leader(), smeltery), "the new machine has both planned uses while building");
+            helper.assertTrue(fixture.project().active(), "adding the final designations does not cancel construction");
+            build(helper, fixture, Items.FURNACE);
+            SettlementBuildingService.refresh(level, fixture.town(), kitchen);
+            SettlementBuildingService.refresh(level, fixture.town(), smeltery);
+            SettlementFurnaceService.update(level, fixture.town(), 0L);
+            var machine = fixture.town().furnaces().get(fixture.origin());
+            helper.assertTrue(machine != null, "the completed shared machine has a processing ledger");
+            SettlementFurnaceService.update(level, fixture.town(), 100L);
+            helper.assertTrue(fixture.town().furnaces().get(fixture.origin()) == machine, "idle shared surveys retain one machine ledger");
+            fill(helper, machine, 2);
+            SettlementFurnaceService.update(level, fixture.town(), 200L);
+            var restored = SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {});
+            SettlementFurnaceService.update(level, restored, 300L);
+            var returned = restored.furnaces().get(fixture.origin());
+            helper.assertValueEqual(returned.items(level.registryAccess()).get(2).getCount(), 1,
+                    "two shared designations advance one saved processing clock");
+            helper.assertValueEqual(returned.items(level.registryAccess()).get(0).getCount(), 1, "only one funded input is consumed");
+            helper.assertValueEqual(restored.furnaces().size(), 1, "the shared building still owns one inventory");
+            helper.assertFalse(level.hasChunkAt(fixture.origin()), "neither construction nor processing loads the site");
+        });
+    }
+
     private static void build(GameTestHelper helper, Fixture fixture, Item material) {
         fixture.depot().setItem(0, new ItemStack(material));
         SettlementBackgroundConstructionGameTests.work(helper, fixture, 50);

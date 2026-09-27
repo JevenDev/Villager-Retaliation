@@ -641,13 +641,16 @@ public final class SettlementViewScreen extends Screen {
         }
         this.guardFeedback = Component.empty();
         this.blueprintFeedback = Component.empty();
+        var matchingAreas = hit.position() == null ? List.<UUID>of() : this.areas.values().stream()
+                .filter(area -> contains(area, hit.position())).map(SettlementManagementPayload.Area::id).toList();
+        int previousArea = hit.resident() == null && this.selectedResident == null
+                && java.util.Objects.equals(this.selectedBlock, hit.position()) ? matchingAreas.indexOf(this.selectedArea) : -1;
+        this.selectedArea = matchingAreas.isEmpty() ? null : matchingAreas.get((previousArea + 1) % matchingAreas.size());
         this.selectedBlock = hit.position();
         this.selectedResident = hit.resident();
         this.resident = null;
         this.residentChecked = false;
         this.residentRefreshAt = 0L;
-        this.selectedArea = this.selectedBlock == null ? null : this.areas.values().stream()
-                .filter(area -> contains(area, this.selectedBlock)).map(SettlementManagementPayload.Area::id).findFirst().orElse(null);
         if (this.drawing) {
             this.dragStart = hit.position();
             this.dragEnd = hit.position();

@@ -124,7 +124,7 @@ public final class SettlementManagementGameTests {
         var overlapping = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Overlap",
                 area.min(), area.max(), 5, true);
         helper.assertFalse(act(builder, fixture.town(), new SettlementManagementActionPayload.SaveArea(overlapping)),
-                "overlapping areas are rejected through the management action");
+                "duplicate residential designations are rejected through the management action");
         helper.assertFalse(act(builder, fixture.town(), new SettlementManagementActionPayload.SaveArea(
                 area(fixture.town(), SettlementAreaType.HOME, 200))), "stage bounds are enforced");
         helper.assertFalse(act(builder, fixture.town(), new SettlementManagementActionPayload.Budget(

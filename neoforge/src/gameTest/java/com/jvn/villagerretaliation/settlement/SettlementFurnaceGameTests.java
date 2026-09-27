@@ -218,6 +218,133 @@ public final class SettlementFurnaceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
+    public static void sharedKitchenAndSmelteryConsumeOneSavedFurnaceInventory(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var level = helper.getLevel();
+            var original = fixture.town().areas().get(fixture.worker().area());
+            var kitchen = new SettlementArea(UUID.randomUUID(), SettlementAreaType.KITCHEN, "Shared kitchen",
+                    original.min(), original.max(), 5, true);
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), kitchen), "the kitchen shares the existing smeltery");
+            Villager cook = EntityType.VILLAGER.create(level);
+            cook.setPos(fixture.town().center().getCenter());
+            cook.setNoAi(true);
+            cook.setVillagerData(cook.getVillagerData().setProfession(VillagerProfession.FARMER));
+            VillageAllegianceApi.assignKnown(level, cook, fixture.town().id(), AllegianceAssignmentSource.EXPLICIT_API);
+            fixture.town().assignDuty(cook.getUUID(), kitchen.id());
+            SettlementWorkforceService.reconcile(level, cook);
+            ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+            VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.BAKED_POTATO));
+            HiredJobInventory.getJobInventory(cook).setItem(HiredJobInventory.FILTER_SLOT, filter);
+            fixture.town().recordWorker(SettlementWorkerState.capture(level, cook, SettlementWorkforceService.duty(cook).orElseThrow(), 0L));
+            fixture.town().recordResident(SettlementResidentState.capture(cook, fixture.town(), 0L));
+            fixture.supply().setItem(0, new ItemStack(Items.RAW_IRON, 2));
+            fixture.supply().setItem(1, new ItemStack(Items.POTATO, 2));
+            fixture.supply().setItem(2, new ItemStack(Items.COAL));
+            SettlementBackgroundService.update(level, fixture.town(), 200L);
+            SettlementBackgroundService.update(level, fixture.town(), 400L);
+            var town = SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {});
+            var machine = town.furnaces().get(fixture.machine().position());
+            var saved = machine.save();
+            SettlementBackgroundService.update(level, town, 400L);
+            helper.assertValueEqual(machine.save(), saved, "replaying a saved interval cannot advance shared machinery twice");
+            for (int now = 600; now <= 4_000; now += 200) SettlementBackgroundService.update(level, town, now);
+            var output = town.depots().get(fixture.output().id());
+            helper.assertValueEqual(output.count(stack -> stack.is(Items.IRON_INGOT)), 2, "the smelter delivers only the two funded ingots");
+            helper.assertValueEqual(output.count(stack -> stack.is(Items.BAKED_POTATO)), 2, "the cook uses the same furnace for two real potatoes");
+            helper.assertTrue(town.depots().get(fixture.supply().id()).isEmpty(), "both workers consume finite shared stock");
+            helper.assertValueEqual(town.furnaces().size(), 1, "different workplace duties never create a second processing inventory");
+            helper.assertValueEqual(machine.id(), fixture.machine().id(), "saving and shared access preserve the physical machine identity");
+            helper.assertFalse(level.hasChunkAt(machine.position()), "sharing machinery does not force its chunk to load");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
+    public static void sharedFurnaceKeepsProcessingWhenItsOriginalDesignationIsDisabledOrRemoved(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var original = town.areas().get(fixture.worker().area());
+            var kitchen = new SettlementArea(UUID.randomUUID(), SettlementAreaType.KITCHEN, "Shared kitchen",
+                    original.min(), original.max(), 5, true);
+            helper.assertTrue(town.putArea(town.leader(), kitchen), "the second workplace is registered");
+            var items = fixture.machine().items(level.registryAccess());
+            items.set(0, new ItemStack(Items.POTATO, 4));
+            items.set(1, new ItemStack(Items.COAL));
+            fixture.machine().updateItems(level, items);
+            helper.assertTrue(town.putArea(town.leader(), new SettlementArea(original.id(), original.type(), original.name(),
+                    original.min(), original.max(), original.priority(), false)), "the original workplace is paused");
+            SettlementFurnaceService.update(level, town, 200L);
+            helper.assertValueEqual(fixture.machine().items(level.registryAccess()).get(2).getCount(), 1,
+                    "the enabled kitchen keeps the shared furnace operating");
+            helper.assertTrue(town.removeArea(town.leader(), original.id()), "the original workplace can be removed");
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            SettlementFurnaceService.update(level, restored, 400L);
+            var machine = restored.furnaces().get(fixture.machine().position());
+            helper.assertValueEqual(machine.items(level.registryAccess()).get(2).getCount(), 2,
+                    "the remaining designation still operates the saved machine");
+            restored.putArea(restored.leader(), new SettlementArea(kitchen.id(), kitchen.type(), kitchen.name(),
+                    kitchen.min(), kitchen.max(), kitchen.priority(), false));
+            SettlementFurnaceService.update(level, restored, 600L);
+            helper.assertValueEqual(machine.items(level.registryAccess()).get(2).getCount(), 2,
+                    "pausing every compatible workplace stops background processing");
+            restored.putArea(restored.leader(), kitchen);
+            SettlementFurnaceService.update(level, restored, 800L);
+            helper.assertValueEqual(machine.items(level.registryAccess()).get(2).getCount(), 3,
+                    "reenabling a shared workplace resumes one processing interval");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
+    public static void repeatedSharedSurveysKeepThePhysicalFurnaceIdentityAndNativeHandoff(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var furnace = place(helper, Blocks.FURNACE, new ItemStack(Items.RAW_IRON), new ItemStack(Items.COAL), ItemStack.EMPTY);
+        var position = furnace.getBlockPos();
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var id = registry.create(0L, level.dimension().location(), position, "");
+        var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), position, 0L).orElseThrow();
+        var smeltery = new SettlementArea(UUID.randomUUID(), SettlementAreaType.SMELTERY, "Smeltery", position, position, 5, true);
+        var kitchen = new SettlementArea(UUID.randomUUID(), SettlementAreaType.KITCHEN, "Kitchen", position, position, 5, true);
+        town.putArea(town.leader(), smeltery);
+        var state = SettlementFurnaceState.capture(level, smeltery.id(), furnace, level.getGameTime());
+        town.recordFurnace(state);
+        helper.assertTrue(town.putArea(town.leader(), kitchen), "the kitchen can share the physical furnace");
+        SettlementBuildingService.refresh(level, town, kitchen);
+        SettlementBuildingService.refresh(level, town, smeltery);
+        SettlementFurnaceService.update(level, town, level.getGameTime());
+        helper.assertTrue(town.furnaces().get(position) == state, "surveying another use does not replace the shared ledger");
+        town.removeArea(town.leader(), smeltery.id());
+        var chunk = level.getChunkAt(position);
+        SettlementFurnaceService.onChunkUnload(new net.neoforged.neoforge.event.level.ChunkEvent.Unload(chunk));
+        helper.assertTrue(town.furnaces().get(position) == state, "the remaining area does not recapture the machine on unload");
+        state.advance(level, level.getGameTime() + 200L);
+        var saved = SettlementFurnaceState.load(state.save());
+        SettlementFurnaceService.onChunkLoad(new net.neoforged.neoforge.event.level.ChunkEvent.Load(chunk, false));
+        helper.assertValueEqual(furnace.getItem(2).getCount(), 1, "pending shared output reaches the physical furnace once");
+        furnace.removeItem(2, 1);
+        town.recordFurnace(saved);
+        SettlementFurnaceService.onChunkLoad(new net.neoforged.neoforge.event.level.ChunkEvent.Load(chunk, false));
+        helper.assertTrue(furnace.getItem(2).isEmpty() && furnace.getItem(0).isEmpty(),
+                "an older shared ledger cannot restore collected output or consumed input");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_furnaces")
+    public static void sharingAWorkplaceDoesNotMakeSpecializedFurnacesInterchangeable(GameTestHelper helper) {
+        fixture(helper, true, fixture -> {
+            var level = helper.getLevel();
+            var kitchen = fixture.town().areas().get(fixture.worker().area());
+            var smeltery = new SettlementArea(UUID.randomUUID(), SettlementAreaType.SMELTERY, "Shared smeltery",
+                    kitchen.min(), kitchen.max(), 5, true);
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), smeltery), "both workplaces are registered");
+            helper.assertFalse(SettlementFurnaceService.serves(smeltery, fixture.machine()), "a smoker cannot serve smelting work");
+            var blast = SettlementFurnaceState.capture(level, smeltery.id(),
+                    new net.minecraft.world.level.block.entity.BlastFurnaceBlockEntity(kitchen.min(), Blocks.BLAST_FURNACE.defaultBlockState()), 0L);
+            helper.assertFalse(SettlementFurnaceService.serves(kitchen, blast), "a blast furnace cannot serve kitchen work");
+            helper.assertTrue(SettlementFurnaceService.serves(smeltery, blast), "the blast furnace still serves its matching workplace");
+        });
+    }
+
     private static void compare(GameTestHelper helper, Block block, ItemStack input, ItemStack fuel, ItemStack output, int ticks) {
         var level = helper.getLevel();
         var furnace = place(helper, block, input, fuel, output);
