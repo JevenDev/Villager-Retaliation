@@ -234,6 +234,11 @@ public final class SettlementGuardScheduleGameTests {
         level.setDayTime(6_000L);
         var guard = fixture.guard;
         var bed = fixture.setup.town().center().offset(1, 0, 2);
+        var home = fixture.setup.home();
+        for (var position : BlockPos.betweenClosed(home.min().offset(-1, -2, -1),
+                home.max().offset(1, 0, 1).atY(home.min().getY() - 2))) {
+            level.setBlockAndUpdate(position, Blocks.STONE.defaultBlockState());
+        }
         helper.assertTrue(SettlementHousingService.assign(fixture.setup.leader(), fixture.setup.town(), guard.getUUID(), bed),
                 "the night guard receives a real individual bed");
         guard.setPos(bed.west().getBottomCenter());
