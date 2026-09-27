@@ -66,6 +66,7 @@ public final class SettlementViewClientSmoke {
     private static Fixture fixture;
     private static ProjectFixture projectFixture;
     private static UUID brewer;
+    private static Villager issueFarmer;
     private static long started;
     private static int phase;
     private static int ticks;
@@ -96,10 +97,10 @@ public final class SettlementViewClientSmoke {
         if (started == 0L) {
             started = Util.getMillis();
         }
-        if (Util.getMillis() - started >= 120_000L) {
+        if (Util.getMillis() - started >= 150_000L) {
             capture("failure");
         }
-        require(Util.getMillis() - started < 120_000L, "client smoke run timed out at phase " + phase
+        require(Util.getMillis() - started < 150_000L, "client smoke run timed out at phase " + phase
                 + " on " + (minecraft.screen == null ? "game" : minecraft.screen.getClass().getSimpleName()));
         if (minecraft.level == null || minecraft.player == null || minecraft.getSingleplayerServer() == null) {
             return;
@@ -301,6 +302,93 @@ public final class SettlementViewClientSmoke {
                 phase = 8;
             }
         } else if (phase == 8 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            require(screen.snapshot().header().issues() > 0, "Summary includes the settlement's progression shortages");
+            capture("issues-summary");
+            requireButtonsFit(screen);
+            button(screen, "villagerretaliation.gui.settlement.page.issues").onPress();
+            ticks = 0;
+            phase = 80;
+        } else if (phase == 80 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES) {
+            if (++ticks < 5) return;
+            require(screen.snapshot().total() == screen.snapshot().header().issues(), "the Issues page agrees with the summary count");
+            requireButtonsFit(screen);
+            capture("issues-progression");
+            UUID player = minecraft.player.getUUID();
+            issueFarmer = minecraft.getSingleplayerServer().submit(() -> prepareIssueFarmer(
+                    minecraft.getSingleplayerServer().getPlayerList().getPlayer(player))).join();
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES, issueFarmer.getUUID().toString());
+            ticks = 0;
+            phase = 81;
+        } else if (phase == 81 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES
+                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Issue issue
+                && issue.resident() != null && issue.resident().equals(issueFarmer.getUUID())) {
+            selectFirstRow(screen);
+            require(button(screen, "villagerretaliation.gui.settlement.pause_worker").active, "a blocked worker exposes quick pause");
+            requireButtonsFit(screen);
+            if (++ticks < 5) return;
+            capture("issues-worker");
+            button(screen, "villagerretaliation.gui.settlement.worker_settings").onPress();
+            ticks = 0;
+            phase = 82;
+        } else if (phase == 82 && minecraft.screen instanceof SettlementWorkerScreen screen && ++ticks >= 5) {
+            require(screen.getTitle().getString().contains("River"), "issue settings open the correct fresh resident");
+            screen.onClose();
+            ticks = 0;
+            phase = 83;
+        } else if (phase == 83 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            if (++ticks < 5) return;
+            requireButtonsFit(screen);
+            capture("issues-resident-controls");
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES, issueFarmer.getUUID().toString());
+            phase = 89;
+        } else if (phase == 89 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES
+                && screen.snapshot().entries().size() == 1) {
+            selectFirstRow(screen);
+            button(screen, "villagerretaliation.gui.settlement.pause_worker").onPress();
+            ticks = 0;
+            phase = 84;
+        } else if (phase == 84 && minecraft.screen instanceof SettlementManagementScreen screen && !screen.submitting()
+                && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident resident
+                && resident.settings() != null && !resident.settings().enabled()) {
+            if (++ticks < 8) return;
+            button(screen, "villagerretaliation.gui.settlement.resume_worker").onPress();
+            phase = 85;
+        } else if (phase == 85 && minecraft.screen instanceof SettlementManagementScreen screen && !screen.submitting()
+                && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident resident
+                && resident.settings() != null && resident.settings().enabled()) {
+            minecraft.getSingleplayerServer().submit(() -> {
+                com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onActive(issueFarmer);
+                blockIssueFarmer();
+            }).join();
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES, issueFarmer.getUUID().toString());
+            phase = 86;
+        } else if (phase == 86 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.ISSUES
+                && screen.snapshot().entries().size() == 1) {
+            selectFirstRow(screen);
+            button(screen, "villagerretaliation.gui.settlement.assign").onPress();
+            phase = 87;
+        } else if (phase == 87 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.AREAS) {
+            requireButtonsFit(screen);
+            capture("issues-reassignment");
+            screen.onClose();
+            phase = 88;
+        } else if (phase == 88 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var data = SettlementSavedData.get(serverPlayer.serverLevel());
+                var area = data.get(fixture.town()).orElseThrow().duties().get(issueFarmer.getUUID());
+                require(SettlementWorkforceService.release(serverPlayer.serverLevel(), serverPlayer, fixture.town(), issueFarmer.getUUID()),
+                        "the issue fixture can be released through existing staffing controls");
+                require(data.removeArea(VillageAllegianceRegistrySavedData.get(serverPlayer.serverLevel()), fixture.town(), serverPlayer.getUUID(), area),
+                        "the issue fixture releases its farm before construction checks");
+            }).join();
             screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.HISTORY, "");
             phase = 70;
         } else if (phase == 70 && minecraft.screen instanceof SettlementManagementScreen screen
@@ -636,6 +724,55 @@ public final class SettlementViewClientSmoke {
         var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
                 .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
         rows.children().getFirst().mouseClicked(0, 0, 0);
+    }
+
+    private static void requireButtonsFit(SettlementManagementScreen screen) {
+        int width = screen.width;
+        int height = screen.height;
+        for (var size : java.util.List.of(new int[]{320, 240}, new int[]{426, 240}, new int[]{width, height})) {
+            screen.resize(Minecraft.getInstance(), size[0], size[1]);
+            checkButtonsFit(screen);
+        }
+    }
+
+    private static void checkButtonsFit(SettlementManagementScreen screen) {
+        var buttons = screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast).filter(button -> button.visible).toList();
+        for (var button : buttons) {
+            require(button.getX() >= 0 && button.getY() >= 0 && button.getRight() <= screen.width
+                    && button.getBottom() <= screen.height, "management buttons remain inside the window");
+            require(Minecraft.getInstance().font.width(button.getMessage()) <= button.getWidth() - 4, "management button labels fit");
+            for (var other : buttons) {
+                if (button == other) continue;
+                require(button.getRight() <= other.getX() || other.getRight() <= button.getX()
+                        || button.getBottom() <= other.getY() || other.getBottom() <= button.getY(), "management buttons do not overlap");
+            }
+        }
+    }
+
+    private static Villager prepareIssueFarmer(ServerPlayer player) {
+        var level = player.serverLevel();
+        var origin = fixture.center().offset(14, 0, 0);
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "River's farm", origin, origin.offset(3, 2, 3), 5, true);
+        require(SettlementBuildingService.register(player, fixture.town(), area), "the issue fixture has a farm");
+        var farmer = EntityType.VILLAGER.create(level);
+        farmer.setPos(origin.getBottomCenter());
+        farmer.setNoAi(true);
+        farmer.setCustomName(Component.literal("River"));
+        farmer.setVillagerData(farmer.getVillagerData().setProfession(VillagerProfession.FARMER));
+        VillageAllegianceApi.assignKnown(level, farmer, fixture.town(), AllegianceAssignmentSource.EXPLICIT_API);
+        com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData.get(level).ensureProfile(level, farmer);
+        require(SettlementWorkforceService.assign(level, player, fixture.town(), farmer, area.id()), "the issue farmer is assigned");
+        issueFarmer = farmer;
+        blockIssueFarmer();
+        return farmer;
+    }
+
+    private static void blockIssueFarmer() {
+        var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(issueFarmer);
+        state.putString("WorkerTaskState", "paused_missing_tool");
+        state.putString("WorkerFailureReason", "missing_hoe");
+        state.putString("Status", "interaction.work.farming.missing_hoe");
+        com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onUnloaded(issueFarmer);
     }
 
     private static UUID prepareBrewer(ServerPlayer player) {

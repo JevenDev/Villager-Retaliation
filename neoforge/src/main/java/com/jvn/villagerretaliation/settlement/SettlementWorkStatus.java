@@ -15,6 +15,10 @@ record SettlementWorkStatus(String status, String diagnostic) {
         var brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
         if (villager.isSleeping() || brain.status().equals("interaction.work.status.sleeping")
                 || brain.status().equals("interaction.work.status.tired")) return new SettlementWorkStatus("resting", "");
+        if (brain.taskState() == HiredWorkerTaskState.MOVING_TO_TARGET || brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA)
+            return new SettlementWorkStatus("workforce.pathing", "");
+        if (brain.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE || brain.taskState() == HiredWorkerTaskState.DEPOSITING)
+            return new SettlementWorkStatus("workforce.depositing", "");
         if (brain.status().equals("interaction.work.status.returning_bounds")) return new SettlementWorkStatus("workforce.pathing", "");
         if (brain.status().equals("interaction.work.hauling.no_demand")) return new SettlementWorkStatus("no_demand", "");
         if (brain.status().equals("interaction.work.builder.choose_structure")) return new SettlementWorkStatus("no_construction_project", "");

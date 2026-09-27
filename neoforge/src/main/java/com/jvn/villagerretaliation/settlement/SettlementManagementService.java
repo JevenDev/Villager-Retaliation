@@ -138,6 +138,7 @@ public final class SettlementManagementService {
             }
         } else {
             var status = SettlementProgressionService.assess(level, town);
+            var issues = SettlementIssueService.issues(level, town, status);
             Set<SettlementPermission> permissions = EnumSet.noneOf(SettlementPermission.class);
             for (SettlementPermission permission : SettlementPermission.values()) {
                 if (town.permits(player.getUUID(), permission)) {
@@ -149,8 +150,9 @@ public final class SettlementManagementService {
                     SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
                     status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
                     status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
-                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent());
+                    town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent(), issues.size());
             switch (request.page()) {
+                case ISSUES -> entries.addAll(issues);
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
                 case BEDS -> beds(level, town, entries);
@@ -287,6 +289,8 @@ public final class SettlementManagementService {
 
     private static String searchable(Entry entry) {
         return entry.name() + " " + entry.id() + switch (entry) {
+            case SettlementManagementPayload.Issue issue -> " " + issue.kind().name() + " " + issue.cause() + " "
+                    + issue.detail() + " " + issue.targetId() + " " + issue.resident() + " " + issue.area();
             case SettlementManagementPayload.Resident resident -> " " + resident.profession().getPath();
             case SettlementManagementPayload.Bed bed -> " " + bed.position().toShortString() + " " + bed.residentName() + " " + bed.resident();
             case SettlementManagementPayload.Area area -> " " + area.kind().name();

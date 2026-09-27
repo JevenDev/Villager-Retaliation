@@ -50,6 +50,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case PROJECTS -> entry instanceof Project;
                 case BEDS -> entry instanceof Bed;
                 case HISTORY -> entry instanceof History;
+                case ISSUES -> entry instanceof Issue;
                 case SUMMARY -> false;
             };
             if (!valid) {
@@ -147,6 +148,16 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.writeEnum(project.phase());
                     buffer.writeUtf(project.missingMaterials(), 512);
                 }
+                case Issue issue -> {
+                    buffer.writeEnum(issue.kind());
+                    buffer.writeUtf(issue.cause(), 128);
+                    buffer.writeUtf(issue.detail(), 512);
+                    buffer.writeEnum(issue.target());
+                    writeOptionalId(buffer, issue.targetId());
+                    writeOptionalId(buffer, issue.resident());
+                    writeOptionalId(buffer, issue.area());
+                    buffer.writeBoolean(issue.enabled());
+                }
                 case Bed bed -> {
                     buffer.writeBlockPos(bed.position());
                     writeOptionalId(buffer, bed.resident());
@@ -223,6 +234,9 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case PROJECTS -> new Project(id, name, buffer.readUUID(), buffer.readUUID(), buffer.readBlockPos(),
                         buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
                         buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512));
+                case ISSUES -> new Issue(id, name, buffer.readEnum(IssueKind.class), buffer.readUtf(128), buffer.readUtf(512),
+                        buffer.readEnum(Page.class), readOptionalId(buffer), readOptionalId(buffer), readOptionalId(buffer),
+                        buffer.readBoolean());
                 case SUMMARY -> throw new IllegalArgumentException("Settlement summary cannot contain rows");
             });
         }
@@ -254,6 +268,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         header.reserve().write(buffer);
         header.budget().write(buffer);
         header.spent().write(buffer);
+        buffer.writeVarInt(header.issues());
     }
 
     private static Header readHeader(RegistryFriendlyByteBuf buffer) {
@@ -282,7 +297,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
         return new Header(id, name, center, leader, permissions, stage, radius, projects, depots, supply, demand,
                 population, housing, food, shortage, support, required,
-                ready, missing, CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer));
+                ready, missing, CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer),
+                buffer.readVarInt());
     }
 
     private static void writeOptionalId(RegistryFriendlyByteBuf buffer, UUID id) {
@@ -324,8 +340,9 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                          SettlementStage stage, int radius, int projectLimit, int depotLimit, int marketSupply, int marketDemand,
                          int population, int housing, double foodDays, long shortageTicks,
                          long supportTicks, long requiredTicks, boolean ready, List<SettlementProgressionService.Requirement> missing,
-                         CurrencyAmount balance, CurrencyAmount reserve, CurrencyAmount budget, CurrencyAmount spent) {
+                         CurrencyAmount balance, CurrencyAmount reserve, CurrencyAmount budget, CurrencyAmount spent, int issues) {
         public Header {
+            if (issues < 0) throw new IllegalArgumentException("Invalid settlement issue count");
             new com.jvn.villagerretaliation.settlement.SettlementStageRules.Limits(
                     radius, projectLimit, depotLimit, marketSupply, marketDemand, Set.of());
             permissions = Set.copyOf(permissions);
@@ -334,9 +351,28 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
     }
 
-    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed, History {
+    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed, History, Issue {
         UUID id();
         String name();
+    }
+
+    public enum IssueKind {
+        PROGRESSION, WORKER, PROJECT
+    }
+
+    public record Issue(UUID id, String name, IssueKind kind, String cause, String detail,
+                        Page target, UUID targetId, UUID resident, UUID area, boolean enabled) implements Entry {
+        public Issue {
+            if (id == null || name == null || name.length() > 128 || kind == null
+                    || cause == null || cause.isBlank() || cause.length() > 128 || detail == null || detail.length() > 512
+                    || target == null || switch (kind) {
+                        case PROGRESSION -> target != Page.RESIDENTS && target != Page.AREAS && target != Page.DEPOTS;
+                        case WORKER -> target != Page.RESIDENTS || targetId == null || !targetId.equals(resident) || area == null;
+                        case PROJECT -> target != Page.PROJECTS || targetId == null || resident == null || area == null;
+                    }) {
+                throw new IllegalArgumentException("Invalid settlement issue");
+            }
+        }
     }
 
     public record Bed(UUID id, String name, BlockPos position, UUID resident, String residentName, boolean available) implements Entry {
