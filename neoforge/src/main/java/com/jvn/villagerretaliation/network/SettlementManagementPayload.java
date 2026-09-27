@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page;
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
+import com.jvn.villagerretaliation.settlement.SettlementEvent;
 import com.jvn.villagerretaliation.settlement.SettlementDepotPurpose;
 import com.jvn.villagerretaliation.settlement.SettlementGuardOrder;
 import com.jvn.villagerretaliation.settlement.SettlementWorkerSettings;
@@ -48,6 +49,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case DELEGATES -> entry instanceof Delegate;
                 case PROJECTS -> entry instanceof Project;
                 case BEDS -> entry instanceof Bed;
+                case HISTORY -> entry instanceof History;
                 case SUMMARY -> false;
             };
             if (!valid) {
@@ -150,6 +152,10 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.writeUtf(bed.residentName(), 128);
                     buffer.writeBoolean(bed.available());
                 }
+                case History history -> {
+                    buffer.writeVarLong(history.gameTime());
+                    buffer.writeEnum(history.kind());
+                }
                 case Delegate delegate -> writePermissions(buffer, delegate.permissions());
             }
         }
@@ -212,6 +218,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         buffer.readBoolean(), buffer.readUtf(64));
                 case BEDS -> new Bed(id, name, buffer.readBlockPos(), readOptionalId(buffer), buffer.readUtf(128), buffer.readBoolean());
                 case DELEGATES -> new Delegate(id, name, readPermissions(buffer));
+                case HISTORY -> new History(id, name, buffer.readVarLong(), buffer.readEnum(SettlementEvent.Type.class));
                 case PROJECTS -> new Project(id, name, buffer.readUUID(), buffer.readUUID(), buffer.readBlockPos(),
                         buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
                         buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512));
@@ -326,7 +333,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
     }
 
-    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed {
+    public sealed interface Entry permits Town, Resident, Area, Depot, Applicant, Order, Delegate, Project, Bed, History {
         UUID id();
         String name();
     }
@@ -398,6 +405,14 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     || placed < 0 || total <= 0 || placed > total || blocker == null || blocker.length() > 128
                     || materials == null || materials.length() > 512 || phase == null || missingMaterials == null || missingMaterials.length() > 512) {
                 throw new IllegalArgumentException("Invalid construction project snapshot");
+            }
+        }
+    }
+
+    public record History(UUID id, String name, long gameTime, SettlementEvent.Type kind) implements Entry {
+        public History {
+            if (id == null || name == null || name.length() > 128 || gameTime < 0 || kind == null) {
+                throw new IllegalArgumentException("Invalid settlement history snapshot");
             }
         }
     }

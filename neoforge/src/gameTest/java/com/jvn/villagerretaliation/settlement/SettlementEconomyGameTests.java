@@ -162,6 +162,9 @@ public final class SettlementEconomyGameTests {
         }
         helper.assertTrue(SettlementProgressionService.advance(fixture.leader(), fixture.town().id()), "the leader can explicitly advance");
         helper.assertValueEqual(fixture.town().stage(), SettlementStage.HAMLET, "the approved stage unlocks");
+        helper.assertValueEqual(fixture.town().history().stream().filter(event -> event.type() == SettlementEvent.Type.STAGE_ADVANCED).count(), 1L,
+                "only the successful advancement enters history");
+        helper.assertValueEqual(fixture.town().history().getLast().subject(), "HAMLET", "history records the earned stage");
         fixture.depot().clearContent();
         fixture.town().support().observe(duration + 200L, false, true);
         helper.assertValueEqual(fixture.town().stage(), SettlementStage.HAMLET, "later shortages do not downgrade the stage");
@@ -170,6 +173,7 @@ public final class SettlementEconomyGameTests {
                 .save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess())
                 .get(fixture.town().id()).orElseThrow();
         helper.assertValueEqual(restored.stage(), SettlementStage.HAMLET, "stage advancement survives reload");
+        helper.assertValueEqual(restored.history(), fixture.town().history(), "the advancement event survives reload unchanged");
         helper.assertValueEqual(restored.support().shortageTicks(), 200L, "shortage duration survives reload");
         helper.succeed();
     }

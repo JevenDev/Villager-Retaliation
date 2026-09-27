@@ -100,8 +100,12 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.RemoveOrder remove -> SettlementTradeService.removeOrder(player, id, remove.id());
             case SettlementManagementActionPayload.Permissions permissions ->
                     town.setPermissions(player.getUUID(), permissions.player(), permissions.grants());
-            case SettlementManagementActionPayload.Transfer transfer ->
-                    town.transferLeadership(player.getUUID(), transfer.successor());
+            case SettlementManagementActionPayload.Transfer transfer -> {
+                boolean transferred = town.transferLeadership(player.getUUID(), transfer.successor());
+                if (transferred) town.recordEvent(level.getGameTime(), SettlementEvent.Type.LEADERSHIP_TRANSFERRED,
+                        playerName(player, transfer.successor()));
+                yield transferred;
+            }
             case SettlementManagementActionPayload.Inventory inventory -> level.getEntity(inventory.resident()) instanceof Villager villager
                     && SettlementWorkforceService.duty(villager).filter(duty -> duty.town().id().equals(id)).isPresent()
                     && SettlementWorkforceService.canManageEquipment(level, villager, player)
@@ -148,6 +152,8 @@ public final class SettlementManagementService {
                 case RESIDENTS -> residents(level, registry, town, entries);
                 case AREAS -> areas(town, entries);
                 case BEDS -> beds(level, town, entries);
+                case HISTORY -> town.history().reversed().forEach(event -> entries.add(new SettlementManagementPayload.History(
+                        event.id(), event.subject(), event.gameTime(), event.type())));
                 case DEPOTS -> depots(town, entries);
                 case PROJECTS -> town.projects().values().forEach(project -> entries.add(new SettlementManagementPayload.Project(
                         project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.status(),
@@ -177,8 +183,9 @@ public final class SettlementManagementService {
             }
         }
         String needle = request.query().strip().toLowerCase(Locale.ROOT);
-        var filtered = entries.stream().filter(entry -> searchable(entry).toLowerCase(Locale.ROOT).contains(needle))
-                .sorted(Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER).thenComparing(Entry::id)).toList();
+        var matching = entries.stream().filter(entry -> searchable(entry).toLowerCase(Locale.ROOT).contains(needle));
+        var filtered = (request.page() == Page.HISTORY ? matching
+                : matching.sorted(Comparator.comparing(Entry::name, String.CASE_INSENSITIVE_ORDER).thenComparing(Entry::id))).toList();
         int size = SettlementManagementRequestPayload.PAGE_SIZE;
         int index = Math.min(request.index(), Math.max(0, (filtered.size() - 1) / size));
         int start = index * size;
@@ -269,6 +276,7 @@ public final class SettlementManagementService {
             case SettlementManagementPayload.Resident resident -> " " + resident.profession().getPath();
             case SettlementManagementPayload.Bed bed -> " " + bed.position().toShortString() + " " + bed.residentName() + " " + bed.resident();
             case SettlementManagementPayload.Area area -> " " + area.kind().name();
+            case SettlementManagementPayload.History history -> " " + history.kind().name();
             case SettlementManagementPayload.Depot depot -> " " + depot.purpose().name();
             case SettlementManagementPayload.Applicant applicant -> " " + applicant.profession().getPath();
             case SettlementManagementPayload.Order order -> " " + order.item().getPath() + " " + order.direction().name();

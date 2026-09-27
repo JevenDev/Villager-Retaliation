@@ -254,6 +254,15 @@ public final class SettlementViewClientSmoke {
                 phase = 8;
             }
         } else if (phase == 8 && minecraft.screen instanceof SettlementManagementScreen screen) {
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.HISTORY, "");
+            phase = 70;
+        } else if (phase == 70 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.HISTORY) {
+            require(screen.snapshot().entries().stream().anyMatch(entry -> entry instanceof
+                    com.jvn.villagerretaliation.network.SettlementManagementPayload.History history
+                    && history.kind() == com.jvn.villagerretaliation.settlement.SettlementEvent.Type.ESTABLISHED),
+                    "the native history page receives the persisted founding event");
+            capture("history");
             screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS, fixture.resident().toString());
             phase = 9;
         } else if (phase == 9 && minecraft.screen instanceof SettlementManagementScreen screen

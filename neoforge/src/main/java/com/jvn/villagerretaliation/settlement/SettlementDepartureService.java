@@ -73,6 +73,7 @@ public final class SettlementDepartureService {
                 var departure = new SettlementDeparture(id, VillagerSocialGraphSavedData.get(level).knownName(id).orElse("Resident"),
                         now, reason, SettlementResidentState.load(state.save()));
                 town.recordDeparture(departure);
+                town.recordEvent(now, SettlementEvent.Type.RESIDENT_DEPARTED, departure.name());
                 town.removeDuty(id);
                 town.removeResident(id);
                 registry.removeResident(town.id(), id);

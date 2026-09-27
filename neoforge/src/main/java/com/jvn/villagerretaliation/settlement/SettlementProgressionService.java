@@ -93,6 +93,7 @@ public final class SettlementProgressionService {
         }
         town.support().resetAdvancement();
         town.advance();
+        town.recordEvent(player.serverLevel().getGameTime(), SettlementEvent.Type.STAGE_ADVANCED, town.stage().name());
         return true;
     }
 

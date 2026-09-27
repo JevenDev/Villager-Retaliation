@@ -72,6 +72,7 @@ public final class SettlementConstructionService {
         state.remove("ProgressTicks");
         ConstructionBlueprintItem.updatePlacement(blueprint, level, plan, preview.origin(), preview.rotation());
         ConstructionBlueprintItem.markStarted(blueprint, builder, 0, level.getGameTime());
+        town.recordEvent(level.getGameTime(), SettlementEvent.Type.PROJECT_STARTED, project.label());
         HiredWorkSession.invalidate(builder);
         SettlementBackgroundService.onUnloaded(builder);
         var care = town.residents().get(resident);
@@ -100,6 +101,7 @@ public final class SettlementConstructionService {
             return false;
         }
         town.finishProject(projectId, SettlementProject.Status.CANCELLED);
+        town.recordEvent(player.serverLevel().getGameTime(), SettlementEvent.Type.PROJECT_CANCELLED, project.label());
         if (player.serverLevel().getEntity(project.builder()) instanceof Villager builder) {
             reconcile(builder);
         }
@@ -170,9 +172,11 @@ public final class SettlementConstructionService {
     public static void finish(Villager builder, CompoundTag state, SettlementProject.Status status) {
         var town = town(builder, state);
         var project = project(builder, state);
-        if (town != null && project != null && project.builder().equals(builder.getUUID())) {
+        if (town != null && project != null && project.active() && project.builder().equals(builder.getUUID())) {
             observe(builder, state);
             town.finishProject(project.id(), status);
+            town.recordEvent(builder.level().getGameTime(), status == SettlementProject.Status.COMPLETED
+                    ? SettlementEvent.Type.PROJECT_COMPLETED : SettlementEvent.Type.PROJECT_CANCELLED, project.label());
         }
     }
 

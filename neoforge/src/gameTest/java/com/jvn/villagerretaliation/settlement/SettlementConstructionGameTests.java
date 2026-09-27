@@ -229,6 +229,10 @@ public final class SettlementConstructionGameTests {
             helper.assertFalse(BuilderTaskState.hasTask(state), "completion clears the live builder task");
             worker.tick(level, fixture.builder(), null, session.context());
             helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).isEmpty(), "repeated ticking cannot refund or duplicate consumed materials");
+            helper.assertValueEqual(fixture.town().history().stream().filter(event -> event.type() == SettlementEvent.Type.PROJECT_STARTED).count(), 1L,
+                    "commissioning enters history once");
+            helper.assertValueEqual(fixture.town().history().stream().filter(event -> event.type() == SettlementEvent.Type.PROJECT_COMPLETED).count(), 1L,
+                    "completion enters history once even after another worker tick");
         } finally {
             fixture.builder().discard();
         }

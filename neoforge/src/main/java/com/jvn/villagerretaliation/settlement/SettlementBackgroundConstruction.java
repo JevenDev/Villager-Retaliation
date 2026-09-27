@@ -98,6 +98,7 @@ final class SettlementBackgroundConstruction {
                     if (depositLeftovers(level, town, worker, inventory, plan, budget)) return;
                     project.observe(state);
                     town.finishProject(project.id(), SettlementProject.Status.COMPLETED);
+                    town.recordEvent(level.getGameTime(), SettlementEvent.Type.PROJECT_COMPLETED, project.label());
                     ConstructionBlueprintItem.completeMatchingBlueprints(level, project.id());
                     BuilderTaskState.clearTask(state);
                     state.remove(POSITION);

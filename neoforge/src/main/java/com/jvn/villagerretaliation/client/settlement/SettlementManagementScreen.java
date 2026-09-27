@@ -580,6 +580,11 @@ public final class SettlementManagementScreen extends Screen {
     }
 
     private static Component name(Entry entry) {
+        if (entry instanceof SettlementManagementPayload.History history) {
+            Component subject = history.kind() == com.jvn.villagerretaliation.settlement.SettlementEvent.Type.STAGE_ADVANCED
+                    ? text("stage." + history.name().toLowerCase(Locale.ROOT)) : Component.literal(history.name());
+            return text("history." + history.kind().name().toLowerCase(Locale.ROOT), subject);
+        }
         return entry.name().isBlank() ? text(entry instanceof SettlementManagementPayload.Town ? "unnamed" : "unnamed_resident")
                 : Component.literal(entry.name());
     }
@@ -614,6 +619,7 @@ public final class SettlementManagementScreen extends Screen {
             case SettlementManagementPayload.Project project -> text("project_row",
                     project.status() == SettlementProject.Status.ACTIVE ? enumText("project_phase", project.phase())
                             : enumText("project_status", project.status()), project.placed(), project.total());
+            case SettlementManagementPayload.History history -> text("history_time", history.gameTime() / 24_000L + 1L);
             case SettlementManagementPayload.Delegate delegate -> Component.literal(String.join(", ",
                     delegate.permissions().stream().map(permission -> enumText("permission", permission).getString()).toList()));
         };

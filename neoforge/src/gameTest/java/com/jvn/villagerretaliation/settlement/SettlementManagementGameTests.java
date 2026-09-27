@@ -103,8 +103,12 @@ public final class SettlementManagementGameTests {
                 delegate.getUUID(), Set.of(SettlementPermission.BUILD))), "delegates cannot promote themselves");
         helper.assertFalse(act(delegate, fixture.town(), new SettlementManagementActionPayload.Transfer(delegate.getUUID())),
                 "delegates cannot take leadership");
+        helper.assertValueEqual(fixture.town().history().size(), 1, "rejected transfers do not add history");
         helper.assertTrue(act(fixture.leader(), fixture.town(), new SettlementManagementActionPayload.Transfer(delegate.getUUID())),
                 "explicit leadership transfer succeeds");
+        helper.assertValueEqual(fixture.town().history().size(), 2, "the successful transfer adds one event");
+        helper.assertValueEqual(fixture.town().history().getLast().type(), SettlementEvent.Type.LEADERSHIP_TRANSFERRED,
+                "the transfer remains visible in the town history");
         helper.assertTrue(SettlementManagementService.snapshot(fixture.leader(), request) == null,
                 "the former leader loses automatic access");
         helper.assertTrue(act(delegate, fixture.town(), new SettlementManagementActionPayload.SaveArea(area)),
@@ -297,6 +301,57 @@ public final class SettlementManagementGameTests {
         } finally {
             buffer.release();
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
+    public static void historyIsBoundedPersistentAndCompatibleWithOlderSaves(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        helper.assertValueEqual(town.history().getFirst().type(), SettlementEvent.Type.ESTABLISHED,
+                "enrollment records the settlement's first event");
+        for (int index = 0; index < 260; index++) {
+            town.recordEvent(index, SettlementEvent.Type.RESIDENT_JOINED, "Resident " + index);
+        }
+        helper.assertValueEqual(town.history().size(), SettlementRecord.MAX_HISTORY, "the history has a finite retention limit");
+        helper.assertValueEqual(town.history().getFirst().subject(), "Resident 4", "only the oldest events expire");
+        var saved = town.save(helper.getLevel().registryAccess());
+        var restored = SettlementRecord.load(saved, helper.getLevel().registryAccess(), () -> {});
+        helper.assertValueEqual(restored.history(), town.history(), "save loading preserves event identities, order and content");
+        helper.assertValueEqual(restored.revision(), town.revision(), "loading does not replay history mutations");
+        saved.remove("History");
+        var legacy = SettlementRecord.load(saved, helper.getLevel().registryAccess(), () -> {});
+        helper.assertTrue(legacy.history().isEmpty(), "older saves do not invent past activity");
+        helper.assertValueEqual(legacy.leader(), town.leader(), "adding history preserves existing authority");
+        var longName = SettlementEvent.create(0, SettlementEvent.Type.RESIDENT_JOINED, "a".repeat(127) + "\uD83C\uDF3E");
+        helper.assertValueEqual(longName.subject(), "a".repeat(127), "bounded names do not split a Unicode character");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
+    public static void historyPagesPreserveChronologyAndViewPermissions(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        for (int index = 0; index < 50; index++) {
+            town.recordEvent(helper.getLevel().getGameTime(), SettlementEvent.Type.RESIDENT_JOINED, "Resident " + index);
+        }
+        long revision = town.revision();
+        var first = snapshot(fixture, Page.HISTORY, 0, "");
+        var second = snapshot(fixture, Page.HISTORY, 1, "");
+        helper.assertValueEqual(first.total(), 51, "history pagination includes enrollment and arrivals");
+        helper.assertValueEqual(first.entries().getFirst().name(), "Resident 49", "the latest event appears first even at the same tick");
+        helper.assertValueEqual(second.entries().getFirst().name(), "Resident 25", "later pages continue chronological order");
+        var selected = snapshot(fixture, Page.HISTORY, 0, "Resident 4");
+        helper.assertValueEqual(selected.total(), 11, "search spans the complete retained history");
+        helper.assertValueEqual(selected.entries().getFirst().name(), "Resident 49", "search preserves chronology");
+        roundTrip(helper, SettlementManagementPayload.STREAM_CODEC, first);
+        var viewer = player(helper, "HistoryViewer");
+        var request = new SettlementManagementRequestPayload(town.id().value(), Page.HISTORY, 0, "", 12, false);
+        helper.assertTrue(SettlementManagementService.snapshot(viewer, request) == null, "outsiders cannot read settlement history");
+        helper.assertValueEqual(town.revision(), revision, "reading history has no side effects");
+        town.setPermissions(fixture.leader().getUUID(), viewer.getUUID(), Set.of(SettlementPermission.VIEW));
+        helper.assertTrue(SettlementManagementService.snapshot(viewer, request) != null, "delegated view permission includes history");
+        helper.assertFalse(helper.getLevel().hasChunkAt(town.center()), "history does not load the settlement");
         helper.succeed();
     }
 

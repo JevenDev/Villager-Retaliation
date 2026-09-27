@@ -21,6 +21,8 @@ import net.minecraft.world.item.ItemStack;
 public final class SettlementRecord {
     public static final int MAX_AREAS = 256;
     public static final int MAX_APPLICANTS = 8;
+    public static final int MAX_HISTORY = 256;
+    private final List<SettlementEvent> history = new ArrayList<>();
     private final VillageAllegianceId id;
     private final ResourceLocation dimension;
     private final BlockPos center;
@@ -99,6 +101,17 @@ public final class SettlementRecord {
 
     public long revision() {
         return this.revision;
+    }
+
+    public List<SettlementEvent> history() {
+        return List.copyOf(this.history);
+    }
+
+    void recordEvent(long gameTime, SettlementEvent.Type type, String subject) {
+        var event = SettlementEvent.create(gameTime, type, subject);
+        if (this.history.size() == MAX_HISTORY) this.history.removeFirst();
+        this.history.add(event);
+        changed();
     }
 
     public SettlementStage stage() {
@@ -770,6 +783,9 @@ public final class SettlementRecord {
         tag.putUUID("Leader", this.leader);
         tag.putLong("FoundedAt", this.foundedAt);
         tag.putLong("Revision", this.revision);
+        var historyTags = new ListTag();
+        this.history.forEach(event -> historyTags.add(event.save()));
+        tag.put("History", historyTags);
         tag.putString("Stage", this.stage.name());
         tag.putInt("ExpansionRadius", this.radius);
         ListTag delegateTags = new ListTag();
@@ -910,6 +926,13 @@ public final class SettlementRecord {
                 dimension, BlockPos.of(tag.getLong("Center")), tag.getUUID("Leader"),
                 tag.getLong("FoundedAt"), dirty);
         record.revision = Math.max(0L, tag.getLong("Revision"));
+        var historyTags = tag.getList("History", Tag.TAG_COMPOUND);
+        var eventIds = new java.util.HashSet<UUID>();
+        for (int index = Math.max(0, historyTags.size() - MAX_HISTORY); index < historyTags.size(); index++) {
+            var event = SettlementEvent.load(historyTags.getCompound(index));
+            if (!eventIds.add(event.id())) throw new IllegalArgumentException("Duplicate settlement history event");
+            record.history.add(event);
+        }
         record.stage = SettlementStage.valueOf(tag.getString("Stage"));
         int savedRadius = tag.contains("ExpansionRadius") ? tag.getInt("ExpansionRadius") : record.stage.legacyRadius();
         if (savedRadius < 16 || savedRadius > SettlementStageRules.MAX_RADIUS) {
