@@ -79,7 +79,7 @@ public final class SettlementLivestock {
         this.position = animal.blockPosition().immutable();
         this.entity = animal.saveWithoutId(new CompoundTag());
         this.version = Math.max(this.version, animal.getPersistentData().getLong(VERSION_TAG));
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
         this.pending = false;
         this.unsafe = animal.getHealth() <= 0.0F || animal.isOnFire() || animal.isInLava()
                 || animal.getLastHurtByMob() != null || animal.isPassenger();
@@ -118,8 +118,8 @@ public final class SettlementLivestock {
     }
 
     int advance(long now) {
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-        this.checkedAt = now;
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
+        this.checkedAt = Math.max(this.checkedAt, now);
         if (elapsed == 0 || this.unsafe) return elapsed;
         int age = this.entity.getInt("Age");
         int love = this.entity.getInt("InLove");

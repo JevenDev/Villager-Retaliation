@@ -22,7 +22,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class SettlementSavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_settlements";
-    private static final int FORMAT_VERSION = 53;
+    private static final int FORMAT_VERSION = 54;
+    final SettlementSimulationService simulation = new SettlementSimulationService();
     private final Map<VillageAllegianceId, SettlementRecord> settlements = new LinkedHashMap<>();
 
     public static SettlementSavedData get(ServerLevel level) {

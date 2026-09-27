@@ -67,6 +67,7 @@ public final class SettlementRecord {
     private SettlementStage stage = SettlementStage.CAMP;
     private int radius = SettlementStage.CAMP.radius();
     private long revision;
+    private long simulationResumedAt;
 
     SettlementRecord(VillageAllegianceId id, ResourceLocation dimension, BlockPos center,
                      UUID leader, long foundedAt, Runnable dirty) {
@@ -97,6 +98,15 @@ public final class SettlementRecord {
 
     public long foundedAt() {
         return this.foundedAt;
+    }
+
+    long simulationResumedAt() {
+        return this.simulationResumedAt;
+    }
+
+    void resumeSimulation(long now) {
+        this.simulationResumedAt = now;
+        changed();
     }
 
     public long revision() {
@@ -836,6 +846,7 @@ public final class SettlementRecord {
             surveyTags.add(entry);
         });
         tag.put("Surveys", surveyTags);
+        tag.putLong("SimulationResumedAt", this.simulationResumedAt);
         tag.put("Support", this.support.save());
         ListTag supportServices = new ListTag();
         SettlementStageRules.forStage(this.stage.next().orElse(this.stage)).services().stream().sorted()
@@ -939,6 +950,7 @@ public final class SettlementRecord {
             throw new IllegalArgumentException("Saved settlement expansion radius exceeds its limit");
         }
         record.radius = Math.max(savedRadius, record.stage.radius());
+        record.simulationResumedAt = Math.max(0L, tag.getLong("SimulationResumedAt"));
         record.support = SettlementSupportState.load(tag.getCompound("Support"));
         var supportStage = record.stage.next().orElse(record.stage);
         Set<SettlementProgressionService.Requirement> supportedServices = SettlementStageRules.legacy(supportStage).services();

@@ -125,14 +125,14 @@ final class SettlementGroundExperience {
         }
         this.entity = observed;
         this.pendingSpawn = false;
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
         this.removed = false;
     }
 
     void advance(ServerLevel level, SettlementExperienceSimulation simulation, long now) {
         if (this.removed || now <= this.checkedAt) return;
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-        this.checkedAt = now;
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
+        this.checkedAt = Math.max(this.checkedAt, now);
         var orb = context(level);
         simulation.advance(orb, elapsed);
         this.entity = orb.saveWithoutId(new CompoundTag());
@@ -143,8 +143,8 @@ final class SettlementGroundExperience {
 
     void age(long now) {
         if (this.removed || now <= this.checkedAt) return;
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-        this.checkedAt = now;
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
+        this.checkedAt = Math.max(this.checkedAt, now);
         int age = Math.min(6000, this.entity.getShort("Age") + elapsed);
         this.entity.putShort("Age", (short) age);
         this.removed = age >= 6000;

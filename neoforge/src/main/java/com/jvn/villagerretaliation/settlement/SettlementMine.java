@@ -146,8 +146,8 @@ public final class SettlementMine implements BlockGetter {
     }
 
     int fluidElapsed(long now) {
-        int elapsed = this.lastFluidTick < 0L ? 0 : (int) Math.clamp(now - this.lastFluidTick, 0L, 200L);
-        this.lastFluidTick = now;
+        int elapsed = this.lastFluidTick < 0L ? 0 : SettlementSimulationClock.elapsed(this.lastFluidTick, now);
+        this.lastFluidTick = Math.max(this.lastFluidTick, now);
         return elapsed;
     }
 

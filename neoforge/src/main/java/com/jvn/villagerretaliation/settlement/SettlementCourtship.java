@@ -23,7 +23,7 @@ record SettlementCourtship(UUID first, UUID second, BlockPos firstStart, BlockPo
 
     SettlementCourtship advance(long now) {
         return new SettlementCourtship(this.first, this.second, this.firstStart, this.secondStart, this.bed, this.courtshipTicks,
-                Math.min(24_000, this.progress + (int) Math.clamp(now - this.checkedAt, 0L, 200L)), Math.max(0L, now));
+                Math.min(24_000, this.progress + SettlementSimulationClock.elapsed(this.checkedAt, now)), Math.max(0L, now));
     }
 
     CompoundTag save() {

@@ -4,6 +4,8 @@
   "settlement.villagerretaliation.leadership_requirements": "Leadership: %s/%s adults at Revered, %s beds for %s residents, %s%% sustained housing and food. Sneak-use the table with an empty hand to accept when ready.",
   "text.config.villagerretaliation.category.settlements": "Settlements",
   "text.config.villagerretaliation.category.settlements.tooltip": "Town food consumption, growth, and stage requirements.",
+  "text.config.villagerretaliation.option.settlements.maxBackgroundVillages": "Background Settlement Limit",
+  "text.config.villagerretaliation.option.settlements.maxBackgroundVillages.tooltip": "Maximum managed settlements simulated in the background. Zero disables background simulation. Settlements rotate fairly each game day. Loaded entities continue to tick normally.",
   "text.config.villagerretaliation.option.settlements.dailyNutrition": "Daily Nutrition",
   "text.config.villagerretaliation.option.settlements.dailyNutrition.tooltip": "Nutrition consumed by each resident over one game day. Meals also retain their normal saturation.",
   "text.config.villagerretaliation.option.settlements.advancementDays": "Sustained Support Days",

@@ -115,7 +115,7 @@ public final class SettlementResidentState {
         if (this.familyInventory != null) this.familyInventory.restore(villager);
         var snapshot = VillagerRecoveryService.captureRecoveryState(villager);
         this.position = villager.blockPosition().immutable();
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
         this.food = snapshot.food();
         this.saturation = snapshot.saturation();
@@ -229,8 +229,8 @@ public final class SettlementResidentState {
     }
 
     int advance(ServerLevel level, SettlementRecord town, long now) {
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-        this.checkedAt = now;
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
+        this.checkedAt = Math.max(this.checkedAt, now);
         if (!this.present || elapsed == 0) {
             return 0;
         }

@@ -147,7 +147,7 @@ public final class SettlementFurnaceState {
 
     void observe(HolderLookup.Provider provider, AbstractFurnaceBlockEntity furnace, long now) {
         refresh(provider, furnace);
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
     }
 
     void refresh(HolderLookup.Provider provider, AbstractFurnaceBlockEntity furnace) {
@@ -162,7 +162,7 @@ public final class SettlementFurnaceState {
     }
 
     void pause(long now) {
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
     }
 
     void missing() {
@@ -187,8 +187,8 @@ public final class SettlementFurnaceState {
     }
 
     void advance(ServerLevel level, long now) {
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-        this.checkedAt = now;
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
+        this.checkedAt = Math.max(this.checkedAt, now);
         if (elapsed == 0 || this.conflict) {
             return;
         }

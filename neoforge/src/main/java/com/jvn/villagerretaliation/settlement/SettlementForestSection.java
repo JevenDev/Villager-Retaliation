@@ -120,7 +120,7 @@ final class SettlementForestSection {
     }
 
     int elapsed(long now) {
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
         this.checkedAt = Math.max(now, this.checkedAt);
         return elapsed;
     }

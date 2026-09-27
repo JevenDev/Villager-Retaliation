@@ -46,7 +46,7 @@ final class SettlementItemDrop {
         if (!observed.getList("Pos", Tag.TAG_DOUBLE).equals(this.entity.getList("Pos", Tag.TAG_DOUBLE))) this.access.clear();
         this.position = item.blockPosition().immutable();
         this.entity = observed;
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
     }
 
     UUID id() {
@@ -87,8 +87,8 @@ final class SettlementItemDrop {
     }
 
     boolean advance(ServerLevel level, long now) {
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-        this.checkedAt = now;
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
+        this.checkedAt = Math.max(this.checkedAt, now);
         int age = this.entity.getShort("Age");
         int delay = this.entity.getShort("PickupDelay");
         int lifespan = this.entity.getInt("Lifespan");

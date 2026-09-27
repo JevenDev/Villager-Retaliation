@@ -204,7 +204,7 @@ public final class SettlementWorkerState {
         this.aptitude = HiredVillagerRoles.roleScore(level, villager, this.role);
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
         this.brewingVersion = Math.max(this.brewingVersion, SettlementBrewingService.version(villager));
-        this.checkedAt = now;
+        this.checkedAt = Math.max(this.checkedAt, now);
         this.progress = 0.0D;
         this.unsafe = villager.getTarget() != null && engagement == null
                 || villager.getLastHurtByMob() != null && !villager.getLastHurtByMob().getUUID().equals(engagement)
@@ -260,8 +260,8 @@ public final class SettlementWorkerState {
     }
 
     int elapsed(long now) {
-        int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
-        this.checkedAt = now;
+        int elapsed = SettlementSimulationClock.elapsed(this.checkedAt, now);
+        this.checkedAt = Math.max(this.checkedAt, now);
         return elapsed;
     }
 
