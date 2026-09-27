@@ -81,10 +81,10 @@ public final class SettlementLivestockService {
     }
 
     static int observedSteps(ServerLevel level, SettlementRecord town, SettlementArea area,
-                              SettlementWorkerState worker, Animal animal) {
+                              SettlementWorkerState worker, Entity animal) {
         var proxy = worker.context(level, town);
         if (proxy == null || !area.contains(worker.position()) || !area.contains(animal.blockPosition())) return -1;
-        if (proxy.distanceToSqr(animal) <= 9.0D) return 0;
+        if (proxy.distanceToSqr(animal) <= (animal instanceof net.minecraft.world.entity.item.ItemEntity ? 2.25D : 9.0D)) return 0;
         int radius = (int) Math.ceil(proxy.getAttributeValue(Attributes.FOLLOW_RANGE)) + 9;
         if (radius < 9 || radius > 256) return -1;
         BlockPos start = proxy.blockPosition();
@@ -104,6 +104,7 @@ public final class SettlementLivestockService {
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
         SettlementAnimalBirthService.update(level, town);
+        SettlementItemDropService.update(level, town, now);
         var frames = new java.util.ArrayList<SettlementLivestockBreeding.Frame>();
         for (var state : List.copyOf(town.livestock().values())) {
             var entity = level.getEntity(state.id());
@@ -120,6 +121,7 @@ public final class SettlementLivestockService {
                 if (!active) {
                     var frame = SettlementLivestockBreeding.step(level, state, now);
                     frames.add(frame);
+                    SettlementLivestockProducts.advance(level, town, frame, now);
                     if (frame.animal() == null || !frame.animal().isInLove()) SettlementPasture.graze(level, town, state, frame.elapsed());
                     state.restore(animal);
                 } else {
@@ -135,6 +137,7 @@ public final class SettlementLivestockService {
             } else if (area != null && area.type() == SettlementAreaType.ANIMAL_PEN && area.contains(state.position())) {
                 var frame = SettlementLivestockBreeding.step(level, state, now);
                 frames.add(frame);
+                SettlementLivestockProducts.advance(level, town, frame, now);
                 if (frame.animal() == null || !frame.animal().isInLove()) SettlementPasture.graze(level, town, state, frame.elapsed());
             } else if (!state.pending()) {
                 town.removeLivestock(state.id());
@@ -143,6 +146,7 @@ public final class SettlementLivestockService {
         }
         SettlementLivestockBreeding.advance(level, town, frames, now);
         SettlementAnimalBirthService.update(level, town);
+        SettlementItemDropService.update(level, town, now);
     }
 
     public static void onActive(Animal animal) {

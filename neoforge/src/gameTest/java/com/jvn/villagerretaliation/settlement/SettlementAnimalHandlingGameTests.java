@@ -359,6 +359,312 @@ public final class SettlementAnimalHandlingGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void backgroundChickenEggsUseTheNativeTimerAndActualInventory(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var chicken = EntityType.CHICKEN.create(helper.getLevel());
+            chicken.setPos(fixture.town().center().east().getBottomCenter());
+            chicken.setNoAi(true);
+            chicken.eggTime = 1;
+            var state = record(helper, fixture, chicken);
+            SettlementLivestockService.update(helper.getLevel(), fixture.town(), 200L);
+            helper.assertValueEqual(fixture.town().itemDrops().size(), 1, "one elapsed native timer produces one actual pending egg");
+            int timer = ((net.minecraft.world.entity.animal.Chicken) state.context(helper.getLevel())).eggTime;
+            helper.assertTrue(timer >= 5_801 && timer <= 11_800, "the next native interval includes the remaining elapsed ticks");
+            work(helper, fixture, 8);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 1, "the handler collects that finite egg");
+            helper.assertTrue(fixture.town().itemDrops().isEmpty(), "collecting consumes the pending item");
+            SettlementLivestockService.update(helper.getLevel(), fixture.town(), 200L);
+            work(helper, fixture, 8);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 1, "repeating the same interval cannot produce or collect another egg");
+            helper.assertTrue(state.restore(chicken), "returning the native chicken applies its background timer");
+            helper.assertValueEqual(chicken.eggTime, timer, "the returned chicken retains the already consumed egg interval");
+            helper.assertFalse(state.restore(chicken), "the timer receipt applies once");
+            helper.assertFalse(helper.getLevel().hasChunkAt(fixture.town().center()), "egg production and collection never load the pen");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void babiesAndJockeysDoNotLayUntilTheNativeRulesPermitIt(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var baby = EntityType.CHICKEN.create(helper.getLevel());
+            baby.setPos(fixture.town().center().east().getBottomCenter());
+            baby.setAge(-400);
+            baby.eggTime = 1;
+            var babyState = record(helper, fixture, baby);
+            var jockey = EntityType.CHICKEN.create(helper.getLevel());
+            jockey.setPos(fixture.town().center().south().getBottomCenter());
+            jockey.setChickenJockey(true);
+            jockey.eggTime = 1;
+            var jockeyState = record(helper, fixture, jockey);
+            SettlementLivestockService.update(helper.getLevel(), fixture.town(), 200L);
+            helper.assertTrue(fixture.town().itemDrops().isEmpty(), "babies and jockeys cannot lay");
+            helper.assertValueEqual(((net.minecraft.world.entity.animal.Chicken) babyState.context(helper.getLevel())).eggTime, 1,
+                    "a baby's egg timer is paused");
+            SettlementLivestockService.update(helper.getLevel(), fixture.town(), 400L);
+            helper.assertValueEqual(fixture.town().itemDrops().size(), 1, "the former baby can lay on the tick it reaches adulthood");
+            helper.assertValueEqual(((net.minecraft.world.entity.animal.Chicken) jockeyState.context(helper.getLevel())).eggTime, 1,
+                    "a jockey's egg timer stays paused");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void fullOutputKeepsTheEggOnTheGroundUntilSpaceReturns(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var drop = eggDrop(helper, fixture, 1);
+            fillOutput(helper, fixture);
+            work(helper, fixture, 8);
+            helper.assertTrue(fixture.town().itemDrops().containsKey(drop.id()), "full output does not delete a ground egg");
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 0, "full output cannot silently credit an egg");
+            supply(helper, fixture, fixture.worker().outputSlots().getFirst(), ItemStack.EMPTY);
+            work(helper, fixture, 8);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 1, "freed capacity collects the same egg");
+            helper.assertTrue(fixture.town().itemDrops().isEmpty(), "successful pickup removes the ground item");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void partialEggPickupConservesTheRemainder(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var drop = eggDrop(helper, fixture, 5);
+            fillOutput(helper, fixture);
+            int slot = fixture.worker().outputSlots().getFirst();
+            supply(helper, fixture, slot, new ItemStack(Items.EGG, 15));
+            work(helper, fixture, 1);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 16, "only one egg fits the remaining output capacity");
+            helper.assertValueEqual(drop.item(helper.getLevel().registryAccess()).getCount(), 4, "the other four remain on the ground");
+            supply(helper, fixture, slot, ItemStack.EMPTY);
+            work(helper, fixture, 8);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 4, "later pickup transfers only the remaining four");
+            helper.assertTrue(fixture.town().itemDrops().isEmpty(), "the finite stack is now fully consumed");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void anUnobservedEggRouteCannotTransferItsItem(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var item = new net.minecraft.world.entity.item.ItemEntity(helper.getLevel(), fixture.town().center().getX() + 8.5D,
+                    fixture.town().center().getY(), fixture.town().center().getZ() + 0.5D, new ItemStack(Items.EGG));
+            var drop = SettlementItemDrop.create(item, fixture.area().id(), 0L);
+            fixture.town().recordItemDrop(drop);
+            work(helper, fixture, 8);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 0, "an unobserved route cannot collect a ground item");
+            helper.assertValueEqual(fixture.worker().status(), "animal_drop_unreachable", "the missing route has a specific blocker");
+            drop.access(fixture.worker(), 8);
+            work(helper, fixture, 8);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 1, "an observed route allows the finite pickup");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void pendingEggsAgeWithoutServerOfflineCatchup(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var drop = eggDrop(helper, fixture, 1);
+            SettlementItemDropService.update(helper.getLevel(), fixture.town(), 48_000L);
+            helper.assertValueEqual(drop.context(helper.getLevel()).getAge(), 200, "a long clock gap simulates only one bounded running interval");
+            SettlementItemDropService.update(helper.getLevel(), fixture.town(), 48_000L);
+            helper.assertValueEqual(drop.context(helper.getLevel()).getAge(), 200, "the same interval cannot age the item twice");
+            for (int step = 1; step <= 29; step++) SettlementItemDropService.update(helper.getLevel(), fixture.town(), 48_000L + step * 200L);
+            helper.assertTrue(fixture.town().itemDrops().isEmpty(), "an uncollected egg expires at its actual native lifespan");
+            work(helper, fixture, 8);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 0, "expired eggs cannot be collected later");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void backgroundEggExpiryHonorsTheNativeExtensionEvent(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var item = new net.minecraft.world.entity.item.ItemEntity(helper.getLevel(), fixture.town().center().getX() + 0.5D,
+                    fixture.town().center().getY(), fixture.town().center().getZ() + 0.5D, new ItemStack(Items.EGG));
+            item.lifespan = 1;
+            var drop = SettlementItemDrop.create(item, fixture.area().id(), 0L);
+            fixture.town().recordItemDrop(drop);
+            int[] calls = {0};
+            Consumer<net.neoforged.neoforge.event.entity.item.ItemExpireEvent> extend = event -> {
+                if (event.getEntity().getUUID().equals(drop.id()) && calls[0]++ == 0) event.addExtraLife(200);
+            };
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(extend);
+            try {
+                SettlementItemDropService.update(helper.getLevel(), fixture.town(), 200L);
+                helper.assertTrue(fixture.town().itemDrops().containsKey(drop.id()), "the native extension preserves the expired egg");
+                helper.assertValueEqual(drop.context(helper.getLevel()).lifespan, 201, "the actual native extra lifetime is retained");
+                SettlementItemDropService.update(helper.getLevel(), fixture.town(), 400L);
+                helper.assertTrue(fixture.town().itemDrops().isEmpty(), "the egg expires when its extended life ends");
+                helper.assertValueEqual(calls[0], 2, "each lifespan boundary fires the native expiry hook once");
+            } finally {
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(extend);
+            }
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void pendingEggMaterializationAndOldSaveReplayAreIdempotent(GameTestHelper helper) {
+        fixture(helper, true, fixture -> {
+            var drop = eggDrop(helper, fixture, 1);
+            var saved = drop.save();
+            helper.assertTrue(SettlementItemDropService.materialize(helper.getLevel(), fixture.town(), drop), "the pending egg enters its loaded native chunk");
+            var item = helper.getLevel().getEntity(drop.id());
+            helper.assertTrue(item instanceof net.minecraft.world.entity.item.ItemEntity, "materialization creates the actual item entity");
+            helper.assertTrue(SettlementItemDropService.materialize(helper.getLevel(), fixture.town(), drop), "a repeated delivery is already acknowledged");
+            helper.assertTrue(helper.getLevel().getEntity(drop.id()) == item, "repeated delivery keeps the same native entity");
+            item.discard();
+            var replay = SettlementItemDrop.load(saved, helper.getLevel().registryAccess());
+            fixture.town().recordItemDrop(replay);
+            work(helper, fixture, 8);
+            helper.assertTrue(fixture.town().itemDrops().isEmpty(), "the chunk receipt rejects an old pending-item snapshot");
+            helper.assertTrue(helper.getLevel().getEntity(drop.id()) == null, "an already consumed native egg cannot be recreated");
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 0, "an old saved drop cannot also credit the background inventory");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void aRejectedNativeEggJoinKeepsTheDropForRetry(GameTestHelper helper) {
+        fixture(helper, true, fixture -> {
+            var drop = eggDrop(helper, fixture, 1);
+            Consumer<net.neoforged.neoforge.event.entity.EntityJoinLevelEvent> reject = event -> {
+                if (event.getEntity().getUUID().equals(drop.id())) event.setCanceled(true);
+            };
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(reject);
+            try {
+                helper.assertFalse(SettlementItemDropService.materialize(helper.getLevel(), fixture.town(), drop), "a rejected native join is not delivery");
+                helper.assertTrue(fixture.town().itemDrops().containsKey(drop.id()), "the rejected egg is still pending");
+            } finally {
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(reject);
+            }
+            helper.assertTrue(SettlementItemDropService.materialize(helper.getLevel(), fixture.town(), drop), "the same egg can be retried");
+            var item = helper.getLevel().getEntity(drop.id());
+            helper.assertTrue(item != null && fixture.town().itemDrops().isEmpty(), "successful retry acknowledges exactly one item");
+            item.discard();
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void aBackgroundHandlerCanCollectAnEggInALoadedPartOfThePen(GameTestHelper helper) {
+        fixture(helper, true, fixture -> {
+            var item = new net.minecraft.world.entity.item.ItemEntity(helper.getLevel(), fixture.town().center().getX() + 1.5D,
+                    fixture.town().center().getY(), fixture.town().center().getZ() + 0.5D, new ItemStack(Items.EGG, 2));
+            helper.assertTrue(helper.getLevel().addFreshEntity(item), "the actual native ground eggs are present");
+            try {
+                work(helper, fixture, 8);
+                helper.assertValueEqual(carried(helper, fixture, Items.EGG), 2, "background work can collect the loaded native stack");
+                helper.assertTrue(item.isRemoved(), "the real world stack is consumed once");
+                work(helper, fixture, 8);
+                helper.assertValueEqual(carried(helper, fixture, Items.EGG), 2, "later work cannot repeat the same collection");
+            } finally {
+                item.discard();
+            }
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void activeNativeChickensDoNotAlsoAdvanceTheirEggTimerInTheBackground(GameTestHelper helper) {
+        fixture(helper, true, fixture -> {
+            var chicken = EntityType.CHICKEN.create(helper.getLevel());
+            chicken.setPos(fixture.town().center().east().getBottomCenter());
+            chicken.setNoAi(true);
+            chicken.eggTime = 100;
+            record(helper, fixture, chicken);
+            helper.assertTrue(helper.getLevel().addFreshEntity(chicken), "the native chicken is present in the active pen");
+            try {
+                SettlementLivestockService.update(helper.getLevel(), fixture.town(), 200L);
+                helper.assertValueEqual(chicken.eggTime, 100, "the active native timer belongs to normal entity ticks");
+                helper.assertTrue(fixture.town().itemDrops().isEmpty(), "background work cannot also lay an active chicken's egg");
+            } finally {
+                chicken.discard();
+            }
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void pendingEggsAndTheirConsumedTimersSurviveSettlementSaves(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var chicken = EntityType.CHICKEN.create(helper.getLevel());
+            chicken.setPos(fixture.town().center().east().getBottomCenter());
+            chicken.eggTime = 1;
+            var state = record(helper, fixture, chicken);
+            SettlementLivestockService.update(helper.getLevel(), fixture.town(), 200L);
+            var level = helper.getLevel();
+            var saved = fixture.town().save(level.registryAccess());
+            var restored = SettlementRecord.load(saved, level.registryAccess(), () -> {});
+            helper.assertValueEqual(restored.itemDrops().size(), 1, "the pending egg survives the same save as its source timer");
+            helper.assertValueEqual(((net.minecraft.world.entity.animal.Chicken) restored.livestock().get(chicken.getUUID()).context(level)).eggTime,
+                    ((net.minecraft.world.entity.animal.Chicken) state.context(level)).eggTime, "the consumed timer survives unchanged");
+            var worker = restored.workers().get(fixture.worker().id());
+            for (int step = 0; step < 8; step++) SettlementBackgroundAnimalHandling.tick(level, restored, worker, 200, 1.0D);
+            helper.assertTrue(restored.itemDrops().isEmpty(), "the restored egg remains collectable");
+            helper.assertValueEqual(worker.items(level.registryAccess()).stream().filter(stack -> stack.is(Items.EGG)).mapToInt(ItemStack::getCount).sum(),
+                    1, "reloading credits only the actual pending egg");
+            saved.remove("ItemDrops");
+            helper.assertTrue(SettlementRecord.load(saved, level.registryAccess(), () -> {}).itemDrops().isEmpty(), "older saves require no pending-item data");
+            var malformed = fixture.town().itemDrops().values().iterator().next().save();
+            malformed.putUUID("Id", UUID.randomUUID());
+            boolean rejected = false;
+            try {
+                SettlementItemDrop.load(malformed, level.registryAccess());
+            } catch (IllegalArgumentException expected) {
+                rejected = true;
+            }
+            helper.assertTrue(rejected, "a drop identity must match its saved native entity");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void anAnimalInteractionIsNotProofOfAnEggPickupRoute(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var chicken = EntityType.CHICKEN.create(helper.getLevel());
+            chicken.setPos(fixture.town().center().east(2).getBottomCenter());
+            chicken.eggTime = 1;
+            record(helper, fixture, chicken);
+            SettlementLivestockService.update(helper.getLevel(), fixture.town(), 200L);
+            work(helper, fixture, 8);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 0,
+                    "an animal within feeding reach can still lay beyond the shorter item pickup reach");
+            helper.assertValueEqual(fixture.worker().status(), "animal_drop_unreachable", "the missing item route blocks pickup");
+            helper.assertFalse(helper.getLevel().hasChunkAt(fixture.town().center()), "checking the missing route cannot load terrain");
+            fixture.town().itemDrops().values().iterator().next().access(fixture.worker(), 2);
+            work(helper, fixture, 8);
+            helper.assertValueEqual(carried(helper, fixture, Items.EGG), 1, "an observed item route permits the same egg to be collected");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_eggs")
+    public static void nativeExpiryHooksCanMakeAPendingEggUnlimited(GameTestHelper helper) {
+        fixture(helper, false, fixture -> {
+            var item = new net.minecraft.world.entity.item.ItemEntity(helper.getLevel(), fixture.town().center().getX() + 0.5D,
+                    fixture.town().center().getY(), fixture.town().center().getZ() + 0.5D, new ItemStack(Items.EGG));
+            item.lifespan = 1;
+            var drop = SettlementItemDrop.create(item, fixture.area().id(), 0L);
+            fixture.town().recordItemDrop(drop);
+            int[] calls = {0};
+            Consumer<net.neoforged.neoforge.event.entity.item.ItemExpireEvent> preserve = event -> {
+                if (event.getEntity().getUUID().equals(drop.id())) {
+                    calls[0]++;
+                    event.getEntity().setUnlimitedLifetime();
+                }
+            };
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(preserve);
+            try {
+                SettlementItemDropService.update(helper.getLevel(), fixture.town(), 200L);
+                SettlementItemDropService.update(helper.getLevel(), fixture.town(), 400L);
+                helper.assertTrue(fixture.town().itemDrops().containsKey(drop.id()), "native unlimited-lifetime hooks preserve the pending item");
+                helper.assertValueEqual(drop.context(helper.getLevel()).getAge(), (int) Short.MIN_VALUE, "the native unlimited-age sentinel survives");
+                helper.assertValueEqual(calls[0], 1, "an unlimited item does not keep expiring");
+            } finally {
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(preserve);
+            }
+        });
+    }
+
+    private static SettlementItemDrop eggDrop(GameTestHelper helper, Fixture fixture, int count) {
+        var position = fixture.town().center().east().getBottomCenter();
+        var item = new net.minecraft.world.entity.item.ItemEntity(helper.getLevel(), position.x, position.y, position.z, new ItemStack(Items.EGG, count));
+        item.setDefaultPickUpDelay();
+        var drop = SettlementItemDrop.create(item, fixture.area().id(), 0L);
+        drop.access(fixture.worker(), 0);
+        fixture.town().recordItemDrop(drop);
+        return drop;
+    }
+
     private static Sheep sheep(GameTestHelper helper, Fixture fixture, DyeColor color) {
         Sheep sheep = EntityType.SHEEP.create(helper.getLevel());
         sheep.setNoAi(true);

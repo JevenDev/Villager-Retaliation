@@ -45,6 +45,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementWorkerState> workers = new LinkedHashMap<>();
     private final Map<UUID, SettlementLivestock> livestock = new LinkedHashMap<>();
     private final Map<UUID, SettlementAnimalBirth> animalBirths = new LinkedHashMap<>();
+    private final Map<UUID, SettlementItemDrop> itemDrops = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFurnaceState> furnaces = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementBrewingStandState> brewingStands = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFieldPlot> fields = new LinkedHashMap<>();
@@ -337,6 +338,21 @@ public final class SettlementRecord {
 
     void removeAnimalBirth(UUID id) {
         if (this.animalBirths.remove(id) != null) changed();
+    }
+
+    Map<UUID, SettlementItemDrop> itemDrops() {
+        return Collections.unmodifiableMap(this.itemDrops);
+    }
+
+    void recordItemDrop(SettlementItemDrop drop) {
+        if (this.itemDrops.putIfAbsent(drop.id(), drop) != null) {
+            throw new IllegalArgumentException("Pending item drops duplicate an identity");
+        }
+        changed();
+    }
+
+    void removeItemDrop(UUID id) {
+        if (this.itemDrops.remove(id) != null) changed();
     }
 
     public Map<UUID, SettlementArrival> arrivals() {
@@ -738,6 +754,9 @@ public final class SettlementRecord {
         ListTag animalBirthTags = new ListTag();
         this.animalBirths.values().forEach(birth -> animalBirthTags.add(birth.save()));
         tag.put("AnimalBirths", animalBirthTags);
+        var itemDropTags = new ListTag();
+        this.itemDrops.values().forEach(drop -> itemDropTags.add(drop.save()));
+        tag.put("ItemDrops", itemDropTags);
         ListTag furnaceTags = new ListTag();
         this.furnaces.values().forEach(furnace -> furnaceTags.add(furnace.save()));
         tag.put("Furnaces", furnaceTags);
@@ -834,6 +853,12 @@ public final class SettlementRecord {
             var birth = SettlementAnimalBirth.load((CompoundTag) raw);
             if (record.animalBirths.putIfAbsent(birth.id(), birth) != null) {
                 throw new IllegalArgumentException("Birth duplicates a livestock identity");
+            }
+        }
+        for (Tag raw : tag.getList("ItemDrops", Tag.TAG_COMPOUND)) {
+            var drop = SettlementItemDrop.load((CompoundTag) raw, provider);
+            if (record.itemDrops.putIfAbsent(drop.id(), drop) != null) {
+                throw new IllegalArgumentException("Pending item drops duplicate an identity");
             }
         }
         for (Tag raw : tag.getList("Furnaces", Tag.TAG_COMPOUND)) {

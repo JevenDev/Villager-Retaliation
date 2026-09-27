@@ -100,6 +100,9 @@ public final class SettlementLivestock {
         animal.setAge(this.entity.getInt("Age"));
         animal.setInLoveTime(this.entity.getInt("InLove"));
         if (animal instanceof Sheep sheep) sheep.setSheared(this.entity.getBoolean("Sheared"));
+        if (animal instanceof net.minecraft.world.entity.animal.Chicken chicken && this.entity.contains("EggLayTime")) {
+            chicken.eggTime = this.entity.getInt("EggLayTime");
+        }
         animal.getPersistentData().putLong(VERSION_TAG, this.version);
         this.pending = false;
         return true;
@@ -177,6 +180,13 @@ public final class SettlementLivestock {
         this.entity.putInt("InLove", 0);
         resetMating();
         changed();
+    }
+
+    void eggTime(int remaining) {
+        if (this.entity.getInt("EggLayTime") != remaining) {
+            this.entity.putInt("EggLayTime", remaining);
+            changed();
+        }
     }
 
     void shear() {
