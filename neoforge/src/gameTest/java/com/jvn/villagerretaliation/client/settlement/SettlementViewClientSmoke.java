@@ -616,6 +616,74 @@ public final class SettlementViewClientSmoke {
                 require(resident.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.HOME).isEmpty(),
                         "releasing the bed also clears the loaded resident's native home");
             }).join();
+            screen.navigateTo(com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, "");
+            phase = 80;
+        } else if (phase == 80 && minecraft.screen instanceof SettlementManagementScreen screen
+                && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS) {
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var actor = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                actor.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+                actor.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+                actor.containerMenu.broadcastChanges();
+                var anchor = fixture.center().offset(12, 0, 20);
+                for (var pos : BlockPos.betweenClosed(anchor.offset(-10, -1, -10), anchor.offset(10, 16, 10))) {
+                    actor.serverLevel().setBlock(pos, pos.getY() < anchor.getY() ? Blocks.DIRT.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
+                }
+            }).join();
+            screen.openWorldView();
+            require(minecraft.screen instanceof SettlementViewScreen, "the existing linked view resumes");
+            ((SettlementViewScreen) minecraft.screen).onClose();
+            minecraft.setScreen(screen);
+            button(screen, "villagerretaliation.gui.settlement.draft_blueprint").onPress();
+            phase = 81;
+        } else if (phase == 81 && minecraft.screen instanceof SettlementBlueprintScreen screen) {
+            screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow()
+                    .setValue("minecraft:village/plains/houses/plains_small_house_1");
+            phase = 82;
+        } else if (phase == 82 && minecraft.screen instanceof SettlementBlueprintScreen screen
+                && literalButton(screen, "Place building").active) {
+            require(heldBlueprint(minecraft) == null, "direct placement needs no blueprint item");
+            capture("direct-building-catalog");
+            literalButton(screen, "Place building").onPress();
+            ticks = 0;
+            phase = 83;
+        } else if (phase == 83 && minecraft.screen instanceof SettlementViewScreen screen && screen.terrainLoaded() && ++ticks >= 8) {
+            var placement = placement(screen);
+            require(placement != null, "the catalog opens a live placement ghost");
+            var original = placement.preview().blocks();
+            var anchor = placement.anchor();
+            for (int i = 0; i < 4; i++) screen.keyPressed(GLFW.GLFW_KEY_R, 0, 0);
+            require(placement.preview().blocks().equals(original), "four cardinal rotations restore every block and state");
+            screen.keyPressed(GLFW.GLFW_KEY_R, 0, GLFW.GLFW_MOD_SHIFT);
+            require(placement.rotation() == net.minecraft.world.level.block.Rotation.COUNTERCLOCKWISE_90, "Shift+R rotates backward");
+            screen.keyPressed(GLFW.GLFW_KEY_R, 0, 0);
+            for (int i = 0; i < 8; i++) screen.keyPressed(GLFW.GLFW_KEY_E, 0, 0);
+            require(placement.rotation() == net.minecraft.world.level.block.Rotation.NONE, "camera orbit does not rotate buildings");
+            screen.keyPressed(GLFW.GLFW_KEY_UP, 0, 0);
+            require(placement.anchor().equals(anchor.north()), "arrow keys nudge in world cardinal directions");
+            screen.keyPressed(GLFW.GLFW_KEY_PAGE_UP, 0, 0);
+            require(placement.anchor().equals(anchor.north().above()), "Page Up raises the building one block");
+            screen.keyPressed(GLFW.GLFW_KEY_PAGE_DOWN, 0, 0);
+            placement.move(fixture.center().offset(12, 0, 20));
+            screen.keyPressed(GLFW.GLFW_KEY_RIGHT, 0, 0);
+            ticks = 0;
+            phase = 84;
+        } else if (phase == 84 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 15) {
+            capture("direct-building-ghost");
+            screen.mouseClicked(40, 200, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            ticks = 0;
+            phase = 85;
+        } else if (phase == 85 && minecraft.screen instanceof SettlementViewScreen screen && placement(screen) == null && ++ticks >= 5) {
+            UUID player = minecraft.player.getUUID();
+            minecraft.getSingleplayerServer().submit(() -> {
+                var actor = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
+                var town = SettlementSavedData.get(actor.serverLevel()).get(fixture.town()).orElseThrow();
+                require(town.projects().values().stream().anyMatch(project -> project.automatic() && project.unfinished()),
+                        "left click queues an authoritative direct order");
+            }).join();
+            capture("direct-building-ordered");
             screen.onClose();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
@@ -625,6 +693,21 @@ public final class SettlementViewClientSmoke {
             LogUtils.getLogger().info("Settlement client smoke checks passed");
             phase = 6;
             minecraft.stop();
+        }
+    }
+
+    private static Button literalButton(net.minecraft.client.gui.screens.Screen screen, String label) {
+        return screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getMessage().getString().equals(label)).findFirst().orElseThrow();
+    }
+
+    private static SettlementStructurePlacement placement(SettlementViewScreen screen) {
+        try {
+            var field = SettlementViewScreen.class.getDeclaredField("placement");
+            field.setAccessible(true);
+            return (SettlementStructurePlacement) field.get(screen);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
         }
     }
 

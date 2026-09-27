@@ -81,7 +81,7 @@ public final class ConstructionBlueprintPreviewRenderer {
         bufferSource.endBatch(RenderType.lines());
     }
 
-    private static void renderBlockGhosts(
+    public static void renderBlockGhosts(
             Minecraft minecraft,
             PoseStack poseStack,
             MultiBufferSource.BufferSource bufferSource,

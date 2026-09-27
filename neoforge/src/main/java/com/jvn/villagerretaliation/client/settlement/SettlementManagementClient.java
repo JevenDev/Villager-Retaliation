@@ -56,6 +56,7 @@ public final class SettlementManagementClient {
 
     public static void acceptResult(SettlementManagementActionResultPayload payload) {
         SettlementViewClient.acceptResult(payload);
+        if (payload.requestId() != 0) return;
         var current = current();
         if (current == null) {
             return;

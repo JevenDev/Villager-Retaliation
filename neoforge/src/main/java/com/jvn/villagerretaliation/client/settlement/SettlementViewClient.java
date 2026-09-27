@@ -25,8 +25,22 @@ public final class SettlementViewClient {
     private static CameraType previousPerspective;
     private static Marker camera;
     private static boolean panels;
+    private static com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewData pendingOrder;
+    private static java.util.UUID pendingTown;
 
     private SettlementViewClient() {
+    }
+
+    static void beginOrder(SettlementManagementScreen parent, com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewData preview) {
+        pendingOrder = preview;
+        pendingTown = parent.snapshot().header().id();
+        Minecraft.getInstance().setScreen(parent);
+        parent.openWorldView();
+        if (active != null && Minecraft.getInstance().screen == active) {
+            active.startOrder(preview);
+            pendingOrder = null;
+            pendingTown = null;
+        }
     }
 
     public static void acceptResult(com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload payload) {
@@ -70,6 +84,11 @@ public final class SettlementViewClient {
         minecraft.options.setCameraType(CameraType.FIRST_PERSON);
         minecraft.setCameraEntity(camera);
         minecraft.setScreen(active);
+        if (pendingOrder != null && payload.town().equals(pendingTown)) {
+            active.startOrder(pendingOrder);
+            pendingOrder = null;
+            pendingTown = null;
+        }
     }
 
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -111,6 +130,8 @@ public final class SettlementViewClient {
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        pendingOrder = null;
+        pendingTown = null;
         if (active != null) {
             end(active);
         }

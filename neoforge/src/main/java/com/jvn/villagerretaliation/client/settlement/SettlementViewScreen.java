@@ -46,6 +46,20 @@ public final class SettlementViewScreen extends Screen {
     private static final double MOVE_RESPONSE = 12.0D;
     private static final double ZOOM_RESPONSE = 14.0D;
     private final SettlementManagementScreen parent;
+    private float cameraYaw = YAW;
+    private SettlementStructurePlacement placement;
+    private int placementHeight;
+    private double placementMouseX = -1;
+    private double placementMouseY = -1;
+    private int placementRequest;
+    private int checkedPlacementRequest;
+    private long placementCheckAt;
+    private boolean placementChanged;
+    private boolean orderPending;
+    private boolean confirmRequested;
+    private String placementReason = "";
+    private String localPlacementReason = "";
+
     private final UUID session;
     private final Map<UUID, SettlementManagementPayload.Area> areas = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Area> incomingAreas = new LinkedHashMap<>();
@@ -205,7 +219,35 @@ public final class SettlementViewScreen extends Screen {
         updateActions();
     }
 
+    void startOrder(ConstructionBlueprintItem.PreviewData preview) {
+        this.placement = new SettlementStructurePlacement(preview);
+        this.placementHeight = 0;
+        this.confirmRequested = false;
+        this.placementChanged = true;
+        this.checkedPlacementRequest = -1;
+        this.placementReason = "";
+        this.placingBlueprint = false;
+        this.guardMode = null;
+        this.drawing = false;
+        this.heldKeys.clear();
+        updateActions();
+    }
+
     void acceptResult(SettlementManagementActionResultPayload payload) {
+        if (payload.requestId() != 0) {
+            if (!this.header.id().equals(payload.town()) || payload.requestId() != this.placementRequest || this.placement == null) return;
+            if (this.placementChanged && !this.orderPending) return;
+            this.checkedPlacementRequest = payload.requestId();
+            this.placementReason = payload.reason();
+            if (this.orderPending) {
+                this.orderPending = false;
+                if (payload.applied()) {
+                    this.placement = null;
+                    this.blueprintFeedback = Component.literal("Building ordered. Track dispatch and materials in Projects.");
+                }
+            }
+            return;
+        }
         if (this.blueprintPending && this.header.id().equals(payload.town())) {
             this.blueprintPending = false;
             this.blueprintSentAt = Util.getMillis();
@@ -290,6 +332,16 @@ public final class SettlementViewScreen extends Screen {
             this.blueprintFeedback = text("blueprint_denied");
         }
         updateActions();
+        if (this.orderPending && now > this.placementCheckAt + 5_000L) {
+            this.orderPending = false;
+            this.placementReason = "No server response. Check Projects before trying again.";
+        }
+        if (this.placement != null && !this.orderPending && now >= this.placementCheckAt) {
+            this.localPlacementReason = this.placement.validate(this.minecraft.level, this.window);
+            this.placementCheckAt = now + 400L;
+            if (this.localPlacementReason.isEmpty()) sendOrder(this.confirmRequested);
+            this.confirmRequested = false;
+        }
         if (this.guardPending && now - this.guardSentAt > 3_000L) {
             this.guardPending = false;
             this.guardFeedback = text("guard_denied");
@@ -343,12 +395,12 @@ public final class SettlementViewScreen extends Screen {
         long now = Util.getMillis();
         double elapsed = this.lastFrame == 0L ? 0.0D : Math.clamp((now - this.lastFrame) / 1_000.0D, 0.0D, 0.05D);
         this.lastFrame = now;
-        double forward = (held(GLFW.GLFW_KEY_W) || held(GLFW.GLFW_KEY_UP) ? 1 : 0)
-                - (held(GLFW.GLFW_KEY_S) || held(GLFW.GLFW_KEY_DOWN) ? 1 : 0);
-        double right = (held(GLFW.GLFW_KEY_D) || held(GLFW.GLFW_KEY_RIGHT) ? 1 : 0)
-                - (held(GLFW.GLFW_KEY_A) || held(GLFW.GLFW_KEY_LEFT) ? 1 : 0);
+        double forward = (held(GLFW.GLFW_KEY_W) || this.placement == null && held(GLFW.GLFW_KEY_UP) ? 1 : 0)
+                - (held(GLFW.GLFW_KEY_S) || this.placement == null && held(GLFW.GLFW_KEY_DOWN) ? 1 : 0);
+        double right = (held(GLFW.GLFW_KEY_D) || this.placement == null && held(GLFW.GLFW_KEY_RIGHT) ? 1 : 0)
+                - (held(GLFW.GLFW_KEY_A) || this.placement == null && held(GLFW.GLFW_KEY_LEFT) ? 1 : 0);
         double speed = this.viewHeight / Math.max(1.0D, Math.hypot(forward, right));
-        double yaw = Math.toRadians(YAW);
+        double yaw = Math.toRadians(this.cameraYaw);
         double response = 1.0D - Math.exp(-MOVE_RESPONSE * elapsed);
         this.panVelocityX += ((-right * Math.cos(yaw) - forward * Math.sin(yaw)) * speed - this.panVelocityX) * response;
         this.panVelocityZ += ((-right * Math.sin(yaw) + forward * Math.cos(yaw)) * speed - this.panVelocityZ) * response;
@@ -360,6 +412,12 @@ public final class SettlementViewScreen extends Screen {
         positionCamera();
         this.hovered = mouseX >= 0 && mouseX < this.panelLeft && mouseY >= 0 && mouseY < this.height
                 ? pick(mouseX, mouseY) : new Pick(null, null);
+        if (this.placement != null && !this.orderPending && !this.confirmRequested && this.hovered.position() != null
+                && (this.placementMouseX != mouseX || this.placementMouseY != mouseY)) {
+            this.placementMouseX = mouseX;
+            this.placementMouseY = mouseY;
+            if (this.placement.move(this.hovered.position().above(1 + this.placementHeight))) placementChanged();
+        }
         graphics.fill(this.panelLeft, 0, this.width, this.height, 0xE0101010);
         graphics.drawString(this.font, this.font.plainSubstrByWidth(this.header.name(), this.panelWidth - 16),
                 this.panelLeft + 8, 10, 0xFFFFFF);
@@ -376,7 +434,11 @@ public final class SettlementViewScreen extends Screen {
             graphics.drawString(this.font, line, this.panelLeft + 8, y, 0xFFFFFF);
             y += this.font.lineHeight + 2;
         }
-        Component hint = !this.blueprintFeedback.getString().isEmpty() ? this.blueprintFeedback
+        Component hint = this.placement != null ? Component.literal(
+                (this.orderPending ? "Submitting order..." : !this.localPlacementReason.isEmpty() ? this.localPlacementReason
+                        : !this.placementReason.isEmpty() ? this.placementReason : this.placementChanged || this.checkedPlacementRequest != this.placementRequest ? "Checking footprint..." : "Site ready")
+                + "\nW/A/S/D pan | Wheel zoom | Q/E orbit | R / Shift+R rotate\nArrows nudge N/W/S/E | Page Up/Down height | Left click order | Right click/Escape cancel")
+                : !this.blueprintFeedback.getString().isEmpty() ? this.blueprintFeedback
                 : this.placingBlueprint ? text("blueprint_place_hint")
                 : this.guardMode != null ? text(this.guardMode == SettlementGuardOrder.Mode.PATROL
                 ? "guard_patrol_hint" : "guard_destination_hint", this.guardPoints.size(), SettlementGuardOrder.MAX_POINTS)
@@ -394,7 +456,28 @@ public final class SettlementViewScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
+    private void placementChanged() {
+        this.placementChanged = true;
+        this.placementReason = "";
+        this.localPlacementReason = this.placement.validate(this.minecraft.level, this.window);
+    }
+
+    private void sendOrder(boolean confirm) {
+        if (this.placement == null || this.orderPending) return;
+        if (confirm && !this.localPlacementReason.isEmpty()) return;
+        this.placementRequest++;
+        this.placementChanged = false;
+        this.orderPending = confirm;
+        this.placementCheckAt = Util.getMillis() + 400L;
+        PacketDistributor.sendToServer(new SettlementManagementActionPayload(this.header.id(),
+                new SettlementManagementActionPayload.OrderStructure(this.placement.preview().structureId(), this.placement.anchor(),
+                        this.placement.rotation(), this.placementRequest, confirm)));
+    }
+
     private Component selectedName() {
+        if (this.placement != null) return Component.literal(this.placement.preview().structureLabel() + "\n"
+                + this.placement.preview().sizeText() + "\n" + this.placement.anchor().toShortString() + "\n"
+                + (this.placement.rotation().ordinal() * 90) + " degrees");
         if (this.resident != null) {
             Component name = text("resident", this.resident.name(), Math.round(this.resident.health()), this.resident.food());
             return this.resident.guardOrder() == null ? name : name.copy().append("\n")
@@ -428,7 +511,7 @@ public final class SettlementViewScreen extends Screen {
         }
         for (var button : this.blueprintButtons) {
             if (button != null) {
-                button.visible = blueprint != null && permits(SettlementPermission.BUILD) && this.header.projectLimit() > 0;
+                button.visible = this.placement == null && blueprint != null && permits(SettlementPermission.BUILD) && this.header.projectLimit() > 0;
                 button.active = button.visible && !blueprint.placementLocked() && blueprintReady() && !this.guardPending;
             }
         }
@@ -557,6 +640,11 @@ public final class SettlementViewScreen extends Screen {
         this.viewHeight = next;
     }
 
+    private static double cameraLimit(double focus, double direction, int center, int radius) {
+        if (Math.abs(direction) < 0.000001D) return Double.POSITIVE_INFINITY;
+        return (center + (direction > 0 ? radius : -radius) - focus) / direction;
+    }
+
     private void positionCamera() {
         if (this.minecraft == null || this.minecraft.level == null) {
             return;
@@ -568,13 +656,13 @@ public final class SettlementViewScreen extends Screen {
             ground = Math.max(ground, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(this.focusX),
                     (int) Math.floor(this.focusZ)));
         }
-        double yaw = Math.toRadians(YAW);
+        double yaw = Math.toRadians(this.cameraYaw);
         double maximumVisibleDistance = this.minecraft.options.getEffectiveRenderDistance() * 16.0D - 8.0D;
         double targetPitch = Math.max(PITCH, Math.toDegrees(Math.asin(Math.min(1.0D,
                 this.cameraHeight / Math.max(1.0D, maximumVisibleDistance)))));
         double offset = this.cameraHeight / Math.tan(Math.toRadians(targetPitch));
-        double limitX = (this.window.center().getX() + this.window.radius() - this.focusX) / Math.sin(yaw);
-        double limitZ = (this.focusZ - this.window.center().getZ() + this.window.radius()) / Math.cos(yaw);
+        double limitX = cameraLimit(this.focusX, Math.sin(yaw), this.window.center().getX(), this.window.radius());
+        double limitZ = cameraLimit(this.focusZ, -Math.cos(yaw), this.window.center().getZ(), this.window.radius());
         offset = Math.max(0.0D, Math.min(offset, Math.min(limitX, limitZ)));
         double x = this.focusX + Math.sin(yaw) * offset;
         double z = this.focusZ - Math.cos(yaw) * offset;
@@ -585,11 +673,44 @@ public final class SettlementViewScreen extends Screen {
             y = Math.max(y, cameraChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(x), (int) Math.floor(z)) + 4.0D);
         }
         float pitch = (float) Math.toDegrees(Math.atan2(y - ground, offset));
-        SettlementViewClient.position(x, y, z, YAW, pitch);
+        SettlementViewClient.position(x, y, z, this.cameraYaw, pitch);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_Q || keyCode == GLFW.GLFW_KEY_E) {
+            this.cameraYaw = (this.cameraYaw + (keyCode == GLFW.GLFW_KEY_Q ? -45 : 45) + 360) % 360;
+            positionCamera();
+            return true;
+        }
+        if (this.placement != null) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                this.placement = null;
+                this.orderPending = false;
+                updateActions();
+                return true;
+            }
+            if (this.orderPending || this.confirmRequested) return true;
+            if (keyCode == GLFW.GLFW_KEY_R) {
+                this.placement.rotate((modifiers & GLFW.GLFW_MOD_SHIFT) != 0);
+                placementChanged();
+                return true;
+            }
+            BlockPos anchor = this.placement.anchor();
+            switch (keyCode) {
+                case GLFW.GLFW_KEY_UP -> anchor = anchor.north();
+                case GLFW.GLFW_KEY_DOWN -> anchor = anchor.south();
+                case GLFW.GLFW_KEY_LEFT -> anchor = anchor.west();
+                case GLFW.GLFW_KEY_RIGHT -> anchor = anchor.east();
+                case GLFW.GLFW_KEY_PAGE_UP -> { anchor = anchor.above(); this.placementHeight++; }
+                case GLFW.GLFW_KEY_PAGE_DOWN -> { anchor = anchor.below(); this.placementHeight--; }
+                default -> { }
+            }
+            if (this.placement.move(anchor)) {
+                placementChanged();
+                return true;
+            }
+        }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && this.placingBlueprint) {
             this.placingBlueprint = false;
             updateActions();
@@ -633,6 +754,12 @@ public final class SettlementViewScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double x, double y, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && this.placement != null) {
+            this.placement = null;
+            this.orderPending = false;
+            updateActions();
+            return true;
+        }
         if (super.mouseClicked(x, y, button)) {
             return true;
         }
@@ -657,6 +784,16 @@ public final class SettlementViewScreen extends Screen {
             return false;
         }
         var hit = pick(x, y);
+        if (this.placement != null) {
+            if (!this.orderPending && this.localPlacementReason.isEmpty()) {
+                this.confirmRequested = true;
+                if (Util.getMillis() >= this.placementCheckAt) {
+                    sendOrder(true);
+                    this.confirmRequested = false;
+                }
+            }
+            return true;
+        }
         if (this.placingBlueprint) {
             var blueprint = heldBlueprint();
             if (blueprint != null && hit.position() != null) {
@@ -700,7 +837,7 @@ public final class SettlementViewScreen extends Screen {
     public boolean mouseDragged(double x, double y, int button, double deltaX, double deltaY) {
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE && x < this.panelLeft) {
             double scale = 2.0D * this.viewHeight * Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D)) / this.height;
-            double yaw = Math.toRadians(YAW);
+            double yaw = Math.toRadians(this.cameraYaw);
             this.panVelocityX = 0.0D;
             this.panVelocityZ = 0.0D;
             pan((-Math.cos(yaw) * deltaX - Math.sin(yaw) * deltaY) * scale,
@@ -759,9 +896,28 @@ public final class SettlementViewScreen extends Screen {
         PoseStack pose = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
         var buffers = this.minecraft.renderBuffers().bufferSource();
+        if (this.placement != null) {
+            pose.pushPose();
+            pose.translate(-camera.x, -camera.y, -camera.z);
+            com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer.renderBlockGhosts(
+                    this.minecraft, pose, buffers, this.placement.preview());
+            pose.popPose();
+            buffers.endBatch(RenderType.translucent());
+        }
         var lines = buffers.getBuffer(RenderType.lines());
         pose.pushPose();
         pose.translate(-camera.x, -camera.y, -camera.z);
+        if (this.placement != null) {
+            var preview = this.placement.preview();
+            boolean invalid = !this.localPlacementReason.isEmpty() || !this.placementReason.isEmpty();
+            boolean checked = !this.placementChanged && this.checkedPlacementRequest == this.placementRequest;
+            LevelRenderer.renderLineBox(pose, lines, new AABB(Vec3.atLowerCornerOf(preview.worldMin()),
+                    Vec3.atLowerCornerOf(preview.worldMax().offset(1, 1, 1))), invalid || !checked ? 1.0F : 0.2F,
+                    invalid ? 0.2F : 0.9F, invalid ? 0.2F : 0.45F, 1.0F);
+            for (var conflict : this.placement.conflicts().stream().limit(128).toList()) {
+                LevelRenderer.renderLineBox(pose, lines, new AABB(conflict).inflate(0.02D), 1.0F, 0.15F, 0.15F, 1.0F);
+            }
+        }
         for (var area : this.areas.values()) {
             if (this.window.chunks().stream().anyMatch(chunk -> chunk.getMaxBlockX() >= area.min().getX()
                     && chunk.getMinBlockX() <= area.max().getX() && chunk.getMaxBlockZ() >= area.min().getZ()
