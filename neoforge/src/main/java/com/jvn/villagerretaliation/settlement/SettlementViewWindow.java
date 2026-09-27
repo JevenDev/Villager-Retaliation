@@ -15,7 +15,7 @@ public record SettlementViewWindow(BlockPos center, int radius, double x, double
     public SettlementViewWindow {
         center = center.immutable();
         chunks = List.copyOf(chunks);
-        if (radius < 1 || radius > SettlementStage.CITY.radius() + BORDER || chunks.size() > MAX_CHUNKS
+        if (radius < 1 || radius > SettlementStageRules.MAX_RADIUS + BORDER || chunks.size() > MAX_CHUNKS
                 || !Double.isFinite(x) || !Double.isFinite(z) || !Float.isFinite(height)
                 || height < MIN_HEIGHT || height > MAX_HEIGHT
                 || Math.abs(x - center.getX()) > radius || Math.abs(z - center.getZ()) > radius
@@ -34,7 +34,7 @@ public record SettlementViewWindow(BlockPos center, int radius, double x, double
         if (!Double.isFinite(x) || !Double.isFinite(z) || !Float.isFinite(height)) {
             throw new IllegalArgumentException("Settlement camera coordinates must be finite");
         }
-        int radius = town.stage().radius() + BORDER;
+        int radius = town.radius() + BORDER;
         BlockPos center = town.center();
         x = Math.clamp(x, center.getX() - radius, center.getX() + radius);
         z = Math.clamp(z, center.getZ() - radius, center.getZ() + radius);

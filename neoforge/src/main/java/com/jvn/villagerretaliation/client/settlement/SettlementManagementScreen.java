@@ -250,12 +250,14 @@ public final class SettlementManagementScreen extends Screen {
         }
         this.rows.add(null, text("population", header.population(), header.housing()), text("housing_hint"));
         this.rows.add(null, text("food", decimal(header.foodDays())), text("food_hint"));
-        this.rows.add(null, text("stage", enumText("stage", header.stage())), text("bounds", header.stage().radius()));
+        this.rows.add(null, text("stage", enumText("stage", header.stage())), text("bounds", header.radius()));
         this.rows.add(null, text("support", decimal(header.supportTicks() / 24_000.0D), decimal(header.requiredTicks() / 24_000.0D)),
                 text(header.ready() ? "ready" : "support_hint"));
         if (header.shortageTicks() > 0L) {
             this.rows.add(null, text("shortage", decimal(header.shortageTicks() / 24_000.0D)), text("shortage_hint"));
         }
+        this.rows.add(null, text("capacity", header.projectLimit(), header.depotLimit()),
+                text("market_capacity", header.marketSupply(), header.marketDemand()));
         for (var missing : header.missing()) {
             this.rows.add(null, enumText("requirement", missing), text("needed"));
         }
@@ -312,12 +314,12 @@ public final class SettlementManagementScreen extends Screen {
             }
             case PROJECTS -> {
                 action(0, "new_project", permits(SettlementPermission.BUILD) && heldBlueprint() != null
-                        && this.snapshot.header() != null && this.snapshot.header().stage().projects() > 0);
+                        && this.snapshot.header() != null && this.snapshot.header().projectLimit() > 0);
                 action(1, "cancel_project", permits(SettlementPermission.BUILD)
                         && selected instanceof SettlementManagementPayload.Project project && project.status() == SettlementProject.Status.ACTIVE);
                 action(2, "project_builder", selected != null);
                 action(3, "draft_blueprint", permits(SettlementPermission.BUILD)
-                        && this.snapshot.header() != null && this.snapshot.header().stage().projects() > 0);
+                        && this.snapshot.header() != null && this.snapshot.header().projectLimit() > 0);
             }
             case TOWNS -> action(0, "open", selected != null);
             case SUMMARY -> {

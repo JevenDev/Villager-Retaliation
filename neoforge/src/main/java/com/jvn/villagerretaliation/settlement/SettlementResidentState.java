@@ -127,7 +127,7 @@ public final class SettlementResidentState {
         var hunger = villager.getEffect(MobEffects.HUNGER);
         this.hungerTicks = hunger == null ? 0 : hunger.isInfiniteDuration() ? Integer.MAX_VALUE : hunger.getDuration();
         this.hungerAmplifier = hunger == null ? 0 : hunger.getAmplifier();
-        int radius = town.stage().radius() + 16;
+        int radius = town.radius() + 16;
         this.present = villager.level().dimension().location().equals(town.dimension())
                 && Math.abs(villager.getX() - town.center().getX()) <= radius
                 && Math.abs(villager.getZ() - town.center().getZ()) <= radius;

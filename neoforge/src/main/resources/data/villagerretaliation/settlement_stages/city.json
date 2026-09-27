@@ -1,0 +1,14 @@
+{
+  "radius": 192,
+  "projects": 8,
+  "depots": 128,
+  "market_supply": 256,
+  "market_demand": 512,
+  "services": [
+    "food_production",
+    "kitchen",
+    "guard_post",
+    "workshop",
+    "trading_post"
+  ]
+}

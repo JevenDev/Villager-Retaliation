@@ -401,7 +401,7 @@ public final class SettlementViewScreen extends Screen {
         }
         for (var button : this.blueprintButtons) {
             if (button != null) {
-                button.visible = blueprint != null && permits(SettlementPermission.BUILD) && this.header.stage().projects() > 0;
+                button.visible = blueprint != null && permits(SettlementPermission.BUILD) && this.header.projectLimit() > 0;
                 button.active = button.visible && !blueprint.placementLocked() && blueprintReady() && !this.guardPending;
             }
         }

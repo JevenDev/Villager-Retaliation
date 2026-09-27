@@ -191,16 +191,11 @@ public final class SettlementTradeService {
     }
 
     public static int dailySupply(SettlementStage stage) {
-        return switch (stage) {
-            case CAMP, HAMLET -> 0;
-            case VILLAGE -> 64;
-            case TOWN -> 128;
-            case CITY -> 256;
-        };
+        return SettlementStageRules.forStage(stage).marketSupply();
     }
 
     public static int dailyDemand(SettlementStage stage) {
-        return dailySupply(stage) * 2;
+        return SettlementStageRules.forStage(stage).marketDemand();
     }
 
     private static Result buy(ServerLevel level, SettlementRecord town, SettlementTradeOrder order, int maximum) {

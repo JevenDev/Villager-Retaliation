@@ -139,7 +139,9 @@ public final class SettlementManagementService {
                 }
             }
             header = new SettlementManagementPayload.Header(town.id().value(), name(registry, town), town.center(), town.leader(),
-                    permissions, town.stage(), status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
+                    permissions, town.stage(), town.radius(), town.stage().projects(), town.stage().depots(),
+                    SettlementTradeService.dailySupply(town.stage()), SettlementTradeService.dailyDemand(town.stage()),
+                    status.population(), status.housing(), status.foodDays(), town.support().shortageTicks(),
                     status.sustainedTicks(), status.requiredTicks(), status.ready(), status.missing(), town.economy().balance(),
                     town.economy().reserve(), town.economy().dailyBudget(), town.economy().spent());
             switch (request.page()) {
@@ -197,7 +199,7 @@ public final class SettlementManagementService {
                             .map(VillagerProfessionUtil::id).orElse(ResourceLocation.withDefaultNamespace("none"))
                     : VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
             BlockPos position = villager != null ? villager.blockPosition() : care == null ? town.center() : care.position();
-            int radius = town.stage().radius() + 16;
+            int radius = town.radius() + 16;
             Presence presence = villager == null ? Presence.UNLOADED
                     : Math.abs((long) position.getX() - town.center().getX()) <= radius
                         && Math.abs((long) position.getZ() - town.center().getZ()) <= radius ? Presence.HERE : Presence.AWAY;

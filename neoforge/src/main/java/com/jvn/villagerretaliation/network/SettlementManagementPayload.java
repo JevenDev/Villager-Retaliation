@@ -228,6 +228,11 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         buffer.writeUUID(header.leader());
         writePermissions(buffer, header.permissions());
         buffer.writeEnum(header.stage());
+        buffer.writeVarInt(header.radius());
+        buffer.writeVarInt(header.projectLimit());
+        buffer.writeVarInt(header.depotLimit());
+        buffer.writeVarInt(header.marketSupply());
+        buffer.writeVarInt(header.marketDemand());
         buffer.writeVarInt(header.population());
         buffer.writeVarInt(header.housing());
         buffer.writeDouble(header.foodDays());
@@ -250,6 +255,11 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         UUID leader = buffer.readUUID();
         Set<SettlementPermission> permissions = readPermissions(buffer);
         SettlementStage stage = buffer.readEnum(SettlementStage.class);
+        int radius = buffer.readVarInt();
+        int projects = buffer.readVarInt();
+        int depots = buffer.readVarInt();
+        int supply = buffer.readVarInt();
+        int demand = buffer.readVarInt();
         int population = buffer.readVarInt();
         int housing = buffer.readVarInt();
         double food = buffer.readDouble();
@@ -262,7 +272,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         for (int index = 0; index < count; index++) {
             missing.add(buffer.readEnum(SettlementProgressionService.Requirement.class));
         }
-        return new Header(id, name, center, leader, permissions, stage, population, housing, food, shortage, support, required,
+        return new Header(id, name, center, leader, permissions, stage, radius, projects, depots, supply, demand,
+                population, housing, food, shortage, support, required,
                 ready, missing, CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer), CurrencyAmount.read(buffer));
     }
 
@@ -302,10 +313,13 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     }
 
     public record Header(UUID id, String name, BlockPos center, UUID leader, Set<SettlementPermission> permissions,
-                         SettlementStage stage, int population, int housing, double foodDays, long shortageTicks,
+                         SettlementStage stage, int radius, int projectLimit, int depotLimit, int marketSupply, int marketDemand,
+                         int population, int housing, double foodDays, long shortageTicks,
                          long supportTicks, long requiredTicks, boolean ready, List<SettlementProgressionService.Requirement> missing,
                          CurrencyAmount balance, CurrencyAmount reserve, CurrencyAmount budget, CurrencyAmount spent) {
         public Header {
+            new com.jvn.villagerretaliation.settlement.SettlementStageRules.Limits(
+                    radius, projectLimit, depotLimit, marketSupply, marketDemand, Set.of());
             permissions = Set.copyOf(permissions);
             missing = List.copyOf(missing);
             center = center.immutable();

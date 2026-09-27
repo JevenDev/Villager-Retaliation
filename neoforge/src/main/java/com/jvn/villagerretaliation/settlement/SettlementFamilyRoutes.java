@@ -63,8 +63,8 @@ final class SettlementFamilyRoutes implements BlockGetter {
             for (var direction : Direction.Plane.HORIZONTAL) {
                 for (int dy : new int[]{0, 1, -1}) {
                     var next = current.relative(direction).offset(0, dy, 0);
-                    if (Math.abs(next.getX() - this.town.center().getX()) > this.town.stage().radius() + 16
-                            || Math.abs(next.getZ() - this.town.center().getZ()) > this.town.stage().radius() + 16
+                    if (Math.abs(next.getX() - this.town.center().getX()) > this.town.radius() + 16
+                            || Math.abs(next.getZ() - this.town.center().getZ()) > this.town.radius() + 16
                             || !allowed.test(next) || !safe(next)) continue;
                     if (dy > 0 && !clear(current.above(2)) || dy < 0 && !clear(next.above(2))) continue;
                     int cost = step.cost + 1;

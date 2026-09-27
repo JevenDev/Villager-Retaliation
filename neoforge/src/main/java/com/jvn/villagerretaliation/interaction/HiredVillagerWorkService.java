@@ -1638,7 +1638,7 @@ public final class HiredVillagerWorkService {
         var duty = com.jvn.villagerretaliation.settlement.SettlementWorkforceService.duty(villager).orElse(null);
         if (duty != null) {
             if (role == HiredVillagerRole.COURIER) {
-                int radius = duty.town().stage().radius();
+                int radius = duty.town().radius();
                 BlockPos center = duty.town().center();
                 return HiredJobSite.fromWorkArea(HiredWorkArea.fromBounds(
                         new BlockPos(center.getX() - radius, level.getMinBuildHeight(), center.getZ() - radius),

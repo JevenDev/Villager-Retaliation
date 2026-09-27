@@ -1,0 +1,11 @@
+{
+  "radius": 128,
+  "projects": 2,
+  "depots": 32,
+  "market_supply": 64,
+  "market_demand": 128,
+  "services": [
+    "food_production",
+    "kitchen"
+  ]
+}

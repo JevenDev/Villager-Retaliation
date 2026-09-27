@@ -136,7 +136,7 @@ public final class SettlementDepartureService {
         }
         CompoundTag walk = new CompoundTag();
         walk.putLong("Center", town.center().asLong());
-        walk.putInt("Radius", town.stage().radius() + 16);
+        walk.putInt("Radius", town.radius() + 16);
         villager.getPersistentData().put(WALK_TAG, walk);
     }
 

@@ -45,7 +45,7 @@ public final class SettlementNavigationService {
     }
 
     static void observe(ServerLevel level, SettlementRecord town, LevelChunk chunk) {
-        int radius = town.stage().radius() + 16;
+        int radius = town.radius() + 16;
         var position = chunk.getPos();
         if (position.getMaxBlockX() < town.center().getX() - radius || position.getMinBlockX() > town.center().getX() + radius
                 || position.getMaxBlockZ() < town.center().getZ() - radius || position.getMinBlockZ() > town.center().getZ() + radius) return;
@@ -60,7 +60,7 @@ public final class SettlementNavigationService {
             if (survey != null) anchors.addAll(survey.beds());
         });
         var result = new java.util.TreeSet<BlockPos>();
-        int radius = town.stage().radius() + 16;
+        int radius = town.radius() + 16;
         for (var anchor : anchors) {
             int minX = Math.max(anchor.getX() - 48, town.center().getX() - radius) >> 4;
             int maxX = Math.min(anchor.getX() + 48, town.center().getX() + radius) >> 4;

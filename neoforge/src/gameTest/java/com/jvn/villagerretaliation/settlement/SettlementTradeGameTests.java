@@ -294,6 +294,48 @@ public final class SettlementTradeGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_stage_rules")
+    public static void configuredMarketsLimitRealPurchasesAndSales(GameTestHelper helper) {
+        var previous = new java.util.EnumMap<SettlementStage, SettlementStageRules.Limits>(SettlementStage.class);
+        for (var stage : SettlementStage.values()) previous.put(stage, SettlementStageRules.forStage(stage));
+        var custom = new java.util.EnumMap<>(previous);
+        var village = previous.get(SettlementStage.VILLAGE);
+        custom.put(SettlementStage.VILLAGE, new SettlementStageRules.Limits(village.radius(), village.projects(), village.depots(),
+                3, 5, village.services()));
+        try {
+            SettlementStageRules.apply(custom);
+            withFixture(helper, fixture -> {
+                var town = fixture.town();
+                town.economy().credit(money(100));
+                SettlementTradeService.configureBudget(fixture.leader(), town.id(), CurrencyAmount.ZERO, money(100));
+                var buy = order(Items.BREAD, SettlementTradeOrder.Direction.BUY, 64, true);
+                SettlementTradeService.putOrder(fixture.leader(), town.id(), buy);
+                helper.assertValueEqual(SettlementTradeService.process(helper.getLevel(), town, 200L).get(buy.id()).count(),
+                        3, "purchases stop at configured outside supply");
+                helper.assertValueEqual(fixture.depot().count(buy::matches), 3, "the limited purchase delivers three actual items");
+                helper.assertValueEqual(SettlementTradeService.process(helper.getLevel(), town, 400L).get(buy.id()).status(),
+                        SettlementTradeService.Status.MARKET_LIMIT, "the next cycle cannot repeat exhausted supply");
+                SettlementTradeService.removeOrder(fixture.leader(), town.id(), buy.id());
+                fixture.depot().setItem(1, new ItemStack(Items.WHEAT, 16));
+                var sell = order(Items.WHEAT, SettlementTradeOrder.Direction.SELL, 0, true);
+                SettlementTradeService.putOrder(fixture.leader(), town.id(), sell);
+                helper.assertValueEqual(SettlementTradeService.process(helper.getLevel(), town, 600L).get(sell.id()).count(),
+                        5, "sales stop at configured outside demand");
+                helper.assertValueEqual(fixture.depot().count(sell::matches), 11, "unsold stock remains in the depot");
+                helper.assertValueEqual(SettlementTradeService.process(helper.getLevel(), town, 800L).get(sell.id()).status(),
+                        SettlementTradeService.Status.MARKET_LIMIT, "exhausted demand stops further sales");
+                custom.put(SettlementStage.VILLAGE, new SettlementStageRules.Limits(village.radius(), village.projects(), village.depots(),
+                        1, 2, village.services()));
+                SettlementStageRules.apply(custom);
+                helper.assertValueEqual(SettlementTradeService.process(helper.getLevel(), town, 1_000L).get(sell.id()).status(),
+                        SettlementTradeService.Status.MARKET_LIMIT, "lower limits cannot reset already used daily demand");
+                helper.assertValueEqual(fixture.depot().count(sell::matches), 11, "lower market limits preserve remaining stock");
+            });
+        } finally {
+            SettlementStageRules.apply(previous);
+        }
+    }
+
     private static SettlementTradeOrder order(Item item, SettlementTradeOrder.Direction direction, int target, boolean enabled) {
         return new SettlementTradeOrder(UUID.randomUUID(), direction, BuiltInRegistries.ITEM.getKey(item), target,
                 direction == SettlementTradeOrder.Direction.BUY ? money(100) : CurrencyAmount.ZERO, money(100), enabled);

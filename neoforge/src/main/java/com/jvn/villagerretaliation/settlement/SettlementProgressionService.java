@@ -55,24 +55,19 @@ public final class SettlementProgressionService {
         if (SettlementStock.supplies(town).isEmpty()) {
             missing.add(Requirement.DEPOT);
         }
-        if (town.areas().values().stream().noneMatch(area -> area.type().foodProduction() && staffed(town, area, adults))) {
-            missing.add(Requirement.FOOD_PRODUCTION);
-        }
-        if (target.ordinal() >= SettlementStage.VILLAGE.ordinal()
-                && !staffed(town, SettlementAreaType.KITCHEN, adults)) {
-            missing.add(Requirement.KITCHEN);
-        }
-        if (target.ordinal() >= SettlementStage.TOWN.ordinal()
-                && !staffed(town, SettlementAreaType.GUARD_POST, adults)) {
-            missing.add(Requirement.GUARD_POST);
-        }
-        if (target == SettlementStage.CITY) {
-            if (!staffed(town, SettlementAreaType.WORKSHOP, adults)) {
-                missing.add(Requirement.WORKSHOP);
-            }
-            if (!staffed(town, SettlementAreaType.TRADING_POST, adults)) {
-                missing.add(Requirement.TRADING_POST);
-            }
+        var services = SettlementStageRules.forStage(target).services();
+        for (var requirement : Requirement.values()) {
+            if (!services.contains(requirement)) continue;
+            boolean operating = switch (requirement) {
+                case FOOD_PRODUCTION -> town.areas().values().stream()
+                        .anyMatch(area -> area.type().foodProduction() && staffed(town, area, adults));
+                case KITCHEN -> staffed(town, SettlementAreaType.KITCHEN, adults);
+                case GUARD_POST -> staffed(town, SettlementAreaType.GUARD_POST, adults);
+                case WORKSHOP -> staffed(town, SettlementAreaType.WORKSHOP, adults);
+                case TRADING_POST -> staffed(town, SettlementAreaType.TRADING_POST, adults);
+                default -> false;
+            };
+            if (!operating) missing.add(requirement);
         }
         long requiredTicks = requiredTicks();
         return new Status(target, population, housing, foodDays, List.copyOf(missing),

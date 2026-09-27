@@ -32,7 +32,7 @@ public final class SettlementFoodService {
     }
 
     private static boolean withinTown(SettlementRecord town, Villager villager) {
-        int radius = town.stage().radius() + 16;
+        int radius = town.radius() + 16;
         return Math.abs(villager.getX() - town.center().getX()) <= radius
                 && Math.abs(villager.getZ() - town.center().getZ()) <= radius;
     }

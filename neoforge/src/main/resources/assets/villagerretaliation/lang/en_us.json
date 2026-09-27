@@ -2379,6 +2379,8 @@
   "villagerretaliation.gui.settlement.food_hint": "Food available in settlement depots.",
   "villagerretaliation.gui.settlement.stage": "Stage: %s",
   "villagerretaliation.gui.settlement.bounds": "Area bounds: %s blocks from the settlement center.",
+  "villagerretaliation.gui.settlement.capacity": "Limits: %s active projects / %s depots",
+  "villagerretaliation.gui.settlement.market_capacity": "Daily market capacity per item group: buy %s / sell %s",
   "villagerretaliation.gui.settlement.support": "Sustained support: %s / %s days",
   "villagerretaliation.gui.settlement.support_hint": "Keep the next stage's requirements satisfied.",
   "villagerretaliation.gui.settlement.ready": "Ready to advance",

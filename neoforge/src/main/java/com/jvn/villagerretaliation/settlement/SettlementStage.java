@@ -4,18 +4,16 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.Optional;
 
 public enum SettlementStage {
-    CAMP(64, 0),
-    HAMLET(96, 1),
-    VILLAGE(128, 2),
-    TOWN(160, 4),
-    CITY(192, 8);
+    CAMP(64),
+    HAMLET(96),
+    VILLAGE(128),
+    TOWN(160),
+    CITY(192);
 
-    private final int radius;
-    private final int projects;
+    private final int legacyRadius;
 
-    SettlementStage(int radius, int projects) {
-        this.radius = radius;
-        this.projects = projects;
+    SettlementStage(int legacyRadius) {
+        this.legacyRadius = legacyRadius;
     }
 
     public int population() {
@@ -30,15 +28,19 @@ public enum SettlementStage {
     }
 
     public int radius() {
-        return this.radius;
+        return SettlementStageRules.forStage(this).radius();
+    }
+
+    int legacyRadius() {
+        return this.legacyRadius;
     }
 
     public int projects() {
-        return this.projects;
+        return SettlementStageRules.forStage(this).projects();
     }
 
     public int depots() {
-        return 8 << ordinal();
+        return SettlementStageRules.forStage(this).depots();
     }
 
     public Optional<SettlementStage> next() {

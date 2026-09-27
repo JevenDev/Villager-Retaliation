@@ -63,6 +63,7 @@ public final class SettlementRecord {
     private SettlementEconomy economy = new SettlementEconomy(this::changed);
     private UUID leader;
     private SettlementStage stage = SettlementStage.CAMP;
+    private int radius = SettlementStage.CAMP.radius();
     private long revision;
 
     SettlementRecord(VillageAllegianceId id, ResourceLocation dimension, BlockPos center,
@@ -102,6 +103,10 @@ public final class SettlementRecord {
 
     public SettlementStage stage() {
         return this.stage;
+    }
+
+    public int radius() {
+        return this.radius;
     }
 
     public SettlementEconomy economy() {
@@ -699,7 +704,7 @@ public final class SettlementRecord {
 
     boolean putArea(UUID actor, SettlementArea area) {
         if (!permits(actor, SettlementPermission.BUILD) || area == null
-                || !area.within(this.center, this.stage.radius())
+                || !area.within(this.center, this.radius)
                 || !this.areas.containsKey(area.id()) && this.areas.size() >= MAX_AREAS
                 || this.areas.containsKey(area.id()) && this.areas.get(area.id()).type() != area.type()
                         && this.duties.containsValue(area.id())
@@ -738,9 +743,16 @@ public final class SettlementRecord {
         return true;
     }
 
+    void refreshStageRules(boolean resetSupport) {
+        this.radius = Math.max(this.radius, this.stage.radius());
+        if (resetSupport) this.support.resetAdvancement();
+        changed();
+    }
+
     void advance() {
         this.stage.next().ifPresent(next -> {
             this.stage = next;
+            this.radius = Math.max(this.radius, next.radius());
             changed();
         });
     }
@@ -759,6 +771,7 @@ public final class SettlementRecord {
         tag.putLong("FoundedAt", this.foundedAt);
         tag.putLong("Revision", this.revision);
         tag.putString("Stage", this.stage.name());
+        tag.putInt("ExpansionRadius", this.radius);
         ListTag delegateTags = new ListTag();
         this.delegates.forEach((player, permissions) -> {
             CompoundTag entry = new CompoundTag();
@@ -808,6 +821,10 @@ public final class SettlementRecord {
         });
         tag.put("Surveys", surveyTags);
         tag.put("Support", this.support.save());
+        ListTag supportServices = new ListTag();
+        SettlementStageRules.forStage(this.stage.next().orElse(this.stage)).services().stream().sorted()
+                .forEach(service -> supportServices.add(net.minecraft.nbt.StringTag.valueOf(service.name())));
+        tag.put("SupportServices", supportServices);
         tag.put("Economy", this.economy.save());
         ListTag residentTags = new ListTag();
         this.residents.values().forEach(resident -> residentTags.add(resident.save()));
@@ -894,7 +911,21 @@ public final class SettlementRecord {
                 tag.getLong("FoundedAt"), dirty);
         record.revision = Math.max(0L, tag.getLong("Revision"));
         record.stage = SettlementStage.valueOf(tag.getString("Stage"));
+        int savedRadius = tag.contains("ExpansionRadius") ? tag.getInt("ExpansionRadius") : record.stage.legacyRadius();
+        if (savedRadius < 16 || savedRadius > SettlementStageRules.MAX_RADIUS) {
+            throw new IllegalArgumentException("Saved settlement expansion radius exceeds its limit");
+        }
+        record.radius = Math.max(savedRadius, record.stage.radius());
         record.support = SettlementSupportState.load(tag.getCompound("Support"));
+        var supportStage = record.stage.next().orElse(record.stage);
+        Set<SettlementProgressionService.Requirement> supportedServices = SettlementStageRules.legacy(supportStage).services();
+        if (tag.contains("SupportServices")) {
+            supportedServices = EnumSet.noneOf(SettlementProgressionService.Requirement.class);
+            for (var service : tag.getList("SupportServices", Tag.TAG_STRING)) {
+                supportedServices.add(SettlementProgressionService.Requirement.valueOf(service.getAsString()));
+            }
+        }
+        if (!supportedServices.equals(SettlementStageRules.forStage(supportStage).services())) record.support.resetAdvancement();
         record.economy = SettlementEconomy.load(tag.getCompound("Economy"), record::changed);
         for (Tag raw : tag.getList("ResidentCare", Tag.TAG_COMPOUND)) {
             var resident = SettlementResidentState.load((CompoundTag) raw);
@@ -1067,7 +1098,7 @@ public final class SettlementRecord {
         }
         for (Tag raw : tag.getList("Areas", Tag.TAG_COMPOUND)) {
             SettlementArea area = SettlementArea.load((CompoundTag) raw);
-            if (!area.within(record.center, record.stage.radius()) || record.areas.size() >= MAX_AREAS
+            if (!area.within(record.center, record.radius) || record.areas.size() >= MAX_AREAS
                     || record.areas.containsKey(area.id())
                     || record.areas.values().stream().anyMatch(existing -> existing.conflictsWith(area))) {
                 throw new IllegalArgumentException("Settlement areas exceed their bounds or have conflicting uses");
