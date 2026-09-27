@@ -65,6 +65,12 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
                 buffer.writeUUID(brew.area());
                 writeBrewingOrder(buffer, brew.order());
             }
+            case WorkerEnabled enabled -> {
+                buffer.writeEnum(Kind.WORKER_ENABLED);
+                buffer.writeUUID(enabled.resident());
+                buffer.writeUUID(enabled.area());
+                buffer.writeBoolean(enabled.enabled());
+            }
             case SaveWorker save -> {
                 buffer.writeEnum(Kind.SAVE_WORKER);
                 buffer.writeUUID(save.resident());
@@ -170,6 +176,7 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
             case GUARD -> new Guard(buffer.readUUID(), readGuardOrder(buffer));
             case BREW -> new Brew(buffer.readUUID(), buffer.readUUID(), readBrewingOrder(buffer));
             case SAVE_WORKER -> new SaveWorker(buffer.readUUID(), buffer.readUUID(), readWorkerSettings(buffer));
+            case WORKER_ENABLED -> new WorkerEnabled(buffer.readUUID(), buffer.readUUID(), buffer.readBoolean());
             case DRAFT_BLUEPRINT -> new DraftBlueprint(buffer.readResourceLocation());
             case PLACE_BLUEPRINT -> new PlaceBlueprint(buffer.readUUID(), buffer.readBlockPos(), buffer.readEnum(net.minecraft.world.level.block.Rotation.class));
             case START_PROJECT -> new StartProject(buffer.readUUID(), buffer.readUUID());
@@ -284,11 +291,11 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, WORKER_ENABLED
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, WorkerEnabled {
     }
 
     public record Home(UUID resident, net.minecraft.core.BlockPos bed, boolean assign) implements Command {
@@ -337,6 +344,13 @@ public record SettlementManagementActionPayload(UUID town, Command command) impl
     public record CancelProject(UUID project) implements Command {
         public CancelProject {
             Objects.requireNonNull(project);
+        }
+    }
+
+    public record WorkerEnabled(UUID resident, UUID area, boolean enabled) implements Command {
+        public WorkerEnabled {
+            Objects.requireNonNull(resident);
+            Objects.requireNonNull(area);
         }
     }
 

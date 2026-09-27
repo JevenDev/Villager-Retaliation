@@ -33,6 +33,18 @@ public final class SettlementWorkerConfigurationService {
         return SettlementWorkerSettings.capture(area.type().role(), state);
     }
 
+    public static boolean setEnabled(ServerPlayer player, SettlementRecord town, UUID resident, UUID areaId, boolean enabled) {
+        if (player == null || !player.isAlive() || player.isSpectator()
+                || !town.dimension().equals(player.level().dimension().location())
+                || !town.permits(player.getUUID(), SettlementPermission.STAFF)
+                || !areaId.equals(town.duties().get(resident))) {
+            return false;
+        }
+        var settings = snapshot(player.serverLevel(), town, resident);
+        return settings != null && configure(player, town, resident, areaId,
+                settings.with(SettlementWorkerSetting.ENABLED, enabled ? 1 : 0));
+    }
+
     public static boolean configure(ServerPlayer player, SettlementRecord town, UUID resident, UUID areaId,
                                     SettlementWorkerSettings settings) {
         if (player == null || !player.isAlive() || player.isSpectator()

@@ -43,6 +43,57 @@ public final class SettlementManagementGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
+    public static void observedBlockersSurviveUnloadAndReloadWithoutReplayingWork(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var town = fixture.town();
+        var level = helper.getLevel();
+        var area = area(town, SettlementAreaType.FARM, 0);
+        town.putArea(fixture.leader().getUUID(), area);
+        var resident = EntityType.VILLAGER.create(level);
+        resident.setNoAi(true);
+        resident.setVillagerData(resident.getVillagerData().setProfession(VillagerProfession.FARMER));
+        VillageAllegianceApi.assignKnown(level, resident, town.id(), AllegianceAssignmentSource.ADMIN);
+        town.assignDuty(resident.getUUID(), area.id());
+        SettlementWorkforceService.reconcile(level, resident);
+        town.removeWorker(resident.getUUID());
+        var unseen = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
+        helper.assertValueEqual(unseen.status(), "awaiting_worker_observation", "an assigned unobserved resident is not idle");
+        var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(resident);
+        state.putString("WorkerTaskState", "paused_missing_tool");
+        state.putString("WorkerFailureReason", "missing_hoe");
+        state.putString("Status", "interaction.work.farming.missing_hoe");
+        SettlementBackgroundService.onUnloaded(resident);
+        var worker = town.workers().get(resident.getUUID());
+        helper.assertValueEqual(worker.status(), "workforce.missing_tools", "unloading retains the observed blocker");
+        helper.assertTrue(worker.diagnostic().contains("hoe"), "the observed cause survives unloading");
+        var saved = town.save(level.registryAccess());
+        var restored = SettlementRecord.load(saved, level.registryAccess(), () -> {});
+        var restoredWorker = restored.workers().get(resident.getUUID());
+        helper.assertValueEqual(SettlementManagementService.residentWork(level, restored, resident.getUUID(), null, restoredWorker),
+                new SettlementWorkStatus(worker.status(), worker.diagnostic()), "save reload preserves the same issue status");
+        var before = restoredWorker.save();
+        SettlementManagementService.residentWork(level, restored, resident.getUUID(), null, restoredWorker);
+        helper.assertValueEqual(restoredWorker.save(), before, "status reads do not advance time, progress or receipts");
+        var legacy = before.copy();
+        legacy.remove("Diagnostic");
+        helper.assertValueEqual(SettlementWorkerState.load(legacy).diagnostic(), "", "old snapshots need no migration");
+        state.putString("WorkerTaskState", "returning_to_work_area");
+        state.putString("Status", "interaction.work.status.returning_bounds");
+        helper.assertValueEqual(SettlementManagementService.residentWork(level, town, resident.getUUID(), resident, worker).status(),
+                "workforce.pathing", "a returned resident uses live state instead of the old blocker");
+        SettlementBackgroundService.onUnloaded(resident);
+        helper.assertValueEqual(worker.status(), "workforce.pathing", "a later unload replaces the old blocker");
+        helper.assertValueEqual(worker.diagnostic(), "", "successful travel clears stale diagnostics");
+        worker.status("missing_hoe");
+        worker.status("resting");
+        helper.assertValueEqual(worker.diagnostic(), "", "background rest carries no stale diagnostic");
+        helper.assertValueEqual(worker.elapsed(level.getGameTime() + 100_000L), 200, "catch-up remains bounded to 200 ticks");
+        helper.assertValueEqual(worker.elapsed(level.getGameTime() + 100_000L), 0, "the same interval cannot replay");
+        helper.assertFalse(level.hasChunkAt(town.center()), "inspection leaves the remote settlement unloaded");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
     public static void remotePagesIncludeEveryResidentWithoutLoadingTheTown(GameTestHelper helper) {
         Fixture fixture = fixture(helper);
         var level = helper.getLevel();
