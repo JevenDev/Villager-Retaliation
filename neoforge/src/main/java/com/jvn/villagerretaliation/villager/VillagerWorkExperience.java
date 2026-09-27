@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.villager;
 
+import java.util.List;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
@@ -33,6 +34,29 @@ public final class VillagerWorkExperience {
 
     public static boolean mayMerge(ExperienceOrb first, ExperienceOrb second) {
         return !isOwned(first) && !isOwned(second);
+    }
+
+    public static Villager mendingTarget(ExperienceOrb orb, net.minecraft.world.entity.player.Player followingPlayer, List<Villager> villagers) {
+        Villager nearest = null;
+        double distance = Double.MAX_VALUE;
+        for (var villager : villagers) {
+            if (!villager.isAlive() || !VillagerEquipmentMending.canRepair(villager)
+                    && !(belongsTo(orb, villager) && VillagerEquipmentMending.hasMendingEquipment(villager))) continue;
+            double candidate = villager.distanceToSqr(orb);
+            if (candidate < 64.0D && candidate < distance) {
+                nearest = villager;
+                distance = candidate;
+            }
+        }
+        return nearest != null && (belongsTo(orb, nearest) || followingPlayer == null || distance < followingPlayer.distanceToSqr(orb))
+                ? nearest : null;
+    }
+
+    public static boolean mendOnContact(ExperienceOrb orb, Villager villager) {
+        if (villager == null || !villager.isAlive() || villager.level() != orb.level() || villager.distanceToSqr(orb) >= 64.0D
+                || !orb.getBoundingBox().intersects(villager.getBoundingBox())) return false;
+        boolean owned = belongsTo(orb, villager) && VillagerEquipmentMending.hasMendingEquipment(villager);
+        return VillagerEquipmentMending.repairWithXp(villager, orb.getValue()) || owned;
     }
 
     public static boolean hasNearbyOwnedExperience(Villager villager) {

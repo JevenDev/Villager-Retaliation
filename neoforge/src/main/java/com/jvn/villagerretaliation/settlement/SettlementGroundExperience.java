@@ -1,16 +1,22 @@
 package com.jvn.villagerretaliation.settlement;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.level.ChunkPos;
 
 final class SettlementGroundExperience {
     private static final String VERSION_TAG = "VillagerRetaliationSettlementExperienceVersion";
     private final UUID id;
     private CompoundTag entity;
+    private BlockPos nativePosition;
+    private final Set<Long> nativeChunks = new LinkedHashSet<>();
+    private final Set<Long> acknowledgedChunks = new LinkedHashSet<>();
     private long checkedAt;
     private long version;
     private boolean removed;
@@ -27,9 +33,11 @@ final class SettlementGroundExperience {
         this.checkedAt = Math.max(0L, checkedAt);
         this.version = version;
         this.removed = removed;
+        nativePosition(position());
     }
 
     static SettlementGroundExperience capture(ExperienceOrb orb, long now) {
+        SettlementExperienceSimulation.remember(orb);
         return new SettlementGroundExperience(orb.saveWithoutId(new CompoundTag()), now, version(orb), false);
     }
 
@@ -40,6 +48,32 @@ final class SettlementGroundExperience {
     BlockPos position() {
         var pos = this.entity.getList("Pos", Tag.TAG_DOUBLE);
         return BlockPos.containing(pos.getDouble(0), pos.getDouble(1), pos.getDouble(2));
+    }
+
+    BlockPos nativePosition() {
+        return this.nativePosition;
+    }
+
+    void nativePosition(BlockPos position) {
+        this.nativePosition = position.immutable();
+        this.nativeChunks.add(ChunkPos.asLong(position));
+    }
+
+    Set<Long> nativeChunks() {
+        return Set.copyOf(this.nativeChunks);
+    }
+
+    void retainAnchors(SettlementGroundExperience other) {
+        this.nativeChunks.addAll(other.nativeChunks);
+        if (this.removed && other.removed && this.version == other.version) this.acknowledgedChunks.addAll(other.acknowledgedChunks);
+    }
+
+    void acknowledge(long chunk) {
+        if (this.removed && this.nativeChunks.contains(chunk)) this.acknowledgedChunks.add(chunk);
+    }
+
+    boolean acknowledged() {
+        return this.removed && this.acknowledgedChunks.containsAll(this.nativeChunks);
     }
 
     long checkedAt() {
@@ -64,6 +98,8 @@ final class SettlementGroundExperience {
 
     void observe(ExperienceOrb orb, long now) {
         if (!this.id.equals(orb.getUUID())) throw new IllegalArgumentException("Ground experience identity differs from its native orb");
+        SettlementExperienceSimulation.remember(orb);
+        nativePosition(orb.blockPosition());
         var observed = orb.saveWithoutId(new CompoundTag());
         if (observed.getShort("Value") <= 0 || observed.getInt("Count") <= 0) {
             remove();
@@ -80,13 +116,15 @@ final class SettlementGroundExperience {
         this.removed = false;
     }
 
-    void advance(long now) {
+    void advance(ServerLevel level, SettlementExperienceSimulation simulation, long now) {
         if (this.removed || now <= this.checkedAt) return;
         int elapsed = (int) Math.clamp(now - this.checkedAt, 0L, 200L);
         this.checkedAt = now;
-        int age = Math.min(6000, this.entity.getShort("Age") + elapsed);
-        this.entity.putShort("Age", (short) age);
-        this.removed = age >= 6000;
+        var orb = context(level);
+        simulation.advance(orb, elapsed);
+        this.entity = orb.saveWithoutId(new CompoundTag());
+        this.removed = orb.isRemoved();
+        if (this.removed && this.entity.getInt("Count") <= 0) this.entity.putInt("Count", 1);
         this.version++;
     }
 
@@ -112,7 +150,9 @@ final class SettlementGroundExperience {
         }
         if (version(orb) == this.version) return false;
         orb.load(this.entity.copy());
+        SettlementExperienceSimulation.restore(orb);
         orb.getPersistentData().putLong(VERSION_TAG, this.version);
+        nativePosition(orb.blockPosition());
         this.entity = orb.saveWithoutId(new CompoundTag());
         return true;
     }
@@ -123,11 +163,21 @@ final class SettlementGroundExperience {
         tag.putLong("CheckedAt", this.checkedAt);
         tag.putLong("Version", this.version);
         tag.putBoolean("Removed", this.removed);
+        tag.putLong("NativePosition", this.nativePosition.asLong());
+        tag.putLongArray("NativeChunks", this.nativeChunks.stream().mapToLong(Long::longValue).toArray());
+        tag.putLongArray("AcknowledgedChunks", this.acknowledgedChunks.stream().mapToLong(Long::longValue).toArray());
         return tag;
     }
 
     static SettlementGroundExperience load(CompoundTag tag) {
-        return new SettlementGroundExperience(tag.getCompound("Entity"), tag.getLong("CheckedAt"),
+        var state = new SettlementGroundExperience(tag.getCompound("Entity"), tag.getLong("CheckedAt"),
                 tag.getLong("Version"), tag.getBoolean("Removed"));
+        if (tag.contains("NativePosition", Tag.TAG_LONG)) {
+            state.nativeChunks.clear();
+            state.nativePosition(BlockPos.of(tag.getLong("NativePosition")));
+        }
+        for (long chunk : tag.getLongArray("NativeChunks")) state.nativeChunks.add(chunk);
+        for (long chunk : tag.getLongArray("AcknowledgedChunks")) state.acknowledge(chunk);
+        return state;
     }
 }

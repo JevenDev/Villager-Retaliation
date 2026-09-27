@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.villager.VillagerWorkExperience;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,12 +17,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ExperienceOrb.class)
-public abstract class ExperienceOrbMixin {
+public abstract class ExperienceOrbMixin implements com.jvn.villagerretaliation.villager.ExperienceOrbWorkTarget {
     @Shadow private int count;
-    @Shadow public int value;
     @Shadow @Nullable private Player followingPlayer;
 
     @Unique @Nullable private Villager villagerretaliation$followingVillager;
+
+    @Override
+    public Villager villagerretaliation$workExperienceTarget() {
+        return this.villagerretaliation$followingVillager;
+    }
+
+    @Override
+    public void villagerretaliation$workExperienceTarget(Villager villager) {
+        this.villagerretaliation$followingVillager = villager;
+    }
 
     @Inject(method = "playerTouch", at = @At("HEAD"), cancellable = true)
     private void villagerretaliation$preventPlayerTakingVillagerWorkExperience(
@@ -95,33 +103,9 @@ public abstract class ExperienceOrbMixin {
     @Inject(method = "scanForEntities", at = @At("TAIL"))
     private void villagerretaliation$findVillagerNeedingMending(CallbackInfo callback) {
         ExperienceOrb orb = (ExperienceOrb) (Object) this;
-        AABB searchArea = orb.getBoundingBox().inflate(8.0D);
-        Villager nearestVillager = null;
-        double nearestDistance = Double.MAX_VALUE;
-        for (Villager villager : orb.level().getEntitiesOfClass(
-                Villager.class,
-                searchArea,
-                candidate -> candidate.isAlive()
-                        && (VillagerEquipmentMending.canRepair(candidate)
-                        || VillagerWorkExperience.belongsTo(orb, candidate)
-                        && VillagerEquipmentMending.hasMendingEquipment(candidate))
-        )) {
-            double distance = villager.distanceToSqr(orb);
-            if (distance < 64.0D && distance < nearestDistance) {
-                nearestVillager = villager;
-                nearestDistance = distance;
-            }
-        }
-
-        if (nearestVillager != null
-                && (VillagerWorkExperience.belongsTo(orb, nearestVillager)
-                || followingPlayer == null
-                || nearestDistance < followingPlayer.distanceToSqr(orb))) {
-            followingPlayer = null;
-            villagerretaliation$followingVillager = nearestVillager;
-        } else {
-            villagerretaliation$followingVillager = null;
-        }
+        villagerretaliation$followingVillager = VillagerWorkExperience.mendingTarget(orb, followingPlayer,
+                orb.level().getEntitiesOfClass(Villager.class, orb.getBoundingBox().inflate(8.0D)));
+        if (villagerretaliation$followingVillager != null) followingPlayer = null;
     }
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
@@ -140,12 +124,7 @@ public abstract class ExperienceOrbMixin {
             return;
         }
 
-        if (!orb.getBoundingBox().intersects(villager.getBoundingBox())) {
-            return;
-        }
-        if (!VillagerEquipmentMending.repairWithXp(villager, value) && !canConsumeWorkExperience) {
-            return;
-        }
+        if (!VillagerWorkExperience.mendOnContact(orb, villager)) return;
 
         villager.take(orb, 1);
         count--;

@@ -13,6 +13,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class SettlementGroundExperienceService {
+    private static final ThreadLocal<ExperienceOrb> RESTORING = new ThreadLocal<>();
     private static final Map<ExperienceOrb, SettlementRecord> OWNERS = new WeakHashMap<>();
     private static final Map<SettlementArea, Integer> CURSORS = new WeakHashMap<>();
 
@@ -46,11 +47,12 @@ public final class SettlementGroundExperienceService {
             state.observe(orb, level.isPositionEntityTicking(orb.blockPosition()) ? level.getGameTime() : state.checkedAt());
         }
         OWNERS.put(orb, town);
-        writeReceipt(level, state, state.position());
+        writeReceipts(level, state);
         town.changed();
     }
 
     public static void onChanged(ExperienceOrb orb) {
+        if (SettlementExperienceSimulation.active(orb) || RESTORING.get() == orb) return;
         if (!(orb.level() instanceof ServerLevel level) || !orb.isAlive() || orb.getValue() <= 0) return;
         var town = owner(level, orb);
         if (town != null && town.areas().values().stream().noneMatch(area -> area.contains(orb.blockPosition()))) {
@@ -74,12 +76,14 @@ public final class SettlementGroundExperienceService {
     }
 
     static void update(ServerLevel level, SettlementRecord town, long now) {
+        var simulation = new SettlementExperienceSimulation(level, town);
         for (var original : List.copyOf(town.groundExperience().values())) {
             var state = synchronize(level, town, original);
             var entity = SettlementAnimalBirthService.existing(level, state.id());
             if (entity instanceof ExperienceOrb orb && orb.level() == level) {
                 if (!readReceipt(level, orb)) {
-                    town.removeGroundExperience(state.id());
+                    state.remove();
+                    remove(level, town, state);
                     continue;
                 }
                 apply(level, town, state, orb);
@@ -87,28 +91,31 @@ public final class SettlementGroundExperienceService {
                 boolean active = level.isPositionEntityTicking(orb.blockPosition());
                 state.observe(orb, active ? now : state.checkedAt());
                 if (!active) {
-                    state.advance(now);
+                    state.advance(level, simulation, now);
                     apply(level, town, state, orb);
                 }
                 if (town.areas().values().stream().noneMatch(area -> area.contains(orb.blockPosition()))) {
                     town.removeGroundExperience(state.id());
                     OWNERS.remove(orb);
                 } else {
-                    writeReceipt(level, state, state.position());
+                    writeReceipts(level, state);
                 }
             } else if (entity != null) {
                 town.removeGroundExperience(state.id());
-            } else if (level.areEntitiesLoaded(ChunkPos.asLong(state.position()))) {
+            } else if (level.areEntitiesLoaded(ChunkPos.asLong(state.nativePosition()))) {
                 state.remove();
                 remove(level, town, state);
             } else {
-                state.advance(now);
+                state.advance(level, simulation, now);
+                if (state.removed()) remove(level, town, state);
+                else writeReceipts(level, state);
             }
             town.changed();
         }
     }
 
     public static boolean onActive(ExperienceOrb orb) {
+        if (SettlementExperienceSimulation.active(orb) || RESTORING.get() == orb) return !orb.isRemoved();
         if (!(orb.level() instanceof ServerLevel level)) return true;
         var town = owner(level, orb);
         if (town != null) {
@@ -124,6 +131,7 @@ public final class SettlementGroundExperienceService {
     }
 
     public static void onUnloaded(ExperienceOrb orb) {
+        if (SettlementExperienceSimulation.active(orb) || RESTORING.get() == orb) return;
         if (!(orb.level() instanceof ServerLevel level)) return;
         var town = owner(level, orb);
         OWNERS.remove(orb);
@@ -152,7 +160,7 @@ public final class SettlementGroundExperienceService {
             apply(level, town, state, orb);
             if (!state.removed()) {
                 state.observe(orb, level.getGameTime());
-                writeReceipt(level, state, state.position());
+                writeReceipts(level, state);
                 town.changed();
             }
         }
@@ -186,23 +194,30 @@ public final class SettlementGroundExperienceService {
     }
 
     private static SettlementGroundExperience synchronize(ServerLevel level, SettlementRecord town, SettlementGroundExperience state) {
-        var chunk = chunk(level, state.position());
-        if (chunk == null) return state;
-        var tag = SettlementChunkReceipts.groundExperience(chunk, false).getCompound(state.id().toString());
-        if (tag.isEmpty() || tag.getLong("Version") < state.version()
-                || tag.getLong("Version") == state.version() && !tag.getBoolean("Removed")) return state;
-        var receipt = SettlementGroundExperience.load(tag);
-        if (!receipt.id().equals(state.id())) throw new IllegalStateException("Ground experience receipt identity differs");
-        town.removeGroundExperience(state.id());
-        town.recordGroundExperience(receipt);
-        return receipt;
+        var latest = state;
+        for (long anchor : state.nativeChunks()) {
+            var chunk = level.getChunkSource().getChunkNow(ChunkPos.getX(anchor), ChunkPos.getZ(anchor));
+            if (chunk == null) continue;
+            var tag = SettlementChunkReceipts.groundExperience(chunk, false).getCompound(state.id().toString());
+            if (tag.isEmpty() || tag.getLong("Version") < latest.version()
+                    || tag.getLong("Version") == latest.version() && !tag.getBoolean("Removed")) continue;
+            var receipt = SettlementGroundExperience.load(tag);
+            if (!receipt.id().equals(state.id())) throw new IllegalStateException("Ground experience receipt identity differs");
+            receipt.retainAnchors(latest);
+            latest = receipt;
+        }
+        if (latest != state) {
+            town.removeGroundExperience(state.id());
+            town.recordGroundExperience(latest);
+        }
+        return latest;
     }
 
     private static boolean readReceipt(ServerLevel level, ExperienceOrb orb) {
         var chunk = chunk(level, orb.blockPosition());
         if (chunk == null) return !orb.isRemoved();
         var tag = SettlementChunkReceipts.groundExperience(chunk, false).getCompound(orb.getUUID().toString());
-        if (!tag.isEmpty()) SettlementGroundExperience.load(tag).restore(orb);
+        if (!tag.isEmpty()) restore(level, SettlementGroundExperience.load(tag), orb);
         return !orb.isRemoved();
     }
 
@@ -212,22 +227,45 @@ public final class SettlementGroundExperienceService {
         var entries = SettlementChunkReceipts.groundExperience(chunk, true);
         String key = state.id().toString();
         if (entries.getCompound(key).getLong("Version") > state.version()) return false;
+        state.acknowledge(ChunkPos.asLong(position));
         entries.put(key, state.save());
         chunk.setUnsaved(true);
         return true;
     }
 
+    private static boolean writeReceipts(ServerLevel level, SettlementGroundExperience state) {
+        boolean complete = true;
+        for (long anchor : state.nativeChunks()) {
+            var position = new BlockPos(ChunkPos.getX(anchor) << 4, state.nativePosition().getY(), ChunkPos.getZ(anchor) << 4);
+            complete &= writeReceipt(level, state, position);
+        }
+        return state.removed() ? state.acknowledged() : complete;
+    }
+
     private static void apply(ServerLevel level, SettlementRecord town, SettlementGroundExperience state, ExperienceOrb orb) {
         if (SettlementGroundExperience.version(orb) > state.version()
                 || SettlementGroundExperience.version(orb) == state.version() && !state.removed()) return;
-        writeReceipt(level, state, orb.blockPosition());
-        state.restore(orb);
+        restore(level, state, orb);
         if (state.removed()) remove(level, town, state);
         town.changed();
     }
 
+    private static void restore(ServerLevel level, SettlementGroundExperience state, ExperienceOrb orb) {
+        var previous = RESTORING.get();
+        RESTORING.set(orb);
+        try {
+            state.nativePosition(orb.blockPosition());
+            writeReceipts(level, state);
+            state.restore(orb);
+            writeReceipts(level, state);
+        } finally {
+            if (previous == null) RESTORING.remove();
+            else RESTORING.set(previous);
+        }
+    }
+
     private static void remove(ServerLevel level, SettlementRecord town, SettlementGroundExperience state) {
-        if (writeReceipt(level, state, state.position())) town.removeGroundExperience(state.id());
+        if (writeReceipts(level, state)) town.removeGroundExperience(state.id());
         town.changed();
     }
 }

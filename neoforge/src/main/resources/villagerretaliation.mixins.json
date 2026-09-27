@@ -25,6 +25,8 @@
     "SettlementTerrainTickMixin",
     "EntityDuelDropMixin",
     "EntityNameMixin",
+    "EntityCollisionAccessor",
+    "ExperienceOrbAccessor",
     "ExperienceOrbMixin",
     "FishingHookPredicateMixin",
     "GiveGiftToHeroMixin",

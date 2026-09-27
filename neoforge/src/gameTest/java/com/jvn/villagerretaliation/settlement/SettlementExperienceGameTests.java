@@ -440,7 +440,7 @@ public final class SettlementExperienceGameTests {
         var orb = orb(helper, fixture, 3, 2, 5990);
         helper.assertTrue(helper.getLevel().addFreshEntity(orb), "the native candidate is present before reconciliation");
         var state = fixture.town().groundExperience().get(orb.getUUID());
-        state.advance(state.checkedAt() + 200L);
+        state.advance(helper.getLevel(), new SettlementExperienceSimulation(helper.getLevel(), fixture.town()), state.checkedAt() + 200L);
         ExperienceOrb.award(helper.getLevel(), fixture.town().center().getBottomCenter(), 3);
         try {
             helper.assertTrue(orb.isRemoved(), "an expired pending candidate is removed before the award searches native storage");
@@ -465,7 +465,7 @@ public final class SettlementExperienceGameTests {
         donor.setId(recipient.getId() + 40);
         helper.assertTrue(helper.getLevel().addFreshEntity(recipient) && helper.getLevel().addFreshEntity(donor), "native merge candidates are present");
         var state = fixture.town().groundExperience().get(donor.getUUID());
-        state.advance(state.checkedAt() + 200L);
+        state.advance(helper.getLevel(), new SettlementExperienceSimulation(helper.getLevel(), fixture.town()), state.checkedAt() + 200L);
         try {
             recipient.tickCount = 1;
             recipient.tick();

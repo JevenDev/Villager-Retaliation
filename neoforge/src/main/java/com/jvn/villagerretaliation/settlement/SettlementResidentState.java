@@ -46,6 +46,7 @@ public final class SettlementResidentState {
     private boolean familyUnsafe;
     private CompoundTag entityContext = new CompoundTag();
     private SettlementFamilyInventory familyInventory;
+    private SettlementMendingEquipment mendingEquipment;
 
     private SettlementResidentState(UUID id) {
         this.id = id;
@@ -110,6 +111,7 @@ public final class SettlementResidentState {
     }
 
     void observe(Villager villager, SettlementRecord town, long now) {
+        restoreMending(villager);
         if (this.familyInventory != null) this.familyInventory.restore(villager);
         var snapshot = VillagerRecoveryService.captureRecoveryState(villager);
         this.position = villager.blockPosition().immutable();
@@ -134,6 +136,15 @@ public final class SettlementResidentState {
         this.familyUnsafe = villager.getTarget() != null || villager.getLastHurtByMob() != null || villager.isOnFire() || villager.isInLava()
                 || com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil.hasVanillaFleeState((ServerLevel) villager.level(), villager.getBrain());
         rememberFamily(villager);
+    }
+
+    void mend(Villager villager, java.util.Map<net.minecraft.world.entity.EquipmentSlot, ItemStack> before) {
+        this.mendingEquipment = SettlementMendingEquipment.capture(villager, this.mendingEquipment, before);
+        remember(villager);
+    }
+
+    private boolean restoreMending(Villager villager) {
+        return this.mendingEquipment != null && this.mendingEquipment.restore(villager);
     }
 
     void remember(Villager villager) {
@@ -185,8 +196,9 @@ public final class SettlementResidentState {
 
     boolean restore(Villager villager) {
         boolean familyRestored = this.familyInventory != null && this.familyInventory.restore(villager);
+        boolean mendingRestored = restoreMending(villager);
         if (villager.getPersistentData().getLong(VERSION_TAG) >= this.version) {
-            return familyRestored;
+            return familyRestored || mendingRestored;
         }
         VillagerRecoveryService.restoreRecoveryState(villager,
                 new VillagerRecoveryService.RecoverySnapshot(this.food, this.saturation, this.exhaustion, this.healTimer));
@@ -332,6 +344,7 @@ public final class SettlementResidentState {
         tag.putBoolean("FamilyUnsafe", this.familyUnsafe);
         if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
         if (this.familyInventory != null) tag.put("FamilyInventory", this.familyInventory.save());
+        if (this.mendingEquipment != null) tag.put("MendingEquipment", this.mendingEquipment.save());
         return tag;
     }
 
@@ -359,6 +372,7 @@ public final class SettlementResidentState {
         state.familyUnsafe = tag.getBoolean("FamilyUnsafe");
         state.entityContext = tag.getCompound("EntityContext").copy();
         if (tag.contains("FamilyInventory")) state.familyInventory = SettlementFamilyInventory.load(tag.getCompound("FamilyInventory"));
+        if (tag.contains("MendingEquipment")) state.mendingEquipment = SettlementMendingEquipment.load(tag.getCompound("MendingEquipment"));
         if (!state.entityContext.isEmpty() && (!state.entityContext.hasUUID("UUID") || !state.id.equals(state.entityContext.getUUID("UUID")))) {
             throw new IllegalArgumentException("Resident context has a different identity");
         }
