@@ -43,7 +43,7 @@ public abstract class LivingEntityVillagerExperienceMixin {
                 defeated,
                 null,
                 defeated.getExperienceReward(level, villager));
-        if (reward > 0) {
+        if (reward > 0 && !com.jvn.villagerretaliation.settlement.SettlementDeathCapture.experience(defeated, defeated.position(), reward, villager)) {
             VillagerWorkExperience.spawn(level, villager, defeated.position(), reward);
         }
     }

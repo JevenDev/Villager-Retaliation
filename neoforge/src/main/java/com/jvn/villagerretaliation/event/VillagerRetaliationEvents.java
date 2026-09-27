@@ -419,6 +419,11 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         Entity entity = event.getEntity();
+        if (entity instanceof LivingEntity living
+                && !com.jvn.villagerretaliation.settlement.SettlementEntityDeathService.onActive(living)) {
+            event.setCanceled(true);
+            return;
+        }
         if (entity instanceof net.minecraft.world.entity.item.ItemEntity item
                 && !com.jvn.villagerretaliation.settlement.SettlementGroundItemService.onActive(item)) {
             event.setCanceled(true);
@@ -530,6 +535,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof LivingEntity living
+                && !com.jvn.villagerretaliation.settlement.SettlementEntityDeathService.onJoined(living)) {
+            event.setCanceled(true);
+            return;
+        }
         if (event.getEntity() instanceof net.minecraft.world.entity.item.ItemEntity item
                 && !com.jvn.villagerretaliation.settlement.SettlementGroundItemService.onJoined(item)) {
             event.setCanceled(true);

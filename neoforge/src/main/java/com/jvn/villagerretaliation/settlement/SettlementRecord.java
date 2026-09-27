@@ -47,6 +47,7 @@ public final class SettlementRecord {
     private final Map<UUID, SettlementAnimalBirth> animalBirths = new LinkedHashMap<>();
     private final Map<UUID, SettlementItemDrop> itemDrops = new LinkedHashMap<>();
     private final Map<UUID, SettlementGroundItem> groundItems = new LinkedHashMap<>();
+    private final Map<UUID, SettlementEntityDeath> entityDeaths = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFurnaceState> furnaces = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementBrewingStandState> brewingStands = new LinkedHashMap<>();
     private final Map<BlockPos, SettlementFieldPlot> fields = new LinkedHashMap<>();
@@ -369,6 +370,21 @@ public final class SettlementRecord {
 
     void removeGroundItem(UUID id) {
         if (this.groundItems.remove(id) != null) changed();
+    }
+
+    Map<UUID, SettlementEntityDeath> entityDeaths() {
+        return Collections.unmodifiableMap(this.entityDeaths);
+    }
+
+    void recordEntityDeath(SettlementEntityDeath death) {
+        if (this.entityDeaths.putIfAbsent(death.id(), death) != null) {
+            throw new IllegalArgumentException("Entity deaths duplicate an identity");
+        }
+        changed();
+    }
+
+    void removeEntityDeath(UUID id) {
+        if (this.entityDeaths.remove(id) != null) changed();
     }
 
     public Map<UUID, SettlementArrival> arrivals() {
@@ -776,6 +792,9 @@ public final class SettlementRecord {
         var groundItemTags = new ListTag();
         this.groundItems.values().forEach(item -> groundItemTags.add(item.save()));
         tag.put("GroundItems", groundItemTags);
+        var deathTags = new ListTag();
+        this.entityDeaths.values().forEach(death -> deathTags.add(death.save()));
+        tag.put("EntityDeaths", deathTags);
         ListTag furnaceTags = new ListTag();
         this.furnaces.values().forEach(furnace -> furnaceTags.add(furnace.save()));
         tag.put("Furnaces", furnaceTags);
@@ -884,6 +903,12 @@ public final class SettlementRecord {
             var item = SettlementGroundItem.load((CompoundTag) raw, provider);
             if (record.groundItems.putIfAbsent(item.drop().id(), item) != null) {
                 throw new IllegalArgumentException("Ground items duplicate an identity");
+            }
+        }
+        for (Tag raw : tag.getList("EntityDeaths", Tag.TAG_COMPOUND)) {
+            var death = SettlementEntityDeath.load((CompoundTag) raw);
+            if (record.entityDeaths.putIfAbsent(death.id(), death) != null) {
+                throw new IllegalArgumentException("Entity deaths duplicate an identity");
             }
         }
         for (Tag raw : tag.getList("Furnaces", Tag.TAG_COMPOUND)) {

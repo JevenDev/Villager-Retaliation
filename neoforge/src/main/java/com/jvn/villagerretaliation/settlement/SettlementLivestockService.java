@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
-import com.jvn.villagerretaliation.interaction.work.AnimalBreedingWorker;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -27,7 +26,7 @@ public final class SettlementLivestockService {
         if (area.type() != SettlementAreaType.ANIMAL_PEN) return;
         var animals = level.getEntitiesOfClass(Animal.class, new AABB(area.min().getX(), area.min().getY(), area.min().getZ(),
                 area.max().getX() + 1.0D, area.max().getY() + 1.0D, area.max().getZ() + 1.0D),
-                animal -> animal.isAlive() && (SettlementLivestockBreeding.supported(animal) || AnimalBreedingWorker.isMilkable(animal)));
+                Animal::isAlive);
         if (animals.isEmpty()) return;
         int cursor = Math.floorMod(AREA_CURSORS.getOrDefault(area, 0), animals.size());
         int count = Math.min(16, animals.size());

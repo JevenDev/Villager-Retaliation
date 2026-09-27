@@ -25,6 +25,7 @@ public final class SettlementLivestock {
     private long version;
     private boolean pending;
     private boolean unsafe;
+    private boolean interaction;
     private double grazing;
     private UUID matingPartner;
     private int matingTicks;
@@ -97,6 +98,7 @@ public final class SettlementLivestock {
             this.pending = false;
             return false;
         }
+        if (this.interaction) animal.load(this.entity.copy());
         animal.setAge(this.entity.getInt("Age"));
         animal.setInLoveTime(this.entity.getInt("InLove"));
         if (animal instanceof Sheep sheep) sheep.setSheared(this.entity.getBoolean("Sheared"));
@@ -106,6 +108,12 @@ public final class SettlementLivestock {
         animal.getPersistentData().putLong(VERSION_TAG, this.version);
         this.pending = false;
         return true;
+    }
+
+    void interacted(Animal animal) {
+        observe(animal, this.checkedAt);
+        this.interaction = true;
+        changed();
     }
 
     int advance(long now) {
@@ -224,6 +232,7 @@ public final class SettlementLivestock {
         tag.putLong("Version", this.version);
         tag.putBoolean("Pending", this.pending);
         tag.putBoolean("Unsafe", this.unsafe);
+        tag.putBoolean("Interaction", this.interaction);
         tag.putDouble("Grazing", this.grazing);
         if (this.matingPartner != null) tag.putUUID("MatingPartner", this.matingPartner);
         tag.putInt("MatingTicks", this.matingTicks);
@@ -254,6 +263,7 @@ public final class SettlementLivestock {
         state.version = Math.max(0L, tag.getLong("Version"));
         state.pending = tag.getBoolean("Pending");
         state.unsafe = tag.getBoolean("Unsafe");
+        state.interaction = tag.getBoolean("Interaction");
         state.grazing = tag.getDouble("Grazing");
         if (!Double.isFinite(state.grazing) || state.grazing < 0.0D || state.grazing >= 1.0D) {
             throw new IllegalArgumentException("Livestock grazing progress is invalid");

@@ -1227,19 +1227,19 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         return count > cap;
     }
 
-    private static boolean isProtectedCullAnimal(Animal animal) {
+    public static boolean isProtectedCullAnimal(Animal animal) {
         return animal.hasCustomName()
                 || animal instanceof TamableAnimal tamable && tamable.isTame()
                 || animal instanceof AbstractHorse horse && horse.isTamed();
     }
 
-    private static boolean isCullWeapon(ItemStack stack) {
+    public static boolean isCullWeapon(ItemStack stack) {
         return !stack.isEmpty()
                 && (stack.getItem() instanceof SwordItem
                         || stack.getItem() instanceof AxeItem);
     }
 
-    private static boolean isAnimalDrop(ItemStack stack) {
+    public static boolean isAnimalDrop(ItemStack stack) {
         return !stack.isEmpty()
                 && (stack.is(ItemTags.MEAT)
                         || stack.is(ItemTags.WOOL)
@@ -1252,7 +1252,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                         || stack.is(Items.ARMADILLO_SCUTE));
     }
 
-    private static double cullWeaponScore(ItemStack stack) {
+    public static double cullWeaponScore(ItemStack stack) {
         Item item = stack.getItem();
         double score = item instanceof SwordItem ? 2.0D : item instanceof AxeItem ? 1.0D : 0.0D;
         if (stack.isEnchanted()) {

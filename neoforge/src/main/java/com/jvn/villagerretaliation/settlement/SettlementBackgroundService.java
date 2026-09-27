@@ -34,6 +34,7 @@ public final class SettlementBackgroundService {
         SettlementFisheryService.update(level, town);
         SettlementForestService.update(level, town, now);
         SettlementMineService.update(level, town, now);
+        SettlementEntityDeathService.update(level, town, now);
         SettlementLivestockService.update(level, town, now);
         SettlementGroundItemService.update(level, town, now);
         SettlementConstructionSiteService.update(level, town);
